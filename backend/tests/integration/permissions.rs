@@ -97,7 +97,10 @@ async fn test_cannot_read_host_on_other_network(
     // Try to read this host - should fail
     let result = ctx
         .client
-        .get_expect_status(&format!("/api/hosts/{}", created_host.id), StatusCode::UNAUTHORIZED)
+        .get_expect_status(
+            &format!("/api/hosts/{}", created_host.id),
+            StatusCode::UNAUTHORIZED,
+        )
         .await;
 
     // Clean up
