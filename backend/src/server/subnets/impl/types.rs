@@ -117,8 +117,10 @@ impl SubnetType {
             return SubnetType::Storage;
         }
 
-        // Standard LAN interfaces (catch-all for ethernet)
-        if Self::match_interface_names(&["eth", "en", "eno", "enp", "ens"], interface_name) {
+        // Standard LAN interfaces (catch-all for ethernet and Linux bridges)
+        // Note: "br" (e.g., br0) is a Linux bridge, commonly used on Unraid/Proxmox for LAN
+        // This is distinct from "br-" which is Docker's bridge naming convention
+        if Self::match_interface_names(&["eth", "en", "eno", "enp", "ens", "br"], interface_name) {
             return SubnetType::Lan;
         }
 

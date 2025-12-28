@@ -172,6 +172,20 @@ pub trait DaemonUtils {
             .await?
             .into_iter()
             .filter_map(|n| {
+                let driver = n.driver.as_deref().unwrap_or("bridge");
+
+                // Only include actual Docker bridge networks
+                // Skip: host (no separate CIDR), macvlan/ipvlan (attached to physical network),
+                // none (no networking), null (invalid)
+                if driver != "bridge" && driver != "overlay" {
+                    tracing::trace!(
+                        network_name = ?n.name,
+                        driver = driver,
+                        "Skipping non-bridge Docker network"
+                    );
+                    return None;
+                }
+
                 let network_name = n.name.clone().unwrap_or("Unknown Network".to_string());
                 n.ipam.clone().map(|ipam| (network_name, ipam))
             })

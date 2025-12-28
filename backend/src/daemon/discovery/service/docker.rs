@@ -242,17 +242,18 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
             .get_subnets_from_docker_networks(daemon_id, network_id, docker, self.discovery_type())
             .await?;
 
-        // Extract Docker CIDRs to filter them from host_subnets
-        let docker_cidrs: Vec<IpCidr> = docker_subnets.iter().map(|s| s.base.cidr).collect();
+        // Extract host CIDRs - host interfaces take precedence over Docker networks
+        let host_cidrs: std::collections::HashSet<IpCidr> =
+            host_subnets.iter().map(|s| s.base.cidr).collect();
 
-        // Filter out any host subnets that match Docker CIDRs
-        // This prevents Unknown-typed host interfaces from overriding DockerBridge-typed subnets
-        let filtered_host_subnets: Vec<Subnet> = host_subnets
+        // Filter out Docker subnets that overlap with host interface CIDRs
+        // Host interfaces determine the correct subnet type (e.g., br0 on Unraid is LAN, not DockerBridge)
+        let filtered_docker_subnets: Vec<Subnet> = docker_subnets
             .into_iter()
-            .filter(|s| !docker_cidrs.contains(&s.base.cidr))
+            .filter(|s| !host_cidrs.contains(&s.base.cidr))
             .collect();
 
-        let subnets: Vec<Subnet> = [filtered_host_subnets, docker_subnets].concat();
+        let subnets: Vec<Subnet> = [host_subnets, filtered_docker_subnets].concat();
 
         let subnet_futures = subnets.iter().map(|subnet| self.create_subnet(subnet));
         let subnets = try_join_all(subnet_futures).await?;

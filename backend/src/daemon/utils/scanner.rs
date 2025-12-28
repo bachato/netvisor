@@ -214,7 +214,12 @@ fn arp_scan_host_blocking(
         "ARP blocking: opening datalink channel"
     );
 
-    let (mut tx, mut rx) = match datalink::channel(interface, Default::default()) {
+    let config = pnet::datalink::Config {
+        read_timeout: Some(Duration::from_millis(100)),
+        ..Default::default()
+    };
+
+    let (mut tx, mut rx) = match datalink::channel(interface, config) {
         Ok(Channel::Ethernet(tx, rx)) => {
             tracing::trace!(target_ip = %target_ip, "ARP blocking: channel opened");
             (tx, rx)
