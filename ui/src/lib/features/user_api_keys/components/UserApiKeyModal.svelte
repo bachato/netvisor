@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createForm } from '@tanstack/svelte-form';
 	import { submitForm } from '$lib/shared/components/forms/form-context';
-	import { required, max, minLength } from '$lib/shared/components/forms/validators';
+	import { required, max, minArrayLength } from '$lib/shared/components/forms/validators';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { pushError } from '$lib/shared/stores/feedback';
@@ -84,6 +84,16 @@
 
 	async function handleGenerateKey() {
 		const formData = form.state.values as UserApiKey;
+
+		// Validate required fields before creating
+		if (!formData.name?.trim()) {
+			pushError('Name is required');
+			return;
+		}
+		if (!formData.network_ids?.length) {
+			pushError('At least one network must be selected');
+			return;
+		}
 
 		loading = true;
 		try {
@@ -187,14 +197,25 @@
 						{/snippet}
 					</form.Field>
 
-					<form.Field name="network_ids">
+					<form.Field
+						name="network_ids"
+						validators={{
+							onBlur: ({ value }) =>
+								minArrayLength(1, 'At least one network must be selected')(value)
+						}}
+					>
 						{#snippet children(field)}
 							<NetworkAccessSelect
 								selectedNetworkIds={field.state.value ?? []}
 								onChange={handleNetworkChange}
 								permissionLevel={permissionsValue}
 								helpText="Select which networks this API key can access"
+								alwaysShowSelection={true}
+								required={true}
 							/>
+							{#if field.state.meta.errors.length > 0}
+								<p class="text-sm text-red-500 mt-1">{field.state.meta.errors[0]}</p>
+							{/if}
 						{/snippet}
 					</form.Field>
 

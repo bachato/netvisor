@@ -29,6 +29,8 @@
 		required?: boolean;
 		/** Whether the input is disabled */
 		disabled?: boolean;
+		/** Always show network selection regardless of permission level (for API keys) */
+		alwaysShowSelection?: boolean;
 	}
 
 	let {
@@ -38,7 +40,8 @@
 		label = 'Networks',
 		helpText = 'Select networks this entity will have access to',
 		required = false,
-		disabled = false
+		disabled = false,
+		alwaysShowSelection = false
 	}: Props = $props();
 
 	// Get current user and networks
@@ -57,7 +60,10 @@
 	);
 
 	// Check if network selection is needed for this permission level
-	let needsNetworkSelection = $derived(!networksNotNeeded.includes(permissionLevel));
+	// Always show if alwaysShowSelection is true (e.g., for API keys)
+	let needsNetworkSelection = $derived(
+		alwaysShowSelection || !networksNotNeeded.includes(permissionLevel)
+	);
 
 	// Convert selected IDs to Network objects
 	let selectedNetworks = $derived(
