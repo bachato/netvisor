@@ -64,6 +64,9 @@ RUN test -f /app/target/release/server || (echo "Server binary not found" && exi
 # ============================================
 FROM debian:bookworm-slim AS runtime
 
+# Required by Kamal for container management 
+LABEL service="scanopy"
+
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \

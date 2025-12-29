@@ -205,7 +205,13 @@ impl BillingPlan {
     }
 
     pub fn can_invite_users(&self) -> bool {
-        self.config().included_seats.unwrap_or(u64::MAX) > 1 && self.config().seat_cents.is_some()
+        // If there's an included amount, then there's a cap and seat_cents needs to be Some to buy more
+        if self.config().included_seats.is_some() {
+            self.config().seat_cents.is_some()
+        // If included is None, it's unlimited
+        } else {
+            true
+        }
     }
 
     pub fn hosting(&self) -> Hosting {
