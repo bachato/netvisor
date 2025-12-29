@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use crate::server::shared::api_key_common::{ApiKeyCommon, ApiKeyType};
 use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 use crate::server::shared::types::api::serialize_sensitive_info;
 use chrono::{DateTime, Utc};
@@ -11,7 +12,7 @@ use validator::Validate;
 #[derive(
     Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default, ToSchema, Validate,
 )]
-pub struct ApiKeyBase {
+pub struct DaemonApiKeyBase {
     #[serde(default)]
     #[serde(serialize_with = "serialize_sensitive_info")]
     #[schema(read_only, required)]
@@ -32,7 +33,7 @@ pub struct ApiKeyBase {
 #[derive(
     Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default, ToSchema, Validate,
 )]
-pub struct ApiKey {
+pub struct DaemonApiKey {
     #[serde(default)]
     #[schema(read_only, required)]
     pub id: Uuid,
@@ -44,10 +45,10 @@ pub struct ApiKey {
     pub created_at: DateTime<Utc>,
     #[serde(flatten)]
     #[validate(nested)]
-    pub base: ApiKeyBase,
+    pub base: DaemonApiKeyBase,
 }
 
-impl ApiKey {
+impl DaemonApiKey {
     pub fn suppress_logs(&self, other: &Self) -> bool {
         self.base.key == other.base.key
             && self.base.name == other.base.name
@@ -57,14 +58,54 @@ impl ApiKey {
     }
 }
 
-impl Display for ApiKey {
+impl Display for DaemonApiKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}: {}", self.base.name, self.id)
     }
 }
 
-impl ChangeTriggersTopologyStaleness<ApiKey> for ApiKey {
-    fn triggers_staleness(&self, _other: Option<ApiKey>) -> bool {
+impl ChangeTriggersTopologyStaleness<DaemonApiKey> for DaemonApiKey {
+    fn triggers_staleness(&self, _other: Option<DaemonApiKey>) -> bool {
         false
+    }
+}
+
+impl ApiKeyCommon for DaemonApiKey {
+    const KEY_TYPE: ApiKeyType = ApiKeyType::Daemon;
+
+    fn key(&self) -> &str {
+        &self.base.key
+    }
+
+    fn name(&self) -> &str {
+        &self.base.name
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.base.is_enabled
+    }
+
+    fn expires_at(&self) -> Option<DateTime<Utc>> {
+        self.base.expires_at
+    }
+
+    fn last_used(&self) -> Option<DateTime<Utc>> {
+        self.base.last_used
+    }
+
+    fn tags(&self) -> &[Uuid] {
+        &self.base.tags
+    }
+
+    fn set_key(&mut self, key: String) {
+        self.base.key = key;
+    }
+
+    fn set_is_enabled(&mut self, enabled: bool) {
+        self.base.is_enabled = enabled;
+    }
+
+    fn set_last_used(&mut self, time: Option<DateTime<Utc>>) {
+        self.base.last_used = time;
     }
 }

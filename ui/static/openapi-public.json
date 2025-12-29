@@ -6,16 +6,16 @@
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
-    "version": "0.12.6"
+    "version": "0.12.7"
   },
   "paths": {
-    "/api/auth/keys": {
+    "/api/auth/daemon": {
       "get": {
         "tags": [
-          "api_keys"
+          "daemon_api_keys"
         ],
-        "summary": "List all api_keys",
-        "operationId": "list_api_keys",
+        "summary": "List all daemon_api_keys",
+        "operationId": "list_daemon_api_keys",
         "parameters": [
           {
             "name": "network_id",
@@ -33,11 +33,11 @@
         ],
         "responses": {
           "200": {
-            "description": "List of api_keys",
+            "description": "List of daemon_api_keys",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_Vec_ApiKey"
+                  "$ref": "#/components/schemas/ApiResponse_Vec_DaemonApiKey"
                 }
               }
             }
@@ -51,15 +51,15 @@
       },
       "post": {
         "tags": [
-          "api_keys"
+          "daemon_api_keys"
         ],
-        "summary": "Create API key",
-        "operationId": "create_api_key",
+        "summary": "Create daemon API key",
+        "operationId": "create_daemon_api_key",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ApiKey"
+                "$ref": "#/components/schemas/DaemonApiKey"
               }
             }
           },
@@ -67,11 +67,11 @@
         },
         "responses": {
           "200": {
-            "description": "API key created",
+            "description": "Daemon API key created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_ApiKeyResponse"
+                  "$ref": "#/components/schemas/ApiResponse_DaemonApiKeyResponse"
                 }
               }
             }
@@ -87,7 +87,356 @@
             }
           },
           "403": {
-            "description": "Insufficient permissions (admin+ required)",
+            "description": "Insufficient permissions (member+ required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/auth/daemon/bulk-delete": {
+      "post": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Bulk delete daemon_api_keys",
+        "operationId": "bulk_delete_daemon_api_keys",
+        "requestBody": {
+          "description": "Array of daemon_api_keys IDs to delete",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "DaemonApiKeys deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/auth/daemon/{id}": {
+      "get": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Get daemon_api_key by ID",
+        "operationId": "get_daemon_api_key_by_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "DaemonApiKey ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DaemonApiKey found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_DaemonApiKey"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "DaemonApiKey not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Update a daemon API key",
+        "operationId": "update_daemon_api_key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon API key ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonApiKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Daemon API key updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_DaemonApiKey"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Delete daemon_api_key",
+        "operationId": "delete_daemon_api_key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "DaemonApiKey ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DaemonApiKey deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "DaemonApiKey not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/auth/daemon/{id}/rotate": {
+      "post": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Rotate a daemon API key",
+        "operationId": "rotate_key_handler",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon API key ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daemon API key rotated, returns new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_String"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/auth/keys": {
+      "get": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Get all user API keys for the current user",
+        "operationId": "get_all_user_api_keys",
+        "responses": {
+          "200": {
+            "description": "List of user API keys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_Vec_UserApiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Create a new user API key",
+        "operationId": "create_user_api_key",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserApiKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "API key created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_UserApiKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid permissions or network access",
             "content": {
               "application/json": {
                 "schema": {
@@ -117,12 +466,12 @@
     "/api/auth/keys/bulk-delete": {
       "post": {
         "tags": [
-          "api_keys"
+          "user_api_keys"
         ],
-        "summary": "Bulk delete api_keys",
-        "operationId": "bulk_delete_api_keys",
+        "summary": "Bulk delete user_api_keys",
+        "operationId": "bulk_delete_user_api_keys",
         "requestBody": {
-          "description": "Array of api_keys IDs to delete",
+          "description": "Array of user_api_keys IDs to delete",
           "content": {
             "application/json": {
               "schema": {
@@ -138,7 +487,7 @@
         },
         "responses": {
           "200": {
-            "description": "ApiKeys deleted",
+            "description": "UserApiKeys deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -158,15 +507,15 @@
     "/api/auth/keys/{id}": {
       "get": {
         "tags": [
-          "api_keys"
+          "user_api_keys"
         ],
-        "summary": "Get api_key by ID",
-        "operationId": "get_api_key_by_id",
+        "summary": "Get user_api_key by ID",
+        "operationId": "get_user_api_key_by_id",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "ApiKey ID",
+            "description": "UserApiKey ID",
             "required": true,
             "schema": {
               "type": "string",
@@ -176,17 +525,17 @@
         ],
         "responses": {
           "200": {
-            "description": "ApiKey found",
+            "description": "UserApiKey found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_ApiKey"
+                  "$ref": "#/components/schemas/ApiResponse_UserApiKey"
                 }
               }
             }
           },
           "404": {
-            "description": "ApiKey not found",
+            "description": "UserApiKey not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -204,10 +553,10 @@
       },
       "put": {
         "tags": [
-          "api_keys"
+          "user_api_keys"
         ],
-        "summary": "Update an API key",
-        "operationId": "update_api_key",
+        "summary": "Update a user API key",
+        "operationId": "update_user_api_key",
         "parameters": [
           {
             "name": "id",
@@ -224,7 +573,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ApiKey"
+                "$ref": "#/components/schemas/UserApiKey"
               }
             }
           },
@@ -236,7 +585,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_ApiKey"
+                  "$ref": "#/components/schemas/ApiResponse_UserApiKey"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to update this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -260,15 +619,15 @@
       },
       "delete": {
         "tags": [
-          "api_keys"
+          "user_api_keys"
         ],
-        "summary": "Delete api_key",
-        "operationId": "delete_api_key",
+        "summary": "Delete user_api_key",
+        "operationId": "delete_user_api_key",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "ApiKey ID",
+            "description": "UserApiKey ID",
             "required": true,
             "schema": {
               "type": "string",
@@ -278,7 +637,7 @@
         ],
         "responses": {
           "200": {
-            "description": "ApiKey deleted",
+            "description": "UserApiKey deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -288,7 +647,7 @@
             }
           },
           "404": {
-            "description": "ApiKey not found",
+            "description": "UserApiKey not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -308,10 +667,10 @@
     "/api/auth/keys/{id}/rotate": {
       "post": {
         "tags": [
-          "api_keys"
+          "user_api_keys"
         ],
-        "summary": "Rotate an API key",
-        "operationId": "rotate_key_handler",
+        "summary": "Rotate a user API key",
+        "operationId": "rotate_user_api_key",
         "parameters": [
           {
             "name": "id",
@@ -331,6 +690,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse_String"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to rotate this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -4511,101 +4880,6 @@
           }
         }
       },
-      "ApiKey": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ApiKeyBase"
-          },
-          {
-            "type": "object",
-            "required": [
-              "id",
-              "updated_at",
-              "created_at"
-            ],
-            "properties": {
-              "created_at": {
-                "type": "string",
-                "format": "date-time",
-                "readOnly": true
-              },
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "readOnly": true
-              },
-              "updated_at": {
-                "type": "string",
-                "format": "date-time",
-                "readOnly": true
-              }
-            }
-          }
-        ]
-      },
-      "ApiKeyBase": {
-        "type": "object",
-        "required": [
-          "key",
-          "name",
-          "last_used",
-          "network_id",
-          "tags"
-        ],
-        "properties": {
-          "expires_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "is_enabled": {
-            "type": "boolean"
-          },
-          "key": {
-            "type": "string",
-            "readOnly": true
-          },
-          "last_used": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "readOnly": true
-          },
-          "name": {
-            "type": "string"
-          },
-          "network_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        }
-      },
-      "ApiKeyResponse": {
-        "type": "object",
-        "required": [
-          "api_key",
-          "key"
-        ],
-        "properties": {
-          "api_key": {
-            "$ref": "#/components/schemas/ApiKey"
-          },
-          "key": {
-            "type": "string"
-          }
-        }
-      },
       "ApiResponse": {
         "type": "object",
         "required": [
@@ -4621,87 +4895,6 @@
                 "$ref": "#/components/schemas/TupleUnit"
               }
             ]
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ApiResponse_ApiKey": {
-        "type": "object",
-        "required": [
-          "success"
-        ],
-        "properties": {
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ApiKeyBase"
-              },
-              {
-                "type": "object",
-                "required": [
-                  "id",
-                  "updated_at",
-                  "created_at"
-                ],
-                "properties": {
-                  "created_at": {
-                    "type": "string",
-                    "format": "date-time",
-                    "readOnly": true
-                  },
-                  "id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "readOnly": true
-                  },
-                  "updated_at": {
-                    "type": "string",
-                    "format": "date-time",
-                    "readOnly": true
-                  }
-                }
-              }
-            ]
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ApiResponse_ApiKeyResponse": {
-        "type": "object",
-        "required": [
-          "success"
-        ],
-        "properties": {
-          "data": {
-            "type": "object",
-            "required": [
-              "api_key",
-              "key"
-            ],
-            "properties": {
-              "api_key": {
-                "$ref": "#/components/schemas/ApiKey"
-              },
-              "key": {
-                "type": "string"
-              }
-            }
           },
           "error": {
             "type": [
@@ -4753,14 +4946,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2025-12-28T15:52:09.812337Z",
-              "id": "6e90eb78-2738-4972-bbf3-3ca97743ad6d",
+              "created_at": "2025-12-29T01:51:50.906905Z",
+              "id": "a2dfa447-3322-4b7e-8675-1b2770e709c9",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2025-12-28T15:52:09.812337Z"
+              "updated_at": "2025-12-29T01:51:50.906905Z"
             }
           },
           "error": {
@@ -4845,6 +5038,87 @@
                 }
               }
             ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_DaemonApiKey": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DaemonApiKeyBase"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "updated_at",
+                  "created_at"
+                ],
+                "properties": {
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  }
+                }
+              }
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_DaemonApiKeyResponse": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": [
+              "api_key",
+              "key"
+            ],
+            "properties": {
+              "api_key": {
+                "$ref": "#/components/schemas/DaemonApiKey"
+              },
+              "key": {
+                "type": "string"
+              }
+            }
           },
           "error": {
             "type": [
@@ -5798,14 +6072,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2025-12-28T15:52:09.810162Z",
-                  "id": "0f1f200e-9b8e-4216-9fe6-77f02ccfdf89",
+                  "created_at": "2025-12-29T01:51:50.902978Z",
+                  "id": "71fbbd87-5663-4c36-81f4-a0b924cfe252",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2025-12-28T15:52:09.810162Z"
+                  "updated_at": "2025-12-29T01:51:50.902978Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -5813,7 +6087,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
-              "service_definition": "Kerberos",
+              "service_definition": "MeTube",
               "source": {
                 "type": "Manual"
               },
@@ -6154,45 +6428,76 @@
           }
         }
       },
-      "ApiResponse_Vec_ApiKey": {
+      "ApiResponse_UserApiKey": {
         "type": "object",
         "required": [
           "success"
         ],
         "properties": {
           "data": {
-            "type": "array",
-            "items": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/ApiKeyBase"
-                },
-                {
-                  "type": "object",
-                  "required": [
-                    "id",
-                    "updated_at",
-                    "created_at"
-                  ],
-                  "properties": {
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "readOnly": true
-                    },
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "readOnly": true
-                    },
-                    "updated_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "readOnly": true
-                    }
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserApiKeyBase"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "updated_at",
+                  "created_at"
+                ],
+                "properties": {
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
                   }
                 }
-              ]
+              }
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_UserApiKeyResponse": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Response for user API key creation/rotation\nContains the full API key record plus the plaintext key (shown only once)",
+            "required": [
+              "api_key",
+              "key"
+            ],
+            "properties": {
+              "api_key": {
+                "$ref": "#/components/schemas/UserApiKey"
+              },
+              "key": {
+                "type": "string",
+                "description": "The plaintext API key - only returned once during creation or rotation"
+              }
             }
           },
           "error": {
@@ -6439,14 +6744,14 @@
               ],
               "description": "Association between a service and a port / interface that the service is listening on",
               "example": {
-                "created_at": "2025-12-28T15:52:09.812151Z",
-                "id": "7b6af22c-5d70-4984-8041-a0259c3e552f",
+                "created_at": "2025-12-29T01:51:50.906571Z",
+                "id": "73b3082d-9a04-4f12-8149-061385cdce8c",
                 "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "port_id": "550e8400-e29b-41d4-a716-446655440006",
                 "service_id": "550e8400-e29b-41d4-a716-446655440007",
                 "type": "Port",
-                "updated_at": "2025-12-28T15:52:09.812151Z"
+                "updated_at": "2025-12-29T01:51:50.906571Z"
               }
             }
           },
@@ -6473,6 +6778,58 @@
               "allOf": [
                 {
                   "$ref": "#/components/schemas/DaemonBase"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "updated_at",
+                    "created_at"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "readOnly": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_Vec_DaemonApiKey": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/DaemonApiKeyBase"
                 },
                 {
                   "type": "object",
@@ -7144,14 +7501,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2025-12-28T15:52:09.809469Z",
-                    "id": "e81a2b19-1795-43e5-a769-cf50413b8c16",
+                    "created_at": "2025-12-29T01:51:50.901658Z",
+                    "id": "48018eb5-889f-4072-bf12-d11ee56c3cf3",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2025-12-28T15:52:09.809469Z"
+                    "updated_at": "2025-12-29T01:51:50.901658Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -7159,7 +7516,7 @@
                 "id": "550e8400-e29b-41d4-a716-446655440007",
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
-                "service_definition": "Kerberos",
+                "service_definition": "MeTube",
                 "source": {
                   "type": "Manual"
                 },
@@ -7463,6 +7820,58 @@
           }
         }
       },
+      "ApiResponse_Vec_UserApiKey": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/UserApiKeyBase"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "updated_at",
+                    "created_at"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "readOnly": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
       "ApiResponse_bool": {
         "type": "object",
         "required": [
@@ -7717,14 +8126,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2025-12-28T15:52:09.805878Z",
-          "id": "c980b652-52bf-4b22-ac9d-1d746b71519b",
+          "created_at": "2025-12-29T01:51:50.893461Z",
+          "id": "7d66d5c3-ad43-4180-8848-7050be89891c",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2025-12-28T15:52:09.805878Z"
+          "updated_at": "2025-12-29T01:51:50.893461Z"
         }
       },
       "BindingBase": {
@@ -8183,6 +8592,101 @@
             }
           }
         ]
+      },
+      "DaemonApiKey": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DaemonApiKeyBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "updated_at",
+              "created_at"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              }
+            }
+          }
+        ]
+      },
+      "DaemonApiKeyBase": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "last_used",
+          "network_id",
+          "tags"
+        ],
+        "properties": {
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "is_enabled": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_used": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "DaemonApiKeyResponse": {
+        "type": "object",
+        "required": [
+          "api_key",
+          "key"
+        ],
+        "properties": {
+          "api_key": {
+            "$ref": "#/components/schemas/DaemonApiKey"
+          },
+          "key": {
+            "type": "string"
+          }
+        }
       },
       "DaemonBase": {
         "type": "object",
@@ -10386,14 +10890,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2025-12-28T15:52:09.805833Z",
-              "id": "959f2f2f-917b-48f6-8420-dacacf4de39a",
+              "created_at": "2025-12-29T01:51:50.893367Z",
+              "id": "9d4e3085-f7f3-47a0-81eb-992808c8631b",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2025-12-28T15:52:09.805833Z"
+              "updated_at": "2025-12-29T01:51:50.893367Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -10401,7 +10905,7 @@
           "id": "550e8400-e29b-41d4-a716-446655440007",
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
-          "service_definition": "Kerberos",
+          "service_definition": "MeTube",
           "source": {
             "type": "Manual"
           },
@@ -11394,6 +11898,119 @@
             }
           }
         ]
+      },
+      "UserApiKey": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserApiKeyBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "updated_at",
+              "created_at"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              }
+            }
+          }
+        ]
+      },
+      "UserApiKeyBase": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "user_id",
+          "organization_id",
+          "last_used",
+          "tags"
+        ],
+        "properties": {
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "is_enabled": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_used": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "network_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Network IDs this key has access to (hydrated from junction table)"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/UserOrgPermissions"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "UserApiKeyResponse": {
+        "type": "object",
+        "description": "Response for user API key creation/rotation\nContains the full API key record plus the plaintext key (shown only once)",
+        "required": [
+          "api_key",
+          "key"
+        ],
+        "properties": {
+          "api_key": {
+            "$ref": "#/components/schemas/UserApiKey"
+          },
+          "key": {
+            "type": "string",
+            "description": "The plaintext API key - only returned once during creation or rotation"
+          }
+        }
       },
       "UserBase": {
         "type": "object",

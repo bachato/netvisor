@@ -1,18 +1,19 @@
 use chrono::{DateTime, Utc};
-use sqlx::Row;
 use sqlx::postgres::PgRow;
+use sqlx::Row;
 use uuid::Uuid;
 
 use crate::server::{
-    api_keys::r#impl::base::{ApiKey, ApiKeyBase},
     shared::storage::traits::{SqlValue, StorableEntity},
+    user_api_keys::r#impl::base::{UserApiKey, UserApiKeyBase},
+    users::r#impl::permissions::UserOrgPermissions,
 };
 
-impl StorableEntity for ApiKey {
-    type BaseData = ApiKeyBase;
+impl StorableEntity for UserApiKey {
+    type BaseData = UserApiKeyBase;
 
     fn table_name() -> &'static str {
-        "api_keys"
+        "user_api_keys"
     }
 
     fn get_base(&self) -> Self::BaseData {
@@ -20,11 +21,12 @@ impl StorableEntity for ApiKey {
     }
 
     fn network_id(&self) -> Option<Uuid> {
-        Some(self.base.network_id)
+        // User API keys use a junction table for network access
+        None
     }
 
     fn organization_id(&self) -> Option<Uuid> {
-        None
+        Some(self.base.organization_id)
     }
 
     fn new(base: Self::BaseData) -> Self {
@@ -71,11 +73,14 @@ impl StorableEntity for ApiKey {
                 Self::BaseData {
                     key,
                     name,
+                    user_id,
+                    organization_id,
+                    permissions,
                     last_used,
                     expires_at,
-                    network_id,
                     is_enabled,
                     tags,
+                    network_ids: _, // Stored in junction table, not here
                 },
         } = self.clone();
 
@@ -84,42 +89,52 @@ impl StorableEntity for ApiKey {
                 "id",
                 "created_at",
                 "updated_at",
+                "key",
+                "name",
+                "user_id",
+                "organization_id",
+                "permissions",
                 "last_used",
                 "expires_at",
-                "network_id",
-                "name",
                 "is_enabled",
-                "key",
                 "tags",
             ],
             vec![
                 SqlValue::Uuid(id),
                 SqlValue::Timestamp(created_at),
                 SqlValue::Timestamp(updated_at),
+                SqlValue::String(key),
+                SqlValue::String(name),
+                SqlValue::Uuid(user_id),
+                SqlValue::Uuid(organization_id),
+                SqlValue::String(permissions.to_string()),
                 SqlValue::OptionTimestamp(last_used),
                 SqlValue::OptionTimestamp(expires_at),
-                SqlValue::Uuid(network_id),
-                SqlValue::String(name),
                 SqlValue::Bool(is_enabled),
-                SqlValue::String(key),
                 SqlValue::UuidArray(tags),
             ],
         ))
     }
 
     fn from_row(row: &PgRow) -> Result<Self, anyhow::Error> {
-        Ok(ApiKey {
+        let permissions_str: String = row.get("permissions");
+        let permissions = permissions_str.parse::<UserOrgPermissions>().unwrap_or_default();
+
+        Ok(UserApiKey {
             id: row.get("id"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
-            base: ApiKeyBase {
+            base: UserApiKeyBase {
+                key: row.get("key"),
+                name: row.get("name"),
+                user_id: row.get("user_id"),
+                organization_id: row.get("organization_id"),
+                permissions,
                 last_used: row.get("last_used"),
                 expires_at: row.get("expires_at"),
-                name: row.get("name"),
-                key: row.get("key"),
                 is_enabled: row.get("is_enabled"),
-                network_id: row.get("network_id"),
                 tags: row.get("tags"),
+                network_ids: Vec::new(), // Hydrated separately from junction table
             },
         })
     }

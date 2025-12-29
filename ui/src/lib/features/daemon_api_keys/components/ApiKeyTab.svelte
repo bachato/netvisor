@@ -111,10 +111,10 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="API Keys" subtitle="Manage API Keys">
+	<TabHeader title="API Keys" subtitle="Manage Daemon API Keys">
 		<svelte:fragment slot="actions">
 			<button class="btn-primary flex items-center" onclick={handleCreateApiKey}
-				><Plus class="h-5 w-5" />Create API Key</button
+				><Plus class="h-5 w-5" />Create Daemon API Key</button
 			>
 		</svelte:fragment>
 	</TabHeader>
@@ -124,10 +124,10 @@
 	{:else if apiKeysData.length === 0}
 		<!-- Empty state -->
 		<EmptyState
-			title="No API Keys configured yet"
+			title="No Daemon API Keys configured yet"
 			subtitle=""
 			onClick={handleCreateApiKey}
-			cta="Create your first API Key"
+			cta="Create your first Daemon API Key"
 		/>
 	{:else}
 		<DataControls

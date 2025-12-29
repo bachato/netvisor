@@ -255,7 +255,7 @@ pub async fn populate_demo_data(
     for api_key in demo_data.api_keys {
         state
             .services
-            .api_key_service
+            .daemon_api_key_service
             .create(api_key, auth.clone())
             .await?;
     }
@@ -354,7 +354,7 @@ async fn reset_organization_data(
         .await?;
     state
         .services
-        .api_key_service
+        .daemon_api_key_service
         .delete_all_for_org(organization_id, &network_ids, auth.clone())
         .await?;
     state

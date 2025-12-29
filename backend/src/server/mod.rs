@@ -1,4 +1,4 @@
-pub mod api_keys;
+pub mod daemon_api_keys;
 pub mod auth;
 pub mod billing;
 pub mod bindings;
@@ -23,4 +23,5 @@ pub mod shares;
 pub mod subnets;
 pub mod tags;
 pub mod topology;
+pub mod user_api_keys;
 pub mod users;

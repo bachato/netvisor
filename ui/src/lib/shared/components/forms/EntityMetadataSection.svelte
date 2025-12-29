@@ -9,7 +9,7 @@
 	import CodeContainer from '../data/CodeContainer.svelte';
 	import type { Network } from '$lib/features/networks/types';
 	import type { Discovery } from '$lib/features/discovery/types/base';
-	import type { ApiKey } from '$lib/features/api_keys/types/base';
+	import type { ApiKey } from '$lib/features/daemon_api_keys/types/base';
 	import type { Tag } from '$lib/features/tags/types/base';
 
 	export let entities: (

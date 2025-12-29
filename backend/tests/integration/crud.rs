@@ -1,9 +1,7 @@
-//! CRUD endpoint tests for all entity types.
-
 use crate::infra::TestContext;
+use scanopy::server::daemon_api_keys::r#impl::base::DaemonApiKey;
 use cidr::{IpCidr, Ipv4Cidr};
 use reqwest::StatusCode;
-use scanopy::server::api_keys::r#impl::base::{ApiKey, ApiKeyBase};
 use scanopy::server::groups::r#impl::base::{Group, GroupBase};
 use scanopy::server::groups::r#impl::types::GroupType;
 use scanopy::server::hosts::r#impl::api::{CreateHostRequest, HostResponse, UpdateHostRequest};
@@ -12,6 +10,7 @@ use scanopy::server::services::r#impl::base::{Service, ServiceBase};
 use scanopy::server::shared::storage::traits::StorableEntity;
 use scanopy::server::shared::types::Color;
 use scanopy::server::shared::types::entities::EntitySource;
+use scanopy::server::daemon_api_keys::r#impl::base::DaemonApiKeyBase;
 use scanopy::server::subnets::r#impl::base::{Subnet, SubnetBase};
 use scanopy::server::subnets::r#impl::types::SubnetType;
 use scanopy::server::tags::r#impl::base::{Tag, TagBase};
@@ -307,7 +306,7 @@ async fn test_tag_crud(ctx: &TestContext) -> Result<(), String> {
 async fn test_api_key_crud(ctx: &TestContext) -> Result<(), String> {
     println!("Testing API Key CRUD...");
 
-    let api_key = ApiKey::new(ApiKeyBase {
+    let api_key = DaemonApiKey::new(DaemonApiKeyBase {
         key: String::new(),
         name: "Test API Key".to_string(),
         last_used: None,
@@ -329,7 +328,7 @@ async fn test_api_key_crud(ctx: &TestContext) -> Result<(), String> {
     );
     println!("  ✓ Create API key (received plaintext key)");
 
-    let fetched: ApiKey = ctx
+    let fetched: DaemonApiKey = ctx
         .client
         .get(&format!("/api/auth/keys/{}", key_id))
         .await?;
@@ -338,7 +337,7 @@ async fn test_api_key_crud(ctx: &TestContext) -> Result<(), String> {
 
     let mut updated = fetched.clone();
     updated.base.name = "Updated API Key".to_string();
-    let updated: ApiKey = ctx
+    let updated: DaemonApiKey = ctx
         .client
         .put(&format!("/api/auth/keys/{}", updated.id), &updated)
         .await?;
@@ -349,7 +348,7 @@ async fn test_api_key_crud(ctx: &TestContext) -> Result<(), String> {
     );
     println!("  ✓ Update API key (key hash preserved)");
 
-    let keys: Vec<ApiKey> = ctx.client.get("/api/auth/keys").await?;
+    let keys: Vec<DaemonApiKey> = ctx.client.get("/api/auth/keys").await?;
     assert!(keys.iter().any(|k| k.id == key_id));
     println!("  ✓ List API keys");
 

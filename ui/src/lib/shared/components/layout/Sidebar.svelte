@@ -33,8 +33,9 @@
 	import HostTab from '$lib/features/hosts/components/HostTab.svelte';
 	import ServiceTab from '$lib/features/services/components/ServiceTab.svelte';
 	import DaemonTab from '$lib/features/daemons/components/DaemonTab.svelte';
-	import ApiKeyTab from '$lib/features/api_keys/components/ApiKeyTab.svelte';
+	import ApiKeyTab from '$lib/features/daemon_api_keys/components/ApiKeyTab.svelte';
 	import UserTab from '$lib/features/users/components/UserTab.svelte';
+	import UserApiKeyTab from '$lib/features/user_api_keys/components/UserApiKeyTab.svelte';
 	import OrganizationSettingsModal from '$lib/features/organizations/OrganizationSettingsModal.svelte';
 	import TagTab from '$lib/features/tags/components/TagTab.svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
@@ -79,6 +80,7 @@
 		requiredPermissions?: UserOrgPermissions[]; // Which permissions can see this item
 		requiresBilling?: boolean; // Whether this requires billing to be enabled
 		hideInDemo?: boolean; // Whether to hide this in demo mode
+		children?: NavItem[]; // Nested child items (displayed indented under parent)
 	}
 
 	interface NavSection {
@@ -137,12 +139,28 @@
 					icon: History as IconComponent,
 					component: DiscoveryHistoryTab,
 					requiredPermissions: ['Member', 'Admin', 'Owner']
+				},
+				{
+					id: 'daemons',
+					label: 'Daemons',
+					icon: entities.getIconComponent('Daemon'),
+					component: DaemonTab,
+					requiredPermissions: ['Member', 'Admin', 'Owner'],
+					children: [
+						{
+							id: 'daemon-api-keys',
+							label: 'Keys',
+							icon: entities.getIconComponent('DaemonApiKey'),
+							component: ApiKeyTab,
+							requiredPermissions: ['Member', 'Admin', 'Owner']
+						}
+					]
 				}
 			]
 		},
 		{
-			id: 'manage',
-			label: 'Manage',
+			id: 'assets',
+			label: 'Assets',
 			items: [
 				{
 					id: 'networks',
@@ -180,19 +198,18 @@
 					requiredPermissions: ['Member', 'Admin', 'Owner']
 				},
 				{
-					id: 'daemons',
-					label: 'Daemons',
-					icon: entities.getIconComponent('Daemon'),
-					component: DaemonTab,
+					id: 'tags',
+					label: 'Tags',
+					icon: entities.getIconComponent('Tag'),
+					component: TagTab,
 					requiredPermissions: ['Member', 'Admin', 'Owner']
-				},
-				{
-					id: 'api-keys',
-					label: 'API Keys',
-					icon: entities.getIconComponent('ApiKey'),
-					component: ApiKeyTab,
-					requiredPermissions: ['Admin', 'Owner']
-				},
+				}
+			]
+		},
+		{
+			id: 'platform',
+			label: 'Platform',
+			items: [
 				{
 					id: 'users',
 					label: 'Users',
@@ -201,11 +218,10 @@
 					requiredPermissions: ['Admin', 'Owner']
 				},
 				{
-					id: 'tags',
-					label: 'Tags',
-					icon: entities.getIconComponent('Tag'),
-					component: TagTab,
-					requiredPermissions: ['Member', 'Admin', 'Owner']
+					id: 'api-keys',
+					label: 'API Keys',
+					icon: entities.getIconComponent('UserApiKey'),
+					component: UserApiKeyTab
 				}
 			]
 		},
@@ -261,19 +277,28 @@
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const tabs: Array<{ id: string; component: any }> = [];
 
+		// Helper to extract tabs from an item and its children
+		function extractTabsFromItem(item: NavItem) {
+			if (item.component) {
+				tabs.push({ id: item.id, component: item.component });
+			}
+			// Also extract tabs from children
+			if (item.children) {
+				for (const child of item.children) {
+					extractTabsFromItem(child);
+				}
+			}
+		}
+
 		for (const configItem of navConfig) {
 			if (isSection(configItem)) {
 				// Get tabs from section items
 				for (const item of configItem.items) {
-					if (item.component) {
-						tabs.push({ id: item.id, component: item.component });
-					}
+					extractTabsFromItem(item);
 				}
 			} else {
 				// Standalone item
-				if (configItem.component) {
-					tabs.push({ id: configItem.id, component: configItem.component });
-				}
+				extractTabsFromItem(configItem);
 			}
 		}
 
@@ -325,13 +350,33 @@
 		);
 	}
 
+	// Helper to filter an item and its children
+	function filterItemWithChildren(item: NavItem): NavItem | null {
+		if (!isItemVisible(item)) {
+			return null;
+		}
+
+		// If item has children, filter them too
+		if (item.children) {
+			const visibleChildren = item.children.filter(isItemVisible);
+			return {
+				...item,
+				children: visibleChildren.length > 0 ? visibleChildren : undefined
+			};
+		}
+
+		return item;
+	}
+
 	// Filter nav config based on user permissions and billing status
 	let navConfig = $derived.by((): NavConfig => {
 		return baseNavConfig
 			.map((configItem) => {
 				if (isSection(configItem)) {
-					// Filter items within the section
-					const visibleItems = configItem.items.filter(isItemVisible);
+					// Filter items within the section (including their children)
+					const visibleItems = configItem.items
+						.map(filterItemWithChildren)
+						.filter((item): item is NavItem => item !== null);
 
 					// Only include section if it has visible items
 					if (visibleItems.length === 0) {
@@ -344,7 +389,7 @@
 					};
 				} else {
 					// Standalone item - check if it should be visible
-					return isItemVisible(configItem) ? configItem : null;
+					return filterItemWithChildren(configItem);
 				}
 			})
 			.filter((item): item is NavSection | NavItem => item !== null);
@@ -515,6 +560,28 @@
 													<span class="ml-3 truncate">{item.label}</span>
 												{/if}
 											</button>
+											<!-- Render children if present -->
+											{#if item.children && item.children.length > 0}
+												<ul class="mt-1 space-y-1" class:ml-4={!collapsed}>
+													{#each item.children as child (child.id)}
+														<li>
+															<button
+																onclick={() => handleItemClick(child)}
+																class="{baseClasses} {activeTab === child.id
+																	? 'text-primary border border-blue-600 bg-blue-700'
+																	: inactiveButtonClass}"
+																style="height: 2.25rem; padding: 0.375rem 0.75rem;"
+																title={collapsed ? child.label : ''}
+															>
+																<child.icon class="h-4 w-4 flex-shrink-0" />
+																{#if !collapsed}
+																	<span class="ml-3 truncate text-sm">{child.label}</span>
+																{/if}
+															</button>
+														</li>
+													{/each}
+												</ul>
+											{/if}
 										</li>
 									{/each}
 								</ul>

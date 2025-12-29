@@ -1,8 +1,6 @@
 use crate::server::{
-    api_keys::{
-        r#impl::base::{ApiKey, ApiKeyBase},
-        service::generate_api_key_for_storage,
-    },
+    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
+    shared::api_key_common::{generate_api_key_for_storage, ApiKeyType},
     auth::{
         r#impl::{
             api::{
@@ -267,7 +265,7 @@ async fn daemon_setup(
     let api_key_raw = if request.install_later {
         None
     } else {
-        let (raw_key, _) = crate::server::api_keys::service::generate_api_key_for_storage();
+        let (raw_key, _) = generate_api_key_for_storage(ApiKeyType::Daemon);
         Some(raw_key)
     };
 
@@ -382,13 +380,13 @@ async fn apply_pending_setup(
             // Note: Daemon will auto-register when it connects with the API key
             // No need to create daemon record here - it will be created on first registration
             if let Some(ref api_key_raw) = daemon.api_key_raw {
-                let hashed_key = crate::server::api_keys::service::hash_api_key(api_key_raw);
+                let hashed_key = crate::server::shared::api_key_common::hash_api_key(api_key_raw);
 
                 state
                     .services
-                    .api_key_service
+                    .daemon_api_key_service
                     .create(
-                        ApiKey::new(ApiKeyBase {
+                        DaemonApiKey::new(DaemonApiKeyBase {
                             key: hashed_key,
                             name: format!("{} API Key", daemon.daemon_name),
                             last_used: None,
@@ -411,13 +409,13 @@ async fn apply_pending_setup(
     if let Some(integrated_daemon_url) = &state.config.integrated_daemon_url
         && let Some(network_id) = first_network_id
     {
-        let (plaintext, hashed) = generate_api_key_for_storage();
+        let (plaintext, hashed) = generate_api_key_for_storage(ApiKeyType::Daemon);
 
         state
             .services
-            .api_key_service
+            .daemon_api_key_service
             .create(
-                ApiKey::new(ApiKeyBase {
+                DaemonApiKey::new(DaemonApiKeyBase {
                     key: hashed,
                     name: "Integrated Daemon API Key".to_string(),
                     last_used: None,

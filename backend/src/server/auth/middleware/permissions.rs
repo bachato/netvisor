@@ -7,7 +7,7 @@ use crate::server::{
 use axum::{extract::FromRequestParts, http::request::Parts};
 use uuid::Uuid;
 
-/// Extractor that accepts either a Member+ user OR a daemon
+/// Extractor that accepts a Member+ user, API key, or daemon
 /// Returns the network IDs the authenticated entity has access to
 pub struct MemberOrDaemon {
     pub network_ids: Vec<Uuid>,
@@ -21,29 +21,49 @@ where
     type Rejection = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        // Get the authenticated entity (works for both users and daemons)
+        // Get the authenticated entity (works for users, API keys, and daemons)
         let entity = AuthenticatedEntity::from_request_parts(parts, state).await?;
 
-        match entity {
-            AuthenticatedEntity::User { .. } => {
+        match &entity {
+            AuthenticatedEntity::User {
+                permissions,
+                network_ids,
+                ..
+            } => {
                 // For users, check they're at least Member level
-                let member = RequireMember::from_request_parts(parts, state).await?;
-                let user: AuthenticatedUser = member.into();
+                if *permissions < UserOrgPermissions::Member {
+                    return Err(AuthError(ApiError::forbidden("Member permission required")));
+                }
 
                 Ok(MemberOrDaemon {
-                    network_ids: user.network_ids.clone(),
-                    entity: user.into(),
+                    network_ids: network_ids.clone(),
+                    entity,
+                })
+            }
+            AuthenticatedEntity::ApiKey {
+                permissions,
+                network_ids,
+                ..
+            } => {
+                // For API keys, check they have at least Member level permissions
+                if *permissions < UserOrgPermissions::Member {
+                    return Err(AuthError(ApiError::forbidden("Member permission required")));
+                }
+
+                Ok(MemberOrDaemon {
+                    network_ids: network_ids.clone(),
+                    entity,
                 })
             }
             AuthenticatedEntity::Daemon { network_id, .. } => {
                 // Daemons only have access to their single network
                 Ok(MemberOrDaemon {
-                    network_ids: vec![network_id],
+                    network_ids: vec![*network_id],
                     entity,
                 })
             }
             _ => Err(AuthError(ApiError::forbidden(
-                "Member or Daemon permission required",
+                "Member, API Key, or Daemon permission required",
             ))),
         }
     }

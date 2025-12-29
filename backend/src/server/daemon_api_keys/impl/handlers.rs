@@ -1,16 +1,16 @@
 use crate::server::{
-    api_keys::{r#impl::base::ApiKey, service::ApiKeyService},
+    daemon_api_keys::{r#impl::base::DaemonApiKey, service::DaemonApiKeyService},
     config::AppState,
     shared::handlers::{query::NetworkFilterQuery, traits::CrudHandlers},
 };
 use uuid::Uuid;
 
-impl CrudHandlers for ApiKey {
-    type Service = ApiKeyService;
+impl CrudHandlers for DaemonApiKey {
+    type Service = DaemonApiKeyService;
     type FilterQuery = NetworkFilterQuery;
 
     fn get_service(state: &AppState) -> &Self::Service {
-        &state.services.api_key_service
+        &state.services.daemon_api_key_service
     }
 
     fn preserve_immutable_fields(&mut self, existing: &Self) {

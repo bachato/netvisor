@@ -2,13 +2,10 @@
 	import { createForm } from '@tanstack/svelte-form';
 	import { submitForm } from '$lib/shared/components/forms/form-context';
 	import { required, max } from '$lib/shared/components/forms/validators';
-	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
-	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { entities } from '$lib/shared/stores/metadata';
-	import { RotateCcwKey } from 'lucide-svelte';
 	import type { ApiKey } from '../types/base';
 	import {
 		createEmptyApiKeyFormData,
@@ -22,6 +19,9 @@
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
+
+	// Shared components
+	import ApiKeyGenerator from '$lib/shared/components/api-keys/ApiKeyGenerator.svelte';
 
 	interface Props {
 		isOpen?: boolean;
@@ -43,7 +43,7 @@
 
 	let loading = $state(false);
 	let deleting = $state(false);
-	let key = $state<string | null>(null);
+	let generatedKey = $state<string | null>(null);
 
 	let isEditing = $derived(apiKey !== null);
 	let title = $derived(isEditing ? `Edit ${apiKey?.name || 'API Key'}` : 'Create API Key');
@@ -74,7 +74,7 @@
 	function handleOpen() {
 		const defaults = getDefaultValues();
 		form.reset(defaults);
-		key = null;
+		generatedKey = null;
 
 		// If network_id is empty but we have a default, set it
 		if (!defaults.network_id && defaultNetworkId) {
@@ -83,7 +83,7 @@
 	}
 
 	function handleOnClose() {
-		key = null;
+		generatedKey = null;
 		onClose();
 	}
 
@@ -103,7 +103,7 @@
 		loading = true;
 		try {
 			const result = await createApiKeyMutation.mutateAsync(formData);
-			key = result.keyString;
+			generatedKey = result.keyString;
 		} catch {
 			pushError('Failed to generate API key');
 		} finally {
@@ -115,8 +115,8 @@
 		const formData = form.state.values as ApiKey;
 		loading = true;
 		try {
-			const generatedKey = await rotateApiKeyMutation.mutateAsync(formData.id);
-			key = generatedKey;
+			const newKey = await rotateApiKeyMutation.mutateAsync(formData.id);
+			generatedKey = newKey;
 		} catch {
 			pushError('Failed to rotate API key');
 		} finally {
@@ -230,41 +230,13 @@
 				</div>
 
 				<!-- Key generation section -->
-				<div class="space-y-3">
-					{#if !key && isEditing}
-						<InlineWarning
-							title="Generating a new key will invalidate your old key"
-							body="Click the button below to generate a new API key. You'll only see it once, so make sure to copy it."
-						/>
-					{/if}
-
-					{#if key}
-						<InlineWarning
-							title="Save this key now"
-							body="This key will not be shown again. Copy it now and store it securely."
-						/>
-					{/if}
-
-					<div class="flex items-start gap-2">
-						<button
-							type="button"
-							class="btn-primary flex-shrink-0 self-stretch"
-							onclick={apiKey != null ? handleRotateKey : handleGenerateKey}
-							disabled={loading}
-						>
-							<RotateCcwKey />
-							<span>{loading ? 'Generating...' : isEditing ? 'Rotate Key' : 'Generate Key'}</span>
-						</button>
-
-						<div class="flex-1">
-							<CodeContainer
-								language="bash"
-								expandable={false}
-								code={key ? key : 'Press Generate Key...'}
-							/>
-						</div>
-					</div>
-				</div>
+				<ApiKeyGenerator
+					{generatedKey}
+					{isEditing}
+					{loading}
+					onGenerate={handleGenerateKey}
+					onRotate={handleRotateKey}
+				/>
 
 				<!-- Metadata section for existing keys -->
 				{#if isEditing && apiKey}

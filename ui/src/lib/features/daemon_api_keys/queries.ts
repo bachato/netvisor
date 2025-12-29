@@ -1,5 +1,6 @@
 /**
- * TanStack Query hooks for API Keys
+ * TanStack Query hooks for Daemon API Keys
+ * These are API keys used by daemons to authenticate with the server
  */
 
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
@@ -9,13 +10,13 @@ import type { ApiKey } from './types/base';
 import { utcTimeZoneSentinel, uuidv4Sentinel } from '$lib/shared/utils/formatting';
 
 /**
- * Query hook for fetching all API keys
+ * Query hook for fetching all daemon API keys
  */
 export function useApiKeysQuery() {
 	return createQuery(() => ({
 		queryKey: queryKeys.apiKeys.all,
 		queryFn: async () => {
-			const { data } = await apiClient.GET('/api/auth/keys');
+			const { data } = await apiClient.GET('/api/auth/daemon');
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to fetch API keys');
 			}
@@ -33,7 +34,7 @@ interface CreateApiKeyResponse {
 }
 
 /**
- * Mutation hook for creating an API key
+ * Mutation hook for creating a daemon API key
  * Returns the key string (only shown once) and the created API key
  */
 export function useCreateApiKeyMutation() {
@@ -41,7 +42,7 @@ export function useCreateApiKeyMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (apiKey: ApiKey) => {
-			const { data } = await apiClient.POST('/api/auth/keys', { body: apiKey });
+			const { data } = await apiClient.POST('/api/auth/daemon', { body: apiKey });
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to create API key');
 			}
@@ -58,14 +59,14 @@ export function useCreateApiKeyMutation() {
 }
 
 /**
- * Mutation hook for updating an API key
+ * Mutation hook for updating a daemon API key
  */
 export function useUpdateApiKeyMutation() {
 	const queryClient = useQueryClient();
 
 	return createMutation(() => ({
 		mutationFn: async (apiKey: ApiKey) => {
-			const { data } = await apiClient.PUT('/api/auth/keys/{id}', {
+			const { data } = await apiClient.PUT('/api/auth/daemon/{id}', {
 				params: { path: { id: apiKey.id } },
 				body: apiKey
 			});
@@ -84,14 +85,14 @@ export function useUpdateApiKeyMutation() {
 }
 
 /**
- * Mutation hook for deleting an API key
+ * Mutation hook for deleting a daemon API key
  */
 export function useDeleteApiKeyMutation() {
 	const queryClient = useQueryClient();
 
 	return createMutation(() => ({
 		mutationFn: async (id: string) => {
-			const { data } = await apiClient.DELETE('/api/auth/keys/{id}', {
+			const { data } = await apiClient.DELETE('/api/auth/daemon/{id}', {
 				params: { path: { id } }
 			});
 			if (!data?.success) {
@@ -109,14 +110,14 @@ export function useDeleteApiKeyMutation() {
 }
 
 /**
- * Mutation hook for bulk deleting API keys
+ * Mutation hook for bulk deleting daemon API keys
  */
 export function useBulkDeleteApiKeysMutation() {
 	const queryClient = useQueryClient();
 
 	return createMutation(() => ({
 		mutationFn: async (ids: string[]) => {
-			const { data } = await apiClient.POST('/api/auth/keys/bulk-delete', { body: ids });
+			const { data } = await apiClient.POST('/api/auth/daemon/bulk-delete', { body: ids });
 			if (!data?.success) {
 				throw new Error(data?.error || 'Failed to delete API keys');
 			}
@@ -132,12 +133,12 @@ export function useBulkDeleteApiKeysMutation() {
 }
 
 /**
- * Mutation hook for rotating an API key
+ * Mutation hook for rotating a daemon API key
  */
 export function useRotateApiKeyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (keyId: string) => {
-			const { data } = await apiClient.POST('/api/auth/keys/{id}/rotate', {
+			const { data } = await apiClient.POST('/api/auth/daemon/{id}/rotate', {
 				params: { path: { id: keyId } }
 			});
 			if (!data?.success || !data.data) {

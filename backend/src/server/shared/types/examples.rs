@@ -11,7 +11,7 @@ use mac_address::MacAddress;
 use std::net::{IpAddr, Ipv4Addr};
 
 use crate::server::{
-    api_keys::r#impl::base::{ApiKey, ApiKeyBase},
+    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
     bindings::r#impl::base::Binding,
     daemons::r#impl::{
         api::DaemonCapabilities,
@@ -227,15 +227,15 @@ pub fn tag() -> Tag {
     }
 }
 
-/// Example ApiKey entity.
-pub fn api_key() -> ApiKey {
-    ApiKey {
+/// Example DaemonApiKey entity.
+pub fn daemon_api_key() -> DaemonApiKey {
+    DaemonApiKey {
         id: ids::API_KEY,
         created_at: example_timestamp(),
         updated_at: example_timestamp(),
-        base: ApiKeyBase {
+        base: DaemonApiKeyBase {
             name: "daemon-key-01".to_string(),
-            key: "sk_••••••••".to_string(), // Masked in responses
+            key: "scp_d_••••••••••••••••••••••••••••••••".to_string(), // Masked in responses
             network_id: ids::NETWORK,
             last_used: Some(example_timestamp()),
             expires_at: None,

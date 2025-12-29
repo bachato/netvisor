@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::server::api_keys::r#impl::base::ApiKey;
+use crate::server::daemon_api_keys::r#impl::base::DaemonApiKey;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ApiKeyResponse {
-    pub api_key: ApiKey,
+pub struct DaemonApiKeyResponse {
+    pub api_key: DaemonApiKey,
     pub key: String,
 }

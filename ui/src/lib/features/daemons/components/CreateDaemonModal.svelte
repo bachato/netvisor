@@ -12,7 +12,7 @@
 	import {
 		createEmptyApiKeyFormData,
 		useCreateApiKeyMutation
-	} from '$lib/features/api_keys/queries';
+	} from '$lib/features/daemon_api_keys/queries';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import CreateDaemonForm from './CreateDaemonForm.svelte';
