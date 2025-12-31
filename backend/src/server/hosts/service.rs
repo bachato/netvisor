@@ -734,8 +734,9 @@ impl HostService {
         } = request;
 
         // Optimistic locking: check if host was modified since user loaded it
+        // Compare at microsecond precision since PostgreSQL TIMESTAMPTZ truncates nanoseconds
         if let Some(expected) = expected_updated_at
-            && existing.updated_at != expected
+            && existing.updated_at.timestamp_micros() != expected.timestamp_micros()
         {
             tracing::warn!(
                 host_id = %id,
