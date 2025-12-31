@@ -6,12 +6,16 @@
 	import { concepts, entities } from '$lib/shared/stores/metadata';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { toColor } from '$lib/shared/utils/styling';
-	import { Trash2 } from 'lucide-svelte';
+	import { ArrowBigUp, Trash2 } from 'lucide-svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import type { TagProps } from '$lib/shared/components/data/types';
+	import DaemonUpgradeModal from './DaemonUpgradeModal.svelte';
+
+	// Modal state
+	let upgradeModalOpen = $state(false);
 
 	// Queries
 	const tagsQuery = useTagsQuery();
@@ -51,6 +55,21 @@
 				return { label: 'Outdated', color: toColor('yellow') };
 			default:
 				return null;
+		}
+	});
+
+	let hasUpdateAvailable = $derived(
+		daemon.version_status.status === 'Outdated' || daemon.version_status.status === 'Deprecated'
+	);
+
+	let upgradeButtonClass = $derived.by(() => {
+		switch (daemon.version_status.status) {
+			case 'Deprecated':
+				return 'btn-icon-info';
+			case 'Outdated':
+				return 'btn-icon-info';
+			default:
+				return 'btn-icon';
 		}
 	});
 
@@ -144,9 +163,23 @@
 				class: 'btn-icon-danger',
 				onClick: () => onDelete(daemon),
 				disabled: daemonIsRunningDiscovery
-			}
+			},
+			...(hasUpdateAvailable
+				? [
+						{
+							label: 'Update',
+							icon: ArrowBigUp,
+							class: upgradeButtonClass,
+							onClick: () => (upgradeModalOpen = true),
+							disabled: false,
+							forceLabel: true
+						}
+					]
+				: [])
 		]
 	});
 </script>
 
 <GenericCard {...cardData} {viewMode} {selected} {onSelectionChange} />
+
+<DaemonUpgradeModal isOpen={upgradeModalOpen} onClose={() => (upgradeModalOpen = false)} {daemon} />
