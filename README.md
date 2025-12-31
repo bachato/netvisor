@@ -38,9 +38,14 @@ Scanopy scans your network, identifies hosts and services, and generates an inte
 - **IT Professionals**: Maintain accurate network inventory without manual spreadsheets  
 - **System Administrators**: Visualize complex multi-VLAN environments
 - **DevOps Teams**: Map containerized services and their dependencies
-- **MSPs**: Manage multiple client networks with separate organizations
+- **MSPs**: Manage multiple client networks with your team
 
-## 🚀 Quick Start
+## 📋 Licensing
+**Self-hosted ([AGPL-3.0](LICENSE.md)):** Free for all use. Requires source disclosure for network services and copyleft compliance.   
+**Self-hosted ([Commercial license](COMMERCIAL-LICENSE.md)):** For those who cannot comply with AGPL-3.0 terms. Contact licensing@scanopy.net  
+**Hosted Solution:** **[Scanopy Cloud](https://scanopy.net)** subscription for zero infrastructure management  
+
+## 🚀 Quick Start for Self Hosting
 
 **Docker Compose**
 
@@ -57,11 +62,13 @@ Use this [helper script](https://community-scripts.github.io/ProxmoxVE/scripts?i
 
 Available as an Unraid community app.
 
+> 💡 **Prefer not to self-host?** [Get a free trial](https://scanopy.net) of Scanopy Cloud
+
 ---
 
 Access the UI at `http://<your-server-ip>:60072`, create your account, and wait for the first discovery to complete.
 
-For detailed setup options and configuration, see the [Installation Guide](https://scanopy.net/docs/self-hosted/server-installation).
+For detailed setup options and configuration, see the [Installation Guide](https://scanopy.net/docs/server-installation).
 
 ## 📚 Documentation
 
@@ -70,11 +77,6 @@ For detailed setup options and configuration, see the [Installation Guide](https
 ## 🖼️ Examples
 
 **[scanopy.net/showcase](https://scanopy.net/showcase)**
-
-## 📋 Licensing
-**Self-hosted ([AGPL-3.0](LICENSE.md)):** Free for all use. Requires source disclosure for network services and copyleft compliance.   
-**Self-hosted ([Commercial license](COMMERCIAL-LICENSE.md)):** For those who cannot comply with AGPL-3.0 terms. Contact licensing@scanopy.net  
-**Hosted Solution:** [Scanopy Cloud](https://scanopy.net) subscription for zero infrastructure management  
 
 ## 🤝 Contributing
 
