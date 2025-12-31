@@ -414,8 +414,11 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/** List all daemons */
-		get: operations['list_daemons'];
+		/**
+		 * Get all daemons
+		 * @description Returns all daemons accessible to the user with computed version status.
+		 */
+		get: operations['get_daemons'];
 		put?: never;
 		post?: never;
 		delete?: never;
@@ -469,7 +472,10 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/** Get daemon by ID */
+		/**
+		 * Get daemon by ID
+		 * @description Returns a specific daemon with computed version status.
+		 */
 		get: operations['get_daemon_by_id'];
 		put?: never;
 		post?: never;
@@ -517,6 +523,27 @@ export interface paths {
 		 *     Returns tuple of (next_session, should_cancel).
 		 */
 		post: operations['receive_work_request'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/api/daemons/{id}/startup': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/**
+		 * Daemon startup handshake
+		 * @description Internal endpoint for daemons to report their version on startup.
+		 *     Updates the daemon's version and last_seen timestamp, returns server capabilities.
+		 */
+		post: operations['daemon_startup'];
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -767,6 +794,13 @@ export interface paths {
 		 *     - Tags must exist and belong to your organization
 		 *     - Duplicate tag UUIDs are automatically deduplicated
 		 *     - Invalid or cross-organization tag UUIDs return a 400 error
+		 *
+		 *     ### Legacy Format (Daemon Backwards Compatibility)
+		 *
+		 *     This endpoint also accepts the legacy `HostWithServicesRequest` format
+		 *     from old daemons. Legacy requests are automatically detected and
+		 *     transformed to the new format. Legacy support will be removed in a
+		 *     future release.
 		 */
 		post: operations['create_host'];
 		delete?: never;
@@ -1733,14 +1767,14 @@ export interface components {
 			/**
 			 * @description Association between a service and a port / interface that the service is listening on
 			 * @example {
-			 *       "created_at": "2025-12-30T17:21:24.086401Z",
-			 *       "id": "bbeb20e6-5f4f-403a-8e3b-42bc94650b08",
+			 *       "created_at": "2025-12-31T03:32:31.295101Z",
+			 *       "id": "83364544-6c3e-4733-a28e-c33207dea74a",
 			 *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 			 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 			 *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
 			 *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
 			 *       "type": "Port",
-			 *       "updated_at": "2025-12-30T17:21:24.086401Z"
+			 *       "updated_at": "2025-12-31T03:32:31.295101Z"
 			 *     }
 			 */
 			data?: components['schemas']['BindingBase'] & {
@@ -1762,24 +1796,28 @@ export interface components {
 			error?: string | null;
 			success: boolean;
 		};
-		ApiResponse_Daemon: {
-			data?: components['schemas']['DaemonBase'] & {
-				/** Format: date-time */
-				readonly created_at: string;
-				/** Format: uuid */
-				readonly id: string;
-				/** Format: date-time */
-				readonly updated_at: string;
-			};
-			error?: string | null;
-			success: boolean;
-		};
 		ApiResponse_DaemonRegistrationResponse: {
 			/** @description Daemon registration response from server to daemon */
 			data?: {
 				daemon: components['schemas']['Daemon'];
 				/** Format: uuid */
 				host_id: string;
+				server_capabilities?: null | components['schemas']['ServerCapabilities'];
+			};
+			error?: string | null;
+			success: boolean;
+		};
+		ApiResponse_DaemonResponse: {
+			/** @description Daemon response for UI including computed version status */
+			data?: components['schemas']['DaemonBase'] & {
+				/** Format: date-time */
+				created_at: string;
+				/** Format: uuid */
+				id: string;
+				/** Format: date-time */
+				updated_at: string;
+				/** @description Computed version status including health and warnings */
+				version_status: components['schemas']['DaemonVersionStatus'];
 			};
 			error?: string | null;
 			success: boolean;
@@ -2071,19 +2109,32 @@ export interface components {
 			error?: string | null;
 			success: boolean;
 		};
+		ApiResponse_ServerCapabilities: {
+			/** @description Server capabilities returned on startup/registration */
+			data?: {
+				/** @description Deprecation warnings for the daemon */
+				deprecation_warnings?: components['schemas']['DeprecationWarning'][];
+				/** @description Minimum daemon version supported by this server */
+				minimum_daemon_version: string;
+				/** @description Server software version */
+				server_version: string;
+			};
+			error?: string | null;
+			success: boolean;
+		};
 		ApiResponse_Service: {
 			/**
 			 * @example {
 			 *       "bindings": [
 			 *         {
-			 *           "created_at": "2025-12-30T17:21:24.081775Z",
-			 *           "id": "d3e03e22-9c78-4ba5-ae6f-38d5b8db6500",
+			 *           "created_at": "2025-12-31T03:32:31.291226Z",
+			 *           "id": "3a7140ad-4b1e-489b-84f8-18829fb4e46b",
 			 *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 			 *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
 			 *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
 			 *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
 			 *           "type": "Port",
-			 *           "updated_at": "2025-12-30T17:21:24.081775Z"
+			 *           "updated_at": "2025-12-31T03:32:31.291226Z"
 			 *         }
 			 *       ],
 			 *       "created_at": "2026-01-15T10:30:00Z",
@@ -2091,7 +2142,7 @@ export interface components {
 			 *       "id": "550e8400-e29b-41d4-a716-446655440007",
 			 *       "name": "nginx",
 			 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
-			 *       "service_definition": "FreeIPA",
+			 *       "service_definition": "Homepage",
 			 *       "source": {
 			 *         "type": "Manual"
 			 *       },
@@ -2273,14 +2324,16 @@ export interface components {
 			error?: string | null;
 			success: boolean;
 		};
-		ApiResponse_Vec_Daemon: {
+		ApiResponse_Vec_DaemonResponse: {
 			data?: (components['schemas']['DaemonBase'] & {
 				/** Format: date-time */
-				readonly created_at: string;
+				created_at: string;
 				/** Format: uuid */
-				readonly id: string;
+				id: string;
 				/** Format: date-time */
-				readonly updated_at: string;
+				updated_at: string;
+				/** @description Computed version status including health and warnings */
+				version_status: components['schemas']['DaemonVersionStatus'];
 			})[];
 			error?: string | null;
 			success: boolean;
@@ -2523,14 +2576,14 @@ export interface components {
 		/**
 		 * @description Association between a service and a port / interface that the service is listening on
 		 * @example {
-		 *       "created_at": "2025-12-30T17:21:24.070407Z",
-		 *       "id": "ff29a6c7-7ce1-4bec-9278-22539c5ec533",
+		 *       "created_at": "2025-12-31T03:32:31.280768Z",
+		 *       "id": "22590fab-3bfb-49c4-bc92-291ef33b8f49",
 		 *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
 		 *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
 		 *       "type": "Port",
-		 *       "updated_at": "2025-12-30T17:21:24.070407Z"
+		 *       "updated_at": "2025-12-31T03:32:31.280768Z"
 		 *     }
 		 */
 		Binding: components['schemas']['BindingBase'] & {
@@ -2741,12 +2794,19 @@ export interface components {
 			host_id: string;
 			/** Format: date-time */
 			readonly last_seen: string;
+			/**
+			 * Format: uuid
+			 * @description User responsible for maintaining this daemon
+			 */
+			user_id: string;
 			mode: components['schemas']['DaemonMode'];
 			name: string;
 			/** Format: uuid */
 			network_id: string;
 			tags: string[];
 			readonly url: string;
+			/** @description Daemon software version (semver format) */
+			version?: string | null;
 		};
 		/** @description Daemon capabilities */
 		DaemonCapabilities: {
@@ -2765,17 +2825,37 @@ export interface components {
 			capabilities: components['schemas']['DaemonCapabilities'];
 			/** Format: uuid */
 			daemon_id: string;
+			/**
+			 * Format: uuid
+			 * @description User responsible for maintaining this daemon (from frontend install command)
+			 *     Optional for backwards compat with old daemons - defaults to nil UUID
+			 */
+			user_id?: string;
 			mode: components['schemas']['DaemonMode'];
 			name: string;
 			/** Format: uuid */
 			network_id: string;
 			url: string;
+			/** @description Daemon software version (optional for backwards compat with old daemons) */
+			version?: string | null;
 		};
 		/** @description Daemon registration response from server to daemon */
 		DaemonRegistrationResponse: {
 			daemon: components['schemas']['Daemon'];
 			/** Format: uuid */
 			host_id: string;
+			server_capabilities?: null | components['schemas']['ServerCapabilities'];
+		};
+		/** @description Daemon response for UI including computed version status */
+		DaemonResponse: components['schemas']['DaemonBase'] & {
+			/** Format: date-time */
+			created_at: string;
+			/** Format: uuid */
+			id: string;
+			/** Format: date-time */
+			updated_at: string;
+			/** @description Computed version status including health and warnings */
+			version_status: components['schemas']['DaemonVersionStatus'];
 		};
 		/** @description Daemon setup request for pre-registration daemon configuration */
 		DaemonSetupRequest: {
@@ -2788,8 +2868,30 @@ export interface components {
 		DaemonSetupResponse: {
 			api_key?: string | null;
 		};
+		/** @description Sent by daemon on startup to report version */
+		DaemonStartupRequest: {
+			/** @description Daemon software version (semver format) */
+			daemon_version: string;
+		};
+		/** @description Daemon version status including health and any warnings */
+		DaemonVersionStatus: {
+			status: components['schemas']['VersionHealthStatus'];
+			version?: string | null;
+			warnings?: components['schemas']['DeprecationWarning'][];
+		};
 		/** @enum {string} */
 		DeploymentType: 'cloud' | 'commercial' | 'community';
+		/**
+		 * @description Severity level for deprecation warnings
+		 * @enum {string}
+		 */
+		DeprecationSeverity: 'Info' | 'Warning' | 'Critical';
+		/** @description Deprecation warning for daemon version */
+		DeprecationWarning: {
+			message: string;
+			severity: components['schemas']['DeprecationSeverity'];
+			sunset_date?: string | null;
+		};
 		Discovery: components['schemas']['DiscoveryBase'] & {
 			/** Format: date-time */
 			readonly created_at: string;
@@ -3416,18 +3518,27 @@ export interface components {
 					/** @enum {string} */
 					type: 'AdHoc';
 			  };
+		/** @description Server capabilities returned on startup/registration */
+		ServerCapabilities: {
+			/** @description Deprecation warnings for the daemon */
+			deprecation_warnings?: components['schemas']['DeprecationWarning'][];
+			/** @description Minimum daemon version supported by this server */
+			minimum_daemon_version: string;
+			/** @description Server software version */
+			server_version: string;
+		};
 		/**
 		 * @example {
 		 *       "bindings": [
 		 *         {
-		 *           "created_at": "2025-12-30T17:21:24.070311Z",
-		 *           "id": "9b6219c7-4876-4831-8c29-c4713038ac59",
+		 *           "created_at": "2025-12-31T03:32:31.280721Z",
+		 *           "id": "6dfab92a-28d4-49b6-9b8c-b4fcc894a275",
 		 *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 		 *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
 		 *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
 		 *           "type": "Port",
-		 *           "updated_at": "2025-12-30T17:21:24.070311Z"
+		 *           "updated_at": "2025-12-31T03:32:31.280721Z"
 		 *         }
 		 *       ],
 		 *       "created_at": "2026-01-15T10:30:00Z",
@@ -3435,7 +3546,7 @@ export interface components {
 		 *       "id": "550e8400-e29b-41d4-a716-446655440007",
 		 *       "name": "nginx",
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
-		 *       "service_definition": "FreeIPA",
+		 *       "service_definition": "Homepage",
 		 *       "source": {
 		 *         "type": "Manual"
 		 *       },
@@ -3815,6 +3926,11 @@ export interface components {
 			x: number;
 			y: number;
 		};
+		/**
+		 * @description Health status for daemon versions
+		 * @enum {string}
+		 */
+		VersionHealthStatus: 'Current' | 'Outdated' | 'Deprecated';
 	};
 	responses: never;
 	parameters: never;
@@ -4761,14 +4877,9 @@ export interface operations {
 			};
 		};
 	};
-	list_daemons: {
+	get_daemons: {
 		parameters: {
-			query?: {
-				/** @description Filter by host ID */
-				host_id?: string | null;
-				/** @description Filter by network ID */
-				network_id?: string | null;
-			};
+			query?: never;
 			header?: never;
 			path?: never;
 			cookie?: never;
@@ -4781,7 +4892,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['ApiResponse_Vec_Daemon'];
+					'application/json': components['schemas']['ApiResponse_Vec_DaemonResponse'];
 				};
 			};
 		};
@@ -4862,7 +4973,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['ApiResponse_Daemon'];
+					'application/json': components['schemas']['ApiResponse_DaemonResponse'];
 				};
 			};
 			/** @description Daemon not found */
@@ -4966,6 +5077,42 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content?: never;
+			};
+			/** @description Daemon not found */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+		};
+	};
+	daemon_startup: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				/** @description Daemon ID */
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': components['schemas']['DaemonStartupRequest'];
+			};
+		};
+		responses: {
+			/** @description Startup acknowledged */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiResponse_ServerCapabilities'];
+				};
 			};
 			/** @description Daemon not found */
 			404: {

@@ -21,14 +21,16 @@
 		''}"
 	title={action.label}
 >
-	<div class="flex items-center justify-center">
+	<div class="flex items-center justify-center {action.forceLabel ? 'opacity-0' : ''}">
 		<action.icon size={16} class="flex-shrink-0" />
 	</div>
 
 	<div
 		class="absolute top-1/2 flex -translate-y-1/2 items-center justify-center whitespace-nowrap {action.disabled
 			? 'opacity-0'
-			: 'opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100'} {isLeftEdge
+			: action.forceLabel
+				? 'opacity-100'
+				: 'opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100'} {isLeftEdge
 			? 'left-0'
 			: isRightEdge
 				? 'right-0'
