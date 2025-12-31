@@ -50,23 +50,27 @@
 		}
 	});
 
-	let posthogInitialized = false;
+	let posthogInitialized = $state(false);
+	let posthogInitStarted = false;
 
 	$effect(() => {
 		if (!configData) return;
 
 		const posthogKey = configData.posthog_key;
 
-		if (browser && posthogKey && !posthogInitialized) {
+		if (browser && posthogKey && !posthogInitStarted) {
+			posthogInitStarted = true;
 			posthog.init(posthogKey, {
 				api_host: 'https://ph.scanopy.net',
 				ui_host: 'https://us.posthog.com',
 				defaults: '2025-11-30',
 				secure_cookie: true,
 				persistence: 'memory',
-				opt_out_capturing_by_default: true
+				opt_out_capturing_by_default: true,
+				loaded: () => {
+					posthogInitialized = true;
+				}
 			});
-			posthogInitialized = true;
 		}
 	});
 

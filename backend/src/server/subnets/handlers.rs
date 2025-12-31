@@ -1,6 +1,9 @@
 use crate::server::auth::middleware::auth::{AuthenticatedEntity, AuthenticatedUser};
 use crate::server::auth::middleware::permissions::{MemberOrDaemon, RequireMember};
-use crate::server::shared::handlers::traits::{CrudHandlers, create_handler, update_handler};
+use crate::server::shared::handlers::query::NetworkFilterQuery;
+use crate::server::shared::handlers::traits::{
+    CrudHandlers, create_handler, get_all_handler, update_handler,
+};
 use crate::server::shared::storage::filter::EntityFilter;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, ApiJson};
 use crate::server::{
@@ -11,7 +14,7 @@ use crate::server::{
     },
     subnets::r#impl::base::Subnet,
 };
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::response::Json;
 use std::sync::Arc;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -21,20 +24,75 @@ use uuid::Uuid;
 mod generated {
     use super::*;
     crate::crud_get_by_id_handler!(Subnet, "subnets", "subnet");
-    crate::crud_get_all_handler!(Subnet, "subnets", "subnet");
     crate::crud_delete_handler!(Subnet, "subnets", "subnet");
     crate::crud_bulk_delete_handler!(Subnet, "subnets");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
-        .routes(routes!(generated::get_all, create_subnet))
+        .routes(routes!(get_all_subnets, create_subnet))
         .routes(routes!(
             generated::get_by_id,
             update_subnet,
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+}
+
+/// Get all subnets
+///
+/// Returns all subnets accessible to the authenticated user or daemon.
+/// Daemons can only access subnets within their assigned network.
+#[utoipa::path(
+    get,
+    path = "",
+    tag = "subnets",
+    operation_id = "list_subnets",
+    summary = "List all subnets",
+    params(NetworkFilterQuery),
+    responses(
+        (status = 200, description = "List of subnets", body = ApiResponse<Vec<Subnet>>),
+    ),
+    security(("session" = []))
+)]
+async fn get_all_subnets(
+    state: State<Arc<AppState>>,
+    MemberOrDaemon { entity, .. }: MemberOrDaemon,
+    query: Query<NetworkFilterQuery>,
+) -> ApiResult<Json<ApiResponse<Vec<Subnet>>>> {
+    match entity {
+        AuthenticatedEntity::User {
+            user_id,
+            organization_id,
+            permissions,
+            network_ids,
+            email,
+        } => {
+            let authenticated_user = AuthenticatedUser {
+                user_id,
+                organization_id,
+                permissions,
+                network_ids,
+                email,
+            };
+            get_all_handler::<Subnet>(state, authenticated_user, query).await
+        }
+        AuthenticatedEntity::Daemon { network_id, .. } => {
+            // Daemons can only access subnets in their network
+            let filter = EntityFilter::unfiltered().network_ids(&[network_id]);
+            let service = Subnet::get_service(&state);
+            let subnets = service.get_all(filter).await.map_err(|e| {
+                tracing::error!(
+                    error = %e,
+                    network_id = %network_id,
+                    "Failed to fetch subnets for daemon"
+                );
+                ApiError::internal_error(&e.to_string())
+            })?;
+            Ok(Json(ApiResponse::success(subnets)))
+        }
+        _ => Err(ApiError::forbidden("Member or Daemon permission required")),
+    }
 }
 
 /// Create a new subnet

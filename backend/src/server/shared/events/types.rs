@@ -358,6 +358,7 @@ pub enum TelemetryOperation {
     // Onboarding funnel
     OrgCreated,
     OnboardingModalCompleted,
+    PlanSelected,
     PersonalPlanSelected,
     CommercialPlanSelected,
     FirstApiKeyCreated,
