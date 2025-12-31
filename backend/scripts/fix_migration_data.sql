@@ -24,7 +24,7 @@
 -- Set dry run mode (pass -v DRY_RUN=true to enable)
 -- When DRY_RUN is not set, :DRY_RUN expands to literal ':DRY_RUN', so we check for that
 \set _dry_run_input :DRY_RUN
-SELECT COALESCE(NULLIF(:'_dry_run_input', ':DRY_RUN'), 'false') = 'true' AS dry_run \gset
+SELECT CASE WHEN COALESCE(NULLIF(:'_dry_run_input', ':DRY_RUN'), 'false') = 'true' THEN 'true' ELSE 'false' END AS dry_run \gset
 
 BEGIN;
 
