@@ -11,14 +11,13 @@ use crate::server::{
     hosts::handlers as host_handlers, interfaces::handlers as interface_handlers,
     invites::handlers as invite_handlers, networks::handlers as network_handlers,
     organizations::handlers as organization_handlers, ports::handlers as port_handlers,
-    services::handlers as service_handlers, shared::types::api::ApiResponse,
-    shares::handlers as share_handlers, subnets::handlers as subnet_handlers,
-    tags::handlers as tag_handlers, topology::handlers as topology_handlers,
-    users::handlers as user_handlers,
+    services::handlers as service_handlers, shares::handlers as share_handlers,
+    subnets::handlers as subnet_handlers, tags::handlers as tag_handlers,
+    topology::handlers as topology_handlers, users::handlers as user_handlers,
 };
+use axum::Router;
 use axum::http::HeaderValue;
 use axum::middleware;
-use axum::{Json, Router, routing::get};
 use reqwest::header;
 use std::sync::Arc;
 use tower_http::set_header::SetResponseHeaderLayer;
@@ -79,11 +78,11 @@ pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
     openapi.merge(auth_openapi);
 
     // Routes exempt from billing checks
+    // Note: /api/health is defined in server.rs outside middleware stack
     let exempt_routes = Router::new()
         .merge(billing_router)
         .merge(shares_router)
-        .merge(auth_router)
-        .route("/api/health", get(get_health));
+        .merge(auth_router);
 
     // Cacheable routes with OpenAPI documentation (also exempt from billing)
     let (cacheable_router, cacheable_openapi) = OpenApiRouter::new()
@@ -104,11 +103,4 @@ pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
         .merge(create_docs_router(openapi.clone()));
 
     (router, openapi)
-}
-
-async fn get_health() -> Json<ApiResponse<String>> {
-    Json(ApiResponse::success(format!(
-        "Scanopy Server {}",
-        env!("CARGO_PKG_VERSION")
-    )))
 }

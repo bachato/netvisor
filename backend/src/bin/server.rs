@@ -154,8 +154,8 @@ async fn main() -> anyhow::Result<()> {
 
     let app_cache = Arc::new(AppCache::new());
 
-    // Create main app
-    let app = Router::new().merge(api_router).layer(
+    // Create main app with all middleware
+    let protected_app = Router::new().merge(api_router).layer(
         ServiceBuilder::new()
             .layer(client_ip_source.into_extension())
             .layer(TraceLayer::new_for_http())
@@ -172,6 +172,20 @@ async fn main() -> anyhow::Result<()> {
             .layer(Extension(app_cache))
             .layer(cache_headers),
     );
+
+    // Health check endpoint without client IP middleware (for kamal-proxy health checks)
+    let app = Router::new()
+        .route(
+            "/api/health",
+            axum::routing::get(|| async {
+                axum::Json(serde_json::json!({
+                    "success": true,
+                    "data": format!("Scanopy Server {}", env!("CARGO_PKG_VERSION")),
+                    "error": null
+                }))
+            }),
+        )
+        .merge(protected_app);
     let listener = tokio::net::TcpListener::bind(&listen_addr).await?;
     let actual_port = listener.local_addr()?.port();
 
