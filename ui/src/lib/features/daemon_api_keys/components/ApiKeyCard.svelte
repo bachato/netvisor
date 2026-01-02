@@ -30,8 +30,8 @@
 	// Build card data
 	let cardData = $derived({
 		title: apiKey.name,
-		iconColor: entities.getColorHelper('ApiKey').icon,
-		Icon: entities.getIconComponent('ApiKey'),
+		iconColor: entities.getColorHelper('DaemonApiKey').icon,
+		Icon: entities.getIconComponent('DaemonApiKey'),
 		fields: [
 			{
 				label: 'Created',

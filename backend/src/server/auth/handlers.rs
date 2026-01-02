@@ -1,6 +1,4 @@
 use crate::server::{
-    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
-    shared::api_key_common::{generate_api_key_for_storage, ApiKeyType},
     auth::{
         r#impl::{
             api::{
@@ -12,14 +10,17 @@ use crate::server::{
             oidc::{OidcFlow, OidcPendingAuth, OidcProviderMetadata, OidcRegisterParams},
         },
         middleware::{
-            auth::{AuthenticatedEntity, AuthenticatedUser},
+            auth::AuthenticatedEntity,
             features::{BlockedInDemoMode, RequireFeature},
+            permissions::{Authorized, IsUser},
         },
         oidc::OidcService,
     },
     config::{AppState, DeploymentType, get_deployment_type},
+    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
     invites::handlers::process_pending_invite,
     networks::r#impl::{Network, NetworkBase},
+    shared::api_key_common::{ApiKeyType, generate_api_key_for_storage},
     shared::{
         events::types::{TelemetryEvent, TelemetryOperation},
         services::traits::CrudService,
@@ -450,12 +451,13 @@ async fn apply_pending_setup(
             organization_id,
             operation: TelemetryOperation::OnboardingModalCompleted,
             timestamp: Utc::now(),
-            authentication: auth_entity,
             metadata: serde_json::json!({
                 "is_onboarding_step": true,
                 "pre_registration_setup": true,
                 "network_count": setup.networks.len()
             }),
+            auth_method: auth_entity.auth_method(),
+            authentication: auth_entity,
         })
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to publish telemetry: {}", e)))?;
@@ -599,7 +601,7 @@ async fn update_password_auth(
     session: Session,
     ClientIp(ip): ClientIp,
     user_agent: Option<TypedHeader<UserAgent>>,
-    auth_user: AuthenticatedUser,
+    auth: Authorized<IsUser>,
     _demo_check: RequireFeature<BlockedInDemoMode>,
     Json(request): Json<UpdateEmailPasswordRequest>,
 ) -> ApiResult<Json<ApiResponse<User>>> {
@@ -620,7 +622,7 @@ async fn update_password_auth(
             request.email,
             ip,
             user_agent,
-            auth_user,
+            auth.into_entity(),
         )
         .await?;
 

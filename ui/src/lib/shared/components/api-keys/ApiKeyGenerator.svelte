@@ -20,13 +20,7 @@
 		onRotate: () => void | Promise<void>;
 	}
 
-	let {
-		generatedKey,
-		isEditing,
-		loading = false,
-		onGenerate,
-		onRotate
-	}: Props = $props();
+	let { generatedKey, isEditing, loading = false, onGenerate, onRotate }: Props = $props();
 
 	function handleClick() {
 		if (isEditing) {
@@ -36,13 +30,7 @@
 		}
 	}
 
-	let buttonText = $derived(
-		loading
-			? 'Generating...'
-			: isEditing
-				? 'Rotate Key'
-				: 'Generate Key'
-	);
+	let buttonText = $derived(loading ? 'Generating...' : isEditing ? 'Rotate Key' : 'Generate Key');
 </script>
 
 <div class="space-y-3">

@@ -4,17 +4,17 @@ use crate::server::github::handlers::{__path_get_stars, get_stars};
 use crate::server::openapi::create_docs_router;
 use crate::server::shared::types::metadata::{__path_get_metadata_registry, get_metadata_registry};
 use crate::server::{
-    daemon_api_keys::handlers as daemon_api_key_handlers, auth::handlers as auth_handlers,
-    billing::handlers as billing_handlers, bindings::handlers as binding_handlers,
-    config::AppState, daemons::handlers as daemon_handlers,
+    auth::handlers as auth_handlers, billing::handlers as billing_handlers,
+    bindings::handlers as binding_handlers, config::AppState,
+    daemon_api_keys::handlers as daemon_api_key_handlers, daemons::handlers as daemon_handlers,
     discovery::handlers as discovery_handlers, groups::handlers as group_handlers,
     hosts::handlers as host_handlers, interfaces::handlers as interface_handlers,
     invites::handlers as invite_handlers, networks::handlers as network_handlers,
     organizations::handlers as organization_handlers, ports::handlers as port_handlers,
-    services::handlers as service_handlers,
-    shares::handlers as share_handlers, subnets::handlers as subnet_handlers,
-    tags::handlers as tag_handlers, topology::handlers as topology_handlers,
-    user_api_keys::handlers as user_api_key_handlers, users::handlers as user_handlers,
+    services::handlers as service_handlers, shares::handlers as share_handlers,
+    subnets::handlers as subnet_handlers, tags::handlers as tag_handlers,
+    topology::handlers as topology_handlers, user_api_keys::handlers as user_api_key_handlers,
+    users::handlers as user_handlers,
 };
 use axum::Router;
 use axum::http::HeaderValue;

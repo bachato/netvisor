@@ -1,5 +1,8 @@
 use crate::server::{
-    auth::middleware::auth::{AuthError, AuthenticatedUser},
+    auth::middleware::{
+        auth::AuthError,
+        permissions::{Authorized, IsUser},
+    },
     billing::types::base::BillingPlan,
     config::AppState,
     organizations::r#impl::base::Organization,
@@ -63,11 +66,14 @@ where
     type Rejection = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let AuthenticatedUser {
-            permissions,
-            organization_id,
-            ..
-        } = AuthenticatedUser::from_request_parts(parts, state).await?;
+        let auth = Authorized::<IsUser>::from_request_parts(parts, state).await?;
+        let permissions = auth
+            .entity
+            .permissions()
+            .ok_or_else(|| AuthError(ApiError::internal_error("No permissions")))?;
+        let organization_id = auth
+            .organization_id()
+            .ok_or_else(|| AuthError(ApiError::internal_error("No organization")))?;
 
         let app_state = state.as_ref();
 

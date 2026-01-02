@@ -1,6 +1,6 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
-	import { cancelDiscovery, cancelling } from '$lib/features/discovery/sse';
+	import { cancelling } from '$lib/features/discovery/sse';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { Loader2, X } from 'lucide-svelte';
 	import type { DiscoveryUpdatePayload } from '../../types/api';
@@ -10,10 +10,12 @@
 	// Props
 	let {
 		viewMode,
-		session
+		session,
+		onCancel
 	}: {
 		viewMode: 'card' | 'list';
 		session: DiscoveryUpdatePayload;
+		onCancel?: (sessionId: string) => void;
 	} = $props();
 
 	// Queries
@@ -27,7 +29,9 @@
 	);
 
 	async function handleCancelDiscovery() {
-		await cancelDiscovery(session.session_id);
+		if (onCancel) {
+			await onCancel(session.session_id);
+		}
 	}
 
 	// Build card data
@@ -54,12 +58,16 @@
 			}
 		],
 		actions: [
-			{
-				label: 'Cancel Discovery',
-				icon: isCancelling ? Loader2 : X,
-				class: `btn-icon-danger ${isCancelling ? 'animate-spin' : ''}`,
-				onClick: isCancelling ? () => {} : () => handleCancelDiscovery()
-			}
+			...(onCancel
+				? [
+						{
+							label: 'Cancel Discovery',
+							icon: isCancelling ? Loader2 : X,
+							class: `btn-icon-danger ${isCancelling ? 'animate-spin' : ''}`,
+							onClick: isCancelling ? () => {} : () => handleCancelDiscovery()
+						}
+					]
+				: [])
 		]
 	});
 </script>

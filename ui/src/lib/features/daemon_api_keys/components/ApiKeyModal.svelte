@@ -48,8 +48,17 @@
 	let isEditing = $derived(apiKey !== null);
 	let title = $derived(isEditing ? `Edit ${apiKey?.name || 'API Key'}` : 'Create API Key');
 
-	// Get minimum date (today)
-	const today = new Date().toISOString().slice(0, 16);
+	// Get minimum date (now) in local time format for datetime-local input
+	function getLocalDateTimeMin(): string {
+		const now = new Date();
+		const year = now.getFullYear();
+		const month = String(now.getMonth() + 1).padStart(2, '0');
+		const day = String(now.getDate()).padStart(2, '0');
+		const hours = String(now.getHours()).padStart(2, '0');
+		const minutes = String(now.getMinutes()).padStart(2, '0');
+		return `${year}-${month}-${day}T${hours}:${minutes}`;
+	}
+	const today = getLocalDateTimeMin();
 
 	function getDefaultValues(): ApiKey {
 		return apiKey ? { ...apiKey } : createEmptyApiKeyFormData(defaultNetworkId);
@@ -139,7 +148,7 @@
 		}
 	}
 
-	let colorHelper = entities.getColorHelper('ApiKey');
+	let colorHelper = entities.getColorHelper('DaemonApiKey');
 </script>
 
 <GenericModal
@@ -151,7 +160,7 @@
 	showCloseButton={true}
 >
 	<svelte:fragment slot="header-icon">
-		<ModalHeaderIcon Icon={entities.getIconComponent('ApiKey')} color={colorHelper.color} />
+		<ModalHeaderIcon Icon={entities.getIconComponent('DaemonApiKey')} color={colorHelper.color} />
 	</svelte:fragment>
 
 	<form

@@ -1,11 +1,11 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use chrono::Utc;
 use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::server::{
-    auth::middleware::auth::{AuthenticatedEntity, AuthenticatedUser},
+    auth::middleware::auth::AuthenticatedEntity,
     shared::{
         api_key_common::ApiKeyService,
         entities::ChangeTriggersTopologyStaleness,
@@ -14,11 +14,12 @@ use crate::server::{
             types::{EntityEvent, EntityOperation},
         },
         services::traits::{CrudService, EventBusService},
-        storage::{generic::GenericPostgresStorage, traits::{StorableEntity, Storage}},
+        storage::{
+            generic::GenericPostgresStorage,
+            traits::{StorableEntity, Storage},
+        },
     },
-    user_api_keys::r#impl::{
-        base::UserApiKey, network_access::UserApiKeyNetworkAccessStorage,
-    },
+    user_api_keys::r#impl::{base::UserApiKey, network_access::UserApiKeyNetworkAccessStorage},
     users::r#impl::permissions::UserOrgPermissions,
 };
 
@@ -77,6 +78,7 @@ impl CrudService<UserApiKey> for UserApiKeyService {
                     "trigger_stale": trigger_stale,
                     "suppress_logs": suppress_logs
                 }),
+                auth_method: authentication.auth_method(),
                 authentication,
             })
             .await?;
@@ -161,10 +163,7 @@ impl UserApiKeyService {
 
         for network_id in key_network_ids {
             if !user_network_ids.contains(network_id) {
-                return Err(format!(
-                    "You don't have access to network {}",
-                    network_id
-                ));
+                return Err(format!("You don't have access to network {}", network_id));
             }
         }
         Ok(())
@@ -217,11 +216,15 @@ impl ApiKeyService for UserApiKeyService {
         &self.event_bus
     }
 
-    fn validate_access(&self, key: &UserApiKey, user: &AuthenticatedUser) -> Result<()> {
+    fn validate_access(&self, key: &UserApiKey, entity: &AuthenticatedEntity) -> Result<()> {
         // User must own this key
-        if key.base.user_id != user.user_id {
-            return Err(anyhow!("You don't own this API key"));
+        if let Some(user_id) = entity.user_id() {
+            if key.base.user_id != user_id {
+                return Err(anyhow!("You don't own this API key"));
+            }
+            Ok(())
+        } else {
+            Err(anyhow!("User context required to validate API key access"))
         }
-        Ok(())
     }
 }

@@ -5,7 +5,7 @@ use crate::server::{
             api::{LoginRequest, RegisterRequest},
             base::{LoginRegisterParams, PendingSetup, ProvisionUserParams},
         },
-        middleware::auth::{AuthenticatedEntity, AuthenticatedUser},
+        middleware::auth::{AuthMethod, AuthenticatedEntity},
     },
     email::traits::EmailService,
     organizations::{
@@ -123,6 +123,7 @@ impl AuthService {
             )
             .await?;
 
+        let authentication: AuthenticatedEntity = user.clone().into();
         self.event_bus
             .publish_auth(AuthEvent {
                 id: Uuid::new_v4(),
@@ -135,7 +136,8 @@ impl AuthService {
                 metadata: serde_json::json!({
                     "method": "password"
                 }),
-                authentication: user.clone().into(),
+                auth_method: authentication.auth_method(),
+                authentication,
             })
             .await?;
 
@@ -251,14 +253,16 @@ impl AuthService {
         }?;
 
         if is_new_org {
+            let authentication: AuthenticatedEntity = user.clone().into();
             self.event_bus
                 .publish_telemetry(TelemetryEvent {
                     id: Uuid::new_v4(),
-                    authentication: user.clone().into(),
                     organization_id: user.base.organization_id,
                     operation: TelemetryOperation::OrgCreated,
                     timestamp: Utc::now(),
                     metadata: serde_json::json!({}),
+                    auth_method: authentication.auth_method(),
+                    authentication,
                 })
                 .await?;
         }
@@ -289,6 +293,7 @@ impl AuthService {
                 // Success - clear attempts
                 self.login_attempts.write().await.remove(&request.email);
 
+                let authentication: AuthenticatedEntity = user.clone().into();
                 self.event_bus
                     .publish_auth(AuthEvent {
                         id: Uuid::new_v4(),
@@ -301,7 +306,8 @@ impl AuthService {
                         metadata: serde_json::json!({
                             "method": "password",
                         }),
-                        authentication: user.clone().into(),
+                        auth_method: authentication.auth_method(),
+                        authentication,
                     })
                     .await?;
 
@@ -323,6 +329,7 @@ impl AuthService {
                             "method": "password",
                             "email": request.email
                         }),
+                        auth_method: AuthMethod::Anonymous,
                         authentication: AuthenticatedEntity::Anonymous,
                     })
                     .await?;
@@ -389,7 +396,7 @@ impl AuthService {
         email: Option<EmailAddress>,
         ip: IpAddr,
         user_agent: Option<String>,
-        authentication: AuthenticatedUser,
+        authentication: AuthenticatedEntity,
     ) -> Result<User> {
         let mut user = self
             .user_service
@@ -415,13 +422,12 @@ impl AuthService {
                 ip_address: ip,
                 user_agent,
                 metadata: serde_json::json!({}),
-                authentication: authentication.clone().into(),
+                auth_method: authentication.auth_method(),
+                authentication: authentication.clone(),
             })
             .await?;
 
-        self.user_service
-            .update(&mut user, authentication.into())
-            .await
+        self.user_service.update(&mut user, authentication).await
     }
 
     /// Initiate password reset process - generates a token
@@ -463,6 +469,7 @@ impl AuthService {
                 ip_address: ip,
                 user_agent,
                 metadata: serde_json::json!({}),
+                auth_method: AuthMethod::Anonymous,
                 authentication: AuthenticatedEntity::Anonymous,
             })
             .await?;
@@ -503,6 +510,7 @@ impl AuthService {
             .await?
             .ok_or_else(|| anyhow!("User not found"))?;
 
+        let authentication: AuthenticatedEntity = user.clone().into();
         self.event_bus
             .publish_auth(AuthEvent {
                 id: Uuid::new_v4(),
@@ -513,7 +521,8 @@ impl AuthService {
                 ip_address: ip,
                 user_agent,
                 metadata: serde_json::json!({}),
-                authentication: user.clone().into(),
+                auth_method: authentication.auth_method(),
+                authentication,
             })
             .await?;
 
@@ -534,17 +543,23 @@ impl AuthService {
         user_agent: Option<String>,
     ) -> Result<()> {
         if let Ok(Some(user)) = self.user_service.get_by_id(&user_id).await {
+            let authentication: AuthenticatedEntity = user.into();
             self.event_bus
                 .publish_auth(AuthEvent {
                     id: Uuid::new_v4(),
-                    user_id: Some(user.id),
-                    organization_id: Some(user.base.organization_id),
+                    user_id: Some(authentication.user_id().expect("User should have user_id")),
+                    organization_id: Some(
+                        authentication
+                            .organization_id()
+                            .expect("User should have org_id"),
+                    ),
                     timestamp: Utc::now(),
                     operation: AuthOperation::LoggedOut,
                     ip_address: ip,
                     user_agent,
                     metadata: serde_json::json!({}),
-                    authentication: user.into(),
+                    auth_method: authentication.auth_method(),
+                    authentication,
                 })
                 .await?;
         }

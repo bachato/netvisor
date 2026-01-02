@@ -16,6 +16,9 @@
 		useBulkDeleteUserApiKeysMutation,
 		type UserApiKey
 	} from '../queries';
+	import type { TabProps } from '$lib/shared/types';
+
+	let { isReadOnly = false }: TabProps = $props();
 
 	// Queries
 	const tagsQuery = useTagsQuery();
@@ -119,9 +122,11 @@
 <div class="space-y-6">
 	<TabHeader title="API Keys" subtitle="Manage your personal API keys for programmatic access">
 		<svelte:fragment slot="actions">
-			<button class="btn-primary flex items-center" onclick={handleCreate}>
-				<Plus class="h-5 w-5" />Create API Key
-			</button>
+			{#if !isReadOnly}
+				<button class="btn-primary flex items-center" onclick={handleCreate}>
+					<Plus class="h-5 w-5" />Create API Key
+				</button>
+			{/if}
 		</svelte:fragment>
 	</TabHeader>
 
@@ -138,7 +143,7 @@
 		<DataControls
 			items={userApiKeysData}
 			fields={apiKeyFields}
-			onBulkDelete={handleBulkDelete}
+			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
 			storageKey="scanopy-user-api-keys-table-state"
 			getItemId={(item) => item.id}
 		>
@@ -153,8 +158,8 @@
 					{viewMode}
 					selected={isSelected}
 					{onSelectionChange}
-					onDelete={handleDelete}
-					onEdit={handleEdit}
+					onDelete={isReadOnly ? undefined : handleDelete}
+					onEdit={isReadOnly ? undefined : handleEdit}
 				/>
 			{/snippet}
 		</DataControls>

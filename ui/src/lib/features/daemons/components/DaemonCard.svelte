@@ -31,7 +31,7 @@
 
 	let {
 		daemon,
-		onDelete = () => {},
+		onDelete,
 		viewMode,
 		selected,
 		onSelectionChange = () => {}
@@ -157,13 +157,17 @@
 			}
 		],
 		actions: [
-			{
-				label: 'Delete',
-				icon: Trash2,
-				class: 'btn-icon-danger',
-				onClick: () => onDelete(daemon),
-				disabled: daemonIsRunningDiscovery
-			},
+			...(onDelete
+				? [
+						{
+							label: 'Delete',
+							icon: Trash2,
+							class: 'btn-icon-danger',
+							onClick: () => onDelete(daemon),
+							disabled: daemonIsRunningDiscovery
+						}
+					]
+				: []),
 			...(hasUpdateAvailable
 				? [
 						{

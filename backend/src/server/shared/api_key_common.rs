@@ -1,7 +1,7 @@
 use std::net::IpAddr;
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use rand::Rng;
@@ -11,7 +11,7 @@ use uuid::Uuid;
 use std::fmt::Display;
 
 use crate::server::{
-    auth::middleware::auth::AuthenticatedUser,
+    auth::middleware::auth::AuthenticatedEntity,
     shared::{
         entities::{ChangeTriggersTopologyStaleness, Entity},
         events::{
@@ -165,7 +165,7 @@ pub trait ApiKeyService: CrudService<Self::Key> + EventBusService<Self::Key> {
     /// Validate that the user has access to perform operations on this key.
     /// - For daemon keys: user must have access to the key's network
     /// - For user keys: user must own the key
-    fn validate_access(&self, key: &Self::Key, user: &AuthenticatedUser) -> Result<()>;
+    fn validate_access(&self, key: &Self::Key, entity: &AuthenticatedEntity) -> Result<()>;
 
     /// Rotate the API key, generating a new key value.
     /// Uses `validate_access` to verify the user can rotate this key.
@@ -174,7 +174,7 @@ pub trait ApiKeyService: CrudService<Self::Key> + EventBusService<Self::Key> {
         api_key_id: Uuid,
         ip_address: IpAddr,
         user_agent: Option<String>,
-        user: AuthenticatedUser,
+        entity: AuthenticatedEntity,
     ) -> Result<String> {
         let mut api_key = self
             .get_by_id(&api_key_id)
@@ -182,7 +182,7 @@ pub trait ApiKeyService: CrudService<Self::Key> + EventBusService<Self::Key> {
             .ok_or_else(|| anyhow!("API key '{}' not found", api_key_id))?;
 
         // Validate access before rotating
-        self.validate_access(&api_key, &user)?;
+        self.validate_access(&api_key, &entity)?;
 
         // Generate new key with correct prefix based on key type
         let (plaintext, hashed) = generate_api_key_for_storage(Self::Key::KEY_TYPE);
@@ -192,8 +192,8 @@ pub trait ApiKeyService: CrudService<Self::Key> + EventBusService<Self::Key> {
         self.api_key_event_bus()
             .publish_auth(AuthEvent {
                 id: Uuid::new_v4(),
-                user_id: Some(user.user_id),
-                organization_id: Some(user.organization_id),
+                user_id: entity.user_id(),
+                organization_id: entity.organization_id(),
                 operation: AuthOperation::RotateKey,
                 timestamp: Utc::now(),
                 ip_address,
@@ -202,12 +202,13 @@ pub trait ApiKeyService: CrudService<Self::Key> + EventBusService<Self::Key> {
                     "api_key_id": api_key_id,
                     "key_type": format!("{:?}", Self::Key::KEY_TYPE),
                 }),
-                authentication: user.clone().into(),
+                auth_method: entity.auth_method(),
+                authentication: entity.clone(),
             })
             .await?;
 
         // Update the key in storage
-        self.update(&mut api_key, user.into()).await?;
+        self.update(&mut api_key, entity).await?;
 
         Ok(plaintext)
     }

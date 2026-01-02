@@ -5,6 +5,23 @@
 //!
 //! Endpoints tagged with "internal" are included in the full spec (for client generation)
 //! but filtered out of the public Scalar documentation.
+//!
+//! ## Authentication Documentation
+//!
+//! Security requirements are documented using the `security()` attribute in handlers:
+//!
+//! ```rust
+//! #[utoipa::path(
+//!     security(("session" = []), ("user_api_key" = [])),
+//!     // ...
+//! )]
+//! async fn get_hosts(auth: Authorized<Viewer>) -> ...
+//! ```
+//!
+//! Available security schemes:
+//! - `session`: Browser session cookie
+//! - `user_api_key`: User API key (Bearer scp_u_...)
+//! - `daemon_api_key`: Daemon API key (Bearer scp_d_...)
 
 use axum::{Extension, Json, Router};
 use std::sync::Arc;
@@ -107,16 +124,28 @@ fn add_security_schemes(spec: &mut OpenApi) {
 
     // Session cookie authentication (used by web UI)
     components.security_schemes.insert(
-        "session_id".to_string(),
-        SecurityScheme::ApiKey(ApiKey::Cookie(ApiKeyValue::new("session_id"))),
+        "session".to_string(),
+        SecurityScheme::ApiKey(ApiKey::Cookie(ApiKeyValue::with_description(
+            "session_id",
+            "Browser session cookie. Obtained via /api/auth/login.",
+        ))),
     );
 
-    // API key authentication (used by daemons)
+    // User API key authentication
     components.security_schemes.insert(
-        "api_key".to_string(),
+        "user_api_key".to_string(),
         SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::with_description(
-            "Authorization: Bearer",
-            "API key for daemon authentication. Generate keys in the web UI under Settings > API Keys.",
+            "Authorization",
+            "User API key (Bearer scp_u_...). Create in Platform > API Keys.",
+        ))),
+    );
+
+    // Daemon API key authentication
+    components.security_schemes.insert(
+        "daemon_api_key".to_string(),
+        SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::with_description(
+            "Authorization",
+            "Daemon API key (Bearer scp_d_...). Requires X-Daemon-ID header.",
         ))),
     );
 }

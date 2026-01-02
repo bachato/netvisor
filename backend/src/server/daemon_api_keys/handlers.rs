@@ -1,12 +1,12 @@
 use crate::server::{
     auth::middleware::{
         features::{BlockedInDemoMode, RequireFeature},
-        permissions::RequireMember,
+        permissions::{Authorized, Member},
     },
     config::AppState,
     daemon_api_keys::r#impl::{api::DaemonApiKeyResponse, base::DaemonApiKey},
     shared::{
-        api_key_common::{generate_api_key_for_storage, ApiKeyService, ApiKeyType},
+        api_key_common::{ApiKeyService, ApiKeyType, generate_api_key_for_storage},
         events::types::{TelemetryEvent, TelemetryOperation},
         handlers::traits::{CrudHandlers, update_handler},
         services::traits::{CrudService, EventBusService},
@@ -53,43 +53,47 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 403, description = "Insufficient permissions (member+ required)", body = ApiErrorResponse),
         (status = 500, description = "Internal server error", body = ApiErrorResponse),
     ),
-    security(("session" = []))
+    security(("session" = []), ("user_api_key" = []))
 )]
 pub async fn create_daemon_api_key(
     State(state): State<Arc<AppState>>,
-    RequireMember(user): RequireMember,
+    auth: Authorized<Member>,
     _demo_check: RequireFeature<BlockedInDemoMode>,
     Json(mut api_key): Json<DaemonApiKey>,
 ) -> ApiResult<Json<ApiResponse<DaemonApiKeyResponse>>> {
+    let network_ids = auth.network_ids();
+    let organization_id = auth
+        .organization_id()
+        .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
+    let user_id = auth.user_id();
+
     tracing::debug!(
         api_key_name = %api_key.base.name,
         network_id = %api_key.base.network_id,
-        user_id = %user.user_id,
+        user_id = ?user_id,
         "Daemon API key create request received"
     );
 
-    validate_network_access(Some(api_key.base.network_id), &user.network_ids, "create")?;
+    validate_network_access(Some(api_key.base.network_id), &network_ids, "create")?;
 
     let (plaintext, hashed) = generate_api_key_for_storage(ApiKeyType::Daemon);
 
     let service = DaemonApiKey::get_service(&state);
     api_key.base.key = hashed;
-    let api_key = service
-        .create(api_key, user.clone().into())
-        .await
-        .map_err(|e| {
-            tracing::error!(
-                error = %e,
-                user_id = %user.user_id,
-                "Failed to create daemon API key"
-            );
-            ApiError::internal_error(&e.to_string())
-        })?;
+    let entity = auth.into_entity();
+    let api_key = service.create(api_key, entity.clone()).await.map_err(|e| {
+        tracing::error!(
+            error = %e,
+            user_id = ?user_id,
+            "Failed to create daemon API key"
+        );
+        ApiError::internal_error(&e.to_string())
+    })?;
 
     let organization = state
         .services
         .organization_service
-        .get_by_id(&user.organization_id)
+        .get_by_id(&organization_id)
         .await?;
 
     if let Some(organization) = organization
@@ -99,13 +103,14 @@ pub async fn create_daemon_api_key(
             .event_bus()
             .publish_telemetry(TelemetryEvent {
                 id: Uuid::new_v4(),
-                authentication: user.clone().into(),
-                organization_id: user.organization_id,
+                organization_id,
                 operation: TelemetryOperation::FirstApiKeyCreated,
                 timestamp: Utc::now(),
                 metadata: serde_json::json!({
                     "is_onboarding_step": true
                 }),
+                auth_method: entity.auth_method(),
+                authentication: entity,
             })
             .await?;
     }
@@ -126,14 +131,16 @@ pub async fn create_daemon_api_key(
         (status = 200, description = "Daemon API key updated", body = ApiResponse<DaemonApiKey>),
         (status = 404, description = "Daemon API key not found", body = ApiErrorResponse),
     ),
-    security(("session" = []))
+    security(("session" = []), ("user_api_key" = []))
 )]
 pub async fn update_daemon_api_key(
     State(state): State<Arc<AppState>>,
-    RequireMember(user): RequireMember,
+    auth: Authorized<Member>,
     Path(id): Path<Uuid>,
     Json(mut request): Json<DaemonApiKey>,
 ) -> ApiResult<Json<ApiResponse<DaemonApiKey>>> {
+    let network_ids = auth.network_ids();
+
     // Fetch existing to preserve immutable fields
     let existing = DaemonApiKey::get_service(&state)
         .get_by_id(&id)
@@ -141,13 +148,13 @@ pub async fn update_daemon_api_key(
         .ok_or_else(|| ApiError::not_found(format!("Daemon API key '{}' not found", id)))?;
 
     // Validate user has access to this key's network
-    validate_network_access(Some(existing.base.network_id), &user.network_ids, "update")?;
+    validate_network_access(Some(existing.base.network_id), &network_ids, "update")?;
 
     // Preserve the key hash - don't allow it to be changed via update
     request.base.key = existing.base.key;
 
     // Delegate to generic handler
-    update_handler::<DaemonApiKey>(State(state), RequireMember(user), Path(id), Json(request)).await
+    update_handler::<DaemonApiKey>(State(state), auth, Path(id), Json(request)).await
 }
 
 /// Rotate a daemon API key
@@ -160,26 +167,27 @@ pub async fn update_daemon_api_key(
         (status = 200, description = "Daemon API key rotated, returns new key", body = ApiResponse<String>),
         (status = 404, description = "Daemon API key not found", body = ApiErrorResponse),
     ),
-    security(("session" = []))
+    security(("session" = []), ("user_api_key" = []))
 )]
 pub async fn rotate_key_handler(
     State(state): State<Arc<AppState>>,
-    RequireMember(user): RequireMember,
+    auth: Authorized<Member>,
     _demo_check: RequireFeature<BlockedInDemoMode>,
     ClientIp(ip): ClientIp,
     user_agent: Option<TypedHeader<UserAgent>>,
     Path(api_key_id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<String>>> {
     let user_agent = user_agent.map(|u| u.to_string());
+    let user_id = auth.user_id();
 
     let service = DaemonApiKey::get_service(&state);
     let key = service
-        .rotate_key(api_key_id, ip, user_agent, user.clone())
+        .rotate_key(api_key_id, ip, user_agent, auth.into_entity())
         .await
         .map_err(|e| {
             tracing::error!(
                 api_key_id = %api_key_id,
-                user_id = %user.user_id,
+                user_id = ?user_id,
                 error = %e,
                 "Failed to rotate daemon API key"
             );

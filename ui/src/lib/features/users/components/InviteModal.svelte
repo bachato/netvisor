@@ -173,7 +173,7 @@
 				</form.Field>
 
 				<NetworkAccessSelect
-					selectedNetworkIds={selectedNetworkIds}
+					{selectedNetworkIds}
 					onChange={handleNetworkChange}
 					permissionLevel={permissionsValue}
 					helpText="Select networks this user will have access to"

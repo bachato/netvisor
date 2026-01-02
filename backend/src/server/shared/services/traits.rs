@@ -79,6 +79,7 @@ where
                     metadata: serde_json::json!({
                         "trigger_stale": trigger_stale
                     }),
+                    auth_method: authentication.auth_method(),
                     authentication,
                 })
                 .await?;
@@ -122,6 +123,7 @@ where
                 operation: EntityOperation::Created,
                 timestamp: Utc::now(),
                 metadata,
+                auth_method: authentication.auth_method(),
                 authentication,
             })
             .await?;
@@ -155,6 +157,7 @@ where
                 metadata: serde_json::json!({
                     "trigger_stale": trigger_stale
                 }),
+                auth_method: authentication.auth_method(),
                 authentication,
             })
             .await?;
@@ -188,6 +191,7 @@ where
                         metadata: serde_json::json!({
                             "trigger_stale": trigger_stale
                         }),
+                        auth_method: authentication.auth_method(),
                         authentication: authentication.clone(),
                     })
                     .await?;
@@ -231,6 +235,7 @@ where
                     metadata: serde_json::json!({
                         "trigger_stale": trigger_stale
                     }),
+                    auth_method: authentication.auth_method(),
                     authentication: authentication.clone(),
                 })
                 .await?;
@@ -365,6 +370,7 @@ where
                     metadata: serde_json::json!({
                         "trigger_stale": trigger_stale
                     }),
+                    auth_method: authentication.auth_method(),
                     authentication: authentication.clone(),
                 })
                 .await?;

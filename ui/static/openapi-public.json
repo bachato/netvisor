@@ -6,11 +6,7 @@
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
-<<<<<<< HEAD
-    "version": "0.12.8"
-=======
-    "version": "0.12.7"
->>>>>>> 5aec054f (prelim user api keys)
+    "version": "0.12.10"
   },
   "paths": {
     "/api/auth/daemon": {
@@ -1158,6 +1154,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse_DaemonResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -2718,6 +2724,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4110,6 +4126,7 @@
           "subnets"
         ],
         "summary": "List all subnets",
+        "description": "Returns all subnets accessible to the authenticated user or daemon.\nDaemons can only access subnets within their assigned network.",
         "operationId": "list_subnets",
         "parameters": [
           {
@@ -4703,6 +4720,26 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Topology not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4748,6 +4785,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse_Topology"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Topology not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -4924,23 +4981,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-<<<<<<< HEAD
-              "created_at": "2025-12-31T03:32:31.295088Z",
-              "id": "bd4e8ab5-f794-49e0-9c71-3f482cf71f8f",
-=======
-              "created_at": "2025-12-29T01:51:50.906905Z",
-              "id": "a2dfa447-3322-4b7e-8675-1b2770e709c9",
->>>>>>> 5aec054f (prelim user api keys)
+              "created_at": "2026-01-02T00:24:06.536065Z",
+              "id": "d77fa89e-206d-4b21-8735-f54887e2bc52",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-<<<<<<< HEAD
-              "updated_at": "2025-12-31T03:32:31.295088Z"
-=======
-              "updated_at": "2025-12-29T01:51:50.906905Z"
->>>>>>> 5aec054f (prelim user api keys)
+              "updated_at": "2026-01-02T00:24:06.536065Z"
             }
           },
           "error": {
@@ -4976,57 +5024,6 @@
                 "minimum": 0
               }
             }
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-<<<<<<< HEAD
-=======
-      "ApiResponse_Daemon": {
-        "type": "object",
-        "required": [
-          "success"
-        ],
-        "properties": {
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DaemonBase"
-              },
-              {
-                "type": "object",
-                "required": [
-                  "id",
-                  "updated_at",
-                  "created_at"
-                ],
-                "properties": {
-                  "created_at": {
-                    "type": "string",
-                    "format": "date-time",
-                    "readOnly": true
-                  },
-                  "id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "readOnly": true
-                  },
-                  "updated_at": {
-                    "type": "string",
-                    "format": "date-time",
-                    "readOnly": true
-                  }
-                }
-              }
-            ]
           },
           "error": {
             "type": [
@@ -5120,7 +5117,6 @@
           }
         }
       },
->>>>>>> 5aec054f (prelim user api keys)
       "ApiResponse_DaemonRegistrationResponse": {
         "type": "object",
         "required": [
@@ -6167,23 +6163,14 @@
             "example": {
               "bindings": [
                 {
-<<<<<<< HEAD
-                  "created_at": "2025-12-31T03:32:31.291220Z",
-                  "id": "4dd8d655-708a-4bd6-8fc4-f912c020c439",
-=======
-                  "created_at": "2025-12-29T01:51:50.902978Z",
-                  "id": "71fbbd87-5663-4c36-81f4-a0b924cfe252",
->>>>>>> 5aec054f (prelim user api keys)
+                  "created_at": "2026-01-02T00:24:06.533165Z",
+                  "id": "68175946-af63-4bbe-82b8-4e1b89a27a81",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-<<<<<<< HEAD
-                  "updated_at": "2025-12-31T03:32:31.291220Z"
-=======
-                  "updated_at": "2025-12-29T01:51:50.902978Z"
->>>>>>> 5aec054f (prelim user api keys)
+                  "updated_at": "2026-01-02T00:24:06.533165Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -6191,11 +6178,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
-<<<<<<< HEAD
-              "service_definition": "Homepage",
-=======
-              "service_definition": "MeTube",
->>>>>>> 5aec054f (prelim user api keys)
+              "service_definition": "Wazuh",
               "source": {
                 "type": "Manual"
               },
@@ -6852,24 +6835,67 @@
               ],
               "description": "Association between a service and a port / interface that the service is listening on",
               "example": {
-<<<<<<< HEAD
-                "created_at": "2025-12-31T03:32:31.294876Z",
-                "id": "e9b6f404-0a3f-47bb-96a8-0dd923bb1aff",
-=======
-                "created_at": "2025-12-29T01:51:50.906571Z",
-                "id": "73b3082d-9a04-4f12-8149-061385cdce8c",
->>>>>>> 5aec054f (prelim user api keys)
+                "created_at": "2026-01-02T00:24:06.535819Z",
+                "id": "0be8fe04-89ec-4aea-959f-f997e0fe8799",
                 "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "port_id": "550e8400-e29b-41d4-a716-446655440006",
                 "service_id": "550e8400-e29b-41d4-a716-446655440007",
                 "type": "Port",
-<<<<<<< HEAD
-                "updated_at": "2025-12-31T03:32:31.294876Z"
-=======
-                "updated_at": "2025-12-29T01:51:50.906571Z"
->>>>>>> 5aec054f (prelim user api keys)
+                "updated_at": "2026-01-02T00:24:06.535819Z"
               }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_Vec_DaemonApiKey": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/DaemonApiKeyBase"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "updated_at",
+                    "created_at"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "readOnly": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                }
+              ]
             }
           },
           "error": {
@@ -6925,58 +6951,6 @@
                 }
               ],
               "description": "Daemon response for UI including computed version status"
-            }
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ApiResponse_Vec_DaemonApiKey": {
-        "type": "object",
-        "required": [
-          "success"
-        ],
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/DaemonApiKeyBase"
-                },
-                {
-                  "type": "object",
-                  "required": [
-                    "id",
-                    "updated_at",
-                    "created_at"
-                  ],
-                  "properties": {
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "readOnly": true
-                    },
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "readOnly": true
-                    },
-                    "updated_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "readOnly": true
-                    }
-                  }
-                }
-              ]
             }
           },
           "error": {
@@ -7621,23 +7595,14 @@
               "example": {
                 "bindings": [
                   {
-<<<<<<< HEAD
-                    "created_at": "2025-12-31T03:32:31.290307Z",
-                    "id": "7416e256-dada-478c-9408-4527d0683dd9",
-=======
-                    "created_at": "2025-12-29T01:51:50.901658Z",
-                    "id": "48018eb5-889f-4072-bf12-d11ee56c3cf3",
->>>>>>> 5aec054f (prelim user api keys)
+                    "created_at": "2026-01-02T00:24:06.532132Z",
+                    "id": "d905dd6c-8745-49c6-87f6-288b6c3c7f3b",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-<<<<<<< HEAD
-                    "updated_at": "2025-12-31T03:32:31.290307Z"
-=======
-                    "updated_at": "2025-12-29T01:51:50.901658Z"
->>>>>>> 5aec054f (prelim user api keys)
+                    "updated_at": "2026-01-02T00:24:06.532132Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -7645,11 +7610,7 @@
                 "id": "550e8400-e29b-41d4-a716-446655440007",
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
-<<<<<<< HEAD
-                "service_definition": "Homepage",
-=======
-                "service_definition": "MeTube",
->>>>>>> 5aec054f (prelim user api keys)
+                "service_definition": "Wazuh",
                 "source": {
                   "type": "Manual"
                 },
@@ -8259,23 +8220,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-<<<<<<< HEAD
-          "created_at": "2025-12-31T03:32:31.280790Z",
-          "id": "3428e1c6-79b3-4d6f-a5ce-31ac5684ba09",
-=======
-          "created_at": "2025-12-29T01:51:50.893461Z",
-          "id": "7d66d5c3-ad43-4180-8848-7050be89891c",
->>>>>>> 5aec054f (prelim user api keys)
+          "created_at": "2026-01-02T00:24:06.523143Z",
+          "id": "8b080046-143e-42ca-b100-c8fa79498f24",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-<<<<<<< HEAD
-          "updated_at": "2025-12-31T03:32:31.280790Z"
-=======
-          "updated_at": "2025-12-29T01:51:50.893461Z"
->>>>>>> 5aec054f (prelim user api keys)
+          "updated_at": "2026-01-02T00:24:06.523143Z"
         }
       },
       "BindingBase": {
@@ -8856,11 +8808,6 @@
             "format": "date-time",
             "readOnly": true
           },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User responsible for maintaining this daemon"
-          },
           "mode": {
             "$ref": "#/components/schemas/DaemonMode"
           },
@@ -8881,6 +8828,11 @@
           "url": {
             "type": "string",
             "readOnly": true
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User responsible for maintaining this daemon"
           },
           "version": {
             "type": [
@@ -8955,11 +8907,6 @@
             "type": "string",
             "format": "uuid"
           },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User responsible for maintaining this daemon (from frontend install command)\nOptional for backwards compat with old daemons - defaults to nil UUID"
-          },
           "mode": {
             "$ref": "#/components/schemas/DaemonMode"
           },
@@ -8972,6 +8919,11 @@
           },
           "url": {
             "type": "string"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User responsible for maintaining this daemon (from frontend install command)\nOptional for backwards compat with old daemons - defaults to nil UUID"
           },
           "version": {
             "type": [
@@ -11204,23 +11156,14 @@
         "example": {
           "bindings": [
             {
-<<<<<<< HEAD
-              "created_at": "2025-12-31T03:32:31.280742Z",
-              "id": "8d1f5476-e6a6-41e2-a3e0-13a19fac57c2",
-=======
-              "created_at": "2025-12-29T01:51:50.893367Z",
-              "id": "9d4e3085-f7f3-47a0-81eb-992808c8631b",
->>>>>>> 5aec054f (prelim user api keys)
+              "created_at": "2026-01-02T00:24:06.523034Z",
+              "id": "802e3245-07cb-4b7d-8bc2-0b7cf28212db",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-<<<<<<< HEAD
-              "updated_at": "2025-12-31T03:32:31.280742Z"
-=======
-              "updated_at": "2025-12-29T01:51:50.893367Z"
->>>>>>> 5aec054f (prelim user api keys)
+              "updated_at": "2026-01-02T00:24:06.523034Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -11228,11 +11171,7 @@
           "id": "550e8400-e29b-41d4-a716-446655440007",
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
-<<<<<<< HEAD
-          "service_definition": "Homepage",
-=======
-          "service_definition": "MeTube",
->>>>>>> 5aec054f (prelim user api keys)
+          "service_definition": "Wazuh",
           "source": {
             "type": "Manual"
           },

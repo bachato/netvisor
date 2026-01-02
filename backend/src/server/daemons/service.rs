@@ -81,6 +81,7 @@ impl CrudService<Daemon> for DaemonService {
                     "trigger_stale": trigger_stale,
                     "suppress_logs": suppress_logs
                 }),
+                auth_method: authentication.auth_method(),
                 authentication,
             })
             .await?;
@@ -172,6 +173,7 @@ impl DaemonService {
                 metadata: serde_json::json!({
                     "session_id": request.session_id
                 }),
+                auth_method: authentication.auth_method(),
                 authentication,
             })
             .await?;
@@ -209,6 +211,7 @@ impl DaemonService {
                 metadata: serde_json::json!({
                     "session_id": session_id
                 }),
+                auth_method: authentication.auth_method(),
                 authentication,
             })
             .await?;
@@ -237,6 +240,7 @@ impl DaemonService {
                     metadata: serde_json::json!({
                         "session_id": cancellation_session_id
                     }),
+                    auth_method: authentication.auth_method(),
                     authentication: authentication.clone(),
                 })
                 .await?;
@@ -255,6 +259,7 @@ impl DaemonService {
                     metadata: serde_json::json!({
                         "session_id": session.session_id
                     }),
+                    auth_method: authentication.auth_method(),
                     authentication,
                 })
                 .await?;

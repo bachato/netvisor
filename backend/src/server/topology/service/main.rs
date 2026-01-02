@@ -131,6 +131,7 @@ impl CrudService<Topology> for TopologyService {
                 metadata: serde_json::json!({
                     "clear_stale": true
                 }),
+                auth_method: authentication.auth_method(),
                 authentication,
             })
             .await?;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createForm } from '@tanstack/svelte-form';
 	import { submitForm } from '$lib/shared/components/forms/form-context';
-	import { required, max, minArrayLength } from '$lib/shared/components/forms/validators';
+	import { required, max } from '$lib/shared/components/forms/validators';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { pushError } from '$lib/shared/stores/feedback';
@@ -45,8 +45,17 @@
 	let isEditing = $derived(apiKey !== null);
 	let title = $derived(isEditing ? `Edit ${apiKey?.name || 'API Key'}` : 'Create API Key');
 
-	// Get minimum date (today)
-	const today = new Date().toISOString().slice(0, 16);
+	// Get minimum date (now) in local time format for datetime-local input
+	function getLocalDateTimeMin(): string {
+		const now = new Date();
+		const year = now.getFullYear();
+		const month = String(now.getMonth() + 1).padStart(2, '0');
+		const day = String(now.getDate()).padStart(2, '0');
+		const hours = String(now.getHours()).padStart(2, '0');
+		const minutes = String(now.getMinutes()).padStart(2, '0');
+		return `${year}-${month}-${day}T${hours}:${minutes}`;
+	}
+	const today = getLocalDateTimeMin();
 
 	function getDefaultValues(): UserApiKey {
 		return apiKey ? { ...apiKey } : createEmptyUserApiKeyFormData();
@@ -88,10 +97,6 @@
 		// Validate required fields before creating
 		if (!formData.name?.trim()) {
 			pushError('Name is required');
-			return;
-		}
-		if (!formData.network_ids?.length) {
-			pushError('At least one network must be selected');
 			return;
 		}
 
@@ -164,6 +169,55 @@
 	>
 		<div class="flex-1 overflow-auto p-6">
 			<div class="space-y-6">
+				<!-- Access Control Info -->
+				<details class="bg-secondary/50 text-secondary rounded-lg text-sm">
+					<summary class="text-primary cursor-pointer p-4 font-medium">
+						API Key Access Reference
+					</summary>
+					<div class="px-4 pb-4">
+						<table class="w-full text-left text-xs">
+							<thead>
+								<tr class="border-secondary border-b">
+									<th class="text-primary pb-2 pr-3 font-medium">Permission</th>
+									<th class="text-primary pb-2 pr-3 font-medium">Network Resources</th>
+									<th class="text-primary pb-2 pr-3 font-medium">Tags</th>
+									<th class="text-primary pb-2 font-medium">Users</th>
+								</tr>
+							</thead>
+							<tbody class="text-secondary">
+								<tr class="border-secondary/50 border-b">
+									<td class="py-2 pr-3">Viewer</td>
+									<td class="py-2 pr-3">Read</td>
+									<td class="py-2 pr-3">Read</td>
+									<td class="py-2">—</td>
+								</tr>
+								<tr class="border-secondary/50 border-b">
+									<td class="py-2 pr-3">Member</td>
+									<td class="py-2 pr-3">Read/Write</td>
+									<td class="py-2 pr-3">Read</td>
+									<td class="py-2">—</td>
+								</tr>
+								<tr class="border-secondary/50 border-b">
+									<td class="py-2 pr-3">Admin</td>
+									<td class="py-2 pr-3">Read/Write</td>
+									<td class="py-2 pr-3">Read/Write</td>
+									<td class="py-2">Read/Write (Member, Viewer)</td>
+								</tr>
+								<tr>
+									<td class="py-2 pr-3">Owner</td>
+									<td class="py-2 pr-3">Read/Write</td>
+									<td class="py-2 pr-3">Read/Write</td>
+									<td class="py-2">Read/Write (all levels)</td>
+								</tr>
+							</tbody>
+						</table>
+						<p class="mt-3 text-xs italic">
+							Network resources: hosts, subnets, services, groups. Org settings (name, billing)
+							require user session and are not accessible via API keys.
+						</p>
+					</div>
+				</details>
+
 				<!-- Key Details Section -->
 				<div class="space-y-4">
 					<h3 class="text-primary text-lg font-medium">Key Details</h3>
@@ -192,30 +246,21 @@
 								{field}
 								label="Permissions"
 								helpText="The maximum permission level this key can have (cannot exceed your own)"
-								disabled={isEditing}
+								context="api_key"
 							/>
 						{/snippet}
 					</form.Field>
 
-					<form.Field
-						name="network_ids"
-						validators={{
-							onBlur: ({ value }) =>
-								minArrayLength(1, 'At least one network must be selected')(value)
-						}}
-					>
+					<form.Field name="network_ids">
 						{#snippet children(field)}
 							<NetworkAccessSelect
 								selectedNetworkIds={field.state.value ?? []}
 								onChange={handleNetworkChange}
 								permissionLevel={permissionsValue}
-								helpText="Select which networks this API key can access"
+								helpText="Leave empty for org-scoped resources only (tags, users)"
 								alwaysShowSelection={true}
-								required={true}
+								required={false}
 							/>
-							{#if field.state.meta.errors.length > 0}
-								<p class="text-sm text-red-500 mt-1">{field.state.meta.errors[0]}</p>
-							{/if}
 						{/snippet}
 					</form.Field>
 

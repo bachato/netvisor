@@ -27,8 +27,6 @@
 		helpText?: string;
 		/** Whether selection is required */
 		required?: boolean;
-		/** Whether the input is disabled */
-		disabled?: boolean;
 		/** Always show network selection regardless of permission level (for API keys) */
 		alwaysShowSelection?: boolean;
 	}
@@ -40,7 +38,6 @@
 		label = 'Networks',
 		helpText = 'Select networks this entity will have access to',
 		required = false,
-		disabled = false,
 		alwaysShowSelection = false
 	}: Props = $props();
 

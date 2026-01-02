@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
-use sqlx::postgres::PgRow;
 use sqlx::Row;
+use sqlx::postgres::PgRow;
 use uuid::Uuid;
 
 use crate::server::{
@@ -118,7 +118,9 @@ impl StorableEntity for UserApiKey {
 
     fn from_row(row: &PgRow) -> Result<Self, anyhow::Error> {
         let permissions_str: String = row.get("permissions");
-        let permissions = permissions_str.parse::<UserOrgPermissions>().unwrap_or_default();
+        let permissions = permissions_str
+            .parse::<UserOrgPermissions>()
+            .unwrap_or_default();
 
         Ok(UserApiKey {
             id: row.get("id"),

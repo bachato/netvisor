@@ -4,14 +4,9 @@
 //! company with MSP operations. The data includes multiple networks, subnets, hosts,
 //! services, daemons, API keys, tags, and groups.
 
-use chrono::{DateTime, Utc};
-use cidr::{IpCidr, Ipv4Cidr};
-use std::net::{IpAddr, Ipv4Addr};
-use uuid::Uuid;
-
 use crate::server::{
-    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
     bindings::r#impl::base::Binding,
+    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
     daemons::r#impl::{
         api::DaemonCapabilities,
         base::{Daemon, DaemonBase, DaemonMode},
@@ -39,6 +34,11 @@ use crate::server::{
         edges::EdgeStyle,
     },
 };
+use chrono::{DateTime, Utc};
+use cidr::{IpCidr, Ipv4Cidr};
+use semver::Version;
+use std::net::{IpAddr, Ipv4Addr};
+use uuid::Uuid;
 
 // ============================================================================
 // Demo Data Container
@@ -1391,7 +1391,9 @@ fn generate_daemons(
                 mode: DaemonMode::Push,
                 name: "HQ Daemon".to_string(),
                 tags: vec![],
-                version: None,
+                version: Version::parse(env!("CARGO_PKG_VERSION"))
+                    .map(Some)
+                    .unwrap_or_default(),
                 user_id,
             },
         });
@@ -1418,7 +1420,9 @@ fn generate_daemons(
                 mode: DaemonMode::Push,
                 name: "Cloud Daemon".to_string(),
                 tags: vec![],
-                version: None,
+                version: Version::parse(env!("CARGO_PKG_VERSION"))
+                    .map(Some)
+                    .unwrap_or_default(),
                 user_id,
             },
         });
@@ -1444,7 +1448,9 @@ fn generate_daemons(
                 mode: DaemonMode::Push,
                 name: "Denver Daemon".to_string(),
                 tags: vec![],
-                version: None,
+                version: Version::parse(env!("CARGO_PKG_VERSION"))
+                    .map(Some)
+                    .unwrap_or_default(),
                 user_id,
             },
         });

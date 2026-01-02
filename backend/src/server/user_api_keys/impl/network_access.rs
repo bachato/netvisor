@@ -203,8 +203,10 @@ impl UserApiKeyNetworkAccessStorage {
 
     /// Add a single network to an API key's access
     pub async fn add_network(&self, api_key_id: &Uuid, network_id: &Uuid) -> Result<()> {
-        let access =
-            UserApiKeyNetworkAccess::new(UserApiKeyNetworkAccessBase::new(*api_key_id, *network_id));
+        let access = UserApiKeyNetworkAccess::new(UserApiKeyNetworkAccessBase::new(
+            *api_key_id,
+            *network_id,
+        ));
         // The storage will handle the unique constraint violation gracefully
         let _ = self.storage.create(&access).await;
         Ok(())

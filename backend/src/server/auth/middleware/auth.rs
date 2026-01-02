@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::server::{
     config::AppState,
     shared::{
-        api_key_common::{check_key_validity, hash_api_key, ApiKeyCommon, ApiKeyType},
+        api_key_common::{ApiKeyCommon, ApiKeyType, check_key_validity, hash_api_key},
         services::traits::CrudService,
         storage::filter::EntityFilter,
         types::api::ApiError,
@@ -30,6 +30,34 @@ impl IntoResponse for AuthError {
     }
 }
 
+/// Represents how an entity authenticated - used for audit logging
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AuthMethod {
+    /// User authenticated via session cookie
+    Session,
+    /// Authenticated via user API key (scp_u_ prefix)
+    UserApiKey,
+    /// Authenticated via daemon API key (scp_d_ prefix)
+    DaemonApiKey,
+    /// System-level operation (internal)
+    System,
+    /// No authentication
+    Anonymous,
+}
+
+impl Display for AuthMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AuthMethod::Session => write!(f, "session"),
+            AuthMethod::UserApiKey => write!(f, "user_api_key"),
+            AuthMethod::DaemonApiKey => write!(f, "daemon_api_key"),
+            AuthMethod::System => write!(f, "system"),
+            AuthMethod::Anonymous => write!(f, "anonymous"),
+        }
+    }
+}
+
 /// Represents either an authenticated user, daemon, or user API key
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum AuthenticatedEntity {
@@ -52,6 +80,7 @@ pub enum AuthenticatedEntity {
         organization_id: Uuid,
         permissions: UserOrgPermissions,
         network_ids: Vec<Uuid>,
+        email: EmailAddress,
     },
     System,
     Anonymous,
@@ -161,6 +190,51 @@ impl AuthenticatedEntity {
             AuthenticatedEntity::User { .. } | AuthenticatedEntity::ApiKey { .. }
         )
     }
+
+    /// Check if this entity has at least the specified permission level.
+    /// Returns true for User/ApiKey with sufficient permissions, or for Daemon when min_level is Member.
+    pub fn has_min_permission(&self, min_level: UserOrgPermissions) -> bool {
+        match self {
+            AuthenticatedEntity::User { permissions, .. }
+            | AuthenticatedEntity::ApiKey { permissions, .. } => *permissions >= min_level,
+            // Daemons have implicit Member-level access for their network
+            AuthenticatedEntity::Daemon { .. } => min_level <= UserOrgPermissions::Member,
+            _ => false,
+        }
+    }
+
+    /// Check if this entity has access to the specified network
+    pub fn has_network_access(&self, network_id: &Uuid) -> bool {
+        self.network_ids().contains(network_id)
+    }
+
+    /// Get the email address if this is a User or ApiKey
+    pub fn email(&self) -> Option<&EmailAddress> {
+        match self {
+            AuthenticatedEntity::User { email, .. } => Some(email),
+            AuthenticatedEntity::ApiKey { email, .. } => Some(email),
+            _ => None,
+        }
+    }
+
+    /// Get authentication method for audit logging
+    pub fn auth_method(&self) -> AuthMethod {
+        match self {
+            AuthenticatedEntity::User { .. } => AuthMethod::Session,
+            AuthenticatedEntity::ApiKey { .. } => AuthMethod::UserApiKey,
+            AuthenticatedEntity::Daemon { .. } => AuthMethod::DaemonApiKey,
+            AuthenticatedEntity::System => AuthMethod::System,
+            AuthenticatedEntity::Anonymous => AuthMethod::Anonymous,
+        }
+    }
+
+    /// Get daemon_id if this is a Daemon, otherwise None
+    pub fn daemon_id(&self) -> Option<Uuid> {
+        match self {
+            AuthenticatedEntity::Daemon { daemon_id, .. } => Some(*daemon_id),
+            _ => None,
+        }
+    }
 }
 
 impl From<User> for AuthenticatedEntity {
@@ -183,6 +257,29 @@ where
     type Rejection = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        // Check if already extracted (cached in extensions) to avoid duplicate auth
+        // This prevents multiple middleware/extractors from triggering repeated DB updates
+        if let Some(cached) = parts.extensions.get::<AuthenticatedEntity>() {
+            return Ok(cached.clone());
+        }
+
+        let result = Self::extract_auth(parts, state).await;
+
+        // Cache successful auth in extensions for subsequent extractors
+        if let Ok(ref entity) = result {
+            parts.extensions.insert(entity.clone());
+        }
+
+        result
+    }
+}
+
+impl AuthenticatedEntity {
+    /// Internal auth extraction logic - called once and cached
+    async fn extract_auth<S>(parts: &mut Parts, state: &S) -> Result<Self, AuthError>
+    where
+        S: Send + Sync + AsRef<AppState>,
+    {
         let app_state = state.as_ref();
 
         // Check for Bearer token in Authorization header
@@ -224,6 +321,23 @@ where
                             return Err(AuthError(e));
                         }
 
+                        // Fetch user to get email for audit trail
+                        let user = app_state
+                            .services
+                            .user_service
+                            .get_by_id(&user_id)
+                            .await
+                            .map_err(|_| {
+                                AuthError(ApiError::internal_error(
+                                    "Failed to fetch user for API key",
+                                ))
+                            })?
+                            .ok_or_else(|| {
+                                AuthError(ApiError::unauthorized(
+                                    "API key owner not found".to_string(),
+                                ))
+                            })?;
+
                         // Get network access from junction table
                         let network_ids = app_state
                             .services
@@ -246,6 +360,7 @@ where
                             organization_id,
                             permissions,
                             network_ids,
+                            email: user.base.email,
                         });
                     }
 
@@ -298,6 +413,30 @@ where
                                 .update(&mut api_key, AuthenticatedEntity::System)
                                 .await;
                         });
+
+                        // Validate daemon exists and belongs to this network
+                        let daemon = app_state
+                            .services
+                            .daemon_service
+                            .get_by_id(&daemon_id)
+                            .await
+                            .map_err(|e| {
+                                AuthError(ApiError::internal_error(&format!(
+                                    "Failed to fetch daemon: {}",
+                                    e
+                                )))
+                            })?
+                            .ok_or_else(|| {
+                                AuthError(ApiError::unauthorized(
+                                    "X-Daemon-ID header references non-existent daemon".to_string(),
+                                ))
+                            })?;
+
+                        if daemon.base.network_id != network_id {
+                            return Err(AuthError(ApiError::unauthorized(
+                                "Daemon does not belong to the authorized network".to_string(),
+                            )));
+                        }
 
                         return Ok(AuthenticatedEntity::Daemon {
                             network_id,
@@ -367,102 +506,6 @@ where
     }
 }
 
-/// Extractor that only accepts authenticated users (rejects daemons)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct AuthenticatedUser {
-    pub user_id: Uuid,
-    pub organization_id: Uuid,
-    pub permissions: UserOrgPermissions,
-    pub network_ids: Vec<Uuid>,
-    pub email: EmailAddress,
-}
-
-impl From<AuthenticatedUser> for AuthenticatedEntity {
-    fn from(value: AuthenticatedUser) -> Self {
-        AuthenticatedEntity::User {
-            user_id: value.user_id,
-            organization_id: value.organization_id,
-            permissions: value.permissions,
-            network_ids: value.network_ids,
-            email: value.email,
-        }
-    }
-}
-
-impl<S> FromRequestParts<S> for AuthenticatedUser
-where
-    S: Send + Sync + AsRef<AppState>,
-{
-    type Rejection = AuthError;
-
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let entity = AuthenticatedEntity::from_request_parts(parts, state).await?;
-
-        match entity {
-            AuthenticatedEntity::User {
-                user_id,
-                organization_id,
-                permissions,
-                network_ids,
-                email,
-            } => Ok(AuthenticatedUser {
-                user_id,
-                organization_id,
-                permissions,
-                network_ids,
-                email,
-            }),
-            _ => Err(AuthError(ApiError::unauthorized(
-                "User authentication required".to_string(),
-            ))),
-        }
-    }
-}
-
-/// Extractor that only accepts authenticated daemons (rejects users)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Copy)]
-pub struct AuthenticatedDaemon {
-    pub network_id: Uuid,
-    pub api_key_id: Uuid,
-    pub daemon_id: Uuid,
-}
-
-impl From<AuthenticatedDaemon> for AuthenticatedEntity {
-    fn from(value: AuthenticatedDaemon) -> Self {
-        AuthenticatedEntity::Daemon {
-            network_id: value.network_id,
-            api_key_id: value.api_key_id,
-            daemon_id: value.daemon_id,
-        }
-    }
-}
-
-impl<S> FromRequestParts<S> for AuthenticatedDaemon
-where
-    S: Send + Sync + AsRef<AppState>,
-{
-    type Rejection = AuthError;
-
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let entity = AuthenticatedEntity::from_request_parts(parts, state).await?;
-
-        match entity {
-            AuthenticatedEntity::Daemon {
-                network_id,
-                api_key_id,
-                daemon_id,
-            } => Ok(AuthenticatedDaemon {
-                network_id,
-                api_key_id,
-                daemon_id,
-            }),
-            _ => Err(AuthError(ApiError::unauthorized(
-                "Daemon authentication required".to_string(),
-            ))),
-        }
-    }
-}
-
 /// Extractor that only accepts user API key authentication (rejects users and daemons)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AuthenticatedApiKey {
@@ -471,6 +514,7 @@ pub struct AuthenticatedApiKey {
     pub organization_id: Uuid,
     pub permissions: UserOrgPermissions,
     pub network_ids: Vec<Uuid>,
+    pub email: EmailAddress,
 }
 
 impl From<AuthenticatedApiKey> for AuthenticatedEntity {
@@ -481,6 +525,7 @@ impl From<AuthenticatedApiKey> for AuthenticatedEntity {
             organization_id: value.organization_id,
             permissions: value.permissions,
             network_ids: value.network_ids,
+            email: value.email,
         }
     }
 }
@@ -501,12 +546,14 @@ where
                 organization_id,
                 permissions,
                 network_ids,
+                email,
             } => Ok(AuthenticatedApiKey {
                 api_key_id,
                 user_id,
                 organization_id,
                 permissions,
                 network_ids,
+                email,
             }),
             _ => Err(AuthError(ApiError::unauthorized(
                 "API key authentication required".to_string(),

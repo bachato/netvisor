@@ -1,9 +1,9 @@
 use crate::server::{
-    daemon_api_keys::service::DaemonApiKeyService,
     auth::{oidc::OidcService, service::AuthService},
     billing::service::{BillingService, BillingServiceParams},
     bindings::service::BindingService,
     config::ServerConfig,
+    daemon_api_keys::service::DaemonApiKeyService,
     daemons::service::DaemonService,
     discovery::service::DiscoveryService,
     email::{plunk::PlunkEmailProvider, smtp::SmtpEmailProvider, traits::EmailService},

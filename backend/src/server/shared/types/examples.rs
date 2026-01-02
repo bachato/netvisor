@@ -8,11 +8,12 @@ use chrono::{TimeZone, Utc};
 use cidr::{IpCidr, Ipv4Cidr};
 use email_address::EmailAddress;
 use mac_address::MacAddress;
+use semver::Version;
 use std::net::{IpAddr, Ipv4Addr};
 
 use crate::server::{
-    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
     bindings::r#impl::base::Binding,
+    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
     daemons::r#impl::{
         api::DaemonCapabilities,
         base::{Daemon, DaemonBase, DaemonMode},
@@ -263,7 +264,9 @@ pub fn daemon() -> Daemon {
             last_seen: example_timestamp(),
             name: "home-daemon".to_string(),
             tags: vec![],
-            version: None,
+            version: Version::parse(env!("CARGO_PKG_VERSION"))
+                .map(Some)
+                .unwrap_or_default(),
             user_id: ids::USER,
         },
     }

@@ -4,12 +4,11 @@
 	 * Used by user API keys, user invites, and user management
 	 *
 	 * Filters available permission options based on the current user's permissions
-	 * (users can only grant permissions equal to or less than their own)
+	 * and the context (API keys vs user management have different rules)
 	 */
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import { permissions } from '$lib/shared/stores/metadata';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
-	import type { UserOrgPermissions } from '$lib/features/users/types';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 
 	interface Props {
@@ -21,6 +20,11 @@
 		helpText?: string;
 		/** Whether the input is disabled */
 		disabled?: boolean;
+		/** Context determines which permission rules apply:
+		 * - 'api_key': Users can grant their own level or below
+		 * - 'user': Only Owners can grant Admin; Admins can only grant Member/Viewer
+		 */
+		context?: 'api_key' | 'user';
 		/** Optional filter to further restrict available permissions */
 		permissionFilter?: (permissionId: string) => boolean;
 	}
@@ -30,6 +34,7 @@
 		label = 'Permissions Level',
 		helpText = 'Choose the access level',
 		disabled = false,
+		context = 'user',
 		permissionFilter
 	}: Props = $props();
 
@@ -37,17 +42,22 @@
 	const currentUserQuery = useCurrentUserQuery();
 	let currentUser = $derived(currentUserQuery.data);
 
-	// Build permission options based on what current user can manage
+	// Build permission options based on context and what current user can grant
 	let permissionOptions = $derived(
 		permissions
 			.getItems()
 			.filter((p) => {
-				// First check if current user can manage this permission level
 				if (!currentUser) return false;
-				const canManage = permissions
-					.getMetadata(currentUser.permissions)
-					.can_manage_user_permissions.includes(p.id);
-				if (!canManage) return false;
+
+				const metadata = permissions.getMetadata(currentUser.permissions);
+				if (!metadata) return false;
+
+				const grantablePermissions =
+					context === 'api_key'
+						? metadata.grantable_api_key_permissions
+						: metadata.grantable_user_permissions;
+
+				if (!grantablePermissions?.includes(p.id)) return false;
 
 				// Apply any additional filter
 				if (permissionFilter && !permissionFilter(p.id)) return false;
@@ -62,11 +72,4 @@
 	);
 </script>
 
-<SelectInput
-	{label}
-	id="permissions"
-	{field}
-	options={permissionOptions}
-	{disabled}
-	{helpText}
-/>
+<SelectInput {label} id="permissions" {field} options={permissionOptions} {disabled} {helpText} />

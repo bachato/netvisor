@@ -1,4 +1,22 @@
 export interface paths {
+	'/api/auth/daemon': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** List all daemon_api_keys */
+		get: operations['list_daemon_api_keys'];
+		put?: never;
+		/** Create daemon API key */
+		post: operations['create_daemon_api_key'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	'/api/auth/daemon-setup': {
 		parameters: {
 			query?: never;
@@ -13,6 +31,59 @@ export interface paths {
 		 *     Supports multiple calls to configure daemons for different networks
 		 */
 		post: operations['daemon_setup'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/api/auth/daemon/bulk-delete': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** Bulk delete daemon_api_keys */
+		post: operations['bulk_delete_daemon_api_keys'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/api/auth/daemon/{id}': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get daemon_api_key by ID */
+		get: operations['get_daemon_api_key_by_id'];
+		/** Update a daemon API key */
+		put: operations['update_daemon_api_key'];
+		post?: never;
+		/** Delete daemon_api_key */
+		delete: operations['delete_daemon_api_key'];
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/api/auth/daemon/{id}/rotate': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** Rotate a daemon API key */
+		post: operations['rotate_key_handler'];
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -42,11 +113,11 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/** List all api_keys */
-		get: operations['list_api_keys'];
+		/** Get all user API keys for the current user */
+		get: operations['get_all_user_api_keys'];
 		put?: never;
-		/** Create API key */
-		post: operations['create_api_key'];
+		/** Create a new user API key */
+		post: operations['create_user_api_key'];
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -62,8 +133,8 @@ export interface paths {
 		};
 		get?: never;
 		put?: never;
-		/** Bulk delete api_keys */
-		post: operations['bulk_delete_api_keys'];
+		/** Bulk delete user_api_keys */
+		post: operations['bulk_delete_user_api_keys'];
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -77,13 +148,13 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/** Get api_key by ID */
-		get: operations['get_api_key_by_id'];
-		/** Update an API key */
-		put: operations['update_api_key'];
+		/** Get user_api_key by ID */
+		get: operations['get_user_api_key_by_id'];
+		/** Update a user API key */
+		put: operations['update_user_api_key'];
 		post?: never;
-		/** Delete api_key */
-		delete: operations['delete_api_key'];
+		/** Delete user_api_key */
+		delete: operations['delete_user_api_key'];
 		options?: never;
 		head?: never;
 		patch?: never;
@@ -98,8 +169,8 @@ export interface paths {
 		};
 		get?: never;
 		put?: never;
-		/** Rotate an API key */
-		post: operations['rotate_key_handler'];
+		/** Rotate a user API key */
+		post: operations['rotate_user_api_key'];
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -1418,7 +1489,11 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/** List all subnets */
+		/**
+		 * List all subnets
+		 * @description Returns all subnets accessible to the authenticated user or daemon.
+		 *     Daemons can only access subnets within their assigned network.
+		 */
 		get: operations['list_subnets'];
 		put?: never;
 		/** Create a new subnet */
@@ -1714,52 +1789,8 @@ export interface components {
 			error?: string | null;
 			success: boolean;
 		};
-		ApiKey: components['schemas']['ApiKeyBase'] & {
-			/** Format: date-time */
-			readonly created_at: string;
-			/** Format: uuid */
-			readonly id: string;
-			/** Format: date-time */
-			readonly updated_at: string;
-		};
-		ApiKeyBase: {
-			/** Format: date-time */
-			expires_at?: string | null;
-			is_enabled?: boolean;
-			readonly key: string;
-			/** Format: date-time */
-			readonly last_used: string | null;
-			name: string;
-			/** Format: uuid */
-			network_id: string;
-			tags: string[];
-		};
-		ApiKeyResponse: {
-			api_key: components['schemas']['ApiKey'];
-			key: string;
-		};
 		ApiResponse: {
 			data?: null;
-			error?: string | null;
-			success: boolean;
-		};
-		ApiResponse_ApiKey: {
-			data?: components['schemas']['ApiKeyBase'] & {
-				/** Format: date-time */
-				readonly created_at: string;
-				/** Format: uuid */
-				readonly id: string;
-				/** Format: date-time */
-				readonly updated_at: string;
-			};
-			error?: string | null;
-			success: boolean;
-		};
-		ApiResponse_ApiKeyResponse: {
-			data?: {
-				api_key: components['schemas']['ApiKey'];
-				key: string;
-			};
 			error?: string | null;
 			success: boolean;
 		};
@@ -1767,14 +1798,14 @@ export interface components {
 			/**
 			 * @description Association between a service and a port / interface that the service is listening on
 			 * @example {
-			 *       "created_at": "2025-12-31T03:32:31.295101Z",
-			 *       "id": "83364544-6c3e-4733-a28e-c33207dea74a",
+			 *       "created_at": "2025-12-31T21:48:59.666218Z",
+			 *       "id": "08820f48-7adf-4235-a5f7-b32ec082b8a8",
 			 *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 			 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 			 *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
 			 *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
 			 *       "type": "Port",
-			 *       "updated_at": "2025-12-31T03:32:31.295101Z"
+			 *       "updated_at": "2025-12-31T21:48:59.666218Z"
 			 *     }
 			 */
 			data?: components['schemas']['BindingBase'] & {
@@ -1792,6 +1823,26 @@ export interface components {
 			data?: {
 				deleted_count: number;
 				requested_count: number;
+			};
+			error?: string | null;
+			success: boolean;
+		};
+		ApiResponse_DaemonApiKey: {
+			data?: components['schemas']['DaemonApiKeyBase'] & {
+				/** Format: date-time */
+				readonly created_at: string;
+				/** Format: uuid */
+				readonly id: string;
+				/** Format: date-time */
+				readonly updated_at: string;
+			};
+			error?: string | null;
+			success: boolean;
+		};
+		ApiResponse_DaemonApiKeyResponse: {
+			data?: {
+				api_key: components['schemas']['DaemonApiKey'];
+				key: string;
 			};
 			error?: string | null;
 			success: boolean;
@@ -2127,14 +2178,14 @@ export interface components {
 			 * @example {
 			 *       "bindings": [
 			 *         {
-			 *           "created_at": "2025-12-31T03:32:31.291226Z",
-			 *           "id": "3a7140ad-4b1e-489b-84f8-18829fb4e46b",
+			 *           "created_at": "2025-12-31T21:48:59.662359Z",
+			 *           "id": "69957f36-852f-4a72-a3b8-7e72935dc7e0",
 			 *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 			 *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
 			 *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
 			 *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
 			 *           "type": "Port",
-			 *           "updated_at": "2025-12-31T03:32:31.291226Z"
+			 *           "updated_at": "2025-12-31T21:48:59.662359Z"
 			 *         }
 			 *       ],
 			 *       "created_at": "2026-01-15T10:30:00Z",
@@ -2142,7 +2193,7 @@ export interface components {
 			 *       "id": "550e8400-e29b-41d4-a716-446655440007",
 			 *       "name": "nginx",
 			 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
-			 *       "service_definition": "Homepage",
+			 *       "service_definition": "UniFi Controller",
 			 *       "source": {
 			 *         "type": "Manual"
 			 *       },
@@ -2262,15 +2313,28 @@ export interface components {
 			error?: string | null;
 			success: boolean;
 		};
-		ApiResponse_Vec_ApiKey: {
-			data?: (components['schemas']['ApiKeyBase'] & {
+		ApiResponse_UserApiKey: {
+			data?: components['schemas']['UserApiKeyBase'] & {
 				/** Format: date-time */
 				readonly created_at: string;
 				/** Format: uuid */
 				readonly id: string;
 				/** Format: date-time */
 				readonly updated_at: string;
-			})[];
+			};
+			error?: string | null;
+			success: boolean;
+		};
+		ApiResponse_UserApiKeyResponse: {
+			/**
+			 * @description Response for user API key creation/rotation
+			 *     Contains the full API key record plus the plaintext key (shown only once)
+			 */
+			data?: {
+				api_key: components['schemas']['UserApiKey'];
+				/** @description The plaintext API key - only returned once during creation or rotation */
+				key: string;
+			};
 			error?: string | null;
 			success: boolean;
 		};
@@ -2314,6 +2378,18 @@ export interface components {
 		};
 		ApiResponse_Vec_Binding: {
 			data?: (components['schemas']['BindingBase'] & {
+				/** Format: date-time */
+				readonly created_at: string;
+				/** Format: uuid */
+				readonly id: string;
+				/** Format: date-time */
+				readonly updated_at: string;
+			})[];
+			error?: string | null;
+			success: boolean;
+		};
+		ApiResponse_Vec_DaemonApiKey: {
+			data?: (components['schemas']['DaemonApiKeyBase'] & {
 				/** Format: date-time */
 				readonly created_at: string;
 				/** Format: uuid */
@@ -2527,6 +2603,18 @@ export interface components {
 			error?: string | null;
 			success: boolean;
 		};
+		ApiResponse_Vec_UserApiKey: {
+			data?: (components['schemas']['UserApiKeyBase'] & {
+				/** Format: date-time */
+				readonly created_at: string;
+				/** Format: uuid */
+				readonly id: string;
+				/** Format: date-time */
+				readonly updated_at: string;
+			})[];
+			error?: string | null;
+			success: boolean;
+		};
 		ApiResponse_bool: {
 			data?: boolean;
 			error?: string | null;
@@ -2576,14 +2664,14 @@ export interface components {
 		/**
 		 * @description Association between a service and a port / interface that the service is listening on
 		 * @example {
-		 *       "created_at": "2025-12-31T03:32:31.280768Z",
-		 *       "id": "22590fab-3bfb-49c4-bc92-291ef33b8f49",
+		 *       "created_at": "2025-12-31T21:48:59.652633Z",
+		 *       "id": "a645d171-00ca-4a72-a92f-aa2ed2f6a3d9",
 		 *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
 		 *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
 		 *       "type": "Port",
-		 *       "updated_at": "2025-12-31T03:32:31.280768Z"
+		 *       "updated_at": "2025-12-31T21:48:59.652633Z"
 		 *     }
 		 */
 		Binding: components['schemas']['BindingBase'] & {
@@ -2788,23 +2876,47 @@ export interface components {
 			/** Format: date-time */
 			readonly updated_at: string;
 		};
+		DaemonApiKey: components['schemas']['DaemonApiKeyBase'] & {
+			/** Format: date-time */
+			readonly created_at: string;
+			/** Format: uuid */
+			readonly id: string;
+			/** Format: date-time */
+			readonly updated_at: string;
+		};
+		DaemonApiKeyBase: {
+			/** Format: date-time */
+			expires_at?: string | null;
+			is_enabled?: boolean;
+			readonly key: string;
+			/** Format: date-time */
+			readonly last_used: string | null;
+			name: string;
+			/** Format: uuid */
+			network_id: string;
+			tags: string[];
+		};
+		DaemonApiKeyResponse: {
+			api_key: components['schemas']['DaemonApiKey'];
+			key: string;
+		};
 		DaemonBase: {
 			capabilities: components['schemas']['DaemonCapabilities'];
 			/** Format: uuid */
 			host_id: string;
 			/** Format: date-time */
 			readonly last_seen: string;
-			/**
-			 * Format: uuid
-			 * @description User responsible for maintaining this daemon
-			 */
-			user_id: string;
 			mode: components['schemas']['DaemonMode'];
 			name: string;
 			/** Format: uuid */
 			network_id: string;
 			tags: string[];
 			readonly url: string;
+			/**
+			 * Format: uuid
+			 * @description User responsible for maintaining this daemon
+			 */
+			user_id: string;
 			/** @description Daemon software version (semver format) */
 			version?: string | null;
 		};
@@ -2825,17 +2937,17 @@ export interface components {
 			capabilities: components['schemas']['DaemonCapabilities'];
 			/** Format: uuid */
 			daemon_id: string;
+			mode: components['schemas']['DaemonMode'];
+			name: string;
+			/** Format: uuid */
+			network_id: string;
+			url: string;
 			/**
 			 * Format: uuid
 			 * @description User responsible for maintaining this daemon (from frontend install command)
 			 *     Optional for backwards compat with old daemons - defaults to nil UUID
 			 */
 			user_id?: string;
-			mode: components['schemas']['DaemonMode'];
-			name: string;
-			/** Format: uuid */
-			network_id: string;
-			url: string;
 			/** @description Daemon software version (optional for backwards compat with old daemons) */
 			version?: string | null;
 		};
@@ -3531,14 +3643,14 @@ export interface components {
 		 * @example {
 		 *       "bindings": [
 		 *         {
-		 *           "created_at": "2025-12-31T03:32:31.280721Z",
-		 *           "id": "6dfab92a-28d4-49b6-9b8c-b4fcc894a275",
+		 *           "created_at": "2025-12-31T21:48:59.652538Z",
+		 *           "id": "63acc3f9-4080-48d4-be09-c3fa8eb4d94a",
 		 *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 		 *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
 		 *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
 		 *           "type": "Port",
-		 *           "updated_at": "2025-12-31T03:32:31.280721Z"
+		 *           "updated_at": "2025-12-31T21:48:59.652538Z"
 		 *         }
 		 *       ],
 		 *       "created_at": "2026-01-15T10:30:00Z",
@@ -3546,7 +3658,7 @@ export interface components {
 		 *       "id": "550e8400-e29b-41d4-a716-446655440007",
 		 *       "name": "nginx",
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
-		 *       "service_definition": "Homepage",
+		 *       "service_definition": "UniFi Controller",
 		 *       "source": {
 		 *         "type": "Manual"
 		 *       },
@@ -3907,6 +4019,40 @@ export interface components {
 			/** Format: date-time */
 			readonly updated_at: string;
 		};
+		UserApiKey: components['schemas']['UserApiKeyBase'] & {
+			/** Format: date-time */
+			readonly created_at: string;
+			/** Format: uuid */
+			readonly id: string;
+			/** Format: date-time */
+			readonly updated_at: string;
+		};
+		UserApiKeyBase: {
+			/** Format: date-time */
+			expires_at?: string | null;
+			is_enabled?: boolean;
+			readonly key: string;
+			/** Format: date-time */
+			readonly last_used: string | null;
+			name: string;
+			/** @description Network IDs this key has access to (hydrated from junction table) */
+			network_ids?: string[];
+			/** Format: uuid */
+			organization_id: string;
+			permissions?: components['schemas']['UserOrgPermissions'];
+			tags: string[];
+			/** Format: uuid */
+			user_id: string;
+		};
+		/**
+		 * @description Response for user API key creation/rotation
+		 *     Contains the full API key record plus the plaintext key (shown only once)
+		 */
+		UserApiKeyResponse: {
+			api_key: components['schemas']['UserApiKey'];
+			/** @description The plaintext API key - only returned once during creation or rotation */
+			key: string;
+		};
 		UserBase: {
 			email: string;
 			network_ids: string[];
@@ -3940,6 +4086,80 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+	list_daemon_api_keys: {
+		parameters: {
+			query?: {
+				/** @description Filter by network ID */
+				network_id?: string | null;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description List of daemon_api_keys */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiResponse_Vec_DaemonApiKey'];
+				};
+			};
+		};
+	};
+	create_daemon_api_key: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': components['schemas']['DaemonApiKey'];
+			};
+		};
+		responses: {
+			/** @description Daemon API key created */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiResponse_DaemonApiKeyResponse'];
+				};
+			};
+			/** @description Bad request */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+			/** @description Insufficient permissions (member+ required) */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+			/** @description Internal server error */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+		};
+	};
 	daemon_setup: {
 		parameters: {
 			query?: never;
@@ -3973,6 +4193,163 @@ export interface operations {
 			};
 		};
 	};
+	bulk_delete_daemon_api_keys: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** @description Array of daemon_api_keys IDs to delete */
+		requestBody: {
+			content: {
+				'application/json': string[];
+			};
+		};
+		responses: {
+			/** @description DaemonApiKeys deleted */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiResponse_BulkDeleteResponse'];
+				};
+			};
+		};
+	};
+	get_daemon_api_key_by_id: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				/** @description DaemonApiKey ID */
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description DaemonApiKey found */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiResponse_DaemonApiKey'];
+				};
+			};
+			/** @description DaemonApiKey not found */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+		};
+	};
+	update_daemon_api_key: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				/** @description Daemon API key ID */
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': components['schemas']['DaemonApiKey'];
+			};
+		};
+		responses: {
+			/** @description Daemon API key updated */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiResponse_DaemonApiKey'];
+				};
+			};
+			/** @description Daemon API key not found */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+		};
+	};
+	delete_daemon_api_key: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				/** @description DaemonApiKey ID */
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description DaemonApiKey deleted */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiResponse'];
+				};
+			};
+			/** @description DaemonApiKey not found */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+		};
+	};
+	rotate_key_handler: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				/** @description Daemon API key ID */
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Daemon API key rotated, returns new key */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiResponse_String'];
+				};
+			};
+			/** @description Daemon API key not found */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+		};
+	};
 	forgot_password: {
 		parameters: {
 			query?: never;
@@ -3997,30 +4374,45 @@ export interface operations {
 			};
 		};
 	};
-	list_api_keys: {
+	get_all_user_api_keys: {
 		parameters: {
-			query?: {
-				/** @description Filter by network ID */
-				network_id?: string | null;
-			};
+			query?: never;
 			header?: never;
 			path?: never;
 			cookie?: never;
 		};
 		requestBody?: never;
 		responses: {
-			/** @description List of api_keys */
+			/** @description List of user API keys */
 			200: {
 				headers: {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['ApiResponse_Vec_ApiKey'];
+					'application/json': components['schemas']['ApiResponse_Vec_UserApiKey'];
+				};
+			};
+			/** @description Not authenticated */
+			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
+				};
+			};
+			/** @description Internal server error */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
 				};
 			};
 		};
 	};
-	create_api_key: {
+	create_user_api_key: {
 		parameters: {
 			query?: never;
 			header?: never;
@@ -4029,7 +4421,7 @@ export interface operations {
 		};
 		requestBody: {
 			content: {
-				'application/json': components['schemas']['ApiKey'];
+				'application/json': components['schemas']['UserApiKey'];
 			};
 		};
 		responses: {
@@ -4039,7 +4431,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['ApiResponse_ApiKeyResponse'];
+					'application/json': components['schemas']['ApiResponse_UserApiKeyResponse'];
 				};
 			};
 			/** @description Bad request */
@@ -4051,7 +4443,7 @@ export interface operations {
 					'application/json': components['schemas']['ApiErrorResponse'];
 				};
 			};
-			/** @description Insufficient permissions (admin+ required) */
+			/** @description Invalid permissions or network access */
 			403: {
 				headers: {
 					[name: string]: unknown;
@@ -4071,21 +4463,21 @@ export interface operations {
 			};
 		};
 	};
-	bulk_delete_api_keys: {
+	bulk_delete_user_api_keys: {
 		parameters: {
 			query?: never;
 			header?: never;
 			path?: never;
 			cookie?: never;
 		};
-		/** @description Array of api_keys IDs to delete */
+		/** @description Array of user_api_keys IDs to delete */
 		requestBody: {
 			content: {
 				'application/json': string[];
 			};
 		};
 		responses: {
-			/** @description ApiKeys deleted */
+			/** @description UserApiKeys deleted */
 			200: {
 				headers: {
 					[name: string]: unknown;
@@ -4096,28 +4488,28 @@ export interface operations {
 			};
 		};
 	};
-	get_api_key_by_id: {
+	get_user_api_key_by_id: {
 		parameters: {
 			query?: never;
 			header?: never;
 			path: {
-				/** @description ApiKey ID */
+				/** @description UserApiKey ID */
 				id: string;
 			};
 			cookie?: never;
 		};
 		requestBody?: never;
 		responses: {
-			/** @description ApiKey found */
+			/** @description UserApiKey found */
 			200: {
 				headers: {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['ApiResponse_ApiKey'];
+					'application/json': components['schemas']['ApiResponse_UserApiKey'];
 				};
 			};
-			/** @description ApiKey not found */
+			/** @description UserApiKey not found */
 			404: {
 				headers: {
 					[name: string]: unknown;
@@ -4128,7 +4520,7 @@ export interface operations {
 			};
 		};
 	};
-	update_api_key: {
+	update_user_api_key: {
 		parameters: {
 			query?: never;
 			header?: never;
@@ -4140,7 +4532,7 @@ export interface operations {
 		};
 		requestBody: {
 			content: {
-				'application/json': components['schemas']['ApiKey'];
+				'application/json': components['schemas']['UserApiKey'];
 			};
 		};
 		responses: {
@@ -4150,7 +4542,16 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['ApiResponse_ApiKey'];
+					'application/json': components['schemas']['ApiResponse_UserApiKey'];
+				};
+			};
+			/** @description Not authorized to update this key */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
 				};
 			};
 			/** @description API key not found */
@@ -4164,19 +4565,19 @@ export interface operations {
 			};
 		};
 	};
-	delete_api_key: {
+	delete_user_api_key: {
 		parameters: {
 			query?: never;
 			header?: never;
 			path: {
-				/** @description ApiKey ID */
+				/** @description UserApiKey ID */
 				id: string;
 			};
 			cookie?: never;
 		};
 		requestBody?: never;
 		responses: {
-			/** @description ApiKey deleted */
+			/** @description UserApiKey deleted */
 			200: {
 				headers: {
 					[name: string]: unknown;
@@ -4185,7 +4586,7 @@ export interface operations {
 					'application/json': components['schemas']['ApiResponse'];
 				};
 			};
-			/** @description ApiKey not found */
+			/** @description UserApiKey not found */
 			404: {
 				headers: {
 					[name: string]: unknown;
@@ -4196,7 +4597,7 @@ export interface operations {
 			};
 		};
 	};
-	rotate_key_handler: {
+	rotate_user_api_key: {
 		parameters: {
 			query?: never;
 			header?: never;
@@ -4215,6 +4616,15 @@ export interface operations {
 				};
 				content: {
 					'application/json': components['schemas']['ApiResponse_String'];
+				};
+			};
+			/** @description Not authorized to rotate this key */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ApiErrorResponse'];
 				};
 			};
 			/** @description API key not found */

@@ -4,7 +4,7 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use crate::server::{
-    auth::middleware::auth::AuthenticatedEntity,
+    auth::middleware::auth::{AuthMethod, AuthenticatedEntity},
     invites::r#impl::base::Invite,
     shared::{
         entities::ChangeTriggersTopologyStaleness,
@@ -92,6 +92,7 @@ impl InviteService {
                 metadata: serde_json::json!({
                     "trigger_stale": trigger_stale
                 }),
+                auth_method: AuthMethod::System,
                 authentication: AuthenticatedEntity::System,
             })
             .await?;

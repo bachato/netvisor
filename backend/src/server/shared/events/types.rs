@@ -1,4 +1,7 @@
-use crate::server::{auth::middleware::auth::AuthenticatedEntity, shared::entities::Entity};
+use crate::server::{
+    auth::middleware::auth::{AuthMethod, AuthenticatedEntity},
+    shared::entities::Entity,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, net::IpAddr};
@@ -270,6 +273,37 @@ pub struct AuthEvent {
     pub user_agent: Option<String>,
     pub metadata: serde_json::Value,
     pub authentication: AuthenticatedEntity,
+    pub auth_method: AuthMethod,
+}
+
+impl AuthEvent {
+    /// Create a new AuthEvent, automatically deriving auth_method from authentication
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: Uuid,
+        user_id: Option<Uuid>,
+        organization_id: Option<Uuid>,
+        operation: AuthOperation,
+        timestamp: DateTime<Utc>,
+        ip_address: IpAddr,
+        user_agent: Option<String>,
+        metadata: serde_json::Value,
+        authentication: AuthenticatedEntity,
+    ) -> Self {
+        let auth_method = authentication.auth_method();
+        Self {
+            id,
+            user_id,
+            organization_id,
+            operation,
+            timestamp,
+            ip_address,
+            user_agent,
+            metadata,
+            authentication,
+            auth_method,
+        }
+    }
 }
 
 impl PartialEq for AuthEvent {
@@ -281,6 +315,7 @@ impl PartialEq for AuthEvent {
             && self.user_agent == other.user_agent
             && self.metadata == other.metadata
             && self.authentication == other.authentication
+            && self.auth_method == other.auth_method
     }
 }
 
@@ -326,7 +361,38 @@ pub struct EntityEvent {
     pub operation: EntityOperation,
     pub timestamp: DateTime<Utc>,
     pub authentication: AuthenticatedEntity,
+    pub auth_method: AuthMethod,
     pub metadata: serde_json::Value,
+}
+
+impl EntityEvent {
+    /// Create a new EntityEvent, automatically deriving auth_method from authentication
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: Uuid,
+        entity_type: Entity,
+        entity_id: Uuid,
+        network_id: Option<Uuid>,
+        organization_id: Option<Uuid>,
+        operation: EntityOperation,
+        timestamp: DateTime<Utc>,
+        authentication: AuthenticatedEntity,
+        metadata: serde_json::Value,
+    ) -> Self {
+        let auth_method = authentication.auth_method();
+        Self {
+            id,
+            entity_type,
+            entity_id,
+            network_id,
+            organization_id,
+            operation,
+            timestamp,
+            authentication,
+            auth_method,
+            metadata,
+        }
+    }
 }
 
 impl PartialEq for EntityEvent {
@@ -336,6 +402,7 @@ impl PartialEq for EntityEvent {
             && self.organization_id == other.organization_id
             && self.operation == other.operation
             && self.authentication == other.authentication
+            && self.auth_method == other.auth_method
             && self.metadata == other.metadata
     }
 }
@@ -382,7 +449,31 @@ pub struct TelemetryEvent {
     pub operation: TelemetryOperation,
     pub timestamp: DateTime<Utc>,
     pub authentication: AuthenticatedEntity,
+    pub auth_method: AuthMethod,
     pub metadata: serde_json::Value,
+}
+
+impl TelemetryEvent {
+    /// Create a new TelemetryEvent, automatically deriving auth_method from authentication
+    pub fn new(
+        id: Uuid,
+        organization_id: Uuid,
+        operation: TelemetryOperation,
+        timestamp: DateTime<Utc>,
+        authentication: AuthenticatedEntity,
+        metadata: serde_json::Value,
+    ) -> Self {
+        let auth_method = authentication.auth_method();
+        Self {
+            id,
+            organization_id,
+            operation,
+            timestamp,
+            authentication,
+            auth_method,
+            metadata,
+        }
+    }
 }
 
 impl Display for TelemetryEvent {

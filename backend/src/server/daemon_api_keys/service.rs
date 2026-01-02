@@ -1,11 +1,11 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use chrono::Utc;
 use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::server::{
-    auth::middleware::auth::{AuthenticatedEntity, AuthenticatedUser},
+    auth::middleware::auth::AuthenticatedEntity,
     daemon_api_keys::r#impl::base::DaemonApiKey,
     shared::{
         api_key_common::ApiKeyService,
@@ -74,6 +74,7 @@ impl CrudService<DaemonApiKey> for DaemonApiKeyService {
                     "trigger_stale": trigger_stale,
                     "suppress_logs": suppress_logs
                 }),
+                auth_method: authentication.auth_method(),
                 authentication,
             })
             .await?;
@@ -83,10 +84,13 @@ impl CrudService<DaemonApiKey> for DaemonApiKeyService {
 }
 
 // Re-export shared API key functions for backwards compatibility
-pub use crate::server::shared::api_key_common::{hash_api_key, ApiKeyType};
+pub use crate::server::shared::api_key_common::{ApiKeyType, hash_api_key};
 
 impl DaemonApiKeyService {
-    pub fn new(storage: Arc<GenericPostgresStorage<DaemonApiKey>>, event_bus: Arc<EventBus>) -> Self {
+    pub fn new(
+        storage: Arc<GenericPostgresStorage<DaemonApiKey>>,
+        event_bus: Arc<EventBus>,
+    ) -> Self {
         Self { storage, event_bus }
     }
 }
@@ -98,9 +102,9 @@ impl ApiKeyService for DaemonApiKeyService {
         &self.event_bus
     }
 
-    fn validate_access(&self, key: &DaemonApiKey, user: &AuthenticatedUser) -> Result<()> {
+    fn validate_access(&self, key: &DaemonApiKey, entity: &AuthenticatedEntity) -> Result<()> {
         // User must have access to the network this key belongs to
-        if !user.network_ids.contains(&key.base.network_id) {
+        if !entity.network_ids().contains(&key.base.network_id) {
             return Err(anyhow!(
                 "You don't have access to the network for this daemon API key"
             ));

@@ -17,6 +17,9 @@
 	} from '../queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
+	import type { TabProps } from '$lib/shared/types';
+
+	let { isReadOnly = false }: TabProps = $props();
 
 	// Queries
 	const tagsQuery = useTagsQuery();
@@ -113,9 +116,11 @@
 	<!-- Header -->
 	<TabHeader title="API Keys" subtitle="Manage Daemon API Keys">
 		<svelte:fragment slot="actions">
-			<button class="btn-primary flex items-center" onclick={handleCreateApiKey}
-				><Plus class="h-5 w-5" />Create Daemon API Key</button
-			>
+			{#if !isReadOnly}
+				<button class="btn-primary flex items-center" onclick={handleCreateApiKey}
+					><Plus class="h-5 w-5" />Create Daemon API Key</button
+				>
+			{/if}
 		</svelte:fragment>
 	</TabHeader>
 	<!-- Loading state -->
@@ -133,7 +138,7 @@
 		<DataControls
 			items={apiKeysData}
 			fields={apiKeyFields}
-			onBulkDelete={handleBulkDelete}
+			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
 			storageKey="scanopy-api-keys-table-state"
 			getItemId={(item) => item.id}
 		>
@@ -148,8 +153,8 @@
 					{viewMode}
 					selected={isSelected}
 					{onSelectionChange}
-					onDelete={handleDeleteApiKey}
-					onEdit={handleEditApiKey}
+					onDelete={isReadOnly ? undefined : handleDeleteApiKey}
+					onEdit={isReadOnly ? undefined : handleEditApiKey}
 				/>
 			{/snippet}
 		</DataControls>
