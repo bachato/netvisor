@@ -1,41 +1,47 @@
-use crate::server::{
-    auth::middleware::auth::AuthenticatedEntity, config::AppState, shared::types::api::ApiError,
-};
+use crate::server::config::AppState;
+#[cfg(not(feature = "generate-fixtures"))]
+use crate::server::{auth::middleware::auth::AuthenticatedEntity, shared::types::api::ApiError};
+#[cfg(not(feature = "generate-fixtures"))]
+use axum::{extract::FromRequestParts, response::IntoResponse};
 use axum::{
-    extract::{FromRequestParts, Request, State},
+    extract::{Request, State},
     middleware::Next,
-    response::{IntoResponse, Response},
+    response::Response,
 };
 use axum_client_ip::ClientIp;
+#[cfg(not(feature = "generate-fixtures"))]
 use governor::{
     Quota, RateLimiter,
     clock::{Clock, DefaultClock},
     state::keyed::DashMapStateStore,
 };
-use std::{
-    net::IpAddr,
-    num::NonZeroU32,
-    sync::{Arc, OnceLock},
-    time::Duration,
-};
+use std::sync::Arc;
+#[cfg(not(feature = "generate-fixtures"))]
+use std::{net::IpAddr, num::NonZeroU32, sync::OnceLock, time::Duration};
+#[cfg(not(feature = "generate-fixtures"))]
 use uuid::Uuid;
 
+#[cfg(not(feature = "generate-fixtures"))]
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub enum RateLimitKey {
     User(Uuid),
     Ip(IpAddr),
 }
 
+#[cfg(not(feature = "generate-fixtures"))]
 type KeyedRateLimiter =
     Arc<RateLimiter<RateLimitKey, DashMapStateStore<RateLimitKey>, DefaultClock>>;
 
+#[cfg(not(feature = "generate-fixtures"))]
 struct RateLimiters {
     user: KeyedRateLimiter,
     anonymous: KeyedRateLimiter,
 }
 
+#[cfg(not(feature = "generate-fixtures"))]
 static RATE_LIMITERS: OnceLock<RateLimiters> = OnceLock::new();
 
+#[cfg(not(feature = "generate-fixtures"))]
 fn get_limiters() -> &'static RateLimiters {
     RATE_LIMITERS.get_or_init(|| {
         let limiters = RateLimiters {
@@ -73,6 +79,7 @@ fn get_limiters() -> &'static RateLimiters {
     })
 }
 
+#[cfg(not(feature = "generate-fixtures"))]
 #[derive(Debug, Clone)]
 struct RateLimitInfo {
     limit: u32,
@@ -80,6 +87,7 @@ struct RateLimitInfo {
     reset_in_secs: u64,
 }
 
+#[cfg(not(feature = "generate-fixtures"))]
 impl RateLimitInfo {
     fn apply_headers(&self, response: &mut Response) {
         let headers = response.headers_mut();
@@ -111,6 +119,7 @@ impl RateLimitInfo {
     }
 }
 
+#[cfg(not(feature = "generate-fixtures"))]
 fn check_user(user_id: Uuid) -> Result<RateLimitInfo, RateLimitInfo> {
     let limiters = get_limiters();
     let key = RateLimitKey::User(user_id);
@@ -134,6 +143,7 @@ fn check_user(user_id: Uuid) -> Result<RateLimitInfo, RateLimitInfo> {
     }
 }
 
+#[cfg(not(feature = "generate-fixtures"))]
 fn check_anonymous(ip: IpAddr) -> Result<RateLimitInfo, RateLimitInfo> {
     let limiters = get_limiters();
     let key = RateLimitKey::Ip(ip);
@@ -166,7 +176,7 @@ pub async fn rate_limit_middleware(
     #[cfg(feature = "generate-fixtures")]
     {
         let _ = (state, ip);
-        return Ok(next.run(request).await);
+        Ok(next.run(request).await)
     }
 
     #[cfg(not(feature = "generate-fixtures"))]
