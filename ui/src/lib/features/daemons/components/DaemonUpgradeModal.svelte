@@ -27,9 +27,9 @@ docker compose up -d`;
 </script>
 
 <GenericModal {isOpen} title="Upgrade Daemon" size="lg" {onClose}>
-	<svelte:fragment slot="header-icon">
+	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={ArrowBigUpDash} color={colorHelper.color} />
-	</svelte:fragment>
+	{/snippet}
 
 	<div class="flex min-h-0 flex-1 flex-col">
 		<div class="flex-1 overflow-auto p-6">

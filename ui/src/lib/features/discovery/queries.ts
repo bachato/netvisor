@@ -14,7 +14,7 @@ export function useDiscoveriesQuery() {
 	return createQuery(() => ({
 		queryKey: queryKeys.discovery.all,
 		queryFn: async () => {
-			const { data } = await apiClient.GET('/api/discovery');
+			const { data } = await apiClient.GET('/api/v1/discovery');
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to fetch discoveries');
 			}
@@ -31,7 +31,7 @@ export function useCreateDiscoveryMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (discovery: Discovery) => {
-			const { data } = await apiClient.POST('/api/discovery', { body: discovery });
+			const { data } = await apiClient.POST('/api/v1/discovery', { body: discovery });
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to create discovery');
 			}
@@ -53,7 +53,7 @@ export function useUpdateDiscoveryMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (discovery: Discovery) => {
-			const { data } = await apiClient.PUT('/api/discovery/{id}', {
+			const { data } = await apiClient.PUT('/api/v1/discovery/{id}', {
 				params: { path: { id: discovery.id } },
 				body: discovery
 			});
@@ -79,7 +79,7 @@ export function useDeleteDiscoveryMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (id: string) => {
-			const { data } = await apiClient.DELETE('/api/discovery/{id}', {
+			const { data } = await apiClient.DELETE('/api/v1/discovery/{id}', {
 				params: { path: { id } }
 			});
 			if (!data?.success) {
@@ -104,7 +104,7 @@ export function useBulkDeleteDiscoveriesMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (ids: string[]) => {
-			const { data } = await apiClient.POST('/api/discovery/bulk-delete', { body: ids });
+			const { data } = await apiClient.POST('/api/v1/discovery/bulk-delete', { body: ids });
 			if (!data?.success) {
 				throw new Error(data?.error || 'Failed to delete discoveries');
 			}

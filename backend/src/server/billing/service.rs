@@ -701,10 +701,10 @@ impl BillingService {
             && organization.not_onboarded(&TelemetryOperation::CommercialPlanSelected)
             && organization.not_onboarded(&TelemetryOperation::PersonalPlanSelected)
         {
+            let authentication: AuthenticatedEntity = owner.clone().into();
             self.event_bus
                 .publish_telemetry(TelemetryEvent {
                     id: Uuid::new_v4(),
-                    authentication: owner.clone().into(),
                     organization_id: organization.id,
                     operation: TelemetryOperation::PlanSelected,
                     timestamp: Utc::now(),
@@ -713,6 +713,8 @@ impl BillingService {
                         "plan": plan.to_string(),
                         "is_commercial": plan.is_commercial()
                     }),
+
+                    authentication,
                 })
                 .await?;
         }

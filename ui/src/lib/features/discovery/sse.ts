@@ -10,7 +10,7 @@ export const sessions = writable<DiscoveryUpdatePayload[]>([]);
 export const cancelling = writable<Map<string, boolean>>(new Map());
 
 export async function getActiveSessions() {
-	const { data } = await apiClient.GET('/api/discovery/active-sessions', {});
+	const { data } = await apiClient.GET('/api/v1/discovery/active-sessions', {});
 	if (data?.success && data.data) {
 		sessions.set(data.data);
 	}
@@ -23,7 +23,7 @@ const lastProgress = new Map<string, number>();
 class DiscoverySSEManager extends BaseSSEManager<DiscoveryUpdatePayload> {
 	protected createConfig(): SSEConfig<DiscoveryUpdatePayload> {
 		return {
-			url: '/api/discovery/stream',
+			url: '/api/v1/discovery/stream',
 			onMessage: async (update) => {
 				// Check if discovered_count increased
 				const last = lastProgress.get(update.session_id) || 0;
@@ -101,7 +101,7 @@ class DiscoverySSEManager extends BaseSSEManager<DiscoveryUpdatePayload> {
 export const discoverySSEManager = new DiscoverySSEManager();
 
 export async function initiateDiscovery(discovery_id: string) {
-	const { data: result } = await apiClient.POST('/api/discovery/start-session', {
+	const { data: result } = await apiClient.POST('/api/v1/discovery/start-session', {
 		body: discovery_id
 	});
 
@@ -135,7 +135,7 @@ export async function cancelDiscovery(session_id: string) {
 	map.set(session_id, true);
 	cancelling.set(map);
 
-	const { data: result } = await apiClient.POST('/api/discovery/{session_id}/cancel', {
+	const { data: result } = await apiClient.POST('/api/v1/discovery/{session_id}/cancel', {
 		params: { path: { session_id } }
 	});
 

@@ -36,7 +36,7 @@ export function useTopologiesQuery() {
 	return createQuery(() => ({
 		queryKey: queryKeys.topology.all,
 		queryFn: async () => {
-			const { data } = await apiClient.GET('/api/topology');
+			const { data } = await apiClient.GET('/api/v1/topology');
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to fetch topologies');
 			}
@@ -56,7 +56,7 @@ export function useTopologyQuery(id: () => string | undefined) {
 			if (!topologyId) {
 				throw new Error('No topology ID provided');
 			}
-			const { data } = await apiClient.GET('/api/topology/{id}', {
+			const { data } = await apiClient.GET('/api/v1/topology/{id}', {
 				params: { path: { id: topologyId } }
 			});
 			if (!data?.success || !data.data) {
@@ -76,7 +76,7 @@ export function useCreateTopologyMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
-			const { data } = await apiClient.POST('/api/topology', { body: topology });
+			const { data } = await apiClient.POST('/api/v1/topology', { body: topology });
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to create topology');
 			}
@@ -97,7 +97,7 @@ export function useCreateTopologyMutation() {
 export function useUpdateTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
-			await apiClient.PUT('/api/topology/{id}', {
+			await apiClient.PUT('/api/v1/topology/{id}', {
 				params: { path: { id: topology.id } },
 				body: topology
 			});
@@ -114,7 +114,7 @@ export function useDeleteTopologyMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (id: string) => {
-			const { data } = await apiClient.DELETE('/api/topology/{id}', {
+			const { data } = await apiClient.DELETE('/api/v1/topology/{id}', {
 				params: { path: { id } }
 			});
 			if (!data?.success) {
@@ -138,7 +138,7 @@ export function useDeleteTopologyMutation() {
 export function useRefreshTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
-			await apiClient.POST('/api/topology/{id}/refresh', {
+			await apiClient.POST('/api/v1/topology/{id}/refresh', {
 				params: { path: { id: topology.id } },
 				body: topology
 			});
@@ -154,7 +154,7 @@ export function useRefreshTopologyMutation() {
 export function useRebuildTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
-			await apiClient.POST('/api/topology/{id}/rebuild', {
+			await apiClient.POST('/api/v1/topology/{id}/rebuild', {
 				params: { path: { id: topology.id } },
 				body: topology
 			});
@@ -171,9 +171,8 @@ export function useLockTopologyMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
-			const { data } = await apiClient.POST('/api/topology/{id}/lock', {
-				params: { path: { id: topology.id } },
-				body: topology
+			const { data } = await apiClient.POST('/api/v1/topology/{id}/lock', {
+				params: { path: { id: topology.id } }
 			});
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to lock topology');
@@ -197,9 +196,8 @@ export function useUnlockTopologyMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
-			const { data } = await apiClient.POST('/api/topology/{id}/unlock', {
-				params: { path: { id: topology.id } },
-				body: topology
+			const { data } = await apiClient.POST('/api/v1/topology/{id}/unlock', {
+				params: { path: { id: topology.id } }
 			});
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to unlock topology');

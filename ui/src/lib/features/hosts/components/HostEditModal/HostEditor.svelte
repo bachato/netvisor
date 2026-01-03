@@ -389,13 +389,12 @@
 	{activeTab}
 	onTabChange={(tabId) => (activeTab = tabId)}
 >
-	<!-- Header icon -->
-	<svelte:fragment slot="header-icon">
+	{#snippet headerIcon()}
 		<ModalHeaderIcon
 			Icon={entities.getIconComponent('Host')}
 			color={entities.getColorString('Host')}
 		/>
-	</svelte:fragment>
+	{/snippet}
 
 	<form
 		onsubmit={(e) => {

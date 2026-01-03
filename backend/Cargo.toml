@@ -188,6 +188,7 @@ tar = "0.4"
 testcontainers = "0.25.0"
 top-english-words = "1.1.1"
 comrak = "0.48.0"
+jsonschema = "0.29"
 
 [features]
 generate-fixtures = []

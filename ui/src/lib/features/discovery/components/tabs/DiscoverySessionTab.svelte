@@ -3,13 +3,16 @@
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
 	import type { FieldConfig } from '$lib/shared/components/data/types';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
-	import { getActiveSessions, sessions } from '../../sse';
+	import { getActiveSessions, sessions, cancelDiscovery } from '../../sse';
 	import DiscoverySessionCard from '../cards/DiscoverySessionCard.svelte';
 	import { type DiscoveryUpdatePayload } from '../../types/api';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import { onMount } from 'svelte';
+	import type { TabProps } from '$lib/shared/types';
+
+	let { isReadOnly = false }: TabProps = $props();
 
 	// Queries
 	const daemonsQuery = useDaemonsQuery();
@@ -30,6 +33,10 @@
 
 		return unsubscribe;
 	});
+
+	async function handleCancelDiscovery(sessionId: string) {
+		await cancelDiscovery(sessionId);
+	}
 
 	let discoveryFields = $derived.by((): FieldConfig<DiscoveryUpdatePayload>[] => [
 		{
@@ -106,7 +113,11 @@
 			getItemId={(item) => item.session_id}
 		>
 			{#snippet children(item: DiscoveryUpdatePayload, viewMode: 'card' | 'list')}
-				<DiscoverySessionCard session={item} {viewMode} />
+				<DiscoverySessionCard
+					session={item}
+					{viewMode}
+					onCancel={isReadOnly ? undefined : handleCancelDiscovery}
+				/>
 			{/snippet}
 		</DataControls>
 	{/if}

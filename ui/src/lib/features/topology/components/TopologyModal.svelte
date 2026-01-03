@@ -97,9 +97,9 @@
 </script>
 
 <GenericModal {isOpen} {title} size="md" {onClose} onOpen={handleOpen} showCloseButton={true}>
-	<svelte:fragment slot="header-icon">
+	{#snippet headerIcon()}
 		<ModalHeaderIcon {Icon} color={colorHelper.color} />
-	</svelte:fragment>
+	{/snippet}
 
 	<form
 		onsubmit={(e) => {

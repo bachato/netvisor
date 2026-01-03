@@ -107,7 +107,7 @@ export function useHostsQuery() {
 	return createQuery(() => ({
 		queryKey: queryKeys.hosts.all,
 		queryFn: async () => {
-			const { data } = await apiClient.GET('/api/hosts');
+			const { data } = await apiClient.GET('/api/v1/hosts');
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to fetch hosts');
 			}
@@ -138,7 +138,7 @@ export function useCreateHostMutation() {
 	return createMutation(() => ({
 		mutationFn: async (data: CreateHostWithServicesRequest) => {
 			const request = toCreateHostRequest(data.host);
-			const { data: result } = await apiClient.POST('/api/hosts', { body: request });
+			const { data: result } = await apiClient.POST('/api/v1/hosts', { body: request });
 			if (!result?.success || !result.data) {
 				throw new Error(result?.error || 'Failed to create host');
 			}
@@ -210,7 +210,7 @@ export function useUpdateHostMutation() {
 					: null
 			};
 
-			const { data: result } = await apiClient.PUT('/api/hosts/{id}', {
+			const { data: result } = await apiClient.PUT('/api/v1/hosts/{id}', {
 				params: { path: { id: data.host.id } },
 				body: request
 			});
@@ -239,13 +239,15 @@ export function useUpdateHostMutation() {
 				// Execute all service operations
 				const serviceResults = await Promise.all([
 					...toCreate.map((s) =>
-						apiClient.POST('/api/services', { body: { ...s, id: undefined } as unknown as Service })
+						apiClient.POST('/api/v1/services', {
+							body: { ...s, id: undefined } as unknown as Service
+						})
 					),
 					...toUpdate.map((s) =>
-						apiClient.PUT('/api/services/{id}', { params: { path: { id: s.id } }, body: s })
+						apiClient.PUT('/api/v1/services/{id}', { params: { path: { id: s.id } }, body: s })
 					),
 					...toDelete.map((s) =>
-						apiClient.DELETE('/api/services/{id}', { params: { path: { id: s.id } } })
+						apiClient.DELETE('/api/v1/services/{id}', { params: { path: { id: s.id } } })
 					)
 				]);
 
@@ -300,7 +302,7 @@ export function useDeleteHostMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (id: string) => {
-			const { data } = await apiClient.DELETE('/api/hosts/{id}', {
+			const { data } = await apiClient.DELETE('/api/v1/hosts/{id}', {
 				params: { path: { id } }
 			});
 			if (!data?.success) {
@@ -340,7 +342,7 @@ export function useBulkDeleteHostsMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (ids: string[]) => {
-			const { data } = await apiClient.POST('/api/hosts/bulk-delete', { body: ids });
+			const { data } = await apiClient.POST('/api/v1/hosts/bulk-delete', { body: ids });
 			if (!data?.success) {
 				throw new Error(data?.error || 'Failed to delete hosts');
 			}
@@ -390,7 +392,7 @@ export function useConsolidateHostsMutation() {
 			const otherHostName = hosts.find((h) => h.id === otherHostId)?.name;
 
 			const { data } = await apiClient.PUT(
-				'/api/hosts/{destination_host}/consolidate/{other_host}',
+				'/api/v1/hosts/{destination_host}/consolidate/{other_host}',
 				{
 					params: { path: { destination_host: destinationHostId, other_host: otherHostId } }
 				}

@@ -38,10 +38,10 @@
 	let {
 		host,
 		hostGroups = [],
-		onEdit = () => {},
-		onDelete = () => {},
-		onHide = () => {},
-		onConsolidate = () => {},
+		onEdit,
+		onDelete,
+		onHide,
+		onConsolidate,
 		viewMode,
 		selected,
 		onSelectionChange = () => {}
@@ -188,29 +188,31 @@
 				}
 			],
 			actions: [
-				{
-					label: 'Delete',
-					icon: Trash2,
-					class: 'btn-icon-danger',
-					onClick: () => onDelete(host),
-					disabled: hasDaemon
-				},
-				{
-					label: 'Consolidate',
-					icon: Replace,
-					onClick: () => onConsolidate(host)
-				},
-				{
-					label: 'Hide',
-					icon: Eye,
-					class: host.hidden ? 'text-blue-400' : '',
-					onClick: () => onHide(host)
-				},
-				{
-					label: 'Edit',
-					icon: Edit,
-					onClick: () => onEdit(host)
-				}
+				...(onDelete
+					? [
+							{
+								label: 'Delete',
+								icon: Trash2,
+								class: 'btn-icon-danger',
+								onClick: () => onDelete(host),
+								disabled: hasDaemon
+							}
+						]
+					: []),
+				...(onConsolidate
+					? [{ label: 'Consolidate', icon: Replace, onClick: () => onConsolidate(host) }]
+					: []),
+				...(onHide
+					? [
+							{
+								label: 'Hide',
+								icon: Eye,
+								class: host.hidden ? 'text-blue-400' : '',
+								onClick: () => onHide(host)
+							}
+						]
+					: []),
+				...(onEdit ? [{ label: 'Edit', icon: Edit, onClick: () => onEdit(host) }] : [])
 			]
 		};
 	});

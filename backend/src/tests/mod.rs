@@ -41,7 +41,7 @@ use std::sync::Arc;
 use testcontainers::{ContainerAsync, GenericImage, ImageExt, core::WaitFor, runners::AsyncRunner};
 use uuid::Uuid;
 
-pub mod daemon_compat;
+pub mod compat;
 pub mod dependencies;
 
 pub const DAEMON_CONFIG_FIXTURE: &str = "src/tests/daemon_config.json";

@@ -2,11 +2,11 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "Network topology discovery and visualization API",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.12.10\"\n  }\n}\n```\n\nError responses include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
-    "version": "0.12.8"
+    "version": "1"
   },
   "paths": {
     "/api/auth/daemon-setup": {
@@ -80,350 +80,6 @@
             }
           }
         }
-      }
-    },
-    "/api/auth/keys": {
-      "get": {
-        "tags": [
-          "api_keys"
-        ],
-        "summary": "List all api_keys",
-        "operationId": "list_api_keys",
-        "parameters": [
-          {
-            "name": "network_id",
-            "in": "query",
-            "description": "Filter by network ID",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of api_keys",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_Vec_ApiKey"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "session": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "api_keys"
-        ],
-        "summary": "Create API key",
-        "operationId": "create_api_key",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApiKey"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "API key created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_ApiKeyResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Insufficient permissions (admin+ required)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/auth/keys/bulk-delete": {
-      "post": {
-        "tags": [
-          "api_keys"
-        ],
-        "summary": "Bulk delete api_keys",
-        "operationId": "bulk_delete_api_keys",
-        "requestBody": {
-          "description": "Array of api_keys IDs to delete",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "ApiKeys deleted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/auth/keys/{id}": {
-      "get": {
-        "tags": [
-          "api_keys"
-        ],
-        "summary": "Get api_key by ID",
-        "operationId": "get_api_key_by_id",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ApiKey ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ApiKey found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_ApiKey"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "ApiKey not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "session": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "api_keys"
-        ],
-        "summary": "Update an API key",
-        "operationId": "update_api_key",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "API key ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApiKey"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "API key updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_ApiKey"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "API key not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "session": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "api_keys"
-        ],
-        "summary": "Delete api_key",
-        "operationId": "delete_api_key",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ApiKey ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ApiKey deleted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "ApiKey not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/auth/keys/{id}/rotate": {
-      "post": {
-        "tags": [
-          "api_keys"
-        ],
-        "summary": "Rotate an API key",
-        "operationId": "rotate_key_handler",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "API key ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "API key rotated, returns new key",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_String"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "API key not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "session": []
-          }
-        ]
       }
     },
     "/api/auth/login": {
@@ -786,7 +442,810 @@
         }
       }
     },
-    "/api/billing/checkout": {
+    "/api/config": {
+      "get": {
+        "tags": [
+          "config",
+          "internal"
+        ],
+        "summary": "Get public server configuration",
+        "description": "Returns public configuration settings like OIDC providers, billing status, etc.",
+        "operationId": "get_public_config",
+        "responses": {
+          "200": {
+            "description": "Public server configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_PublicConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/github-stars": {
+      "get": {
+        "tags": [
+          "github",
+          "internal"
+        ],
+        "summary": "Get GitHub star count",
+        "description": "Returns the current star count for the Scanopy GitHub repository.",
+        "operationId": "get_stars",
+        "responses": {
+          "200": {
+            "description": "GitHub star count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_u32"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metadata": {
+      "get": {
+        "tags": [
+          "internal",
+          "metadata"
+        ],
+        "summary": "Get metadata registry",
+        "description": "Returns metadata about all entity types, service definitions, and other system metadata.",
+        "operationId": "get_metadata_registry",
+        "responses": {
+          "200": {
+            "description": "Metadata registry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_MetadataRegistry"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/daemon": {
+      "get": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "List all daemon_api_keys",
+        "operationId": "list_daemon_api_keys",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of daemon_api_keys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_Vec_DaemonApiKey"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Create daemon API key",
+        "operationId": "create_daemon_api_key",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonApiKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Daemon API key created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_DaemonApiKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions (member+ required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/daemon/bulk-delete": {
+      "post": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Bulk delete daemon_api_keys",
+        "operationId": "bulk_delete_daemon_api_keys",
+        "requestBody": {
+          "description": "Array of daemon_api_keys IDs to delete",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "DaemonApiKeys deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/daemon/{id}": {
+      "get": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Get daemon_api_key by ID",
+        "operationId": "get_daemon_api_key_by_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "DaemonApiKey ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DaemonApiKey found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_DaemonApiKey"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "DaemonApiKey not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Update a daemon API key",
+        "operationId": "update_daemon_api_key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon API key ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonApiKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Daemon API key updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_DaemonApiKey"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Delete daemon_api_key",
+        "operationId": "delete_daemon_api_key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "DaemonApiKey ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DaemonApiKey deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "DaemonApiKey not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/daemon/{id}/rotate": {
+      "post": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Rotate a daemon API key",
+        "operationId": "rotate_key_handler",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon API key ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daemon API key rotated, returns new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_String"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/keys": {
+      "get": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Get all user API keys for the current user",
+        "operationId": "get_all_user_api_keys",
+        "responses": {
+          "200": {
+            "description": "List of user API keys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_Vec_UserApiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Create a new user API key",
+        "operationId": "create_user_api_key",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserApiKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "API key created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_UserApiKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid permissions or network access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/keys/bulk-delete": {
+      "post": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Bulk delete user API keys",
+        "operationId": "bulk_delete_user_api_keys",
+        "requestBody": {
+          "description": "Array of API key IDs to delete",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "API keys deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/keys/{id}": {
+      "get": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Get a user API key by ID",
+        "operationId": "get_user_api_key_by_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "API key ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API key found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_UserApiKey"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Update a user API key",
+        "operationId": "update_user_api_key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "API key ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserApiKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "API key updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_UserApiKey"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to update this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Delete a user API key",
+        "operationId": "delete_user_api_key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "API key ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API key deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/keys/{id}/rotate": {
+      "post": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Rotate a user API key",
+        "operationId": "rotate_user_api_key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "API key ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API key rotated, returns new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_String"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to rotate this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/billing/checkout": {
       "post": {
         "tags": [
           "billing",
@@ -828,12 +1287,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/billing/plans": {
+    "/api/v1/billing/plans": {
       "get": {
         "tags": [
           "billing",
@@ -865,12 +1327,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/billing/portal": {
+    "/api/v1/billing/portal": {
       "post": {
         "tags": [
           "billing",
@@ -912,12 +1377,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/billing/webhooks": {
+    "/api/v1/billing/webhooks": {
       "post": {
         "tags": [
           "billing",
@@ -950,7 +1418,7 @@
         }
       }
     },
-    "/api/bindings": {
+    "/api/v1/bindings": {
       "get": {
         "tags": [
           "bindings"
@@ -1025,6 +1493,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -1080,12 +1551,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/bindings/bulk-delete": {
+    "/api/v1/bindings/bulk-delete": {
       "post": {
         "tags": [
           "bindings"
@@ -1121,12 +1595,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/bindings/{id}": {
+    "/api/v1/bindings/{id}": {
       "get": {
         "tags": [
           "bindings"
@@ -1168,6 +1645,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -1236,6 +1716,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -1282,35 +1765,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/config": {
-      "get": {
-        "tags": [
-          "config",
-          "internal"
-        ],
-        "summary": "Get public server configuration",
-        "description": "Returns public configuration settings like OIDC providers, billing status, etc.",
-        "operationId": "get_public_config",
-        "responses": {
-          "200": {
-            "description": "Public server configuration",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_PublicConfigResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/daemons": {
+    "/api/v1/daemons": {
       "get": {
         "tags": [
           "daemons"
@@ -1332,12 +1795,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/daemons/bulk-delete": {
+    "/api/v1/daemons/bulk-delete": {
       "post": {
         "tags": [
           "daemons"
@@ -1373,60 +1839,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/daemons/register": {
-      "post": {
-        "tags": [
-          "daemons",
-          "internal"
-        ],
-        "summary": "Register a new daemon",
-        "description": "Internal endpoint for daemon self-registration. Creates a host entry\nand sets up default discovery jobs for the daemon.",
-        "operationId": "register_daemon",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DaemonRegistrationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Daemon registered successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_DaemonRegistrationResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Daemon registration disabled in demo mode",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api_key": []
-          }
-        ]
-      }
-    },
-    "/api/daemons/{id}": {
+    "/api/v1/daemons/{id}": {
       "get": {
         "tags": [
           "daemons"
@@ -1457,6 +1878,16 @@
               }
             }
           },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Daemon not found",
             "content": {
@@ -1469,6 +1900,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -1516,245 +1950,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/daemons/{id}/heartbeat": {
-      "post": {
-        "tags": [
-          "daemons",
-          "internal"
-        ],
-        "summary": "Receive daemon heartbeat",
-        "description": "Internal endpoint for daemons to send periodic heartbeats.\nUpdates the daemon's last_seen timestamp and current status.",
-        "operationId": "receive_heartbeat",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Daemon ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DaemonHeartbeatPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Heartbeat received",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Daemon not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api_key": []
-          }
-        ]
-      }
-    },
-    "/api/daemons/{id}/request-work": {
-      "post": {
-        "tags": [
-          "daemons",
-          "internal"
-        ],
-        "summary": "Request work from server",
-        "description": "Internal endpoint for daemons to poll for pending discovery sessions.\nAlso updates heartbeat and returns any pending cancellation requests.\nReturns tuple of (next_session, should_cancel).",
-        "operationId": "receive_work_request",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Daemon ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DaemonHeartbeatPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Work request processed - returns (Option<DiscoveryUpdatePayload>, bool)"
-          },
-          "404": {
-            "description": "Daemon not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api_key": []
-          }
-        ]
-      }
-    },
-    "/api/daemons/{id}/startup": {
-      "post": {
-        "tags": [
-          "daemons",
-          "internal"
-        ],
-        "summary": "Daemon startup handshake",
-        "description": "Internal endpoint for daemons to report their version on startup.\nUpdates the daemon's version and last_seen timestamp, returns server capabilities.",
-        "operationId": "daemon_startup",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Daemon ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DaemonStartupRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Startup acknowledged",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_ServerCapabilities"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Daemon not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api_key": []
-          }
-        ]
-      }
-    },
-    "/api/daemons/{id}/update-capabilities": {
-      "post": {
-        "tags": [
-          "daemons",
-          "internal"
-        ],
-        "summary": "Update daemon capabilities",
-        "description": "Internal endpoint for daemons to report their current capabilities.",
-        "operationId": "update_capabilities",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Daemon ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DaemonCapabilities"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Capabilities updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Daemon not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api_key": []
-          }
-        ]
-      }
-    },
-    "/api/discovery": {
+    "/api/v1/discovery": {
       "get": {
         "tags": [
           "discoveries"
@@ -1803,6 +2007,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -1847,12 +2054,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/discovery/active-sessions": {
+    "/api/v1/discovery/active-sessions": {
       "get": {
         "tags": [
           "discoveries"
@@ -1873,12 +2083,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/discovery/bulk-delete": {
+    "/api/v1/discovery/bulk-delete": {
       "post": {
         "tags": [
           "discoveries"
@@ -1914,12 +2127,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/discovery/start-session": {
+    "/api/v1/discovery/start-session": {
       "post": {
         "tags": [
           "discoveries"
@@ -1961,12 +2177,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/discovery/{id}": {
+    "/api/v1/discovery/{id}": {
       "get": {
         "tags": [
           "discoveries"
@@ -2008,6 +2227,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -2065,6 +2287,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -2111,12 +2336,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/discovery/{session_id}/cancel": {
+    "/api/v1/discovery/{session_id}/cancel": {
       "post": {
         "tags": [
           "discoveries"
@@ -2149,12 +2377,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/discovery/{session_id}/update": {
+    "/api/v1/discovery/{session_id}/update": {
       "post": {
         "tags": [
           "discovery",
@@ -2199,35 +2430,12 @@
         },
         "security": [
           {
-            "api_key": []
+            "daemon_api_key": []
           }
         ]
       }
     },
-    "/api/github-stars": {
-      "get": {
-        "tags": [
-          "github",
-          "internal"
-        ],
-        "summary": "Get GitHub star count",
-        "description": "Returns the current star count for the Scanopy GitHub repository.",
-        "operationId": "get_stars",
-        "responses": {
-          "200": {
-            "description": "GitHub star count",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_u32"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/groups": {
+    "/api/v1/groups": {
       "get": {
         "tags": [
           "groups"
@@ -2262,6 +2470,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -2307,12 +2518,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/groups/bulk-delete": {
+    "/api/v1/groups/bulk-delete": {
       "post": {
         "tags": [
           "groups"
@@ -2348,12 +2562,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/groups/{id}": {
+    "/api/v1/groups/{id}": {
       "get": {
         "tags": [
           "groups"
@@ -2395,6 +2612,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -2462,6 +2682,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -2508,12 +2731,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/hosts": {
+    "/api/v1/hosts": {
       "get": {
         "tags": [
           "hosts"
@@ -2534,6 +2760,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -2591,11 +2820,17 @@
         "security": [
           {
             "session": []
+          },
+          {
+            "user_api_key": []
+          },
+          {
+            "daemon_api_key": []
           }
         ]
       }
     },
-    "/api/hosts/bulk-delete": {
+    "/api/v1/hosts/bulk-delete": {
       "post": {
         "tags": [
           "hosts"
@@ -2642,12 +2877,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/hosts/discovery": {
+    "/api/v1/hosts/discovery": {
       "post": {
         "tags": [
           "hosts",
@@ -2690,12 +2928,12 @@
         },
         "security": [
           {
-            "api_key": []
+            "daemon_api_key": []
           }
         ]
       }
     },
-    "/api/hosts/{destination_host}/consolidate/{other_host}": {
+    "/api/v1/hosts/{destination_host}/consolidate/{other_host}": {
       "put": {
         "tags": [
           "hosts"
@@ -2759,12 +2997,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/hosts/{id}": {
+    "/api/v1/hosts/{id}": {
       "get": {
         "tags": [
           "hosts"
@@ -2807,6 +3048,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -2875,6 +3119,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -2932,12 +3179,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/interfaces": {
+    "/api/v1/interfaces": {
       "get": {
         "tags": [
           "interfaces"
@@ -2999,6 +3249,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -3043,12 +3296,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/interfaces/bulk-delete": {
+    "/api/v1/interfaces/bulk-delete": {
       "post": {
         "tags": [
           "interfaces"
@@ -3093,12 +3349,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/interfaces/{id}": {
+    "/api/v1/interfaces/{id}": {
       "get": {
         "tags": [
           "interfaces"
@@ -3140,6 +3399,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -3207,6 +3469,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -3253,12 +3518,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/invites": {
+    "/api/v1/invites": {
       "get": {
         "tags": [
           "invites"
@@ -3278,6 +3546,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -3323,12 +3594,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/invites/{id}": {
+    "/api/v1/invites/{id}": {
       "get": {
         "tags": [
           "invites"
@@ -3367,16 +3641,29 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
         ]
       }
     },
-    "/api/invites/{id}/revoke": {
+    "/api/v1/invites/{id}/revoke": {
       "delete": {
         "tags": [
           "invites"
@@ -3429,35 +3716,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/metadata": {
-      "get": {
-        "tags": [
-          "internal",
-          "metadata"
-        ],
-        "summary": "Get metadata registry",
-        "description": "Returns metadata about all entity types, service definitions, and other system metadata.",
-        "operationId": "get_metadata_registry",
-        "responses": {
-          "200": {
-            "description": "Metadata registry",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_MetadataRegistry"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/networks": {
+    "/api/v1/networks": {
       "get": {
         "tags": [
           "networks"
@@ -3478,6 +3745,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -3513,12 +3783,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/networks/bulk-delete": {
+    "/api/v1/networks/bulk-delete": {
       "post": {
         "tags": [
           "networks"
@@ -3564,12 +3837,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/networks/{id}": {
+    "/api/v1/networks/{id}": {
       "get": {
         "tags": [
           "networks"
@@ -3611,6 +3887,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -3678,6 +3957,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -3734,12 +4016,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/organizations": {
+    "/api/v1/organizations": {
       "get": {
         "tags": [
           "organizations"
@@ -3775,7 +4060,7 @@
         ]
       }
     },
-    "/api/organizations/{id}": {
+    "/api/v1/organizations/{id}": {
       "put": {
         "tags": [
           "organizations"
@@ -3838,12 +4123,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/organizations/{id}/populate-demo": {
+    "/api/v1/organizations/{id}/populate-demo": {
       "post": {
         "tags": [
           "organizations",
@@ -3897,12 +4185,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/organizations/{id}/reset": {
+    "/api/v1/organizations/{id}/reset": {
       "post": {
         "tags": [
           "organizations",
@@ -3956,12 +4247,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/ports": {
+    "/api/v1/ports": {
       "get": {
         "tags": [
           "ports"
@@ -4010,6 +4304,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -4054,12 +4351,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/ports/bulk-delete": {
+    "/api/v1/ports/bulk-delete": {
       "post": {
         "tags": [
           "ports"
@@ -4095,12 +4395,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/ports/{id}": {
+    "/api/v1/ports/{id}": {
       "get": {
         "tags": [
           "ports"
@@ -4142,6 +4445,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -4209,6 +4515,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -4255,12 +4564,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/services": {
+    "/api/v1/services": {
       "get": {
         "tags": [
           "services"
@@ -4309,6 +4621,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -4354,12 +4669,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/services/bulk-delete": {
+    "/api/v1/services/bulk-delete": {
       "post": {
         "tags": [
           "services"
@@ -4395,12 +4713,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/services/{id}": {
+    "/api/v1/services/{id}": {
       "get": {
         "tags": [
           "services"
@@ -4442,6 +4763,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -4510,6 +4834,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -4556,12 +4883,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/shares": {
+    "/api/v1/shares": {
       "get": {
         "tags": [
           "shares"
@@ -4610,6 +4940,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -4654,12 +4987,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/shares/bulk-delete": {
+    "/api/v1/shares/bulk-delete": {
       "post": {
         "tags": [
           "shares"
@@ -4695,12 +5031,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/shares/public/{id}": {
+    "/api/v1/shares/public/{id}": {
       "get": {
         "tags": [
           "shares"
@@ -4744,7 +5083,7 @@
         }
       }
     },
-    "/api/shares/public/{id}/verify": {
+    "/api/v1/shares/public/{id}/verify": {
       "post": {
         "tags": [
           "shares",
@@ -4808,7 +5147,7 @@
         }
       }
     },
-    "/api/shares/{id}": {
+    "/api/v1/shares/{id}": {
       "get": {
         "tags": [
           "shares"
@@ -4850,6 +5189,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -4907,6 +5249,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -4953,17 +5298,21 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/subnets": {
+    "/api/v1/subnets": {
       "get": {
         "tags": [
           "subnets"
         ],
         "summary": "List all subnets",
+        "description": "Returns all subnets accessible to the authenticated user or daemon.\nDaemons can only access subnets within their assigned network.",
         "operationId": "list_subnets",
         "parameters": [
           {
@@ -4995,6 +5344,12 @@
         "security": [
           {
             "session": []
+          },
+          {
+            "user_api_key": []
+          },
+          {
+            "daemon_api_key": []
           }
         ]
       },
@@ -5039,11 +5394,17 @@
         "security": [
           {
             "session": []
+          },
+          {
+            "user_api_key": []
+          },
+          {
+            "daemon_api_key": []
           }
         ]
       }
     },
-    "/api/subnets/bulk-delete": {
+    "/api/v1/subnets/bulk-delete": {
       "post": {
         "tags": [
           "subnets"
@@ -5079,12 +5440,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/subnets/{id}": {
+    "/api/v1/subnets/{id}": {
       "get": {
         "tags": [
           "subnets"
@@ -5126,6 +5490,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -5194,6 +5561,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -5240,12 +5610,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/tags": {
+    "/api/v1/tags": {
       "get": {
         "tags": [
           "tags"
@@ -5266,6 +5639,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -5322,12 +5698,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/tags/bulk-delete": {
+    "/api/v1/tags/bulk-delete": {
       "post": {
         "tags": [
           "tags"
@@ -5363,12 +5742,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/tags/{id}": {
+    "/api/v1/tags/{id}": {
       "get": {
         "tags": [
           "tags"
@@ -5410,6 +5792,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -5467,6 +5852,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -5513,12 +5901,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/topology": {
+    "/api/v1/topology": {
       "get": {
         "tags": [
           "topology",
@@ -5539,6 +5930,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -5585,12 +5979,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/topology/{id}": {
+    "/api/v1/topology/{id}": {
       "get": {
         "tags": [
           "topology"
@@ -5632,6 +6029,9 @@
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -5689,6 +6089,9 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
@@ -5735,12 +6138,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/topology/{id}/lock": {
+    "/api/v1/topology/{id}/lock": {
       "post": {
         "tags": [
           "topology"
@@ -5759,16 +6165,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Topology"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "description": "Topology locked",
@@ -5779,16 +6175,39 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Topology not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
         ]
       }
     },
-    "/api/topology/{id}/rebuild": {
+    "/api/v1/topology/{id}/rebuild": {
       "post": {
         "tags": [
           "topology",
@@ -5828,16 +6247,29 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
         ]
       }
     },
-    "/api/topology/{id}/refresh": {
+    "/api/v1/topology/{id}/refresh": {
       "post": {
         "tags": [
           "topology",
@@ -5877,16 +6309,29 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
         ]
       }
     },
-    "/api/topology/{id}/unlock": {
+    "/api/v1/topology/{id}/unlock": {
       "post": {
         "tags": [
           "topology"
@@ -5905,16 +6350,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Topology"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "description": "Topology unlocked",
@@ -5925,16 +6360,39 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Topology not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
         ]
       }
     },
-    "/api/users": {
+    "/api/v1/users": {
       "get": {
         "tags": [
           "users"
@@ -5955,12 +6413,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/users/bulk-delete": {
+    "/api/v1/users/bulk-delete": {
       "post": {
         "tags": [
           "users"
@@ -6006,12 +6467,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/users/{id}": {
+    "/api/v1/users/{id}": {
       "get": {
         "tags": [
           "users"
@@ -6037,6 +6501,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse_User"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -6187,12 +6661,15 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
       }
     },
-    "/api/users/{id}/admin": {
+    "/api/v1/users/{id}/admin": {
       "put": {
         "tags": [
           "users",
@@ -6256,9 +6733,33 @@
         },
         "security": [
           {
+            "user_api_key": []
+          },
+          {
             "session": []
           }
         ]
+      }
+    },
+    "/api/version": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Get API version information",
+        "operationId": "get_version",
+        "responses": {
+          "200": {
+            "description": "Version information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_VersionInfo"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -6282,105 +6783,32 @@
           }
         }
       },
-      "ApiKey": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ApiKeyBase"
-          },
-          {
-            "type": "object",
-            "required": [
-              "id",
-              "updated_at",
-              "created_at"
-            ],
-            "properties": {
-              "created_at": {
-                "type": "string",
-                "format": "date-time",
-                "readOnly": true
-              },
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "readOnly": true
-              },
-              "updated_at": {
-                "type": "string",
-                "format": "date-time",
-                "readOnly": true
-              }
-            }
-          }
-        ]
-      },
-      "ApiKeyBase": {
+      "ApiMeta": {
         "type": "object",
+        "description": "API version metadata included in all responses",
         "required": [
-          "key",
-          "name",
-          "last_used",
-          "network_id",
-          "tags"
+          "api_version",
+          "server_version"
         ],
         "properties": {
-          "expires_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
+          "api_version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "API version (integer, increments on breaking changes)",
+            "minimum": 0
           },
-          "is_enabled": {
-            "type": "boolean"
-          },
-          "key": {
+          "server_version": {
             "type": "string",
-            "readOnly": true
-          },
-          "last_used": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "readOnly": true
-          },
-          "name": {
-            "type": "string"
-          },
-          "network_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        }
-      },
-      "ApiKeyResponse": {
-        "type": "object",
-        "required": [
-          "api_key",
-          "key"
-        ],
-        "properties": {
-          "api_key": {
-            "$ref": "#/components/schemas/ApiKey"
-          },
-          "key": {
-            "type": "string"
+            "description": "Server version (semver)",
+            "example": "0.12.10"
           }
         }
       },
       "ApiResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -6399,86 +6827,8 @@
               "null"
             ]
           },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ApiResponse_ApiKey": {
-        "type": "object",
-        "required": [
-          "success"
-        ],
-        "properties": {
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ApiKeyBase"
-              },
-              {
-                "type": "object",
-                "required": [
-                  "id",
-                  "updated_at",
-                  "created_at"
-                ],
-                "properties": {
-                  "created_at": {
-                    "type": "string",
-                    "format": "date-time",
-                    "readOnly": true
-                  },
-                  "id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "readOnly": true
-                  },
-                  "updated_at": {
-                    "type": "string",
-                    "format": "date-time",
-                    "readOnly": true
-                  }
-                }
-              }
-            ]
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ApiResponse_ApiKeyResponse": {
-        "type": "object",
-        "required": [
-          "success"
-        ],
-        "properties": {
-          "data": {
-            "type": "object",
-            "required": [
-              "api_key",
-              "key"
-            ],
-            "properties": {
-              "api_key": {
-                "$ref": "#/components/schemas/ApiKey"
-              },
-              "key": {
-                "type": "string"
-              }
-            }
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
           },
           "success": {
             "type": "boolean"
@@ -6488,7 +6838,8 @@
       "ApiResponse_Binding": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -6524,14 +6875,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2025-12-31T03:32:31.295101Z",
-              "id": "83364544-6c3e-4733-a28e-c33207dea74a",
+              "created_at": "2026-01-03T18:56:56.405483Z",
+              "id": "6572662d-2700-4509-8430-a05b7f248db4",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2025-12-31T03:32:31.295101Z"
+              "updated_at": "2026-01-03T18:56:56.405483Z"
             }
           },
           "error": {
@@ -6539,6 +6890,9 @@
               "string",
               "null"
             ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
           },
           "success": {
             "type": "boolean"
@@ -6548,7 +6902,8 @@
       "ApiResponse_BulkDeleteResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -6574,42 +6929,86 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
         }
       },
-      "ApiResponse_DaemonRegistrationResponse": {
+      "ApiResponse_DaemonApiKey": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DaemonApiKeyBase"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "updated_at",
+                  "created_at"
+                ],
+                "properties": {
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  }
+                }
+              }
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_DaemonApiKeyResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
             "type": "object",
-            "description": "Daemon registration response from server to daemon",
             "required": [
-              "daemon",
-              "host_id"
+              "api_key",
+              "key"
             ],
             "properties": {
-              "daemon": {
-                "$ref": "#/components/schemas/Daemon"
+              "api_key": {
+                "$ref": "#/components/schemas/DaemonApiKey"
               },
-              "host_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "server_capabilities": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/ServerCapabilities",
-                    "description": "Server capabilities (returned if daemon sends version info)"
-                  }
-                ]
+              "key": {
+                "type": "string"
               }
             }
           },
@@ -6619,6 +7018,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -6627,7 +7029,8 @@
       "ApiResponse_DaemonResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -6671,6 +7074,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -6679,7 +7085,8 @@
       "ApiResponse_DaemonSetupResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -6700,6 +7107,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -6708,7 +7118,8 @@
       "ApiResponse_Discovery": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -6749,6 +7160,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -6757,7 +7171,8 @@
       "ApiResponse_DiscoveryUpdatePayload": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -6823,6 +7238,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -6831,7 +7249,8 @@
       "ApiResponse_Group": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -6888,6 +7307,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -6896,7 +7318,8 @@
       "ApiResponse_HostResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7038,6 +7461,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7046,7 +7472,8 @@
       "ApiResponse_Interface": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7099,6 +7526,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7107,7 +7537,8 @@
       "ApiResponse_Invite": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7148,6 +7579,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7156,7 +7590,8 @@
       "ApiResponse_MetadataRegistry": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7249,6 +7684,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7257,7 +7695,8 @@
       "ApiResponse_Network": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7306,6 +7745,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7314,7 +7756,8 @@
       "ApiResponse_Organization": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7355,6 +7798,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7363,7 +7809,8 @@
       "ApiResponse_Port": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7415,6 +7862,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7423,7 +7873,8 @@
       "ApiResponse_PublicConfigResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7496,6 +7947,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7504,7 +7958,8 @@
       "ApiResponse_PublicShareMetadata": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7538,47 +7993,8 @@
               "null"
             ]
           },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ApiResponse_ServerCapabilities": {
-        "type": "object",
-        "required": [
-          "success"
-        ],
-        "properties": {
-          "data": {
-            "type": "object",
-            "description": "Server capabilities returned on startup/registration",
-            "required": [
-              "server_version",
-              "minimum_daemon_version"
-            ],
-            "properties": {
-              "deprecation_warnings": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/DeprecationWarning"
-                },
-                "description": "Deprecation warnings for the daemon"
-              },
-              "minimum_daemon_version": {
-                "type": "string",
-                "description": "Minimum daemon version supported by this server"
-              },
-              "server_version": {
-                "type": "string",
-                "description": "Server software version"
-              }
-            }
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
           },
           "success": {
             "type": "boolean"
@@ -7588,7 +8004,8 @@
       "ApiResponse_Service": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7625,14 +8042,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2025-12-31T03:32:31.291226Z",
-                  "id": "3a7140ad-4b1e-489b-84f8-18829fb4e46b",
+                  "created_at": "2026-01-03T18:56:56.400921Z",
+                  "id": "5abe99fd-205b-48a5-beaf-be44ab5b38d7",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2025-12-31T03:32:31.291226Z"
+                  "updated_at": "2026-01-03T18:56:56.400921Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -7640,7 +8057,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
-              "service_definition": "Homepage",
+              "service_definition": "Netdata",
               "source": {
                 "type": "Manual"
               },
@@ -7655,6 +8072,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7663,7 +8083,8 @@
       "ApiResponse_SetupResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7688,6 +8109,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7696,7 +8120,8 @@
       "ApiResponse_Share": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7737,6 +8162,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7745,7 +8173,8 @@
       "ApiResponse_String": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7757,6 +8186,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7765,7 +8197,8 @@
       "ApiResponse_Subnet": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7820,6 +8253,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7828,7 +8264,8 @@
       "ApiResponse_Tag": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7878,6 +8315,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7886,7 +8326,8 @@
       "ApiResponse_Topology": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7927,6 +8368,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -7935,7 +8379,8 @@
       "ApiResponse_User": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -7976,50 +8421,89 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
         }
       },
-      "ApiResponse_Vec_ApiKey": {
+      "ApiResponse_UserApiKey": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
-            "type": "array",
-            "items": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/ApiKeyBase"
-                },
-                {
-                  "type": "object",
-                  "required": [
-                    "id",
-                    "updated_at",
-                    "created_at"
-                  ],
-                  "properties": {
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "readOnly": true
-                    },
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "readOnly": true
-                    },
-                    "updated_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "readOnly": true
-                    }
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserApiKeyBase"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "updated_at",
+                  "created_at"
+                ],
+                "properties": {
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
                   }
                 }
-              ]
+              }
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_UserApiKeyResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Response for user API key creation/rotation\nContains the full API key record plus the plaintext key (shown only once)",
+            "required": [
+              "api_key",
+              "key"
+            ],
+            "properties": {
+              "api_key": {
+                "$ref": "#/components/schemas/UserApiKey"
+              },
+              "key": {
+                "type": "string",
+                "description": "The plaintext API key - only returned once during creation or rotation"
+              }
             }
           },
           "error": {
@@ -8027,6 +8511,9 @@
               "string",
               "null"
             ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
           },
           "success": {
             "type": "boolean"
@@ -8036,7 +8523,8 @@
       "ApiResponse_Vec_BillingPlan": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8220,6 +8708,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8228,7 +8719,8 @@
       "ApiResponse_Vec_Binding": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8266,14 +8758,14 @@
               ],
               "description": "Association between a service and a port / interface that the service is listening on",
               "example": {
-                "created_at": "2025-12-31T03:32:31.294878Z",
-                "id": "e1530ec0-7249-4441-9896-75c0fc3a0759",
+                "created_at": "2026-01-03T18:56:56.405103Z",
+                "id": "9bf9f4f9-8c0a-46f2-8440-fc60fa36e494",
                 "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "port_id": "550e8400-e29b-41d4-a716-446655440006",
                 "service_id": "550e8400-e29b-41d4-a716-446655440007",
                 "type": "Port",
-                "updated_at": "2025-12-31T03:32:31.294878Z"
+                "updated_at": "2026-01-03T18:56:56.405103Z"
               }
             }
           },
@@ -8283,6 +8775,65 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_Vec_DaemonApiKey": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/DaemonApiKeyBase"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "updated_at",
+                    "created_at"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "readOnly": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8291,7 +8842,8 @@
       "ApiResponse_Vec_DaemonResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8338,6 +8890,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8346,7 +8901,8 @@
       "ApiResponse_Vec_Discovery": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8390,6 +8946,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8398,7 +8957,8 @@
       "ApiResponse_Vec_DiscoveryUpdatePayload": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8467,6 +9027,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8475,7 +9038,8 @@
       "ApiResponse_Vec_Group": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8535,6 +9099,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8543,7 +9110,8 @@
       "ApiResponse_Vec_HostResponse": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8688,6 +9256,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8696,7 +9267,8 @@
       "ApiResponse_Vec_Interface": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8752,6 +9324,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8760,7 +9335,8 @@
       "ApiResponse_Vec_Invite": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8804,6 +9380,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8812,7 +9391,8 @@
       "ApiResponse_Vec_Network": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8864,6 +9444,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8872,7 +9455,8 @@
       "ApiResponse_Vec_Port": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8927,6 +9511,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -8935,7 +9522,8 @@
       "ApiResponse_Vec_Service": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -8974,14 +9562,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2025-12-31T03:32:31.290307Z",
-                    "id": "44d3b000-e5fc-4130-aebb-3d877051dda7",
+                    "created_at": "2026-01-03T18:56:56.399542Z",
+                    "id": "80231175-e526-4f63-85fe-1b5f86131d5a",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2025-12-31T03:32:31.290307Z"
+                    "updated_at": "2026-01-03T18:56:56.399542Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -8989,7 +9577,7 @@
                 "id": "550e8400-e29b-41d4-a716-446655440007",
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
-                "service_definition": "Homepage",
+                "service_definition": "Netdata",
                 "source": {
                   "type": "Manual"
                 },
@@ -9005,6 +9593,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -9013,7 +9604,8 @@
       "ApiResponse_Vec_Share": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -9057,6 +9649,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -9065,7 +9660,8 @@
       "ApiResponse_Vec_Subnet": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -9123,6 +9719,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -9131,7 +9730,8 @@
       "ApiResponse_Vec_Tag": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -9184,6 +9784,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -9192,7 +9795,8 @@
       "ApiResponse_Vec_Topology": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -9236,6 +9840,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -9244,7 +9851,8 @@
       "ApiResponse_Vec_User": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -9288,6 +9896,114 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_Vec_UserApiKey": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/UserApiKeyBase"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "updated_at",
+                    "created_at"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "readOnly": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_VersionInfo": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Version information for API compatibility checking",
+            "required": [
+              "api_version",
+              "server_version"
+            ],
+            "properties": {
+              "api_version": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Current API version (integer, increments on breaking changes)",
+                "minimum": 0
+              },
+              "min_compatible_client": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Minimum client version that can use this API (optional, for future use)"
+              },
+              "server_version": {
+                "type": "string",
+                "description": "Server version (semver)",
+                "example": "0.12.10"
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -9296,7 +10012,8 @@
       "ApiResponse_bool": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -9308,6 +10025,9 @@
               "null"
             ]
           },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
           "success": {
             "type": "boolean"
           }
@@ -9316,7 +10036,8 @@
       "ApiResponse_u32": {
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "meta"
         ],
         "properties": {
           "data": {
@@ -9329,6 +10050,9 @@
               "string",
               "null"
             ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
           },
           "success": {
             "type": "boolean"
@@ -9547,14 +10271,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2025-12-31T03:32:31.280768Z",
-          "id": "22590fab-3bfb-49c4-bc92-291ef33b8f49",
+          "created_at": "2026-01-03T18:56:56.389936Z",
+          "id": "17df1678-3597-4598-84e7-16eccd01e1c3",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2025-12-31T03:32:31.280768Z"
+          "updated_at": "2026-01-03T18:56:56.389936Z"
         }
       },
       "BindingBase": {
@@ -9982,10 +10706,10 @@
           }
         }
       },
-      "Daemon": {
+      "DaemonApiKey": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/DaemonBase"
+            "$ref": "#/components/schemas/DaemonApiKeyBase"
           },
           {
             "type": "object",
@@ -10014,6 +10738,69 @@
           }
         ]
       },
+      "DaemonApiKeyBase": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "last_used",
+          "network_id",
+          "tags"
+        ],
+        "properties": {
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "is_enabled": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_used": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "DaemonApiKeyResponse": {
+        "type": "object",
+        "required": [
+          "api_key",
+          "key"
+        ],
+        "properties": {
+          "api_key": {
+            "$ref": "#/components/schemas/DaemonApiKey"
+          },
+          "key": {
+            "type": "string"
+          }
+        }
+      },
       "DaemonBase": {
         "type": "object",
         "required": [
@@ -10040,11 +10827,6 @@
             "format": "date-time",
             "readOnly": true
           },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User responsible for maintaining this daemon"
-          },
           "mode": {
             "$ref": "#/components/schemas/DaemonMode"
           },
@@ -10065,6 +10847,11 @@
           "url": {
             "type": "string",
             "readOnly": true
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User responsible for maintaining this daemon"
           },
           "version": {
             "type": [
@@ -10094,105 +10881,12 @@
           }
         }
       },
-      "DaemonHeartbeatPayload": {
-        "type": "object",
-        "required": [
-          "url",
-          "name",
-          "mode"
-        ],
-        "properties": {
-          "mode": {
-            "$ref": "#/components/schemas/DaemonMode"
-          },
-          "name": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          }
-        }
-      },
       "DaemonMode": {
         "type": "string",
         "enum": [
           "Push",
           "Pull"
         ]
-      },
-      "DaemonRegistrationRequest": {
-        "type": "object",
-        "description": "Daemon registration request from daemon to server",
-        "required": [
-          "daemon_id",
-          "network_id",
-          "name",
-          "url",
-          "mode",
-          "capabilities"
-        ],
-        "properties": {
-          "capabilities": {
-            "$ref": "#/components/schemas/DaemonCapabilities"
-          },
-          "daemon_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User responsible for maintaining this daemon (from frontend install command)\nOptional for backwards compat with old daemons - defaults to nil UUID"
-          },
-          "mode": {
-            "$ref": "#/components/schemas/DaemonMode"
-          },
-          "name": {
-            "type": "string"
-          },
-          "network_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "url": {
-            "type": "string"
-          },
-          "version": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Daemon software version (optional for backwards compat with old daemons)"
-          }
-        }
-      },
-      "DaemonRegistrationResponse": {
-        "type": "object",
-        "description": "Daemon registration response from server to daemon",
-        "required": [
-          "daemon",
-          "host_id"
-        ],
-        "properties": {
-          "daemon": {
-            "$ref": "#/components/schemas/Daemon"
-          },
-          "host_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "server_capabilities": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/ServerCapabilities",
-                "description": "Server capabilities (returned if daemon sends version info)"
-              }
-            ]
-          }
-        }
       },
       "DaemonResponse": {
         "allOf": [
@@ -10258,19 +10952,6 @@
               "string",
               "null"
             ]
-          }
-        }
-      },
-      "DaemonStartupRequest": {
-        "type": "object",
-        "description": "Sent by daemon on startup to report version",
-        "required": [
-          "daemon_version"
-        ],
-        "properties": {
-          "daemon_version": {
-            "type": "string",
-            "description": "Daemon software version (semver format)"
           }
         }
       },
@@ -12329,31 +13010,6 @@
           }
         ]
       },
-      "ServerCapabilities": {
-        "type": "object",
-        "description": "Server capabilities returned on startup/registration",
-        "required": [
-          "server_version",
-          "minimum_daemon_version"
-        ],
-        "properties": {
-          "deprecation_warnings": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DeprecationWarning"
-            },
-            "description": "Deprecation warnings for the daemon"
-          },
-          "minimum_daemon_version": {
-            "type": "string",
-            "description": "Minimum daemon version supported by this server"
-          },
-          "server_version": {
-            "type": "string",
-            "description": "Server software version"
-          }
-        }
-      },
       "Service": {
         "allOf": [
           {
@@ -12388,14 +13044,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2025-12-31T03:32:31.280721Z",
-              "id": "6dfab92a-28d4-49b6-9b8c-b4fcc894a275",
+              "created_at": "2026-01-03T18:56:56.389831Z",
+              "id": "04708141-fe1d-49c3-90e4-9c4fd99c1318",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2025-12-31T03:32:31.280721Z"
+              "updated_at": "2026-01-03T18:56:56.389831Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -12403,7 +13059,7 @@
           "id": "550e8400-e29b-41d4-a716-446655440007",
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
-          "service_definition": "Homepage",
+          "service_definition": "Netdata",
           "source": {
             "type": "Manual"
           },
@@ -13398,6 +14054,119 @@
           }
         ]
       },
+      "UserApiKey": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserApiKeyBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "updated_at",
+              "created_at"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              }
+            }
+          }
+        ]
+      },
+      "UserApiKeyBase": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "user_id",
+          "organization_id",
+          "last_used",
+          "tags"
+        ],
+        "properties": {
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "is_enabled": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_used": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "network_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Network IDs this key has access to (hydrated from junction table)"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/UserOrgPermissions"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "UserApiKeyResponse": {
+        "type": "object",
+        "description": "Response for user API key creation/rotation\nContains the full API key record plus the plaintext key (shown only once)",
+        "required": [
+          "api_key",
+          "key"
+        ],
+        "properties": {
+          "api_key": {
+            "$ref": "#/components/schemas/UserApiKey"
+          },
+          "key": {
+            "type": "string",
+            "description": "The plaintext API key - only returned once during creation or rotation"
+          }
+        }
+      },
       "UserBase": {
         "type": "object",
         "required": [
@@ -13487,19 +14256,54 @@
           "Outdated",
           "Deprecated"
         ]
+      },
+      "VersionInfo": {
+        "type": "object",
+        "description": "Version information for API compatibility checking",
+        "required": [
+          "api_version",
+          "server_version"
+        ],
+        "properties": {
+          "api_version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Current API version (integer, increments on breaking changes)",
+            "minimum": 0
+          },
+          "min_compatible_client": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Minimum client version that can use this API (optional, for future use)"
+          },
+          "server_version": {
+            "type": "string",
+            "description": "Server version (semver)",
+            "example": "0.12.10"
+          }
+        }
       }
     },
     "securitySchemes": {
-      "api_key": {
+      "daemon_api_key": {
         "type": "apiKey",
         "in": "header",
-        "name": "Authorization: Bearer",
-        "description": "API key for daemon authentication. Generate keys in the web UI under Settings > API Keys."
+        "name": "Authorization",
+        "description": "Daemon API key (Bearer scp_d_...). Requires X-Daemon-ID header."
       },
-      "session_id": {
+      "session": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "session_id"
+        "name": "session_id",
+        "description": "Browser session cookie. Obtained via /api/auth/login."
+      },
+      "user_api_key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "User API key (Bearer scp_u_...). Create in Platform > API Keys."
       }
     }
   },
@@ -13517,6 +14321,10 @@
       "description": "Server configuration. Public configuration settings for client applications."
     },
     {
+      "name": "daemon_api_keys",
+      "description": "Daemon API keys for scanner authentication. Create and manage keys that allow daemons to authenticate with the server and submit discovery results."
+    },
+    {
       "name": "discoveries",
       "description": "Network discovery operations. Trigger and monitor scans that detect hosts, services, and network topology."
     },
@@ -13530,7 +14338,7 @@
     },
     {
       "name": "bindings",
-      "description": "\n            ## Binding Types\n            - **Interface binding**: Service is present at an interface (IP address) without a specific port.\n              Used for non-port-bound services like gateways.\n            - **Port binding (specific interface)**: Service listens on a specific port on a specific interface.\n            - **Port binding (all interfaces)**: Service listens on a specific port on all interfaces\n              (`interface_id: null`).\n\n            ## Validation and Deduplication Rules\n            - **Conflict detection**: Interface bindings conflict with port bindings on the same interface.\n              A port binding on all interfaces conflicts with any interface binding for the same service.\n            - **All-interfaces precedence**: When creating a port binding with `interface_id: null`,\n              any existing specific-interface bindings for the same port are automatically removed,\n              as they are superseded by the all-interfaces binding.\n        "
+      "description": "\n            ## Binding Types\n            - **Interface binding**: Service is present at an interface (IP address) without a specific port.\n              Used for non-port-bound services like gateways.\n            - **Port binding (specific interface)**: Service listens on a specific port on a specific interface.\n            - **Port binding (all interfaces)**: Service listens on a specific port on all interfaces\n              (`interface_id: null`).\n        "
     },
     {
       "name": "groups",
@@ -13577,8 +14385,16 @@
       "description": "IP subnets within networks. Define address ranges and organize hosts by subnet."
     },
     {
+      "name": "system",
+      "description": "System information endpoints. Version and compatibility checking."
+    },
+    {
       "name": "tags",
       "description": "Custom tags for categorization. Apply labels to entities for filtering and organization."
+    },
+    {
+      "name": "user_api_keys",
+      "description": "User API keys for programmatic access. Create and manage personal API keys with scoped permissions for automation and integrations."
     },
     {
       "name": "users",

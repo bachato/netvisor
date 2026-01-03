@@ -21,7 +21,7 @@ export function useServicesQuery() {
 	return createQuery(() => ({
 		queryKey: queryKeys.services.all,
 		queryFn: async () => {
-			const { data } = await apiClient.GET('/api/services');
+			const { data } = await apiClient.GET('/api/v1/services');
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to fetch services');
 			}
@@ -38,7 +38,7 @@ export function useCreateServiceMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (service: Service) => {
-			const { data } = await apiClient.POST('/api/services', { body: service });
+			const { data } = await apiClient.POST('/api/v1/services', { body: service });
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to create service');
 			}
@@ -60,7 +60,7 @@ export function useUpdateServiceMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (service: Service) => {
-			const { data } = await apiClient.PUT('/api/services/{id}', {
+			const { data } = await apiClient.PUT('/api/v1/services/{id}', {
 				params: { path: { id: service.id } },
 				body: service
 			});
@@ -86,7 +86,7 @@ export function useDeleteServiceMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (id: string) => {
-			const { data } = await apiClient.DELETE('/api/services/{id}', {
+			const { data } = await apiClient.DELETE('/api/v1/services/{id}', {
 				params: { path: { id } }
 			});
 			if (!data?.success) {
@@ -111,7 +111,7 @@ export function useBulkDeleteServicesMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (ids: string[]) => {
-			const { data } = await apiClient.POST('/api/services/bulk-delete', { body: ids });
+			const { data } = await apiClient.POST('/api/v1/services/bulk-delete', { body: ids });
 			if (!data?.success) {
 				throw new Error(data?.error || 'Failed to delete services');
 			}
@@ -153,13 +153,15 @@ export function useBulkUpdateServicesMutation() {
 			// Execute all operations
 			const results = await Promise.all([
 				...toCreate.map((s) =>
-					apiClient.POST('/api/services', { body: { ...s, id: undefined } as unknown as Service })
+					apiClient.POST('/api/v1/services', {
+						body: { ...s, id: undefined } as unknown as Service
+					})
 				),
 				...toUpdate.map((s) =>
-					apiClient.PUT('/api/services/{id}', { params: { path: { id: s.id } }, body: s })
+					apiClient.PUT('/api/v1/services/{id}', { params: { path: { id: s.id } }, body: s })
 				),
 				...toDelete.map((s) =>
-					apiClient.DELETE('/api/services/{id}', { params: { path: { id: s.id } } })
+					apiClient.DELETE('/api/v1/services/{id}', { params: { path: { id: s.id } } })
 				)
 			]);
 

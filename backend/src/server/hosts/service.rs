@@ -155,6 +155,7 @@ impl CrudService<Host> for HostService {
                         metadata: serde_json::json!({
                             "trigger_stale": trigger_stale
                         }),
+
                         authentication,
                     })
                     .await?;
@@ -194,6 +195,7 @@ impl CrudService<Host> for HostService {
                 metadata: serde_json::json!({
                     "trigger_stale": trigger_stale
                 }),
+
                 authentication,
             })
             .await?;
@@ -1050,6 +1052,7 @@ impl HostService {
                     metadata: serde_json::json!({
                         "trigger_stale": trigger_stale
                     }),
+
                     authentication,
                 })
                 .await?;
@@ -1347,6 +1350,7 @@ impl HostService {
                 metadata: serde_json::json!({
                     "trigger_stale": trigger_stale
                 }),
+
                 authentication,
             })
             .await?;

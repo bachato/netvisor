@@ -1,4 +1,4 @@
-use crate::server::auth::middleware::permissions::RequireMember;
+use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Viewer};
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::daemons::r#impl::api::DaemonHeartbeatPayload;
 use crate::server::shared::events::types::TelemetryOperation;
@@ -7,7 +7,7 @@ use crate::server::shared::storage::filter::EntityFilter;
 use crate::server::shared::storage::traits::StorableEntity;
 use crate::server::shared::types::api::ApiErrorResponse;
 use crate::server::{
-    auth::middleware::auth::{AuthenticatedDaemon, AuthenticatedEntity},
+    auth::middleware::auth::AuthenticatedEntity,
     config::AppState,
     daemons::r#impl::{
         api::{
@@ -47,12 +47,18 @@ mod generated {
     crate::crud_bulk_delete_handler!(Daemon, "daemons");
 }
 
+/// User-facing daemon management endpoints (versioned at /api/v1/daemons)
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(get_all))
         .routes(routes!(get_by_id, generated::delete))
         .routes(routes!(generated::bulk_delete))
-        // Daemon-only endpoints (internal API - hidden from public docs)
+}
+
+/// Daemon-internal endpoints (unversioned at /api/daemon)
+/// These are called by daemons themselves, not by users.
+pub fn create_internal_router() -> OpenApiRouter<Arc<AppState>> {
+    OpenApiRouter::new()
         .routes(routes!(register_daemon))
         .routes(routes!(daemon_startup))
         .routes(routes!(receive_heartbeat))
@@ -72,13 +78,14 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     responses(
         (status = 200, description = "List of daemons", body = ApiResponse<Vec<DaemonResponse>>),
     ),
-    security(("session" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_all(
     State(state): State<Arc<AppState>>,
-    RequireMember(user): RequireMember,
+    auth: Authorized<Viewer>,
 ) -> ApiResult<Json<ApiResponse<Vec<DaemonResponse>>>> {
-    let filter = EntityFilter::unfiltered().network_ids(&user.network_ids);
+    let network_ids = auth.network_ids();
+    let filter = EntityFilter::unfiltered().network_ids(&network_ids);
     let daemons = state.services.daemon_service.get_all(filter).await?;
 
     let policy = DaemonVersionPolicy::default();
@@ -112,20 +119,28 @@ async fn get_all(
     responses(
         (status = 200, description = "Daemon found", body = ApiResponse<DaemonResponse>),
         (status = 404, description = "Daemon not found", body = ApiErrorResponse),
+        (status = 403, description = "Access denied", body = ApiErrorResponse),
     ),
-    security(("session" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_by_id(
     State(state): State<Arc<AppState>>,
-    RequireMember(_user): RequireMember,
+    auth: Authorized<Viewer>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<DaemonResponse>>> {
+    let network_ids = auth.network_ids();
+
     let daemon = state
         .services
         .daemon_service
         .get_by_id(&id)
         .await?
         .ok_or_else(|| ApiError::not_found(format!("Daemon '{}' not found", id)))?;
+
+    // Validate user has access to this daemon's network
+    if !network_ids.contains(&daemon.base.network_id) {
+        return Err(ApiError::forbidden("You don't have access to this daemon"));
+    }
 
     let policy = DaemonVersionPolicy::default();
     let version_status = policy.evaluate(daemon.base.version.as_ref());
@@ -154,18 +169,18 @@ const DAILY_MIDNIGHT_CRON: &str = "0 0 0 * * *";
         (status = 200, description = "Daemon registered successfully", body = ApiResponse<DaemonRegistrationResponse>),
         (status = 403, description = "Daemon registration disabled in demo mode", body = ApiErrorResponse),
     ),
-    security(("api_key" = []))
+    security(("daemon_api_key" = []))
 )]
 async fn register_daemon(
     State(state): State<Arc<AppState>>,
-    auth_daemon: AuthenticatedDaemon,
+    auth: Authorized<IsDaemon>,
     Json(request): Json<DaemonRegistrationRequest>,
 ) -> ApiResult<Json<ApiResponse<DaemonRegistrationResponse>>> {
     // Check if this is a demo organization - block daemon registration
     let network = state
         .services
         .network_service
-        .get_by_id(&auth_daemon.network_id)
+        .get_by_id(&request.network_id)
         .await?
         .ok_or_else(|| ApiError::not_found("Network not found".to_string()))?;
 
@@ -223,7 +238,7 @@ async fn register_daemon(
         }
 
         let updated_daemon = service
-            .update(&mut existing_daemon, auth_daemon.into())
+            .update(&mut existing_daemon, auth.into_entity())
             .await
             .map_err(|e| ApiError::internal_error(&format!("Failed to update daemon: {}", e)))?;
 
@@ -250,7 +265,7 @@ async fn register_daemon(
     let host_response = state
         .services
         .host_service
-        .discover_host(dummy_host, vec![], vec![], vec![], auth_daemon.into())
+        .discover_host(dummy_host, vec![], vec![], vec![], auth.entity.clone())
         .await?;
 
     // If user_id is nil (old daemon), fall back to org owner
@@ -283,7 +298,7 @@ async fn register_daemon(
     daemon.id = request.daemon_id;
 
     let registered_daemon = service
-        .create(daemon, auth_daemon.into())
+        .create(daemon, auth.entity.clone())
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to register daemon: {}", e)))?;
 
@@ -303,19 +318,21 @@ async fn register_daemon(
     if let Some(organization) = organization
         && organization.not_onboarded(&TelemetryOperation::FirstDaemonRegistered)
     {
+        let authentication: AuthenticatedEntity = auth.into_entity();
         state
             .services
             .daemon_service
             .event_bus()
             .publish_telemetry(TelemetryEvent {
                 id: Uuid::new_v4(),
-                authentication: auth_daemon.into(),
                 organization_id: organization.id,
                 operation: TelemetryOperation::FirstDaemonRegistered,
                 timestamp: Utc::now(),
                 metadata: serde_json::json!({
                     "is_onboarding_step": true
                 }),
+
+                authentication,
             })
             .await?;
     }
@@ -425,14 +442,15 @@ async fn register_daemon(
         (status = 200, description = "Startup acknowledged", body = ApiResponse<ServerCapabilities>),
         (status = 404, description = "Daemon not found", body = ApiErrorResponse),
     ),
-    security(("api_key" = []))
+    security(("daemon_api_key" = []))
 )]
 async fn daemon_startup(
     State(state): State<Arc<AppState>>,
-    auth_daemon: AuthenticatedDaemon,
+    auth: Authorized<IsDaemon>,
     Path(id): Path<Uuid>,
     Json(request): Json<DaemonStartupRequest>,
 ) -> ApiResult<Json<ApiResponse<ServerCapabilities>>> {
+    let daemon_network_id = auth.network_ids()[0];
     let service = &state.services.daemon_service;
 
     let mut daemon = service
@@ -441,11 +459,18 @@ async fn daemon_startup(
         .map_err(|e| ApiError::internal_error(&format!("Failed to get daemon: {}", e)))?
         .ok_or_else(|| ApiError::not_found(format!("Daemon '{}' not found", id)))?;
 
+    // Validate daemon belongs to the authenticated daemon's network
+    if daemon.base.network_id != daemon_network_id {
+        return Err(ApiError::forbidden(
+            "Cannot access daemon on a different network",
+        ));
+    }
+
     daemon.base.version = Some(request.daemon_version.clone());
     daemon.base.last_seen = Utc::now();
 
     service
-        .update(&mut daemon, auth_daemon.into())
+        .update(&mut daemon, auth.into_entity())
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to update daemon: {}", e)))?;
 
@@ -478,14 +503,15 @@ async fn daemon_startup(
         (status = 200, description = "Capabilities updated", body = EmptyApiResponse),
         (status = 404, description = "Daemon not found", body = ApiErrorResponse),
     ),
-    security(("api_key" = []))
+    security(("daemon_api_key" = []))
 )]
 async fn update_capabilities(
     State(state): State<Arc<AppState>>,
-    auth_daemon: AuthenticatedDaemon,
+    auth: Authorized<IsDaemon>,
     Path(id): Path<Uuid>,
     Json(updated_capabilities): Json<DaemonCapabilities>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
+    let daemon_network_id = auth.network_ids()[0];
     tracing::debug!(
         id = %id,
         capabilities = %updated_capabilities,
@@ -499,9 +525,16 @@ async fn update_capabilities(
         .map_err(|e| ApiError::internal_error(&format!("Failed to get daemon: {}", e)))?
         .ok_or_else(|| ApiError::not_found(format!("Daemon '{}' not found", &id)))?;
 
+    // Validate daemon belongs to the authenticated daemon's network
+    if daemon.base.network_id != daemon_network_id {
+        return Err(ApiError::forbidden(
+            "Cannot access daemon on a different network",
+        ));
+    }
+
     daemon.base.capabilities = updated_capabilities;
 
-    service.update(&mut daemon, auth_daemon.into()).await?;
+    service.update(&mut daemon, auth.into_entity()).await?;
 
     Ok(Json(ApiResponse::success(())))
 }
@@ -520,14 +553,15 @@ async fn update_capabilities(
         (status = 200, description = "Heartbeat received", body = EmptyApiResponse),
         (status = 404, description = "Daemon not found", body = ApiErrorResponse),
     ),
-    security(("api_key" = []))
+    security(("daemon_api_key" = []))
 )]
 async fn receive_heartbeat(
     State(state): State<Arc<AppState>>,
-    auth_daemon: AuthenticatedDaemon,
+    auth: Authorized<IsDaemon>,
     Path(id): Path<Uuid>,
     Json(request): Json<DaemonHeartbeatPayload>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
+    let daemon_network_id = auth.network_ids()[0];
     let service = &state.services.daemon_service;
 
     let mut daemon = service
@@ -536,13 +570,20 @@ async fn receive_heartbeat(
         .map_err(|e| ApiError::internal_error(&format!("Failed to get daemon: {}", e)))?
         .ok_or_else(|| ApiError::not_found(format!("Daemon '{}' not found", &id)))?;
 
+    // Validate daemon belongs to the authenticated daemon's network
+    if daemon.base.network_id != daemon_network_id {
+        return Err(ApiError::forbidden(
+            "Cannot access daemon on a different network",
+        ));
+    }
+
     daemon.base.last_seen = Utc::now();
     daemon.base.url = request.url;
     daemon.base.name = request.name;
     daemon.base.mode = request.mode;
 
     service
-        .update(&mut daemon, auth_daemon.into())
+        .update(&mut daemon, auth.into_entity())
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to update heartbeat: {}", e)))?;
 
@@ -564,14 +605,15 @@ async fn receive_heartbeat(
         (status = 200, description = "Work request processed - returns (Option<DiscoveryUpdatePayload>, bool)"),
         (status = 404, description = "Daemon not found", body = ApiErrorResponse),
     ),
-    security(("api_key" = []))
+    security(("daemon_api_key" = []))
 )]
 async fn receive_work_request(
     State(state): State<Arc<AppState>>,
-    auth_daemon: AuthenticatedDaemon,
+    auth: Authorized<IsDaemon>,
     Path(daemon_id): Path<Uuid>,
     Json(request): Json<DaemonHeartbeatPayload>,
 ) -> ApiResult<Json<ApiResponse<(Option<DiscoveryUpdatePayload>, bool)>>> {
+    let daemon_network_id = auth.network_ids()[0];
     let service = &state.services.daemon_service;
 
     let mut daemon = service
@@ -580,13 +622,20 @@ async fn receive_work_request(
         .map_err(|e| ApiError::internal_error(&format!("Failed to get daemon: {}", e)))?
         .ok_or_else(|| ApiError::not_found(format!("Daemon '{}' not found", &daemon_id)))?;
 
+    // Validate daemon belongs to the authenticated daemon's network
+    if daemon.base.network_id != daemon_network_id {
+        return Err(ApiError::forbidden(
+            "Cannot access daemon on a different network",
+        ));
+    }
+
     daemon.base.last_seen = Utc::now();
     daemon.base.url = request.url;
     daemon.base.name = request.name;
     daemon.base.mode = request.mode;
 
     service
-        .update(&mut daemon, auth_daemon.into())
+        .update(&mut daemon, auth.entity.clone())
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to update heartbeat: {}", e)))?;
 
@@ -609,7 +658,7 @@ async fn receive_work_request(
             cancel,
             session_id_to_cancel,
             next_session.clone(),
-            auth_daemon.into(),
+            auth.into_entity(),
         )
         .await?;
 

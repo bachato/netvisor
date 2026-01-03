@@ -76,13 +76,12 @@
 </script>
 
 <GenericModal {isOpen} {title} {onClose} onOpen={handleOpen} size="xl">
-	<!-- Header icon -->
-	<svelte:fragment slot="header-icon">
+	{#snippet headerIcon()}
 		<ModalHeaderIcon
 			Icon={serviceDefinitions.getIconComponent(service.service_definition)}
 			color={serviceDefinitions.getColorHelper(service.service_definition).color}
 		/>
-	</svelte:fragment>
+	{/snippet}
 
 	<!-- Content -->
 	<div class="flex h-full flex-col overflow-hidden">
@@ -95,12 +94,14 @@
 		</div>
 	</div>
 
-	<svelte:fragment slot="footer">
-		<div class="flex items-center justify-end gap-3">
-			<button type="button" onclick={onClose} class="btn-secondary"> Cancel </button>
-			<button type="button" onclick={handleSubmit} disabled={loading} class="btn-primary">
-				{loading ? 'Updating...' : 'Update Service'}
-			</button>
+	{#snippet footer()}
+		<div class="modal-footer">
+			<div class="flex items-center justify-end gap-3">
+				<button type="button" onclick={onClose} class="btn-secondary"> Cancel </button>
+				<button type="button" onclick={handleSubmit} disabled={loading} class="btn-primary">
+					{loading ? 'Updating...' : 'Update Service'}
+				</button>
+			</div>
 		</div>
-	</svelte:fragment>
+	{/snippet}
 </GenericModal>

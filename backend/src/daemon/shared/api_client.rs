@@ -29,6 +29,8 @@ impl DaemonApiClient {
 
                 Client::builder()
                     .danger_accept_invalid_certs(allow_self_signed_certs)
+                    .connect_timeout(Duration::from_secs(10))
+                    .timeout(Duration::from_secs(30))
                     .build()
                     .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {}", e))
             })

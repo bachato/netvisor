@@ -350,17 +350,6 @@ impl ConfigStore {
         self.save(&config.clone()).await
     }
 
-    pub async fn get_host_id(&self) -> Result<Option<Uuid>> {
-        let config = self.config.read().await;
-        Ok(config.host_id)
-    }
-
-    pub async fn set_host_id(&self, host_id: Uuid) -> Result<()> {
-        let mut config = self.config.write().await;
-        config.host_id = Some(host_id);
-        self.save(&config.clone()).await
-    }
-
     pub async fn get_user_id(&self) -> Result<Option<Uuid>> {
         let config = self.config.read().await;
         Ok(config.user_id)

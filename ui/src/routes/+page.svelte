@@ -26,7 +26,7 @@
 	let sidebarCollapsed = $state(false);
 	let dataLoadingStarted = $state(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let allTabs = $state<Array<{ id: string; component: any }>>([]);
+	let allTabs = $state<Array<{ id: string; component: any; isReadOnly: boolean }>>([]);
 
 	// Update URL hash when activeTab changes
 	$effect(() => {
@@ -113,7 +113,7 @@
 				<!-- Programmatically render all tabs based on sidebar config -->
 				{#each allTabs as tab (tab.id)}
 					<div class:hidden={activeTab !== tab.id}>
-						<tab.component />
+						<tab.component isReadOnly={tab.isReadOnly} />
 					</div>
 				{/each}
 			</div>

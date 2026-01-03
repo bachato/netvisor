@@ -8,11 +8,12 @@ use chrono::{TimeZone, Utc};
 use cidr::{IpCidr, Ipv4Cidr};
 use email_address::EmailAddress;
 use mac_address::MacAddress;
+use semver::Version;
 use std::net::{IpAddr, Ipv4Addr};
 
 use crate::server::{
-    api_keys::r#impl::base::{ApiKey, ApiKeyBase},
     bindings::r#impl::base::Binding,
+    daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
     daemons::r#impl::{
         api::DaemonCapabilities,
         base::{Daemon, DaemonBase, DaemonMode},
@@ -227,15 +228,15 @@ pub fn tag() -> Tag {
     }
 }
 
-/// Example ApiKey entity.
-pub fn api_key() -> ApiKey {
-    ApiKey {
+/// Example DaemonApiKey entity.
+pub fn daemon_api_key() -> DaemonApiKey {
+    DaemonApiKey {
         id: ids::API_KEY,
         created_at: example_timestamp(),
         updated_at: example_timestamp(),
-        base: ApiKeyBase {
+        base: DaemonApiKeyBase {
             name: "daemon-key-01".to_string(),
-            key: "sk_••••••••".to_string(), // Masked in responses
+            key: "scp_d_••••••••••••••••••••••••••••••••".to_string(), // Masked in responses
             network_id: ids::NETWORK,
             last_used: Some(example_timestamp()),
             expires_at: None,
@@ -263,7 +264,9 @@ pub fn daemon() -> Daemon {
             last_seen: example_timestamp(),
             name: "home-daemon".to_string(),
             tags: vec![],
-            version: None,
+            version: Version::parse(env!("CARGO_PKG_VERSION"))
+                .map(Some)
+                .unwrap_or_default(),
             user_id: ids::USER,
         },
     }
