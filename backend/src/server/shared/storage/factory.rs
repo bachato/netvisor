@@ -47,7 +47,7 @@ pub async fn create_session_store(
     session_store.migrate().await?;
 
     Ok(SessionManagerLayer::new(session_store)
-        .with_expiry(Expiry::OnInactivity(time::Duration::days(30))) // 30 days
+        .with_expiry(Expiry::OnInactivity(time::Duration::days(7)))
         .with_name("session_id")
         .with_secure(use_secure)
         .with_http_only(true)

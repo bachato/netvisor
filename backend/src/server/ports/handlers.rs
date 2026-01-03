@@ -72,7 +72,7 @@ async fn validate_port_network_consistency(state: &AppState, port: &Port) -> Res
         (status = 200, description = "Port created successfully", body = ApiResponse<Port>),
         (status = 400, description = "Network mismatch or duplicate port", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_port(
     State(state): State<Arc<AppState>>,
@@ -95,7 +95,7 @@ async fn create_port(
         (status = 400, description = "Network mismatch or invalid request", body = ApiErrorResponse),
         (status = 404, description = "Port not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_port(
     State(state): State<Arc<AppState>>,

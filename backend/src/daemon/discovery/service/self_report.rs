@@ -271,7 +271,7 @@ impl DiscoveryRunner<SelfReportDiscovery> {
         };
 
         let daemon_id = self.as_ref().api_client.config().get_id().await?;
-        let path = format!("/api/daemon/{}/update-capabilities", daemon_id);
+        let path = format!("/api/daemons/{}/update-capabilities", daemon_id);
 
         self.as_ref()
             .api_client

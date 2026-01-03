@@ -70,7 +70,7 @@ pub async fn get_organization(
         (status = 403, description = "Only owners can update organization", body = ApiErrorResponse),
         (status = 404, description = "Organization not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn update_org_name(
     State(state): State<Arc<AppState>>,
@@ -108,7 +108,7 @@ pub async fn update_org_name(
         (status = 403, description = "Cannot reset another organization", body = ApiErrorResponse),
         (status = 404, description = "Organization not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn reset(
     State(state): State<Arc<AppState>>,
@@ -149,7 +149,7 @@ pub async fn reset(
         (status = 403, description = "Only available for demo organizations", body = ApiErrorResponse),
         (status = 404, description = "Organization not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn populate_demo_data(
     State(state): State<Arc<AppState>>,

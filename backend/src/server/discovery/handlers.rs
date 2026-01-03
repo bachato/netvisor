@@ -65,7 +65,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 400, description = "Invalid subnet network", body = ApiErrorResponse),
         (status = 400, description = "Can't create historical discovery", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn create_discovery(
     State(state): State<Arc<AppState>>,
@@ -112,7 +112,7 @@ pub async fn create_discovery(
         (status = 400, description = "Invalid subnet network", body = ApiErrorResponse),
         (status = 400, description = "Can't update historical discovery", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn update_discovery(
     state: State<Arc<AppState>>,
@@ -186,7 +186,7 @@ async fn receive_discovery_update(
         (status = 200, description = "Discovery session started", body = ApiResponse<DiscoveryUpdatePayload>),
         (status = 404, description = "Discovery not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn start_session(
     State(state): State<Arc<AppState>>,
@@ -275,7 +275,7 @@ async fn discovery_stream(
     responses(
         (status = 200, description = "List of active discovery sessions", body = ApiResponse<Vec<DiscoveryUpdatePayload>>),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_active_sessions(
     State(state): State<Arc<AppState>>,
@@ -300,7 +300,7 @@ async fn get_active_sessions(
     responses(
         (status = 200, description = "Discovery session cancelled", body = EmptyApiResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn cancel_discovery(
     State(state): State<Arc<AppState>>,

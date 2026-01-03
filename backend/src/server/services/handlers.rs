@@ -58,7 +58,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 200, description = "Service created successfully", body = ApiResponse<Service>),
         (status = 400, description = "Validation error: host network mismatch, cross-host binding, or binding conflict", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn create_service(
     State(state): State<Arc<AppState>>,
@@ -119,7 +119,7 @@ pub async fn create_service(
         (status = 400, description = "Validation error: host network mismatch, cross-host binding, or binding conflict", body = ApiErrorResponse),
         (status = 404, description = "Service not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn update_service(
     State(state): State<Arc<AppState>>,

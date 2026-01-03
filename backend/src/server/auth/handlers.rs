@@ -516,6 +516,12 @@ async fn login(
         ));
     }
 
+    // Cycle session ID to prevent session fixation attacks
+    session
+        .cycle_id()
+        .await
+        .map_err(|e| ApiError::internal_error(&format!("Failed to cycle session: {}", e)))?;
+
     session
         .insert("user_id", user.id)
         .await
@@ -1092,6 +1098,16 @@ async fn handle_login_flow(
                 )));
             }
 
+            // Cycle session ID to prevent session fixation attacks
+            if let Err(e) = session.cycle_id().await {
+                tracing::error!("Failed to cycle session ID: {}", e);
+                return Err(Redirect::to(&format!(
+                    "{}?error={}",
+                    return_url,
+                    urlencoding::encode(&format!("Failed to create session: {}", e))
+                )));
+            }
+
             // Save user_id to session
             if let Err(e) = session.insert("user_id", user.id).await {
                 tracing::error!("Failed to save session: {}", e);
@@ -1194,6 +1210,16 @@ async fn handle_register_flow(
         .await
     {
         Ok(user) => {
+            // Cycle session ID to prevent session fixation attacks
+            if let Err(e) = session.cycle_id().await {
+                tracing::error!("Failed to cycle session ID: {}", e);
+                return Err(Redirect::to(&format!(
+                    "{}?error={}",
+                    return_url,
+                    urlencoding::encode(&format!("Failed to create session: {}", e))
+                )));
+            }
+
             // Save user_id to session
             if let Err(e) = session.insert("user_id", user.id).await {
                 tracing::error!("Failed to save session: {}", e);

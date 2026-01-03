@@ -98,7 +98,7 @@ pub fn create_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
 /// Creates the application router and returns both the router and OpenAPI spec.
 /// The OpenAPI spec is built from annotated handlers using utoipa-axum.
 pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
-    // Routes that require billing for user requests (daemons exempt via middleware check)
+    // Routes that require billing for requests
     let billed_routes = create_openapi_routes();
 
     // Extract OpenAPI spec and convert to regular Router for middleware application
@@ -109,9 +109,9 @@ pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
     ));
 
     // Extract OpenAPI from billing, shares, and auth routes (exempt from billing middleware but need types)
-    // Billing and shares are versioned, auth is unversioned (session management)
+    // Shares are versioned because they are user facing, auth and billing is unversioned
     let (billing_router, billing_openapi) = OpenApiRouter::new()
-        .nest("/api/v1/billing", billing_handlers::create_router())
+        .nest("/api/billing", billing_handlers::create_router())
         .split_for_parts();
     let (shares_router, shares_openapi) = OpenApiRouter::new()
         .nest("/api/v1/shares", share_handlers::create_router())
@@ -119,22 +119,20 @@ pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
     let (auth_router, auth_openapi) = OpenApiRouter::new()
         .nest("/api/auth", auth_handlers::create_router()) // Unversioned - session auth
         .split_for_parts();
+
     // Daemon-internal endpoints (unversioned - daemons call these, not users)
     let (daemon_internal_router, daemon_internal_openapi) = OpenApiRouter::new()
-        .nest("/api/daemon", daemon_handlers::create_internal_router())
+        .nest("/api/daemons", daemon_handlers::create_internal_router())
         .split_for_parts();
 
     // Legacy routes for backwards compatibility with older daemons (v0.12.x)
     // These are not documented in OpenAPI but must remain functional
-    let legacy_daemon_router: Router<Arc<AppState>> = Router::new().nest(
-        "/api/daemons",
-        daemon_handlers::create_internal_router().into(),
-    );
     let legacy_entity_router: Router<Arc<AppState>> = Router::new()
         .nest("/api/hosts", host_handlers::create_router().into())
         .nest("/api/subnets", subnet_handlers::create_router().into())
         .nest("/api/services", service_handlers::create_router().into())
-        .nest("/api/groups", group_handlers::create_router().into());
+        .nest("/api/groups", group_handlers::create_router().into())
+        .nest("/api/discovery", discovery_handlers::create_router().into());
 
     // Version endpoint (unversioned - used to check API version)
     let (version_router, version_openapi) = OpenApiRouter::new()
@@ -155,7 +153,6 @@ pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
         .merge(shares_router)
         .merge(auth_router)
         .merge(daemon_internal_router)
-        .merge(legacy_daemon_router)
         .merge(legacy_entity_router)
         .merge(version_router);
 

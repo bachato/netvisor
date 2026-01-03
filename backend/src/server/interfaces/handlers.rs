@@ -91,7 +91,7 @@ async fn validate_interface_consistency(
         (status = 200, description = "Interface created successfully", body = ApiResponse<Interface>),
         (status = 400, description = "Network mismatch or invalid request", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_interface(
     State(state): State<Arc<AppState>>,
@@ -125,7 +125,7 @@ async fn create_interface(
         (status = 400, description = "Network mismatch or invalid request", body = ApiErrorResponse),
         (status = 404, description = "Interface not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_interface(
     State(state): State<Arc<AppState>>,
@@ -156,7 +156,7 @@ async fn update_interface(
         (status = 200, description = "Interface deleted successfully", body = EmptyApiResponse),
         (status = 404, description = "Interface not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn delete_interface(
     State(state): State<Arc<AppState>>,
@@ -213,7 +213,7 @@ async fn delete_interface(
         (status = 200, description = "Interfaces deleted successfully", body = ApiResponse<BulkDeleteResponse>),
         (status = 400, description = "No IDs provided", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn bulk_delete_interfaces(
     State(state): State<Arc<AppState>>,

@@ -51,7 +51,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 400, description = "Validation error: name empty or too long", body = ApiErrorResponse),
         (status = 409, description = "Tag name already exists in this organization", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn create_tag(
     state: State<Arc<AppState>>,

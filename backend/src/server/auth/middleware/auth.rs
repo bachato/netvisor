@@ -1,9 +1,10 @@
-use std::fmt::Display;
+use std::{fmt::Display, net::IpAddr};
 
 use crate::server::{
     config::AppState,
     shared::{
         api_key_common::{ApiKeyCommon, ApiKeyType, check_key_validity, hash_api_key},
+        events::types::{AuthEvent, AuthOperation},
         services::traits::CrudService,
         storage::filter::EntityFilter,
         types::api::ApiError,
@@ -12,9 +13,10 @@ use crate::server::{
 };
 use axum::{
     extract::FromRequestParts,
-    http::request::Parts,
+    http::{HeaderMap, request::Parts},
     response::{IntoResponse, Response},
 };
+use axum_client_ip::ClientIp;
 use chrono::Utc;
 use email_address::EmailAddress;
 use serde::Deserialize;
@@ -224,6 +226,10 @@ impl From<User> for AuthenticatedEntity {
     }
 }
 
+/// Marker to cache failed auth attempts and prevent duplicate event publishing
+#[derive(Clone)]
+struct AuthAttemptFailed(ApiError);
+
 // Generic authenticated entity extractor - accepts users, daemons, and user API keys
 impl<S> FromRequestParts<S> for AuthenticatedEntity
 where
@@ -238,11 +244,23 @@ where
             return Ok(cached.clone());
         }
 
+        // Check if auth already failed for this request (prevents duplicate event publishing)
+        if let Some(cached_failure) = parts.extensions.get::<AuthAttemptFailed>() {
+            return Err(AuthError(cached_failure.0.clone()));
+        }
+
         let result = Self::extract_auth(parts, state).await;
 
-        // Cache successful auth in extensions for subsequent extractors
-        if let Ok(ref entity) = result {
-            parts.extensions.insert(entity.clone());
+        // Cache result in extensions for subsequent extractors
+        match &result {
+            Ok(entity) => {
+                parts.extensions.insert(entity.clone());
+            }
+            Err(AuthError(api_error)) => {
+                parts
+                    .extensions
+                    .insert(AuthAttemptFailed(api_error.clone()));
+            }
         }
 
         result
@@ -257,12 +275,21 @@ impl AuthenticatedEntity {
     {
         let app_state = state.as_ref();
 
+        // Extract IP and user agent for failed auth logging
+        let ip = ClientIp::from_request_parts(parts, state)
+            .await
+            .map(|c| c.0)
+            .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
+        let user_agent = extract_user_agent(&parts.headers);
+
         // Check for Bearer token in Authorization header
         if let Some(auth_header) = parts.headers.get(axum::http::header::AUTHORIZATION)
             && let Ok(auth_str) = auth_header.to_str()
             && let Some(api_key_raw) = auth_str.strip_prefix("Bearer ")
         {
             let hashed_key = hash_api_key(api_key_raw);
+            // Extract key prefix for logging (first 8 chars, safe for logging)
+            let key_prefix = api_key_raw.get(..8);
 
             // Detect key type from prefix
             let (key_type, _is_prefixed) = ApiKeyType::from_key(api_key_raw);
@@ -284,6 +311,21 @@ impl AuthenticatedEntity {
 
                         // Check validity using shared trait
                         if let Err(e) = check_key_validity(&user_api_key) {
+                            let reason = if user_api_key.is_expired() {
+                                "expired"
+                            } else {
+                                "disabled"
+                            };
+                            publish_api_key_auth_failed(
+                                app_state,
+                                ip,
+                                user_agent.clone(),
+                                key_type,
+                                reason,
+                                key_prefix,
+                            )
+                            .await;
+
                             // Auto-disable expired keys
                             if user_api_key.is_expired() {
                                 user_api_key.set_is_enabled(false);
@@ -341,6 +383,15 @@ impl AuthenticatedEntity {
                         });
                     }
 
+                    publish_api_key_auth_failed(
+                        app_state,
+                        ip,
+                        user_agent.clone(),
+                        key_type,
+                        "invalid_key",
+                        key_prefix,
+                    )
+                    .await;
                     return Err(AuthError(ApiError::unauthorized(
                         "Invalid API key".to_string(),
                     )));
@@ -371,6 +422,21 @@ impl AuthenticatedEntity {
 
                         // Check validity using shared trait
                         if let Err(e) = check_key_validity(&api_key) {
+                            let reason = if api_key.is_expired() {
+                                "expired"
+                            } else {
+                                "disabled"
+                            };
+                            publish_api_key_auth_failed(
+                                app_state,
+                                ip,
+                                user_agent.clone(),
+                                key_type,
+                                reason,
+                                key_prefix,
+                            )
+                            .await;
+
                             // Auto-disable expired keys
                             if api_key.is_expired() {
                                 api_key.set_is_enabled(false);
@@ -402,6 +468,15 @@ impl AuthenticatedEntity {
                         });
                     }
 
+                    publish_api_key_auth_failed(
+                        app_state,
+                        ip,
+                        user_agent.clone(),
+                        key_type,
+                        "invalid_key",
+                        key_prefix,
+                    )
+                    .await;
                     return Err(AuthError(ApiError::unauthorized(
                         "Invalid API key".to_string(),
                     )));
@@ -461,6 +536,55 @@ impl AuthenticatedEntity {
             email: user.base.email,
         })
     }
+}
+
+/// Helper to extract user agent from headers
+fn extract_user_agent(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get(axum::http::header::USER_AGENT)
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.to_string())
+}
+
+/// Publish a failed API key authentication event
+async fn publish_api_key_auth_failed(
+    app_state: &AppState,
+    ip: IpAddr,
+    user_agent: Option<String>,
+    key_type: ApiKeyType,
+    reason: &str,
+    key_prefix: Option<&str>,
+) {
+    let key_type_str = match key_type {
+        ApiKeyType::User => "user",
+        ApiKeyType::Daemon => "daemon",
+    };
+
+    let metadata = serde_json::json!({
+        "key_type": key_type_str,
+        "reason": reason,
+        "key_prefix": key_prefix,
+    });
+
+    let event = AuthEvent::new(
+        Uuid::new_v4(),
+        None, // No user_id for failed auth
+        None, // No organization_id
+        AuthOperation::ApiKeyAuthFailed,
+        Utc::now(),
+        ip,
+        user_agent,
+        metadata,
+        AuthenticatedEntity::Anonymous,
+    );
+
+    // Fire and forget - don't block auth on event publishing
+    let event_bus = app_state.services.event_bus.clone();
+    tokio::spawn(async move {
+        if let Err(e) = event_bus.publish_auth(event).await {
+            tracing::warn!(error = %e, "Failed to publish API key auth failed event");
+        }
+    });
 }
 
 /// Extractor that only accepts user API key authentication (rejects users and daemons)

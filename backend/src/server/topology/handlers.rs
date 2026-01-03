@@ -60,7 +60,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 200, description = "Topology updated", body = ApiResponse<Topology>),
         (status = 404, description = "Topology not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_topology(
     state: State<Arc<AppState>>,
@@ -79,7 +79,7 @@ async fn update_topology(
     responses(
         (status = 200, description = "List of topologies", body = ApiResponse<Vec<Topology>>),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_all_topologies(
     State(state): State<Arc<AppState>>,
@@ -104,7 +104,7 @@ async fn get_all_topologies(
         (status = 200, description = "Topology created", body = ApiResponse<Topology>),
         (status = 400, description = "Validation failed", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_topology(
     State(state): State<Arc<AppState>>,
@@ -210,7 +210,7 @@ async fn create_topology(
         (status = 200, description = "Topology refreshed", body = EmptyApiResponse),
         (status = 403, description = "Access denied", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn refresh(
     State(state): State<Arc<AppState>>,
@@ -263,7 +263,7 @@ async fn refresh(
         (status = 200, description = "Topology rebuilt", body = EmptyApiResponse),
         (status = 403, description = "Access denied", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn rebuild(
     State(state): State<Arc<AppState>>,
@@ -358,13 +358,12 @@ async fn rebuild(
     path = "/{id}/lock",
     tags = ["topology"],
     params(("id" = Uuid, Path, description = "Topology ID")),
-    request_body = Topology,
     responses(
         (status = 200, description = "Topology locked", body = ApiResponse<Topology>),
         (status = 403, description = "Access denied", body = ApiErrorResponse),
         (status = 404, description = "Topology not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn lock(
     State(state): State<Arc<AppState>>,
@@ -404,13 +403,12 @@ async fn lock(
     path = "/{id}/unlock",
     tags = ["topology"],
     params(("id" = Uuid, Path, description = "Topology ID")),
-    request_body = Topology,
     responses(
         (status = 200, description = "Topology unlocked", body = ApiResponse<Topology>),
         (status = 403, description = "Access denied", body = ApiErrorResponse),
         (status = 404, description = "Topology not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn unlock(
     State(state): State<Arc<AppState>>,

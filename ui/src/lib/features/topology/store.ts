@@ -255,8 +255,7 @@ export async function refreshTopology(data: Topology) {
 
 export async function lockTopology(data: Topology) {
 	const { data: result } = await apiClient.POST('/api/v1/topology/{id}/lock', {
-		params: { path: { id: data.id } },
-		body: data
+		params: { path: { id: data.id } }
 	});
 
 	if (result?.success && result.data) {
@@ -271,8 +270,7 @@ export async function lockTopology(data: Topology) {
 
 export async function unlockTopology(data: Topology) {
 	const { data: result } = await apiClient.POST('/api/v1/topology/{id}/unlock', {
-		params: { path: { id: data.id } },
-		body: data
+		params: { path: { id: data.id } }
 	});
 
 	if (result?.success && result.data) {

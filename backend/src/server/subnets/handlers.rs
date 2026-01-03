@@ -181,7 +181,7 @@ async fn create_subnet(
         (status = 400, description = "CIDR change would orphan existing interfaces", body = ApiErrorResponse),
         (status = 404, description = "Subnet not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_subnet(
     State(state): State<Arc<AppState>>,

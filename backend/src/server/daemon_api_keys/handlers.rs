@@ -53,7 +53,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 403, description = "Insufficient permissions (member+ required)", body = ApiErrorResponse),
         (status = 500, description = "Internal server error", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn create_daemon_api_key(
     State(state): State<Arc<AppState>>,
@@ -130,7 +130,7 @@ pub async fn create_daemon_api_key(
         (status = 200, description = "Daemon API key updated", body = ApiResponse<DaemonApiKey>),
         (status = 404, description = "Daemon API key not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn update_daemon_api_key(
     State(state): State<Arc<AppState>>,
@@ -166,7 +166,7 @@ pub async fn update_daemon_api_key(
         (status = 200, description = "Daemon API key rotated, returns new key", body = ApiResponse<String>),
         (status = 404, description = "Daemon API key not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn rotate_key_handler(
     State(state): State<Arc<AppState>>,

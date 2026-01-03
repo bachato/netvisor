@@ -41,7 +41,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 200, description = "Invite created", body = ApiResponse<Invite>),
         (status = 403, description = "Cannot create invite with higher permissions", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_invite(
     State(state): State<Arc<AppState>>,
@@ -174,7 +174,7 @@ async fn create_invite(
         (status = 400, description = "Invalid or expired invite", body = ApiErrorResponse),
         (status = 403, description = "Access denied", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_invite(
     State(state): State<Arc<AppState>>,
@@ -210,7 +210,7 @@ async fn get_invite(
     responses(
         (status = 200, description = "List of active invites", body = ApiResponse<Vec<Invite>>),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_invites(
     State(state): State<Arc<AppState>>,
@@ -258,7 +258,7 @@ async fn get_invites(
         (status = 400, description = "Invalid invite", body = ApiErrorResponse),
         (status = 403, description = "Cannot revoke this invite", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn revoke_invite(
     State(state): State<Arc<AppState>>,

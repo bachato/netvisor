@@ -46,7 +46,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     responses(
         (status = 200, description = "Network created", body = ApiResponse<Network>),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_network(
     State(state): State<Arc<AppState>>,
@@ -84,7 +84,7 @@ async fn create_network(
         (status = 404, description = "Network not found", body = ApiErrorResponse),
         (status = 403, description = "User not admin", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_network(
     state: State<Arc<AppState>>,
@@ -106,7 +106,7 @@ async fn update_network(
         (status = 404, description = "Network not found", body = ApiErrorResponse),
         (status = 403, description = "User not admin", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn delete_network(
     state: State<Arc<AppState>>,
@@ -126,7 +126,7 @@ async fn delete_network(
         (status = 200, description = "Networks deleted successfully", body = ApiResponse<BulkDeleteResponse>),
         (status = 403, description = "User not admin", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn bulk_delete_networks(
     state: State<Arc<AppState>>,

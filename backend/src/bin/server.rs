@@ -34,6 +34,7 @@ async fn main() -> anyhow::Result<()> {
     let listen_addr = format!("0.0.0.0:{}", &config.server_port);
     let web_external_path = config.web_external_path.clone();
     let client_ip_source = config.client_ip_source.clone();
+    let public_url = config.public_url.clone();
 
     // Initialize tracing
     tracing_subscriber::registry()
@@ -219,13 +220,12 @@ async fn main() -> anyhow::Result<()> {
         .layer(cors)
         .merge(protected_app);
     let listener = tokio::net::TcpListener::bind(&listen_addr).await?;
-    let actual_port = listener.local_addr()?.port();
 
     tracing::info!("🚀 Scanopy Server v{}", env!("CARGO_PKG_VERSION"));
     if web_external_path.is_some() {
-        tracing::info!("📊 Web UI: http://<your-ip>:{}", actual_port);
+        tracing::info!("📊 Web UI: http://{}", public_url);
     }
-    tracing::info!("🔧 API: http://<your-ip>:{}/api", actual_port);
+    tracing::info!("🔧 API: http://{}/api", public_url);
 
     // Spawn server in background
     tokio::spawn(async move {

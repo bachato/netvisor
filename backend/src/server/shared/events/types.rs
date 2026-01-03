@@ -248,12 +248,13 @@ pub enum AuthOperation {
 
     // Api Key Auth
     RotateKey,
+    ApiKeyAuthFailed,
 }
 
 impl AuthOperation {
     fn log_level(&self) -> EventLogLevel {
         match self {
-            AuthOperation::LoginFailed => EventLogLevel::Error,
+            AuthOperation::LoginFailed | AuthOperation::ApiKeyAuthFailed => EventLogLevel::Error,
             _ => EventLogLevel::Info,
         }
     }

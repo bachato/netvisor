@@ -81,7 +81,7 @@ pub async fn get_user_by_id(
     responses(
         (status = 200, description = "List of users", body = ApiResponse<Vec<User>>),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn get_all_users(
     State(state): State<Arc<AppState>>,
@@ -144,7 +144,7 @@ pub async fn get_all_users(
         (status = 403, description = "Cannot delete user with higher permissions", body = ApiErrorResponse),
         (status = 409, description = "Cannot delete the only owner", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn delete_user(
     state: State<Arc<AppState>>,
@@ -269,7 +269,7 @@ pub async fn update_user(
         (status = 403, description = "Cannot update user with higher permissions", body = ApiErrorResponse),
         (status = 404, description = "User not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn admin_update_user(
     State(state): State<Arc<AppState>>,
@@ -368,7 +368,7 @@ async fn admin_update_user(
         (status = 200, description = "Users deleted successfully", body = ApiResponse<BulkDeleteResponse>),
         (status = 403, description = "Cannot delete users with higher permissions", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn bulk_delete_users(
     State(state): State<Arc<AppState>>,

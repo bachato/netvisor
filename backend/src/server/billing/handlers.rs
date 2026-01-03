@@ -29,7 +29,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 200, description = "List of available billing plans", body = ApiResponse<Vec<BillingPlan>>),
         (status = 400, description = "Billing not enabled", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_billing_plans(
     State(state): State<Arc<AppState>>,
@@ -58,7 +58,7 @@ async fn get_billing_plans(
         (status = 200, description = "Checkout session URL", body = ApiResponse<String>),
         (status = 400, description = "Invalid plan or billing not enabled", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_checkout_session(
     State(state): State<Arc<AppState>>,
@@ -140,7 +140,7 @@ async fn handle_webhook(
         (status = 200, description = "Portal session URL", body = ApiResponse<String>),
         (status = 400, description = "Billing not enabled", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_portal_session(
     State(state): State<Arc<AppState>>,

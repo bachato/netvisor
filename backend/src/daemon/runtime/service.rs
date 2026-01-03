@@ -52,6 +52,14 @@ impl DaemonRuntimeService {
         }
     }
 
+    /// Check if an error indicates the daemon record doesn't exist on the server.
+    /// This can happen if the server's database was reset or the daemon was deleted.
+    fn is_daemon_not_found_error(error: &anyhow::Error) -> bool {
+        let error_str = error.to_string().to_lowercase();
+        (error_str.contains("not found") && error_str.contains("daemon"))
+            || (error_str.contains("http 404") && error_str.contains("daemon"))
+    }
+
     pub async fn request_work(&self) -> Result<()> {
         let interval = Duration::from_secs(self.config.get_heartbeat_interval().await?);
         let daemon_id = self.config.get_id().await?;
@@ -75,7 +83,7 @@ impl DaemonRuntimeService {
 
             tracing::info!(daemon_id = %daemon_id, "Checking for work...");
 
-            let path = format!("/api/daemon/{}/request-work", daemon_id);
+            let path = format!("/api/daemons/{}/request-work", daemon_id);
             let result: Result<(Option<DiscoveryUpdatePayload>, bool), _> = self
                 .api_client
                 .post(
@@ -141,7 +149,7 @@ impl DaemonRuntimeService {
                 continue;
             }
 
-            let path = format!("/api/daemon/{}/heartbeat", daemon_id);
+            let path = format!("/api/daemons/{}/heartbeat", daemon_id);
             match self
                 .api_client
                 .post_no_data::<_>(
@@ -185,25 +193,35 @@ impl DaemonRuntimeService {
             .await
             .is_ok();
 
-        if let Some(existing_host_id) = self.config.get_host_id().await? {
-            tracing::info!(
-                host_id = %existing_host_id,
-                daemon_id = %daemon_id,
-                network_id = %network_id,
-                has_docker = %has_docker_client,
-                "Already registered, announcing startup"
-            );
+        // Always check with server using daemon_id - this is the source of truth
+        // for whether we're registered, not local host_id state
+        tracing::info!(
+            daemon_id = %daemon_id,
+            network_id = %network_id,
+            has_docker = %has_docker_client,
+            "Checking registration status with server"
+        );
 
-            // Announce startup to report version and get server capabilities
-            if let Err(e) = self.announce_startup(daemon_id).await {
-                tracing::warn!(
+        match self.announce_startup(daemon_id).await {
+            Ok(_) => {
+                tracing::info!(
                     daemon_id = %daemon_id,
-                    error = %e,
-                    "Failed to announce startup - continuing anyway"
+                    "Server recognized daemon, startup announced"
                 );
+                return Ok(());
             }
-
-            return Ok(());
+            Err(e) if Self::is_daemon_not_found_error(&e) => {
+                // Daemon not found on server - need to register
+                tracing::info!(
+                    daemon_id = %daemon_id,
+                    "Daemon not registered on server, registering..."
+                );
+                // Fall through to registration below
+            }
+            Err(e) => {
+                // Other errors (network issues, etc.) - can't proceed without server
+                return Err(e);
+            }
         }
 
         tracing::info!(
@@ -284,7 +302,7 @@ impl DaemonRuntimeService {
             let result: Result<DaemonRegistrationResponse, _> = self
                 .api_client
                 .post(
-                    "/api/daemon/register",
+                    "/api/daemons/register",
                     &registration_request,
                     "Registration failed",
                 )
@@ -292,7 +310,8 @@ impl DaemonRuntimeService {
 
             match result {
                 Ok(response) => {
-                    config.set_host_id(response.host_id).await?;
+                    // Note: host_id is not cached locally - the server provides it
+                    // in discovery requests via DiscoveryType
                     tracing::info!(
                         "Successfully registered with server, assigned ID: {}",
                         response.daemon.id
@@ -344,6 +363,74 @@ impl DaemonRuntimeService {
                         continue;
                     }
 
+                    // Check for connection errors - provide helpful troubleshooting message
+                    let error_lower = error_str.to_lowercase();
+                    let server_url = config.get_server_url().await.unwrap_or_default();
+
+                    // Connection refused - server not running or wrong address
+                    if error_lower.contains("connection refused") {
+                        tracing::error!(
+                            daemon_id = %daemon_id,
+                            server_url = %server_url,
+                            "Connection refused by server at {}. \
+                             The server may not be running or the URL may be incorrect.",
+                            server_url
+                        );
+                        return Err(anyhow::anyhow!(
+                            "Connection refused by server at {}. Verify the server is running and SCANOPY_SERVER_URL is correct.",
+                            server_url
+                        ));
+                    }
+
+                    // Timeout - differentiate between connect timeout and response timeout
+                    if error_lower.contains("timeout") || error_lower.contains("timed out") {
+                        // Connect timeout - couldn't establish connection at all
+                        if error_lower.contains("connect") {
+                            tracing::error!(
+                                daemon_id = %daemon_id,
+                                server_url = %server_url,
+                                "Connection timed out trying to reach server at {}. \
+                                 The server may be unreachable or blocked by a firewall.",
+                                server_url
+                            );
+                            return Err(anyhow::anyhow!(
+                                "Connection timed out reaching server at {}. Check network connectivity and firewall rules.",
+                                server_url
+                            ));
+                        }
+                        // Response timeout - connected but server didn't respond
+                        tracing::error!(
+                            daemon_id = %daemon_id,
+                            server_url = %server_url,
+                            "Server at {} did not respond in time. \
+                             The connection was established but the server did not send a response. \
+                             Consider switching to Pull mode (SCANOPY_MODE=Pull) if the server cannot reach this daemon.",
+                            server_url
+                        );
+                        return Err(anyhow::anyhow!(
+                            "Server at {} connected but did not respond. Consider using Pull mode (SCANOPY_MODE=Pull) if the server cannot initiate connections to this daemon.",
+                            server_url
+                        ));
+                    }
+
+                    // Generic connection error
+                    if error_lower.contains("connect error")
+                        || error_lower.contains("tcp connect")
+                        || error_lower.contains("error sending request")
+                    {
+                        tracing::error!(
+                            daemon_id = %daemon_id,
+                            server_url = %server_url,
+                            "Failed to connect to server at {}: {}",
+                            server_url,
+                            error_str
+                        );
+                        return Err(anyhow::anyhow!(
+                            "Cannot connect to server at {}. Verify the server is running and the URL is correct.",
+                            server_url
+                        ));
+                    }
+
                     // For other errors, fail immediately
                     return Err(e);
                 }
@@ -358,7 +445,7 @@ impl DaemonRuntimeService {
     /// - Receive server capabilities and deprecation warnings
     /// - Update last_seen timestamp
     pub async fn announce_startup(&self, daemon_id: Uuid) -> Result<()> {
-        let path = format!("/api/daemon/{}/startup", daemon_id);
+        let path = format!("/api/daemons/{}/startup", daemon_id);
 
         let request = DaemonStartupRequest {
             daemon_version: semver::Version::parse(env!("CARGO_PKG_VERSION"))?,
@@ -399,7 +486,7 @@ impl DaemonRuntimeService {
             match warning.severity {
                 DeprecationSeverity::Critical => {
                     tracing::error!(
-                        "DEPRECATION CRITICAL: {}{}",
+                        "{}{}",
                         warning.message,
                         warning
                             .sunset_date
@@ -410,7 +497,7 @@ impl DaemonRuntimeService {
                 }
                 DeprecationSeverity::Warning => {
                     tracing::warn!(
-                        "DEPRECATION WARNING: {}{}",
+                        "{}{}",
                         warning.message,
                         warning
                             .sunset_date

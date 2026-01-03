@@ -42,7 +42,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 200, description = "Group created successfully", body = ApiResponse<Group>),
         (status = 400, description = "Invalid request", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_group(
     State(state): State<Arc<AppState>>,
@@ -83,7 +83,7 @@ async fn create_group(
         (status = 400, description = "Invalid request", body = ApiErrorResponse),
         (status = 404, description = "Group not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_group(
     State(state): State<Arc<AppState>>,

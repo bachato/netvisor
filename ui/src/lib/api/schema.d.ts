@@ -322,7 +322,7 @@ export interface paths {
 		};
 		get?: never;
 		put?: never;
-		/** Bulk delete user_api_keys */
+		/** Bulk delete user API keys */
 		post: operations['bulk_delete_user_api_keys'];
 		delete?: never;
 		options?: never;
@@ -337,12 +337,12 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/** Get user_api_key by ID */
+		/** Get a user API key by ID */
 		get: operations['get_user_api_key_by_id'];
 		/** Update a user API key */
 		put: operations['update_user_api_key'];
 		post?: never;
-		/** Delete user_api_key */
+		/** Delete a user API key */
 		delete: operations['delete_user_api_key'];
 		options?: never;
 		head?: never;
@@ -555,27 +555,6 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
-	'/api/v1/daemons/register': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/**
-		 * Register a new daemon
-		 * @description Internal endpoint for daemon self-registration. Creates a host entry
-		 *     and sets up default discovery jobs for the daemon.
-		 */
-		post: operations['register_daemon'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
 	'/api/v1/daemons/{id}': {
 		parameters: {
 			query?: never;
@@ -592,90 +571,6 @@ export interface paths {
 		post?: never;
 		/** Delete daemon */
 		delete: operations['delete_daemon'];
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/daemons/{id}/heartbeat': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/**
-		 * Receive daemon heartbeat
-		 * @description Internal endpoint for daemons to send periodic heartbeats.
-		 *     Updates the daemon's last_seen timestamp and current status.
-		 */
-		post: operations['receive_heartbeat'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/daemons/{id}/request-work': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/**
-		 * Request work from server
-		 * @description Internal endpoint for daemons to poll for pending discovery sessions.
-		 *     Also updates heartbeat and returns any pending cancellation requests.
-		 *     Returns tuple of (next_session, should_cancel).
-		 */
-		post: operations['receive_work_request'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/daemons/{id}/startup': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/**
-		 * Daemon startup handshake
-		 * @description Internal endpoint for daemons to report their version on startup.
-		 *     Updates the daemon's version and last_seen timestamp, returns server capabilities.
-		 */
-		post: operations['daemon_startup'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/daemons/{id}/update-capabilities': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/**
-		 * Update daemon capabilities
-		 * @description Internal endpoint for daemons to report their current capabilities.
-		 */
-		post: operations['update_capabilities'];
-		delete?: never;
 		options?: never;
 		head?: never;
 		patch?: never;
@@ -1829,14 +1724,14 @@ export interface components {
 			/**
 			 * @description Association between a service and a port / interface that the service is listening on
 			 * @example {
-			 *       "created_at": "2026-01-03T01:01:49.064935Z",
-			 *       "id": "5433a493-4407-4094-8b30-c2047b7f6910",
+			 *       "created_at": "2026-01-03T18:56:56.405483Z",
+			 *       "id": "6572662d-2700-4509-8430-a05b7f248db4",
 			 *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 			 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 			 *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
 			 *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
 			 *       "type": "Port",
-			 *       "updated_at": "2026-01-03T01:01:49.064935Z"
+			 *       "updated_at": "2026-01-03T18:56:56.405483Z"
 			 *     }
 			 */
 			data?: components['schemas']['BindingBase'] & {
@@ -1877,18 +1772,6 @@ export interface components {
 			data?: {
 				api_key: components['schemas']['DaemonApiKey'];
 				key: string;
-			};
-			error?: string | null;
-			meta: components['schemas']['ApiMeta'];
-			success: boolean;
-		};
-		ApiResponse_DaemonRegistrationResponse: {
-			/** @description Daemon registration response from server to daemon */
-			data?: {
-				daemon: components['schemas']['Daemon'];
-				/** Format: uuid */
-				host_id: string;
-				server_capabilities?: null | components['schemas']['ServerCapabilities'];
 			};
 			error?: string | null;
 			meta: components['schemas']['ApiMeta'];
@@ -2210,33 +2093,19 @@ export interface components {
 			meta: components['schemas']['ApiMeta'];
 			success: boolean;
 		};
-		ApiResponse_ServerCapabilities: {
-			/** @description Server capabilities returned on startup/registration */
-			data?: {
-				/** @description Deprecation warnings for the daemon */
-				deprecation_warnings?: components['schemas']['DeprecationWarning'][];
-				/** @description Minimum daemon version supported by this server */
-				minimum_daemon_version: string;
-				/** @description Server software version */
-				server_version: string;
-			};
-			error?: string | null;
-			meta: components['schemas']['ApiMeta'];
-			success: boolean;
-		};
 		ApiResponse_Service: {
 			/**
 			 * @example {
 			 *       "bindings": [
 			 *         {
-			 *           "created_at": "2026-01-03T01:01:49.059275Z",
-			 *           "id": "4c292675-e827-4f0b-8ef1-7884638a03b7",
+			 *           "created_at": "2026-01-03T18:56:56.400921Z",
+			 *           "id": "5abe99fd-205b-48a5-beaf-be44ab5b38d7",
 			 *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 			 *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
 			 *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
 			 *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
 			 *           "type": "Port",
-			 *           "updated_at": "2026-01-03T01:01:49.059275Z"
+			 *           "updated_at": "2026-01-03T18:56:56.400921Z"
 			 *         }
 			 *       ],
 			 *       "created_at": "2026-01-15T10:30:00Z",
@@ -2244,7 +2113,7 @@ export interface components {
 			 *       "id": "550e8400-e29b-41d4-a716-446655440007",
 			 *       "name": "nginx",
 			 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
-			 *       "service_definition": "Glances",
+			 *       "service_definition": "Netdata",
 			 *       "source": {
 			 *         "type": "Manual"
 			 *       },
@@ -2766,14 +2635,14 @@ export interface components {
 		/**
 		 * @description Association between a service and a port / interface that the service is listening on
 		 * @example {
-		 *       "created_at": "2026-01-03T01:01:49.050356Z",
-		 *       "id": "b033995f-9058-4bf0-8325-1e9fd489e179",
+		 *       "created_at": "2026-01-03T18:56:56.389936Z",
+		 *       "id": "17df1678-3597-4598-84e7-16eccd01e1c3",
 		 *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
 		 *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
 		 *       "type": "Port",
-		 *       "updated_at": "2026-01-03T01:01:49.050356Z"
+		 *       "updated_at": "2026-01-03T18:56:56.389936Z"
 		 *     }
 		 */
 		Binding: components['schemas']['BindingBase'] & {
@@ -2970,14 +2839,6 @@ export interface components {
 			password?: string | null;
 			share: components['schemas']['Share'];
 		};
-		Daemon: components['schemas']['DaemonBase'] & {
-			/** Format: date-time */
-			readonly created_at: string;
-			/** Format: uuid */
-			readonly id: string;
-			/** Format: date-time */
-			readonly updated_at: string;
-		};
 		DaemonApiKey: components['schemas']['DaemonApiKeyBase'] & {
 			/** Format: date-time */
 			readonly created_at: string;
@@ -3027,39 +2888,8 @@ export interface components {
 			has_docker_socket?: boolean;
 			interfaced_subnet_ids: string[];
 		};
-		DaemonHeartbeatPayload: {
-			mode: components['schemas']['DaemonMode'];
-			name: string;
-			url: string;
-		};
 		/** @enum {string} */
 		DaemonMode: 'Push' | 'Pull';
-		/** @description Daemon registration request from daemon to server */
-		DaemonRegistrationRequest: {
-			capabilities: components['schemas']['DaemonCapabilities'];
-			/** Format: uuid */
-			daemon_id: string;
-			mode: components['schemas']['DaemonMode'];
-			name: string;
-			/** Format: uuid */
-			network_id: string;
-			url: string;
-			/**
-			 * Format: uuid
-			 * @description User responsible for maintaining this daemon (from frontend install command)
-			 *     Optional for backwards compat with old daemons - defaults to nil UUID
-			 */
-			user_id?: string;
-			/** @description Daemon software version (optional for backwards compat with old daemons) */
-			version?: string | null;
-		};
-		/** @description Daemon registration response from server to daemon */
-		DaemonRegistrationResponse: {
-			daemon: components['schemas']['Daemon'];
-			/** Format: uuid */
-			host_id: string;
-			server_capabilities?: null | components['schemas']['ServerCapabilities'];
-		};
 		/** @description Daemon response for UI including computed version status */
 		DaemonResponse: components['schemas']['DaemonBase'] & {
 			/** Format: date-time */
@@ -3081,11 +2911,6 @@ export interface components {
 		/** @description Response from daemon setup endpoint */
 		DaemonSetupResponse: {
 			api_key?: string | null;
-		};
-		/** @description Sent by daemon on startup to report version */
-		DaemonStartupRequest: {
-			/** @description Daemon software version (semver format) */
-			daemon_version: string;
 		};
 		/** @description Daemon version status including health and any warnings */
 		DaemonVersionStatus: {
@@ -3732,27 +3557,18 @@ export interface components {
 					/** @enum {string} */
 					type: 'AdHoc';
 			  };
-		/** @description Server capabilities returned on startup/registration */
-		ServerCapabilities: {
-			/** @description Deprecation warnings for the daemon */
-			deprecation_warnings?: components['schemas']['DeprecationWarning'][];
-			/** @description Minimum daemon version supported by this server */
-			minimum_daemon_version: string;
-			/** @description Server software version */
-			server_version: string;
-		};
 		/**
 		 * @example {
 		 *       "bindings": [
 		 *         {
-		 *           "created_at": "2026-01-03T01:01:49.050307Z",
-		 *           "id": "171498c3-a55e-4d5f-b57d-f2efbee4b9e8",
+		 *           "created_at": "2026-01-03T18:56:56.389831Z",
+		 *           "id": "04708141-fe1d-49c3-90e4-9c4fd99c1318",
 		 *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 		 *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
 		 *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
 		 *           "type": "Port",
-		 *           "updated_at": "2026-01-03T01:01:49.050307Z"
+		 *           "updated_at": "2026-01-03T18:56:56.389831Z"
 		 *         }
 		 *       ],
 		 *       "created_at": "2026-01-15T10:30:00Z",
@@ -3760,7 +3576,7 @@ export interface components {
 		 *       "id": "550e8400-e29b-41d4-a716-446655440007",
 		 *       "name": "nginx",
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
-		 *       "service_definition": "Glances",
+		 *       "service_definition": "Netdata",
 		 *       "source": {
 		 *         "type": "Manual"
 		 *       },
@@ -4947,14 +4763,14 @@ export interface operations {
 			path?: never;
 			cookie?: never;
 		};
-		/** @description Array of user_api_keys IDs to delete */
+		/** @description Array of API key IDs to delete */
 		requestBody: {
 			content: {
 				'application/json': string[];
 			};
 		};
 		responses: {
-			/** @description UserApiKeys deleted */
+			/** @description API keys deleted */
 			200: {
 				headers: {
 					[name: string]: unknown;
@@ -4970,14 +4786,14 @@ export interface operations {
 			query?: never;
 			header?: never;
 			path: {
-				/** @description UserApiKey ID */
+				/** @description API key ID */
 				id: string;
 			};
 			cookie?: never;
 		};
 		requestBody?: never;
 		responses: {
-			/** @description UserApiKey found */
+			/** @description API key found */
 			200: {
 				headers: {
 					[name: string]: unknown;
@@ -4986,7 +4802,7 @@ export interface operations {
 					'application/json': components['schemas']['ApiResponse_UserApiKey'];
 				};
 			};
-			/** @description UserApiKey not found */
+			/** @description API key not found */
 			404: {
 				headers: {
 					[name: string]: unknown;
@@ -5047,14 +4863,14 @@ export interface operations {
 			query?: never;
 			header?: never;
 			path: {
-				/** @description UserApiKey ID */
+				/** @description API key ID */
 				id: string;
 			};
 			cookie?: never;
 		};
 		requestBody?: never;
 		responses: {
-			/** @description UserApiKey deleted */
+			/** @description API key deleted */
 			200: {
 				headers: {
 					[name: string]: unknown;
@@ -5063,7 +4879,7 @@ export interface operations {
 					'application/json': components['schemas']['ApiResponse'];
 				};
 			};
-			/** @description UserApiKey not found */
+			/** @description API key not found */
 			404: {
 				headers: {
 					[name: string]: unknown;
@@ -5489,39 +5305,6 @@ export interface operations {
 			};
 		};
 	};
-	register_daemon: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['DaemonRegistrationRequest'];
-			};
-		};
-		responses: {
-			/** @description Daemon registered successfully */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiResponse_DaemonRegistrationResponse'];
-				};
-			};
-			/** @description Daemon registration disabled in demo mode */
-			403: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiErrorResponse'];
-				};
-			};
-		};
-	};
 	get_daemon_by_id: {
 		parameters: {
 			query?: never;
@@ -5576,148 +5359,6 @@ export interface operations {
 		requestBody?: never;
 		responses: {
 			/** @description Daemon deleted */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiResponse'];
-				};
-			};
-			/** @description Daemon not found */
-			404: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiErrorResponse'];
-				};
-			};
-		};
-	};
-	receive_heartbeat: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				/** @description Daemon ID */
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['DaemonHeartbeatPayload'];
-			};
-		};
-		responses: {
-			/** @description Heartbeat received */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiResponse'];
-				};
-			};
-			/** @description Daemon not found */
-			404: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiErrorResponse'];
-				};
-			};
-		};
-	};
-	receive_work_request: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				/** @description Daemon ID */
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['DaemonHeartbeatPayload'];
-			};
-		};
-		responses: {
-			/** @description Work request processed - returns (Option<DiscoveryUpdatePayload>, bool) */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
-			};
-			/** @description Daemon not found */
-			404: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiErrorResponse'];
-				};
-			};
-		};
-	};
-	daemon_startup: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				/** @description Daemon ID */
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['DaemonStartupRequest'];
-			};
-		};
-		responses: {
-			/** @description Startup acknowledged */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiResponse_ServerCapabilities'];
-				};
-			};
-			/** @description Daemon not found */
-			404: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['ApiErrorResponse'];
-				};
-			};
-		};
-	};
-	update_capabilities: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				/** @description Daemon ID */
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['DaemonCapabilities'];
-			};
-		};
-		responses: {
-			/** @description Capabilities updated */
 			200: {
 				headers: {
 					[name: string]: unknown;
@@ -8376,11 +8017,7 @@ export interface operations {
 			};
 			cookie?: never;
 		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['Topology'];
-			};
-		};
+		requestBody?: never;
 		responses: {
 			/** @description Topology locked */
 			200: {
@@ -8493,11 +8130,7 @@ export interface operations {
 			};
 			cookie?: never;
 		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['Topology'];
-			};
-		};
+		requestBody?: never;
 		responses: {
 			/** @description Topology unlocked */
 			200: {

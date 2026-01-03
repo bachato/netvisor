@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "Network topology discovery and visualization API. API version 1.",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.12.10\"\n  }\n}\n```\n\nError responses include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -547,10 +547,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -614,10 +614,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -658,10 +658,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -709,10 +709,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -768,10 +768,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -817,10 +817,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -868,10 +868,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1287,10 +1287,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1327,10 +1327,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1377,10 +1377,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1493,10 +1493,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -1551,10 +1551,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1595,10 +1595,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1646,10 +1646,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -1716,10 +1716,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -1765,10 +1765,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1795,10 +1795,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1839,10 +1839,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -1901,10 +1901,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -1950,10 +1950,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2007,10 +2007,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -2054,10 +2054,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2083,10 +2083,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2127,10 +2127,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2177,10 +2177,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2228,10 +2228,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -2287,10 +2287,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -2336,10 +2336,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2377,10 +2377,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2471,10 +2471,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -2518,10 +2518,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2562,10 +2562,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2613,10 +2613,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -2682,10 +2682,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -2731,10 +2731,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2761,10 +2761,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -2877,10 +2877,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -2997,10 +2997,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3049,10 +3049,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -3119,10 +3119,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -3179,10 +3179,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3249,10 +3249,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -3296,10 +3296,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3349,10 +3349,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3400,10 +3400,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -3469,10 +3469,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -3518,10 +3518,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3547,10 +3547,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -3594,10 +3594,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3655,10 +3655,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3716,10 +3716,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3746,10 +3746,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -3783,10 +3783,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3837,10 +3837,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -3888,10 +3888,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -3957,10 +3957,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -4016,10 +4016,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4123,10 +4123,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4185,10 +4185,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4247,10 +4247,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4304,10 +4304,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -4351,10 +4351,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4395,10 +4395,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4446,10 +4446,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -4515,10 +4515,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -4564,10 +4564,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4621,10 +4621,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -4669,10 +4669,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4713,10 +4713,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4764,10 +4764,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -4834,10 +4834,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -4883,10 +4883,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -4940,10 +4940,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -4987,10 +4987,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -5031,10 +5031,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -5190,10 +5190,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -5249,10 +5249,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -5298,10 +5298,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -5440,10 +5440,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -5491,10 +5491,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -5561,10 +5561,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -5610,10 +5610,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -5640,10 +5640,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -5698,10 +5698,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -5742,10 +5742,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -5793,10 +5793,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -5852,10 +5852,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -5901,10 +5901,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -5931,10 +5931,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -5979,10 +5979,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6030,10 +6030,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -6089,10 +6089,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       },
@@ -6138,10 +6138,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6165,16 +6165,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Topology"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "description": "Topology locked",
@@ -6209,10 +6199,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6271,10 +6261,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6333,10 +6323,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6360,16 +6350,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Topology"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "description": "Topology unlocked",
@@ -6404,10 +6384,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6433,10 +6413,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6487,10 +6467,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6681,10 +6661,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6753,10 +6733,10 @@
         },
         "security": [
           {
-            "session": []
+            "user_api_key": []
           },
           {
-            "user_api_key": []
+            "session": []
           }
         ]
       }
@@ -6895,14 +6875,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-01-03T05:01:26.531320Z",
-              "id": "6f1f4909-43ac-4b2b-8643-bd3ddf689439",
+              "created_at": "2026-01-03T18:56:56.405483Z",
+              "id": "6572662d-2700-4509-8430-a05b7f248db4",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-03T05:01:26.531320Z"
+              "updated_at": "2026-01-03T18:56:56.405483Z"
             }
           },
           "error": {
@@ -8062,14 +8042,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-01-03T05:01:26.527982Z",
-                  "id": "a84fa743-f73d-453e-8b36-054abed8184e",
+                  "created_at": "2026-01-03T18:56:56.400921Z",
+                  "id": "5abe99fd-205b-48a5-beaf-be44ab5b38d7",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-03T05:01:26.527982Z"
+                  "updated_at": "2026-01-03T18:56:56.400921Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -8077,7 +8057,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
-              "service_definition": "UptimeKuma",
+              "service_definition": "Netdata",
               "source": {
                 "type": "Manual"
               },
@@ -8778,14 +8758,14 @@
               ],
               "description": "Association between a service and a port / interface that the service is listening on",
               "example": {
-                "created_at": "2026-01-03T05:01:26.531124Z",
-                "id": "fe875060-f258-4dda-ad7d-11f30d0e56cd",
+                "created_at": "2026-01-03T18:56:56.405103Z",
+                "id": "9bf9f4f9-8c0a-46f2-8440-fc60fa36e494",
                 "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "port_id": "550e8400-e29b-41d4-a716-446655440006",
                 "service_id": "550e8400-e29b-41d4-a716-446655440007",
                 "type": "Port",
-                "updated_at": "2026-01-03T05:01:26.531124Z"
+                "updated_at": "2026-01-03T18:56:56.405103Z"
               }
             }
           },
@@ -9582,14 +9562,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-01-03T05:01:26.527187Z",
-                    "id": "f145d8fd-6968-49f9-957b-8ef9c0d18940",
+                    "created_at": "2026-01-03T18:56:56.399542Z",
+                    "id": "80231175-e526-4f63-85fe-1b5f86131d5a",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-01-03T05:01:26.527187Z"
+                    "updated_at": "2026-01-03T18:56:56.399542Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -9597,7 +9577,7 @@
                 "id": "550e8400-e29b-41d4-a716-446655440007",
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
-                "service_definition": "UptimeKuma",
+                "service_definition": "Netdata",
                 "source": {
                   "type": "Manual"
                 },
@@ -10291,14 +10271,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-01-03T05:01:26.517180Z",
-          "id": "4a949b67-41b2-4d74-8aad-737a24e0edcd",
+          "created_at": "2026-01-03T18:56:56.389936Z",
+          "id": "17df1678-3597-4598-84e7-16eccd01e1c3",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-01-03T05:01:26.517180Z"
+          "updated_at": "2026-01-03T18:56:56.389936Z"
         }
       },
       "BindingBase": {
@@ -13064,14 +13044,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-01-03T05:01:26.517112Z",
-              "id": "2fdeecc0-c429-4201-877c-12bc9e07a6de",
+              "created_at": "2026-01-03T18:56:56.389831Z",
+              "id": "04708141-fe1d-49c3-90e4-9c4fd99c1318",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-03T05:01:26.517112Z"
+              "updated_at": "2026-01-03T18:56:56.389831Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -13079,7 +13059,7 @@
           "id": "550e8400-e29b-41d4-a716-446655440007",
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
-          "service_definition": "UptimeKuma",
+          "service_definition": "Netdata",
           "source": {
             "type": "Manual"
           },
@@ -14341,6 +14321,10 @@
       "description": "Server configuration. Public configuration settings for client applications."
     },
     {
+      "name": "daemon_api_keys",
+      "description": "Daemon API keys for scanner authentication. Create and manage keys that allow daemons to authenticate with the server and submit discovery results."
+    },
+    {
       "name": "discoveries",
       "description": "Network discovery operations. Trigger and monitor scans that detect hosts, services, and network topology."
     },
@@ -14354,7 +14338,7 @@
     },
     {
       "name": "bindings",
-      "description": "\n            ## Binding Types\n            - **Interface binding**: Service is present at an interface (IP address) without a specific port.\n              Used for non-port-bound services like gateways.\n            - **Port binding (specific interface)**: Service listens on a specific port on a specific interface.\n            - **Port binding (all interfaces)**: Service listens on a specific port on all interfaces\n              (`interface_id: null`).\n\n            ## Validation and Deduplication Rules\n            - **Conflict detection**: Interface bindings conflict with port bindings on the same interface.\n              A port binding on all interfaces conflicts with any interface binding for the same service.\n            - **All-interfaces precedence**: When creating a port binding with `interface_id: null`,\n              any existing specific-interface bindings for the same port are automatically removed,\n              as they are superseded by the all-interfaces binding.\n        "
+      "description": "\n            ## Binding Types\n            - **Interface binding**: Service is present at an interface (IP address) without a specific port.\n              Used for non-port-bound services like gateways.\n            - **Port binding (specific interface)**: Service listens on a specific port on a specific interface.\n            - **Port binding (all interfaces)**: Service listens on a specific port on all interfaces\n              (`interface_id: null`).\n        "
     },
     {
       "name": "groups",
@@ -14407,6 +14391,10 @@
     {
       "name": "tags",
       "description": "Custom tags for categorization. Apply labels to entities for filtering and organization."
+    },
+    {
+      "name": "user_api_keys",
+      "description": "User API keys for programmatic access. Create and manage personal API keys with scoped permissions for automation and integrations."
     },
     {
       "name": "users",

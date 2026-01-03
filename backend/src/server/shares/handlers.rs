@@ -85,7 +85,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         (status = 200, description = "Share created", body = ApiResponse<Share>),
         (status = 400, description = "Invalid request", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_share(
     State(state): State<Arc<AppState>>,
@@ -121,7 +121,7 @@ async fn create_share(
         (status = 200, description = "Share updated", body = ApiResponse<Share>),
         (status = 404, description = "Share not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_share(
     State(state): State<Arc<AppState>>,

@@ -46,7 +46,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     responses(
         (status = 200, description = "List of hosts with their children", body = ApiResponse<Vec<HostResponse>>),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_all_hosts(
     State(state): State<Arc<AppState>>,
@@ -81,7 +81,7 @@ async fn get_all_hosts(
         (status = 200, description = "Host found", body = ApiResponse<HostResponse>),
         (status = 404, description = "Host not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_host_by_id(
     State(state): State<Arc<AppState>>,
@@ -266,7 +266,7 @@ async fn create_host(
         (status = 400, description = "Validation error: invalid tags", body = ApiErrorResponse),
         (status = 404, description = "Host not found", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_host(
     State(state): State<Arc<AppState>>,
@@ -398,7 +398,7 @@ async fn create_host_discovery(
         (status = 404, description = "One or both hosts not found", body = ApiErrorResponse),
         (status = 400, description = "Validation error: same host, has daemon, or different networks", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn consolidate_hosts(
     State(state): State<Arc<AppState>>,
@@ -475,7 +475,7 @@ async fn consolidate_hosts(
         (status = 404, description = "Host not found", body = ApiErrorResponse),
         (status = 409, description = "Host has associated daemon", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn delete_host(
     State(state): State<Arc<AppState>>,
@@ -513,7 +513,7 @@ pub async fn delete_host(
         (status = 200, description = "Hosts deleted successfully", body = ApiResponse<BulkDeleteResponse>),
         (status = 409, description = "One or more hosts has an associated daemon - delete daemons first", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn bulk_delete_hosts(
     State(state): State<Arc<AppState>>,

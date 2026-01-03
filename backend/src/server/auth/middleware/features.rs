@@ -1,6 +1,7 @@
 use crate::server::{
     auth::middleware::{
         auth::AuthError,
+        cache::CachedOrganization,
         permissions::{Authorized, IsUser},
     },
     billing::types::base::BillingPlan,
@@ -77,13 +78,10 @@ where
 
         let app_state = state.as_ref();
 
-        let organization = app_state
-            .services
-            .organization_service
-            .get_by_id(&organization_id)
+        // Use cached organization lookup (may have been cached by billing middleware)
+        let organization = CachedOrganization::get_or_load(parts, app_state, &organization_id)
             .await
-            .map_err(|_| AuthError(ApiError::internal_error("Failed to load organization")))?
-            .ok_or_else(|| AuthError(ApiError::forbidden("Organization not found")))?;
+            .map_err(AuthError)?;
 
         let plan = organization.base.plan.unwrap_or_default();
 

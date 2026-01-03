@@ -148,7 +148,7 @@ async fn validate_no_binding_type_conflict(
         (status = 400, description = "Referenced port or interface does not exist", body = ApiErrorResponse),
         (status = 409, description = "Conflict with existing binding type", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn create_binding(
     State(state): State<Arc<AppState>>,
@@ -212,7 +212,7 @@ async fn create_binding(
         (status = 400, description = "Referenced port or interface does not exist", body = ApiErrorResponse),
         (status = 409, description = "Conflict with existing binding type", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn update_binding(
     State(state): State<Arc<AppState>>,

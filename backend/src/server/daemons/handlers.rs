@@ -78,7 +78,7 @@ pub fn create_internal_router() -> OpenApiRouter<Arc<AppState>> {
     responses(
         (status = 200, description = "List of daemons", body = ApiResponse<Vec<DaemonResponse>>),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_all(
     State(state): State<Arc<AppState>>,
@@ -121,7 +121,7 @@ async fn get_all(
         (status = 404, description = "Daemon not found", body = ApiErrorResponse),
         (status = 403, description = "Access denied", body = ApiErrorResponse),
     ),
-    security(("session" = []), ("user_api_key" = []))
+     security(("user_api_key" = []), ("session" = []))
 )]
 async fn get_by_id(
     State(state): State<Arc<AppState>>,

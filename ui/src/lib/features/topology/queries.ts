@@ -172,8 +172,7 @@ export function useLockTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
 			const { data } = await apiClient.POST('/api/v1/topology/{id}/lock', {
-				params: { path: { id: topology.id } },
-				body: topology
+				params: { path: { id: topology.id } }
 			});
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to lock topology');
@@ -198,8 +197,7 @@ export function useUnlockTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
 			const { data } = await apiClient.POST('/api/v1/topology/{id}/unlock', {
-				params: { path: { id: topology.id } },
-				body: topology
+				params: { path: { id: topology.id } }
 			});
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to unlock topology');
