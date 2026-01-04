@@ -2,7 +2,6 @@
 	import TabHeader from '$lib/shared/components/layout/TabHeader.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
-	import { initiateDiscovery } from '../../sse';
 	import type { Discovery } from '../../types/base';
 	import { discoveryFields } from '../../queries';
 	import DiscoveryEditModal from '../DiscoveryModal/DiscoveryEditModal.svelte';
@@ -16,7 +15,8 @@
 		useCreateDiscoveryMutation,
 		useUpdateDiscoveryMutation,
 		useDeleteDiscoveryMutation,
-		useBulkDeleteDiscoveriesMutation
+		useBulkDeleteDiscoveriesMutation,
+		useInitiateDiscoveryMutation
 	} from '../../queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
@@ -35,6 +35,7 @@
 	const updateDiscoveryMutation = useUpdateDiscoveryMutation();
 	const deleteDiscoveryMutation = useDeleteDiscoveryMutation();
 	const bulkDeleteDiscoveriesMutation = useBulkDeleteDiscoveriesMutation();
+	const initiateDiscoveryMutation = useInitiateDiscoveryMutation();
 
 	// Derived data
 	let tagsData = $derived(tagsQuery.data ?? []);
@@ -64,8 +65,8 @@
 		}
 	}
 
-	async function handleDiscoveryRun(discovery: Discovery) {
-		await initiateDiscovery(discovery.id);
+	function handleDiscoveryRun(discovery: Discovery) {
+		initiateDiscoveryMutation.mutate(discovery.id);
 	}
 
 	async function handleDiscoveryCreate(data: Discovery) {

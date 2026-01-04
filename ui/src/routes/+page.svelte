@@ -3,10 +3,10 @@
 	import Toast from '$lib/shared/components/feedback/Toast.svelte';
 	import Sidebar from '$lib/shared/components/layout/Sidebar.svelte';
 	import { onDestroy, onMount } from 'svelte';
-	import { discoverySSEManager } from '$lib/features/discovery/sse';
+	import { discoverySSEManager } from '$lib/features/discovery/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { getMetadata } from '$lib/shared/stores/metadata';
-	import { topologySSEManager } from '$lib/features/topology/sse';
+	import { topologySSEManager } from '$lib/features/topology/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 
 	// Read hash immediately during script initialization, before onMount

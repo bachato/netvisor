@@ -2,7 +2,7 @@
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import { getDaemonIsRunningDiscovery } from '$lib/features/daemons/queries';
-	import { sessions } from '$lib/features/discovery/sse';
+	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
 	import { concepts, entities } from '$lib/shared/stores/metadata';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { toColor } from '$lib/shared/utils/styling';
@@ -22,12 +22,14 @@
 	const networksQuery = useNetworksQuery();
 	const hostsQuery = useHostsQuery();
 	const subnetsQuery = useSubnetsQuery();
+	const sessionsQuery = useActiveSessionsQuery();
 
 	// Derived data
 	let tagsData = $derived(tagsQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
+	let sessionsData = $derived(sessionsQuery.data ?? []);
 
 	let {
 		daemon,
@@ -44,7 +46,7 @@
 	} = $props();
 
 	let host = $derived(hostsData.find((h) => h.id === daemon.host_id) ?? null);
-	let daemonIsRunningDiscovery = $derived(getDaemonIsRunningDiscovery(daemon.id, $sessions));
+	let daemonIsRunningDiscovery = $derived(getDaemonIsRunningDiscovery(daemon.id, sessionsData));
 
 	// Compute status tag based on version_status
 	let status: TagProps | null = $derived.by(() => {

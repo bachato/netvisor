@@ -8,7 +8,7 @@
 	import { identifyUser, trackPlunkEvent } from '$lib/shared/utils/analytics';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import { resolve } from '$app/paths';
-	import { resetTopologyOptions } from '$lib/features/topology/store';
+	import { resetTopologyOptions } from '$lib/features/topology/queries';
 	import { pushError, pushSuccess } from '$lib/shared/stores/feedback';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';

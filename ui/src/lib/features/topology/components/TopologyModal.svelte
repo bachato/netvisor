@@ -6,12 +6,12 @@
 	import type { Topology } from '../types/base';
 	import {
 		createEmptyTopologyFormData,
-		createTopology,
-		topologies,
-		topology,
-		topologyOptions,
-		updateTopology
-	} from '../store';
+		useCreateTopologyMutation,
+		useTopologiesQuery,
+		useUpdateTopologyMutation,
+		selectedTopologyId,
+		topologyOptions
+	} from '../queries';
 	import { entities } from '$lib/shared/stores/metadata';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
@@ -22,7 +22,12 @@
 
 	// TanStack Query hooks
 	const networksQuery = useNetworksQuery();
+	const topologiesQuery = useTopologiesQuery();
+	const createTopologyMutation = useCreateTopologyMutation();
+	const updateTopologyMutation = useUpdateTopologyMutation();
+
 	let networksData = $derived(networksQuery.data ?? []);
+	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let defaultNetworkId = $derived(networksData[0]?.id ?? '');
 
 	let {
@@ -42,11 +47,6 @@
 
 	let loading = $state(false);
 
-	$effect(() => {
-		void $topology;
-		void $topologies;
-	});
-
 	function getDefaultValues(): Topology {
 		return topo ? { ...topo } : createEmptyTopologyFormData(defaultNetworkId);
 	}
@@ -64,9 +64,11 @@
 			loading = true;
 			try {
 				if (isEditing) {
-					await updateTopology(topologyData);
+					await updateTopologyMutation.mutateAsync(topologyData);
 				} else {
-					await createTopology(topologyData);
+					const created = await createTopologyMutation.mutateAsync(topologyData);
+					// Select the newly created topology
+					selectedTopologyId.set(created.id);
 				}
 				await onSubmit();
 			} finally {
@@ -89,7 +91,7 @@
 	let availableTopologies = $derived(() => {
 		const networkId = form.state.values.network_id;
 		const currentId = form.state.values.id;
-		return $topologies.filter((t) => t.id !== currentId && t.network_id == networkId);
+		return topologiesData.filter((t) => t.id !== currentId && t.network_id == networkId);
 	});
 
 	let colorHelper = entities.getColorHelper('Topology');

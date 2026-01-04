@@ -111,7 +111,8 @@ export const queryKeys = {
 	},
 	discovery: {
 		all: ['discovery'] as const,
-		detail: (id: string) => [...queryKeys.discovery.all, 'detail', id] as const
+		detail: (id: string) => [...queryKeys.discovery.all, 'detail', id] as const,
+		sessions: () => [...queryKeys.discovery.all, 'sessions'] as const
 	},
 	apiKeys: {
 		all: ['apiKeys'] as const,

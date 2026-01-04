@@ -215,6 +215,7 @@ export function createDefaultService(
 		name: serviceType,
 		bindings: [],
 		virtualization: null,
+		position: 0, // Will be set by server based on existing services
 		source: {
 			type: 'Manual'
 		}

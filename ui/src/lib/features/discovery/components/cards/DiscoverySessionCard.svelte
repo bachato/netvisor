@@ -1,6 +1,6 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
-	import { cancelling } from '$lib/features/discovery/sse';
+	import { cancellingSessions } from '$lib/features/discovery/queries';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { Loader2, X } from 'lucide-svelte';
 	import type { DiscoveryUpdatePayload } from '../../types/api';
@@ -25,7 +25,7 @@
 	let daemonsData = $derived(daemonsQuery.data ?? []);
 	let daemon = $derived(daemonsData.find((d) => d.id == session.daemon_id));
 	let isCancelling = $derived(
-		session?.session_id ? $cancelling.get(session.session_id) === true : false
+		session?.session_id ? $cancellingSessions.get(session.session_id) === true : false
 	);
 
 	async function handleCancelDiscovery() {
@@ -63,7 +63,8 @@
 						{
 							label: 'Cancel Discovery',
 							icon: isCancelling ? Loader2 : X,
-							class: `btn-icon-danger ${isCancelling ? 'animate-spin' : ''}`,
+							class: 'btn-icon-danger',
+							animation: isCancelling ? 'animate-spin' : '',
 							onClick: isCancelling ? () => {} : () => handleCancelDiscovery()
 						}
 					]
