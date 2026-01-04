@@ -70,7 +70,7 @@ Access the UI at `http://<your-server-ip>:60072`, create your account, and wait 
 
 For detailed setup options and configuration, see the [Installation Guide](https://scanopy.net/docs/server-installation).
 
-## 📚 Documentation
+## 📚 Documentation + API
 
 **[scanopy.net/docs](https://scanopy.net/docs)**
 
