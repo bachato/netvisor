@@ -296,6 +296,7 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                 )],
                 details: MatchDetails::new_certain("Docker daemon self-report"),
             },
+            position: 0,
         });
 
         let mut temp_docker_daemon_host = Host::new(HostBase {

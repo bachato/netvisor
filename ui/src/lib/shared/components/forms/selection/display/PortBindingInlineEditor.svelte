@@ -39,9 +39,19 @@
 		onUpdate?: (updates: Partial<PortBinding>) => void;
 		service?: Service;
 		host?: HostFormData;
+		services?: Service[];
 	}
 
-	let { binding, onUpdate = () => {}, service = undefined, host = undefined }: Props = $props();
+	let {
+		binding,
+		onUpdate = () => {},
+		service = undefined,
+		host = undefined,
+		services = undefined
+	}: Props = $props();
+
+	// Use services from props (current editing state) if provided, otherwise fall back to global cache
+	let effectiveServicesData = $derived(services ?? servicesData);
 
 	// Type guard for services with Port bindings
 	function isServiceWithPortBindings(svc: Service): svc is Service {
@@ -51,7 +61,7 @@
 	// Check if this port+interface combination conflicts with existing bindings
 	function getConflictingService(portId: string, interfaceId: string | null): Service | null {
 		// Get services that have a binding on this port
-		const servicesForPort = servicesData.filter((s) =>
+		const servicesForPort = effectiveServicesData.filter((s) =>
 			s.bindings.some((b) => b.type === 'Port' && b.port_id === portId)
 		);
 

@@ -11,6 +11,7 @@ use crate::server::services::r#impl::virtualization::{
     DockerVirtualization, ServiceVirtualization,
 };
 use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
+use crate::server::shared::position::Positioned;
 use crate::server::shared::storage::traits::StorableEntity;
 use crate::server::shared::types::entities::{DiscoveryMetadata, EntitySource};
 use crate::server::subnets::r#impl::base::Subnet;
@@ -39,6 +40,9 @@ pub struct ServiceBase {
     #[serde(default)]
     #[schema(required)]
     pub tags: Vec<Uuid>,
+    /// Position of this service in the host's service list (for ordering)
+    #[serde(default)]
+    pub position: i32,
 }
 
 impl Default for ServiceBase {
@@ -52,6 +56,7 @@ impl Default for ServiceBase {
             virtualization: None,
             source: EntitySource::Unknown,
             tags: Vec::new(),
+            position: 0,
         }
     }
 }
@@ -430,6 +435,7 @@ impl Service {
                     metadata: vec![discovery_metadata],
                     details: result.details.clone(),
                 },
+                position: 0, // Discovery services get position assigned during merge
             });
 
             Some((service, ports, result.endpoint))
@@ -441,5 +447,23 @@ impl Service {
             );
             None
         }
+    }
+}
+
+impl Positioned for Service {
+    fn position(&self) -> i32 {
+        self.base.position
+    }
+
+    fn set_position(&mut self, position: i32) {
+        self.base.position = position;
+    }
+
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
+    fn entity_name() -> &'static str {
+        "service"
     }
 }

@@ -8,7 +8,8 @@ import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-qu
 import { queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Service } from './types/base';
-import { utcTimeZoneSentinel, uuidv4Sentinel } from '$lib/shared/utils/formatting';
+import { utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
+import { v4 as uuidv4 } from 'uuid';
 
 // Re-export type for convenience
 export type { Service };
@@ -204,7 +205,7 @@ export function createDefaultService(
 	host_network_id: string
 ): Service {
 	return {
-		id: uuidv4Sentinel,
+		id: uuidv4(), // Generate real UUID for client-provided ID
 		created_at: utcTimeZoneSentinel,
 		updated_at: utcTimeZoneSentinel,
 		network_id: host_network_id,

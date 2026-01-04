@@ -154,9 +154,10 @@
 	}
 
 	// TanStack Form - onSubmit delegates to performSubmission for access to latest state
-	// Using let so we can recreate the form on modal open to clear stale field registrations
-	// Form state is managed by TanStack Form's internal store, not Svelte reactivity
-	// svelte-ignore non_reactive_update
+	// Note: We intentionally do NOT recreate the form on modal open. Reassigning `form` causes
+	// Field components to remain bound to the old form (TanStack Form is not reactive to Svelte).
+	// Instead, we use form.reset() which properly resets values, validation, and touched state.
+	// Fields unmount when modal closes ({#if isOpen} in GenericModal) and re-register on open.
 	let form = createForm(() => ({
 		defaultValues: {
 			name: formData.name,
@@ -170,42 +171,30 @@
 		}
 	}));
 
-	// Creates a fresh form instance - called on modal open to clear stale field registrations
-	function recreateForm() {
-		form = createForm(() => ({
-			defaultValues: {
-				name: formData.name,
-				hostname: formData.hostname || '',
-				description: formData.description || '',
-				interfaces: formData.interfaces || [],
-				ports: formData.ports || []
-			},
-			onSubmit: async ({ value }) => {
-				await performSubmission(value);
-			}
-		}));
-	}
-
 	// Initialize form data when host changes or modal opens
+	let modalInitialized = $state(false);
 	function handleOpen() {
+		modalInitialized = true;
+		lastHostId = host?.id ?? null;
 		resetForm();
-		recreateForm();
 	}
 
-	// Track host ID to detect when host changes (e.g., after createAndContinue)
+	// Track host ID to detect when host changes WHILE modal is already open
+	// (e.g., after createAndContinue creates a new host).
+	// Initial open is handled by handleOpen(), so we check modalInitialized.
 	let lastHostId = $state<string | null>(null);
 	$effect(() => {
 		const currentHostId = host?.id ?? null;
-		if (isOpen && currentHostId !== lastHostId) {
-			// Host changed while modal is open (e.g., after createAndContinue)
-			// Reset form to use the new host's data, but preserve current tab
-			if (lastHostId !== null || currentHostId !== null) {
-				const currentTab = activeTab;
-				resetForm();
-				recreateForm();
-				activeTab = currentTab; // Preserve tab position
-			}
+		// Only reset if modal was already initialized and host changed
+		if (isOpen && modalInitialized && currentHostId !== lastHostId) {
+			const currentTab = activeTab;
+			resetForm();
+			activeTab = currentTab; // Preserve tab position
 			lastHostId = currentHostId;
+		}
+		// Reset flag when modal closes
+		if (!isOpen) {
+			modalInitialized = false;
 		}
 	});
 

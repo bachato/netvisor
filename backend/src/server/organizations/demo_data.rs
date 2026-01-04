@@ -499,6 +499,7 @@ fn create_service(
                 virtualization: None,
                 source: EntitySource::Manual,
                 tags,
+                position: 0,
             },
         },
         port,

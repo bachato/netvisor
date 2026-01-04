@@ -16,6 +16,7 @@ use crate::server::{
             bus::EventBus,
             types::{EntityEvent, EntityOperation},
         },
+        position::next_position,
         services::traits::{ChildCrudService, CrudService, EventBusService},
         storage::{filter::EntityFilter, generic::GenericPostgresStorage, traits::Storage},
         types::{api::ValidationError, entities::EntitySource},
@@ -121,6 +122,9 @@ impl CrudService<Service> for ServiceService {
         let filter = EntityFilter::unfiltered().host_id(&service.base.host_id);
         let existing_services = self.get_all(filter).await?;
 
+        // Auto-assign position for new services (next available position on host)
+        let next_pos = next_position(&existing_services);
+
         let service_from_storage = match existing_services
             .into_iter()
             .find(|existing: &Service| *existing == service)
@@ -140,6 +144,9 @@ impl CrudService<Service> for ServiceService {
                     .await?
             }
             _ => {
+                // Auto-assign position (users cannot set position via /api/services)
+                service.base.position = next_pos;
+
                 // Validate bindings don't conflict with each other before creating
                 Self::validate_bindings_no_conflicts(&service.base.bindings)?;
 
@@ -218,6 +225,9 @@ impl CrudService<Service> for ServiceService {
             .get_by_id(&service.id)
             .await?
             .ok_or_else(|| anyhow!("Could not find service"))?;
+
+        // Preserve position (users cannot change position via /api/services, use host endpoints)
+        service.base.position = current_service.base.position;
 
         // Deduplicate bindings before validation
         service.base.bindings =

@@ -4,8 +4,8 @@ use crate::server::{
     daemons::service::DaemonService,
     hosts::r#impl::{
         api::{
-            ConflictBehavior, CreateHostRequest, HostResponse, UpdateHostRequest,
-            UpdateInterfaceInput, UpdatePortInput,
+            ConflictBehavior, CreateHostRequest, HostResponse, InterfaceInput, PortInput,
+            ServiceInput, UpdateHostRequest,
         },
         base::{Host, HostBase},
     },
@@ -19,7 +19,8 @@ use crate::server::{
             types::{EntityEvent, EntityOperation},
         },
         handlers::traits::CrudHandlers,
-        services::traits::{CrudService, EventBusService},
+        position::validate_input_positions,
+        services::traits::{ChildCrudService, CrudService, EventBusService},
         storage::{
             filter::EntityFilter,
             generic::GenericPostgresStorage,
@@ -224,44 +225,6 @@ impl HostService {
         }
     }
 
-    /// Validate that interface positions are sequential (0, 1, 2, ..., n-1) with no gaps or duplicates.
-    /// Returns Ok(()) if valid, or a ValidationError describing the issue.
-    fn validate_interface_positions(positions: &[i32]) -> Result<()> {
-        if positions.is_empty() {
-            return Ok(());
-        }
-
-        let mut sorted_positions = positions.to_vec();
-        sorted_positions.sort();
-
-        // Check for duplicates
-        for i in 1..sorted_positions.len() {
-            if sorted_positions[i] == sorted_positions[i - 1] {
-                return Err(ValidationError::new(format!(
-                    "Duplicate interface position: {}. Each interface must have a unique position.",
-                    sorted_positions[i]
-                ))
-                .into());
-            }
-        }
-
-        // Check that positions are sequential starting from 0
-        for (expected, actual) in sorted_positions.iter().enumerate() {
-            if *actual != expected as i32 {
-                return Err(ValidationError::new(format!(
-                    "Interface positions must be sequential starting from 0. \
-                     Expected position {} but found {}. Positions should be: 0, 1, 2, ..., {}",
-                    expected,
-                    actual,
-                    positions.len() - 1
-                ))
-                .into());
-            }
-        }
-
-        Ok(())
-    }
-
     /// Get ports for a specific host
     pub async fn get_ports_for_host(&self, host_id: &Uuid) -> Result<Vec<Port>> {
         self.port_service.get_for_host(host_id).await
@@ -361,12 +324,9 @@ impl HostService {
     // Host creation with children
     // =========================================================================
 
-    /// Create a host from a CreateHostRequest with interfaces and ports.
-    /// For API users: errors if a host with matching interfaces exists.
-    /// Source is automatically set to Manual for API-created entities.
-    ///
-    /// Note: Services are created separately via the services endpoint after the host exists,
-    /// as service bindings require the real IDs of the interfaces/ports to reference.
+    /// Create a host with all its children (interfaces, ports, services) from API request.
+    /// Client provides UUIDs for all entities, enabling services to reference interfaces/ports.
+    /// For API users: errors if a host with matching interfaces already exists.
     pub async fn create_from_request(
         &self,
         request: CreateHostRequest,
@@ -383,11 +343,16 @@ impl HostService {
             tags,
             interfaces: interface_inputs,
             ports: port_inputs,
+            services: service_inputs,
         } = request;
 
-        // Validate that interface positions are sequential (0, 1, 2, ..., n-1)
-        let positions: Vec<i32> = interface_inputs.iter().map(|i| i.position).collect();
-        Self::validate_interface_positions(&positions)?;
+        // Validate that interface and service positions are sequential
+        validate_input_positions(&interface_inputs, "interface")
+            .map_err(|e| ValidationError::new(e.message))?;
+        validate_input_positions(&service_inputs, "service")
+            .map_err(|e| ValidationError::new(e.message))?;
+
+        // TODO: Add ID collision validation (Phase 2)
 
         // Auto-set source to Manual for API-created entities
         let source = EntitySource::Manual;
@@ -398,32 +363,37 @@ impl HostService {
             network_id,
             hostname,
             description,
-            source,
+            source: source.clone(),
             virtualization,
             hidden,
             tags,
         };
         let host = Host::new(host_base);
 
-        // Build interfaces for conflict detection and creation
+        // Build interfaces with client-provided IDs
         let interfaces: Vec<Interface> = interface_inputs
             .into_iter()
-            .map(|input| Interface::new(input.into_base(host.id, network_id)))
+            .map(|input| input.into_interface(host.id, network_id))
             .collect();
 
-        // Build ports
+        // Build ports with client-provided IDs
         let ports: Vec<Port> = port_inputs
             .into_iter()
-            .map(|input| Port::new(input.into_base(host.id, network_id)))
+            .map(|input| input.into_port(host.id, network_id))
+            .collect();
+
+        // Build services with client-provided IDs
+        let services: Vec<Service> = service_inputs
+            .into_iter()
+            .map(|input| input.into_service(host.id, network_id, source.clone()))
             .collect();
 
         // Use unified creation with Error behavior for API users
-        // Services are created separately via POST /api/services
         self.create_with_children(
             host,
             interfaces,
             ports,
-            vec![], // No services - added separately after host creation
+            services,
             ConflictBehavior::Error,
             authentication,
         )
@@ -678,6 +648,7 @@ impl HostService {
                 virtualization: None,
                 source: EntitySource::Discovery { metadata: vec![] },
                 tags: Vec::new(),
+                position: 0,
             });
 
             // The singleton upsert in service.create() will merge bindings
@@ -733,6 +704,7 @@ impl HostService {
             expected_updated_at,
             interfaces: interface_inputs,
             ports: port_inputs,
+            services: service_inputs,
         } = request;
 
         // Optimistic locking: check if host was modified since user loaded it
@@ -775,17 +747,34 @@ impl HostService {
             .update(&mut updated_host, authentication.clone())
             .await?;
 
-        // Sync interfaces if provided
-        if let Some(inputs) = interface_inputs {
-            self.sync_interfaces(&updated.id, &network_id, inputs, authentication.clone())
-                .await?;
-        }
+        // TODO: Add ID validation (Phase 2) - check IDs belong to this host or don't exist
 
-        // Sync ports if provided
-        if let Some(inputs) = port_inputs {
-            self.sync_ports(&updated.id, &network_id, inputs, authentication.clone())
-                .await?;
-        }
+        // Sync interfaces
+        self.sync_interfaces(
+            &updated.id,
+            &network_id,
+            interface_inputs,
+            authentication.clone(),
+        )
+        .await?;
+
+        // Sync ports
+        self.sync_ports(
+            &updated.id,
+            &network_id,
+            port_inputs,
+            authentication.clone(),
+        )
+        .await?;
+
+        // Sync services
+        self.sync_services(
+            &updated.id,
+            &network_id,
+            service_inputs,
+            authentication.clone(),
+        )
+        .await?;
 
         // Load fresh children after sync
         let (interfaces, ports, services) = self.load_children_for_host(&updated.id).await?;
@@ -796,28 +785,26 @@ impl HostService {
     }
 
     /// Sync interfaces for a host: delete removed, update existing, create new.
+    /// Client provides UUIDs - if ID exists for this host, update; if not, create.
     async fn sync_interfaces(
         &self,
         host_id: &Uuid,
         network_id: &Uuid,
-        inputs: Vec<UpdateInterfaceInput>,
+        inputs: Vec<InterfaceInput>,
         authentication: AuthenticatedEntity,
     ) -> Result<()> {
         use std::collections::HashSet;
 
         // Validate that positions are sequential (0, 1, 2, ..., n-1)
-        let positions: Vec<i32> = inputs.iter().map(|i| i.position).collect();
-        Self::validate_interface_positions(&positions)?;
+        validate_input_positions(&inputs, "interface")
+            .map_err(|e| ValidationError::new(e.message))?;
 
         // Get existing interfaces for this host
         let existing = self.interface_service.get_for_host(host_id).await?;
         let existing_ids: HashSet<Uuid> = existing.iter().map(|i| i.id).collect();
 
-        // Partition inputs into new vs existing
-        let input_ids: HashSet<Uuid> = inputs
-            .iter()
-            .filter_map(|i| if i.is_new() { None } else { i.id })
-            .collect();
+        // All input IDs (client-provided)
+        let input_ids: HashSet<Uuid> = inputs.iter().map(|i| i.id).collect();
 
         // Delete interfaces that are not in the input list
         let to_delete: Vec<Uuid> = existing_ids.difference(&input_ids).copied().collect();
@@ -827,38 +814,38 @@ impl HostService {
                 .await?;
         }
 
-        // Process each input
+        // Process each input - create or update based on whether ID exists for this host
         for input in inputs {
-            let is_new = input.is_new();
+            let id = input.id;
             let mut interface = input.into_interface(*host_id, *network_id);
 
-            if is_new {
-                // Create new interface
-                self.interface_service
-                    .create(interface, authentication.clone())
-                    .await?;
-            } else if existing_ids.contains(&interface.id) {
+            if existing_ids.contains(&id) {
                 // Update existing interface - preserve created_at from existing
-                if let Some(existing_iface) = existing.iter().find(|i| i.id == interface.id) {
+                if let Some(existing_iface) = existing.iter().find(|i| i.id == id) {
                     interface.preserve_immutable_fields(existing_iface);
                 }
 
                 self.interface_service
                     .update(&mut interface, authentication.clone())
                     .await?;
+            } else {
+                // Create new interface with client-provided ID
+                self.interface_service
+                    .create(interface, authentication.clone())
+                    .await?;
             }
-            // Note: if ID doesn't exist in existing, it's silently skipped (invalid reference)
         }
 
         Ok(())
     }
 
-    /// Sync ports for a host: delete removed, create new, update existing
+    /// Sync ports for a host: delete removed, create new, update existing.
+    /// Client provides UUIDs - if ID exists for this host, update; if not, create.
     async fn sync_ports(
         &self,
         host_id: &Uuid,
         network_id: &Uuid,
-        inputs: Vec<UpdatePortInput>,
+        inputs: Vec<PortInput>,
         authentication: AuthenticatedEntity,
     ) -> Result<()> {
         use std::collections::HashSet;
@@ -867,11 +854,8 @@ impl HostService {
         let existing = self.port_service.get_for_host(host_id).await?;
         let existing_ids: HashSet<Uuid> = existing.iter().map(|p| p.id).collect();
 
-        // Partition inputs into new vs existing
-        let input_ids: HashSet<Uuid> = inputs
-            .iter()
-            .filter_map(|p| if p.is_new() { None } else { p.id })
-            .collect();
+        // All input IDs (client-provided)
+        let input_ids: HashSet<Uuid> = inputs.iter().map(|p| p.id).collect();
 
         // Delete ports that are not in the input list
         let to_delete: Vec<Uuid> = existing_ids.difference(&input_ids).copied().collect();
@@ -881,26 +865,85 @@ impl HostService {
                 .await?;
         }
 
-        // Create new ports (existing ports are kept as-is)
+        // Process each input - create or update based on whether ID exists for this host
         for input in inputs {
-            let is_new = input.is_new();
+            let id = input.id;
             let mut port = input.into_port(*host_id, *network_id);
 
-            if is_new {
-                self.port_service
-                    .create(port, authentication.clone())
-                    .await?;
-            } else if existing_ids.contains(&port.id) {
-                // Update existing interface - preserve created_at from existing
-                if let Some(existing_port) = existing.iter().find(|p| p.id == port.id) {
+            if existing_ids.contains(&id) {
+                // Update existing port - preserve created_at from existing
+                if let Some(existing_port) = existing.iter().find(|p| p.id == id) {
                     port.preserve_immutable_fields(existing_port);
                 }
 
                 self.port_service
                     .update(&mut port, authentication.clone())
                     .await?;
+            } else {
+                // Create new port with client-provided ID
+                self.port_service
+                    .create(port, authentication.clone())
+                    .await?;
             }
-            // Note: if ID doesn't exist in existing, it's silently skipped (invalid reference)
+        }
+
+        Ok(())
+    }
+
+    /// Sync services for a host: delete removed, update existing, create new.
+    /// Client provides UUIDs - if ID exists for this host, update; if not, create.
+    async fn sync_services(
+        &self,
+        host_id: &Uuid,
+        network_id: &Uuid,
+        inputs: Vec<ServiceInput>,
+        authentication: AuthenticatedEntity,
+    ) -> Result<()> {
+        use std::collections::HashSet;
+
+        // Validate that positions are sequential (0, 1, 2, ..., n-1)
+        validate_input_positions(&inputs, "service")
+            .map_err(|e| ValidationError::new(e.message))?;
+
+        // Get existing services for this host
+        let existing = self.service_service.get_for_parent(host_id).await?;
+        let existing_ids: HashSet<Uuid> = existing.iter().map(|s| s.id).collect();
+
+        // All input IDs (client-provided)
+        let input_ids: HashSet<Uuid> = inputs.iter().map(|s| s.id).collect();
+
+        // Delete services that are not in the input list
+        let to_delete: Vec<Uuid> = existing_ids.difference(&input_ids).copied().collect();
+        if !to_delete.is_empty() {
+            self.service_service
+                .delete_many(&to_delete, authentication.clone())
+                .await?;
+        }
+
+        // Process each input - create or update based on whether ID exists for this host
+        for input in inputs {
+            let id = input.id;
+            // For new services, source is Manual (API-created)
+            // For existing services, we'll preserve their source below
+            let mut service = input.into_service(*host_id, *network_id, EntitySource::Manual);
+
+            if existing_ids.contains(&id) {
+                // Update existing service - preserve immutable fields
+                if let Some(existing_svc) = existing.iter().find(|s| s.id == id) {
+                    service.preserve_immutable_fields(existing_svc);
+                    // Also preserve source - can't change via API
+                    service.base.source = existing_svc.base.source.clone();
+                }
+
+                self.service_service
+                    .update(&mut service, authentication.clone())
+                    .await?;
+            } else {
+                // Create new service with client-provided ID
+                self.service_service
+                    .create(service, authentication.clone())
+                    .await?;
+            }
         }
 
         Ok(())

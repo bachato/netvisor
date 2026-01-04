@@ -113,6 +113,7 @@ async fn test_host_crud(ctx: &TestContext) -> Result<(), String> {
         tags: Vec::new(),
         interfaces: vec![],
         ports: vec![],
+        services: vec![],
     };
 
     let created: HostResponse = ctx.client.post("/api/v1/hosts", &request).await?;
@@ -136,8 +137,9 @@ async fn test_host_crud(ctx: &TestContext) -> Result<(), String> {
         hidden: fetched.hidden,
         tags: fetched.tags.clone(),
         expected_updated_at: None, // No optimistic locking for this test
-        interfaces: None,          // Don't sync interfaces
-        ports: None,               // Don't sync ports
+        interfaces: vec![],        // Keep existing interfaces
+        ports: vec![],             // Keep existing ports
+        services: vec![],          // Keep existing services
     };
     let updated: HostResponse = ctx
         .client
@@ -172,6 +174,7 @@ async fn test_service_crud(ctx: &TestContext) -> Result<(), String> {
         tags: Vec::new(),
         interfaces: vec![],
         ports: vec![],
+        services: vec![],
     };
     let created_host: HostResponse = ctx.client.post("/api/v1/hosts", &host_request).await?;
 
@@ -187,6 +190,7 @@ async fn test_service_crud(ctx: &TestContext) -> Result<(), String> {
         virtualization: None,
         source: EntitySource::System,
         tags: Vec::new(),
+        position: 0,
     });
 
     let created: Service = ctx.client.post("/api/v1/services", &service).await?;

@@ -148,6 +148,7 @@ pub fn service(network_id: &Uuid, host_id: &Uuid) -> Service {
         virtualization: None,
         source: EntitySource::System,
         tags: Vec::new(),
+        position: 0,
     })
 }
 

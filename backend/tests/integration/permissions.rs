@@ -133,6 +133,7 @@ async fn test_cannot_create_host_on_other_network(
         tags: Vec::new(),
         interfaces: vec![],
         ports: vec![],
+        services: vec![],
     };
 
     // Should get 401 Unauthorized (or 403 Forbidden)

@@ -254,7 +254,7 @@
 	<!-- Current Items -->
 	{#if items.length > 0}
 		<div class="mb-3 space-y-2">
-			{#each items as item, index (index)}
+			{#each items as item, index (itemDisplayComponent.getId(item))}
 				{@const isHighlighted = highlightedIndex === index}
 
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -306,6 +306,7 @@
 									onUpdate={(updates: Partial<T>) => onItemUpdate(item, index, updates)}
 									service={ctx.service}
 									host={ctx.host}
+									services={ctx.services}
 								/>
 							{:else}
 								<ListSelectItem {item} {context} displayComponent={itemDisplayComponent} />

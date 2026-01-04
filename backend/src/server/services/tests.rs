@@ -1046,6 +1046,7 @@ async fn test_open_ports_singleton_per_host() {
         virtualization: None,
         source: EntitySource::Discovery { metadata: vec![] },
         tags: Vec::new(),
+        position: 0,
     });
 
     let created_op1 = services
@@ -1067,6 +1068,7 @@ async fn test_open_ports_singleton_per_host() {
         virtualization: None,
         source: EntitySource::Discovery { metadata: vec![] },
         tags: Vec::new(),
+        position: 0,
     });
 
     let created_op2 = services

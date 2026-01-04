@@ -1724,14 +1724,14 @@ export interface components {
 			/**
 			 * @description Association between a service and a port / interface that the service is listening on
 			 * @example {
-			 *       "created_at": "2026-01-03T18:56:56.405483Z",
-			 *       "id": "6572662d-2700-4509-8430-a05b7f248db4",
+			 *       "created_at": "2026-01-04T01:23:00.695353Z",
+			 *       "id": "ee3a1883-d351-4a78-a255-df50b4916c03",
 			 *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 			 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 			 *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
 			 *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
 			 *       "type": "Port",
-			 *       "updated_at": "2026-01-03T18:56:56.405483Z"
+			 *       "updated_at": "2026-01-04T01:23:00.695353Z"
 			 *     }
 			 */
 			data?: components['schemas']['BindingBase'] & {
@@ -2098,14 +2098,14 @@ export interface components {
 			 * @example {
 			 *       "bindings": [
 			 *         {
-			 *           "created_at": "2026-01-03T18:56:56.400921Z",
-			 *           "id": "5abe99fd-205b-48a5-beaf-be44ab5b38d7",
+			 *           "created_at": "2026-01-04T01:23:00.691060Z",
+			 *           "id": "87576518-818a-4edc-a6f1-2e4d080c1f39",
 			 *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 			 *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
 			 *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
 			 *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
 			 *           "type": "Port",
-			 *           "updated_at": "2026-01-03T18:56:56.400921Z"
+			 *           "updated_at": "2026-01-04T01:23:00.691060Z"
 			 *         }
 			 *       ],
 			 *       "created_at": "2026-01-15T10:30:00Z",
@@ -2113,7 +2113,8 @@ export interface components {
 			 *       "id": "550e8400-e29b-41d4-a716-446655440007",
 			 *       "name": "nginx",
 			 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
-			 *       "service_definition": "Netdata",
+			 *       "position": 0,
+			 *       "service_definition": "Lubelogger",
 			 *       "source": {
 			 *         "type": "Manual"
 			 *       },
@@ -2635,14 +2636,14 @@ export interface components {
 		/**
 		 * @description Association between a service and a port / interface that the service is listening on
 		 * @example {
-		 *       "created_at": "2026-01-03T18:56:56.389936Z",
-		 *       "id": "17df1678-3597-4598-84e7-16eccd01e1c3",
+		 *       "created_at": "2026-01-04T01:23:00.680172Z",
+		 *       "id": "8287fe84-9001-4a2f-9ab4-f537707adbc0",
 		 *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
 		 *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
 		 *       "type": "Port",
-		 *       "updated_at": "2026-01-03T18:56:56.389936Z"
+		 *       "updated_at": "2026-01-04T01:23:00.680172Z"
 		 *     }
 		 */
 		Binding: components['schemas']['BindingBase'] & {
@@ -2660,6 +2661,36 @@ export interface components {
 			/** Format: uuid */
 			service_id: string;
 		};
+		/**
+		 * @description Input for creating or updating a binding within a service.
+		 *     Used in both CreateHostRequest and UpdateHostRequest.
+		 *     Client must provide a UUID for the binding.
+		 */
+		BindingInput:
+			| {
+					/**
+					 * Format: uuid
+					 * @description Client-provided UUID for this binding
+					 */
+					id: string;
+					/** Format: uuid */
+					interface_id: string;
+					/** @enum {string} */
+					type: 'Interface';
+			  }
+			| {
+					/**
+					 * Format: uuid
+					 * @description Client-provided UUID for this binding
+					 */
+					id: string;
+					/** Format: uuid */
+					interface_id?: string | null;
+					/** Format: uuid */
+					port_id: string;
+					/** @enum {string} */
+					type: 'Port';
+			  };
 		/**
 		 * @description The type of binding - either to an interface or to a port.
 		 *
@@ -2735,18 +2766,17 @@ export interface components {
 			url: string;
 		};
 		/**
-		 * @description Request type for creating a host with its associated interfaces and ports.
+		 * @description Request type for creating a host with its associated interfaces, ports, and services.
 		 *     Server assigns `host_id`, `network_id`, and `source` to all children.
-		 *     Source is automatically set based on how the entity was created (API vs UI).
-		 *
-		 *     Note: Services are created separately via `POST /api/services` after the host exists,
-		 *     as service bindings require the real IDs of the interfaces/ports to reference.
+		 *     Client must provide UUIDs for all entities, enabling services to reference
+		 *     interfaces/ports by ID in the same request.
 		 * @example {
 		 *       "description": "Primary web server",
 		 *       "hidden": false,
 		 *       "hostname": "web-server-01.local",
 		 *       "interfaces": [
 		 *         {
+		 *           "id": "550e8400-e29b-41d4-a716-446655440005",
 		 *           "ip_address": "192.168.1.100",
 		 *           "mac_address": "DE:AD:BE:EF:12:34",
 		 *           "name": "eth0",
@@ -2758,10 +2788,12 @@ export interface components {
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *       "ports": [
 		 *         {
+		 *           "id": "550e8400-e29b-41d4-a716-446655440006",
 		 *           "number": 80,
 		 *           "protocol": "Tcp"
 		 *         }
 		 *       ],
+		 *       "services": [],
 		 *       "tags": [],
 		 *       "virtualization": null
 		 *     }
@@ -2770,29 +2802,17 @@ export interface components {
 			description?: string | null;
 			hidden?: boolean;
 			hostname?: string | null;
-			interfaces?: components['schemas']['CreateInterfaceInput'][];
+			/** @description Interfaces to create with this host (client provides UUIDs) */
+			interfaces?: components['schemas']['InterfaceInput'][];
 			name: string;
 			/** Format: uuid */
 			network_id: string;
-			ports?: components['schemas']['CreatePortInput'][];
+			/** @description Ports to create with this host (client provides UUIDs) */
+			ports?: components['schemas']['PortInput'][];
+			/** @description Services to create with this host (can reference interfaces/ports by their UUIDs) */
+			services?: components['schemas']['ServiceInput'][];
 			tags: string[];
 			virtualization?: null | components['schemas']['HostVirtualization'];
-		};
-		/**
-		 * @description Input for creating an interface with a host.
-		 *     `host_id` and `network_id` are assigned by the server.
-		 */
-		CreateInterfaceInput: {
-			ip_address: string;
-			mac_address?: string | null;
-			name?: string | null;
-			/**
-			 * Format: int32
-			 * @description Position of this interface in the host's interface list (for ordering)
-			 */
-			position?: number;
-			/** Format: uuid */
-			subnet_id: string;
 		};
 		CreateInviteRequest: {
 			/** Format: int64 */
@@ -2800,20 +2820,6 @@ export interface components {
 			network_ids: string[];
 			permissions: components['schemas']['UserOrgPermissions'];
 			send_to?: string | null;
-		};
-		/**
-		 * @description Input for creating a port with a host.
-		 *     `host_id` and `network_id` are assigned by the server.
-		 *     The port is specified by number and protocol (e.g., 80/tcp, 443/tcp).
-		 */
-		CreatePortInput: {
-			/**
-			 * Format: int32
-			 * @description Port number (1-65535)
-			 */
-			number: number;
-			/** @description Transport protocol (Tcp or Udp) */
-			protocol: components['schemas']['TransportProtocol'];
 		};
 		/**
 		 * @description Request type for creating a service.
@@ -3311,6 +3317,28 @@ export interface components {
 			/** Format: uuid */
 			subnet_id: string;
 		};
+		/**
+		 * @description Input for creating or updating an interface.
+		 *     Used in both CreateHostRequest and UpdateHostRequest.
+		 *     Client must provide a UUID for the interface.
+		 */
+		InterfaceInput: {
+			/**
+			 * Format: uuid
+			 * @description Client-provided UUID for this interface
+			 */
+			id: string;
+			ip_address: string;
+			mac_address?: string | null;
+			name?: string | null;
+			/**
+			 * Format: int32
+			 * @description Position of this interface in the host's interface list (for ordering)
+			 */
+			position?: number;
+			/** Format: uuid */
+			subnet_id: string;
+		};
 		Invite: components['schemas']['InviteBase'] & {
 			/** Format: date-time */
 			readonly created_at: string;
@@ -3489,6 +3517,25 @@ export interface components {
 			/** Format: uuid */
 			network_id: string;
 		};
+		/**
+		 * @description Input for creating or updating a port.
+		 *     Used in both CreateHostRequest and UpdateHostRequest.
+		 *     Client must provide a UUID for the port.
+		 */
+		PortInput: {
+			/**
+			 * Format: uuid
+			 * @description Client-provided UUID for this port
+			 */
+			id: string;
+			/**
+			 * Format: int32
+			 * @description Port number (1-65535)
+			 */
+			number: number;
+			/** @description Transport protocol (Tcp or Udp) */
+			protocol: components['schemas']['TransportProtocol'];
+		};
 		/** @description Port type with number, protocol, and optional type identifier */
 		PortType: {
 			number: number;
@@ -3561,14 +3608,14 @@ export interface components {
 		 * @example {
 		 *       "bindings": [
 		 *         {
-		 *           "created_at": "2026-01-03T18:56:56.389831Z",
-		 *           "id": "04708141-fe1d-49c3-90e4-9c4fd99c1318",
+		 *           "created_at": "2026-01-04T01:23:00.680055Z",
+		 *           "id": "ff9753e7-fdfb-4c3e-8ccb-598fcbed7399",
 		 *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
 		 *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
 		 *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
 		 *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
 		 *           "type": "Port",
-		 *           "updated_at": "2026-01-03T18:56:56.389831Z"
+		 *           "updated_at": "2026-01-04T01:23:00.680055Z"
 		 *         }
 		 *       ],
 		 *       "created_at": "2026-01-15T10:30:00Z",
@@ -3576,7 +3623,8 @@ export interface components {
 		 *       "id": "550e8400-e29b-41d4-a716-446655440007",
 		 *       "name": "nginx",
 		 *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
-		 *       "service_definition": "Netdata",
+		 *       "position": 0,
+		 *       "service_definition": "Lubelogger",
 		 *       "source": {
 		 *         "type": "Manual"
 		 *       },
@@ -3600,6 +3648,11 @@ export interface components {
 			name: string;
 			/** Format: uuid */
 			network_id: string;
+			/**
+			 * Format: int32
+			 * @description Position of this service in the host's service list (for ordering)
+			 */
+			position?: number;
 			service_definition: string;
 			/** @description Will be automatically set to Manual for creation through API */
 			source: components['schemas']['EntitySource'];
@@ -3641,6 +3694,32 @@ export interface components {
 			| 'Custom'
 			| 'Scanopy'
 			| 'OpenPorts';
+		/**
+		 * @description Input for creating or updating a service.
+		 *     Used in both CreateHostRequest and UpdateHostRequest.
+		 *     Client must provide a UUID for the service.
+		 */
+		ServiceInput: {
+			/** @description Bindings that associate this service with ports/interfaces */
+			bindings?: components['schemas']['BindingInput'][];
+			/**
+			 * Format: uuid
+			 * @description Client-provided UUID for this service
+			 */
+			id: string;
+			/** @description Display name for this service */
+			name: string;
+			/**
+			 * Format: int32
+			 * @description Position of this service in the host's service list (for ordering)
+			 */
+			position?: number;
+			/** @description Service definition ID (e.g., "Nginx", "PostgreSQL") */
+			service_definition: string;
+			/** @description Tags for categorization */
+			tags?: string[];
+			virtualization?: null | components['schemas']['ServiceVirtualization'];
+		};
 		/** ServiceVirtualization */
 		ServiceVirtualization: {
 			details: components['schemas']['DockerVirtualization'];
@@ -3847,17 +3926,15 @@ export interface components {
 			password?: string | null;
 		};
 		/**
-		 * @description Request type for updating a host.
-		 *     Optionally includes interfaces and ports to sync (create/update/delete).
+		 * @description Request type for updating a host with its children.
+		 *     Uses the same input types as CreateHostRequest.
+		 *     Server will sync children (create new, update existing, delete removed).
 		 */
 		UpdateHostRequest: {
 			description?: string | null;
 			/**
 			 * Format: date-time
 			 * @description Optional: expected updated_at timestamp for optimistic locking.
-			 *     If provided, the update will fail with a conflict error if the host
-			 *     has been modified since this timestamp (e.g., by discovery running
-			 *     while the user was editing).
 			 */
 			expected_updated_at?: string | null;
 			hidden: boolean;
@@ -3865,69 +3942,23 @@ export interface components {
 			/** Format: uuid */
 			id: string;
 			/**
-			 * @description Optional: interfaces to sync with this host.
-			 *     If provided, the server will:
-			 *     - Create interfaces without an `id` (or with nil UUID)
-			 *     - Keep/update interfaces with matching `id`
-			 *     - Delete existing interfaces not in this list
-			 *
-			 *     If not provided (None), interfaces are left unchanged.
+			 * @description Interfaces to sync with this host.
+			 *     Server will create/update/delete to match this list.
 			 */
-			interfaces?: components['schemas']['UpdateInterfaceInput'][] | null;
+			interfaces?: components['schemas']['InterfaceInput'][];
 			name: string;
 			/**
-			 * @description Optional: ports to sync with this host.
-			 *     If provided, the server will:
-			 *     - Create ports without an `id` (or with nil UUID)
-			 *     - Keep/update ports with matching `id`
-			 *     - Delete existing ports not in this list
-			 *
-			 *     If not provided (None), ports are left unchanged.
+			 * @description Ports to sync with this host.
+			 *     Server will create/update/delete to match this list.
 			 */
-			ports?: components['schemas']['UpdatePortInput'][] | null;
+			ports?: components['schemas']['PortInput'][];
+			/**
+			 * @description Services to sync with this host.
+			 *     Server will create/update/delete to match this list.
+			 */
+			services?: components['schemas']['ServiceInput'][];
 			tags: string[];
 			virtualization?: null | components['schemas']['HostVirtualization'];
-		};
-		/**
-		 * @description Input for syncing an interface during host update.
-		 *     If `id` is None or nil UUID, a new interface is created.
-		 *     If `id` matches an existing interface, it is updated.
-		 */
-		UpdateInterfaceInput: {
-			/**
-			 * Format: uuid
-			 * @description ID of existing interface to update, or None/nil for new interface
-			 */
-			id?: string | null;
-			ip_address: string;
-			mac_address?: string | null;
-			name?: string | null;
-			/**
-			 * Format: int32
-			 * @description Position of this interface in the host's interface list (for ordering)
-			 */
-			position?: number;
-			/** Format: uuid */
-			subnet_id: string;
-		};
-		/**
-		 * @description Input for syncing a port during host update.
-		 *     If `id` is None or nil UUID, a new port is created.
-		 *     If `id` matches an existing port, it is kept.
-		 */
-		UpdatePortInput: {
-			/**
-			 * Format: uuid
-			 * @description ID of existing port to keep, or None/nil for new port
-			 */
-			id?: string | null;
-			/**
-			 * Format: int32
-			 * @description Port number (1-65535)
-			 */
-			number: number;
-			/** @description Transport protocol (Tcp or Udp) */
-			protocol: components['schemas']['TransportProtocol'];
 		};
 		User: components['schemas']['UserBase'] & {
 			/** Format: date-time */

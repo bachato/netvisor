@@ -44,6 +44,7 @@ async fn test_service_network_validation(ctx: &TestContext) -> Result<(), String
         tags: Vec::new(),
         interfaces: vec![],
         ports: vec![],
+        services: vec![],
     };
     let created_host: HostResponse = ctx.client.post("/api/v1/hosts", &host_request).await?;
 
@@ -58,6 +59,7 @@ async fn test_service_network_validation(ctx: &TestContext) -> Result<(), String
         virtualization: None,
         source: EntitySource::System,
         tags: Vec::new(),
+        position: 0,
     });
 
     let result = ctx

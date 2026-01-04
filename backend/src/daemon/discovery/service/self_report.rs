@@ -234,6 +234,7 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
                 metadata: vec![DiscoveryMetadata::new(self.discovery_type(), daemon_id)],
                 details: MatchDetails::new_certain("Scanopy Daemon self-report"),
             },
+            position: 0,
         });
 
         services.push(daemon_service);

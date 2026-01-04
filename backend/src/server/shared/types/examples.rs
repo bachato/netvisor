@@ -27,7 +27,7 @@ use crate::server::{
         types::GroupType,
     },
     hosts::r#impl::{
-        api::{CreateHostRequest, CreateInterfaceInput, CreatePortInput, HostResponse},
+        api::{CreateHostRequest, HostResponse, InterfaceInput, PortInput},
         base::{Host, HostBase},
     },
     interfaces::r#impl::base::{Interface, InterfaceBase},
@@ -204,6 +204,7 @@ pub fn service() -> Service {
             virtualization: None,
             source: EntitySource::Manual,
             tags: vec![],
+            position: 0,
         },
     }
 }
@@ -344,17 +345,20 @@ pub fn create_host_request() -> CreateHostRequest {
         virtualization: None,
         hidden: false,
         tags: vec![],
-        interfaces: vec![CreateInterfaceInput {
+        interfaces: vec![InterfaceInput {
+            id: ids::INTERFACE,
             subnet_id: ids::SUBNET,
             ip_address: IpAddr::V4(Ipv4Addr::new(192, 168, 1, 100)),
             mac_address: Some(MacAddress::new([0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34])),
             name: Some("eth0".to_string()),
             position: 0,
         }],
-        ports: vec![CreatePortInput {
+        ports: vec![PortInput {
+            id: ids::PORT,
             number: 80,
             protocol: TransportProtocol::Tcp,
         }],
+        services: vec![],
     }
 }
 

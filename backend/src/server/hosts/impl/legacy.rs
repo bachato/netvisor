@@ -278,6 +278,7 @@ impl LegacyService {
                 virtualization: None, // Old virtualization format ignored
                 source: EntitySource::Discovery { metadata: vec![] },
                 tags: self.tags,
+                position: 0,
             },
         }
     }

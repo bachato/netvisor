@@ -62,6 +62,7 @@
 		onChange?: (updatedService: Service) => void;
 		selectedPortBindings?: PortBinding[];
 		index?: number;
+		currentServices?: Service[];
 	}
 
 	let {
@@ -69,7 +70,8 @@
 		service,
 		onChange = () => {},
 		selectedPortBindings = $bindable([]),
-		index = -1
+		index = -1,
+		currentServices = []
 	}: Props = $props();
 
 	// Local state for form fields
@@ -439,7 +441,7 @@
 					getItemContext={() => ({
 						service,
 						host,
-						services: servicesData,
+						services: currentServices.length > 0 ? currentServices : servicesData,
 						interfaces: host.interfaces,
 						ports: host.ports,
 						isContainerSubnet: isContainerSubnetFn
@@ -476,7 +478,7 @@
 					getItemContext={() => ({
 						service,
 						host,
-						services: servicesData,
+						services: currentServices.length > 0 ? currentServices : servicesData,
 						interfaces: host.interfaces,
 						isContainerSubnet: isContainerSubnetFn
 					})}

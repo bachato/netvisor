@@ -41,11 +41,18 @@
 	function handleTransferPorts(transferToService: Service, transferFromService: Service) {
 		const bindingIdsToTransfer = new Set(selectedPortBindings.map((b) => b.id));
 
+		// Update bindings with new service_id and network_id for the target service
+		const transferredBindings = selectedPortBindings.map((b) => ({
+			...b,
+			service_id: transferToService.id,
+			network_id: transferToService.network_id
+		}));
+
 		const updatedServices = currentServices.map((s) => {
 			if (s.id === transferToService.id) {
 				return {
 					...s,
-					bindings: [...s.bindings, ...selectedPortBindings]
+					bindings: [...s.bindings, ...transferredBindings]
 				};
 			} else if (s.id === transferFromService.id) {
 				return {
@@ -182,6 +189,7 @@
 						service={selectedItem}
 						onChange={(updatedService) => onChange(updatedService)}
 						bind:selectedPortBindings
+						{currentServices}
 					/>
 				{:else}
 					<EntityConfigEmpty
