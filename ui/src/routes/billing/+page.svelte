@@ -13,6 +13,7 @@
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { pushSuccess, pushError } from '$lib/shared/stores/feedback';
 	import PlanInquiryModal from '$lib/features/billing/PlanInquiryModal.svelte';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 
 	// TanStack Query for current user
 	const currentUserQuery = useCurrentUserQuery();
@@ -62,6 +63,13 @@
 
 	async function handlePlanSelect(plan: BillingPlan) {
 		try {
+			// Track plan selection
+			const metadata = billingPlans.getMetadata(plan.type);
+			trackEvent('plan_selected', {
+				plan: plan.type,
+				is_commercial: metadata?.is_commercial ?? false
+			});
+
 			const checkoutUrl = await checkoutMutation.mutateAsync(plan);
 			if (checkoutUrl) {
 				window.location.href = checkoutUrl;
