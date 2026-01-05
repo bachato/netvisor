@@ -76,5 +76,11 @@
     "cliFlag": "--docker-proxy-ssl-chain",
     "envVar": "SCANOPY_DOCKER_PROXY_SSL_CHAIN",
     "helpText": "Path to SSL chain if using a docker proxy with SSL"
+  },
+  {
+    "id": "use_npcap_arp",
+    "cliFlag": "--use-npcap-arp",
+    "envVar": "SCANOPY_USE_NPCAP_ARP",
+    "helpText": "(Windows only) Use Npcap for broadcast ARP scanning instead of native SendARP. Requires Npcap installation. Ignored on Linux/macOS"
   }
 ]

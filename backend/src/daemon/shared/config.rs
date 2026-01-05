@@ -84,6 +84,11 @@ pub struct DaemonCli {
     /// User ID of the person who installed this daemon. Used for deprecation notifications.
     #[arg(long)]
     user_id: Option<Uuid>,
+
+    /// (Windows only) Use Npcap for broadcast ARP scanning instead of native SendARP.
+    /// Requires Npcap installation. Ignored on Linux/macOS.
+    #[arg(long)]
+    use_npcap_arp: Option<bool>,
 }
 
 /// Unified configuration struct that handles both startup and runtime config
@@ -129,6 +134,9 @@ pub struct AppConfig {
     docker_proxy_ssl_key: Option<String>,
     #[serde(default)]
     docker_proxy_ssl_chain: Option<String>,
+    /// (Windows only) Use Npcap for broadcast ARP scanning instead of native SendARP
+    #[serde(default)]
+    pub use_npcap_arp: bool,
 }
 
 impl Default for AppConfig {
@@ -156,6 +164,7 @@ impl Default for AppConfig {
             docker_proxy_ssl_cert: None,
             docker_proxy_ssl_chain: None,
             docker_proxy_ssl_key: None,
+            use_npcap_arp: false,
         }
     }
 }
@@ -243,6 +252,9 @@ impl AppConfig {
         }
         if let Some(user_id) = cli_args.user_id {
             figment = figment.merge(("user_id", user_id));
+        }
+        if let Some(use_npcap_arp) = cli_args.use_npcap_arp {
+            figment = figment.merge(("use_npcap_arp", use_npcap_arp));
         }
 
         let config: AppConfig = figment
@@ -452,6 +464,11 @@ impl ConfigStore {
     pub async fn get_config(&self) -> AppConfig {
         let config = self.config.read().await;
         config.clone()
+    }
+
+    pub async fn get_use_npcap_arp(&self) -> Result<bool> {
+        let config = self.config.read().await;
+        Ok(config.use_npcap_arp)
     }
 }
 

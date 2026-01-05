@@ -2,9 +2,8 @@ use crate::daemon::discovery::service::base::{
     CreatesDiscoveredEntities, DiscoversNetworkedEntities, DiscoveryRunner, RunsDiscovery,
 };
 use crate::daemon::discovery::types::base::{DiscoveryCriticalError, DiscoverySessionUpdate};
-use crate::daemon::utils::scanner::{
-    arp_scan_host, can_arp_scan, scan_endpoints, scan_tcp_ports, scan_udp_ports,
-};
+use crate::daemon::utils::arp::{self, ArpScanResult};
+use crate::daemon::utils::scanner::{can_arp_scan, scan_endpoints, scan_tcp_ports, scan_udp_ports};
 use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback};
 use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
 use crate::server::ports::r#impl::base::PortType;
@@ -25,6 +24,7 @@ use futures::{
     stream::{self, StreamExt},
 };
 use mac_address::MacAddress;
+use pnet::datalink;
 use std::collections::{HashMap, HashSet};
 use std::result::Result::Ok;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -193,8 +193,11 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             .map(|p| p.number())
             .collect();
 
+        // Get ARP config
+        let use_npcap = self.as_ref().config_store.get_use_npcap_arp().await?;
+
         // Check ARP capability once before partitioning
-        let arp_available = can_arp_scan();
+        let arp_available = can_arp_scan(use_npcap);
 
         // Partition IPs - only use ARP path if we have capability
         let (interfaced_ips, non_interfaced_ips): (Vec<_>, Vec<_>) = if arp_available {
@@ -216,6 +219,11 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             total_ips = total_ips,
             interfaced_ips = interfaced_ips.len(),
             non_interfaced_ips = non_interfaced_ips.len(),
+            arp_method = if cfg!(target_family = "windows") && !use_npcap {
+                "SendARP"
+            } else {
+                "Broadcast"
+            },
             "Phase 1: Checking host responsiveness"
         );
 
@@ -226,56 +234,109 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         let mut responsive_hosts: Vec<(IpAddr, Subnet, Option<MacAddress>, Vec<PortType>)> =
             Vec::new();
 
-        // Process interfaced subnets with ARP
+        // Process interfaced subnets with batch ARP scanning
         if !interfaced_ips.is_empty() {
-            let arp_concurrency = self.as_ref().utils.get_optimal_arp_concurrency()?;
+            // Group IPs by subnet for batch scanning
+            let mut subnet_to_ips: HashMap<IpCidr, (Subnet, Vec<std::net::Ipv4Addr>)> =
+                HashMap::new();
+            for (ip, subnet) in &interfaced_ips {
+                if let IpAddr::V4(ipv4) = ip {
+                    subnet_to_ips
+                        .entry(subnet.base.cidr)
+                        .or_insert_with(|| (subnet.clone(), Vec::new()))
+                        .1
+                        .push(*ipv4);
+                }
+            }
 
+            let subnet_count = subnet_to_ips.len();
             tracing::info!(
-                count = interfaced_ips.len(),
-                concurrency = arp_concurrency,
-                "Phase 1a: ARP scanning interfaced subnets"
+                subnets = subnet_count,
+                total_ips = interfaced_ips.len(),
+                "Phase 1a: Batch ARP scanning interfaced subnets"
             );
 
-            let subnet_cidr_to_mac_clone = subnet_cidr_to_mac.clone();
-            let arp_responsive: Vec<_> = stream::iter(interfaced_ips)
-            .map(|(ip, subnet)| {
-                let cancel = cancel.clone();
-                let phase1_scanned = phase1_scanned.clone();
-                let subnet_mac = subnet_cidr_to_mac_clone.get(&subnet.base.cidr).and_then(|m| *m);
+            // Scan each subnet as a batch
+            for (cidr, (subnet, target_ips)) in subnet_to_ips {
+                if cancel.is_cancelled() {
+                    return Err(Error::msg("Discovery session was cancelled"));
+                }
 
-                async move {
-                    let result = self
-                        .check_host_responsive_arp(ip, subnet_mac.unwrap(), daemon_ip, cancel)
-                        .await;
+                let subnet_mac = subnet_cidr_to_mac.get(&cidr).and_then(|m| *m);
 
-                    let scanned = phase1_scanned.fetch_add(1, Ordering::Relaxed) + 1;
-                    let pct = (scanned * 50 / total_ips.max(1)) as u8;
-                    let _ = self.report_scanning_progress(pct).await;
+                let Some(source_mac) = subnet_mac else {
+                    tracing::warn!(cidr = %cidr, "No MAC address found for subnet, skipping ARP scan");
+                    continue;
+                };
 
-                    match result {
-                        Ok(Some(mac)) => Some((ip, subnet, Some(mac), Vec::new())),
-                        Ok(None) => None,
-                        Err(e) => {
-                            if DiscoveryCriticalError::is_critical_error(e.to_string()) {
-                                tracing::error!(ip = %ip, error = %e, "Critical error in ARP check");
-                            } else {
-                                tracing::trace!(ip = %ip, error = %e, "ARP check failed");
-                            }
-                            None
+                // Find the network interface for this subnet
+                let source_ipv4 = match daemon_ip {
+                    IpAddr::V4(ip) => ip,
+                    IpAddr::V6(ip) => ip.to_ipv4().unwrap_or(std::net::Ipv4Addr::UNSPECIFIED),
+                };
+
+                let pnet_source_mac = pnet::util::MacAddr::from(source_mac.bytes());
+                let interface = datalink::interfaces()
+                    .into_iter()
+                    .find(|iface| iface.mac.unwrap_or_default() == pnet_source_mac);
+
+                let Some(interface) = interface else {
+                    tracing::warn!(mac = %source_mac, "No interface found for MAC, skipping ARP scan");
+                    continue;
+                };
+
+                let target_count = target_ips.len();
+                tracing::debug!(
+                    cidr = %cidr,
+                    interface = %interface.name,
+                    targets = target_count,
+                    "Scanning subnet"
+                );
+
+                let scan_start = std::time::Instant::now();
+
+                match arp::scan_subnet(&interface, source_ipv4, source_mac, target_ips, use_npcap)
+                    .await
+                {
+                    Ok(results) => {
+                        let elapsed = scan_start.elapsed();
+                        tracing::debug!(
+                            cidr = %cidr,
+                            targets = target_count,
+                            responsive = results.len(),
+                            elapsed_ms = elapsed.as_millis(),
+                            "Subnet ARP scan complete"
+                        );
+
+                        // Convert results to responsive hosts format
+                        for ArpScanResult { ip, mac } in results {
+                            responsive_hosts.push((
+                                IpAddr::V4(ip),
+                                subnet.clone(),
+                                Some(mac),
+                                Vec::new(),
+                            ));
+                        }
+                    }
+                    Err(e) => {
+                        if DiscoveryCriticalError::is_critical_error(e.to_string()) {
+                            tracing::error!(cidr = %cidr, error = %e, "Critical error in batch ARP scan");
+                        } else {
+                            tracing::warn!(cidr = %cidr, error = %e, "Batch ARP scan failed");
                         }
                     }
                 }
-            })
-            .buffer_unordered(arp_concurrency)
-            .filter_map(|x| async { x })
-            .collect()
-            .await;
+
+                // Update progress
+                let scanned =
+                    phase1_scanned.fetch_add(target_count, Ordering::Relaxed) + target_count;
+                let pct = (scanned * 50 / total_ips.max(1)) as u8;
+                let _ = self.report_scanning_progress(pct).await;
+            }
 
             if cancel.is_cancelled() {
                 return Err(Error::msg("Discovery session was cancelled"));
             }
-
-            responsive_hosts.extend(arp_responsive);
         }
 
         // Process non-interfaced subnets with port scanning
@@ -430,28 +491,6 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         );
 
         Ok(results)
-    }
-
-    async fn check_host_responsive_arp(
-        &self,
-        ip: IpAddr,
-        subnet_mac: MacAddress,
-        daemon_ip: IpAddr,
-        cancel: CancellationToken,
-    ) -> Result<Option<MacAddress>, Error> {
-        if cancel.is_cancelled() {
-            return Err(Error::msg("Discovery was cancelled"));
-        }
-
-        let mac = arp_scan_host(&subnet_mac, daemon_ip, ip).await?;
-
-        if mac.is_some() {
-            tracing::debug!(ip = %ip, mac = ?mac, "Host responsive (ARP)");
-        } else {
-            tracing::trace!(ip = %ip, "Host not responsive (ARP timeout)");
-        }
-
-        Ok(mac)
     }
 
     async fn check_host_responsive_ports(
