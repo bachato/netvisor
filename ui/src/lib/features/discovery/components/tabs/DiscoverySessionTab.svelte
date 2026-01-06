@@ -90,7 +90,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="Discovery Sessions" subtitle="Monitor active discovery sessions" />
+	<TabHeader title="Discovery Sessions" />
 	{#if isLoading}
 		<Loading />
 	{:else if sessionsList.length === 0}

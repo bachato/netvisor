@@ -116,7 +116,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="Discovery History" subtitle="Review historical discovery sessions" />
+	<TabHeader title="Discovery History" />
 
 	{#if isLoading}
 		<Loading />

@@ -18,7 +18,7 @@ use uuid::Uuid;
 const HEALTH_LOG_INTERVAL: u64 = 10;
 
 /// Log target for consistent daemon logging output
-const LOG_TARGET: &str = "daemon";
+pub const LOG_TARGET: &str = "daemon";
 
 /// Error message for invalid API key when daemon is not registered (onboarding scenario).
 /// Used by server auth middleware and daemon error detection.

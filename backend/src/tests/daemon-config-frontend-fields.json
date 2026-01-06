@@ -9,7 +9,13 @@
     "id": "mode",
     "cliFlag": "--mode",
     "envVar": "SCANOPY_MODE",
-    "helpText": "Select whether the daemon will Pull work from the server or have work Pushed to it. If set to Push, you will need to ensure that network you are deploying the daemon on can be reached by the server by opening/forwarding the port to the daemon. If set to Pull, no port opening/forwarding is needed"
+    "helpText": "Select whether the daemon will Pull work from the server or have work Pushed to it. If set to Push, you will need to ensure that network you are deploying the daemon on can be reached by the server by opening/forwarding the port to the daemon, and provide the Daemon URL where the server should try to reach the daemon. If set to Pull, no port opening/forwarding is needed"
+  },
+  {
+    "id": "daemon_url",
+    "cliFlag": "--daemon-url",
+    "envVar": "SCANOPY_DAEMON_URL",
+    "helpText": "Public URL where server can reach daemon in Push mode. Defaults to auto-detected IP + Daemon Port if not set"
   },
   {
     "id": "daemon_port",
@@ -22,12 +28,6 @@
     "cliFlag": "--bind-address",
     "envVar": "SCANOPY_BIND_ADDRESS",
     "helpText": "IP address to bind daemon to"
-  },
-  {
-    "id": "daemon_url",
-    "cliFlag": "--daemon-url",
-    "envVar": "SCANOPY_DAEMON_URL",
-    "helpText": "Public URL where server can reach daemon, if running in Push mode. Defaults to auto-detected IP + Daemon Port if not set"
   },
   {
     "id": "allow_self_signed_certs",
