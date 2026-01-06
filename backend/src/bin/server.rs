@@ -11,7 +11,7 @@ use reqwest::header::{self, HeaderName};
 use scanopy::server::{
     auth::middleware::{logging::request_logging_middleware, rate_limit::rate_limit_middleware},
     billing::plans::get_purchasable_plans,
-    config::{AppState, ServerCli, ServerConfig},
+    config::{AppState, ServerCli, ServerConfig, get_deployment_type},
     shared::handlers::{cache::AppCache, factory::create_router},
 };
 use tower::ServiceBuilder;
@@ -22,6 +22,9 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+/// Log target for consistent server logging output
+const LOG_TARGET: &str = "server";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -35,6 +38,7 @@ async fn main() -> anyhow::Result<()> {
     let web_external_path = config.web_external_path.clone();
     let client_ip_source = config.client_ip_source.clone();
     let public_url = config.public_url.clone();
+    let log_level = config.log_level.clone();
 
     // Initialize tracing
     tracing_subscriber::registry()
@@ -45,10 +49,29 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // Create app state
+    // Startup banner
+    tracing::info!(target: LOG_TARGET, "");
+    tracing::info!(target: LOG_TARGET, "   _____                                   ");
+    tracing::info!(target: LOG_TARGET, "  / ___/_________ _____  ____  ____  __  __");
+    tracing::info!(target: LOG_TARGET, "  \\__ \\/ ___/ __ `/ __ \\/ __ \\/ __ \\/ / / /");
+    tracing::info!(target: LOG_TARGET, " ___/ / /__/ /_/ / / / / /_/ / /_/ / /_/ / ");
+    tracing::info!(target: LOG_TARGET, "/____/\\___/\\__,_/_/ /_/\\____/ .___/\\__, /  ");
+    tracing::info!(target: LOG_TARGET, "                           /_/    /____/   ");
+    tracing::info!(target: LOG_TARGET, "");
+    tracing::info!(target: LOG_TARGET, "Scanopy Server v{}", env!("CARGO_PKG_VERSION"));
+    tracing::info!(target: LOG_TARGET, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    tracing::info!(target: LOG_TARGET, "Initializing...");
+    tracing::info!(target: LOG_TARGET, "  Connecting to database...");
+
+    // Create app state (database + services)
     let state = AppState::new(config).await?;
+    tracing::info!(target: LOG_TARGET, "  Database connected, migrations applied");
+    tracing::info!(target: LOG_TARGET, "  Services initialized");
+
     let discovery_service = state.services.discovery_service.clone();
     let billing_service = state.services.billing_service.clone();
+    let deployment_type = get_deployment_type(state.clone());
 
     // Create discovery cleanup task
     let discovery_cleanup_state = state.clone();
@@ -103,10 +126,14 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    tracing::info!(target: LOG_TARGET, "  Background tasks started");
+
     let (base_router, _openapi) = create_router(state.clone());
     let base_router = base_router.with_state(state.clone());
+    tracing::info!(target: LOG_TARGET, "  Routes registered");
 
     let api_router = if let Some(static_path) = &web_external_path {
+        tracing::debug!(target: LOG_TARGET, "  Serving web assets from {:?}", static_path);
         base_router.fallback_service(
             ServeDir::new(static_path)
                 .append_index_html_on_directories(true)
@@ -116,7 +143,7 @@ async fn main() -> anyhow::Result<()> {
                 ))),
         )
     } else {
-        tracing::info!("Server is not serving web assets due to no web_external_path");
+        tracing::debug!(target: LOG_TARGET, "  Web assets not configured (API-only mode)");
         base_router
     };
 
@@ -221,12 +248,6 @@ async fn main() -> anyhow::Result<()> {
         .merge(protected_app);
     let listener = tokio::net::TcpListener::bind(&listen_addr).await?;
 
-    tracing::info!("🚀 Scanopy Server v{}", env!("CARGO_PKG_VERSION"));
-    if web_external_path.is_some() {
-        tracing::info!("📊 Web UI: {}", public_url);
-    }
-    tracing::info!("🔧 API: {}/api", public_url);
-
     // Spawn server in background
     tokio::spawn(async move {
         axum::serve(
@@ -237,16 +258,56 @@ async fn main() -> anyhow::Result<()> {
         .unwrap();
     });
 
-    // Start cron for discovery scheduler
+    // Start discovery scheduler
     discovery_service.start_scheduler().await?;
+    tracing::info!(target: LOG_TARGET, "  Discovery scheduler started");
 
+    // Initialize billing if configured
     if let Some(billing_service) = billing_service {
         billing_service
             .initialize_products(get_purchasable_plans())
             .await?;
+        tracing::info!(target: LOG_TARGET, "  Billing service initialized");
     }
 
+    // Configuration summary
+    tracing::info!(target: LOG_TARGET, "Configuration:");
+    tracing::info!(target: LOG_TARGET, "  Listen:          {}", listen_addr);
+    tracing::info!(target: LOG_TARGET, "  Public URL:      {}", public_url);
+    tracing::info!(target: LOG_TARGET, "  Log level:       {}", log_level);
+    tracing::info!(target: LOG_TARGET, "  Deployment:      {:?}", deployment_type);
+    if web_external_path.is_some() {
+        tracing::info!(target: LOG_TARGET, "  Web UI:          enabled");
+    } else {
+        tracing::info!(target: LOG_TARGET, "  Web UI:          disabled (API-only)");
+    }
+    if state.config.integrated_daemon_url.is_some() {
+        tracing::info!(target: LOG_TARGET, "  Integrated daemon: {}", state.config.integrated_daemon_url.as_ref().unwrap());
+    }
+    if state.config.stripe_secret.is_some() {
+        tracing::info!(target: LOG_TARGET, "  Billing:         enabled");
+    }
+    if state.services.oidc_service.is_some() {
+        tracing::info!(target: LOG_TARGET, "  OIDC:            enabled");
+    }
+    if state.config.use_secure_session_cookies {
+        tracing::info!(target: LOG_TARGET, "  Secure cookies:  enabled (HTTPS)");
+    }
+
+    // Ready message
+    tracing::info!(target: LOG_TARGET, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    tracing::info!(target: LOG_TARGET, "Server ready");
+    tracing::info!(target: LOG_TARGET, "  API:             {}/api", public_url);
+    if web_external_path.is_some() {
+        tracing::info!(target: LOG_TARGET, "  Web UI:          {}", public_url);
+    }
+    tracing::info!(target: LOG_TARGET, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    // Wait for shutdown signal
     tokio::signal::ctrl_c().await?;
+
+    tracing::info!(target: LOG_TARGET, "Shutdown signal received");
+    tracing::info!(target: LOG_TARGET, "Server stopped");
 
     Ok(())
 }
