@@ -8,7 +8,7 @@
 	import { entities } from '$lib/shared/stores/metadata';
 	import type { Daemon } from '../types/base';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
-	import { RotateCcwKey, SatelliteDish } from 'lucide-svelte';
+	import { SatelliteDish } from 'lucide-svelte';
 	import {
 		createEmptyApiKeyFormData,
 		useCreateApiKeyMutation
@@ -49,10 +49,6 @@
 	let keyState = $state<string | null>(null);
 	// In onboarding mode, use the provisionalApiKey; otherwise use keyState
 	let key = $derived(onboardingMode ? provisionalApiKey : keyState);
-
-	// Key source selection: generate new or use existing
-	let keySource = $state<'generate' | 'existing'>('generate');
-	let existingKeyInput = $state('');
 	// In onboarding mode, use the provisionalNetworkId; otherwise use first network or daemon's network
 	let selectedNetworkId = $state('');
 
@@ -73,15 +69,7 @@
 
 	function handleOnClose() {
 		keyState = null;
-		keySource = 'generate';
-		existingKeyInput = '';
 		onClose();
-	}
-
-	function handleKeySourceChange(source: 'generate' | 'existing') {
-		keySource = source;
-		keyState = null;
-		existingKeyInput = '';
 	}
 
 	async function handleUseExistingKey() {
@@ -91,7 +79,7 @@
 			return;
 		}
 
-		const trimmedKey = existingKeyInput.trim();
+		const trimmedKey = daemonFormRef?.getExistingKeyInput()?.trim() ?? '';
 		if (!trimmedKey) {
 			pushError('Please enter an API key');
 			return;
@@ -164,96 +152,11 @@
 					networkId={selectedNetworkId}
 					apiKey={key}
 					showAdvanced={!onboardingMode || !!key}
+					allowExistingKey={!onboardingMode && !daemon}
+					keySet={!!key}
+					onGenerateKey={handleCreateNewApiKey}
+					onUseExistingKey={handleUseExistingKey}
 				/>
-
-				<!-- API Key Section (hidden in onboarding mode) -->
-				{#if !onboardingMode && !daemon}
-					<div class="pb-2">
-						<!-- Key source selection -->
-						<div class="mb-3 flex gap-4">
-							<label class="flex cursor-pointer items-center gap-2">
-								<input
-									type="radio"
-									name="key-source"
-									value="generate"
-									checked={keySource === 'generate'}
-									disabled={!!key}
-									onchange={() => handleKeySourceChange('generate')}
-									class="h-4 w-4 border-gray-600 bg-gray-700 text-blue-600 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-								/>
-								<span class="text-primary text-sm">Generate new API key</span>
-							</label>
-							<label class="flex cursor-pointer items-center gap-2">
-								<input
-									type="radio"
-									name="key-source"
-									value="existing"
-									checked={keySource === 'existing'}
-									disabled={!!key}
-									onchange={() => handleKeySourceChange('existing')}
-									class="h-4 w-4 border-gray-600 bg-gray-700 text-blue-600 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-								/>
-								<span class="text-primary text-sm">Use existing API key</span>
-							</label>
-						</div>
-
-						{#if keySource === 'generate'}
-							<!-- Generate new key flow -->
-							<div class="flex items-start gap-2">
-								<button
-									class="btn-primary m-1 flex-shrink-0 self-stretch"
-									disabled={!!key}
-									type="button"
-									onclick={handleCreateNewApiKey}
-								>
-									<RotateCcwKey />
-									<span>Generate Key</span>
-								</button>
-
-								<div class="flex-1">
-									<CodeContainer
-										language="bash"
-										expandable={false}
-										code={key ? key : 'Press Generate Key...'}
-									/>
-								</div>
-							</div>
-							{#if !key}
-								<div class="text-tertiary mt-1 text-xs">
-									This will create a new API key, which you can manage later in the API Keys tab.
-								</div>
-							{/if}
-						{:else}
-							<!-- Use existing key flow -->
-							<div class="flex items-start gap-2">
-								<input
-									type="text"
-									bind:value={existingKeyInput}
-									placeholder="Paste your API key here"
-									disabled={!!key}
-									class="input flex-1"
-								/>
-								<button
-									class="btn-primary m-1 flex-shrink-0"
-									disabled={!!key || !existingKeyInput.trim()}
-									type="button"
-									onclick={handleUseExistingKey}
-								>
-									<span>Use Key</span>
-								</button>
-							</div>
-							{#if !key}
-								<div class="text-tertiary mt-1 text-xs">
-									Paste an existing API key to use with this daemon.
-								</div>
-							{:else}
-								<div class="mt-2">
-									<CodeContainer language="bash" expandable={false} code={key} />
-								</div>
-							{/if}
-						{/if}
-					</div>
-				{/if}
 
 				<!-- Existing daemon with new key warning -->
 				{#if daemon && key && selectedNetworkId}
