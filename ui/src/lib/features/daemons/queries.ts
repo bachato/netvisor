@@ -7,6 +7,7 @@ import { queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Daemon } from './types/base';
 import type { DiscoveryUpdatePayload } from '../discovery/types/api';
+import { trackEventOnce } from '$lib/shared/utils/analytics';
 
 /**
  * Query hook for fetching all daemons
@@ -18,6 +19,10 @@ export function useDaemonsQuery() {
 			const { data } = await apiClient.GET('/api/v1/daemons');
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to fetch daemons');
+			}
+			// Track first daemon registration (once per browser)
+			if (data.data.length > 0) {
+				trackEventOnce('first_daemon_registered');
 			}
 			return data.data;
 		}

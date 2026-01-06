@@ -60,8 +60,8 @@ jobs:
           mv backend/src/tests/scanopy-next.sql backend/src/tests/scanopy.sql
           mv backend/src/tests/daemon_config-next.json backend/src/tests/daemon_config.json
           mv ui/static/services-next.json ui/static/services.json
-          mv ui/static/billing-plans-next.json ui/static/billing-plans.json
-          mv ui/static/features-next.json ui/static/features.json
+          mv ui/src/lib/data/billing-plans-next.json ui/src/lib/data/billing-plans.json
+          mv ui/src/lib/data/features-next.json ui/src/lib/data/features.json
           echo "✅ Updated test fixtures"
       
       - name: Commit and push fixture updates
@@ -69,7 +69,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add backend/Cargo.toml backend/Cargo.lock ui/package.json ui/package-lock.json
-          git add backend/src/tests/scanopy.sql backend/src/tests/daemon_config.json ui/static/services.json ui/static/billing-plans.json ui/static/features.json
+          git add backend/src/tests/scanopy.sql backend/src/tests/daemon_config.json ui/static/services.json ui/src/lib/data/billing-plans.json ui/src/lib/data/features.json
           
           if git diff --staged --quiet; then
             echo "No fixture changes to commit"

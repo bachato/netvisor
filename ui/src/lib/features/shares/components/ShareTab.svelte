@@ -115,7 +115,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="Sharing" subtitle="View and manage shared topology links and embeds" />
+	<TabHeader title="Sharing" />
 
 	<!-- Loading state -->
 	{#if isLoading}

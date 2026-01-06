@@ -1,5 +1,6 @@
 use std::{fmt::Display, net::IpAddr};
 
+use crate::daemon::runtime::service::{INVALID_API_KEY_ERROR, REGISTERED_INVALID_KEY_ERROR};
 use crate::server::{
     config::AppState,
     shared::{
@@ -468,6 +469,17 @@ impl AuthenticatedEntity {
                         });
                     }
 
+                    // Check if this daemon exists to provide a better error message
+                    // - If daemon exists: key was rotated/revoked, fail immediately
+                    // - If daemon doesn't exist: onboarding scenario, daemon should retry
+                    let daemon_exists = app_state
+                        .services
+                        .daemon_service
+                        .get_by_id(&daemon_id)
+                        .await
+                        .map(|d| d.is_some())
+                        .unwrap_or(false);
+
                     publish_api_key_auth_failed(
                         app_state,
                         ip,
@@ -477,8 +489,14 @@ impl AuthenticatedEntity {
                         key_prefix,
                     )
                     .await;
+
+                    if daemon_exists {
+                        return Err(AuthError(ApiError::unauthorized(
+                            REGISTERED_INVALID_KEY_ERROR.to_string(),
+                        )));
+                    }
                     return Err(AuthError(ApiError::unauthorized(
-                        "Invalid API key".to_string(),
+                        INVALID_API_KEY_ERROR.to_string(),
                     )));
                 }
             }

@@ -274,6 +274,43 @@ export const permissions = createTypeMetadataHelpers<'permissions', PermissionsM
 );
 export const concepts = createEntityMetadataHelpers('concepts');
 
+/**
+ * Generic metadata item structure for static fixtures.
+ * Looser than TypeMetadata to allow JSON imports without strict color types.
+ */
+interface StaticMetadataItem {
+	id: string;
+	name: string | null;
+	description: string | null;
+	category: string | null;
+	icon: string | null;
+	color: string | null;
+	metadata: unknown;
+}
+
+/**
+ * Create metadata helpers from a static metadata array.
+ * Used for billing page to avoid runtime API calls by using static JSON fixtures.
+ */
+export function createStaticHelpers<M>(items: StaticMetadataItem[]) {
+	const map = new Map(items.map((i) => [i.id, i]));
+	return {
+		getMetadata: (id: string | null): M => (map.get(id ?? '')?.metadata as M) ?? ({} as M),
+		getName: (id: string | null) => map.get(id ?? '')?.name ?? id ?? '',
+		getDescription: (id: string | null) => map.get(id ?? '')?.description ?? '',
+		getCategory: (id: string | null) => map.get(id ?? '')?.category ?? '',
+		getIconComponent: (id: string | null) => {
+			const item = map.get(id ?? '');
+			return createIconComponent(item?.icon ?? null);
+		},
+		getColorHelper: (id: string | null) => {
+			const item = map.get(id ?? '');
+			// Cast to Color type - static fixtures may have string color values
+			return createColorHelper((item?.color as Color) ?? null);
+		}
+	};
+}
+
 export async function getMetadata() {
 	const { data } = await apiClient.GET('/api/metadata', {});
 	if (data?.success && data.data) {

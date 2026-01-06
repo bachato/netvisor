@@ -114,7 +114,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="API Keys" subtitle="Manage Daemon API Keys">
+	<TabHeader title="Daemon API Keys">
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateApiKey}

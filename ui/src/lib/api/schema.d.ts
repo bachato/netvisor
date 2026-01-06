@@ -164,6 +164,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/billing/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a checkout session */
+        post: operations["create_checkout_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get available billing plans */
+        get: operations["get_billing_plans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/portal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a billing portal session */
+        post: operations["create_portal_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Handle Stripe webhook
+         * @description Internal endpoint for Stripe webhook callbacks.
+         */
+        post: operations["handle_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config": {
         parameters: {
             query?: never;
@@ -178,6 +249,111 @@ export interface paths {
         get: operations["get_public_config"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/daemons/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a new daemon
+         * @description Internal endpoint for daemon self-registration. Creates a host entry
+         *     and sets up default discovery jobs for the daemon.
+         */
+        post: operations["register_daemon"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/daemons/{id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive daemon heartbeat
+         * @description Internal endpoint for daemons to send periodic heartbeats.
+         *     Updates the daemon's last_seen timestamp and current status.
+         */
+        post: operations["receive_heartbeat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/daemons/{id}/request-work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request work from server
+         * @description Internal endpoint for daemons to poll for pending discovery sessions.
+         *     Also updates heartbeat and returns any pending cancellation requests.
+         *     Returns tuple of (next_session, should_cancel).
+         */
+        post: operations["receive_work_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/daemons/{id}/startup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Daemon startup handshake
+         * @description Internal endpoint for daemons to report their version on startup.
+         *     Updates the daemon's version and last_seen timestamp, returns server capabilities.
+         */
+        post: operations["daemon_startup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/daemons/{id}/update-capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update daemon capabilities
+         * @description Internal endpoint for daemons to report their current capabilities.
+         */
+        post: operations["update_capabilities"];
         delete?: never;
         options?: never;
         head?: never;
@@ -360,77 +536,6 @@ export interface paths {
         put?: never;
         /** Rotate a user API key */
         post: operations["rotate_user_api_key"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/billing/checkout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a checkout session */
-        post: operations["create_checkout_session"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/billing/plans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get available billing plans */
-        get: operations["get_billing_plans"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/billing/portal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a billing portal session */
-        post: operations["create_portal_session"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/billing/webhooks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Handle Stripe webhook
-         * @description Internal endpoint for Stripe webhook callbacks.
-         */
-        post: operations["handle_webhook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1716,14 +1821,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-01-04T19:28:16.420911Z",
-             *       "id": "b7fbc28b-ef96-498f-a0e2-e4fef1fa3e57",
+             *       "created_at": "2026-01-06T00:51:30.801477Z",
+             *       "id": "ab9bfc57-e3c0-48a0-9b55-9162b90f906f",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-01-04T19:28:16.420911Z"
+             *       "updated_at": "2026-01-06T00:51:30.801477Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -1764,6 +1869,18 @@ export interface components {
             data?: {
                 api_key: components["schemas"]["DaemonApiKey"];
                 key: string;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
+        ApiResponse_DaemonRegistrationResponse: {
+            /** @description Daemon registration response from server to daemon */
+            data?: {
+                daemon: components["schemas"]["Daemon"];
+                /** Format: uuid */
+                host_id: string;
+                server_capabilities?: null | components["schemas"]["ServerCapabilities"];
             };
             error?: string | null;
             meta: components["schemas"]["ApiMeta"];
@@ -2085,19 +2202,33 @@ export interface components {
             meta: components["schemas"]["ApiMeta"];
             success: boolean;
         };
+        ApiResponse_ServerCapabilities: {
+            /** @description Server capabilities returned on startup/registration */
+            data?: {
+                /** @description Deprecation warnings for the daemon */
+                deprecation_warnings?: components["schemas"]["DeprecationWarning"][];
+                /** @description Minimum daemon version supported by this server */
+                minimum_daemon_version: string;
+                /** @description Server software version */
+                server_version: string;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
         ApiResponse_Service: {
             /**
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-01-04T19:28:16.416832Z",
-             *           "id": "4edb950c-1b30-44fb-9f7e-f1d4a0c04d50",
+             *           "created_at": "2026-01-06T00:51:30.798808Z",
+             *           "id": "0dda69be-bcff-4c61-89e0-5dc304213d7b",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-01-04T19:28:16.416832Z"
+             *           "updated_at": "2026-01-06T00:51:30.798808Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -2106,7 +2237,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Lubelogger",
+             *       "service_definition": "NUT",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -2611,14 +2742,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-01-04T19:28:16.407427Z",
-         *       "id": "01038e27-0437-41b6-9d48-3253b0a5851a",
+         *       "created_at": "2026-01-06T00:51:30.792122Z",
+         *       "id": "48e00ccb-9182-4fe9-b3a0-575c09ccf096",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-01-04T19:28:16.407427Z"
+         *       "updated_at": "2026-01-06T00:51:30.792122Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -2765,7 +2896,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Lubelogger",
+         *           "service_definition": "NUT",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -2821,6 +2952,14 @@ export interface components {
             password?: string | null;
             share: components["schemas"]["Share"];
         };
+        Daemon: components["schemas"]["DaemonBase"] & {
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
         DaemonApiKey: components["schemas"]["DaemonApiKeyBase"] & {
             /** Format: date-time */
             readonly created_at: string;
@@ -2870,8 +3009,39 @@ export interface components {
             has_docker_socket?: boolean;
             interfaced_subnet_ids: string[];
         };
+        DaemonHeartbeatPayload: {
+            mode: components["schemas"]["DaemonMode"];
+            name: string;
+            url: string;
+        };
         /** @enum {string} */
         DaemonMode: "Push" | "Pull";
+        /** @description Daemon registration request from daemon to server */
+        DaemonRegistrationRequest: {
+            capabilities: components["schemas"]["DaemonCapabilities"];
+            /** Format: uuid */
+            daemon_id: string;
+            mode: components["schemas"]["DaemonMode"];
+            name: string;
+            /** Format: uuid */
+            network_id: string;
+            url: string;
+            /**
+             * Format: uuid
+             * @description User responsible for maintaining this daemon (from frontend install command)
+             *     Optional for backwards compat with old daemons - defaults to nil UUID
+             */
+            user_id?: string;
+            /** @description Daemon software version (optional for backwards compat with old daemons) */
+            version?: string | null;
+        };
+        /** @description Daemon registration response from server to daemon */
+        DaemonRegistrationResponse: {
+            daemon: components["schemas"]["Daemon"];
+            /** Format: uuid */
+            host_id: string;
+            server_capabilities?: null | components["schemas"]["ServerCapabilities"];
+        };
         /** @description Daemon response for UI including computed version status */
         DaemonResponse: components["schemas"]["DaemonBase"] & {
             /** Format: date-time */
@@ -2893,6 +3063,11 @@ export interface components {
         /** @description Response from daemon setup endpoint */
         DaemonSetupResponse: {
             api_key?: string | null;
+        };
+        /** @description Sent by daemon on startup to report version */
+        DaemonStartupRequest: {
+            /** @description Daemon software version (semver format) */
+            daemon_version: string;
         };
         /** @description Daemon version status including health and any warnings */
         DaemonVersionStatus: {
@@ -3551,18 +3726,27 @@ export interface components {
             /** @enum {string} */
             type: "AdHoc";
         };
+        /** @description Server capabilities returned on startup/registration */
+        ServerCapabilities: {
+            /** @description Deprecation warnings for the daemon */
+            deprecation_warnings?: components["schemas"]["DeprecationWarning"][];
+            /** @description Minimum daemon version supported by this server */
+            minimum_daemon_version: string;
+            /** @description Server software version */
+            server_version: string;
+        };
         /**
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-01-04T19:28:16.407332Z",
-         *           "id": "6842f35e-b835-44cc-a2c1-e2c4cc27c422",
+         *           "created_at": "2026-01-06T00:51:30.792075Z",
+         *           "id": "be404975-3e17-49fb-a9dc-6b8b1ed44909",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-01-04T19:28:16.407332Z"
+         *           "updated_at": "2026-01-06T00:51:30.792075Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -3571,7 +3755,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Lubelogger",
+         *       "service_definition": "NUT",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -3744,7 +3928,7 @@ export interface components {
             organization_id: string;
         };
         /** @enum {string} */
-        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild";
+        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "SubscriptionCancelled";
         Topology: components["schemas"]["TopologyBase"] & {
             /** Format: date-time */
             readonly created_at: string;
@@ -4302,6 +4486,130 @@ export interface operations {
             };
         };
     };
+    create_checkout_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Checkout session URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_String"];
+                };
+            };
+            /** @description Invalid plan or billing not enabled */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_billing_plans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of available billing plans */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Vec_BillingPlan"];
+                };
+            };
+            /** @description Billing not enabled */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    create_portal_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "text/plain": string;
+            };
+        };
+        responses: {
+            /** @description Portal session URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_String"];
+                };
+            };
+            /** @description Billing not enabled */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    handle_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook processed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Invalid signature or billing not enabled */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     get_public_config: {
         parameters: {
             query?: never;
@@ -4318,6 +4626,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_PublicConfigResponse"];
+                };
+            };
+        };
+    };
+    register_daemon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DaemonRegistrationRequest"];
+            };
+        };
+        responses: {
+            /** @description Daemon registered successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DaemonRegistrationResponse"];
+                };
+            };
+            /** @description Daemon registration disabled in demo mode */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    receive_heartbeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daemon ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DaemonHeartbeatPayload"];
+            };
+        };
+        responses: {
+            /** @description Heartbeat received */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Daemon not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    receive_work_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daemon ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DaemonHeartbeatPayload"];
+            };
+        };
+        responses: {
+            /** @description Work request processed - returns (Option<DiscoveryUpdatePayload>, bool) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Daemon not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    daemon_startup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daemon ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DaemonStartupRequest"];
+            };
+        };
+        responses: {
+            /** @description Startup acknowledged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ServerCapabilities"];
+                };
+            };
+            /** @description Daemon not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_capabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daemon ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DaemonCapabilities"];
+            };
+        };
+        responses: {
+            /** @description Capabilities updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Daemon not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -4848,130 +5331,6 @@ export interface operations {
             };
             /** @description API key not found */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
-    create_checkout_session: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCheckoutRequest"];
-            };
-        };
-        responses: {
-            /** @description Checkout session URL */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponse_String"];
-                };
-            };
-            /** @description Invalid plan or billing not enabled */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
-    get_billing_plans: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of available billing plans */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponse_Vec_BillingPlan"];
-                };
-            };
-            /** @description Billing not enabled */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
-    create_portal_session: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "text/plain": string;
-            };
-        };
-        responses: {
-            /** @description Portal session URL */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponse_String"];
-                };
-            };
-            /** @description Billing not enabled */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
-    handle_webhook: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Webhook processed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponse"];
-                };
-            };
-            /** @description Invalid signature or billing not enabled */
-            400: {
                 headers: {
                     [name: string]: unknown;
                 };

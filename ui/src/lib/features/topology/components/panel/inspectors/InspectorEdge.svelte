@@ -8,11 +8,15 @@
 
 	let { edge }: { edge: Edge } = $props();
 
-	let edgeData = $derived(edge.data as TopologyEdge);
+	let edgeData = $derived(edge.data as TopologyEdge | undefined);
 </script>
 
 <div class="w-full space-y-4">
-	{#if edgeData.edge_type === 'HubAndSpoke' || edgeData.edge_type === 'RequestPath'}
+	{#if !edgeData}
+		<div class="space-y-3">
+			<p class="text-tertiary text-sm">Edge data not available</p>
+		</div>
+	{:else if edgeData.edge_type === 'HubAndSpoke' || edgeData.edge_type === 'RequestPath'}
 		<InspectorEdgeGroup
 			groupId={edgeData.group_id}
 			sourceBindingId={edgeData.source_binding_id}

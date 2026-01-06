@@ -1,0 +1,118 @@
+name: Service not detected
+description: Report a service that Scanopy isn't detecting
+title: "Service NOT DETECTED: "
+labels: ["bug", "service-request"]
+assignees:
+  - mayanayza
+
+body:
+  - type: input
+    id: service-name
+    attributes:
+      label: Service name
+      description: The name of the service that isn't being detected
+      placeholder: e.g., Frigate, TrueNAS Scale, Cadvisor
+    validations:
+      required: true
+
+  - type: dropdown
+    id: in-library
+    attributes:
+      label: Is this service in Scanopy's service library?
+      description: Check [scanopy.net/services](https://scanopy.net/services) to see if it's listed
+      options:
+        - "1: No, it's not listed"
+        - "2: Yes, it's listed but not being detected"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### Complete ONE section below based on your selection above
+
+        | You selected | Complete |
+        |--------------|----------|
+        | **1: Not listed** | Section A |
+        | **2: Listed but not detected** | Section B |
+
+        ---
+        ## Section A: Service not in library
+        *Skip this section if you selected option 2*
+
+  - type: input
+    id: a-ports
+    attributes:
+      label: "[A] Port(s) the service runs on"
+      description: The default port(s) for this service
+      placeholder: e.g., 80, 443, 8080
+
+  - type: textarea
+    id: a-detection-hints
+    attributes:
+      label: "[A] How can this service be identified?"
+      description: |
+        What makes this service recognizable? For example:
+        - HTML page title (e.g., `<title>Frigate</title>`)
+        - HTTP response headers
+        - Banner text when connecting
+      placeholder: |
+        Web UI title: "My Service Dashboard"
+        Header: "Server: MyService/1.0"
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## Section B: Service in library but not detected
+        *Skip this section if you selected option 1*
+
+  - type: dropdown
+    id: b-deployment
+    attributes:
+      label: "[B] How is the service deployed?"
+      description: This affects which detection method Scanopy uses
+      options:
+        - ""
+        - Docker container on same host as Scanopy daemon
+        - Different host on the network
+
+  - type: dropdown
+    id: b-port-config
+    attributes:
+      label: "[B] Are you using the default ports?"
+      description: Check scanopy.net/services for the expected ports
+      options:
+        - ""
+        - Yes, using default ports
+        - No, using custom ports
+
+  - type: textarea
+    id: b-expected-vs-actual
+    attributes:
+      label: "[B] Expected vs actual"
+      description: |
+        Help us debug by comparing what Scanopy expects vs what you're running.
+        Check your service's definition at [scanopy.net/services](https://scanopy.net/services).
+      placeholder: |
+        Definition expects: port 80, title "ServiceName"
+        I'm running: port 80, title "ServiceName v2.1"
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help (screenshots, logs, links to service docs)
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution interest
+      options:
+        - label: I'd like to contribute this service definition myself

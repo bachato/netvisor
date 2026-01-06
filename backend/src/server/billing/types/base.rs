@@ -160,6 +160,12 @@ pub struct BillingPlanFeatures {
     pub email_support: bool,
     pub community_support: bool,
     pub priority_support: bool,
+    // Core features (included in all plans)
+    pub unlimited_scans: bool,
+    pub unlimited_hosts: bool,
+    pub service_definitions: bool,
+    pub docker_integration: bool,
+    pub real_time_updates: bool,
 }
 
 impl BillingPlan {
@@ -285,6 +291,11 @@ impl BillingPlan {
                 email_support: false,
                 community_support: true,
                 priority_support: false,
+                unlimited_scans: true,
+                unlimited_hosts: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
             },
             BillingPlan::Starter { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -302,6 +313,11 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: false,
+                unlimited_scans: true,
+                unlimited_hosts: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
             },
             BillingPlan::Pro { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -319,6 +335,11 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: false,
+                unlimited_scans: true,
+                unlimited_hosts: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
             },
             BillingPlan::Team { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -336,6 +357,11 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: true,
+                unlimited_scans: true,
+                unlimited_hosts: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
             },
             BillingPlan::Business { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -353,6 +379,11 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: true,
+                unlimited_scans: true,
+                unlimited_hosts: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
             },
             BillingPlan::Enterprise { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -370,6 +401,11 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: true,
+                unlimited_scans: true,
+                unlimited_hosts: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
             },
             BillingPlan::Demo { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -387,6 +423,11 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                unlimited_scans: true,
+                unlimited_hosts: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
             },
             BillingPlan::CommercialSelfHosted { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -404,6 +445,11 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: true,
+                unlimited_scans: true,
+                unlimited_hosts: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
             },
         }
     }
@@ -430,6 +476,11 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             email_support,
             priority_support,
             community_support,
+            unlimited_scans,
+            unlimited_hosts,
+            service_definitions,
+            docker_integration,
+            real_time_updates,
         } = self;
 
         if share_views {
@@ -490,6 +541,26 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
 
         if remove_created_with {
             features.push(Feature::RemoveCreatedWith)
+        }
+
+        if unlimited_scans {
+            features.push(Feature::UnlimitedScans)
+        }
+
+        if unlimited_hosts {
+            features.push(Feature::UnlimitedHosts)
+        }
+
+        if service_definitions {
+            features.push(Feature::ServiceDefinitions)
+        }
+
+        if docker_integration {
+            features.push(Feature::DockerIntegration)
+        }
+
+        if real_time_updates {
+            features.push(Feature::RealTimeUpdates)
         }
 
         features

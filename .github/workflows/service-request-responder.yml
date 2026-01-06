@@ -1,0 +1,46 @@
+name: Service Request Auto-Responder
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  respond:
+    if: contains(github.event.issue.labels.*.name, 'service-request')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add good first issue label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['good first issue']
+            });
+
+      - name: Post welcome comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `Thanks for reporting this!
+
+            **Want to help get this added faster?** If you're running this service, you're in the best position to verify a detection pattern works. Contributing a service definition is the quickest way to get this into Scanopy:
+
+            **[How to add a service definition](https://github.com/scanopy/scanopy/blob/main/contributing.md#adding-service-definitions)**
+
+            If you're not comfortable contributing, no problem — we'll get to it, but community contributions are prioritized.
+
+            ---
+            *This is an automated response. A maintainer will review this issue soon.*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });

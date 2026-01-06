@@ -4,8 +4,11 @@
 	import { Loader2, SatelliteDish } from 'lucide-svelte';
 	import { entities } from '$lib/shared/stores/metadata';
 
-	// Query for active sessions
-	const sessionsQuery = useActiveSessionsQuery();
+	// Defer query until browser is idle to avoid blocking critical rendering path
+	let queryEnabled = $state(false);
+
+	// Query for active sessions (deferred, using getter for reactivity)
+	const sessionsQuery = useActiveSessionsQuery(() => queryEnabled);
 	let sessionsData = $derived(sessionsQuery.data ?? []);
 
 	// Track the session ID we're showing (stick to first session until done)
@@ -59,8 +62,18 @@
 			pendingDaemonSetup = localStorage.getItem('pendingDaemonSetup') === 'true';
 		}
 
-		// TanStack query handles fetching, just connect SSE for updates
-		discoverySSEManager.connect();
+		// Defer non-critical requests until browser is idle
+		const enableQuery = () => {
+			queryEnabled = true;
+			discoverySSEManager.connect();
+		};
+
+		if ('requestIdleCallback' in window) {
+			requestIdleCallback(enableQuery);
+		} else {
+			// Fallback for Safari
+			setTimeout(enableQuery, 0);
+		}
 
 		// Toggle messages every 4 seconds
 		intervalId = setInterval(() => {

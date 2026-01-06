@@ -53,6 +53,20 @@ pub struct EndpointResponse {
     pub status: u16,
 }
 
+impl Display for EndpointResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let body_length = self.body.len().min(20);
+        write!(
+            f,
+            "Response from {} -- Status {}; Headers {:?}; Body {}...",
+            self.endpoint,
+            self.status,
+            self.headers,
+            &self.body[0..body_length]
+        )
+    }
+}
+
 impl Endpoint {
     pub fn is_resolved(&self) -> bool {
         self.ip.is_some()

@@ -12,6 +12,7 @@ import type { Topology, TopologyOptions } from './types/base';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
 import { writable, get } from 'svelte/store';
+import { trackEventOnce } from '$lib/shared/utils/analytics';
 
 // Default options for new topologies
 export const defaultTopologyOptions: TopologyOptions = {
@@ -160,6 +161,10 @@ export function useRebuildTopologyMutation() {
 				params: { path: { id: topology.id } },
 				body: topology
 			});
+
+			// Track first topology rebuild (once per browser)
+			trackEventOnce('first_topology_rebuild');
+
 			return topology.id;
 		}
 	}));

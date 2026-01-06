@@ -1,5 +1,6 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
+	import AnimatedProgressBar from './AnimatedProgressBar.svelte';
 	import { cancellingSessions } from '$lib/features/discovery/queries';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { Loader2, X } from 'lucide-svelte';
@@ -87,10 +88,7 @@
 
 			<div class="flex items-center gap-2">
 				<div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-700">
-					<div
-						class="h-full bg-blue-500 transition-all duration-300 ease-out"
-						style="width: {session.progress}%"
-					></div>
+					<AnimatedProgressBar progress={session.progress} />
 				</div>
 				<span class="text-secondary text-xs">{session.progress}%</span>
 			</div>

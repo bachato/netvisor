@@ -22,6 +22,7 @@ interface FieldDef {
 	disabled?: (isNew: boolean) => boolean;
 	validators?: Validator[];
 	required?: boolean;
+	showWhen?: (values: Record<string, string | number | boolean>) => boolean;
 }
 
 export const fieldDefs: FieldDef[] = [
@@ -44,12 +45,25 @@ export const fieldDefs: FieldDef[] = [
 		cliFlag: '--mode',
 		envVar: 'SCANOPY_MODE',
 		helpText:
-			'Select whether the daemon will Pull work from the server or have work Pushed to it. If set to Push, you will need to ensure that network you are deploying the daemon on can be reached by the server by opening/forwarding the port to the daemon. If set to Pull, no port opening/forwarding is needed',
+			'Select whether the daemon will Pull work from the server or have work Pushed to it. If set to Push, you will need to ensure that network you are deploying the daemon on can be reached by the server by opening/forwarding the port to the daemon, and provide the Daemon URL where the server should try to reach the daemon. If set to Pull, no port opening/forwarding is needed',
 		options: [
 			{ label: 'Push', value: 'Push' },
 			{ label: 'Pull', value: 'Pull' }
 		],
 		disabled: (isNew) => !isNew
+	},
+	{
+		id: 'daemonUrl',
+		label: 'Daemon URL',
+		type: 'string',
+		defaultValue: '',
+		cliFlag: '--daemon-url',
+		envVar: 'SCANOPY_DAEMON_URL',
+		helpText:
+			'Public URL where server can reach daemon in Push mode. Defaults to auto-detected IP + Daemon Port if not set',
+		placeholder: 'https://daemon.example.com',
+		validators: [url],
+		showWhen: (values) => values.mode === 'Push'
 	},
 	// Network section
 	{
@@ -74,19 +88,6 @@ export const fieldDefs: FieldDef[] = [
 		placeholder: '0.0.0.0',
 		section: 'Network',
 		validators: [ipAddressFormat]
-	},
-	{
-		id: 'daemonUrl',
-		label: 'Daemon URL',
-		type: 'string',
-		defaultValue: '',
-		cliFlag: '--daemon-url',
-		envVar: 'SCANOPY_DAEMON_URL',
-		helpText:
-			'Public URL where server can reach daemon, if running in Push mode. Defaults to auto-detected IP + Daemon Port if not set',
-		placeholder: 'https://daemon.example.com',
-		section: 'Network',
-		validators: [url]
 	},
 	{
 		id: 'allowSelfSignedCerts',
@@ -187,5 +188,36 @@ export const fieldDefs: FieldDef[] = [
 		placeholder: '/certs/ca.pem',
 		section: 'Docker Proxy',
 		validators: []
+	},
+	{
+		id: 'arp_retries',
+		label: 'Arp Retries',
+		type: 'number',
+		cliFlag: '--arp-retries',
+		envVar: 'SCANOPY_ARP_RETRIES',
+		helpText:
+			'Number of ARP retry rounds for non-responding hosts (default: 2, meaning 3 total attempts)',
+		section: 'Arp Scanning'
+	},
+	{
+		id: 'arp_rate_pps',
+		label: 'Arp Packets per Second',
+		type: 'number',
+		cliFlag: '--arp-rate-pps',
+		envVar: 'SCANOPY_ARP_RATE_PPS',
+		helpText:
+			'Maximum ARP packets per second (default: 50, go more conservative for networks with enterprise switches)',
+		section: 'Arp Scanning'
+	},
+	{
+		id: 'use_npcap_arp',
+		label: 'Use Npcap for ARP on Windows',
+		type: 'boolean',
+		defaultValue: false,
+		cliFlag: '--use-npcap-arp',
+		envVar: 'SCANOPY_USE_NPCAP_ARP',
+		helpText:
+			"Enable faster ARP scanning on Windows by using broadcast ARP via Npcap instead of native SendARP, which doesn't support broadcast. **Requires Npcap installation**. Ignored on Linux/macOS",
+		section: 'Arp Scanning'
 	}
 ];

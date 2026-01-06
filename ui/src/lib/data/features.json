@@ -73,7 +73,7 @@
     "icon": "sparkle",
     "color": "Gray",
     "metadata": {
-      "is_coming_soon": true
+      "is_coming_soon": false
     }
   },
   {
@@ -158,6 +158,61 @@
     "name": "Embeds",
     "description": "Embed live network diagrams in wikis, dashboards, or documentation",
     "category": "Sharing",
+    "icon": "sparkle",
+    "color": "Gray",
+    "metadata": {
+      "is_coming_soon": false
+    }
+  },
+  {
+    "id": "unlimited_scans",
+    "name": "Unlimited Scans",
+    "description": "No limits on network discovery scans",
+    "category": "Core",
+    "icon": "sparkle",
+    "color": "Gray",
+    "metadata": {
+      "is_coming_soon": false
+    }
+  },
+  {
+    "id": "unlimited_hosts",
+    "name": "Unlimited Hosts",
+    "description": "Monitor as many hosts as your network has",
+    "category": "Core",
+    "icon": "sparkle",
+    "color": "Gray",
+    "metadata": {
+      "is_coming_soon": false
+    }
+  },
+  {
+    "id": "service_definitions",
+    "name": "200+ Service Definitions",
+    "description": "Auto-detect databases, containers, web servers, and more",
+    "category": "Core",
+    "icon": "sparkle",
+    "color": "Gray",
+    "metadata": {
+      "is_coming_soon": false
+    }
+  },
+  {
+    "id": "docker_integration",
+    "name": "Docker Integration",
+    "description": "Automatic discovery of containerized services",
+    "category": "Core",
+    "icon": "sparkle",
+    "color": "Gray",
+    "metadata": {
+      "is_coming_soon": false
+    }
+  },
+  {
+    "id": "real_time_updates",
+    "name": "Real-time Updates",
+    "description": "Live topology updates as your network changes",
+    "category": "Core",
     "icon": "sparkle",
     "color": "Gray",
     "metadata": {
