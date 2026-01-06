@@ -187,5 +187,36 @@ export const fieldDefs: FieldDef[] = [
 		placeholder: '/certs/ca.pem',
 		section: 'Docker Proxy',
 		validators: []
+	},
+	{
+		id: 'arp_retries',
+		label: 'Arp Retries',
+		type: 'number',
+		cliFlag: '--arp-retries',
+		envVar: 'SCANOPY_ARP_RETRIES',
+		helpText:
+			'Number of ARP retry rounds for non-responding hosts (default: 2, meaning 3 total attempts)',
+		section: 'Arp Scanning'
+	},
+	{
+		id: 'arp_rate_pps',
+		label: 'Arp Retries',
+		type: 'number',
+		cliFlag: '--arp-rate-pps',
+		envVar: 'SCANOPY_ARP_RATE_PPS',
+		helpText:
+			'Maximum ARP packets per second (default: 50, go more conservative for networks with enterprise switches)',
+		section: 'Arp Scanning'
+	},
+	{
+		id: 'use_npcap_arp',
+		label: 'Use Npcap for ARP on Windows',
+		type: 'boolean',
+		defaultValue: false,
+		cliFlag: '--use-npcap-arp',
+		envVar: 'SCANOPY_USE_NPCAP_ARP',
+		helpText:
+			"Enable faster ARP scanning on Windows by using broadcast ARP via Npcap instead of native SendARP, which doesn't support broadcast. **Requires Npcap installation**. Ignored on Linux/macOS",
+		section: 'Arp Scanning'
 	}
 ];

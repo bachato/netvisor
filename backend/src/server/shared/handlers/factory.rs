@@ -62,11 +62,9 @@ pub async fn get_version() -> Json<ApiResponse<VersionInfo>> {
     }))
 }
 
-/// Creates the OpenApiRouter with all documented API routes.
-/// This is the single source of truth for route definitions.
-/// Used by both the server and OpenAPI spec generation.
+/// Creates the OpenApiRouter with billed entity routes.
 /// All entity routes are versioned under /api/v1/.
-pub fn create_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
+fn create_billed_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .nest("/api/v1/hosts", host_handlers::create_router())
         .nest("/api/v1/interfaces", interface_handlers::create_router())
@@ -95,35 +93,54 @@ pub fn create_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
         .nest("/api/v1/topology", topology_handlers::create_router())
 }
 
+/// Creates the OpenApiRouter with exempt routes (not subject to billing middleware).
+/// Shares are versioned (user-facing), auth and billing are unversioned.
+fn create_exempt_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
+    OpenApiRouter::new()
+        .nest("/api/billing", billing_handlers::create_router())
+        .nest("/api/v1/shares", share_handlers::create_router())
+        .nest("/api/auth", auth_handlers::create_router())
+        .nest("/api/daemons", daemon_handlers::create_internal_router())
+        .routes(utoipa_axum::routes!(get_version))
+}
+
+/// Creates the OpenApiRouter with cacheable routes.
+fn create_cacheable_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
+    OpenApiRouter::new()
+        .routes(utoipa_axum::routes!(get_metadata_registry))
+        .routes(utoipa_axum::routes!(get_public_config))
+        .routes(utoipa_axum::routes!(get_stars))
+}
+
+/// Collects all OpenAPI route definitions without building the actual router.
+/// This is the single source of truth for OpenAPI spec generation.
+/// Used by both the server and standalone spec generation.
+pub fn collect_all_openapi_routes() -> OpenApi {
+    let (_, mut openapi) = create_billed_openapi_routes().split_for_parts();
+    let (_, exempt_openapi) = create_exempt_openapi_routes().split_for_parts();
+    let (_, cacheable_openapi) = create_cacheable_openapi_routes().split_for_parts();
+
+    openapi.merge(exempt_openapi);
+    openapi.merge(cacheable_openapi);
+    openapi
+}
+
 /// Creates the application router and returns both the router and OpenAPI spec.
 /// The OpenAPI spec is built from annotated handlers using utoipa-axum.
 pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
-    // Routes that require billing for requests
-    let billed_routes = create_openapi_routes();
+    // Get the complete OpenAPI spec from single source of truth
+    let openapi = collect_all_openapi_routes();
 
-    // Extract OpenAPI spec and convert to regular Router for middleware application
-    let (billed_router, mut openapi) = billed_routes.split_for_parts();
+    // Build routers from the same helper functions (discarding their OpenAPI output)
+    // Billed routes require billing middleware
+    let (billed_router, _) = create_billed_openapi_routes().split_for_parts();
     let billed_router = billed_router.layer(middleware::from_fn_with_state(
         state,
         require_billing_for_users,
     ));
 
-    // Extract OpenAPI from billing, shares, and auth routes (exempt from billing middleware but need types)
-    // Shares are versioned because they are user facing, auth and billing is unversioned
-    let (billing_router, billing_openapi) = OpenApiRouter::new()
-        .nest("/api/billing", billing_handlers::create_router())
-        .split_for_parts();
-    let (shares_router, shares_openapi) = OpenApiRouter::new()
-        .nest("/api/v1/shares", share_handlers::create_router())
-        .split_for_parts();
-    let (auth_router, auth_openapi) = OpenApiRouter::new()
-        .nest("/api/auth", auth_handlers::create_router()) // Unversioned - session auth
-        .split_for_parts();
-
-    // Daemon-internal endpoints (unversioned - daemons call these, not users)
-    let (daemon_internal_router, daemon_internal_openapi) = OpenApiRouter::new()
-        .nest("/api/daemons", daemon_handlers::create_internal_router())
-        .split_for_parts();
+    // Exempt routes (no billing middleware)
+    let (exempt_router, _) = create_exempt_openapi_routes().split_for_parts();
 
     // Legacy routes for backwards compatibility with older daemons (v0.12.x)
     // These are not documented in OpenAPI but must remain functional
@@ -134,43 +151,17 @@ pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
         .nest("/api/groups", group_handlers::create_router().into())
         .nest("/api/discovery", discovery_handlers::create_router().into());
 
-    // Version endpoint (unversioned - used to check API version)
-    let (version_router, version_openapi) = OpenApiRouter::new()
-        .routes(utoipa_axum::routes!(get_version))
-        .split_for_parts();
-
-    // Merge OpenAPI specs into main spec
-    openapi.merge(billing_openapi);
-    openapi.merge(shares_openapi);
-    openapi.merge(auth_openapi);
-    openapi.merge(daemon_internal_openapi);
-    openapi.merge(version_openapi);
-
-    // Routes exempt from billing checks
-    // Note: /api/health is defined in server.rs outside middleware stack
-    let exempt_routes = Router::new()
-        .merge(billing_router)
-        .merge(shares_router)
-        .merge(auth_router)
-        .merge(daemon_internal_router)
-        .merge(legacy_entity_router)
-        .merge(version_router);
-
-    // Cacheable routes with OpenAPI documentation (also exempt from billing)
-    let (cacheable_router, cacheable_openapi) = OpenApiRouter::new()
-        .routes(utoipa_axum::routes!(get_metadata_registry))
-        .routes(utoipa_axum::routes!(get_public_config))
-        .routes(utoipa_axum::routes!(get_stars))
-        .split_for_parts();
+    // Cacheable routes with cache headers
+    let (cacheable_router, _) = create_cacheable_openapi_routes().split_for_parts();
     let cacheable_routes = cacheable_router.layer(SetResponseHeaderLayer::if_not_present(
         header::CACHE_CONTROL,
         HeaderValue::from_static("max-age=3600, must-revalidate"),
     ));
-    openapi.merge(cacheable_openapi);
 
     let router = Router::new()
         .merge(billed_router)
-        .merge(exempt_routes)
+        .merge(exempt_router)
+        .merge(legacy_entity_router)
         .merge(cacheable_routes)
         .merge(create_docs_router(openapi.clone()))
         // Fixture capture middleware (no-op unless capture-fixtures feature is enabled)
