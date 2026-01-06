@@ -16,4 +16,46 @@ declare module 'freemail' {
 	export function disposable(email: string): boolean;
 }
 
+declare module '$lib/data/billing-plans.json' {
+	interface BillingPlanFixture {
+		id: string;
+		name: string;
+		description: string;
+		category: string | null;
+		icon: string;
+		color: string;
+		metadata: {
+			base_cents: number;
+			rate: 'Month' | 'Year';
+			trial_days: number;
+			seat_cents: number | null;
+			network_cents: number | null;
+			included_seats: number | null;
+			included_networks: number | null;
+			features: Record<string, boolean>;
+			is_commercial: boolean;
+			hosting: string;
+			custom_price: string | null;
+		};
+	}
+	const data: BillingPlanFixture[];
+	export default data;
+}
+
+declare module '$lib/data/features.json' {
+	interface FeatureFixture {
+		id: string;
+		name: string;
+		description: string;
+		category: string;
+		icon: string;
+		color: string;
+		metadata: {
+			is_coming_soon: boolean;
+		};
+	}
+	const data: FeatureFixture[];
+	export default data;
+}
+
 export {};

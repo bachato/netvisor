@@ -92,6 +92,12 @@
 			const result = await setupMutation.mutateAsync(formData);
 			// Update store with network IDs
 			onboardingStore.setNetworkIds(result.network_ids);
+
+			// Track onboarding modal completion
+			trackEvent('onboarding_modal_completed', {
+				network_count: formData.networks.length
+			});
+
 			// Skip daemon step if server has integrated daemon
 			currentStep = hasIntegratedDaemon ? 'register' : 'daemon';
 		} catch {
@@ -124,6 +130,11 @@
 		try {
 			// Extract subscribed for Plunk, send rest to backend
 			const user = await registerMutation.mutateAsync(data);
+
+			// Track org creation
+			trackEvent('org_created', {
+				org_id: user.organization_id
+			});
 
 			// Track registration in Plunk for email marketing
 			trackPlunkEvent('register', user.email, subscribed);

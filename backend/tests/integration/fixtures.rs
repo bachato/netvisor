@@ -151,13 +151,13 @@ async fn generate_billing_plans_json() -> Result<(), Box<dyn std::error::Error>>
     let feature_metadata: Vec<TypeMetadata> = Feature::iter().map(|f| f.to_metadata()).collect();
 
     let json_string = serde_json::to_string_pretty(&plan_metadata)?;
-    let path = std::path::Path::new("../ui/static/billing-plans-next.json");
+    let path = std::path::Path::new("../ui/src/lib/data/billing-plans-next.json");
     tokio::fs::write(path, json_string).await?;
 
     let json_string = serde_json::to_string_pretty(&feature_metadata)?;
-    let path = std::path::Path::new("../ui/static/features-next.json");
+    let path = std::path::Path::new("../ui/src/lib/data/features-next.json");
     tokio::fs::write(path, json_string).await?;
 
-    println!("✅ Generated billing-plans-next.json and features-next.json");
+    println!("✅ Generated billing-plans-next.json and features-next.json in ui/src/lib/data/");
     Ok(())
 }

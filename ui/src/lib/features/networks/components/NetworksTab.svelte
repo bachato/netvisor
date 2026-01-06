@@ -144,7 +144,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="Networks" subtitle="Manage networks">
+	<TabHeader title="Networks">
 		<svelte:fragment slot="actions">
 			{#if canManageNetworks}
 				<button class="btn-primary flex items-center" onclick={handleCreateNetwork}

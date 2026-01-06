@@ -60,25 +60,31 @@
 
 	const nodes = $derived(topology?.nodes ?? []);
 
-	const edgeData = data as TopologyEdge;
-	const edgeTypeMetadata = edgeTypes.getMetadata(edgeData.edge_type);
+	const edgeData = $derived(data as TopologyEdge | undefined);
+	const edgeTypeMetadata = $derived(edgeData ? edgeTypes.getMetadata(edgeData.edge_type) : null);
 
 	// Get group reactively - updates when groups store changes
 	let group = $derived.by(() => {
-		if (!topology?.groups) return null;
+		if (!topology?.groups || !edgeTypeMetadata || !edgeData) return null;
 		if (edgeTypeMetadata.is_group_edge && 'group_id' in edgeData) {
 			return topology.groups.find((g) => g.id == edgeData.group_id) || null;
 		}
 		return null;
 	});
 
-	let hideEdge = $derived($topologyOptions.local.hide_edge_types.includes(edgeData.edge_type));
+	let hideEdge = $derived(
+		edgeData ? $topologyOptions.local.hide_edge_types.includes(edgeData.edge_type) : false
+	);
 
 	// Get display state from helper - Make reactive to hover stores
 	let displayState = $derived.by(() => {
 		// Subscribe to hover stores to trigger reactivity
 		void $edgeHoverState;
 		void $groupHoverState;
+
+		if (!edgeData) {
+			return { shouldShowFull: false, shouldAnimate: false };
+		}
 
 		// Create a minimal edge object for the helper
 		const edge: Edge = {
@@ -99,11 +105,14 @@
 		if (group?.color) {
 			return createColorHelper(group.color);
 		}
+		if (!edgeData) {
+			return createColorHelper('Gray');
+		}
 		return edgeTypes.getColorHelper(edgeData.edge_type);
 	});
 
 	// Determine if this edge should use the two-color dashed effect
-	let isGroupEdge = $derived(edgeTypeMetadata.is_group_edge);
+	let isGroupEdge = $derived(edgeTypeMetadata?.is_group_edge ?? false);
 	let useMultiColorDash = $derived(isGroupEdge && shouldShowFull);
 
 	// Calculate base edge properties
@@ -123,7 +132,7 @@
 		} else if (useMultiColorDash && !isSelected) {
 			// Other group edges, subtler highlight
 			strokeColor = 'rgba(0, 0, 0, 0.15)';
-		} else if (!isGroupEdge && edgeTypeMetadata.is_dashed) {
+		} else if (!isGroupEdge && edgeTypeMetadata?.is_dashed) {
 			dashArray = 'stroke-dasharray: 5 5;';
 		}
 
@@ -186,7 +195,7 @@
 
 	// Helper function to get the path calculation function based on edge style
 	function getPathFunction(edge_style: string) {
-		const isMultiHop = (edgeData.is_multi_hop as boolean) || false;
+		const isMultiHop = (edgeData?.is_multi_hop as boolean) || false;
 		const offset = calculateDynamicOffset(isMultiHop);
 
 		const basePathProperties = {
@@ -229,7 +238,7 @@
 	// Calculate edge path and label position - DRY approach
 	let pathData = $derived.by(() => {
 		// Use group edge_style if available, otherwise use edge type metadata
-		const edge_style = group ? group.edge_style : edgeTypeMetadata.edge_style;
+		const edge_style = group ? group.edge_style : (edgeTypeMetadata?.edge_style ?? 'SmoothStep');
 		return getPathFunction(edge_style);
 	});
 
@@ -262,62 +271,70 @@
 	let reconnecting = $state(false);
 </script>
 
-{#if isSelected}
-	<EdgeReconnectAnchor
-		bind:reconnecting
-		type="source"
-		position={{ x: sourceX, y: sourceY }}
-		class={{}}
-		style={!reconnecting
-			? `background: ${edgeColorHelper.rgb}; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;`
-			: 'background: transparent; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;'}
-	/>
-	<EdgeReconnectAnchor
-		bind:reconnecting
-		type="target"
-		position={{ x: targetX, y: targetY }}
-		style={!reconnecting
-			? `background: ${edgeColorHelper.rgb}; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;`
-			: 'background: transparent; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;'}
-	/>
-{/if}
-
-{#if !hideEdge && !reconnecting}
-	<!-- Solid base layer for group edges when shown full (rendered first, behind) -->
-	{#if useMultiColorDash}
-		<BaseEdge path={edgePath} style={solidBaseStyle} {id} interactionWidth={0} class="solid-base" />
+{#if edgeData}
+	{#if isSelected}
+		<EdgeReconnectAnchor
+			bind:reconnecting
+			type="source"
+			position={{ x: sourceX, y: sourceY }}
+			class={{}}
+			style={!reconnecting
+				? `background: ${edgeColorHelper.rgb}; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;`
+				: 'background: transparent; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;'}
+		/>
+		<EdgeReconnectAnchor
+			bind:reconnecting
+			type="target"
+			position={{ x: targetX, y: targetY }}
+			style={!reconnecting
+				? `background: ${edgeColorHelper.rgb}; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;`
+				: 'background: transparent; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;'}
+		/>
 	{/if}
 
-	<!-- Primary edge layer (white dashes for group edges when shown, normal for everything else) -->
-	<BaseEdge
-		path={edgePath}
-		style={edgeStyle}
-		{id}
-		interactionWidth={interactionWidth || 20}
-		class={useMultiColorDash ? 'dashed-overlay' : ''}
-	/>
+	{#if !hideEdge && !reconnecting}
+		<!-- Solid base layer for group edges when shown full (rendered first, behind) -->
+		{#if useMultiColorDash}
+			<BaseEdge
+				path={edgePath}
+				style={solidBaseStyle}
+				{id}
+				interactionWidth={0}
+				class="solid-base"
+			/>
+		{/if}
 
-	{#if label}
-		<EdgeLabel
-			x={labelX + labelOffsetX}
-			y={labelY + labelOffsetY}
-			style="background: none; pointer-events: none;"
-		>
-			<div
-				class="card text-secondary nopan"
-				style="font-size: 12px; font-weight: 500; padding: 0.5rem 0.75rem; border-color: rgb(55 65 81); cursor: {isDragging
-					? 'grabbing'
-					: 'grab'}; pointer-events: auto;"
-				draggable="true"
-				role="button"
-				tabindex="0"
-				ondragstart={onDragStart}
-				ondrag={onDrag}
-				ondragend={onDragEnd}
+		<!-- Primary edge layer (white dashes for group edges when shown, normal for everything else) -->
+		<BaseEdge
+			path={edgePath}
+			style={edgeStyle}
+			{id}
+			interactionWidth={interactionWidth || 20}
+			class={useMultiColorDash ? 'dashed-overlay' : ''}
+		/>
+
+		{#if label}
+			<EdgeLabel
+				x={labelX + labelOffsetX}
+				y={labelY + labelOffsetY}
+				style="background: none; pointer-events: none;"
 			>
-				{label}
-			</div>
-		</EdgeLabel>
+				<div
+					class="card text-secondary nopan"
+					style="font-size: 12px; font-weight: 500; padding: 0.5rem 0.75rem; border-color: rgb(55 65 81); cursor: {isDragging
+						? 'grabbing'
+						: 'grab'}; pointer-events: auto;"
+					draggable="true"
+					role="button"
+					tabindex="0"
+					ondragstart={onDragStart}
+					ondrag={onDrag}
+					ondragend={onDragEnd}
+				>
+					{label}
+				</div>
+			</EdgeLabel>
+		{/if}
 	{/if}
 {/if}
 

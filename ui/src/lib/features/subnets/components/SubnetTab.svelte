@@ -156,7 +156,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="Subnets" subtitle="Manage network subnets and IP ranges">
+	<TabHeader title="Subnets">
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateSubnet}

@@ -381,9 +381,9 @@ impl Service {
                 "Service discovered"
             );
 
-            tracing::debug!(
+            tracing::trace!(
                 service_id = %service_definition.id(),
-                match_reason = ?result.details.reason,
+                match_reason = %result.details.reason,
                 full_params = ?params,
                 "Service match details"
             );

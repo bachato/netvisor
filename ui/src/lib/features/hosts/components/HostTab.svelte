@@ -252,7 +252,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="Hosts" subtitle="Manage hosts on the network">
+	<TabHeader title="Hosts">
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateHost}

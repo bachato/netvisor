@@ -9,6 +9,7 @@ use crate::daemon::discovery::service::base::{
 use crate::daemon::discovery::service::docker::DockerScanDiscovery;
 use crate::daemon::discovery::service::network::NetworkScanDiscovery;
 use crate::daemon::discovery::service::self_report::SelfReportDiscovery;
+use crate::daemon::runtime::service::LOG_TARGET;
 use crate::server::daemons::r#impl::api::DaemonDiscoveryRequest;
 use crate::server::discovery::r#impl::types::DiscoveryType;
 
@@ -103,7 +104,7 @@ impl DaemonDiscoverySessionManager {
 
     /// Check if discovery is currently running
     pub async fn is_discovery_running(&self) -> bool {
-        tracing::debug!("Checking discovery running on manager instance: {:p}", self);
+        tracing::debug!(target: LOG_TARGET, "Checking discovery running on manager instance: {:p}", self);
         let task_guard = self.current_task.read().await;
         let has_task = task_guard.is_some();
         let is_finished = if let Some(handle) = task_guard.as_ref() {
@@ -111,7 +112,7 @@ impl DaemonDiscoverySessionManager {
         } else {
             true
         };
-        tracing::debug!("Has task: {}, Is finished: {}", has_task, is_finished);
+        tracing::debug!(target: LOG_TARGET, "Has task: {}, Is finished: {}", has_task, is_finished);
 
         if let Some(handle) = task_guard.as_ref() {
             !handle.is_finished()

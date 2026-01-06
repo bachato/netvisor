@@ -7,7 +7,8 @@
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
-	import { ChevronDown, ChevronRight } from 'lucide-svelte';
+	import { ChevronDown, ChevronRight, RotateCcwKey } from 'lucide-svelte';
+	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { fieldDefs } from '../config';
@@ -20,6 +21,11 @@
 		showAdvanced?: boolean;
 		initialName?: string;
 		showModeSelect?: boolean;
+		// API key source selection props
+		allowExistingKey?: boolean;
+		keySet?: boolean;
+		onGenerateKey?: () => void;
+		onUseExistingKey?: () => void;
 	}
 
 	let {
@@ -28,7 +34,11 @@
 		apiKey = null,
 		showAdvanced = true,
 		initialName = '',
-		showModeSelect = true
+		showModeSelect = true,
+		allowExistingKey = false,
+		keySet = false,
+		onGenerateKey,
+		onUseExistingKey
 	}: Props = $props();
 
 	const configQuery = useConfigQuery();
@@ -68,6 +78,9 @@
 				defaults[def.id] = def.defaultValue ?? '';
 			}
 		}
+		// Add UI state fields (not part of daemon config, just for form interaction)
+		defaults.keySource = 'generate';
+		defaults.existingKeyInput = '';
 		return defaults;
 	}
 
@@ -262,6 +275,11 @@
 		return form.state.values['name'] as string;
 	}
 
+	// Export the existing key input value for parent components
+	export function getExistingKeyInput(): string {
+		return (form.state.values['existingKeyInput'] as string) ?? '';
+	}
+
 	// Export form for parent access
 	export function getForm() {
 		return form;
@@ -283,32 +301,34 @@
 <div class="space-y-4">
 	<!-- Basic Fields -->
 	{#each basicFieldDefs as def (def.id)}
-		{#if def.type === 'string'}
-			<form.Field name={def.id} validators={getValidators(def.id)}>
-				{#snippet children(field)}
-					<TextInput
-						label={def.label}
-						{field}
-						id={def.id}
-						placeholder={String(def.placeholder ?? '')}
-						required={def.required ?? false}
-						helpText={def.helpText}
-					/>
-				{/snippet}
-			</form.Field>
-		{:else if def.type === 'select'}
-			<form.Field name={def.id}>
-				{#snippet children(field)}
-					<SelectInput
-						label={def.label}
-						{field}
-						id={def.id}
-						options={def.options ?? []}
-						helpText={def.helpText}
-						disabled={def.disabled?.(isNewDaemon) ?? false}
-					/>
-				{/snippet}
-			</form.Field>
+		{#if !def.showWhen || def.showWhen(formValues)}
+			{#if def.type === 'string'}
+				<form.Field name={def.id} validators={getValidators(def.id)}>
+					{#snippet children(field)}
+						<TextInput
+							label={def.label}
+							{field}
+							id={def.id}
+							placeholder={String(def.placeholder ?? '')}
+							required={def.required ?? false}
+							helpText={def.helpText}
+						/>
+					{/snippet}
+				</form.Field>
+			{:else if def.type === 'select'}
+				<form.Field name={def.id}>
+					{#snippet children(field)}
+						<SelectInput
+							label={def.label}
+							{field}
+							id={def.id}
+							options={def.options ?? []}
+							helpText={def.helpText}
+							disabled={def.disabled?.(isNewDaemon) ?? false}
+						/>
+					{/snippet}
+				</form.Field>
+			{/if}
 		{/if}
 	{/each}
 
@@ -384,6 +404,93 @@
 						</div>
 					{/each}
 				</div>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- API Key Source Selection (only when allowExistingKey is true) -->
+	{#if allowExistingKey}
+		<div class="space-y-3 pb-2">
+			<form.Field name="keySource">
+				{#snippet children(field)}
+					<RadioGroup
+						label="API Key"
+						id="key-source"
+						{field}
+						options={[
+							{
+								value: 'generate',
+								label: 'Generate new API key',
+								helpText: 'Generate a new key if this is a fresh daemon setup.'
+							},
+							{
+								value: 'existing',
+								label: 'Use existing API key',
+								helpText:
+									"Use an existing key if your organization manages API keys centrally or you've already generated one."
+							}
+						]}
+						disabled={keySet}
+					/>
+				{/snippet}
+			</form.Field>
+
+			{#if formValues.keySource === 'generate'}
+				<!-- Generate new key flow -->
+				<div class="flex items-start gap-2">
+					<button
+						class="btn-primary m-1 flex-shrink-0 self-stretch"
+						disabled={keySet}
+						type="button"
+						onclick={() => onGenerateKey?.()}
+					>
+						<RotateCcwKey />
+						<span>Generate Key</span>
+					</button>
+
+					<div class="flex-1">
+						<CodeContainer
+							language="bash"
+							expandable={false}
+							code={apiKey ? apiKey : 'Press Generate Key...'}
+						/>
+					</div>
+				</div>
+				{#if !apiKey}
+					<div class="text-tertiary mt-1 text-xs">
+						This will create a new API key, which you can manage later in the API Keys tab.
+					</div>
+				{/if}
+			{:else}
+				<!-- Use existing key flow -->
+				<form.Field name="existingKeyInput">
+					{#snippet children(field)}
+						<div class="flex items-center gap-2">
+							<div class="flex-1">
+								<TextInput
+									label=""
+									{field}
+									id="existing-key-input"
+									placeholder="Paste your API key here"
+									disabled={keySet}
+								/>
+							</div>
+							<button
+								class="btn-primary flex-shrink-0"
+								disabled={keySet || !String(formValues.existingKeyInput ?? '').trim()}
+								type="button"
+								onclick={() => onUseExistingKey?.()}
+							>
+								<span>Use Key</span>
+							</button>
+						</div>
+					{/snippet}
+				</form.Field>
+				{#if apiKey}
+					<div class="mt-2">
+						<CodeContainer language="bash" expandable={false} code={apiKey} />
+					</div>
+				{/if}
 			{/if}
 		</div>
 	{/if}

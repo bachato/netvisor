@@ -8,7 +8,7 @@
 	import { entities } from '$lib/shared/stores/metadata';
 	import type { Daemon } from '../types/base';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
-	import { RotateCcwKey, SatelliteDish } from 'lucide-svelte';
+	import { SatelliteDish } from 'lucide-svelte';
 	import {
 		createEmptyApiKeyFormData,
 		useCreateApiKeyMutation
@@ -70,6 +70,22 @@
 	function handleOnClose() {
 		keyState = null;
 		onClose();
+	}
+
+	async function handleUseExistingKey() {
+		// Validate form first (same pattern as handleCreateNewApiKey)
+		const isValid = await daemonFormRef?.validate();
+		if (!isValid) {
+			return;
+		}
+
+		const trimmedKey = daemonFormRef?.getExistingKeyInput()?.trim() ?? '';
+		if (!trimmedKey) {
+			pushError('Please enter an API key');
+			return;
+		}
+
+		keyState = trimmedKey;
 	}
 
 	async function handleCreateNewApiKey() {
@@ -136,37 +152,11 @@
 					networkId={selectedNetworkId}
 					apiKey={key}
 					showAdvanced={!onboardingMode || !!key}
+					allowExistingKey={!onboardingMode && !daemon}
+					keySet={!!key}
+					onGenerateKey={handleCreateNewApiKey}
+					onUseExistingKey={handleUseExistingKey}
 				/>
-
-				<!-- API Key Section (hidden in onboarding mode) -->
-				{#if !onboardingMode && !daemon}
-					<div class="pb-2">
-						<div class="flex items-start gap-2">
-							<button
-								class="btn-primary m-1 flex-shrink-0 self-stretch"
-								disabled={!!key}
-								type="button"
-								onclick={handleCreateNewApiKey}
-							>
-								<RotateCcwKey />
-								<span>Generate Key</span>
-							</button>
-
-							<div class="flex-1">
-								<CodeContainer
-									language="bash"
-									expandable={false}
-									code={key ? key : 'Press Generate Key...'}
-								/>
-							</div>
-						</div>
-						{#if !key}
-							<div class="text-tertiary mt-1 text-xs">
-								This will create a new API key, which you can manage later in the API Keys tab.
-							</div>
-						{/if}
-					</div>
-				{/if}
 
 				<!-- Existing daemon with new key warning -->
 				{#if daemon && key && selectedNetworkId}

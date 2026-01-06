@@ -26,6 +26,12 @@ pub enum Feature {
     LiveChatSupport,
     PrioritySupport,
     Embeds,
+    // Core features (included in all plans)
+    UnlimitedScans,
+    UnlimitedHosts,
+    ServiceDefinitions,
+    DockerIntegration,
+    RealTimeUpdates,
 }
 
 impl HasId for Feature {
@@ -46,16 +52,18 @@ impl HasId for Feature {
             Feature::CommunitySupport => "community_support",
             Feature::PrioritySupport => "priority_support",
             Feature::ApiAccess => "api_access",
+            Feature::UnlimitedScans => "unlimited_scans",
+            Feature::UnlimitedHosts => "unlimited_hosts",
+            Feature::ServiceDefinitions => "service_definitions",
+            Feature::DockerIntegration => "docker_integration",
+            Feature::RealTimeUpdates => "real_time_updates",
         }
     }
 }
 
 impl Feature {
     pub fn is_coming_soon(&self) -> bool {
-        matches!(
-            self,
-            Feature::Webhooks | Feature::AuditLogs | Feature::ApiAccess
-        )
+        matches!(self, Feature::Webhooks | Feature::AuditLogs)
     }
 }
 
@@ -72,6 +80,12 @@ impl EntityMetadataProvider for Feature {
 impl TypeMetadataProvider for Feature {
     fn category(&self) -> &'static str {
         match self {
+            Feature::UnlimitedScans
+            | Feature::UnlimitedHosts
+            | Feature::ServiceDefinitions
+            | Feature::DockerIntegration
+            | Feature::RealTimeUpdates => "Core",
+
             Feature::CommunitySupport
             | Feature::EmailSupport
             | Feature::LiveChatSupport
@@ -108,6 +122,11 @@ impl TypeMetadataProvider for Feature {
             Feature::EmailSupport => "Email Support",
             Feature::CommunitySupport => "Community Support",
             Feature::PrioritySupport => "Priority Support",
+            Feature::UnlimitedScans => "Unlimited Scans",
+            Feature::UnlimitedHosts => "Unlimited Hosts",
+            Feature::ServiceDefinitions => "200+ Service Definitions",
+            Feature::DockerIntegration => "Docker Integration",
+            Feature::RealTimeUpdates => "Real-time Updates",
         }
     }
 
@@ -138,6 +157,13 @@ impl TypeMetadataProvider for Feature {
             Feature::Whitelabeling => "We deploy Scanopy to a custom domain with your branding",
             Feature::LiveChatSupport => "Access to the Scanopy team via live chat",
             Feature::CommunitySupport => "Community support via GitHub issues and discussions",
+            Feature::UnlimitedScans => "No limits on network discovery scans",
+            Feature::UnlimitedHosts => "Monitor as many hosts as your network has",
+            Feature::ServiceDefinitions => {
+                "Auto-detect databases, containers, web servers, and more"
+            }
+            Feature::DockerIntegration => "Automatic discovery of containerized services",
+            Feature::RealTimeUpdates => "Live topology updates as your network changes",
         }
     }
 

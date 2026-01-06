@@ -6,74 +6,13 @@
 //!
 //! No Docker containers are required - this is purely compile-time.
 
-use scanopy::server::config::AppState;
 use scanopy::server::openapi::{build_openapi, export_openapi_spec_to_file, filter_internal_paths};
-use scanopy::server::shared::handlers::factory::create_openapi_routes;
-use std::sync::Arc;
+use scanopy::server::shared::handlers::factory::collect_all_openapi_routes;
 use utoipa::openapi::OpenApi;
 
-/// Collect and merge all OpenAPI routes into a single spec.
-///
-/// This consolidates all API routes including:
-/// - Main CRUD routes from create_openapi_routes()
-/// - Billing routes (exempt from auth middleware)
-/// - Shares routes (exempt from auth middleware)
-/// - Auth routes (exempt from auth middleware)
-/// - Cacheable routes (config, metadata, github-stars)
+/// Collect all OpenAPI routes from the single source of truth in factory.rs.
 fn collect_all_routes() -> OpenApi {
-    // Get the main OpenAPI routes
-    let routes = create_openapi_routes();
-    let (_, openapi) = routes.split_for_parts();
-
-    // Merge billing, shares, and auth routes (they're in separate exempt sections)
-    // Billing and shares are versioned, auth is unversioned (session management)
-    let (_, billing_openapi) = utoipa_axum::router::OpenApiRouter::<Arc<AppState>>::new()
-        .nest(
-            "/api/v1/billing",
-            scanopy::server::billing::handlers::create_router(),
-        )
-        .split_for_parts();
-    let (_, shares_openapi) = utoipa_axum::router::OpenApiRouter::<Arc<AppState>>::new()
-        .nest(
-            "/api/v1/shares",
-            scanopy::server::shares::handlers::create_router(),
-        )
-        .split_for_parts();
-    let (_, auth_openapi) = utoipa_axum::router::OpenApiRouter::<Arc<AppState>>::new()
-        .nest(
-            "/api/auth", // Unversioned - session auth
-            scanopy::server::auth::handlers::create_router(),
-        )
-        .split_for_parts();
-
-    // Version endpoint (unversioned)
-    use scanopy::server::shared::handlers::factory::{__path_get_version, get_version};
-    let (_, version_openapi) = utoipa_axum::router::OpenApiRouter::<Arc<AppState>>::new()
-        .routes(utoipa_axum::routes!(get_version))
-        .split_for_parts();
-
-    // Cacheable routes (config, metadata, github-stars)
-    use scanopy::server::config::{__path_get_public_config, get_public_config};
-    use scanopy::server::github::handlers::{__path_get_stars, get_stars};
-    use scanopy::server::shared::types::metadata::{
-        __path_get_metadata_registry, get_metadata_registry,
-    };
-
-    let (_, cacheable_openapi) = utoipa_axum::router::OpenApiRouter::<Arc<AppState>>::new()
-        .routes(utoipa_axum::routes!(get_metadata_registry))
-        .routes(utoipa_axum::routes!(get_public_config))
-        .routes(utoipa_axum::routes!(get_stars))
-        .split_for_parts();
-
-    // Merge all route sets
-    let mut merged = openapi;
-    merged.merge(billing_openapi);
-    merged.merge(shares_openapi);
-    merged.merge(auth_openapi);
-    merged.merge(version_openapi);
-    merged.merge(cacheable_openapi);
-
-    merged
+    collect_all_openapi_routes()
 }
 
 /// Generate the full OpenAPI spec (including internal endpoints) and save to ui/static/openapi.json.
