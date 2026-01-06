@@ -23,6 +23,34 @@ use uuid::Uuid;
 
 pub const SCAN_TIMEOUT: Duration = Duration::from_millis(800);
 
+/// Describes concurrent operations in the discovery pipeline that consume file descriptors.
+/// Used to calculate optimal deep scan concurrency.
+#[derive(Debug, Clone, Default)]
+pub struct ConcurrentPipelineOps {
+    /// Number of ARP datalink channels open (2 FDs each: tx + rx)
+    pub arp_subnet_count: usize,
+    /// Number of concurrent hosts in non-interfaced discovery port scan
+    pub non_interfaced_scan_concurrency: usize,
+    /// Number of discovery ports being scanned per non-interfaced host
+    pub discovery_ports_count: usize,
+    /// Batch size for non-interfaced port scanning
+    pub port_scan_batch_size: usize,
+}
+
+impl ConcurrentPipelineOps {
+    /// Calculate total FDs consumed by concurrent pipeline operations
+    pub fn estimated_fd_usage(&self) -> usize {
+        // ARP channels: 2 FDs per subnet (tx + rx)
+        let arp_fds = self.arp_subnet_count * 2;
+
+        // Non-interfaced discovery scan: concurrent hosts * min(batch_size, discovery_ports)
+        let ports_per_host = self.port_scan_batch_size.min(self.discovery_ports_count);
+        let non_interfaced_fds = self.non_interfaced_scan_concurrency * ports_per_host;
+
+        arp_fds + non_interfaced_fds
+    }
+}
+
 /// Cross-platform system utilities trait
 #[async_trait]
 pub trait DaemonUtils {
@@ -233,8 +261,16 @@ pub trait DaemonUtils {
     /// Get optimal concurrency for ARP scanning (OS-specific due to BPF limits on macOS)
     fn get_optimal_arp_concurrency(&self) -> Result<usize, Error>;
 
-    /// Get optimal concurrency for deep port scanning
-    fn get_optimal_deep_scan_concurrency(&self, port_batch_size: usize) -> Result<usize, Error>;
+    /// Get optimal concurrency for deep port scanning.
+    ///
+    /// # Arguments
+    /// * `port_batch_size` - Number of ports scanned concurrently per host in deep scan
+    /// * `concurrent_ops` - Description of other concurrent operations consuming FDs
+    fn get_optimal_deep_scan_concurrency(
+        &self,
+        port_batch_size: usize,
+        concurrent_ops: ConcurrentPipelineOps,
+    ) -> Result<usize, Error>;
 
     async fn get_optimal_port_batch_size(&self) -> Result<usize, Error> {
         let fd_limit = Self::get_fd_limit()?;

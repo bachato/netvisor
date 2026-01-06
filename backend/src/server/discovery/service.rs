@@ -846,6 +846,114 @@ impl DiscoveryService {
         let now = Utc::now();
         let stall_threshold = chrono::Duration::minutes(5);
 
+        // First pass: identify stalled sessions (read locks only)
+        let stalled_sessions: Vec<(Uuid, Uuid)> = {
+            let sessions = self.sessions.read().await;
+            let last_updated = self.session_last_updated.read().await;
+
+            sessions
+                .iter()
+                .filter_map(|(session_id, session)| {
+                    // Skip terminal states
+                    if session.phase.is_terminal() {
+                        return None;
+                    }
+
+                    // Check last update time
+                    let is_stalled = if let Some(last_update_time) = last_updated.get(session_id) {
+                        now.signed_duration_since(*last_update_time) > stall_threshold
+                    } else if let Some(started_at) = session.started_at {
+                        now.signed_duration_since(started_at) > stall_threshold
+                    } else {
+                        false
+                    };
+
+                    if is_stalled {
+                        Some((*session_id, session.daemon_id))
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        };
+
+        if stalled_sessions.is_empty() {
+            return;
+        }
+
+        // Second pass: send cancellation requests to daemons (no locks held)
+        for (session_id, daemon_id) in &stalled_sessions {
+            tracing::warn!(
+                session_id = %session_id,
+                daemon_id = %daemon_id,
+                "Sending cancellation to daemon for stalled session"
+            );
+
+            // Try to get daemon info and send cancellation
+            match self.daemon_service.get_by_id(daemon_id).await {
+                Ok(Some(daemon)) => {
+                    match daemon.base.mode {
+                        DaemonMode::Push => {
+                            // Send HTTP cancellation request (best effort)
+                            let url = format!("{}/api/discovery/cancel", daemon.base.url);
+                            let client = reqwest::Client::new();
+                            match client.post(&url).json(session_id).send().await {
+                                Ok(response) if response.status().is_success() => {
+                                    tracing::info!(
+                                        daemon_id = %daemon_id,
+                                        session_id = %session_id,
+                                        "Sent cancellation request to daemon for stalled session"
+                                    );
+                                }
+                                Ok(response) => {
+                                    tracing::warn!(
+                                        daemon_id = %daemon_id,
+                                        session_id = %session_id,
+                                        status = %response.status(),
+                                        "Failed to cancel stalled session on daemon"
+                                    );
+                                }
+                                Err(e) => {
+                                    tracing::warn!(
+                                        daemon_id = %daemon_id,
+                                        session_id = %session_id,
+                                        error = %e,
+                                        "Failed to send cancellation request to daemon"
+                                    );
+                                }
+                            }
+                        }
+                        DaemonMode::Pull => {
+                            // Set cancellation flag for pull mode
+                            self.daemon_pull_cancellations
+                                .write()
+                                .await
+                                .insert(*daemon_id, (true, *session_id));
+                            tracing::info!(
+                                daemon_id = %daemon_id,
+                                session_id = %session_id,
+                                "Set cancellation flag for pull-mode daemon"
+                            );
+                        }
+                    }
+                }
+                Ok(None) => {
+                    tracing::warn!(
+                        daemon_id = %daemon_id,
+                        "Daemon not found when trying to cancel stalled session"
+                    );
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        daemon_id = %daemon_id,
+                        error = %e,
+                        "Failed to get daemon for cancellation"
+                    );
+                }
+            }
+        }
+
+        // Third pass: cleanup session state (write locks)
         let mut sessions = self.sessions.write().await;
         let mut last_updated = self.session_last_updated.write().await;
         let mut daemon_sessions = self.daemon_sessions.write().await;
@@ -853,28 +961,7 @@ impl DiscoveryService {
 
         let mut stalled_count = 0;
 
-        let stalled_sessions: Vec<_> = sessions
-            .iter()
-            .filter_map(|(session_id, session)| {
-                // Skip terminal states
-                if session.phase.is_terminal() {
-                    return None;
-                }
-
-                // Check last update time
-                let is_stalled = if let Some(last_update_time) = last_updated.get(session_id) {
-                    now.signed_duration_since(*last_update_time) > stall_threshold
-                } else if let Some(started_at) = session.started_at {
-                    now.signed_duration_since(started_at) > stall_threshold
-                } else {
-                    false
-                };
-
-                if is_stalled { Some(*session_id) } else { None }
-            })
-            .collect();
-
-        for session_id in stalled_sessions {
+        for (session_id, _daemon_id) in stalled_sessions {
             if let Some(mut session) = sessions.remove(&session_id) {
                 let daemon_id = session.daemon_id;
 
@@ -908,7 +995,7 @@ impl DiscoveryService {
                 if let Some((_, cancel_session_id)) = daemon_pull_cancellations.get(&daemon_id)
                     && *cancel_session_id == session_id
                 {
-                    daemon_pull_cancellations.remove(&daemon_id); // Add this
+                    daemon_pull_cancellations.remove(&daemon_id);
                     tracing::debug!(
                         "Removed stale cancellation flag for daemon {} session {}",
                         daemon_id,

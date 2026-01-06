@@ -145,7 +145,7 @@ pub trait RunsDiscovery: AsRef<DaemonDiscoveryService> + Send + Sync {
     ) -> Result<(), Error>;
 
     /// Report scanning progress with automatic time-based throttling.
-    /// Only reports if at least 10 seconds have passed since the last report.
+    /// Reports if progress has changed OR at least 30 seconds have passed (heartbeat).
     /// Percent should be 0-100.
     async fn report_scanning_progress(&self, percent: u8) -> Result<(), Error> {
         let session = self.as_ref().get_session().await?;
@@ -153,11 +153,7 @@ pub trait RunsDiscovery: AsRef<DaemonDiscoveryService> + Send + Sync {
         let last_progress = &session.last_progress;
 
         let prev_percent = last_progress.load(Ordering::Relaxed);
-
-        // Skip if progress hasn't moved forward
-        if percent <= prev_percent && percent < 100 {
-            return Ok(());
-        }
+        let progress_changed = percent > prev_percent || percent == 100;
 
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -165,12 +161,21 @@ pub trait RunsDiscovery: AsRef<DaemonDiscoveryService> + Send + Sync {
             .as_secs();
         let last_time = last_report_time.load(Ordering::Relaxed);
 
-        // Throttle to every 10 seconds, but always allow 100%
-        if percent < 100 && now < last_time + 10 {
+        // Heartbeat interval - report even if progress hasn't changed
+        let heartbeat_interval_secs = 30;
+        let heartbeat_due = now >= last_time + heartbeat_interval_secs;
+
+        // Skip if: progress hasn't changed AND heartbeat not due AND not 100%
+        if !progress_changed && !heartbeat_due && percent < 100 {
             return Ok(());
         }
 
-        // Try to claim this report slot (check both time and progress)
+        // Throttle rapid updates (min 10 seconds between reports, unless 100%)
+        if percent < 100 && !heartbeat_due && now < last_time + 10 {
+            return Ok(());
+        }
+
+        // Try to claim this report slot
         if last_report_time
             .compare_exchange(last_time, now, Ordering::SeqCst, Ordering::Relaxed)
             .is_err()
@@ -178,7 +183,7 @@ pub trait RunsDiscovery: AsRef<DaemonDiscoveryService> + Send + Sync {
             return Ok(());
         }
 
-        // Update last progress (relaxed is fine here since time gate already synchronized)
+        // Update last progress
         last_progress.store(percent, Ordering::Relaxed);
 
         self.report_discovery_update(DiscoverySessionUpdate::scanning(percent))

@@ -3,6 +3,7 @@ use crate::daemon::discovery::service::base::{
 };
 use crate::daemon::discovery::types::base::{DiscoveryCriticalError, DiscoverySessionUpdate};
 use crate::daemon::utils::arp::{self, ArpScanResult};
+use crate::daemon::utils::base::ConcurrentPipelineOps;
 use crate::daemon::utils::scanner::{can_arp_scan, scan_endpoints, scan_tcp_ports, scan_udp_ports};
 use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback};
 use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
@@ -39,6 +40,9 @@ use uuid::Uuid;
 /// Grace period to wait for late ARP arrivals after the last deep scan completes
 const LATE_ARRIVAL_GRACE_PERIOD: Duration = Duration::from_secs(30);
 
+/// Maximum interval between progress reports (heartbeat even if progress unchanged)
+const MAX_PROGRESS_REPORT_INTERVAL: Duration = Duration::from_secs(30);
+
 // Progress phase weights (must sum to 100)
 const PROGRESS_ARP_PHASE: u8 = 30; // 0-30%: ARP discovery
 const PROGRESS_DEEP_SCAN_PHASE: u8 = 65; // 30-95%: Deep scanning
@@ -67,6 +71,8 @@ pub struct DeepScanParams<'a> {
     cancel: CancellationToken,
     port_scan_batch_size: usize,
     gateway_ips: &'a [IpAddr],
+    /// Optional counter for batch-level progress tracking
+    batches_completed: Option<&'a Arc<AtomicUsize>>,
 }
 
 impl CreatesDiscoveredEntities for DiscoveryRunner<NetworkScanDiscovery> {}
@@ -246,12 +252,38 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         self.report_discovery_update(DiscoverySessionUpdate::scanning(0))
             .await?;
 
-        // Get deep scan parameters
+        // Count unique subnets that will have ARP channels open
+        let arp_subnet_count: usize = {
+            let unique_cidrs: std::collections::HashSet<_> = interfaced_ips
+                .iter()
+                .map(|(_, subnet)| subnet.base.cidr)
+                .collect();
+            unique_cidrs.len()
+        };
+
+        // Pre-compute non-interfaced port concurrency if needed
+        let non_interfaced_scan_concurrency = if !non_interfaced_ips.is_empty() {
+            let configured = self.as_ref().config_store.get_concurrent_scans().await?;
+            self.as_ref()
+                .utils
+                .get_optimal_concurrent_scans(configured)
+                .await?
+        } else {
+            0
+        };
+
+        // Get deep scan parameters with precise FD budget
         let ports_per_host_batch = 200;
+        let concurrent_ops = ConcurrentPipelineOps {
+            arp_subnet_count,
+            non_interfaced_scan_concurrency,
+            discovery_ports_count: discovery_ports.len(),
+            port_scan_batch_size,
+        };
         let deep_scan_concurrency = self
             .as_ref()
             .utils
-            .get_optimal_deep_scan_concurrency(ports_per_host_batch)?;
+            .get_optimal_deep_scan_concurrency(ports_per_host_batch, concurrent_ops)?;
 
         let gateway_ips = self
             .as_ref()
@@ -287,7 +319,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                 total_ips = interfaced_ips.len(),
                 arp_retries,
                 arp_rate_pps,
-                "Starting ARP discovery (results feed directly to deep scan)"
+                "Starting ARP discovery"
             );
 
             // Start ARP scan for each subnet and forward results to async channel
@@ -412,17 +444,13 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
 
         // Process non-interfaced subnets with port scanning (send to same channel)
         if !non_interfaced_ips.is_empty() {
-            let configured = self.as_ref().config_store.get_concurrent_scans().await?;
-            let port_concurrency = self
-                .as_ref()
-                .utils
-                .get_optimal_concurrent_scans(configured)
-                .await?;
+            // Use pre-computed concurrency (calculated earlier for FD budget)
+            let port_concurrency = non_interfaced_scan_concurrency;
 
             tracing::info!(
                 count = non_interfaced_ips.len(),
                 concurrency = port_concurrency,
-                "Port scanning non-interfaced subnets (parallel to ARP)"
+                "Port scanning non-interfaced subnets in parallel to ARP"
             );
 
             let host_tx = host_tx.clone();
@@ -482,18 +510,35 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         let last_activity = Arc::new(std::sync::Mutex::new(Instant::now()));
         let mut results: Vec<Host> = Vec::new();
 
+        // Batch-level progress tracking for smoother UX
+        // TCP port scanning is the bulk of deep scan work (~328 batches per host for 65535 ports)
+        let batches_per_host = 65535_usize.div_ceil(ports_per_host_batch);
+        let total_batches = Arc::new(AtomicUsize::new(0));
+        let batches_completed = Arc::new(AtomicUsize::new(0));
+
         // Collect hosts into a stream and process with concurrency limit
-        let mut pending_scans = futures::stream::FuturesUnordered::new();
+        // Use trait objects to allow spawning from different code paths
+        let mut pending_scans: futures::stream::FuturesUnordered<
+            std::pin::Pin<Box<dyn std::future::Future<Output = Option<Host>> + Send>>,
+        > = futures::stream::FuturesUnordered::new();
         let mut channel_closed = false;
         let mut last_progress_report = 0u8;
+        let mut last_progress_time = Instant::now();
+
+        // Buffer for hosts waiting to be scanned when at concurrency limit
+        let mut pending_hosts: Vec<(IpAddr, Subnet, Option<MacAddress>)> = Vec::new();
+
+        // Use interval instead of sleep - interval persists across select iterations
+        // whereas sleep creates a new future each time and gets dropped when other branches fire
+        let mut progress_ticker = tokio::time::interval(Duration::from_secs(1));
 
         // Helper to calculate phase-weighted progress
-        // Note: `has_pending_scans` passed separately to avoid borrowing pending_scans in closure
+        // Note: counters passed by value to avoid borrowing issues in closure
         let calculate_progress = |channel_closed: bool,
-                                  discovered: usize,
-                                  scanned: usize,
                                   has_pending_scans: bool,
-                                  grace_elapsed: Duration|
+                                  grace_elapsed: Duration,
+                                  total_batches_val: usize,
+                                  batches_completed_val: usize|
          -> u8 {
             if !channel_closed {
                 // ARP phase (0-30%): Based on elapsed time vs estimated duration
@@ -504,14 +549,15 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                     1.0
                 };
                 (arp_progress * PROGRESS_ARP_PHASE as f64) as u8
-            } else if scanned < discovered || has_pending_scans {
-                // Deep scan phase (30-95%): Based on scanned/discovered ratio
-                let scan_progress = if discovered > 0 {
-                    scanned as f64 / discovered as f64
-                } else {
-                    0.0
-                };
+            } else if total_batches_val > 0
+                && (batches_completed_val < total_batches_val || has_pending_scans)
+            {
+                // Deep scan phase (30-95%): Based on batch completion ratio for smooth progress
+                let scan_progress = batches_completed_val as f64 / total_batches_val as f64;
                 PROGRESS_ARP_PHASE + (scan_progress * PROGRESS_DEEP_SCAN_PHASE as f64) as u8
+            } else if has_pending_scans {
+                // Deep scan with no batch info yet - show minimal progress
+                PROGRESS_ARP_PHASE
             } else {
                 // Grace period phase (95-100%): Based on grace period elapsed
                 let grace_progress = (grace_elapsed.as_secs_f64()
@@ -532,13 +578,15 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                             hosts_discovered.fetch_add(1, Ordering::Relaxed);
                             *last_activity.lock().unwrap() = Instant::now();
 
-                            let cancel = cancel.clone();
-                            let gateway_ips = gateway_ips.clone();
-                            let hosts_scanned = hosts_scanned.clone();
-                            let last_activity = last_activity.clone();
-
-                            // Spawn deep scan if under concurrency limit
+                            // Spawn deep scan if under concurrency limit, otherwise buffer
                             if pending_scans.len() < deep_scan_concurrency {
+                                let cancel = cancel.clone();
+                                let gateway_ips = gateway_ips.clone();
+                                let hosts_scanned = hosts_scanned.clone();
+                                let last_activity = last_activity.clone();
+                                let batches_completed = batches_completed.clone();
+
+                                total_batches.fetch_add(batches_per_host, Ordering::Relaxed);
                                 pending_scans.push(Box::pin(async move {
                                     let result = self
                                         .deep_scan_host(DeepScanParams {
@@ -549,6 +597,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                             cancel,
                                             port_scan_batch_size: ports_per_host_batch,
                                             gateway_ips: &gateway_ips,
+                                            batches_completed: Some(&batches_completed),
                                         })
                                         .await;
 
@@ -568,6 +617,10 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                         }
                                     }
                                 }));
+                            } else {
+                                // Count batches upfront so progress doesn't regress when pulled from buffer
+                                total_batches.fetch_add(batches_per_host, Ordering::Relaxed);
+                                pending_hosts.push((ip, subnet, mac));
                             }
                         }
                         None => {
@@ -577,27 +630,73 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                     }
                 }
 
-                // Collect completed deep scans
+                // Collect completed deep scans and spawn buffered hosts
                 Some(result) = pending_scans.next(), if !pending_scans.is_empty() => {
                     if let Some(host) = result {
                         results.push(host);
                     }
+
+                    // Spawn next buffered host if available (batches already counted when buffered)
+                    if let Some((ip, subnet, mac)) = pending_hosts.pop() {
+                        let cancel = cancel.clone();
+                        let gateway_ips = gateway_ips.clone();
+                        let hosts_scanned = hosts_scanned.clone();
+                        let last_activity = last_activity.clone();
+                        let batches_completed = batches_completed.clone();
+
+                        pending_scans.push(Box::pin(async move {
+                            let result = self
+                                .deep_scan_host(DeepScanParams {
+                                    ip,
+                                    subnet: &subnet,
+                                    mac,
+                                    phase1_ports: Vec::new(),
+                                    cancel,
+                                    port_scan_batch_size: ports_per_host_batch,
+                                    gateway_ips: &gateway_ips,
+                                    batches_completed: Some(&batches_completed),
+                                })
+                                .await;
+
+                            hosts_scanned.fetch_add(1, Ordering::Relaxed);
+                            *last_activity.lock().unwrap() = Instant::now();
+
+                            match result {
+                                Ok(Some(host)) => Some(host),
+                                Ok(None) => None,
+                                Err(e) => {
+                                    if DiscoveryCriticalError::is_critical_error(e.to_string()) {
+                                        tracing::error!(ip = %ip, error = %e, "Critical error in deep scan");
+                                    } else {
+                                        tracing::warn!(ip = %ip, error = %e, "Deep scan failed");
+                                    }
+                                    None
+                                }
+                            }
+                        }));
+                    }
                 }
 
                 // Periodic progress update and grace period check
-                _ = tokio::time::sleep(Duration::from_secs(1)) => {
-                    let discovered = hosts_discovered.load(Ordering::Relaxed);
-                    let scanned = hosts_scanned.load(Ordering::Relaxed);
-                    let has_pending = !pending_scans.is_empty();
+                _ = progress_ticker.tick() => {
+                    let has_pending = !pending_scans.is_empty() || !pending_hosts.is_empty();
                     let grace_elapsed = last_activity.lock().unwrap().elapsed();
                     let pipeline_elapsed = pipeline_start.elapsed();
+                    let total_batches_val = total_batches.load(Ordering::Relaxed);
+                    let batches_completed_val = batches_completed.load(Ordering::Relaxed);
 
                     // Calculate and report progress (only if changed)
-                    let progress = calculate_progress(channel_closed, discovered, scanned, has_pending, grace_elapsed);
+                    let progress = calculate_progress(
+                        channel_closed,
+                        has_pending,
+                        grace_elapsed,
+                        total_batches_val,
+                        batches_completed_val,
+                    );
 
                     let phase = if !channel_closed {
                         "arp"
-                    } else if scanned < discovered || has_pending {
+                    } else if total_batches_val > 0 && (batches_completed_val < total_batches_val || has_pending) {
                         "deep_scan"
                     } else {
                         "grace"
@@ -607,8 +706,8 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         phase,
                         progress,
                         channel_closed,
-                        discovered,
-                        scanned,
+                        total_batches = total_batches_val,
+                        batches_completed = batches_completed_val,
                         has_pending,
                         pipeline_elapsed_secs = pipeline_elapsed.as_secs(),
                         estimated_arp_secs = estimated_arp_duration.as_secs(),
@@ -616,8 +715,11 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         "Progress calculation"
                     );
 
-                    if progress != last_progress_report {
+                    // Report progress if it changed OR if enough time has passed (heartbeat)
+                    let time_since_last_report = last_progress_time.elapsed();
+                    if progress != last_progress_report || time_since_last_report >= MAX_PROGRESS_REPORT_INTERVAL {
                         last_progress_report = progress;
+                        last_progress_time = Instant::now();
                         let _ = self.report_scanning_progress(progress.min(99)).await;
                     }
 
@@ -637,8 +739,8 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                 return Err(Error::msg("Discovery session was cancelled"));
             }
 
-            // Exit when channel closed, no pending scans, and grace period expired
-            if channel_closed && pending_scans.is_empty() {
+            // Exit when channel closed, no pending scans/hosts, and grace period expired
+            if channel_closed && pending_scans.is_empty() && pending_hosts.is_empty() {
                 let elapsed = last_activity.lock().unwrap().elapsed();
 
                 if elapsed >= LATE_ARRIVAL_GRACE_PERIOD {
@@ -682,6 +784,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             cancel,
             port_scan_batch_size,
             gateway_ips,
+            batches_completed,
         } = params;
 
         if cancel.is_cancelled() {
@@ -710,6 +813,11 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             let open_ports =
                 scan_tcp_ports(ip, cancel.clone(), port_scan_batch_size, chunk.to_vec()).await?;
             all_tcp_ports.extend(open_ports);
+
+            // Update batch-level progress
+            if let Some(counter) = batches_completed {
+                counter.fetch_add(1, Ordering::Relaxed);
+            }
         }
 
         let use_https_ports: HashMap<u16, bool> = all_tcp_ports
