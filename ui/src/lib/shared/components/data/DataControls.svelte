@@ -770,7 +770,7 @@
 							? 'space-y-2'
 							: 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'}
 					>
-						{#each groupItems as item (item)}
+						{#each groupItems as item (getItemId(item))}
 							<!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
 							{@const itemId = getItemId(item)}
 							{@const isSelected = selectedIds.has(itemId)}
@@ -793,7 +793,7 @@
 				? 'space-y-2'
 				: 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'}
 		>
-			{#each processedItems as item (item)}
+			{#each processedItems as item (getItemId(item))}
 				{@const itemId = getItemId(item)}
 				{@const isSelected = selectedIds.has(itemId)}
 				{@render children(item, viewMode, isSelected, (selected) => {

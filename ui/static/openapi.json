@@ -442,6 +442,179 @@
         }
       }
     },
+    "/api/billing/checkout": {
+      "post": {
+        "tags": [
+          "billing",
+          "internal"
+        ],
+        "summary": "Create a checkout session",
+        "operationId": "create_checkout_session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Checkout session URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_String"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid plan or billing not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/billing/plans": {
+      "get": {
+        "tags": [
+          "billing",
+          "internal"
+        ],
+        "summary": "Get available billing plans",
+        "operationId": "get_billing_plans",
+        "responses": {
+          "200": {
+            "description": "List of available billing plans",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_Vec_BillingPlan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Billing not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/billing/portal": {
+      "post": {
+        "tags": [
+          "billing",
+          "internal"
+        ],
+        "summary": "Create a billing portal session",
+        "operationId": "create_portal_session",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Portal session URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_String"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Billing not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/billing/webhooks": {
+      "post": {
+        "tags": [
+          "billing",
+          "internal"
+        ],
+        "summary": "Handle Stripe webhook",
+        "description": "Internal endpoint for Stripe webhook callbacks.",
+        "operationId": "handle_webhook",
+        "responses": {
+          "200": {
+            "description": "Webhook processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid signature or billing not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/config": {
       "get": {
         "tags": [
@@ -463,6 +636,287 @@
             }
           }
         }
+      }
+    },
+    "/api/daemons/register": {
+      "post": {
+        "tags": [
+          "daemons",
+          "internal"
+        ],
+        "summary": "Register a new daemon",
+        "description": "Internal endpoint for daemon self-registration. Creates a host entry\nand sets up default discovery jobs for the daemon.",
+        "operationId": "register_daemon",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Daemon registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_DaemonRegistrationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Daemon registration disabled in demo mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "daemon_api_key": []
+          }
+        ]
+      }
+    },
+    "/api/daemons/{id}/heartbeat": {
+      "post": {
+        "tags": [
+          "daemons",
+          "internal"
+        ],
+        "summary": "Receive daemon heartbeat",
+        "description": "Internal endpoint for daemons to send periodic heartbeats.\nUpdates the daemon's last_seen timestamp and current status.",
+        "operationId": "receive_heartbeat",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonHeartbeatPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Heartbeat received",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "daemon_api_key": []
+          }
+        ]
+      }
+    },
+    "/api/daemons/{id}/request-work": {
+      "post": {
+        "tags": [
+          "daemons",
+          "internal"
+        ],
+        "summary": "Request work from server",
+        "description": "Internal endpoint for daemons to poll for pending discovery sessions.\nAlso updates heartbeat and returns any pending cancellation requests.\nReturns tuple of (next_session, should_cancel).",
+        "operationId": "receive_work_request",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonHeartbeatPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Work request processed - returns (Option<DiscoveryUpdatePayload>, bool)"
+          },
+          "404": {
+            "description": "Daemon not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "daemon_api_key": []
+          }
+        ]
+      }
+    },
+    "/api/daemons/{id}/startup": {
+      "post": {
+        "tags": [
+          "daemons",
+          "internal"
+        ],
+        "summary": "Daemon startup handshake",
+        "description": "Internal endpoint for daemons to report their version on startup.\nUpdates the daemon's version and last_seen timestamp, returns server capabilities.",
+        "operationId": "daemon_startup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonStartupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Startup acknowledged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_ServerCapabilities"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "daemon_api_key": []
+          }
+        ]
+      }
+    },
+    "/api/daemons/{id}/update-capabilities": {
+      "post": {
+        "tags": [
+          "daemons",
+          "internal"
+        ],
+        "summary": "Update daemon capabilities",
+        "description": "Internal endpoint for daemons to report their current capabilities.",
+        "operationId": "update_capabilities",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonCapabilities"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Capabilities updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "daemon_api_key": []
+          }
+        ]
       }
     },
     "/api/github-stars": {
@@ -1243,179 +1697,6 @@
             "session": []
           }
         ]
-      }
-    },
-    "/api/v1/billing/checkout": {
-      "post": {
-        "tags": [
-          "billing",
-          "internal"
-        ],
-        "summary": "Create a checkout session",
-        "operationId": "create_checkout_session",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCheckoutRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Checkout session URL",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_String"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid plan or billing not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/v1/billing/plans": {
-      "get": {
-        "tags": [
-          "billing",
-          "internal"
-        ],
-        "summary": "Get available billing plans",
-        "operationId": "get_billing_plans",
-        "responses": {
-          "200": {
-            "description": "List of available billing plans",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_Vec_BillingPlan"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Billing not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/v1/billing/portal": {
-      "post": {
-        "tags": [
-          "billing",
-          "internal"
-        ],
-        "summary": "Create a billing portal session",
-        "operationId": "create_portal_session",
-        "requestBody": {
-          "content": {
-            "text/plain": {
-              "schema": {
-                "type": "string"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Portal session URL",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_String"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Billing not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/v1/billing/webhooks": {
-      "post": {
-        "tags": [
-          "billing",
-          "internal"
-        ],
-        "summary": "Handle Stripe webhook",
-        "description": "Internal endpoint for Stripe webhook callbacks.",
-        "operationId": "handle_webhook",
-        "responses": {
-          "200": {
-            "description": "Webhook processed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid signature or billing not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/api/v1/bindings": {
@@ -6875,14 +7156,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-01-04T19:28:16.420911Z",
-              "id": "b7fbc28b-ef96-498f-a0e2-e4fef1fa3e57",
+              "created_at": "2026-01-06T00:51:30.801477Z",
+              "id": "ab9bfc57-e3c0-48a0-9b55-9162b90f906f",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-04T19:28:16.420911Z"
+              "updated_at": "2026-01-06T00:51:30.801477Z"
             }
           },
           "error": {
@@ -7009,6 +7290,55 @@
               },
               "key": {
                 "type": "string"
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_DaemonRegistrationResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Daemon registration response from server to daemon",
+            "required": [
+              "daemon",
+              "host_id"
+            ],
+            "properties": {
+              "daemon": {
+                "$ref": "#/components/schemas/Daemon"
+              },
+              "host_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "server_capabilities": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ServerCapabilities",
+                    "description": "Server capabilities (returned if daemon sends version info)"
+                  }
+                ]
               }
             }
           },
@@ -8001,6 +8331,52 @@
           }
         }
       },
+      "ApiResponse_ServerCapabilities": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Server capabilities returned on startup/registration",
+            "required": [
+              "server_version",
+              "minimum_daemon_version"
+            ],
+            "properties": {
+              "deprecation_warnings": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DeprecationWarning"
+                },
+                "description": "Deprecation warnings for the daemon"
+              },
+              "minimum_daemon_version": {
+                "type": "string",
+                "description": "Minimum daemon version supported by this server"
+              },
+              "server_version": {
+                "type": "string",
+                "description": "Server software version"
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
       "ApiResponse_Service": {
         "type": "object",
         "required": [
@@ -8042,14 +8418,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-01-04T19:28:16.416832Z",
-                  "id": "4edb950c-1b30-44fb-9f7e-f1d4a0c04d50",
+                  "created_at": "2026-01-06T00:51:30.798808Z",
+                  "id": "0dda69be-bcff-4c61-89e0-5dc304213d7b",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-04T19:28:16.416832Z"
+                  "updated_at": "2026-01-06T00:51:30.798808Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -8058,7 +8434,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Lubelogger",
+              "service_definition": "NUT",
               "source": {
                 "type": "Manual"
               },
@@ -8759,14 +9135,14 @@
               ],
               "description": "Association between a service and a port / interface that the service is listening on",
               "example": {
-                "created_at": "2026-01-04T19:28:16.420581Z",
-                "id": "f5f9b73a-680d-41b3-b0f0-f58ae16b955d",
+                "created_at": "2026-01-06T00:51:30.801259Z",
+                "id": "d866b020-9f03-44f1-b1ab-e3436402ec9a",
                 "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "port_id": "550e8400-e29b-41d4-a716-446655440006",
                 "service_id": "550e8400-e29b-41d4-a716-446655440007",
                 "type": "Port",
-                "updated_at": "2026-01-04T19:28:16.420581Z"
+                "updated_at": "2026-01-06T00:51:30.801259Z"
               }
             }
           },
@@ -9563,14 +9939,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-01-04T19:28:16.415518Z",
-                    "id": "c64435a5-76fb-4025-8ddd-f55f489df0c6",
+                    "created_at": "2026-01-06T00:51:30.798002Z",
+                    "id": "7ac89ebf-2425-4bda-9e02-c36f90a95027",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-01-04T19:28:16.415518Z"
+                    "updated_at": "2026-01-06T00:51:30.798002Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -9579,7 +9955,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Lubelogger",
+                "service_definition": "NUT",
                 "source": {
                   "type": "Manual"
                 },
@@ -10273,14 +10649,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-01-04T19:28:16.407427Z",
-          "id": "01038e27-0437-41b6-9d48-3253b0a5851a",
+          "created_at": "2026-01-06T00:51:30.792122Z",
+          "id": "48e00ccb-9182-4fe9-b3a0-575c09ccf096",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-01-04T19:28:16.407427Z"
+          "updated_at": "2026-01-06T00:51:30.792122Z"
         }
       },
       "BindingBase": {
@@ -10641,7 +11017,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Lubelogger",
+              "service_definition": "NUT",
               "tags": [],
               "virtualization": null
             }
@@ -10749,6 +11125,38 @@
             "$ref": "#/components/schemas/Share"
           }
         }
+      },
+      "Daemon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DaemonBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "updated_at",
+              "created_at"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              }
+            }
+          }
+        ]
       },
       "DaemonApiKey": {
         "allOf": [
@@ -10925,12 +11333,105 @@
           }
         }
       },
+      "DaemonHeartbeatPayload": {
+        "type": "object",
+        "required": [
+          "url",
+          "name",
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/DaemonMode"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
       "DaemonMode": {
         "type": "string",
         "enum": [
           "Push",
           "Pull"
         ]
+      },
+      "DaemonRegistrationRequest": {
+        "type": "object",
+        "description": "Daemon registration request from daemon to server",
+        "required": [
+          "daemon_id",
+          "network_id",
+          "name",
+          "url",
+          "mode",
+          "capabilities"
+        ],
+        "properties": {
+          "capabilities": {
+            "$ref": "#/components/schemas/DaemonCapabilities"
+          },
+          "daemon_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/DaemonMode"
+          },
+          "name": {
+            "type": "string"
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User responsible for maintaining this daemon (from frontend install command)\nOptional for backwards compat with old daemons - defaults to nil UUID"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Daemon software version (optional for backwards compat with old daemons)"
+          }
+        }
+      },
+      "DaemonRegistrationResponse": {
+        "type": "object",
+        "description": "Daemon registration response from server to daemon",
+        "required": [
+          "daemon",
+          "host_id"
+        ],
+        "properties": {
+          "daemon": {
+            "$ref": "#/components/schemas/Daemon"
+          },
+          "host_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "server_capabilities": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ServerCapabilities",
+                "description": "Server capabilities (returned if daemon sends version info)"
+              }
+            ]
+          }
+        }
       },
       "DaemonResponse": {
         "allOf": [
@@ -10996,6 +11497,19 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "DaemonStartupRequest": {
+        "type": "object",
+        "description": "Sent by daemon on startup to report version",
+        "required": [
+          "daemon_version"
+        ],
+        "properties": {
+          "daemon_version": {
+            "type": "string",
+            "description": "Daemon software version (semver format)"
           }
         }
       },
@@ -13123,6 +13637,31 @@
           }
         ]
       },
+      "ServerCapabilities": {
+        "type": "object",
+        "description": "Server capabilities returned on startup/registration",
+        "required": [
+          "server_version",
+          "minimum_daemon_version"
+        ],
+        "properties": {
+          "deprecation_warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeprecationWarning"
+            },
+            "description": "Deprecation warnings for the daemon"
+          },
+          "minimum_daemon_version": {
+            "type": "string",
+            "description": "Minimum daemon version supported by this server"
+          },
+          "server_version": {
+            "type": "string",
+            "description": "Server software version"
+          }
+        }
+      },
       "Service": {
         "allOf": [
           {
@@ -13157,14 +13696,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-01-04T19:28:16.407332Z",
-              "id": "6842f35e-b835-44cc-a2c1-e2c4cc27c422",
+              "created_at": "2026-01-06T00:51:30.792075Z",
+              "id": "be404975-3e17-49fb-a9dc-6b8b1ed44909",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-04T19:28:16.407332Z"
+              "updated_at": "2026-01-06T00:51:30.792075Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -13173,7 +13712,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Lubelogger",
+          "service_definition": "NUT",
           "source": {
             "type": "Manual"
           },
@@ -13687,7 +14226,12 @@
           "CommercialPlanSelected",
           "FirstApiKeyCreated",
           "FirstDaemonRegistered",
-          "FirstTopologyRebuild"
+          "FirstTopologyRebuild",
+          "CheckoutStarted",
+          "CheckoutCompleted",
+          "TrialStarted",
+          "TrialEnded",
+          "SubscriptionCancelled"
         ]
       },
       "Topology": {

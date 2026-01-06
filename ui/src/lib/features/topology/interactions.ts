@@ -111,7 +111,8 @@ export function updateConnectedNodes(
 		}
 
 		for (const edge of allEdges) {
-			const edgeData = edge.data as TopologyEdge;
+			const edgeData = edge.data as TopologyEdge | undefined;
+			if (!edgeData) continue;
 
 			// Add directly connected nodes (regular edges)
 			if (edgeData.source === selectedNode.id) {
@@ -148,7 +149,11 @@ export function updateConnectedNodes(
 
 	// If an edge is selected (group OR non-group)
 	if (selectedEdge) {
-		const edgeData = selectedEdge.data as TopologyEdge;
+		const edgeData = selectedEdge.data as TopologyEdge | undefined;
+		if (!edgeData) {
+			connectedNodeIds.set(new Set());
+			return;
+		}
 		const edgeTypeMetadata = edgeTypes.getMetadata(edgeData.edge_type);
 
 		// For group edges
@@ -157,7 +162,8 @@ export function updateConnectedNodes(
 
 			// Find all edges in this group and add their connected nodes
 			for (const edge of allEdges) {
-				const eData = edge.data as TopologyEdge;
+				const eData = edge.data as TopologyEdge | undefined;
+				if (!eData) continue;
 				const eMetadata = edgeTypes.getMetadata(eData.edge_type);
 
 				if (eMetadata.is_group_edge && 'group_id' in eData && eData.group_id === groupId) {
@@ -199,7 +205,8 @@ export function updateConnectedNodes(
  * Toggle edge hover state - updates both individual edge and group hover states
  */
 export function toggleEdgeHover(edge: Edge, allEdges: Edge[]) {
-	const edgeData = edge.data as TopologyEdge;
+	const edgeData = edge.data as TopologyEdge | undefined;
+	if (!edgeData) return;
 	const edgeTypeMetadata = edgeTypes.getMetadata(edgeData.edge_type);
 
 	// Toggle individual edge hover state
@@ -223,7 +230,8 @@ export function toggleEdgeHover(edge: Edge, allEdges: Edge[]) {
 
 			// Check if ANY edge in this group is hovered
 			for (const e of allEdges) {
-				const eData = e.data as TopologyEdge;
+				const eData = e.data as TopologyEdge | undefined;
+				if (!eData) continue;
 				const eMetadata = edgeTypes.getMetadata(eData.edge_type);
 				if (eMetadata.is_group_edge && 'group_id' in eData && eData.group_id === groupId) {
 					const eIsHovered = updatedEdgeStates.get(e.id) || false;
@@ -249,7 +257,10 @@ export function getEdgeDisplayState(
 	selectedNode: Node | null,
 	selectedEdge: Edge | null
 ): { shouldShowFull: boolean; shouldAnimate: boolean } {
-	const edgeData = edge.data as TopologyEdge;
+	const edgeData = edge.data as TopologyEdge | undefined;
+	if (!edgeData) {
+		return { shouldShowFull: false, shouldAnimate: false };
+	}
 	const edgeTypeMetadata = edgeTypes.getMetadata(edgeData.edge_type);
 	const isGroupEdge = edgeTypeMetadata.is_group_edge;
 
@@ -270,10 +281,12 @@ export function getEdgeDisplayState(
 		// Check if any edge in this group is selected
 		let isGroupSelected = false;
 		if (selectedEdge) {
-			const selectedEdgeData = selectedEdge.data as TopologyEdge;
-			const selectedMetadata = edgeTypes.getMetadata(selectedEdgeData.edge_type);
-			if (selectedMetadata.is_group_edge && 'group_id' in selectedEdgeData) {
-				isGroupSelected = selectedEdgeData.group_id === groupId;
+			const selectedEdgeData = selectedEdge.data as TopologyEdge | undefined;
+			if (selectedEdgeData) {
+				const selectedMetadata = edgeTypes.getMetadata(selectedEdgeData.edge_type);
+				if (selectedMetadata.is_group_edge && 'group_id' in selectedEdgeData) {
+					isGroupSelected = selectedEdgeData.group_id === groupId;
+				}
 			}
 		}
 

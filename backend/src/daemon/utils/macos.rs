@@ -64,25 +64,45 @@ impl DaemonUtils for MacOsDaemonUtils {
         Ok(10)
     }
 
-    fn get_optimal_deep_scan_concurrency(&self, port_batch_size: usize) -> Result<usize, Error> {
+    fn get_optimal_deep_scan_concurrency(
+        &self,
+        port_batch_size: usize,
+        concurrent_ops: crate::daemon::utils::base::ConcurrentPipelineOps,
+    ) -> Result<usize, Error> {
         let fd_limit = Self::get_fd_limit()?;
 
-        // Reserve file descriptors for:
+        // Base reserved file descriptors:
         // - stdin, stdout, stderr (3)
         // - HTTP client connections for endpoints (50)
         // - Docker socket and other daemon operations (50)
-        // - Buffer for safety (100)
-        let reserved = 203;
-        let available = fd_limit.saturating_sub(reserved);
+        // - Async channels and miscellaneous (50)
+        // - Safety buffer (50)
+        let base_reserved = 203;
 
-        let concurrency = std::cmp::max(1, available / port_batch_size);
+        // FDs consumed by concurrent pipeline operations (calculated precisely)
+        let pipeline_fds = concurrent_ops.estimated_fd_usage();
+
+        let total_reserved = base_reserved + pipeline_fds;
+        let available = fd_limit.saturating_sub(total_reserved);
+
+        // On macOS with low FD limits (default 256), be very conservative
+        let concurrency = if fd_limit < 512 {
+            // Very constrained - allow minimal concurrency
+            std::cmp::max(1, available / port_batch_size).min(2)
+        } else {
+            std::cmp::max(1, available / port_batch_size)
+        };
 
         tracing::debug!(
-            fd_limit = fd_limit,
-            reserved = reserved,
-            available = available,
-            port_batch_size = port_batch_size,
-            concurrency = concurrency,
+            fd_limit,
+            base_reserved,
+            pipeline_fds,
+            total_reserved,
+            available,
+            port_batch_size,
+            concurrency,
+            arp_subnets = concurrent_ops.arp_subnet_count,
+            non_interfaced_concurrency = concurrent_ops.non_interfaced_scan_concurrency,
             "Calculated deep scan concurrency"
         );
 

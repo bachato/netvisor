@@ -260,8 +260,9 @@ export const cancellingSessions = writable<Map<string, boolean>>(new Map());
 
 /**
  * Query hook for fetching active discovery sessions
+ * @param getEnabled - Getter function that returns whether query is enabled (for reactivity with Svelte 5 runes)
  */
-export function useActiveSessionsQuery() {
+export function useActiveSessionsQuery(getEnabled: () => boolean = () => true) {
 	return createQuery(() => ({
 		queryKey: queryKeys.discovery.sessions(),
 		queryFn: async () => {
@@ -272,7 +273,8 @@ export function useActiveSessionsQuery() {
 			return data.data as DiscoveryUpdatePayload[];
 		},
 		// Sessions change frequently, keep fresh
-		staleTime: 5 * 1000
+		staleTime: 5 * 1000,
+		enabled: getEnabled()
 	}));
 }
 

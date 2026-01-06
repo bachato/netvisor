@@ -101,7 +101,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="Daemons" subtitle="Manage daemons">
+	<TabHeader title="Daemons">
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateDaemon}

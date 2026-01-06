@@ -1,0 +1,46 @@
+name: Escalate Service Requests
+
+on:
+  schedule:
+    # Run daily at 01:00 UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  escalate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add help wanted label to old service requests
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const twoWeeksAgo = new Date();
+            twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+            // Find open issues with service-request label
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'service-request',
+              state: 'open',
+              per_page: 100
+            });
+
+            for (const issue of issues.data) {
+              const createdAt = new Date(issue.created_at);
+              const hasHelpWanted = issue.labels.some(l => l.name === 'help wanted');
+
+              // Add "help wanted" if older than 2 weeks and doesn't have it
+              if (createdAt < twoWeeksAgo && !hasHelpWanted) {
+                console.log(`Adding 'help wanted' to issue #${issue.number}`);
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: ['help wanted']
+                });
+              }
+            }

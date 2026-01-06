@@ -122,7 +122,7 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title="Scheduled Discovery" subtitle="Schedule discovery sessions">
+	<TabHeader title="Scheduled Discovery Sessions">
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateDiscovery}

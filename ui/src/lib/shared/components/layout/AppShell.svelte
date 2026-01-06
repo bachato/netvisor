@@ -13,7 +13,7 @@
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
 	import { getRoute } from '$lib/shared/utils/navigation';
-	import posthog from 'posthog-js';
+	import type { PostHog } from 'posthog-js';
 	import { browser } from '$app/environment';
 	import CookieConsent from '$lib/shared/components/feedback/CookieConsent.svelte';
 
@@ -50,7 +50,7 @@
 		}
 	});
 
-	let posthogInitialized = $state(false);
+	let posthogInstance = $state<PostHog | null>(null);
 	let posthogInitStarted = false;
 
 	$effect(() => {
@@ -60,23 +60,26 @@
 
 		if (browser && posthogKey && !posthogInitStarted) {
 			posthogInitStarted = true;
-			posthog.init(posthogKey, {
-				api_host: 'https://ph.scanopy.net',
-				ui_host: 'https://us.posthog.com',
-				defaults: '2025-11-30',
-				secure_cookie: true,
-				persistence: 'memory',
-				opt_out_capturing_by_default: true,
-				loaded: () => {
-					posthogInitialized = true;
-				}
+			// Lazy-load posthog-js to avoid blocking initial bundle
+			import('posthog-js').then(({ default: posthog }) => {
+				posthog.init(posthogKey, {
+					api_host: 'https://ph.scanopy.net',
+					ui_host: 'https://us.posthog.com',
+					defaults: '2025-11-30',
+					secure_cookie: true,
+					persistence: 'memory',
+					opt_out_capturing_by_default: true,
+					loaded: () => {
+						posthogInstance = posthog;
+					}
+				});
 			});
 		}
 	});
 
 	// Identify user in PostHog when authenticated (skipped in demo mode by identifyUser)
 	$effect(() => {
-		if (posthogInitialized && currentUser) {
+		if (posthogInstance && currentUser && organization !== undefined) {
 			identifyUser(currentUser.id, currentUser.email, currentUser.organization_id);
 		}
 	});
