@@ -77,7 +77,7 @@ impl StorableEntity for Discovery {
                     name,
                     daemon_id,
                     network_id,
-                    tags,
+                    tags: _, // Stored in entity_tags junction table
                 },
         } = self.clone();
 
@@ -91,7 +91,6 @@ impl StorableEntity for Discovery {
                 "daemon_id",
                 "run_type",
                 "discovery_type",
-                "tags",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -102,7 +101,6 @@ impl StorableEntity for Discovery {
                 SqlValue::Uuid(daemon_id),
                 SqlValue::RunType(run_type),
                 SqlValue::DiscoveryType(discovery_type),
-                SqlValue::UuidArray(tags),
             ],
         ))
     }
@@ -125,7 +123,7 @@ impl StorableEntity for Discovery {
                 network_id: row.get("network_id"),
                 run_type,
                 discovery_type,
-                tags: row.get("tags"),
+                tags: Vec::new(), // Hydrated from entity_tags junction table
             },
         })
     }

@@ -9,6 +9,7 @@ use crate::server::topology::types::base::Topology;
 use crate::server::{groups::r#impl::base::Group, tags::r#impl::base::Tag};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
+use utoipa::ToSchema;
 
 use crate::server::{
     daemon_api_keys::r#impl::base::DaemonApiKey,
@@ -42,7 +43,15 @@ pub trait ChangeTriggersTopologyStaleness<T> {
     Deserialize,
     Display,
 )]
-#[strum_discriminants(derive(Display, Hash, EnumIter, IntoStaticStr))]
+#[strum_discriminants(derive(
+    Display,
+    Hash,
+    EnumIter,
+    IntoStaticStr,
+    Serialize,
+    Deserialize,
+    ToSchema
+))]
 pub enum Entity {
     Organization(Organization),
     Invite(Invite),

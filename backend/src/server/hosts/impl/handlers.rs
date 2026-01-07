@@ -2,11 +2,31 @@ use crate::server::{
     config::AppState,
     hosts::{r#impl::base::Host, service::HostService},
     shared::{
+        entities::EntityDiscriminants,
         handlers::{query::NetworkFilterQuery, traits::CrudHandlers},
+        taggable::Taggable,
         types::entities::EntitySource,
     },
 };
 use uuid::Uuid;
+
+impl Taggable for Host {
+    fn entity_type() -> &'static str {
+        "Host"
+    }
+
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
+    fn tags(&self) -> &[Uuid] {
+        &self.base.tags
+    }
+
+    fn set_tags(&mut self, tags: Vec<Uuid>) {
+        self.base.tags = tags;
+    }
+}
 
 impl CrudHandlers for Host {
     type Service = HostService;
@@ -31,5 +51,9 @@ impl CrudHandlers for Host {
 
     fn set_tags(&mut self, tags: Vec<Uuid>) {
         self.base.tags = tags;
+    }
+
+    fn tag_entity_type() -> Option<EntityDiscriminants> {
+        Some(EntityDiscriminants::Host)
     }
 }

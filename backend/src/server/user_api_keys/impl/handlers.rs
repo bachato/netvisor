@@ -1,9 +1,31 @@
 use crate::server::{
     config::AppState,
-    shared::handlers::{query::NoFilterQuery, traits::CrudHandlers},
+    shared::{
+        entities::EntityDiscriminants,
+        handlers::{query::NoFilterQuery, traits::CrudHandlers},
+        taggable::Taggable,
+    },
     user_api_keys::{r#impl::base::UserApiKey, service::UserApiKeyService},
 };
 use uuid::Uuid;
+
+impl Taggable for UserApiKey {
+    fn entity_type() -> &'static str {
+        "UserApiKey"
+    }
+
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
+    fn tags(&self) -> &[Uuid] {
+        &self.base.tags
+    }
+
+    fn set_tags(&mut self, tags: Vec<Uuid>) {
+        self.base.tags = tags;
+    }
+}
 
 impl CrudHandlers for UserApiKey {
     type Service = UserApiKeyService;
@@ -32,5 +54,9 @@ impl CrudHandlers for UserApiKey {
 
     fn set_tags(&mut self, tags: Vec<Uuid>) {
         self.base.tags = tags;
+    }
+
+    fn tag_entity_type() -> Option<EntityDiscriminants> {
+        Some(EntityDiscriminants::UserApiKey)
     }
 }

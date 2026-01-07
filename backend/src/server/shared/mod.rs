@@ -6,5 +6,6 @@ pub mod handlers;
 pub mod position;
 pub mod services;
 pub mod storage;
+pub mod taggable;
 pub mod types;
 pub mod validation;

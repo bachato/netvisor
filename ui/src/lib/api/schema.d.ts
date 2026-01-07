@@ -1562,6 +1562,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tags/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set all tags for an entity
+         * @description Replaces all tags on an entity with the provided list.
+         *
+         *     ### Validation
+         *
+         *     - Entity type must be taggable (Host, Service, Subnet, Group, Network, Discovery, Daemon, DaemonApiKey, UserApiKey)
+         *     - All tags must exist and belong to your organization
+         */
+        put: operations["set_entity_tags"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/assign/bulk-add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk add a tag to multiple entities
+         * @description Adds a single tag to multiple entities of the same type. This is useful for batch tagging operations.
+         *
+         *     ### Validation
+         *
+         *     - Entity type must be taggable (Host, Service, Subnet, Group, Network, Discovery, Daemon, DaemonApiKey, UserApiKey)
+         *     - Tag must exist and belong to your organization
+         *     - Entities that already have the tag are silently skipped
+         */
+        post: operations["bulk_add_tag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/assign/bulk-remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk remove a tag from multiple entities
+         * @description Removes a single tag from multiple entities of the same type.
+         *
+         *     ### Validation
+         *
+         *     - Entity type must be taggable (Host, Service, Subnet, Group, Network, Discovery, Daemon, DaemonApiKey, UserApiKey)
+         *     - Entities that don't have the tag are silently skipped
+         */
+        post: operations["bulk_remove_tag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tags/bulk-delete": {
         parameters: {
             query?: never;
@@ -1821,14 +1897,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-01-06T00:51:30.801477Z",
-             *       "id": "ab9bfc57-e3c0-48a0-9b55-9162b90f906f",
+             *       "created_at": "2026-01-07T00:11:35.216805Z",
+             *       "id": "a9a38688-e728-4b2c-b6d2-511389ef77a8",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-01-06T00:51:30.801477Z"
+             *       "updated_at": "2026-01-07T00:11:35.216805Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -1847,6 +1923,16 @@ export interface components {
             data?: {
                 deleted_count: number;
                 requested_count: number;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
+        ApiResponse_BulkTagResponse: {
+            /** @description Response for bulk tag operations */
+            data?: {
+                /** @description Number of entities affected */
+                affected_count: number;
             };
             error?: string | null;
             meta: components["schemas"]["ApiMeta"];
@@ -2221,14 +2307,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-01-06T00:51:30.798808Z",
-             *           "id": "0dda69be-bcff-4c61-89e0-5dc304213d7b",
+             *           "created_at": "2026-01-07T00:11:35.212862Z",
+             *           "id": "fc153ce3-cef3-42ab-b5bc-2828475b2a63",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-01-06T00:51:30.798808Z"
+             *           "updated_at": "2026-01-07T00:11:35.212862Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -2237,7 +2323,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "NUT",
+             *       "service_definition": "Jump",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -2742,14 +2828,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-01-06T00:51:30.792122Z",
-         *       "id": "48e00ccb-9182-4fe9-b3a0-575c09ccf096",
+         *       "created_at": "2026-01-07T00:11:35.203417Z",
+         *       "id": "67068e3f-8d64-460d-9b13-84af21fc050f",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-01-06T00:51:30.792122Z"
+         *       "updated_at": "2026-01-07T00:11:35.203417Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -2832,6 +2918,23 @@ export interface components {
             deleted_count: number;
             requested_count: number;
         };
+        /** @description Request body for bulk tag operations */
+        BulkTagRequest: {
+            /** @description The IDs of entities to modify */
+            entity_ids: string[];
+            /** @description The entity type (e.g., Host, Service, Subnet) */
+            entity_type: components["schemas"]["EntityDiscriminants"];
+            /**
+             * Format: uuid
+             * @description The tag ID to add or remove
+             */
+            tag_id: string;
+        };
+        /** @description Response for bulk tag operations */
+        BulkTagResponse: {
+            /** @description Number of entities affected */
+            affected_count: number;
+        };
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /**
@@ -2896,7 +2999,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "NUT",
+         *           "service_definition": "Jump",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -3220,6 +3323,8 @@ export interface components {
         };
         /** @enum {string} */
         EdgeTypeDiscriminants: "Interface" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke";
+        /** @enum {string} */
+        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "Subnet" | "Group" | "Topology";
         EntityMetadata: {
             color: components["schemas"]["Color"];
             icon: string;
@@ -3739,14 +3844,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-01-06T00:51:30.792075Z",
-         *           "id": "be404975-3e17-49fb-a9dc-6b8b1ed44909",
+         *           "created_at": "2026-01-07T00:11:35.203314Z",
+         *           "id": "ff30e8da-3466-4498-92c7-2aa2f0ad3ed0",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-01-06T00:51:30.792075Z"
+         *           "updated_at": "2026-01-07T00:11:35.203314Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -3755,7 +3860,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "NUT",
+         *       "service_definition": "Jump",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -3826,6 +3931,18 @@ export interface components {
             details: components["schemas"]["DockerVirtualization"];
             /** @enum {string} */
             type: "Docker";
+        };
+        /** @description Request body for setting all tags on an entity */
+        SetTagsRequest: {
+            /**
+             * Format: uuid
+             * @description The entity ID
+             */
+            entity_id: string;
+            /** @description The entity type (e.g., Host, Service, Subnet) */
+            entity_type: components["schemas"]["EntityDiscriminants"];
+            /** @description The new list of tag IDs */
+            tag_ids: string[];
         };
         /** @description Setup request for pre-registration org/network configuration */
         SetupRequest: {
@@ -8005,6 +8122,123 @@ export interface operations {
             };
             /** @description Tag name already exists in this organization */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    set_entity_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTagsRequest"];
+            };
+        };
+        responses: {
+            /** @description Tags set successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Invalid entity type or tag */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    bulk_add_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkTagRequest"];
+            };
+        };
+        responses: {
+            /** @description Tag added successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BulkTagResponse"];
+                };
+            };
+            /** @description Invalid entity type or tag */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    bulk_remove_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkTagRequest"];
+            };
+        };
+        responses: {
+            /** @description Tag removed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BulkTagResponse"];
+                };
+            };
+            /** @description Invalid entity type */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

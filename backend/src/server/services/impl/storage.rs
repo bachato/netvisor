@@ -86,7 +86,7 @@ impl StorableEntity for Service {
                     virtualization,
                     bindings: _, // Bindings stored in separate table, managed by BindingStorage
                     source,
-                    tags,
+                    tags: _, // Stored in entity_tags junction table
                     position,
                 },
         } = self.clone();
@@ -102,7 +102,6 @@ impl StorableEntity for Service {
                 "service_definition",
                 "virtualization",
                 "source",
-                "tags",
                 "position",
             ],
             vec![
@@ -115,7 +114,6 @@ impl StorableEntity for Service {
                 SqlValue::ServiceDefinition(service_definition),
                 SqlValue::OptionalServiceVirtualization(virtualization),
                 SqlValue::EntitySource(source),
-                SqlValue::UuidArray(tags),
                 SqlValue::I32(position),
             ],
         ))
@@ -143,7 +141,7 @@ impl StorableEntity for Service {
                 service_definition,
                 virtualization,
                 bindings: Vec::new(), // Bindings loaded separately by ServiceService via BindingStorage
-                tags: row.get("tags"),
+                tags: Vec::new(),     // Hydrated from entity_tags junction table
                 source,
                 position: row.get("position"),
             },

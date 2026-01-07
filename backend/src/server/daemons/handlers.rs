@@ -1,6 +1,7 @@
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Viewer};
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::daemons::r#impl::api::DaemonHeartbeatPayload;
+use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::events::types::TelemetryOperation;
 use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::EntityFilter;
@@ -88,10 +89,26 @@ async fn get_all(
     let filter = EntityFilter::unfiltered().network_ids(&network_ids);
     let daemons = state.services.daemon_service.get_all(filter).await?;
 
+    // Hydrate tags from junction table
+    let daemon_ids: Vec<Uuid> = daemons.iter().map(|d| d.id).collect();
+    let tags_map = if !daemon_ids.is_empty() {
+        state
+            .services
+            .entity_tag_service
+            .get_tags_map(&daemon_ids, EntityDiscriminants::Daemon)
+            .await?
+    } else {
+        std::collections::HashMap::new()
+    };
+
     let policy = DaemonVersionPolicy::default();
     let responses: Vec<DaemonResponse> = daemons
         .into_iter()
-        .map(|d| {
+        .map(|mut d| {
+            // Apply tags from junction table
+            if let Some(tags) = tags_map.get(&d.id) {
+                d.base.tags = tags.clone();
+            }
             let version_status = policy.evaluate(d.base.version.as_ref());
             DaemonResponse {
                 id: d.id,
@@ -130,7 +147,7 @@ async fn get_by_id(
 ) -> ApiResult<Json<ApiResponse<DaemonResponse>>> {
     let network_ids = auth.network_ids();
 
-    let daemon = state
+    let mut daemon = state
         .services
         .daemon_service
         .get_by_id(&id)
@@ -140,6 +157,16 @@ async fn get_by_id(
     // Validate user has access to this daemon's network
     if !network_ids.contains(&daemon.base.network_id) {
         return Err(ApiError::forbidden("You don't have access to this daemon"));
+    }
+
+    // Hydrate tags from junction table
+    let tags_map = state
+        .services
+        .entity_tag_service
+        .get_tags_map(&[daemon.id], EntityDiscriminants::Daemon)
+        .await?;
+    if let Some(tags) = tags_map.get(&daemon.id) {
+        daemon.base.tags = tags.clone();
     }
 
     let policy = DaemonVersionPolicy::default();

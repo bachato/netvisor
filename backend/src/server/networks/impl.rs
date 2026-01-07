@@ -4,8 +4,9 @@ use crate::server::{
     config::AppState,
     networks::service::NetworkService,
     shared::{
-        entities::ChangeTriggersTopologyStaleness,
+        entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants},
         handlers::{query::NoFilterQuery, traits::CrudHandlers},
+        taggable::Taggable,
     },
 };
 use chrono::{DateTime, Utc};
@@ -65,6 +66,24 @@ impl Display for Network {
     }
 }
 
+impl Taggable for Network {
+    fn entity_type() -> &'static str {
+        "Network"
+    }
+
+    fn id(&self) -> uuid::Uuid {
+        self.id
+    }
+
+    fn tags(&self) -> &[uuid::Uuid] {
+        &self.base.tags
+    }
+
+    fn set_tags(&mut self, tags: Vec<uuid::Uuid>) {
+        self.base.tags = tags;
+    }
+}
+
 impl CrudHandlers for Network {
     type Service = NetworkService;
     type FilterQuery = NoFilterQuery;
@@ -79,6 +98,10 @@ impl CrudHandlers for Network {
 
     fn set_tags(&mut self, tags: Vec<uuid::Uuid>) {
         self.base.tags = tags;
+    }
+
+    fn tag_entity_type() -> Option<EntityDiscriminants> {
+        Some(EntityDiscriminants::Network)
     }
 }
 
@@ -150,26 +173,18 @@ impl StorableEntity for Network {
                 Self::BaseData {
                     name,
                     organization_id,
-                    tags,
+                    tags: _, // Stored in entity_tags junction table
                 },
         } = self.clone();
 
         Ok((
-            vec![
-                "id",
-                "created_at",
-                "updated_at",
-                "name",
-                "organization_id",
-                "tags",
-            ],
+            vec!["id", "created_at", "updated_at", "name", "organization_id"],
             vec![
                 SqlValue::Uuid(id),
                 SqlValue::Timestamp(created_at),
                 SqlValue::Timestamp(updated_at),
                 SqlValue::String(name),
                 SqlValue::Uuid(organization_id),
-                SqlValue::UuidArray(tags),
             ],
         ))
     }
@@ -182,7 +197,7 @@ impl StorableEntity for Network {
             base: NetworkBase {
                 name: row.get("name"),
                 organization_id: row.get("organization_id"),
-                tags: row.get("tags"),
+                tags: Vec::new(), // Hydrated from entity_tags junction table
             },
         })
     }

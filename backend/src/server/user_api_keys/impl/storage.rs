@@ -79,7 +79,7 @@ impl StorableEntity for UserApiKey {
                     last_used,
                     expires_at,
                     is_enabled,
-                    tags,
+                    tags: _,        // Stored in entity_tags junction table
                     network_ids: _, // Stored in junction table, not here
                 },
         } = self.clone();
@@ -97,7 +97,6 @@ impl StorableEntity for UserApiKey {
                 "last_used",
                 "expires_at",
                 "is_enabled",
-                "tags",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -111,7 +110,6 @@ impl StorableEntity for UserApiKey {
                 SqlValue::OptionTimestamp(last_used),
                 SqlValue::OptionTimestamp(expires_at),
                 SqlValue::Bool(is_enabled),
-                SqlValue::UuidArray(tags),
             ],
         ))
     }
@@ -135,7 +133,7 @@ impl StorableEntity for UserApiKey {
                 last_used: row.get("last_used"),
                 expires_at: row.get("expires_at"),
                 is_enabled: row.get("is_enabled"),
-                tags: row.get("tags"),
+                tags: Vec::new(),        // Hydrated from entity_tags junction table
                 network_ids: Vec::new(), // Hydrated separately from junction table
             },
         })

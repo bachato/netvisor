@@ -1,5 +1,6 @@
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
+use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::handlers::query::FilterQueryExtractor;
 use crate::server::shared::handlers::traits::{
     BulkDeleteResponse, CrudHandlers, bulk_delete_handler, delete_handler,
@@ -61,11 +62,27 @@ async fn get_all_hosts(
     let base_filter = EntityFilter::unfiltered().network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
 
-    let hosts = state
+    let mut hosts = state
         .services
         .host_service
         .get_all_host_responses(filter)
         .await?;
+
+    // Hydrate tags from junction table
+    if !hosts.is_empty() {
+        let host_ids: Vec<Uuid> = hosts.iter().map(|h| h.id).collect();
+        let tags_map = state
+            .services
+            .entity_tag_service
+            .get_tags_map(&host_ids, EntityDiscriminants::Host)
+            .await?;
+        for host in &mut hosts {
+            if let Some(tags) = tags_map.get(&host.id) {
+                host.tags = tags.clone();
+            }
+        }
+    }
+
     Ok(Json(ApiResponse::success(hosts)))
 }
 
@@ -93,7 +110,7 @@ async fn get_host_by_id(
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
-    let host = state
+    let mut host = state
         .services
         .host_service
         .get_host_response(&id)
@@ -101,6 +118,16 @@ async fn get_host_by_id(
         .ok_or_else(|| ApiError::not_found(format!("Host {} not found", id)))?;
 
     validate_read_access(Some(host.network_id), None, &network_ids, organization_id)?;
+
+    // Hydrate tags from junction table
+    let tags_map = state
+        .services
+        .entity_tag_service
+        .get_tags_map(&[host.id], EntityDiscriminants::Host)
+        .await?;
+    if let Some(tags) = tags_map.get(&host.id) {
+        host.tags = tags.clone();
+    }
 
     Ok(Json(ApiResponse::success(host)))
 }
@@ -300,9 +327,19 @@ async fn update_host(
         validate_and_dedupe_tags(request.tags, organization_id, &state.services.tag_service)
             .await?;
 
-    let host_response = host_service
+    let mut host_response = host_service
         .update_from_request(request, auth.into_entity())
         .await?;
+
+    // Hydrate tags from junction table
+    let tags_map = state
+        .services
+        .entity_tag_service
+        .get_tags_map(&[host_response.id], EntityDiscriminants::Host)
+        .await?;
+    if let Some(tags) = tags_map.get(&host_response.id) {
+        host_response.tags = tags.clone();
+    }
 
     Ok(Json(ApiResponse::success(host_response)))
 }
@@ -446,9 +483,19 @@ async fn consolidate_hosts(
         )));
     }
 
-    let host_response = host_service
+    let mut host_response = host_service
         .consolidate_hosts(destination_host, other_host, auth.into_entity())
         .await?;
+
+    // Hydrate tags from junction table
+    let tags_map = state
+        .services
+        .entity_tag_service
+        .get_tags_map(&[host_response.id], EntityDiscriminants::Host)
+        .await?;
+    if let Some(tags) = tags_map.get(&host_response.id) {
+        host_response.tags = tags.clone();
+    }
 
     Ok(Json(ApiResponse::success(host_response)))
 }

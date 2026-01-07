@@ -151,6 +151,8 @@
 			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
 			storageKey="scanopy-discovery-scheduled-table-state"
 			getItemId={(item) => item.id}
+			entityType={isReadOnly ? undefined : 'Discovery'}
+			getItemTags={(item) => item.tags}
 		>
 			{#snippet children(
 				item: Discovery,

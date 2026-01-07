@@ -85,6 +85,10 @@
 		}
 	}
 
+	function getServiceTags(service: Service): string[] {
+		return service.tags;
+	}
+
 	// Define field configuration for the DataTableControls
 	const serviceFields: FieldConfig<Service>[] = [
 		{
@@ -183,6 +187,8 @@
 			fields={serviceFields}
 			storageKey="scanopy-services-table-state"
 			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
+			entityType={isReadOnly ? undefined : 'Service'}
+			getItemTags={getServiceTags}
 			getItemId={(item) => item.id}
 		>
 			{#snippet children(

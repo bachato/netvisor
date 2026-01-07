@@ -83,7 +83,7 @@ impl StorableEntity for Host {
                     hidden,
                     source,
                     virtualization,
-                    tags,
+                    tags: _, // Stored in entity_tags junction table
                 },
         } = self.clone();
 
@@ -99,7 +99,6 @@ impl StorableEntity for Host {
                 "hostname",
                 "hidden",
                 "virtualization",
-                "tags",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -112,7 +111,6 @@ impl StorableEntity for Host {
                 SqlValue::OptionalString(hostname),
                 SqlValue::Bool(hidden),
                 SqlValue::OptionalHostVirtualization(virtualization),
-                SqlValue::UuidArray(tags),
             ],
         ))
     }
@@ -138,7 +136,7 @@ impl StorableEntity for Host {
                 hostname: row.get("hostname"),
                 hidden: row.get("hidden"),
                 virtualization,
-                tags: row.get("tags"),
+                tags: Vec::new(), // Hydrated from entity_tags junction table
             },
         })
     }

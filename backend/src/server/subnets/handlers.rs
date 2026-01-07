@@ -1,5 +1,6 @@
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
+use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::handlers::query::{FilterQueryExtractor, NetworkFilterQuery};
 use crate::server::shared::handlers::traits::{CrudHandlers, update_handler};
 use crate::server::shared::services::traits::CrudService;
@@ -58,20 +59,19 @@ async fn get_all_subnets(
     let organization_id = auth.organization_id();
     let entity = auth.into_entity();
 
-    match entity {
+    let mut subnets = match entity {
         AuthenticatedEntity::Daemon { network_id, .. } => {
             // Daemons can only access subnets in their network
             let filter = EntityFilter::unfiltered().network_ids(&[network_id]);
             let service = Subnet::get_service(&state);
-            let subnets = service.get_all(filter).await.map_err(|e| {
+            service.get_all(filter).await.map_err(|e| {
                 tracing::error!(
                     error = %e,
                     network_id = %network_id,
                     "Failed to fetch subnets for daemon"
                 );
                 ApiError::internal_error(&e.to_string())
-            })?;
-            Ok(Json(ApiResponse::success(subnets)))
+            })?
         }
         _ => {
             // Users/API keys - use standard filter with query params
@@ -80,13 +80,29 @@ async fn get_all_subnets(
             let base_filter = EntityFilter::unfiltered().network_ids(&network_ids);
             let filter = query.apply_to_filter(base_filter, &network_ids, org_id);
             let service = Subnet::get_service(&state);
-            let subnets = service.get_all(filter).await.map_err(|e| {
+            service.get_all(filter).await.map_err(|e| {
                 tracing::error!(error = %e, "Failed to fetch subnets");
                 ApiError::internal_error(&e.to_string())
-            })?;
-            Ok(Json(ApiResponse::success(subnets)))
+            })?
+        }
+    };
+
+    // Hydrate tags from junction table
+    if !subnets.is_empty() {
+        let subnet_ids: Vec<Uuid> = subnets.iter().map(|s| s.id).collect();
+        let tags_map = state
+            .services
+            .entity_tag_service
+            .get_tags_map(&subnet_ids, EntityDiscriminants::Subnet)
+            .await?;
+        for subnet in &mut subnets {
+            if let Some(tags) = tags_map.get(&subnet.id) {
+                subnet.base.tags = tags.clone();
+            }
         }
     }
+
+    Ok(Json(ApiResponse::success(subnets)))
 }
 
 /// Create a new subnet

@@ -268,6 +268,22 @@ impl EntityFilter {
         self
     }
 
+    /// Filter by entity_type (for entity_tags junction table)
+    pub fn entity_type(mut self, entity_type: &str) -> Self {
+        self.conditions
+            .push(format!("entity_type = ${}", self.values.len() + 1));
+        self.values.push(SqlValue::String(entity_type.to_string()));
+        self
+    }
+
+    /// Filter by tag_id (for entity_tags junction table)
+    pub fn tag_id(mut self, id: &Uuid) -> Self {
+        self.conditions
+            .push(format!("tag_id = ${}", self.values.len() + 1));
+        self.values.push(SqlValue::Uuid(*id));
+        self
+    }
+
     pub fn to_where_clause(&self) -> String {
         if self.conditions.is_empty() {
             String::new()

@@ -75,7 +75,7 @@ impl StorableEntity for DaemonApiKey {
                     expires_at,
                     network_id,
                     is_enabled,
-                    tags,
+                    tags: _, // Stored in entity_tags junction table
                 },
         } = self.clone();
 
@@ -90,7 +90,6 @@ impl StorableEntity for DaemonApiKey {
                 "name",
                 "is_enabled",
                 "key",
-                "tags",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -102,7 +101,6 @@ impl StorableEntity for DaemonApiKey {
                 SqlValue::String(name),
                 SqlValue::Bool(is_enabled),
                 SqlValue::String(key),
-                SqlValue::UuidArray(tags),
             ],
         ))
     }
@@ -119,7 +117,7 @@ impl StorableEntity for DaemonApiKey {
                 key: row.get("key"),
                 is_enabled: row.get("is_enabled"),
                 network_id: row.get("network_id"),
-                tags: row.get("tags"),
+                tags: Vec::new(), // Hydrated from entity_tags junction table
             },
         })
     }

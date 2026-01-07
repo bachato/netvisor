@@ -6,6 +6,7 @@ use crate::server::{
     config::AppState,
     shared::{
         api_key_common::{ApiKeyService, ApiKeyType, generate_api_key_for_storage},
+        entities::EntityDiscriminants,
         handlers::traits::{
             BulkDeleteResponse, CrudHandlers, bulk_delete_handler, delete_handler,
             get_by_id_handler,
@@ -58,7 +59,7 @@ pub async fn get_all(
     let user_id = auth.require_user_id()?;
     let service = &state.services.user_api_key_service;
 
-    let keys = service.get_for_user(&user_id).await.map_err(|e| {
+    let mut keys = service.get_for_user(&user_id).await.map_err(|e| {
         tracing::error!(
             user_id = %user_id,
             error = %e,
@@ -66,6 +67,21 @@ pub async fn get_all(
         );
         ApiError::internal_error(&e.to_string())
     })?;
+
+    // Hydrate tags from junction table
+    if !keys.is_empty() {
+        let key_ids: Vec<Uuid> = keys.iter().map(|k| k.id).collect();
+        let tags_map = state
+            .services
+            .entity_tag_service
+            .get_tags_map(&key_ids, EntityDiscriminants::UserApiKey)
+            .await?;
+        for key in &mut keys {
+            if let Some(tags) = tags_map.get(&key.id) {
+                key.base.tags = tags.clone();
+            }
+        }
+    }
 
     Ok(Json(ApiResponse::success(keys)))
 }

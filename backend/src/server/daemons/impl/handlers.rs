@@ -1,9 +1,31 @@
 use crate::server::{
     config::AppState,
     daemons::{r#impl::base::Daemon, service::DaemonService},
-    shared::handlers::{query::HostChildQuery, traits::CrudHandlers},
+    shared::{
+        entities::EntityDiscriminants,
+        handlers::{query::HostChildQuery, traits::CrudHandlers},
+        taggable::Taggable,
+    },
 };
 use uuid::Uuid;
+
+impl Taggable for Daemon {
+    fn entity_type() -> &'static str {
+        "Daemon"
+    }
+
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
+    fn tags(&self) -> &[Uuid] {
+        &self.base.tags
+    }
+
+    fn set_tags(&mut self, tags: Vec<Uuid>) {
+        self.base.tags = tags;
+    }
+}
 
 impl CrudHandlers for Daemon {
     type Service = DaemonService;
@@ -28,5 +50,9 @@ impl CrudHandlers for Daemon {
 
     fn set_tags(&mut self, tags: Vec<Uuid>) {
         self.base.tags = tags;
+    }
+
+    fn tag_entity_type() -> Option<EntityDiscriminants> {
+        Some(EntityDiscriminants::Daemon)
     }
 }

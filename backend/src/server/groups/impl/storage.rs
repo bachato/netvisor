@@ -84,7 +84,7 @@ impl StorableEntity for Group {
                     source,
                     color,
                     edge_style,
-                    tags,
+                    tags: _, // Stored in entity_tags junction table
                 },
         } = self.clone();
 
@@ -103,7 +103,6 @@ impl StorableEntity for Group {
                 "group_type",
                 "color",
                 "edge_style",
-                "tags",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -116,7 +115,6 @@ impl StorableEntity for Group {
                 SqlValue::String(group_type_str.to_string()),
                 SqlValue::String(color.to_string()),
                 SqlValue::String(serde_json::to_string(&edge_style)?),
-                SqlValue::UuidArray(tags),
             ],
         ))
     }
@@ -150,7 +148,7 @@ impl StorableEntity for Group {
                 group_type,
                 binding_ids: Vec::new(), // Hydrated by GroupService via GroupBindingStorage
                 color: row.get::<String, _>("color").parse().unwrap_or_default(),
-                tags: row.get("tags"),
+                tags: Vec::new(), // Hydrated from entity_tags junction table
             },
         })
     }

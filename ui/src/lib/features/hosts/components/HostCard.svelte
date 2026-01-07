@@ -5,16 +5,14 @@
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import { concepts, entities, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { Group } from '$lib/features/groups/types/base';
-	import { useTagsQuery } from '$lib/features/tags/queries';
-	import { toColor } from '$lib/shared/utils/styling';
 	import { useHostsQuery } from '../queries';
 	import { useServicesQuery } from '$lib/features/services/queries';
 	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
+	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 
 	// Queries
-	const tagsQuery = useTagsQuery();
 	const hostsQuery = useHostsQuery();
 	const servicesQuery = useServicesQuery();
 	const interfacesQuery = useInterfacesQuery();
@@ -22,7 +20,6 @@
 	const subnetsQuery = useSubnetsQuery();
 
 	// Derived data
-	let tagsData = $derived(tagsQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data ?? []);
 	let servicesData = $derived(servicesQuery.data ?? []);
 	let interfacesData = $derived(interfacesQuery.data ?? []);
@@ -180,15 +177,7 @@
 					}),
 					emptyText: 'No interfaces'
 				},
-				{
-					label: 'Tags',
-					value: host.tags.map((t) => {
-						const tag = tagsData.find((tag) => tag.id == t);
-						return tag
-							? { id: tag.id, color: tag.color, label: tag.name }
-							: { id: t, color: toColor('gray'), label: 'Unknown Tag' };
-					})
-				}
+				{ label: 'Tags', snippet: tagsSnippet }
 			],
 			actions: [
 				...(onDelete
@@ -220,5 +209,12 @@
 		};
 	});
 </script>
+
+{#snippet tagsSnippet()}
+	<div class="flex items-center gap-2">
+		<span class="text-secondary text-sm">Tags:</span>
+		<TagPickerInline selectedTagIds={host.tags} entityId={host.id} entityType="Host" />
+	</div>
+{/snippet}
 
 <GenericCard {...cardData} {viewMode} {selected} {onSelectionChange} />

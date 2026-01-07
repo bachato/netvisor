@@ -84,7 +84,7 @@ impl StorableEntity for Subnet {
                     cidr,
                     subnet_type,
                     description,
-                    tags,
+                    tags: _, // Stored in entity_tags junction table
                 },
         } = self.clone();
 
@@ -99,7 +99,6 @@ impl StorableEntity for Subnet {
                 "network_id",
                 "created_at",
                 "updated_at",
-                "tags",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -111,7 +110,6 @@ impl StorableEntity for Subnet {
                 SqlValue::Uuid(network_id),
                 SqlValue::Timestamp(created_at),
                 SqlValue::Timestamp(updated_at),
-                SqlValue::UuidArray(tags),
             ],
         ))
     }
@@ -137,7 +135,7 @@ impl StorableEntity for Subnet {
                 source,
                 cidr,
                 subnet_type,
-                tags: row.get("tags"),
+                tags: Vec::new(), // Hydrated from entity_tags junction table
             },
         })
     }

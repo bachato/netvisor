@@ -17,7 +17,11 @@ use crate::server::{
     organizations::service::OrganizationService,
     ports::service::PortService,
     services::service::ServiceService,
-    shared::{events::bus::EventBus, storage::factory::StorageFactory},
+    shared::{
+        events::bus::EventBus,
+        services::entity_tags::EntityTagService,
+        storage::{entity_tags::EntityTagStorage, factory::StorageFactory},
+    },
     shares::service::ShareService,
     subnets::service::SubnetService,
     tags::service::TagService,
@@ -53,6 +57,7 @@ pub struct ServiceFactory {
     pub event_bus: Arc<EventBus>,
     pub logging_service: Arc<LoggingService>,
     pub tag_service: Arc<TagService>,
+    pub entity_tag_service: Arc<EntityTagService>,
     pub port_service: Arc<PortService>,
     pub binding_service: Arc<BindingService>,
 }
@@ -99,6 +104,12 @@ impl ServiceFactory {
         let share_service = Arc::new(ShareService::new(storage.shares.clone(), event_bus.clone()));
 
         let tag_service = Arc::new(TagService::new(storage.tags.clone(), event_bus.clone()));
+
+        let entity_tag_storage = Arc::new(EntityTagStorage::new(storage.pool.clone()));
+        let entity_tag_service = Arc::new(EntityTagService::new(
+            entity_tag_storage,
+            tag_service.clone(),
+        ));
 
         let port_service = Arc::new(PortService::new(storage.ports.clone(), event_bus.clone()));
 
@@ -275,6 +286,7 @@ impl ServiceFactory {
             event_bus,
             logging_service,
             tag_service,
+            entity_tag_service,
             port_service,
             binding_service,
         })

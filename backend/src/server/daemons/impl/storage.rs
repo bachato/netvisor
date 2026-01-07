@@ -80,7 +80,7 @@ impl StorableEntity for Daemon {
                     mode,
                     url,
                     name,
-                    tags,
+                    tags: _, // Stored in entity_tags junction table
                     version,
                     user_id,
                 },
@@ -98,7 +98,6 @@ impl StorableEntity for Daemon {
                 "url",
                 "name",
                 "mode",
-                "tags",
                 "version",
                 "user_id",
             ],
@@ -113,7 +112,6 @@ impl StorableEntity for Daemon {
                 SqlValue::String(url),
                 SqlValue::String(name),
                 SqlValue::DaemonMode(mode),
-                SqlValue::UuidArray(tags),
                 SqlValue::OptionalString(version.map(|v| v.to_string())),
                 SqlValue::Uuid(user_id),
             ],
@@ -145,7 +143,7 @@ impl StorableEntity for Daemon {
                 name: row.get("name"),
                 mode,
                 capabilities,
-                tags: row.get("tags"),
+                tags: Vec::new(), // Hydrated from entity_tags junction table
                 version,
                 user_id: row.get("user_id"),
             },

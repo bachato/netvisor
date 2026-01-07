@@ -2,7 +2,7 @@ use crate::server::{
     auth::middleware::permissions::{Authorized, Member, Viewer},
     config::AppState,
     shared::{
-        entities::{ChangeTriggersTopologyStaleness, Entity},
+        entities::{ChangeTriggersTopologyStaleness, Entity, EntityDiscriminants},
         handlers::query::FilterQueryExtractor,
         services::traits::{CrudService, EventBusService},
         storage::{filter::EntityFilter, traits::StorableEntity},
@@ -81,6 +81,13 @@ where
     fn set_tags(&mut self, _tags: Vec<Uuid>) {
         // Default: no-op
     }
+
+    /// Optional: Get the entity type for the tags junction table.
+    /// Override for entities that use the junction table for tag storage.
+    /// Returns None for entities that don't support tags or don't use the junction table.
+    fn tag_entity_type() -> Option<EntityDiscriminants> {
+        None
+    }
 }
 
 /// Create a standard CRUD router
@@ -127,12 +134,15 @@ where
     )?;
 
     // Validate and dedupe tags if entity has them
-    if let Some(tags) = entity.get_tags() {
-        let validated_tags =
+    let validated_tags = if let Some(tags) = entity.get_tags() {
+        let validated =
             validate_and_dedupe_tags(tags.clone(), organization_id, &state.services.tag_service)
                 .await?;
-        entity.set_tags(validated_tags);
-    }
+        entity.set_tags(validated.clone());
+        Some(validated)
+    } else {
+        None
+    };
 
     let created = service
         .create(entity, auth.into_entity())
@@ -150,6 +160,15 @@ where
             }
             api_error
         })?;
+
+    // Persist tags to junction table if entity supports it
+    if let (Some(entity_type), Some(tags)) = (T::tag_entity_type(), validated_tags) {
+        state
+            .services
+            .entity_tag_service
+            .set_tags(created.id(), entity_type, tags, organization_id)
+            .await?;
+    }
 
     Ok(Json(ApiResponse::success(created)))
 }
@@ -182,7 +201,7 @@ where
 
     let service = T::get_service(&state);
 
-    let entities = service.get_all(filter).await.map_err(|e| {
+    let mut entities = service.get_all(filter).await.map_err(|e| {
         tracing::error!(
             entity_type = T::table_name(),
             user_id = ?user_id,
@@ -191,6 +210,22 @@ where
         );
         ApiError::internal_error(&e.to_string())
     })?;
+
+    // Hydrate tags from junction table if entity supports it
+    if let Some(entity_type) = T::tag_entity_type() {
+        let ids: Vec<Uuid> = entities.iter().map(|e| e.id()).collect();
+        let tags_map = state
+            .services
+            .entity_tag_service
+            .get_tags_map(&ids, entity_type)
+            .await
+            .map_err(|e| ApiError::internal_error(&format!("Failed to hydrate tags: {}", e)))?;
+        for entity in &mut entities {
+            if let Some(tags) = tags_map.get(&entity.id()) {
+                entity.set_tags(tags.clone());
+            }
+        }
+    }
 
     Ok(Json(ApiResponse::success(entities)))
 }
@@ -211,7 +246,7 @@ where
     let user_id = auth.user_id();
 
     let service = T::get_service(&state);
-    let entity = service
+    let mut entity = service
         .get_by_id(&id)
         .await
         .map_err(|e| {
@@ -240,6 +275,19 @@ where
         &network_ids,
         organization_id,
     )?;
+
+    // Hydrate tags from junction table if entity supports it
+    if let Some(entity_type) = T::tag_entity_type() {
+        let tags = state
+            .services
+            .entity_tag_service
+            .get_tags_map(&[id], entity_type)
+            .await
+            .map_err(|e| ApiError::internal_error(&format!("Failed to hydrate tags: {}", e)))?;
+        if let Some(entity_tags) = tags.get(&id) {
+            entity.set_tags(entity_tags.clone());
+        }
+    }
 
     Ok(Json(ApiResponse::success(entity)))
 }
@@ -308,12 +356,15 @@ where
     )?;
 
     // Validate and dedupe tags if entity has them
-    if let Some(tags) = entity.get_tags() {
-        let validated_tags =
+    let validated_tags = if let Some(tags) = entity.get_tags() {
+        let validated =
             validate_and_dedupe_tags(tags.clone(), organization_id, &state.services.tag_service)
                 .await?;
-        entity.set_tags(validated_tags);
-    }
+        entity.set_tags(validated.clone());
+        Some(validated)
+    } else {
+        None
+    };
 
     let updated = service
         .update(&mut entity, auth.into_entity())
@@ -332,6 +383,15 @@ where
             }
             api_error
         })?;
+
+    // Persist tags to junction table if entity supports it
+    if let (Some(entity_type), Some(tags)) = (T::tag_entity_type(), validated_tags) {
+        state
+            .services
+            .entity_tag_service
+            .set_tags(updated.id(), entity_type, tags, organization_id)
+            .await?;
+    }
 
     Ok(Json(ApiResponse::success(updated)))
 }
@@ -394,6 +454,16 @@ where
         }
         api_error
     })?;
+
+    // Clean up tags from junction table if entity supports it
+    if let Some(entity_type) = T::tag_entity_type() {
+        state
+            .services
+            .entity_tag_service
+            .remove_all_for_entity(id, entity_type)
+            .await
+            .map_err(|e| ApiError::internal_error(&format!("Failed to clean up tags: {}", e)))?;
+    }
 
     Ok(Json(ApiResponse::success(())))
 }
@@ -464,6 +534,20 @@ where
             }
             api_error
         })?;
+
+    // Clean up tags from junction table for all deleted entities
+    if let Some(entity_type) = T::tag_entity_type() {
+        for id in &valid_ids {
+            state
+                .services
+                .entity_tag_service
+                .remove_all_for_entity(*id, entity_type)
+                .await
+                .map_err(|e| {
+                    ApiError::internal_error(&format!("Failed to clean up tags: {}", e))
+                })?;
+        }
+    }
 
     Ok(Json(ApiResponse::success(BulkDeleteResponse {
         deleted_count,

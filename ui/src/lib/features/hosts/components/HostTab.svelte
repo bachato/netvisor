@@ -234,6 +234,10 @@
 		}
 	}
 
+	function getHostTags(host: Host): string[] {
+		return host.tags;
+	}
+
 	async function handleHostHide(host: Host) {
 		const updatedHost = { ...host, hidden: !host.hidden };
 		await updateHostMutation.mutateAsync({
@@ -279,6 +283,8 @@
 			fields={hostFields}
 			storageKey="scanopy-hosts-table-state"
 			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
+			entityType={isReadOnly ? undefined : 'Host'}
+			getItemTags={getHostTags}
 			getItemId={(item) => item.id}
 		>
 			{#snippet children(
