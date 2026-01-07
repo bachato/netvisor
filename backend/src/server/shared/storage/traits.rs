@@ -139,5 +139,6 @@ pub enum SqlValue {
     StringArray(Vec<String>),
     OptionalStringArray(Option<Vec<String>>),
     JsonValue(serde_json::Value),
+    MacAddress(MacAddress),
     OptionalMacAddress(Option<MacAddress>),
 }

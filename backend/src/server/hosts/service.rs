@@ -546,6 +546,27 @@ impl HostService {
                     created_interfaces.push(existing_iface);
                     continue;
                 }
+
+                // MAC fallback: find by (host_id, mac_address) when subnet differs
+                // This handles cases where subnet_id changed between discovery runs
+                if let Some(mac) = &interface.base.mac_address {
+                    let mac_filter = EntityFilter::unfiltered()
+                        .host_id(&interface.base.host_id)
+                        .mac_address(mac);
+                    let existing_by_mac: Vec<Interface> =
+                        self.interface_service.get_all(mac_filter).await?;
+                    if let Some(existing_iface) = existing_by_mac.into_iter().next() {
+                        tracing::debug!(
+                            interface_ip = %interface.base.ip_address,
+                            interface_mac = %mac,
+                            existing_subnet_id = %existing_iface.base.subnet_id,
+                            incoming_subnet_id = %interface.base.subnet_id,
+                            "Found existing interface by MAC address (subnet_id differs)"
+                        );
+                        created_interfaces.push(existing_iface);
+                        continue;
+                    }
+                }
             }
 
             let created = self

@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use email_address::EmailAddress;
 use uuid::Uuid;
 
+use mac_address::MacAddress;
+
 use crate::server::{
     shared::storage::traits::SqlValue, users::r#impl::permissions::UserOrgPermissions,
 };
@@ -155,6 +157,13 @@ impl EntityFilter {
         self.conditions
             .push(format!("subnet_id = ${}", self.values.len() + 1));
         self.values.push(SqlValue::Uuid(*id));
+        self
+    }
+
+    pub fn mac_address(mut self, mac: &MacAddress) -> Self {
+        self.conditions
+            .push(format!("mac_address = ${}", self.values.len() + 1));
+        self.values.push(SqlValue::MacAddress(*mac));
         self
     }
 

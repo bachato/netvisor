@@ -145,6 +145,10 @@ where
             SqlValue::StringArray(v) => query.bind(v.clone()),
             SqlValue::OptionalStringArray(v) => query.bind(v.clone()),
             SqlValue::JsonValue(v) => query.bind(v.clone()),
+            SqlValue::MacAddress(v) => {
+                // sqlx mac_address feature supports MacAddress directly
+                query.bind(*v)
+            }
             SqlValue::OptionalMacAddress(v) => {
                 // sqlx mac_address feature supports MacAddress directly
                 query.bind(*v)

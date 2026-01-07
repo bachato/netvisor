@@ -7474,14 +7474,23 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
+<<<<<<< HEAD
               "created_at": "2026-01-06T20:35:46.470847Z",
               "id": "91515c53-34b4-470f-9b86-38c4f859bf23",
+=======
+              "created_at": "2026-01-06T18:14:22.479974Z",
+              "id": "86d576b8-fc3c-4373-98c1-fea43c82d62a",
+>>>>>>> fix/discovery-duplicates
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
+<<<<<<< HEAD
               "updated_at": "2026-01-06T20:35:46.470847Z"
+=======
+              "updated_at": "2026-01-06T18:14:22.479974Z"
+>>>>>>> fix/discovery-duplicates
             }
           },
           "error": {
@@ -8736,14 +8745,23 @@
             "example": {
               "bindings": [
                 {
+<<<<<<< HEAD
                   "created_at": "2026-01-06T20:35:46.466607Z",
                   "id": "9f45a8ba-ee27-476a-b405-82ca90539503",
+=======
+                  "created_at": "2026-01-06T18:14:22.476865Z",
+                  "id": "11acb5fc-84d6-4c0c-b3a4-69506a3826f8",
+>>>>>>> fix/discovery-duplicates
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
+<<<<<<< HEAD
                   "updated_at": "2026-01-06T20:35:46.466607Z"
+=======
+                  "updated_at": "2026-01-06T18:14:22.476865Z"
+>>>>>>> fix/discovery-duplicates
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -8752,7 +8770,11 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
+<<<<<<< HEAD
               "service_definition": "Confluence",
+=======
+              "service_definition": "Lidarr",
+>>>>>>> fix/discovery-duplicates
               "source": {
                 "type": "Manual"
               },
@@ -9453,14 +9475,23 @@
               ],
               "description": "Association between a service and a port / interface that the service is listening on",
               "example": {
+<<<<<<< HEAD
                 "created_at": "2026-01-06T20:35:46.470592Z",
                 "id": "ebceebc4-b320-41cf-8c5e-56c4c7868538",
+=======
+                "created_at": "2026-01-06T18:14:22.479723Z",
+                "id": "9a986cf2-a77c-4fa7-94e8-4a5f277997b4",
+>>>>>>> fix/discovery-duplicates
                 "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "port_id": "550e8400-e29b-41d4-a716-446655440006",
                 "service_id": "550e8400-e29b-41d4-a716-446655440007",
                 "type": "Port",
+<<<<<<< HEAD
                 "updated_at": "2026-01-06T20:35:46.470592Z"
+=======
+                "updated_at": "2026-01-06T18:14:22.479723Z"
+>>>>>>> fix/discovery-duplicates
               }
             }
           },
@@ -10257,14 +10288,23 @@
               "example": {
                 "bindings": [
                   {
+<<<<<<< HEAD
                     "created_at": "2026-01-06T20:35:46.465695Z",
                     "id": "1fad6fd3-04d8-4d17-95b5-7e4fd0970408",
+=======
+                    "created_at": "2026-01-06T18:14:22.475927Z",
+                    "id": "904a6935-2ef4-4eb1-82e4-417f16f4fd8b",
+>>>>>>> fix/discovery-duplicates
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
+<<<<<<< HEAD
                     "updated_at": "2026-01-06T20:35:46.465695Z"
+=======
+                    "updated_at": "2026-01-06T18:14:22.475927Z"
+>>>>>>> fix/discovery-duplicates
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -10273,7 +10313,11 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
+<<<<<<< HEAD
                 "service_definition": "Confluence",
+=======
+                "service_definition": "Lidarr",
+>>>>>>> fix/discovery-duplicates
                 "source": {
                   "type": "Manual"
                 },
@@ -10967,14 +11011,23 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
+<<<<<<< HEAD
           "created_at": "2026-01-06T20:35:46.456053Z",
           "id": "d7a8b097-a50a-42f1-9a21-3768d351ccef",
+=======
+          "created_at": "2026-01-06T18:14:22.470703Z",
+          "id": "f5e676ac-126b-4b81-af66-e212734c21c8",
+>>>>>>> fix/discovery-duplicates
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
+<<<<<<< HEAD
           "updated_at": "2026-01-06T20:35:46.456053Z"
+=======
+          "updated_at": "2026-01-06T18:14:22.470703Z"
+>>>>>>> fix/discovery-duplicates
         }
       },
       "BindingBase": {
@@ -11335,7 +11388,11 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
+<<<<<<< HEAD
               "service_definition": "Confluence",
+=======
+              "service_definition": "Lidarr",
+>>>>>>> fix/discovery-duplicates
               "tags": [],
               "virtualization": null
             }
@@ -14072,14 +14129,23 @@
         "example": {
           "bindings": [
             {
+<<<<<<< HEAD
               "created_at": "2026-01-06T20:35:46.456005Z",
               "id": "126bcfa4-313a-4457-9e58-551de0da7c31",
+=======
+              "created_at": "2026-01-06T18:14:22.470602Z",
+              "id": "b2f709fc-c978-4888-a617-e4d7d0000b20",
+>>>>>>> fix/discovery-duplicates
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
+<<<<<<< HEAD
               "updated_at": "2026-01-06T20:35:46.456005Z"
+=======
+              "updated_at": "2026-01-06T18:14:22.470602Z"
+>>>>>>> fix/discovery-duplicates
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -14088,7 +14154,11 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
+<<<<<<< HEAD
           "service_definition": "Confluence",
+=======
+          "service_definition": "Lidarr",
+>>>>>>> fix/discovery-duplicates
           "source": {
             "type": "Manual"
           },
