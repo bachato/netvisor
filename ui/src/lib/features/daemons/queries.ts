@@ -11,8 +11,9 @@ import { trackEventOnce } from '$lib/shared/utils/analytics';
 
 /**
  * Query hook for fetching all daemons
+ * @param options.enabled - Optional getter function to control when query is enabled
  */
-export function useDaemonsQuery() {
+export function useDaemonsQuery(options?: { enabled?: () => boolean }) {
 	return createQuery(() => ({
 		queryKey: queryKeys.daemons.all,
 		queryFn: async () => {
@@ -25,7 +26,8 @@ export function useDaemonsQuery() {
 				trackEventOnce('first_daemon_registered');
 			}
 			return data.data;
-		}
+		},
+		enabled: options?.enabled?.() ?? true
 	}));
 }
 

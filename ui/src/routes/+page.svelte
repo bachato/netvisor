@@ -19,7 +19,8 @@
 	let isCheckingAuth = $derived(currentUserQuery.isPending);
 
 	// TanStack Query for daemons - used to determine default tab
-	const daemonsQuery = useDaemonsQuery();
+	// Only fetch when authenticated to avoid 401 errors during onboarding
+	const daemonsQuery = useDaemonsQuery({ enabled: () => isAuthenticated });
 
 	let activeTab = $state(initialHash || 'topology');
 	let appInitialized = $state(false);

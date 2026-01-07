@@ -191,3 +191,9 @@ set-plan-enterprise:
 	@docker exec -t scanopy-postgres psql -U postgres -d scanopy -c \
 		"UPDATE organizations SET plan = '{\"type\": \"Enterprise\", \"base_cents\": 0, \"rate\": \"Month\", \"trial_days\": 0, \"seat_cents\": null, \"network_cents\": null, \"included_seats\": null, \"included_networks\": null}'::jsonb"
 	@echo "Done!"
+
+set-plan-demo:
+	@echo "Setting all organizations to Demo plan..."
+	@docker exec -t scanopy-postgres psql -U postgres -d scanopy -c \
+		"UPDATE organizations SET plan = '{\"type\": \"Demo\", \"base_cents\": 0, \"rate\": \"Month\", \"trial_days\": 0, \"seat_cents\": null, \"network_cents\": null, \"included_seats\": null, \"included_networks\": null}'::jsonb"
+	@echo "Done!"

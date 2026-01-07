@@ -47,9 +47,10 @@
 	// Get current user ID for user_id field
 	let currentUserId = $derived(currentUserQuery.data?.id ?? null);
 
-	// Separate field defs - conditionally exclude mode if showModeSelect is false
+	// Separate field defs - conditionally exclude mode and daemonUrl if showModeSelect is false
+	// (daemonUrl depends on mode selection, so both should be hidden until Install Now)
 	let basicFieldDefs = $derived(
-		fieldDefs.filter((d) => !d.section && (d.id !== 'mode' || showModeSelect))
+		fieldDefs.filter((d) => !d.section && (!['mode', 'daemonUrl'].includes(d.id) || showModeSelect))
 	);
 	const advancedFieldDefs = fieldDefs.filter((d) => d.section);
 
