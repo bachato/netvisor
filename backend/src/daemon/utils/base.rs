@@ -187,7 +187,15 @@ pub trait DaemonUtils {
         docker_proxy: Result<Option<String>, Error>,
         docker_proxy_ssl_info: Result<Option<(String, String, String)>, Error>,
     ) -> Result<Docker, Error> {
+        use tokio::time::timeout;
+
+        const DOCKER_CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+
+        tracing::debug!("Creating Docker client connection");
+        let start = std::time::Instant::now();
+
         let client = if let Ok(Some(docker_proxy)) = docker_proxy {
+            tracing::debug!(proxy = %docker_proxy, "Using Docker proxy");
             if docker_proxy.contains("https://")
                 && let Ok(Some((key, cert, chain))) = docker_proxy_ssl_info
             {
@@ -209,13 +217,44 @@ pub trait DaemonUtils {
                     .map_err(|e| anyhow::anyhow!("Failed to connect to Docker: {}", e))?
             }
         } else {
+            tracing::debug!("Using Docker local defaults");
             Docker::connect_with_local_defaults()
                 .map_err(|e| anyhow::anyhow!("Failed to connect to Docker: {}", e))?
         };
 
-        client.ping().await?;
-
-        Ok(client)
+        // Add timeout to Docker ping to prevent indefinite blocking
+        tracing::debug!(
+            "Pinging Docker daemon (timeout: {:?})",
+            DOCKER_CONNECT_TIMEOUT
+        );
+        match timeout(DOCKER_CONNECT_TIMEOUT, client.ping()).await {
+            Ok(Ok(_)) => {
+                tracing::info!(
+                    elapsed_ms = start.elapsed().as_millis(),
+                    "Docker client connected successfully"
+                );
+                Ok(client)
+            }
+            Ok(Err(e)) => {
+                tracing::warn!(
+                    elapsed_ms = start.elapsed().as_millis(),
+                    error = %e,
+                    "Docker ping failed"
+                );
+                Err(anyhow::anyhow!("Docker ping failed: {}", e))
+            }
+            Err(_) => {
+                tracing::warn!(
+                    elapsed_ms = start.elapsed().as_millis(),
+                    "Docker ping timed out after {:?}",
+                    DOCKER_CONNECT_TIMEOUT
+                );
+                Err(anyhow::anyhow!(
+                    "Docker connection timed out after {:?}",
+                    DOCKER_CONNECT_TIMEOUT
+                ))
+            }
+        }
     }
 
     async fn get_subnets_from_docker_networks(
