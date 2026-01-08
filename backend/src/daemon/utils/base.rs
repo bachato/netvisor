@@ -114,7 +114,6 @@ pub trait DaemonUtils {
                 index = interface.index,
                 is_up = interface.is_up(),
                 is_loopback = interface.is_loopback(),
-                is_running = interface.is_running(),
                 mac = ?interface.mac,
                 ips = ?interface.ips,
                 flags = interface.flags,
