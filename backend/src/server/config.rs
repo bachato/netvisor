@@ -128,6 +128,9 @@ pub struct ServerConfig {
     // Testing
     #[serde(default)]
     pub enforce_billing_for_testing: bool,
+
+    // Metrics
+    pub metrics_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
@@ -179,6 +182,7 @@ impl Default for ServerConfig {
             oidc_providers: None,
             posthog_key: None,
             enforce_billing_for_testing: false,
+            metrics_token: None,
         }
     }
 }

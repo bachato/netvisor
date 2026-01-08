@@ -13,6 +13,7 @@ pub mod hosts;
 pub mod interfaces;
 pub mod invites;
 pub mod logging;
+pub mod metrics;
 pub mod networks;
 pub mod openapi;
 pub mod organizations;
