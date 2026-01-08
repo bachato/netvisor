@@ -19,7 +19,7 @@
 	const hostsQuery = useHostsQuery({ limit: 0 });
 	const servicesQuery = useServicesQuery();
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 
 	let serviceMetadata = $derived(serviceDefinitions.getItem(service.service_definition));
 

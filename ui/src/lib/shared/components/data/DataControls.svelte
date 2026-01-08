@@ -23,6 +23,9 @@
 		type EntityDiscriminants
 	} from '$lib/features/tags/queries';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+	import type { components } from '$lib/api/schema';
+
+	type PaginationMeta = components['schemas']['PaginationMeta'];
 
 	// Client-side pagination: 20 items per page
 	const PAGE_SIZE = 20;
@@ -36,7 +39,10 @@
 		entityType = null,
 		getItemTags = null,
 		children,
-		getItemId
+		getItemId,
+		// Server-side pagination (optional)
+		serverPagination = null,
+		onPageChange = null
 	}: {
 		items: T[];
 		fields: FieldConfig<T>[];
@@ -47,6 +53,9 @@
 		getItemTags?: ((item: T) => string[]) | null;
 		children: Snippet<[T, 'card' | 'list', boolean, (selected: boolean) => void]>;
 		getItemId: (item: T) => string;
+		// Server-side pagination: when provided, pagination is server-controlled
+		serverPagination?: PaginationMeta | null;
+		onPageChange?: ((page: number) => void) | null;
 	} = $props();
 
 	// Bulk tag mutations
@@ -607,35 +616,83 @@
 	let hasActiveSearch = $derived(searchQuery.trim().length > 0);
 	let hasActiveGrouping = $derived(selectedGroupField !== null);
 
-	// Client-side pagination derived values
-	let totalPages = $derived(Math.ceil(processedItems.length / PAGE_SIZE));
-	let canGoPrev = $derived(currentPage > 1);
-	let canGoNext = $derived(currentPage < totalPages);
-	let showingStart = $derived(Math.min((currentPage - 1) * PAGE_SIZE + 1, processedItems.length));
-	let showingEnd = $derived(Math.min(currentPage * PAGE_SIZE, processedItems.length));
+	// Check if using server-side pagination
+	let useServerPagination = $derived(serverPagination !== null && onPageChange !== null);
 
-	// Paginated items for display (slice of processedItems)
+	// Effective current page: derived from server offset when using server-side pagination
+	let effectiveCurrentPage = $derived(
+		useServerPagination && serverPagination
+			? Math.floor(serverPagination.offset / PAGE_SIZE) + 1
+			: currentPage
+	);
+
+	// Pagination derived values (server-side or client-side)
+	let totalPages = $derived(
+		useServerPagination && serverPagination
+			? Math.ceil(serverPagination.total_count / PAGE_SIZE)
+			: Math.ceil(processedItems.length / PAGE_SIZE)
+	);
+	let canGoPrev = $derived(effectiveCurrentPage > 1);
+	let canGoNext = $derived(
+		useServerPagination && serverPagination
+			? serverPagination.has_more
+			: effectiveCurrentPage < totalPages
+	);
+	let showingStart = $derived(
+		useServerPagination && serverPagination
+			? Math.min(serverPagination.offset + 1, serverPagination.total_count)
+			: Math.min((effectiveCurrentPage - 1) * PAGE_SIZE + 1, processedItems.length)
+	);
+	let showingEnd = $derived(
+		useServerPagination && serverPagination
+			? Math.min(serverPagination.offset + processedItems.length, serverPagination.total_count)
+			: Math.min(effectiveCurrentPage * PAGE_SIZE, processedItems.length)
+	);
+	let totalCount = $derived(
+		useServerPagination && serverPagination ? serverPagination.total_count : processedItems.length
+	);
+
+	// Paginated items for display
+	// Server-side: items are already paginated, just apply client-side filtering
+	// Client-side: slice the processed items
 	let paginatedItems = $derived(
-		processedItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+		useServerPagination
+			? processedItems
+			: processedItems.slice(
+					(effectiveCurrentPage - 1) * PAGE_SIZE,
+					effectiveCurrentPage * PAGE_SIZE
+				)
 	);
 
 	// Reset to page 1 when filters/search change and current page would be out of bounds
 	$effect(() => {
-		if (currentPage > totalPages && totalPages > 0) {
-			currentPage = 1;
+		if (effectiveCurrentPage > totalPages && totalPages > 0) {
+			if (useServerPagination && onPageChange) {
+				onPageChange(1);
+			} else {
+				currentPage = 1;
+			}
 		}
 	});
 
 	// Pagination handlers
 	function goToPrevPage() {
 		if (canGoPrev) {
-			currentPage = currentPage - 1;
+			if (useServerPagination && onPageChange) {
+				onPageChange(effectiveCurrentPage - 1);
+			} else {
+				currentPage = currentPage - 1;
+			}
 		}
 	}
 
 	function goToNextPage() {
 		if (canGoNext) {
-			currentPage = currentPage + 1;
+			if (useServerPagination && onPageChange) {
+				onPageChange(effectiveCurrentPage + 1);
+			} else {
+				currentPage = currentPage + 1;
+			}
 		}
 	}
 </script>
@@ -870,13 +927,13 @@
 	<!-- Results Count and Pagination -->
 	<div class="text-tertiary flex items-center justify-between text-sm">
 		<span>
-			{#if processedItems.length === 0}
+			{#if totalCount === 0}
 				No items
 			{:else if totalPages > 1}
-				Showing {showingStart}-{showingEnd} of {processedItems.length}
-				{processedItems.length === 1 ? 'item' : 'items'}
+				Showing {showingStart}-{showingEnd} of {totalCount}
+				{totalCount === 1 ? 'item' : 'items'}
 			{:else}
-				Showing {processedItems.length} of {items.length}
+				Showing {totalCount} of {items.length}
 				{items.length === 1 ? 'item' : 'items'}
 			{/if}
 		</span>
@@ -898,7 +955,7 @@
 						<ChevronLeft class="h-4 w-4" />
 					</button>
 					<span class="text-secondary min-w-[80px] text-center">
-						Page {currentPage} of {totalPages}
+						Page {effectiveCurrentPage} of {totalPages}
 					</span>
 					<button
 						onclick={goToNextPage}

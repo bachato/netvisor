@@ -14,7 +14,7 @@
 
 	// TanStack Query hooks
 	const servicesQuery = useServicesQuery();
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 
 	let serviceMetadata = $derived(serviceDefinitions.getItem(service.service_definition));
 

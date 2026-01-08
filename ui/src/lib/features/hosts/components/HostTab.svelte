@@ -30,10 +30,17 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 
+	// Pagination state
+	const PAGE_SIZE = 20;
+	let currentPage = $state(1);
+
 	// Queries
 	const tagsQuery = useTagsQuery();
-	// Paginated hosts - DataControls handles client-side filtering/sorting
-	const hostsQuery = useHostsQuery({ limit: 25 });
+	// Paginated hosts with server-side pagination
+	const hostsQuery = useHostsQuery(() => ({
+		limit: PAGE_SIZE,
+		offset: (currentPage - 1) * PAGE_SIZE
+	}));
 	const networksQuery = useNetworksQuery();
 	useDaemonsQuery();
 
@@ -56,9 +63,16 @@
 	// Derived data
 	let tagsData = $derived(tagsQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
+	let hostsPagination = $derived(hostsQuery.data?.pagination ?? null);
 	let servicesData = $derived(servicesQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
-	let isLoading = $derived(hostsQuery.isPending);
+	// Only show full loading on initial load (no data yet)
+	let isInitialLoading = $derived(hostsQuery.isPending && !hostsQuery.data);
+
+	// Page change handler for server-side pagination
+	function handlePageChange(page: number) {
+		currentPage = page;
+	}
 
 	let showHostEditor = $state(false);
 	let editingHost = $state<Host | null>(null);
@@ -258,10 +272,10 @@
 		</svelte:fragment>
 	</TabHeader>
 
-	<!-- Loading state -->
-	{#if isLoading}
+	<!-- Loading state (only on initial load) -->
+	{#if isInitialLoading}
 		<Loading />
-	{:else if hostsData.length === 0}
+	{:else if hostsData.length === 0 && !hostsPagination}
 		<!-- Empty state -->
 		<EmptyState
 			title="No hosts configured yet"
@@ -278,6 +292,8 @@
 			entityType={isReadOnly ? undefined : 'Host'}
 			getItemTags={getHostTags}
 			getItemId={(item) => item.id}
+			serverPagination={hostsPagination}
+			onPageChange={handlePageChange}
 		>
 			{#snippet children(
 				item: Host,

@@ -22,7 +22,7 @@
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
 	const topologiesQuery = useTopologiesQuery();
 	const servicesQuery = useServicesQuery();
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let topology = $derived(
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)

@@ -12,6 +12,7 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
+	import { onMount } from 'svelte';
 
 	/**
 	 * Compact inline tag picker for use in cards and bulk actions.
@@ -49,6 +50,53 @@
 	let inputValue = $state('');
 	let isDropdownOpen = $state(false);
 	let inputElement: HTMLInputElement | undefined = $state();
+	let triggerElement: HTMLDivElement | undefined = $state();
+	let dropdownPosition = $state({ top: 0, left: 0 });
+
+	// Portal container for escaping stacking contexts
+	let portalContainer: HTMLDivElement | null = $state(null);
+
+	onMount(() => {
+		portalContainer = document.createElement('div');
+		portalContainer.style.position = 'absolute';
+		portalContainer.style.top = '0';
+		portalContainer.style.left = '0';
+		portalContainer.style.width = '0';
+		portalContainer.style.height = '0';
+		document.body.appendChild(portalContainer);
+
+		return () => {
+			portalContainer?.remove();
+		};
+	});
+
+	// Portal action to move element to body
+	function portal(node: HTMLElement) {
+		if (portalContainer) {
+			portalContainer.appendChild(node);
+		}
+		return {
+			destroy() {}
+		};
+	}
+
+	function calculatePosition() {
+		if (!triggerElement) return;
+		const rect = triggerElement.getBoundingClientRect();
+		dropdownPosition = {
+			top: rect.bottom + 4,
+			left: rect.left
+		};
+	}
+
+	// Reposition dropdown on scroll when open
+	$effect(() => {
+		if (!isDropdownOpen) return;
+
+		const handleScroll = () => calculatePosition();
+		window.addEventListener('scroll', handleScroll, true);
+		return () => window.removeEventListener('scroll', handleScroll, true);
+	});
 
 	// Query and mutation
 	const tagsQuery = useTagsQuery();
@@ -169,6 +217,7 @@
 	function handleAddClick() {
 		if (disabled) return;
 		isDropdownOpen = true;
+		calculatePosition();
 		// Focus input after dropdown opens
 		setTimeout(() => inputElement?.focus(), 0);
 	}
@@ -214,7 +263,7 @@
 
 	<!-- Add button / dropdown -->
 	{#if (onAdd || isEntityMode) && !disabled}
-		<div class="relative flex h-5 items-center">
+		<div bind:this={triggerElement} class="relative flex h-5 items-center">
 			{#if isDropdownOpen}
 				<!-- Input for searching/creating tags -->
 				<input
@@ -237,44 +286,44 @@
 					<Plus class="h-3 w-3" />
 				</button>
 			{/if}
-
-			<!-- Dropdown -->
-			{#if showDropdown}
-				<div
-					class="absolute left-0 top-full z-50 mt-1 max-h-48 min-w-40 overflow-y-auto rounded-md border border-gray-600 bg-gray-700 shadow-lg"
-				>
-					<!-- Create new tag option -->
-					{#if showCreateOption}
-						<button
-							type="button"
-							class="flex w-full items-center gap-2 border-b border-gray-600 px-3 py-2 text-left text-xs transition-colors hover:bg-gray-600"
-							onmousedown={handleCreateTag}
-							disabled={isCreating}
-						>
-							<Plus class="h-3 w-3 shrink-0 text-green-400" />
-							<span class="text-primary">
-								{isCreating ? 'Creating...' : `Create "${inputValue.trim()}"`}
-							</span>
-						</button>
-					{/if}
-
-					<!-- Existing tags -->
-					{#each availableTags as tag (tag.id)}
-						{@const colorHelper = createColorHelper(tag.color)}
-						<button
-							type="button"
-							class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-gray-600"
-							onmousedown={() => handleAddTag(tag.id)}
-						>
-							<span
-								class="h-2.5 w-2.5 shrink-0 rounded-full"
-								style="background-color: {colorHelper.rgb};"
-							></span>
-							<span class="text-primary">{tag.name}</span>
-						</button>
-					{/each}
-				</div>
-			{/if}
 		</div>
 	{/if}
 </div>
+
+<!-- Portal dropdown to body to escape stacking contexts -->
+{#if showDropdown && portalContainer}
+	<div
+		use:portal
+		class="fixed z-[9999] max-h-48 min-w-40 overflow-y-auto rounded-md border border-gray-600 bg-gray-700 shadow-lg"
+		style="top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
+	>
+		<!-- Create new tag option -->
+		{#if showCreateOption}
+			<button
+				type="button"
+				class="flex w-full items-center gap-2 border-b border-gray-600 px-3 py-2 text-left text-xs transition-colors hover:bg-gray-600"
+				onmousedown={handleCreateTag}
+				disabled={isCreating}
+			>
+				<Plus class="h-3 w-3 shrink-0 text-green-400" />
+				<span class="text-primary">
+					{isCreating ? 'Creating...' : `Create "${inputValue.trim()}"`}
+				</span>
+			</button>
+		{/if}
+
+		<!-- Existing tags -->
+		{#each availableTags as tag (tag.id)}
+			{@const colorHelper = createColorHelper(tag.color)}
+			<button
+				type="button"
+				class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-gray-600"
+				onmousedown={() => handleAddTag(tag.id)}
+			>
+				<span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {colorHelper.rgb};"
+				></span>
+				<span class="text-primary">{tag.name}</span>
+			</button>
+		{/each}
+	</div>
+{/if}

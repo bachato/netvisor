@@ -4,7 +4,12 @@
  * Hosts are the parent entity that populates child caches for interfaces, ports, and services.
  */
 
-import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
+import {
+	createQuery,
+	createMutation,
+	useQueryClient,
+	keepPreviousData
+} from '@tanstack/svelte-query';
 import { queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import { pushSuccess } from '$lib/shared/stores/feedback';
@@ -203,7 +208,9 @@ export function useHostsQuery(optionsOrGetter: PaginationOptions | (() => Pagina
 					items: responses.map(toHostPrimitive),
 					pagination: data.meta?.pagination ?? null
 				};
-			}
+			},
+			// Keep showing previous page data while fetching next page
+			placeholderData: keepPreviousData
 		};
 	});
 }

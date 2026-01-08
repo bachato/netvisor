@@ -22,7 +22,7 @@
 	const portsQuery = usePortsQuery();
 	const subnetsQuery = useSubnetsQuery();
 
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 	let portsData = $derived(portsQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 

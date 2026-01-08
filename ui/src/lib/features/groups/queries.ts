@@ -57,12 +57,6 @@ export function useUpdateGroupMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (group: Group) => {
-			// Debug: log what we're sending to the API
-			console.log('[useUpdateGroupMutation] Sending:', {
-				groupId: group.id,
-				bindingIds: group.binding_ids
-			});
-
 			const { data } = await apiClient.PUT('/api/v1/groups/{id}', {
 				params: { path: { id: group.id } },
 				body: group
@@ -71,21 +65,9 @@ export function useUpdateGroupMutation() {
 				throw new Error(data?.error || 'Failed to update group');
 			}
 
-			// Debug: log what we received from the API
-			console.log('[useUpdateGroupMutation] Received:', {
-				groupId: data.data.id,
-				bindingIds: data.data.binding_ids
-			});
-
 			return data.data;
 		},
 		onSuccess: (updatedGroup: Group) => {
-			// Debug: log the cache update
-			console.log('[useUpdateGroupMutation] Updating cache with:', {
-				groupId: updatedGroup.id,
-				bindingIds: updatedGroup.binding_ids
-			});
-
 			queryClient.setQueryData<Group[]>(
 				queryKeys.groups.all,
 				(old) => old?.map((g) => (g.id === updatedGroup.id ? updatedGroup : g)) ?? []

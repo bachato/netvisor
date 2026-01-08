@@ -21,16 +21,23 @@
 
 	let { isReadOnly = false }: TabProps = $props();
 
+	// Pagination state
+	const PAGE_SIZE = 20;
+	let currentPage = $state(1);
+
 	// Queries
 	const tagsQuery = useTagsQuery();
-	// Paginated services - DataControls handles client-side filtering/sorting
-	const servicesQuery = useServicesQuery({ limit: 25 });
+	// Paginated services with server-side pagination
+	const servicesQuery = useServicesQuery(() => ({
+		limit: PAGE_SIZE,
+		offset: (currentPage - 1) * PAGE_SIZE
+	}));
 	const networksQuery = useNetworksQuery();
 
 	// Selective host lookup - only fetches hosts needed for service display
 	// Extract host IDs from visible services for host name display
 	const hostsQuery = useHostsByIds(() => {
-		return (servicesQuery.data ?? [])
+		return (servicesQuery.data?.items ?? [])
 			.filter((s) => s.host_id)
 			.map((s) => s.host_id)
 			.filter((id, idx, arr) => arr.indexOf(id) === idx);
@@ -43,10 +50,17 @@
 
 	// Derived data
 	let tagsData = $derived(tagsQuery.data ?? []);
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
+	let servicesPagination = $derived(servicesQuery.data?.pagination ?? null);
 	let hostsData = $derived(hostsQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
-	let isLoading = $derived(servicesQuery.isPending);
+	// Only show full loading on initial load (no data yet)
+	let isInitialLoading = $derived(servicesQuery.isPending && !servicesQuery.data);
+
+	// Page change handler for server-side pagination
+	function handlePageChange(page: number) {
+		currentPage = page;
+	}
 
 	let showServiceEditor = $state(false);
 	let editingService = $state<Service | null>(null);
@@ -184,10 +198,10 @@
 	<!-- Header -->
 	<TabHeader title="Services" subtitle="To create a service, add it to a host in the Hosts tab." />
 
-	<!-- Loading state -->
-	{#if isLoading}
+	<!-- Loading state (only on initial load) -->
+	{#if isInitialLoading}
 		<Loading />
-	{:else if servicesData.length === 0}
+	{:else if servicesData.length === 0 && !servicesPagination}
 		<!-- Empty state -->
 		<EmptyState title="No services configured yet" subtitle="" />
 	{:else}
@@ -199,6 +213,8 @@
 			entityType={isReadOnly ? undefined : 'Service'}
 			getItemTags={getServiceTags}
 			getItemId={(item) => item.id}
+			serverPagination={servicesPagination}
+			onPageChange={handlePageChange}
 		>
 			{#snippet children(
 				item: Service,

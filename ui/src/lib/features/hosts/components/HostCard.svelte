@@ -17,7 +17,7 @@
 	const subnetsQuery = useSubnetsQuery();
 
 	// Derived data
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 	let interfacesData = $derived(interfacesQuery.data ?? []);
 	let daemonsData = $derived(daemonsQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);

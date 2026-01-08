@@ -51,7 +51,7 @@
 	const portsQuery = usePortsQuery();
 	const subnetsQuery = useSubnetsQuery();
 
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 	let isServicesLoading = $derived(servicesQuery.isLoading);
 	let networksData = $derived(networksQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
@@ -99,15 +99,6 @@
 				binding_ids: bindingIds
 			};
 
-			// Debug: log what we're submitting
-			console.log('[GroupEditModal] onSubmit:', {
-				isEditing,
-				groupId: group?.id,
-				bindingIdsFromLocalState: bindingIds,
-				bindingIdsFromFormValue: value.binding_ids,
-				finalBindingIds: groupData.binding_ids
-			});
-
 			loading = true;
 			try {
 				if (isEditing && group) {
@@ -132,17 +123,6 @@
 		form.reset(defaults);
 		bindingIds = defaults.binding_ids ?? [];
 		selectedNetworkId = defaults.network_id ?? '';
-
-		// Debug: log what data we're loading
-		console.log('[GroupEditModal] handleOpen:', {
-			isEditing,
-			groupId: group?.id,
-			groupName: group?.name,
-			bindingIds,
-			servicesCount: servicesData.length,
-			servicesWithBindings: servicesData.filter((s) => s.bindings.length > 0).length,
-			allBindingIds: servicesData.flatMap((s) => s.bindings.map((b) => b.id))
-		});
 	}
 
 	// Available service bindings (exclude already selected ones)

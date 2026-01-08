@@ -1904,14 +1904,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-01-08T02:01:23.088531Z",
-             *       "id": "27ed41f2-18d5-4dc2-8c20-ba59ad9e94cf",
+             *       "created_at": "2026-01-08T02:40:35.790992Z",
+             *       "id": "5491e7b4-10fc-4bf1-bdff-c1029a74398d",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-01-08T02:01:23.088531Z"
+             *       "updated_at": "2026-01-08T02:40:35.790992Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2314,14 +2314,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-01-08T02:01:23.084656Z",
-             *           "id": "687b87ee-696d-46b6-adcf-8c5723dae743",
+             *           "created_at": "2026-01-08T02:40:35.786793Z",
+             *           "id": "555fd07f-b892-4c92-bf69-3d6da019d0b5",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-01-08T02:01:23.084656Z"
+             *           "updated_at": "2026-01-08T02:40:35.786793Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -2330,7 +2330,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Philips Hue Bridge",
+             *       "service_definition": "NFS",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -2613,14 +2613,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-01-08T02:01:23.075002Z",
-         *       "id": "aab718c7-6b44-4f39-ac72-d94d2b1b1116",
+         *       "created_at": "2026-01-08T02:40:35.777869Z",
+         *       "id": "77f739bb-1726-409a-8400-aec5a26443e1",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-01-08T02:01:23.075002Z"
+         *       "updated_at": "2026-01-08T02:40:35.777869Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -2784,7 +2784,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Philips Hue Bridge",
+         *           "service_definition": "NFS",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -3803,14 +3803,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-01-08T02:01:23.074859Z",
-         *           "id": "4094b2e1-9b70-4f91-a2a2-937e99dbddfa",
+         *           "created_at": "2026-01-08T02:40:35.777776Z",
+         *           "id": "e98f05f5-bb96-4beb-a4e8-b1f8dbf4cac3",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-01-08T02:01:23.074859Z"
+         *           "updated_at": "2026-01-08T02:40:35.777776Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -3819,7 +3819,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Philips Hue Bridge",
+         *       "service_definition": "NFS",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -4929,6 +4929,8 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -5652,6 +5654,8 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -6072,6 +6076,8 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -6271,6 +6277,8 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -7278,6 +7286,8 @@ export interface operations {
                 host_id?: string | null;
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -7479,6 +7489,8 @@ export interface operations {
                 host_id?: string | null;
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -7947,6 +7959,8 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -8455,6 +8469,8 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
