@@ -8,11 +8,14 @@ use async_trait::async_trait;
 use tokio::sync::broadcast;
 use uuid::Uuid;
 
-use crate::server::shared::{
-    entities::EntityDiscriminants,
-    events::types::{
-        AuthEvent, AuthOperation, EntityEvent, EntityOperation, Event, TelemetryEvent,
-        TelemetryOperation,
+use crate::{
+    daemon::runtime::service::LOG_TARGET,
+    server::shared::{
+        entities::EntityDiscriminants,
+        events::types::{
+            AuthEvent, AuthOperation, EntityEvent, EntityOperation, Event, TelemetryEvent,
+            TelemetryOperation,
+        },
     },
 };
 
@@ -284,6 +287,7 @@ impl EventBus {
         subscribers.push(state);
 
         tracing::info!(
+            target: LOG_TARGET,
             subscriber = %subscriber.name(),
             debounce_ms = subscriber.debounce_window_ms(),
             "Registered event subscriber",

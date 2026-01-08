@@ -20,20 +20,65 @@ pub const POST_SCAN_RECEIVE: Duration = Duration::from_secs(5);
 /// Check if broadcast ARP is available (requires raw socket capability)
 pub fn is_available() -> bool {
     let interfaces = datalink::interfaces();
+
+    tracing::debug!(
+        interface_count = interfaces.len(),
+        "Checking ARP availability: enumerating interfaces"
+    );
+
+    // Log why each interface is rejected
+    for iface in &interfaces {
+        if iface.is_loopback() {
+            tracing::trace!(name = %iface.name, "Skipping loopback interface");
+        } else if !iface.is_up() {
+            tracing::trace!(name = %iface.name, "Skipping interface: not up");
+        } else if iface.mac.is_none() {
+            tracing::trace!(name = %iface.name, "Skipping interface: no MAC address");
+        }
+    }
+
     let suitable = interfaces
         .into_iter()
         .find(|iface| iface.is_up() && !iface.is_loopback() && iface.mac.is_some());
 
     let Some(interface) = suitable else {
+        tracing::warn!(
+            "ARP scanning unavailable: no suitable network interface found. \
+             Ensure container has a non-loopback interface with a MAC address."
+        );
         return false;
     };
+
+    tracing::debug!(
+        interface = %interface.name,
+        mac = ?interface.mac,
+        "Found suitable interface for ARP, testing raw socket capability"
+    );
 
     let config = pnet::datalink::Config {
         read_timeout: Some(Duration::from_millis(100)),
         ..Default::default()
     };
 
-    datalink::channel(&interface, config).is_ok()
+    match datalink::channel(&interface, config) {
+        Ok(_) => {
+            tracing::debug!(
+                interface = %interface.name,
+                "ARP scanning available: raw socket channel created successfully"
+            );
+            true
+        }
+        Err(e) => {
+            tracing::warn!(
+                interface = %interface.name,
+                error = %e,
+                "ARP scanning unavailable: failed to create raw socket channel. \
+                 Ensure container has NET_RAW and NET_ADMIN capabilities. \
+                 Error typically indicates missing privileges for raw packet access."
+            );
+            false
+        }
+    }
 }
 
 /// Scan subnet using broadcast ARP with targeted retries.

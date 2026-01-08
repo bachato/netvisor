@@ -64,6 +64,7 @@ export function useUpdateGroupMutation() {
 			if (!data?.success || !data.data) {
 				throw new Error(data?.error || 'Failed to update group');
 			}
+
 			return data.data;
 		},
 		onSuccess: (updatedGroup: Group) => {

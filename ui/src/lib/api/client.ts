@@ -55,7 +55,8 @@ interface CacheEntry {
 }
 
 const requestCache = new Map<string, CacheEntry>();
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 500; // Increased from 250 to reduce rapid invalidation impact
+const MAX_CACHE_SIZE = 50; // Limit cache size to prevent memory growth
 
 function getRequestKey(request: Request): string {
 	const method = request.method;
@@ -70,8 +71,18 @@ function getRequestKey(request: Request): string {
 
 function cleanupExpiredRequests() {
 	const now = Date.now();
+	// Remove expired entries
 	for (const [key, cache] of requestCache.entries()) {
 		if (now - cache.timestamp > DEBOUNCE_MS) {
+			requestCache.delete(key);
+		}
+	}
+	// If still over limit, remove oldest entries
+	if (requestCache.size > MAX_CACHE_SIZE) {
+		const entries = Array.from(requestCache.entries());
+		entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+		const toRemove = entries.slice(0, entries.length - MAX_CACHE_SIZE);
+		for (const [key] of toRemove) {
 			requestCache.delete(key);
 		}
 	}

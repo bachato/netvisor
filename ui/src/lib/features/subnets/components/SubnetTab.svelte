@@ -16,8 +16,6 @@
 		useDeleteSubnetMutation,
 		useBulkDeleteSubnetsMutation
 	} from '../queries';
-	import { useHostsQuery } from '$lib/features/hosts/queries';
-	import { useServicesQuery } from '$lib/features/services/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import type { TabProps } from '$lib/shared/types';
 
@@ -27,9 +25,6 @@
 	const tagsQuery = useTagsQuery();
 	const subnetsQuery = useSubnetsQuery();
 	const networksQuery = useNetworksQuery();
-	// Load related data (limit: 0 to get all hosts for subnet cards)
-	useHostsQuery({ limit: 0 });
-	useServicesQuery();
 
 	// Mutations
 	const createSubnetMutation = useCreateSubnetMutation();

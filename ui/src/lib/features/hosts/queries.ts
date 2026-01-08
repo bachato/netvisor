@@ -4,7 +4,12 @@
  * Hosts are the parent entity that populates child caches for interfaces, ports, and services.
  */
 
-import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
+import {
+	createQuery,
+	createMutation,
+	useQueryClient,
+	keepPreviousData
+} from '@tanstack/svelte-query';
 import { queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import { pushSuccess } from '$lib/shared/stores/feedback';
@@ -203,7 +208,43 @@ export function useHostsQuery(optionsOrGetter: PaginationOptions | (() => Pagina
 					items: responses.map(toHostPrimitive),
 					pagination: data.meta?.pagination ?? null
 				};
-			}
+			},
+			// Keep showing previous page data while fetching next page
+			placeholderData: keepPreviousData
+		};
+	});
+}
+
+/**
+ * Query hook for fetching specific hosts by IDs (for selective loading)
+ * Used for lookups where only a subset of hosts is needed (e.g., service → host name)
+ *
+ * @param idsGetter - Getter function returning array of host IDs to fetch
+ */
+export function useHostsByIds(idsGetter: () => string[]) {
+	return createQuery(() => {
+		const ids = idsGetter();
+
+		return {
+			queryKey: [...queryKeys.hosts.all, 'byIds', ids],
+			queryFn: async (): Promise<Host[]> => {
+				if (ids.length === 0) return [];
+
+				const { data } = await apiClient.GET('/api/v1/hosts', {
+					params: {
+						query: {
+							ids: ids,
+							limit: 0 // No pagination when fetching by IDs
+						}
+					}
+				});
+				if (!data?.success || !data.data) {
+					throw new Error(data?.error || 'Failed to fetch hosts');
+				}
+
+				return data.data.map(toHostPrimitive);
+			},
+			enabled: ids.length > 0
 		};
 	});
 }
@@ -260,35 +301,41 @@ export function useUpdateHostMutation() {
 				hidden: data.host.hidden,
 				tags: data.host.tags,
 				expected_updated_at: data.host.updated_at,
-				// Always send arrays (empty = no changes to sync)
-				interfaces: (data.interfaces ?? []).map(
-					(iface, index): InterfaceInput => ({
-						id: iface.id,
-						subnet_id: iface.subnet_id,
-						ip_address: iface.ip_address,
-						mac_address: iface.mac_address,
-						name: iface.name,
-						position: index
-					})
-				),
-				ports: (data.ports ?? []).map(
-					(port): PortInput => ({
-						id: port.id,
-						number: port.number,
-						protocol: port.protocol
-					})
-				),
-				services: (data.services ?? []).map(
-					(service, index): ServiceInput => ({
-						id: service.id,
-						service_definition: service.service_definition,
-						name: service.name,
-						bindings: service.bindings.map(toBindingInput),
-						virtualization: service.virtualization,
-						tags: service.tags,
-						position: index
-					})
-				)
+				// Only send arrays if provided (undefined = preserve existing)
+				interfaces: data.interfaces
+					? data.interfaces.map(
+							(iface, index): InterfaceInput => ({
+								id: iface.id,
+								subnet_id: iface.subnet_id,
+								ip_address: iface.ip_address,
+								mac_address: iface.mac_address,
+								name: iface.name,
+								position: index
+							})
+						)
+					: undefined,
+				ports: data.ports
+					? data.ports.map(
+							(port): PortInput => ({
+								id: port.id,
+								number: port.number,
+								protocol: port.protocol
+							})
+						)
+					: undefined,
+				services: data.services
+					? data.services.map(
+							(service, index): ServiceInput => ({
+								id: service.id,
+								service_definition: service.service_definition,
+								name: service.name,
+								bindings: service.bindings.map(toBindingInput),
+								virtualization: service.virtualization,
+								tags: service.tags,
+								position: index
+							})
+						)
+					: undefined
 			};
 
 			const { data: result } = await apiClient.PUT('/api/v1/hosts/{id}', {

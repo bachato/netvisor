@@ -18,7 +18,7 @@
 	const servicesQuery = useServicesQuery();
 	let interfacesData = $derived(interfacesQuery.data ?? []);
 	let portsData = $derived(portsQuery.data ?? []);
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 
 	// Hydrate host to form data for ServiceConfigPanel
 	function hydrateHostToFormData(host: Host): HostFormData {

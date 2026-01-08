@@ -10,7 +10,7 @@
 	// TanStack Query hooks
 	const servicesQuery = useServicesQuery();
 	const subnetsQuery = useSubnetsQuery();
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 
 	// Helper to check if subnet is a container subnet

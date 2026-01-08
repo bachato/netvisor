@@ -47,7 +47,7 @@ impl EntityMetadataProvider for GroupTypeDiscriminants {
     fn icon(&self) -> Icon {
         match self {
             GroupTypeDiscriminants::RequestPath => Icon::Route,
-            GroupTypeDiscriminants::HubAndSpoke => Icon::Share2,
+            GroupTypeDiscriminants::HubAndSpoke => Icon::Sun,
         }
     }
 }

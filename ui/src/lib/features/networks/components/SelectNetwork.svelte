@@ -13,10 +13,18 @@
 	interface Props {
 		selectedNetworkId?: string | null;
 		disabled?: boolean;
+		disabledReason?: string;
 		onNetworkChange?: (networkId: string) => void;
 	}
 
-	let { selectedNetworkId = $bindable(null), disabled = false, onNetworkChange }: Props = $props();
+	let {
+		selectedNetworkId = $bindable(null),
+		disabled = false,
+		disabledReason = '',
+		onNetworkChange
+	}: Props = $props();
+
+	let helpText = $derived(disabled && disabledReason ? disabledReason : 'Select network');
 
 	const networksQuery = useNetworksQuery();
 	let networksData = $derived(networksQuery.data ?? []);
@@ -58,5 +66,5 @@
 			<option class="select-option" value={network.id}>{network.name}</option>
 		{/each}
 	</select>
-	<p class="text-tertiary mt-2 text-xs">Select network</p>
+	<p class="text-tertiary mt-2 text-xs">{helpText}</p>
 </div>

@@ -831,17 +831,23 @@ impl HostService {
             .update(&mut updated_host, authentication.clone())
             .await?;
 
-        // Sync interfaces
-        self.sync_interfaces(&updated.id, &network_id, interfaces, authentication.clone())
-            .await?;
+        // Sync interfaces only if provided (None means preserve existing)
+        if let Some(interfaces) = interfaces {
+            self.sync_interfaces(&updated.id, &network_id, interfaces, authentication.clone())
+                .await?;
+        }
 
-        // Sync ports
-        self.sync_ports(&updated.id, &network_id, ports, authentication.clone())
-            .await?;
+        // Sync ports only if provided (None means preserve existing)
+        if let Some(ports) = ports {
+            self.sync_ports(&updated.id, &network_id, ports, authentication.clone())
+                .await?;
+        }
 
-        // Sync services
-        self.sync_services(&updated.id, &network_id, services, authentication.clone())
-            .await?;
+        // Sync services only if provided (None means preserve existing)
+        if let Some(services) = services {
+            self.sync_services(&updated.id, &network_id, services, authentication.clone())
+                .await?;
+        }
 
         // Load fresh children after sync
         let (interfaces, ports, services) = self.load_children_for_host(&updated.id).await?;

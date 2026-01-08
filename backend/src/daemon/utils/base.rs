@@ -62,7 +62,20 @@ pub trait DaemonUtils {
     fn get_fd_limit() -> Result<usize, Error>;
 
     fn get_own_ip_address(&self) -> Result<IpAddr, Error> {
-        local_ip().map_err(|e| anyhow!("Failed to get local IP address: {}", e))
+        match local_ip() {
+            Ok(ip) => {
+                tracing::info!(ip = %ip, "Detected local IP address");
+                Ok(ip)
+            }
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "Failed to detect local IP address. This may occur in MACVLAN containers \
+                     or environments without a default route."
+                );
+                Err(anyhow!("Failed to get local IP address: {}", e))
+            }
+        }
     }
 
     fn get_own_mac_address(&self) -> Result<Option<MacAddress>, Error> {
@@ -89,6 +102,24 @@ pub trait DaemonUtils {
         Error,
     > {
         let interfaces = pnet::datalink::interfaces();
+
+        tracing::debug!(
+            interface_count = interfaces.len(),
+            "Enumerating network interfaces"
+        );
+
+        for interface in &interfaces {
+            tracing::debug!(
+                name = %interface.name,
+                index = interface.index,
+                is_up = interface.is_up(),
+                is_loopback = interface.is_loopback(),
+                mac = ?interface.mac,
+                ips = ?interface.ips,
+                flags = interface.flags,
+                "Found interface"
+            );
+        }
 
         // First pass: collect all interface data and potential subnets
         let mut potential_subnets: Vec<(String, IpNetwork)> = Vec::new();
@@ -155,7 +186,15 @@ pub trait DaemonUtils {
         docker_proxy: Result<Option<String>, Error>,
         docker_proxy_ssl_info: Result<Option<(String, String, String)>, Error>,
     ) -> Result<Docker, Error> {
+        use tokio::time::timeout;
+
+        const DOCKER_CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+
+        tracing::debug!("Creating Docker client connection");
+        let start = std::time::Instant::now();
+
         let client = if let Ok(Some(docker_proxy)) = docker_proxy {
+            tracing::debug!(proxy = %docker_proxy, "Using Docker proxy");
             if docker_proxy.contains("https://")
                 && let Ok(Some((key, cert, chain))) = docker_proxy_ssl_info
             {
@@ -177,13 +216,44 @@ pub trait DaemonUtils {
                     .map_err(|e| anyhow::anyhow!("Failed to connect to Docker: {}", e))?
             }
         } else {
+            tracing::debug!("Using Docker local defaults");
             Docker::connect_with_local_defaults()
                 .map_err(|e| anyhow::anyhow!("Failed to connect to Docker: {}", e))?
         };
 
-        client.ping().await?;
-
-        Ok(client)
+        // Add timeout to Docker ping to prevent indefinite blocking
+        tracing::debug!(
+            "Pinging Docker daemon (timeout: {:?})",
+            DOCKER_CONNECT_TIMEOUT
+        );
+        match timeout(DOCKER_CONNECT_TIMEOUT, client.ping()).await {
+            Ok(Ok(_)) => {
+                tracing::info!(
+                    elapsed_ms = start.elapsed().as_millis(),
+                    "Docker client connected successfully"
+                );
+                Ok(client)
+            }
+            Ok(Err(e)) => {
+                tracing::warn!(
+                    elapsed_ms = start.elapsed().as_millis(),
+                    error = %e,
+                    "Docker ping failed"
+                );
+                Err(anyhow::anyhow!("Docker ping failed: {}", e))
+            }
+            Err(_) => {
+                tracing::warn!(
+                    elapsed_ms = start.elapsed().as_millis(),
+                    "Docker ping timed out after {:?}",
+                    DOCKER_CONNECT_TIMEOUT
+                );
+                Err(anyhow::anyhow!(
+                    "Docker connection timed out after {:?}",
+                    DOCKER_CONNECT_TIMEOUT
+                ))
+            }
+        }
     }
 
     async fn get_subnets_from_docker_networks(

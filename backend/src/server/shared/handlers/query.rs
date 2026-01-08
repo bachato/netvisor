@@ -86,6 +86,8 @@ pub trait FilterQueryExtractor: DeserializeOwned + Send + Sync + Default {
 pub struct NetworkFilterQuery {
     /// Filter by network ID
     pub network_id: Option<Uuid>,
+    /// Filter by specific entity IDs (for selective loading)
+    pub ids: Option<Vec<Uuid>>,
     /// Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.
     #[param(minimum = 0, maximum = 1000)]
     pub limit: Option<u32>,
@@ -101,6 +103,12 @@ impl FilterQueryExtractor for NetworkFilterQuery {
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
     ) -> EntityFilter {
+        // Apply IDs filter first if provided
+        let filter = match &self.ids {
+            Some(ids) if !ids.is_empty() => filter.entity_ids(ids),
+            _ => filter,
+        };
+        // Then apply network filter
         match self.network_id {
             Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
             Some(_) => filter.network_ids(&[]), // User doesn't have access - return empty
@@ -172,6 +180,8 @@ pub struct HostChildQuery {
     pub host_id: Option<Uuid>,
     /// Filter by network ID
     pub network_id: Option<Uuid>,
+    /// Filter by specific entity IDs (for selective loading)
+    pub ids: Option<Vec<Uuid>>,
     /// Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.
     #[param(minimum = 0, maximum = 1000)]
     pub limit: Option<u32>,
@@ -187,11 +197,18 @@ impl FilterQueryExtractor for HostChildQuery {
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
     ) -> EntityFilter {
+        // Apply IDs filter first if provided
+        let filter = match &self.ids {
+            Some(ids) if !ids.is_empty() => filter.entity_ids(ids),
+            _ => filter,
+        };
+        // Then apply network filter
         let filter = match self.network_id {
             Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
             Some(_) => filter.network_ids(&[]),
             None => filter.network_ids(user_network_ids),
         };
+        // Then apply host filter
         match self.host_id {
             Some(id) => filter.host_id(&id),
             None => filter,

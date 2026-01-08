@@ -367,20 +367,20 @@ async fn test_port_transfer_between_services_via_host_update() {
         hidden: false,
         tags: vec![],
         expected_updated_at: None,
-        interfaces: vec![InterfaceInput {
+        interfaces: Some(vec![InterfaceInput {
             id: created_iface.id,
             subnet_id: created_iface.base.subnet_id,
             ip_address: created_iface.base.ip_address,
             mac_address: created_iface.base.mac_address,
             name: created_iface.base.name.clone(),
             position: Some(0),
-        }],
-        ports: vec![PortInput {
+        }]),
+        ports: Some(vec![PortInput {
             id: created_port.id,
             number: created_port.base.port_type.number(),
             protocol: created_port.base.port_type.protocol(),
-        }],
-        services: vec![
+        }]),
+        services: Some(vec![
             // Service A: no longer has the binding
             ServiceInput {
                 id: created_svc_a.id,
@@ -405,7 +405,7 @@ async fn test_port_transfer_between_services_via_host_update() {
                 tags: vec![],
                 position: Some(1),
             },
-        ],
+        ]),
     };
 
     // This should succeed - the fix ensures services losing bindings are processed first

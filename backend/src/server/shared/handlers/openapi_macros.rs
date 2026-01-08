@@ -207,8 +207,9 @@ macro_rules! crud_bulk_delete_handler {
 #[macro_export]
 macro_rules! crud_get_all_handler {
     ($entity:ty, $response:ty, $tag:expr, $singular:expr) => {
-        // Type aliases to help utoipa resolve types
+        // Type alias for filter query
         type __GetAllFilterQuery = <$entity as $crate::server::shared::handlers::traits::CrudHandlers>::FilterQuery;
+        // Type alias for response - used in function signature
         type __PaginatedResponse = $crate::server::shared::types::api::PaginatedApiResponse<$response>;
 
         #[utoipa::path(
@@ -219,7 +220,8 @@ macro_rules! crud_get_all_handler {
             summary = concat!("List all ", $tag),
             params(__GetAllFilterQuery),
             responses(
-                (status = 200, description = concat!("List of ", $tag), body = __PaginatedResponse),
+                // Use inline() to force utoipa 5.0 to generate unique schema for each generic instantiation
+                (status = 200, description = concat!("List of ", $tag), body = inline(__PaginatedResponse)),
             ),
              security(("user_api_key" = []), ("session" = []))
         )]

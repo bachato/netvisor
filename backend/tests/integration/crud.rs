@@ -137,9 +137,9 @@ async fn test_host_crud(ctx: &TestContext) -> Result<(), String> {
         hidden: fetched.hidden,
         tags: fetched.tags.clone(),
         expected_updated_at: None, // No optimistic locking for this test
-        interfaces: vec![],        // Keep existing interfaces
-        ports: vec![],             // Keep existing ports
-        services: vec![],          // Keep existing services
+        interfaces: None,          // Keep existing interfaces
+        ports: None,               // Keep existing ports
+        services: None,            // Keep existing services
     };
     let updated: HostResponse = ctx
         .client

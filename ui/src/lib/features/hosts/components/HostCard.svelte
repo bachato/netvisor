@@ -4,8 +4,6 @@
 	import type { Host } from '../types/base';
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import { concepts, entities, serviceDefinitions } from '$lib/shared/stores/metadata';
-	import type { Group } from '$lib/features/groups/types/base';
-	import { useHostsQuery } from '../queries';
 	import { useServicesQuery } from '$lib/features/services/queries';
 	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
@@ -13,16 +11,13 @@
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 
 	// Queries
-	// Use limit: 0 to get all hosts for virtualization lookups
-	const hostsQuery = useHostsQuery({ limit: 0 });
 	const servicesQuery = useServicesQuery();
 	const interfacesQuery = useInterfacesQuery();
 	const daemonsQuery = useDaemonsQuery();
 	const subnetsQuery = useSubnetsQuery();
 
 	// Derived data
-	let hostsData = $derived(hostsQuery.data?.items ?? []);
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
 	let interfacesData = $derived(interfacesQuery.data ?? []);
 	let daemonsData = $derived(daemonsQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
@@ -35,7 +30,6 @@
 
 	let {
 		host,
-		hostGroups = [],
 		onEdit,
 		onDelete,
 		onHide,
@@ -45,7 +39,6 @@
 		onSelectionChange = () => {}
 	}: {
 		host: Host;
-		hostGroups?: Group[];
 		onEdit?: (host: Host) => void;
 		onDelete?: (host: Host) => void;
 		onHide?: (host: Host) => void;
@@ -72,14 +65,6 @@
 
 	// Consolidate all reactive computations into a single derived to prevent cascading updates
 	let cardData = $derived.by(() => {
-		const servicesThatManageVmsIds = hostServices
-			.filter(
-				(sv) =>
-					serviceDefinitions.getItem(sv.service_definition)?.metadata.manages_virtualization ==
-					'vms'
-			)
-			.map((sv) => sv.id);
-
 		const servicesThatManageContainersIds = hostServices
 			.filter(
 				(sv) =>
@@ -87,13 +72,6 @@
 					'containers'
 			)
 			.map((sv) => sv.id);
-
-		const vms = hostsData.filter(
-			(h) =>
-				h.virtualization &&
-				h.virtualization?.type == 'Proxmox' &&
-				servicesThatManageVmsIds.includes(h.virtualization.details.service_id)
-		);
 
 		const containers = hostServices.filter(
 			(s) =>
@@ -120,26 +98,6 @@
 				{
 					label: 'Description',
 					value: host.description
-				},
-				{
-					label: 'Groups',
-					value: hostGroups.map((group: Group) => ({
-						id: group.id,
-						label: group.name,
-						color: entities.getColorHelper('Group').color
-					})),
-					emptyText: 'No groups assigned'
-				},
-				{
-					label: 'VMs',
-					value: vms.map((h) => {
-						return {
-							id: h.id,
-							label: h.name,
-							color: concepts.getColorHelper('Virtualization').color
-						};
-					}),
-					emptyText: 'No VMs assigned'
 				},
 				{
 					label: 'Services',

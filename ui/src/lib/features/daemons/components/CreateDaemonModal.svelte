@@ -142,7 +142,11 @@
 						body="To visualize your network, Scanopy needs to discover what's on it. Install the daemon below—after registration, it'll connect and start mapping automatically."
 					/>
 				{:else if !daemon}
-					<SelectNetwork bind:selectedNetworkId />
+					<SelectNetwork
+						bind:selectedNetworkId
+						disabled={!!key}
+						disabledReason="Network cannot be changed after API key is generated"
+					/>
 				{/if}
 
 				<!-- Use the extracted CreateDaemonForm component -->

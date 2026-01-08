@@ -25,7 +25,11 @@ pub trait EmailProvider: Send + Sync {
     fn build_password_reset_email(&self, url: String, token: String) -> String {
         self.build_email(PASSWORD_RESET_BODY.replace(
             "{reset_url}",
-            &format!("{}/reset-password?token={}", url, token),
+            &format!(
+                "{}/reset-password?token={}",
+                url.trim_end_matches('/'),
+                token
+            ),
         ))
     }
 

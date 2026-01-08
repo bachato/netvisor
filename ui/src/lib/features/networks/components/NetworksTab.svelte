@@ -21,7 +21,6 @@
 		useDeleteNetworkMutation,
 		useBulkDeleteNetworksMutation
 	} from '../queries';
-	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
@@ -32,8 +31,7 @@
 
 	const tagsQuery = useTagsQuery();
 	const networksQuery = useNetworksQuery();
-	// Load related data (limit: 0 to get all hosts for network cards)
-	useHostsQuery({ limit: 0 });
+	// Load related data for network cards
 	useDaemonsQuery();
 	useSubnetsQuery();
 	useGroupsQuery();

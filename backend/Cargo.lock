@@ -299,7 +299,7 @@ dependencies = [
  "miniserde",
  "serde",
  "serde_json",
- "serde_qs 0.15.0",
+ "serde_qs",
  "thiserror 2.0.17",
  "tracing",
 ]
@@ -494,6 +494,7 @@ dependencies = [
  "axum-core",
  "bytes",
  "cookie",
+ "form_urlencoded",
  "futures-util",
  "headers",
  "http",
@@ -503,6 +504,8 @@ dependencies = [
  "pin-project-lite",
  "rustversion",
  "serde_core",
+ "serde_html_form",
+ "serde_path_to_error",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -4794,7 +4797,7 @@ dependencies = [
 
 [[package]]
 name = "scanopy-server"
-version = "0.13.2"
+version = "0.13.3"
 dependencies = [
  "anyhow",
  "argon2",
@@ -4874,7 +4877,6 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "serde_qs 0.13.0",
  "serde_with",
  "serial_test",
  "sha2",
@@ -5072,6 +5074,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_html_form"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2f2d7ff8a2140333718bb329f5c40fc5f0865b84c426183ce14c97d2ab8154f"
+dependencies = [
+ "form_urlencoded",
+ "indexmap 2.12.0",
+ "itoa",
+ "ryu",
+ "serde_core",
+]
+
+[[package]]
 name = "serde_json"
 version = "1.0.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5102,17 +5117,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ce1fc6db65a611022b23a0dec6975d63fb80a302cb3388835ff02c097258d50"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "serde_qs"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd34f36fe4c5ba9654417139a9b3a20d2e1de6012ee678ad14d240c22c78d8d6"
-dependencies = [
- "percent-encoding",
- "serde",
- "thiserror 1.0.69",
 ]
 
 [[package]]

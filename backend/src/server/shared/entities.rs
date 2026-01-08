@@ -151,7 +151,7 @@ impl EntityMetadataProvider for EntityDiscriminants {
             EntityDiscriminants::Binding => Icon::Link,
             EntityDiscriminants::Subnet => Icon::Network,
             EntityDiscriminants::Group => Icon::Group,
-            EntityDiscriminants::Topology => Icon::ChartNetwork,
+            EntityDiscriminants::Topology => Icon::ChartBarStacked,
 
             EntityDiscriminants::EntityTag => Icon::Tag,
             EntityDiscriminants::GroupBinding => Icon::Link,

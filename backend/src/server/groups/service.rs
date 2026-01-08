@@ -21,7 +21,7 @@ use crate::server::{
         storage::{
             filter::EntityFilter,
             generic::GenericPostgresStorage,
-            traits::{StorableEntity, Storage},
+            traits::{PaginatedResult, StorableEntity, Storage},
         },
     },
 };
@@ -100,6 +100,33 @@ impl CrudService<Group> for GroupService {
             }
             None => Ok(None),
         }
+    }
+
+    async fn get_paginated(
+        &self,
+        filter: EntityFilter,
+    ) -> Result<PaginatedResult<Group>, anyhow::Error> {
+        let mut paginated = self
+            .storage()
+            .get_paginated(filter, "created_at ASC")
+            .await?;
+
+        if !paginated.items.is_empty() {
+            let group_ids: Vec<Uuid> = paginated.items.iter().map(|g| g.id).collect();
+            let bindings_map = self.binding_storage.get_for_groups(&group_ids).await?;
+
+            self.entity_tag_service
+                .hydrate_tags_batch(&mut paginated.items)
+                .await?;
+
+            for group in &mut paginated.items {
+                if let Some(binding_ids) = bindings_map.get(&group.id) {
+                    group.base.binding_ids = binding_ids.clone();
+                }
+            }
+        }
+
+        Ok(paginated)
     }
 
     async fn create(

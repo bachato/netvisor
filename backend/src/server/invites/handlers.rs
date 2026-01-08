@@ -154,7 +154,7 @@ async fn create_invite(
     {
         let url = format!(
             "{}/api/invites/{}/accept",
-            invite.base.url.clone(),
+            invite.base.url.trim_end_matches('/'),
             invite.id
         );
         email_service.send_invite(send_to, from_addr, url).await?;

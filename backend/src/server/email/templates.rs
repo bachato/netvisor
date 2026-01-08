@@ -15,7 +15,7 @@ pub const EMAIL_HEADER: &str = r#"<!DOCTYPE html>
                     <!-- Header with Logo -->
                     <tr>
                         <td align="center" style="padding: 40px 40px 30px 40px;">
-                            <img src="https://cdn.jsdelivr.net/gh/scanopy/website@main/static/scanopy-logo.png" alt="Scanopy" style="width: 80px; height: 80px; display: block;">
+                            <img src="https://cdn.jsdelivr.net/gh/scanopy/scanopy@main/media/logo.png" alt="Scanopy" style="width: 80px; height: 80px; display: block;">
                         </td>
                     </tr>
 "#;

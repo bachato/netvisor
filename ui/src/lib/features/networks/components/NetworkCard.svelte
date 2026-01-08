@@ -3,7 +3,6 @@
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import { entities, permissions } from '$lib/shared/stores/metadata';
 	import type { Network } from '../types';
-	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
@@ -32,19 +31,15 @@
 	const currentUserQuery = useCurrentUserQuery();
 	let currentUser = $derived(currentUserQuery.data);
 
-	// Use limit: 0 to get all hosts for network filtering
-	const hostsQuery = useHostsQuery({ limit: 0 });
 	const daemonsQuery = useDaemonsQuery();
 	const subnetsQuery = useSubnetsQuery();
 	const groupsQuery = useGroupsQuery();
 
 	// Derived data from queries
-	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let daemonsData = $derived(daemonsQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 	let groupsData = $derived(groupsQuery.data ?? []);
 
-	let networkHosts = $derived(hostsData.filter((h) => h.network_id == network.id));
 	let networkDaemons = $derived(daemonsData.filter((d) => d.network_id == network.id));
 	let networkSubnets = $derived(subnetsData.filter((s) => s.network_id == network.id));
 	let networkGroups = $derived(groupsData.filter((g) => g.network_id == network.id));
@@ -66,16 +61,6 @@
 						id: d.id,
 						label: d.name,
 						color: entities.getColorHelper('Daemon').color
-					};
-				})
-			},
-			{
-				label: 'Hosts',
-				value: networkHosts.map((h) => {
-					return {
-						id: h.id,
-						label: h.name,
-						color: entities.getColorHelper('Host').color
 					};
 				})
 			},

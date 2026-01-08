@@ -4,7 +4,12 @@
  * Services are populated by the hosts query but also have direct CRUD operations.
  */
 
-import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
+import {
+	createQuery,
+	createMutation,
+	useQueryClient,
+	keepPreviousData
+} from '@tanstack/svelte-query';
 import { queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Service } from './types/base';
@@ -15,22 +20,99 @@ import { v4 as uuidv4 } from 'uuid';
 export type { Service };
 
 /**
+ * Query parameters for services query
+ */
+export interface ServicesQueryParams {
+	limit?: number;
+	offset?: number;
+	network_id?: string;
+	host_id?: string;
+}
+
+/**
+ * Pagination metadata from API response
+ */
+export interface PaginationMeta {
+	total_count: number;
+	limit: number;
+	offset: number;
+	has_more: boolean;
+}
+
+/**
+ * Result of a paginated query
+ */
+export interface PaginatedResult<T> {
+	items: T[];
+	pagination: PaginationMeta | null;
+}
+
+/**
  * Query hook for accessing the services cache
  * This cache is primarily populated by useHostsQuery
+ *
+ * @param paramsOrGetter - Query parameters or getter function returning parameters.
+ *                         Use getter function for reactive options (e.g., when offset changes).
  */
-export function useServicesQuery() {
-	return createQuery(() => ({
-		queryKey: queryKeys.services.all,
-		queryFn: async () => {
-			const { data } = await apiClient.GET('/api/v1/services', {
-				params: { query: { limit: 0 } }
-			});
-			if (!data?.success || !data.data) {
-				throw new Error(data?.error || 'Failed to fetch services');
-			}
-			return data.data;
-		}
-	}));
+export function useServicesQuery(
+	paramsOrGetter: ServicesQueryParams | (() => ServicesQueryParams) = {}
+) {
+	return createQuery(() => {
+		const params = typeof paramsOrGetter === 'function' ? paramsOrGetter() : paramsOrGetter;
+		const { limit, offset, network_id, host_id } = params;
+
+		return {
+			queryKey: [...queryKeys.services.all, { limit, offset, network_id, host_id }],
+			queryFn: async (): Promise<PaginatedResult<Service>> => {
+				const { data } = await apiClient.GET('/api/v1/services', {
+					params: { query: { limit, offset, network_id, host_id } }
+				});
+				if (!data?.success || !data.data) {
+					throw new Error(data?.error || 'Failed to fetch services');
+				}
+				return {
+					items: data.data,
+					pagination: data.meta?.pagination ?? null
+				};
+			},
+			// Keep showing previous page data while fetching next page
+			placeholderData: keepPreviousData
+		};
+	});
+}
+
+/**
+ * Query hook for fetching specific services by IDs (for selective loading)
+ * Used for lookups where only a subset of services is needed (e.g., virtualization lookups)
+ *
+ * @param idsGetter - Getter function returning array of service IDs to fetch
+ */
+export function useServicesByIds(idsGetter: () => string[]) {
+	return createQuery(() => {
+		const ids = idsGetter();
+
+		return {
+			queryKey: [...queryKeys.services.all, 'byIds', ids],
+			queryFn: async (): Promise<Service[]> => {
+				if (ids.length === 0) return [];
+
+				const { data } = await apiClient.GET('/api/v1/services', {
+					params: {
+						query: {
+							ids: ids,
+							limit: 0 // No pagination when fetching by IDs
+						}
+					}
+				});
+				if (!data?.success || !data.data) {
+					throw new Error(data?.error || 'Failed to fetch services');
+				}
+
+				return data.data;
+			},
+			enabled: ids.length > 0
+		};
+	});
 }
 
 /**

@@ -360,7 +360,53 @@ export function useCancelDiscoveryMutation() {
 // Track last known progress per session to detect changes
 const lastProgress = new Map<string, number>();
 
+// Throttle configuration for query invalidations
+const INVALIDATION_THROTTLE_MS = 1000; // At most 1 invalidation per second
+
 class DiscoverySSEManager extends BaseSSEManager<DiscoveryUpdatePayload> {
+	private invalidationPending = false;
+	private invalidationTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	/**
+	 * Throttled query invalidation - batches multiple invalidation requests
+	 * and only executes at most once per INVALIDATION_THROTTLE_MS
+	 */
+	private scheduleInvalidation() {
+		if (this.invalidationPending) {
+			// Already have a pending invalidation, skip
+			return;
+		}
+
+		this.invalidationPending = true;
+		this.invalidationTimeout = setTimeout(() => {
+			this.invalidationPending = false;
+			this.invalidationTimeout = null;
+
+			// Invalidate all relevant queries
+			queryClient.invalidateQueries({ queryKey: queryKeys.hosts.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.services.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.subnets.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.daemons.all });
+		}, INVALIDATION_THROTTLE_MS);
+	}
+
+	/**
+	 * Clean up resources on disconnect
+	 */
+	override disconnect() {
+		// Clear any pending invalidation
+		if (this.invalidationTimeout) {
+			clearTimeout(this.invalidationTimeout);
+			this.invalidationTimeout = null;
+			this.invalidationPending = false;
+		}
+
+		// Clear progress tracking for all sessions
+		lastProgress.clear();
+
+		super.disconnect();
+	}
+
 	protected createConfig(): SSEConfig<DiscoveryUpdatePayload> {
 		return {
 			url: '/api/v1/discovery/stream',
@@ -370,18 +416,15 @@ class DiscoverySSEManager extends BaseSSEManager<DiscoveryUpdatePayload> {
 				const current = update.progress || 0;
 
 				if (current > last) {
-					// Invalidate queries to refresh data
-					queryClient.invalidateQueries({ queryKey: queryKeys.hosts.all });
-					queryClient.invalidateQueries({ queryKey: queryKeys.services.all });
-					queryClient.invalidateQueries({ queryKey: queryKeys.subnets.all });
-					queryClient.invalidateQueries({ queryKey: queryKeys.daemons.all });
+					// Schedule throttled invalidation instead of immediate
+					this.scheduleInvalidation();
 					lastProgress.set(update.session_id, current);
 				}
 
 				// Handle terminal phases
 				if (update.phase === 'Complete') {
 					pushSuccess(`${update.discovery_type.type} discovery completed`);
-					// Final refresh on completion
+					// Final refresh on completion - do this immediately, not throttled
 					await Promise.all([
 						queryClient.invalidateQueries({ queryKey: queryKeys.hosts.all }),
 						queryClient.invalidateQueries({ queryKey: queryKeys.services.all }),

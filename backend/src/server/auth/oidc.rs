@@ -47,7 +47,11 @@ impl OidcService {
 
         for config in configs {
             // Build provider-specific callback URL
-            let redirect_url = format!("{}/api/auth/oidc/{}/callback", public_url, config.slug);
+            let redirect_url = format!(
+                "{}/api/auth/oidc/{}/callback",
+                public_url.trim_end_matches('/'),
+                config.slug
+            );
 
             let provider = OidcProvider::new(
                 config.slug.clone(),

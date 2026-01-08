@@ -26,19 +26,32 @@
 		useBulkDeleteHostsMutation,
 		useConsolidateHostsMutation
 	} from '../queries';
-	import { useGroupsQuery } from '$lib/features/groups/queries';
-	import { useServicesQuery } from '$lib/features/services/queries';
+	import { useServicesByIds } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 
+	// Pagination state
+	const PAGE_SIZE = 20;
+	let currentPage = $state(1);
+
 	// Queries
 	const tagsQuery = useTagsQuery();
-	// Load all hosts (client-side pagination handled by DataControls)
-	const hostsQuery = useHostsQuery({ limit: 0 });
-	const groupsQuery = useGroupsQuery();
-	const servicesQuery = useServicesQuery();
+	// Paginated hosts with server-side pagination
+	const hostsQuery = useHostsQuery(() => ({
+		limit: PAGE_SIZE,
+		offset: (currentPage - 1) * PAGE_SIZE
+	}));
 	const networksQuery = useNetworksQuery();
 	useDaemonsQuery();
+
+	// Selective service lookup - only fetches services needed for virtualization display
+	// Extract service IDs from visible hosts for "Virtualized By" field
+	const servicesQuery = useServicesByIds(() => {
+		return (hostsQuery.data?.items ?? [])
+			.filter((h) => h.virtualization?.details.service_id)
+			.map((h) => h.virtualization!.details.service_id)
+			.filter((id, idx, arr) => arr.indexOf(id) === idx);
+	});
 
 	// Mutations
 	const createHostMutation = useCreateHostMutation();
@@ -50,10 +63,16 @@
 	// Derived data
 	let tagsData = $derived(tagsQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
-	let groupsData = $derived(groupsQuery.data ?? []);
+	let hostsPagination = $derived(hostsQuery.data?.pagination ?? null);
 	let servicesData = $derived(servicesQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
-	let isLoading = $derived(hostsQuery.isPending);
+	// Only show full loading on initial load (no data yet)
+	let isInitialLoading = $derived(hostsQuery.isPending && !hostsQuery.data);
+
+	// Page change handler for server-side pagination
+	function handlePageChange(page: number) {
+		currentPage = page;
+	}
 
 	let showHostEditor = $state(false);
 	let editingHost = $state<Host | null>(null);
@@ -148,24 +167,6 @@
 			}
 		}
 	];
-
-	let hostGroups = $derived(
-		new Map(
-			hostsData.map((host) => {
-				const foundGroups = groupsData.filter((g) => {
-					return (g.binding_ids ?? []).some((b) => {
-						// Use servicesData instead of getServiceForBinding to maintain reactivity
-						let service = servicesData.find((s) => s.bindings.map((sb) => sb.id).includes(b));
-						// Check if the service belongs to this host
-						if (service) return service.host_id === host.id;
-						return false;
-					});
-				});
-
-				return [host.id, foundGroups];
-			})
-		)
-	);
 
 	function handleCreateHost() {
 		editingHost = null;
@@ -271,10 +272,10 @@
 		</svelte:fragment>
 	</TabHeader>
 
-	<!-- Loading state -->
-	{#if isLoading}
+	<!-- Loading state (only on initial load) -->
+	{#if isInitialLoading}
 		<Loading />
-	{:else if hostsData.length === 0}
+	{:else if hostsData.length === 0 && !hostsPagination}
 		<!-- Empty state -->
 		<EmptyState
 			title="No hosts configured yet"
@@ -291,6 +292,8 @@
 			entityType={isReadOnly ? undefined : 'Host'}
 			getItemTags={getHostTags}
 			getItemId={(item) => item.id}
+			serverPagination={hostsPagination}
+			onPageChange={handlePageChange}
 		>
 			{#snippet children(
 				item: Host,
@@ -300,7 +303,6 @@
 			)}
 				<HostCard
 					host={item}
-					hostGroups={hostGroups.get(item.id)}
 					{viewMode}
 					selected={isSelected}
 					{onSelectionChange}

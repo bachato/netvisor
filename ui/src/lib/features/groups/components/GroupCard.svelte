@@ -12,7 +12,8 @@
 	const servicesQuery = useServicesQuery();
 
 	// Derived data
-	let servicesData = $derived(servicesQuery.data ?? []);
+	let servicesData = $derived(servicesQuery.data?.items ?? []);
+	let isServicesLoading = $derived(servicesQuery.isLoading);
 
 	let {
 		group,
@@ -31,17 +32,21 @@
 	} = $props();
 
 	// Get services for this group via binding_ids
-	let groupServices = $derived(
-		(() => {
-			if (group.group_type === 'RequestPath' || group.group_type === 'HubAndSpoke') {
-				const serviceMap = new Map(servicesData.flatMap((s) => s.bindings.map((b) => [b.id, s])));
-				return group.binding_ids
-					.map((bindingId) => serviceMap.get(bindingId))
-					.filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined);
-			}
+	// Using $derived.by() for proper reactivity with complex computation
+	let groupServices = $derived.by(() => {
+		if (group.group_type !== 'RequestPath' && group.group_type !== 'HubAndSpoke') {
 			return [];
-		})()
-	);
+		}
+		if (servicesData.length === 0 || group.binding_ids.length === 0) {
+			return [];
+		}
+		// Build a map of binding.id -> service for lookup
+		const serviceMap = new Map(servicesData.flatMap((s) => s.bindings.map((b) => [b.id, s])));
+
+		return group.binding_ids
+			.map((bindingId) => serviceMap.get(bindingId))
+			.filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined);
+	});
 
 	let groupServiceLabels = $derived(
 		groupServices.map((s) => {
@@ -105,7 +110,7 @@
 						color: entities.getColorString('Service')
 					};
 				}),
-				emptyText: 'No services in group'
+				emptyText: isServicesLoading ? 'Loading...' : 'No services in group'
 			},
 			{ label: 'Tags', snippet: tagsSnippet }
 		],

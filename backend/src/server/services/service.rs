@@ -1,6 +1,6 @@
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::services::entity_tags::EntityTagService;
-use crate::server::shared::storage::traits::StorableEntity;
+use crate::server::shared::storage::traits::{PaginatedResult, StorableEntity};
 use crate::server::{
     auth::middleware::auth::AuthenticatedEntity,
     bindings::{
@@ -111,6 +111,31 @@ impl CrudService<Service> for ServiceService {
             }
             None => Ok(None),
         }
+    }
+
+    async fn get_paginated(
+        &self,
+        filter: EntityFilter,
+    ) -> Result<PaginatedResult<Service>, anyhow::Error> {
+        let mut paginated = self
+            .storage()
+            .get_paginated(filter, "created_at ASC")
+            .await?;
+
+        if !paginated.items.is_empty() {
+            let service_ids: Vec<Uuid> = paginated.items.iter().map(|s| s.id).collect();
+            let bindings_map = self.binding_service.get_for_parents(&service_ids).await?;
+
+            for service in &mut paginated.items {
+                if let Some(bindings) = bindings_map.get(&service.id) {
+                    service.base.bindings = bindings.clone();
+                }
+            }
+
+            self.bulk_hydrate_tags(&mut paginated.items).await?;
+        }
+
+        Ok(paginated)
     }
 
     async fn create(

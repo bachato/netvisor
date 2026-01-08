@@ -1,3 +1,4 @@
+use crate::daemon::runtime::service::LOG_TARGET;
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::daemons::r#impl::base::DaemonMode;
 use crate::server::discovery::r#impl::types::RunType;
@@ -367,9 +368,10 @@ impl DiscoveryService {
         scheduler.write().await.start().await?;
 
         if failed_count == 0 {
-            tracing::info!("Discovery scheduler started with {} jobs", count);
+            tracing::info!(target: LOG_TARGET, "Discovery scheduler started with {} jobs", count);
         } else {
             tracing::warn!(
+                target: LOG_TARGET,
                 "Discovery scheduler started with {}/{} jobs. {} failed and were disabled.",
                 count - failed_count,
                 count,

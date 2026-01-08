@@ -24,7 +24,7 @@ use tower_http::{
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 /// Log target for consistent server logging output
-const LOG_TARGET: &str = "server";
+pub const LOG_TARGET: &str = "server";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -260,7 +260,6 @@ async fn main() -> anyhow::Result<()> {
 
     // Start discovery scheduler
     discovery_service.start_scheduler().await?;
-    tracing::info!(target: LOG_TARGET, "  Discovery scheduler started");
 
     // Initialize billing if configured
     if let Some(billing_service) = billing_service {

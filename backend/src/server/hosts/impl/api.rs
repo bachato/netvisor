@@ -327,7 +327,7 @@ pub struct CreateHostRequest {
 
 /// Request type for updating a host with its children.
 /// Uses the same input types as CreateHostRequest.
-/// Server will sync children (create new, update existing, delete removed).
+/// Server will sync children (create new, update existing, delete removed) only if provided.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct UpdateHostRequest {
     pub id: Uuid,
@@ -346,19 +346,22 @@ pub struct UpdateHostRequest {
     pub expected_updated_at: Option<DateTime<Utc>>,
 
     /// Interfaces to sync with this host.
-    /// Server will create/update/delete to match this list.
-    #[serde(default)]
-    pub interfaces: Vec<InterfaceInput>,
+    /// If Some, server will create/update/delete to match this list.
+    /// If None, existing interfaces are preserved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interfaces: Option<Vec<InterfaceInput>>,
 
     /// Ports to sync with this host.
-    /// Server will create/update/delete to match this list.
-    #[serde(default)]
-    pub ports: Vec<PortInput>,
+    /// If Some, server will create/update/delete to match this list.
+    /// If None, existing ports are preserved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ports: Option<Vec<PortInput>>,
 
     /// Services to sync with this host.
-    /// Server will create/update/delete to match this list.
-    #[serde(default)]
-    pub services: Vec<ServiceInput>,
+    /// If Some, server will create/update/delete to match this list.
+    /// If None, existing services are preserved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub services: Option<Vec<ServiceInput>>,
 }
 
 // =============================================================================

@@ -1,20 +1,10 @@
 <script lang="ts">
 	import { Edit, Trash2 } from 'lucide-svelte';
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
-	import { entities, subnetTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { subnetTypes } from '$lib/shared/stores/metadata';
 	import { isContainerSubnet } from '../queries';
 	import type { Subnet } from '../types/base';
-	import { useServicesQuery } from '$lib/features/services/queries';
-	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
-
-	// Queries
-	const servicesQuery = useServicesQuery();
-	const interfacesQuery = useInterfacesQuery();
-
-	// Derived data
-	let servicesData = $derived(servicesQuery.data ?? []);
-	let interfacesData = $derived(interfacesQuery.data ?? []);
 
 	let {
 		subnet,
@@ -31,34 +21,6 @@
 		selected: boolean;
 		onSelectionChange?: (selected: boolean) => void;
 	} = $props();
-
-	// Get services for this subnet via interfaces
-	let subnetServices = $derived(
-		(() => {
-			// Get all interfaces on this subnet
-			const subnetInterfaces = interfacesData.filter((i) => i.subnet_id === subnet.id);
-			const interfaceIds = new Set(subnetInterfaces.map((i) => i.id));
-			const hostIds = new Set(subnetInterfaces.map((i) => i.host_id));
-
-			return servicesData.filter((s) =>
-				s.bindings.some(
-					(b) =>
-						(b.interface_id && interfaceIds.has(b.interface_id)) ||
-						(hostIds.has(s.host_id) && b.interface_id == null)
-				)
-			);
-		})()
-	);
-
-	let serviceLabels = $derived(
-		subnetServices.map((s) => {
-			const def = serviceDefinitions.getItem(s.service_definition);
-			return {
-				id: s.id,
-				label: def ? `${s.name} (${def.name})` : s.name
-			};
-		})
-	);
 
 	// Build card data
 	let cardData = $derived({
@@ -81,15 +43,6 @@
 					}
 				],
 				emptyText: 'No type specified'
-			},
-			{
-				label: 'Services',
-				value: serviceLabels.map(({ id, label }) => ({
-					id,
-					label,
-					color: entities.getColorString('Service')
-				})),
-				emptyText: 'No services'
 			},
 			{ label: 'Tags', snippet: tagsSnippet }
 		],
