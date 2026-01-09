@@ -1,6 +1,7 @@
 > **First:** Read `CLAUDE.md` (project instructions) — you are a **worker**.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Task: Fix HTTP 413 Error When Rebuilding Topology (Issue #451)
 
 ## Objective
@@ -72,6 +73,33 @@ Fix the HTTP 413 (Payload Too Large) error that occurs when rebuilding topology.
 - Check if there's a way to make this operation more efficient
 =======
 # Task: Fix Service Binding Text Search in Groups (Issue #452)
+=======
+# Task: Fix Host Icon from Best Service (Issue #449)
+
+## Objective
+
+Fix the regression where host icons no longer display the icon from the "best" or "top" service.
+
+## Issue Summary
+
+**GitHub Issue:** #449
+
+**Reported Behavior:**
+- Navigate to Hosts section
+- Observe host icons
+- Question marks appear instead of service icons
+
+**Expected Behavior:**
+- Icons should display for the top-performing/best service
+- Matches behavior from v0.12.x
+
+**Additional Context:**
+- In v0.12.x, a dropdown existed on host details page to select icon display strategy
+- This configuration option is no longer available in current version
+- Reporter unsure if removal was intentional
+
+**Environment:** v0.13.3, regression since v0.13.2
+>>>>>>> fix/449-host-icon
 
 ## Objective
 
@@ -126,6 +154,7 @@ Fix the broken text search functionality when selecting service bindings while c
 ## Work Summary
 
 ### Root Cause
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 The `rebuild` and `refresh` endpoints accepted `Json<Topology>` containing the **full topology** (hosts, interfaces, services, subnets, groups, ports, bindings, nodes, edges, etc.) but only actually used a few fields. Combined with Axum's default 2MB body limit, large networks would exceed this limit and trigger HTTP 413 errors.
@@ -198,12 +227,59 @@ Additionally, the search was only checking `label` and `description` fields, but
    ```
 
 **File: `ui/src/lib/features/groups/components/GroupEditModal/GroupEditModal.svelte`**
+=======
+
+The issue was a race condition combined with incorrect fallback logic in `HostCard.svelte`.
+
+**The problematic code:**
+```javascript
+Icon:
+    serviceDefinitions.getIconComponent(hostServices[0]?.service_definition) ||
+    entities.getIconComponent('Host'),
+```
+
+**What happened:**
+1. On initial render, services haven't loaded yet → `hostServices` is `[]`
+2. `hostServices[0]?.service_definition` evaluates to `undefined`
+3. `getIconComponent(undefined)` returns `HelpCircle` (question mark icon)
+4. `HelpCircle` is truthy, so the `|| entities.getIconComponent('Host')` fallback never triggers
+5. When services load, the derived block should re-run, but the initial `HelpCircle` was being shown inconsistently
+
+The inconsistency occurred because:
+- Sometimes TanStack Query had cached data → services available immediately → correct icon
+- Sometimes cache miss → initial render shows `HelpCircle` → re-render timing issues
+
+### Fix
+
+Changed the fallback logic to explicitly check if services exist:
+
+```javascript
+Icon:
+    hostServices.length > 0
+        ? serviceDefinitions.getIconComponent(hostServices[0].service_definition)
+        : entities.getIconComponent('Host'),
+```
+
+This ensures:
+- If no services (yet or ever) → Host icon is shown (not HelpCircle)
+- If services exist → first service's icon is shown
+
+### Files Changed
+
+1. **`ui/src/lib/features/hosts/components/HostCard.svelte`** (lines 94-97)
+   - Changed from `||` fallback to explicit ternary with `hostServices.length > 0` check
+
+### Regarding Icon Strategy Dropdown
+
+No evidence of an "icon strategy" dropdown exists in the current codebase. The implementation uses the first service (sorted by position) to determine the host icon. This appears to be the intended behavior.
+>>>>>>> fix/449-host-icon
 
 4. **Line 132**: Added filter to exclude "Unclaimed Open Ports" services from binding dropdown:
    ```javascript
    .filter((s) => s.service_definition !== 'Unclaimed Open Ports')
    ```
 
+<<<<<<< HEAD
 ### Acceptance Criteria Status
 
 - [x] Text search in binding selector filters results correctly
@@ -213,3 +289,7 @@ Additionally, the search was only checking `label` and `description` fields, but
 - [x] Empty search shows all available bindings (early return on empty filterText)
 - [x] `make format && make lint` passes
 >>>>>>> fix/452-group-binding-search
+=======
+- `npm run check` (svelte-check): 0 errors, 0 warnings
+- `npm run format && npm run lint`: Passes
+>>>>>>> fix/449-host-icon
