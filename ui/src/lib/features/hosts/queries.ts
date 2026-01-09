@@ -30,6 +30,7 @@ import type {
 	AllInterfaces
 } from './types/base';
 import type { Service } from '$lib/features/services/types/base';
+import type { components } from '$lib/api/schema';
 
 // Re-export types for convenience
 export type { Host, HostResponse, HostFormData, Interface, Port };
@@ -137,11 +138,17 @@ function toCreateHostRequest(formData: HostFormData): CreateHostRequest {
 }
 
 /**
- * Pagination options for list queries
+ * Query options for host list queries including pagination and ordering
  */
-export interface PaginationOptions {
+export interface HostQueryOptions {
 	limit?: number;
 	offset?: number;
+	/** Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+	group_by?: components['schemas']['HostOrderField'];
+	/** Secondary ordering field (sorting within groups or standalone sort). */
+	order_by?: components['schemas']['HostOrderField'];
+	/** Direction for order_by field. */
+	order_direction?: components['schemas']['OrderDirection'];
 }
 
 /**
@@ -163,15 +170,15 @@ export interface PaginatedResult<T> {
 }
 
 /**
- * Query hook for fetching hosts with optional pagination
+ * Query hook for fetching hosts with optional pagination and ordering
  * Populates interfaces, ports, and services caches from the response
  *
- * @param optionsOrGetter - Pagination options or getter function returning options.
- *                          Use getter function for reactive options (e.g., when offset changes).
+ * @param optionsOrGetter - Query options or getter function returning options.
+ *                          Use getter function for reactive options (e.g., when offset or ordering changes).
  *                          Omit or pass {} for default (limit=50).
  *                          Pass { limit: 0 } for unlimited (all hosts).
  */
-export function useHostsQuery(optionsOrGetter: PaginationOptions | (() => PaginationOptions) = {}) {
+export function useHostsQuery(optionsOrGetter: HostQueryOptions | (() => HostQueryOptions) = {}) {
 	const queryClient = useQueryClient();
 
 	return createQuery(() => {
@@ -184,7 +191,10 @@ export function useHostsQuery(optionsOrGetter: PaginationOptions | (() => Pagina
 					params: {
 						query: {
 							limit: options.limit,
-							offset: options.offset
+							offset: options.offset,
+							group_by: options.group_by,
+							order_by: options.order_by,
+							order_direction: options.order_direction
 						}
 					}
 				});

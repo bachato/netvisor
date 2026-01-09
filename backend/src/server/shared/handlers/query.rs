@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 use uuid::Uuid;
 
@@ -55,6 +55,29 @@ impl PaginationParams {
             filter
         };
         filter.offset(self.effective_offset())
+    }
+}
+
+// ============================================================================
+// Order Direction
+// ============================================================================
+
+/// Direction for ORDER BY clauses.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, utoipa::ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderDirection {
+    #[default]
+    Asc,
+    Desc,
+}
+
+impl OrderDirection {
+    /// Convert to SQL ORDER BY direction keyword.
+    pub fn to_sql(&self) -> &'static str {
+        match self {
+            Self::Asc => "ASC",
+            Self::Desc => "DESC",
+        }
     }
 }
 

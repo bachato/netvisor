@@ -285,12 +285,14 @@ impl HostService {
         Ok(responses)
     }
 
-    /// Get paginated hosts with all children hydrated for API response
+    /// Get paginated hosts with all children hydrated for API response.
+    /// Supports custom ordering via the `order_by` parameter.
     pub async fn get_all_host_responses_paginated(
         &self,
         filter: EntityFilter,
+        order_by: &str,
     ) -> Result<PaginatedResult<HostResponse>> {
-        let result = self.get_paginated(filter).await?;
+        let result = self.storage().get_paginated(filter, order_by).await?;
 
         if result.items.is_empty() {
             return Ok(PaginatedResult {

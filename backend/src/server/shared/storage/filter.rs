@@ -9,13 +9,14 @@ use crate::server::{
     users::r#impl::permissions::UserOrgPermissions,
 };
 
-/// Builder pattern for common WHERE clauses with optional pagination.
+/// Builder pattern for common WHERE clauses with optional pagination and JOINs.
 #[derive(Clone)]
 pub struct EntityFilter {
     conditions: Vec<String>,
     values: Vec<SqlValue>,
     limit_value: Option<u32>,
     offset_value: Option<u32>,
+    joins: Vec<String>,
 }
 
 impl EntityFilter {
@@ -25,6 +26,7 @@ impl EntityFilter {
             values: Vec::new(),
             limit_value: None,
             offset_value: None,
+            joins: Vec::new(),
         }
     }
 
@@ -78,6 +80,23 @@ impl EntityFilter {
             parts.push(format!("OFFSET {}", offset));
         }
         parts.join(" ")
+    }
+
+    /// Add a JOIN clause to the filter.
+    /// Example: `filter.join("LEFT JOIN services AS s ON hosts.service_id = s.id")`
+    pub fn join(mut self, join_clause: &str) -> Self {
+        self.joins.push(join_clause.to_string());
+        self
+    }
+
+    /// Generate the combined JOIN clause string.
+    pub fn to_join_clause(&self) -> String {
+        self.joins.join(" ")
+    }
+
+    /// Returns true if this filter has any JOIN clauses.
+    pub fn has_joins(&self) -> bool {
+        !self.joins.is_empty()
     }
 
     pub fn entity_id(mut self, id: &Uuid) -> Self {

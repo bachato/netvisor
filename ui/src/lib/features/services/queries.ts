@@ -15,18 +15,25 @@ import { apiClient } from '$lib/api/client';
 import type { Service } from './types/base';
 import { utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { v4 as uuidv4 } from 'uuid';
+import type { components } from '$lib/api/schema';
 
 // Re-export type for convenience
 export type { Service };
 
 /**
- * Query parameters for services query
+ * Query parameters for services query including pagination and ordering
  */
 export interface ServicesQueryParams {
 	limit?: number;
 	offset?: number;
 	network_id?: string;
 	host_id?: string;
+	/** Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+	group_by?: components['schemas']['ServiceOrderField'];
+	/** Secondary ordering field (sorting within groups or standalone sort). */
+	order_by?: components['schemas']['ServiceOrderField'];
+	/** Direction for order_by field. */
+	order_direction?: components['schemas']['OrderDirection'];
 }
 
 /**
@@ -48,24 +55,29 @@ export interface PaginatedResult<T> {
 }
 
 /**
- * Query hook for accessing the services cache
+ * Query hook for accessing the services cache with pagination and ordering
  * This cache is primarily populated by useHostsQuery
  *
  * @param paramsOrGetter - Query parameters or getter function returning parameters.
- *                         Use getter function for reactive options (e.g., when offset changes).
+ *                         Use getter function for reactive options (e.g., when offset or ordering changes).
  */
 export function useServicesQuery(
 	paramsOrGetter: ServicesQueryParams | (() => ServicesQueryParams) = {}
 ) {
 	return createQuery(() => {
 		const params = typeof paramsOrGetter === 'function' ? paramsOrGetter() : paramsOrGetter;
-		const { limit, offset, network_id, host_id } = params;
+		const { limit, offset, network_id, host_id, group_by, order_by, order_direction } = params;
 
 		return {
-			queryKey: [...queryKeys.services.all, { limit, offset, network_id, host_id }],
+			queryKey: [
+				...queryKeys.services.all,
+				{ limit, offset, network_id, host_id, group_by, order_by, order_direction }
+			],
 			queryFn: async (): Promise<PaginatedResult<Service>> => {
 				const { data } = await apiClient.GET('/api/v1/services', {
-					params: { query: { limit, offset, network_id, host_id } }
+					params: {
+						query: { limit, offset, network_id, host_id, group_by, order_by, order_direction }
+					}
 				});
 				if (!data?.success || !data.data) {
 					throw new Error(data?.error || 'Failed to fetch services');

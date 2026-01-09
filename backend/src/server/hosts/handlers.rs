@@ -2,7 +2,9 @@ use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::extractors::Query;
-use crate::server::shared::handlers::query::FilterQueryExtractor;
+use crate::server::shared::handlers::query::{
+    FilterQueryExtractor, OrderDirection, PaginationParams,
+};
 use crate::server::shared::handlers::traits::{
     BulkDeleteResponse, bulk_delete_handler, delete_handler,
 };
@@ -21,10 +23,147 @@ use crate::server::{
 };
 use axum::extract::{Path, State};
 use axum::response::Json;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::IntoParams;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 use validator::Validate;
+
+// ============================================================================
+// Host Ordering
+// ============================================================================
+
+/// Fields that hosts can be ordered/grouped by.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum HostOrderField {
+    #[default]
+    CreatedAt,
+    Name,
+    Hostname,
+    UpdatedAt,
+    /// Sort by virtualizing service name. Requires JOIN to services table.
+    VirtualizedBy,
+    NetworkId,
+}
+
+impl HostOrderField {
+    /// Returns the SQL ORDER BY expression for this field.
+    pub fn to_sql(&self) -> &'static str {
+        match self {
+            Self::CreatedAt => "hosts.created_at",
+            Self::Name => "hosts.name",
+            Self::Hostname => "hosts.hostname",
+            Self::UpdatedAt => "hosts.updated_at",
+            Self::NetworkId => "hosts.network_id",
+            Self::VirtualizedBy => "COALESCE(virt_service.name, '')",
+        }
+    }
+
+    /// Returns the JOIN clause if this field requires one, None otherwise.
+    pub fn join_sql(&self) -> Option<&'static str> {
+        match self {
+            Self::VirtualizedBy => Some(
+                "LEFT JOIN services AS virt_service ON \
+                 (hosts.virtualization->'details'->>'service_id')::uuid = virt_service.id",
+            ),
+            _ => None,
+        }
+    }
+}
+
+// ============================================================================
+// Host Filter Query
+// ============================================================================
+
+/// Query parameters for filtering and ordering hosts.
+#[derive(Deserialize, Default, Debug, Clone, IntoParams)]
+pub struct HostFilterQuery {
+    /// Filter by network ID
+    pub network_id: Option<Uuid>,
+    /// Filter by specific entity IDs (for selective loading)
+    pub ids: Option<Vec<Uuid>>,
+    /// Primary ordering field (used for grouping). Always sorts ASC to keep groups together.
+    pub group_by: Option<HostOrderField>,
+    /// Secondary ordering field (sorting within groups or standalone sort).
+    pub order_by: Option<HostOrderField>,
+    /// Direction for order_by field (group_by always uses ASC).
+    pub order_direction: Option<OrderDirection>,
+    /// Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.
+    #[param(minimum = 0, maximum = 1000)]
+    pub limit: Option<u32>,
+    /// Number of results to skip. Default: 0.
+    #[param(minimum = 0)]
+    pub offset: Option<u32>,
+}
+
+impl HostFilterQuery {
+    /// Build the ORDER BY clause and apply any required JOINs to the filter.
+    /// Returns: (modified_filter, order_by_sql)
+    pub fn apply_ordering(&self, mut filter: EntityFilter) -> (EntityFilter, String) {
+        let mut order_parts = Vec::new();
+
+        // Primary: group_by field (always ASC to keep groups together)
+        if let Some(group_field) = &self.group_by {
+            if let Some(join) = group_field.join_sql() {
+                filter = filter.join(join);
+            }
+            order_parts.push(format!("{} ASC", group_field.to_sql()));
+        }
+
+        // Secondary: order_by field with specified direction
+        if let Some(order_field) = &self.order_by {
+            // Only add JOIN if not already added by group_by
+            let group_join = self.group_by.and_then(|g| g.join_sql());
+            let order_join = order_field.join_sql();
+            if group_join != order_join
+                && let Some(join) = order_join
+            {
+                filter = filter.join(join);
+            }
+            let direction = self.order_direction.unwrap_or_default().to_sql();
+            order_parts.push(format!("{} {}", order_field.to_sql(), direction));
+        }
+
+        // Default: created_at ASC if nothing specified
+        let order_by = if order_parts.is_empty() {
+            "hosts.created_at ASC".to_string()
+        } else {
+            order_parts.join(", ")
+        };
+
+        (filter, order_by)
+    }
+}
+
+impl FilterQueryExtractor for HostFilterQuery {
+    fn apply_to_filter(
+        &self,
+        filter: EntityFilter,
+        user_network_ids: &[Uuid],
+        _user_organization_id: Uuid,
+    ) -> EntityFilter {
+        // Apply IDs filter first if provided
+        let filter = match &self.ids {
+            Some(ids) if !ids.is_empty() => filter.entity_ids(ids),
+            _ => filter,
+        };
+        // Then apply network filter
+        match self.network_id {
+            Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
+            Some(_) => filter.network_ids(&[]), // User doesn't have access - return empty
+            None => filter.network_ids(user_network_ids),
+        }
+    }
+
+    fn pagination(&self) -> PaginationParams {
+        PaginationParams {
+            limit: self.limit,
+            offset: self.offset,
+        }
+    }
+}
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
@@ -39,12 +178,13 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 ///
 /// Returns all hosts the authenticated user has access to, with their
 /// interfaces, ports, and services included. Supports pagination via
-/// `limit` and `offset` query parameters.
+/// `limit` and `offset` query parameters, and ordering via `group_by`,
+/// `order_by`, and `order_direction`.
 #[utoipa::path(
     get,
     path = "",
     tag = "hosts",
-    params(crate::server::shared::handlers::query::NetworkFilterQuery),
+    params(HostFilterQuery),
     responses(
         (status = 200, description = "List of hosts with their children", body = PaginatedApiResponse<HostResponse>),
     ),
@@ -53,7 +193,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 async fn get_all_hosts(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Viewer>,
-    Query(query): Query<crate::server::shared::handlers::query::NetworkFilterQuery>,
+    Query(query): Query<HostFilterQuery>,
 ) -> ApiResult<Json<PaginatedApiResponse<HostResponse>>> {
     let network_ids = auth.network_ids();
     let organization_id = auth
@@ -67,10 +207,13 @@ async fn get_all_hosts(
     let pagination = query.pagination();
     let filter = pagination.apply_to_filter(filter);
 
+    // Apply ordering and JOINs
+    let (filter, order_by) = query.apply_ordering(filter);
+
     let result = state
         .services
         .host_service
-        .get_all_host_responses_paginated(filter)
+        .get_all_host_responses_paginated(filter, &order_by)
         .await?;
 
     // Get effective pagination values for response metadata

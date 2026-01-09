@@ -17,7 +17,9 @@ use utoipa::openapi::{Components, OpenApi, PathItem};
 use utoipa_scalar::{Scalar, Servable};
 
 use crate::server::config::AppState;
-use crate::server::shared::handlers::query::PaginationParams;
+use crate::server::hosts::handlers::HostOrderField;
+use crate::server::services::handlers::ServiceOrderField;
+use crate::server::shared::handlers::query::{OrderDirection, PaginationParams};
 
 /// Tag used to mark endpoints that should be hidden from public documentation
 /// but included in the full OpenAPI spec for client generation.
@@ -30,7 +32,7 @@ const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Only API metadata and security schemes need to be defined here.
 #[derive(OpenApiDerive)]
 #[openapi(
-    components(schemas(PaginationParams)),
+    components(schemas(PaginationParams, OrderDirection, HostOrderField, ServiceOrderField)),
     info(
         title = "Scanopy API",
         version = "1",

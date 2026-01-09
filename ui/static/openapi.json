@@ -3369,7 +3369,7 @@
           "hosts"
         ],
         "summary": "List all hosts",
-        "description": "Returns all hosts the authenticated user has access to, with their\ninterfaces, ports, and services included. Supports pagination via\n`limit` and `offset` query parameters.",
+        "description": "Returns all hosts the authenticated user has access to, with their\ninterfaces, ports, and services included. Supports pagination via\n`limit` and `offset` query parameters, and ordering via `group_by`,\n`order_by`, and `order_direction`.",
         "operationId": "get_all_hosts",
         "parameters": [
           {
@@ -3402,6 +3402,57 @@
             }
           },
           {
+<<<<<<< HEAD
+=======
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/HostOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/HostOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+>>>>>>> fix/450-grouped-pagination
             "name": "limit",
             "in": "query",
             "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
@@ -5444,8 +5495,22 @@
           "services"
         ],
         "summary": "List all services",
-        "operationId": "list_services",
+        "description": "Returns all services the authenticated user has access to.\nSupports pagination via `limit` and `offset` query parameters,\nand ordering via `group_by`, `order_by`, and `order_direction`.",
+        "operationId": "get_all_services",
         "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
           {
             "name": "host_id",
             "in": "query",
@@ -5460,16 +5525,67 @@
             }
           },
           {
-            "name": "network_id",
+            "name": "ids",
             "in": "query",
-            "description": "Filter by network ID",
+            "description": "Filter by specific entity IDs (for selective loading)",
             "required": false,
             "schema": {
               "type": [
-                "string",
+                "array",
                 "null"
               ],
-              "format": "uuid"
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/ServiceOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/ServiceOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
             }
           },
           {
@@ -5524,33 +5640,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "description": "Response type for paginated list endpoints (pagination is always present in meta)",
-                  "required": [
-                    "success",
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Service"
-                      }
-                    },
-                    "error": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/PaginatedApiMeta"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    }
-                  }
+                  "$ref": "#/components/schemas/PaginatedApiResponse_Service"
                 }
               }
             }
@@ -8253,14 +8343,23 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
+<<<<<<< HEAD
               "created_at": "2026-01-09T00:15:11.742105Z",
               "id": "0272d778-b3c0-41d5-96f6-1a571cf2bd65",
+=======
+              "created_at": "2026-01-09T06:20:23.535764Z",
+              "id": "d4e14dac-181c-4500-8a69-9b2a87e6799d",
+>>>>>>> fix/450-grouped-pagination
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
+<<<<<<< HEAD
               "updated_at": "2026-01-09T00:15:11.742105Z"
+=======
+              "updated_at": "2026-01-09T06:20:23.535764Z"
+>>>>>>> fix/450-grouped-pagination
             }
           },
           "error": {
@@ -9550,14 +9649,23 @@
             "example": {
               "bindings": [
                 {
+<<<<<<< HEAD
                   "created_at": "2026-01-09T00:15:11.735575Z",
                   "id": "503480cc-fc59-44bd-9493-489ba067f06d",
+=======
+                  "created_at": "2026-01-09T06:20:23.531273Z",
+                  "id": "e6f33801-06ad-4fb1-a0a9-89befdd43288",
+>>>>>>> fix/450-grouped-pagination
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
+<<<<<<< HEAD
                   "updated_at": "2026-01-09T00:15:11.735575Z"
+=======
+                  "updated_at": "2026-01-09T06:20:23.531273Z"
+>>>>>>> fix/450-grouped-pagination
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -9566,7 +9674,11 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
+<<<<<<< HEAD
               "service_definition": "Sensu",
+=======
+              "service_definition": "Grocy",
+>>>>>>> fix/450-grouped-pagination
               "source": {
                 "type": "Manual"
               },
@@ -10673,14 +10785,23 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
+<<<<<<< HEAD
           "created_at": "2026-01-09T00:15:11.717618Z",
           "id": "814b2fe3-1485-4ed3-93cc-b21d6bbcddc8",
+=======
+          "created_at": "2026-01-09T06:20:23.522147Z",
+          "id": "a855cf8e-3aa1-4df1-a24c-e09f3429549e",
+>>>>>>> fix/450-grouped-pagination
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
+<<<<<<< HEAD
           "updated_at": "2026-01-09T00:15:11.717618Z"
+=======
+          "updated_at": "2026-01-09T06:20:23.522147Z"
+>>>>>>> fix/450-grouped-pagination
         }
       },
       "BindingBase": {
@@ -11083,7 +11204,11 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
+<<<<<<< HEAD
               "service_definition": "Sensu",
+=======
+              "service_definition": "Grocy",
+>>>>>>> fix/450-grouped-pagination
               "tags": [],
               "virtualization": null
             }
@@ -12518,6 +12643,18 @@
           "BestService"
         ]
       },
+      "HostOrderField": {
+        "type": "string",
+        "description": "Fields that hosts can be ordered/grouped by.",
+        "enum": [
+          "created_at",
+          "name",
+          "hostname",
+          "updated_at",
+          "virtualized_by",
+          "network_id"
+        ]
+      },
       "HostResponse": {
         "type": "object",
         "description": "Response type for host endpoints.\nIncludes hydrated children (interfaces, ports, services).",
@@ -13257,6 +13394,14 @@
           }
         }
       },
+      "OrderDirection": {
+        "type": "string",
+        "description": "Direction for ORDER BY clauses.",
+        "enum": [
+          "asc",
+          "desc"
+        ]
+      },
       "Organization": {
         "allOf": [
           {
@@ -13567,6 +13712,91 @@
                   }
                 ],
                 "services": [],
+                "source": {
+                  "type": "Manual"
+                },
+                "tags": [],
+                "updated_at": "2026-01-15T10:30:00Z",
+                "virtualization": null
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginatedApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PaginatedApiResponse_Service": {
+        "type": "object",
+        "description": "Response type for paginated list endpoints (pagination is always present in meta)",
+        "required": [
+          "success",
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ServiceBase"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "updated_at"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "readOnly": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                }
+              ],
+              "example": {
+                "bindings": [
+                  {
+                    "created_at": "2026-01-09T06:20:23.530469Z",
+                    "id": "1309f1fd-be9e-4f5c-b7f3-8b337fc5b50e",
+                    "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                    "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                    "port_id": "550e8400-e29b-41d4-a716-446655440006",
+                    "service_id": "550e8400-e29b-41d4-a716-446655440007",
+                    "type": "Port",
+                    "updated_at": "2026-01-09T06:20:23.530469Z"
+                  }
+                ],
+                "created_at": "2026-01-15T10:30:00Z",
+                "host_id": "550e8400-e29b-41d4-a716-446655440003",
+                "id": "550e8400-e29b-41d4-a716-446655440007",
+                "name": "nginx",
+                "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                "position": 0,
+                "service_definition": "Grocy",
                 "source": {
                   "type": "Manual"
                 },
@@ -14356,14 +14586,23 @@
         "example": {
           "bindings": [
             {
+<<<<<<< HEAD
               "created_at": "2026-01-09T00:15:11.717509Z",
               "id": "11ef1b91-f43e-480a-a8b3-eea062c1a311",
+=======
+              "created_at": "2026-01-09T06:20:23.522088Z",
+              "id": "6896ef97-5199-41ee-909d-237da8ecb5fa",
+>>>>>>> fix/450-grouped-pagination
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
+<<<<<<< HEAD
               "updated_at": "2026-01-09T00:15:11.717509Z"
+=======
+              "updated_at": "2026-01-09T06:20:23.522088Z"
+>>>>>>> fix/450-grouped-pagination
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -14372,7 +14611,11 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
+<<<<<<< HEAD
           "service_definition": "Sensu",
+=======
+          "service_definition": "Grocy",
+>>>>>>> fix/450-grouped-pagination
           "source": {
             "type": "Manual"
           },
@@ -14537,6 +14780,18 @@
             ]
           }
         }
+      },
+      "ServiceOrderField": {
+        "type": "string",
+        "description": "Fields that services can be ordered/grouped by.",
+        "enum": [
+          "created_at",
+          "name",
+          "updated_at",
+          "host",
+          "network_id",
+          "position"
+        ]
       },
       "ServiceVirtualization": {
         "oneOf": [

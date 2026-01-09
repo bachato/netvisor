@@ -42,7 +42,10 @@
 		getItemId,
 		// Server-side pagination (optional)
 		serverPagination = null,
-		onPageChange = null
+		onPageChange = null,
+		// Server-side ordering callback (optional)
+		// Called when grouping or sorting changes, allowing parent to update query params
+		onOrderChange = null
 	}: {
 		items: T[];
 		fields: FieldConfig<T>[];
@@ -56,6 +59,11 @@
 		// Server-side pagination: when provided, pagination is server-controlled
 		serverPagination?: PaginationMeta | null;
 		onPageChange?: ((page: number) => void) | null;
+		// Server-side ordering: called when group/sort changes
+		// Args: (groupBy field key, orderBy field key, direction)
+		onOrderChange?:
+			| ((groupBy: string | null, orderBy: string | null, direction: 'asc' | 'desc') => void)
+			| null;
 	} = $props();
 
 	// Bulk tag mutations
@@ -671,6 +679,50 @@
 				onPageChange(1);
 			} else {
 				currentPage = 1;
+			}
+		}
+	});
+
+	// Track previous ordering state to detect changes and reset pagination
+	let prevGroupBy: string | null = null;
+	let prevOrderBy: string | null = null;
+	let prevDirection: 'asc' | 'desc' = 'asc';
+	let orderChangeInitialized = false;
+
+	// Notify parent of ordering changes and reset pagination
+	$effect(() => {
+		const groupBy = selectedGroupField;
+		const orderBy = sortState.field;
+		const direction = sortState.direction;
+
+		// Skip the initial run (state restoration)
+		if (!orderChangeInitialized) {
+			prevGroupBy = groupBy;
+			prevOrderBy = orderBy;
+			prevDirection = direction;
+			orderChangeInitialized = true;
+			return;
+		}
+
+		// Check if ordering actually changed
+		const orderChanged =
+			groupBy !== prevGroupBy || orderBy !== prevOrderBy || direction !== prevDirection;
+
+		if (orderChanged) {
+			prevGroupBy = groupBy;
+			prevOrderBy = orderBy;
+			prevDirection = direction;
+
+			// Reset to page 1 when ordering changes
+			if (useServerPagination && onPageChange) {
+				onPageChange(1);
+			} else {
+				currentPage = 1;
+			}
+
+			// Notify parent of the change
+			if (onOrderChange) {
+				onOrderChange(groupBy, orderBy, direction);
 			}
 		}
 	});

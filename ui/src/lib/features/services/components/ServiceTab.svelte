@@ -13,11 +13,24 @@
 		useServicesQuery,
 		useUpdateServiceMutation,
 		useDeleteServiceMutation,
-		useBulkDeleteServicesMutation
+		useBulkDeleteServicesMutation,
+		type ServicesQueryParams
 	} from '../queries';
 	import { useHostsByIds } from '$lib/features/hosts/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import type { TabProps } from '$lib/shared/types';
+	import type { components } from '$lib/api/schema';
+
+	type ServiceOrderField = components['schemas']['ServiceOrderField'];
+	type OrderDirection = components['schemas']['OrderDirection'];
+
+	// Map frontend field keys to backend ServiceOrderField values
+	const fieldKeyToOrderField: Record<string, ServiceOrderField> = {
+		name: 'name',
+		host: 'host',
+		created_at: 'created_at',
+		network_id: 'network_id'
+	};
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -25,13 +38,23 @@
 	const PAGE_SIZE = 20;
 	let currentPage = $state(1);
 
+	// Ordering state (for server-side ordering)
+	let groupBy = $state<ServiceOrderField | undefined>(undefined);
+	let orderBy = $state<ServiceOrderField | undefined>(undefined);
+	let orderDirection = $state<OrderDirection>('asc');
+
 	// Queries
 	const tagsQuery = useTagsQuery();
-	// Paginated services with server-side pagination
-	const servicesQuery = useServicesQuery(() => ({
-		limit: PAGE_SIZE,
-		offset: (currentPage - 1) * PAGE_SIZE
-	}));
+	// Paginated services with server-side pagination and ordering
+	const servicesQuery = useServicesQuery(
+		(): ServicesQueryParams => ({
+			limit: PAGE_SIZE,
+			offset: (currentPage - 1) * PAGE_SIZE,
+			group_by: groupBy,
+			order_by: orderBy,
+			order_direction: orderDirection
+		})
+	);
 	const networksQuery = useNetworksQuery();
 
 	// Selective host lookup - only fetches hosts needed for service display
@@ -60,6 +83,19 @@
 	// Page change handler for server-side pagination
 	function handlePageChange(page: number) {
 		currentPage = page;
+	}
+
+	// Order change handler for server-side ordering
+	function handleOrderChange(
+		groupField: string | null,
+		orderField: string | null,
+		direction: 'asc' | 'desc'
+	) {
+		// Map frontend field keys to backend ServiceOrderField values
+		groupBy = groupField ? fieldKeyToOrderField[groupField] : undefined;
+		orderBy = orderField ? fieldKeyToOrderField[orderField] : undefined;
+		orderDirection = direction;
+		// Note: DataControls already resets to page 1 when ordering changes
 	}
 
 	let showServiceEditor = $state(false);
@@ -215,6 +251,7 @@
 			getItemId={(item) => item.id}
 			serverPagination={servicesPagination}
 			onPageChange={handlePageChange}
+			onOrderChange={handleOrderChange}
 		>
 			{#snippet children(
 				item: Service,

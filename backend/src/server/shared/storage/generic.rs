@@ -225,9 +225,20 @@ where
         order_by: &str,
     ) -> Result<Vec<T>, anyhow::Error> {
         let pagination_clause = filter.to_pagination_clause();
+        let join_clause = filter.to_join_clause();
+
+        // Use table-qualified SELECT when JOINing to avoid column conflicts
+        let select = if filter.has_joins() {
+            format!("{}.*", T::table_name())
+        } else {
+            "*".to_string()
+        };
+
         let query_str = format!(
-            "SELECT * FROM {} {} ORDER BY {} {}",
+            "SELECT {} FROM {} {} {} ORDER BY {} {}",
+            select,
             T::table_name(),
+            join_clause,
             filter.to_where_clause(),
             order_by,
             pagination_clause
@@ -247,11 +258,14 @@ where
         filter: EntityFilter,
         order_by: &str,
     ) -> Result<PaginatedResult<T>, anyhow::Error> {
+        let join_clause = filter.to_join_clause();
+
         // First, get the total count (without limit/offset)
-        // We use a subquery approach to reuse bind_value
+        // Include JOIN in count query to ensure correct count when filtering on joined tables
         let count_query_str = format!(
-            "SELECT COUNT(*) FROM {} {}",
+            "SELECT COUNT(*) FROM {} {} {}",
             T::table_name(),
+            join_clause,
             filter.to_where_clause()
         );
 
@@ -266,9 +280,19 @@ where
 
         // Then get the paginated results
         let pagination_clause = filter.to_pagination_clause();
+
+        // Use table-qualified SELECT when JOINing to avoid column conflicts
+        let select = if filter.has_joins() {
+            format!("{}.*", T::table_name())
+        } else {
+            "*".to_string()
+        };
+
         let query_str = format!(
-            "SELECT * FROM {} {} ORDER BY {} {}",
+            "SELECT {} FROM {} {} {} ORDER BY {} {}",
+            select,
             T::table_name(),
+            join_clause,
             filter.to_where_clause(),
             order_by,
             pagination_clause

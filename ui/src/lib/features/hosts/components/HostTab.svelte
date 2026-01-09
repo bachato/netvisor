@@ -24,23 +24,47 @@
 		useUpdateHostMutation,
 		useDeleteHostMutation,
 		useBulkDeleteHostsMutation,
-		useConsolidateHostsMutation
+		useConsolidateHostsMutation,
+		type HostQueryOptions
 	} from '../queries';
 	import { useServicesByIds } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
+	import type { components } from '$lib/api/schema';
+
+	type HostOrderField = components['schemas']['HostOrderField'];
+	type OrderDirection = components['schemas']['OrderDirection'];
+
+	// Map frontend field keys to backend HostOrderField values
+	const fieldKeyToOrderField: Record<string, HostOrderField> = {
+		name: 'name',
+		hostname: 'hostname',
+		created_at: 'created_at',
+		virtualized_by: 'virtualized_by',
+		network_id: 'network_id'
+	};
 
 	// Pagination state
 	const PAGE_SIZE = 20;
 	let currentPage = $state(1);
 
+	// Ordering state (for server-side ordering)
+	let groupBy = $state<HostOrderField | undefined>(undefined);
+	let orderBy = $state<HostOrderField | undefined>(undefined);
+	let orderDirection = $state<OrderDirection>('asc');
+
 	// Queries
 	const tagsQuery = useTagsQuery();
-	// Paginated hosts with server-side pagination
-	const hostsQuery = useHostsQuery(() => ({
-		limit: PAGE_SIZE,
-		offset: (currentPage - 1) * PAGE_SIZE
-	}));
+	// Paginated hosts with server-side pagination and ordering
+	const hostsQuery = useHostsQuery(
+		(): HostQueryOptions => ({
+			limit: PAGE_SIZE,
+			offset: (currentPage - 1) * PAGE_SIZE,
+			group_by: groupBy,
+			order_by: orderBy,
+			order_direction: orderDirection
+		})
+	);
 	const networksQuery = useNetworksQuery();
 	useDaemonsQuery();
 
@@ -72,6 +96,19 @@
 	// Page change handler for server-side pagination
 	function handlePageChange(page: number) {
 		currentPage = page;
+	}
+
+	// Order change handler for server-side ordering
+	function handleOrderChange(
+		groupField: string | null,
+		orderField: string | null,
+		direction: 'asc' | 'desc'
+	) {
+		// Map frontend field keys to backend HostOrderField values
+		groupBy = groupField ? fieldKeyToOrderField[groupField] : undefined;
+		orderBy = orderField ? fieldKeyToOrderField[orderField] : undefined;
+		orderDirection = direction;
+		// Note: DataControls already resets to page 1 when ordering changes
 	}
 
 	let showHostEditor = $state(false);
@@ -294,6 +331,7 @@
 			getItemId={(item) => item.id}
 			serverPagination={hostsPagination}
 			onPageChange={handlePageChange}
+			onOrderChange={handleOrderChange}
 		>
 			{#snippet children(
 				item: Host,
