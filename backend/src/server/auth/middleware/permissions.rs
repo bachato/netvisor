@@ -226,6 +226,79 @@ impl PermissionRequirement for IsSystem {
 }
 
 // ============================================================================
+// External Service Requirements
+// ============================================================================
+
+/// Marker trait for external service types.
+///
+/// Implement this trait to create service-specific permission requirements.
+pub trait ExternalServiceType: Send + Sync + 'static {
+    /// Returns the expected service name, or None if any service is allowed.
+    fn required_name() -> Option<&'static str>;
+}
+
+/// Marker for any external service (no name restriction).
+pub struct AnyService;
+
+impl ExternalServiceType for AnyService {
+    fn required_name() -> Option<&'static str> {
+        None
+    }
+}
+
+/// Marker for Prometheus service.
+pub struct Prometheus;
+
+impl ExternalServiceType for Prometheus {
+    fn required_name() -> Option<&'static str> {
+        Some("prometheus")
+    }
+}
+
+/// Marker for Grafana service.
+pub struct Grafana;
+
+impl ExternalServiceType for Grafana {
+    fn required_name() -> Option<&'static str> {
+        Some("grafana")
+    }
+}
+
+/// Requires external service authentication, optionally restricted to a specific service.
+///
+/// Usage:
+/// - `Authorized<IsExternalService>` - any external service
+/// - `Authorized<IsExternalService<Prometheus>>` - only prometheus
+/// - `Authorized<IsExternalService<Grafana>>` - only grafana
+///
+/// Passes for: ExternalService (with matching name if T specifies one)
+/// Fails for: User, ApiKey, Daemon, System, Anonymous
+pub struct IsExternalService<T: ExternalServiceType = AnyService>(PhantomData<T>);
+
+impl<T: ExternalServiceType> PermissionRequirement for IsExternalService<T> {
+    fn check(entity: &AuthenticatedEntity) -> Result<(), ApiError> {
+        match entity {
+            AuthenticatedEntity::ExternalService { name } => {
+                if let Some(required_name) = T::required_name() {
+                    if name.to_lowercase() != required_name {
+                        return Err(ApiError::forbidden(&format!(
+                            "External service '{}' required",
+                            required_name
+                        )));
+                    }
+                }
+                Ok(())
+            }
+            _ => Err(ApiError::forbidden(Self::description())),
+        }
+    }
+
+    fn description() -> &'static str {
+        "External service authentication required"
+    }
+}
+
+// ============================================================================
 // Combinators
 // ============================================================================
 

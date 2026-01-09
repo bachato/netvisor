@@ -36,6 +36,7 @@ type KeyedRateLimiter =
 struct RateLimiters {
     user: KeyedRateLimiter,
     anonymous: KeyedRateLimiter,
+    external_service: KeyedRateLimiter,
 }
 
 #[cfg(not(feature = "generate-fixtures"))]
@@ -55,11 +56,18 @@ fn get_limiters() -> &'static RateLimiters {
                 Quota::per_minute(NonZeroU32::new(20).unwrap())
                     .allow_burst(NonZeroU32::new(5).unwrap()),
             )),
+            // External services (Prometheus, etc.): 60 requests per minute with burst of 10
+            // Sufficient for typical 15-30 second scrape intervals
+            external_service: Arc::new(RateLimiter::keyed(
+                Quota::per_minute(NonZeroU32::new(60).unwrap())
+                    .allow_burst(NonZeroU32::new(10).unwrap()),
+            )),
         };
 
         // Spawn cleanup task
         let user_limiter = Arc::clone(&limiters.user);
         let anonymous_limiter = Arc::clone(&limiters.anonymous);
+        let external_service_limiter = Arc::clone(&limiters.external_service);
 
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(Duration::from_secs(60));
@@ -67,10 +75,12 @@ fn get_limiters() -> &'static RateLimiters {
                 interval.tick().await;
                 user_limiter.retain_recent();
                 anonymous_limiter.retain_recent();
+                external_service_limiter.retain_recent();
                 tracing::debug!(
-                    "Rate limiter cleanup: user keys={}, anonymous keys={}",
+                    "Rate limiter cleanup: user keys={}, anonymous keys={}, external_service keys={}",
                     user_limiter.len(),
-                    anonymous_limiter.len()
+                    anonymous_limiter.len(),
+                    external_service_limiter.len()
                 );
             }
         });
@@ -167,6 +177,30 @@ fn check_anonymous(ip: IpAddr) -> Result<RateLimitInfo, RateLimitInfo> {
     }
 }
 
+#[cfg(not(feature = "generate-fixtures"))]
+fn check_external_service(ip: IpAddr) -> Result<RateLimitInfo, RateLimitInfo> {
+    let limiters = get_limiters();
+    let key = RateLimitKey::Ip(ip);
+
+    match limiters.external_service.check_key(&key) {
+        Ok(_) => Ok(RateLimitInfo {
+            limit: 60,
+            remaining: 59,
+            reset_in_secs: 60,
+        }),
+        Err(not_until) => {
+            let wait_time = not_until
+                .wait_time_from(DefaultClock::default().now())
+                .as_secs();
+            Err(RateLimitInfo {
+                limit: 60,
+                remaining: 0,
+                reset_in_secs: wait_time,
+            })
+        }
+    }
+}
+
 pub async fn rate_limit_middleware(
     State(state): State<Arc<AppState>>,
     ClientIp(ip): ClientIp,
@@ -210,6 +244,7 @@ pub async fn rate_limit_middleware(
         let check_result = match entity {
             Some(AuthenticatedEntity::User { user_id, .. }) => check_user(user_id),
             Some(AuthenticatedEntity::ApiKey { user_id, .. }) => check_user(user_id),
+            Some(AuthenticatedEntity::ExternalService { .. }) => check_external_service(ip),
             _ => check_anonymous(ip),
         };
 

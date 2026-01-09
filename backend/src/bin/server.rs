@@ -12,7 +12,6 @@ use scanopy::server::{
     auth::middleware::{logging::request_logging_middleware, rate_limit::rate_limit_middleware},
     billing::plans::get_purchasable_plans,
     config::{AppState, ServerCli, ServerConfig, get_deployment_type},
-    metrics::handlers::get_metrics,
     shared::handlers::{cache::AppCache, factory::create_router},
 };
 use tower::ServiceBuilder;
@@ -234,7 +233,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Health check endpoint without middleware (for kamal-proxy health checks)
-    // Metrics endpoint with its own token-based auth
+    // Metrics endpoint is now at /api/metrics with external service auth (see factory.rs)
     let app = Router::new()
         .route(
             "/api/health",
@@ -246,7 +245,6 @@ async fn main() -> anyhow::Result<()> {
                 }))
             }),
         )
-        .route("/metrics", axum::routing::get(get_metrics))
         .with_state(state.clone())
         .layer(cors)
         .merge(protected_app);

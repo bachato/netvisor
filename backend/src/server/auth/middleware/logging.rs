@@ -39,6 +39,9 @@ pub async fn request_logging_middleware(
         Some(AuthenticatedEntity::ApiKey { api_key_id, .. }) => {
             ("api_key", Some(api_key_id.to_string()))
         }
+        Some(AuthenticatedEntity::ExternalService { name }) => {
+            ("external_service", Some(name.clone()))
+        }
         Some(AuthenticatedEntity::System) => ("system", None),
         Some(AuthenticatedEntity::Anonymous) | None => ("anonymous", None),
     };

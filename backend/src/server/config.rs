@@ -14,7 +14,7 @@ use figment::{
     providers::{Env, Format, Serialized, Toml},
 };
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use utoipa::ToSchema;
 
 use crate::server::shared::storage::factory::StorageFactory;
@@ -131,6 +131,12 @@ pub struct ServerConfig {
 
     // Metrics
     pub metrics_token: Option<String>,
+
+    // External service IP restrictions
+    // Maps service name (lowercase) to list of allowed IPs/CIDRs
+    // Populated from SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS env vars
+    #[serde(default)]
+    pub external_service_allowed_ips: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
@@ -183,6 +189,7 @@ impl Default for ServerConfig {
             posthog_key: None,
             enforce_billing_for_testing: false,
             metrics_token: None,
+            external_service_allowed_ips: HashMap::new(),
         }
     }
 }
@@ -265,11 +272,51 @@ impl ServerConfig {
             figment = figment.merge(("disable_registration", disable_registration));
         }
 
-        let config: ServerConfig = figment
+        let mut config: ServerConfig = figment
             .extract()
             .map_err(|e| Error::msg(format!("Configuration error: {}", e)))?;
 
+        // Parse external service IP restrictions from env vars
+        // Format: SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS=192.168.1.0/24,10.0.0.1
+        config.external_service_allowed_ips = Self::load_external_service_allowed_ips();
+
         Ok(config)
+    }
+
+    /// Load external service IP restrictions from environment variables.
+    ///
+    /// Scans for env vars matching `SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS`
+    /// and parses them into a HashMap of service name -> allowed IPs.
+    fn load_external_service_allowed_ips() -> HashMap<String, Vec<String>> {
+        let mut result = HashMap::new();
+        let prefix = "SCANOPY_EXTERNAL_SERVICE_";
+        let suffix = "_ALLOWED_IPS";
+
+        for (key, value) in std::env::vars() {
+            if key.starts_with(prefix) && key.ends_with(suffix) {
+                // Extract service name from: SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS
+                let service_name = key
+                    .strip_prefix(prefix)
+                    .and_then(|s| s.strip_suffix(suffix))
+                    .map(|s| s.to_lowercase());
+
+                if let Some(name) = service_name {
+                    if !name.is_empty() {
+                        let ips: Vec<String> = value
+                            .split(',')
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .collect();
+
+                        if !ips.is_empty() {
+                            result.insert(name, ips);
+                        }
+                    }
+                }
+            }
+        }
+
+        result
     }
 
     pub fn database_url(&self) -> String {

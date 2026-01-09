@@ -1,4 +1,6 @@
-use std::{fmt::Display, net::IpAddr};
+use std::{fmt::Display, net::IpAddr, str::FromStr};
+
+use cidr::IpCidr;
 
 use crate::daemon::runtime::service::{INVALID_API_KEY_ERROR, REGISTERED_INVALID_KEY_ERROR};
 use crate::server::{
@@ -43,6 +45,8 @@ pub enum AuthMethod {
     UserApiKey,
     /// Authenticated via daemon API key (scp_d_ prefix)
     DaemonApiKey,
+    /// External service authentication (e.g., Prometheus)
+    ExternalService,
     /// System-level operation (internal)
     System,
     /// No authentication
@@ -55,6 +59,7 @@ impl Display for AuthMethod {
             AuthMethod::Session => write!(f, "session"),
             AuthMethod::UserApiKey => write!(f, "user_api_key"),
             AuthMethod::DaemonApiKey => write!(f, "daemon_api_key"),
+            AuthMethod::ExternalService => write!(f, "external_service"),
             AuthMethod::System => write!(f, "system"),
             AuthMethod::Anonymous => write!(f, "anonymous"),
         }
@@ -83,6 +88,11 @@ pub enum AuthenticatedEntity {
         organization_id: Uuid,
         permissions: UserOrgPermissions,
         network_ids: Vec<Uuid>,
+    },
+    /// External service authentication (e.g., Prometheus, Grafana)
+    ExternalService {
+        /// Service name from X-Service-Name header
+        name: String,
     },
     System,
     Anonymous,
@@ -113,6 +123,9 @@ impl Display for AuthenticatedEntity {
                 "ApiKey {{ api_key_id: {}, user_id: {}, permissions: {} }}",
                 api_key_id, user_id, permissions
             ),
+            AuthenticatedEntity::ExternalService { name } => {
+                write!(f, "ExternalService {{ name: {} }}", name)
+            }
         }
     }
 }
@@ -154,6 +167,7 @@ impl AuthenticatedEntity {
             AuthenticatedEntity::User { user_id, .. } => user_id.to_string(),
             AuthenticatedEntity::Daemon { daemon_id, .. } => daemon_id.to_string(),
             AuthenticatedEntity::ApiKey { api_key_id, .. } => api_key_id.to_string(),
+            AuthenticatedEntity::ExternalService { name } => format!("external_service:{}", name),
             AuthenticatedEntity::System => "System".to_string(),
             AuthenticatedEntity::Anonymous => "Anonymous".to_string(),
         }
@@ -165,6 +179,7 @@ impl AuthenticatedEntity {
             AuthenticatedEntity::Daemon { network_id, .. } => vec![*network_id],
             AuthenticatedEntity::User { network_ids, .. } => network_ids.clone(),
             AuthenticatedEntity::ApiKey { network_ids, .. } => network_ids.clone(),
+            AuthenticatedEntity::ExternalService { .. } => vec![], // Global scope, no network restriction
             AuthenticatedEntity::System => vec![],
             AuthenticatedEntity::Anonymous => vec![],
         }
@@ -183,6 +198,11 @@ impl AuthenticatedEntity {
     /// Check if this is a user API key
     pub fn is_api_key(&self) -> bool {
         matches!(self, AuthenticatedEntity::ApiKey { .. })
+    }
+
+    /// Check if this is an external service
+    pub fn is_external_service(&self) -> bool {
+        matches!(self, AuthenticatedEntity::ExternalService { .. })
     }
 
     /// Check if this is a user or API key (has user-level permissions)
@@ -288,6 +308,36 @@ impl AuthenticatedEntity {
             && let Ok(auth_str) = auth_header.to_str()
             && let Some(api_key_raw) = auth_str.strip_prefix("Bearer ")
         {
+            // Check for external service token (e.g., Prometheus metrics endpoint)
+            // This must come before API key type detection since external tokens don't have prefixes
+            if let Some(metrics_token) = &app_state.config.metrics_token {
+                if !metrics_token.is_empty() && api_key_raw == metrics_token {
+                    // External service authentication
+                    let service_name = parts
+                        .headers
+                        .get("X-Service-Name")
+                        .and_then(|h| h.to_str().ok())
+                        .map(|s| s.to_lowercase())
+                        .unwrap_or_else(|| "unknown".to_string());
+
+                    // Check IP restrictions for this service
+                    if let Some(allowed_ips) = app_state
+                        .config
+                        .external_service_allowed_ips
+                        .get(&service_name)
+                    {
+                        if !is_ip_allowed(ip, allowed_ips) {
+                            return Err(AuthError(ApiError::forbidden(&format!(
+                                "IP {} not allowed for external service '{}'",
+                                ip, service_name
+                            ))));
+                        }
+                    }
+
+                    return Ok(AuthenticatedEntity::ExternalService { name: service_name });
+                }
+            }
+
             let hashed_key = hash_api_key(api_key_raw);
             // Extract key prefix for logging (first 8 chars, safe for logging)
             let key_prefix = api_key_raw.get(..8);
@@ -562,6 +612,41 @@ fn extract_user_agent(headers: &HeaderMap) -> Option<String> {
         .get(axum::http::header::USER_AGENT)
         .and_then(|h| h.to_str().ok())
         .map(|s| s.to_string())
+}
+
+/// Check if an IP address is allowed based on a list of IP/CIDR strings.
+///
+/// Returns true if:
+/// - The allowed list is empty (no restriction)
+/// - The IP matches any entry in the list (exact IP or CIDR range)
+///
+/// Invalid CIDR entries in the list are logged and skipped.
+fn is_ip_allowed(ip: IpAddr, allowed: &[String]) -> bool {
+    if allowed.is_empty() {
+        return true; // No restriction = allow all
+    }
+
+    for entry in allowed {
+        // Try to parse as CIDR first
+        if let Ok(cidr) = IpCidr::from_str(entry) {
+            if cidr.contains(&ip) {
+                return true;
+            }
+        } else if let Ok(exact_ip) = IpAddr::from_str(entry) {
+            // Try as exact IP address
+            if ip == exact_ip {
+                return true;
+            }
+        } else {
+            // Log invalid entry but don't fail
+            tracing::warn!(
+                "Invalid IP/CIDR entry in external service allowed IPs: {}",
+                entry
+            );
+        }
+    }
+
+    false
 }
 
 /// Publish a failed API key authentication event
