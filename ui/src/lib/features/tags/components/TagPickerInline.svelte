@@ -223,7 +223,7 @@
 	}
 </script>
 
-<div class="flex flex-wrap items-center gap-1">
+<div class="flex min-w-0 flex-wrap items-center gap-1 overflow-hidden">
 	<!-- Selected tags -->
 	{#each selectedTagIds as tagId (tagId)}
 		{@const tag = getTag(tagId)}

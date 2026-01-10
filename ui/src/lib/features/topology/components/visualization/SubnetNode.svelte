@@ -22,13 +22,19 @@
 	import type { SubnetRenderData, Topology } from '../../types/base';
 	import { type Writable, get } from 'svelte/store';
 	import { getContext } from 'svelte';
-	import { connectedNodeIds } from '../../interactions';
+	import { connectedNodeIds, isExporting } from '../../interactions';
 	import type { Node, Edge } from '@xyflow/svelte';
 
 	// Subscribe to connectedNodeIds for reactivity
 	let connectedNodes = $state(get(connectedNodeIds));
 	connectedNodeIds.subscribe((value) => {
 		connectedNodes = value;
+	});
+
+	// Subscribe to isExporting for reactivity
+	let isExportingValue = $state(get(isExporting));
+	isExporting.subscribe((value) => {
+		isExportingValue = value;
 	});
 
 	let { id, data, selected, width, height }: NodeProps = $props();
@@ -54,6 +60,7 @@
 
 	// Calculate if this node should fade out when another node is selected
 	let shouldFadeOut = $derived.by(() => {
+		if (isExportingValue) return false;
 		if (!selectedNode && !selectedEdge) return false;
 		// Check if this node is in the connected set
 		return !connectedNodes.has(id);

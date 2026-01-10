@@ -78,9 +78,9 @@ impl UserApiKeyService {
 
     /// Get a user API key by its hashed key value
     pub async fn get_by_key(&self, hashed_key: &str) -> Result<Option<UserApiKey>> {
-        use crate::server::shared::storage::{filter::EntityFilter, traits::Storage};
+        use crate::server::shared::storage::{filter::StorableFilter, traits::Storage};
 
-        let filter = EntityFilter::unfiltered().api_key(hashed_key.to_string());
+        let filter = StorableFilter::<UserApiKey>::new().api_key(hashed_key.to_string());
         if let Some(mut key) = self.storage.get_one(filter).await? {
             // Hydrate network_ids from junction table
             key.base.network_ids = self.network_access_storage.get_for_key(&key.id).await?;
@@ -92,9 +92,9 @@ impl UserApiKeyService {
 
     /// Get all API keys for a specific user, with network_ids hydrated
     pub async fn get_for_user(&self, user_id: &Uuid) -> Result<Vec<UserApiKey>> {
-        use crate::server::shared::storage::{filter::EntityFilter, traits::Storage};
+        use crate::server::shared::storage::{filter::StorableFilter, traits::Storage};
 
-        let filter = EntityFilter::unfiltered().user_id(user_id);
+        let filter = StorableFilter::<UserApiKey>::new().user_id(user_id);
         let mut keys = self.storage.get_all(filter).await?;
 
         // Batch hydrate network_ids

@@ -15,7 +15,7 @@ use crate::server::{
         },
         services::traits::{CrudService, EventBusService},
         storage::{
-            filter::EntityFilter,
+            filter::StorableFilter,
             generic::GenericPostgresStorage,
             traits::{PaginatedResult, Storable, Storage},
         },
@@ -65,7 +65,7 @@ impl CrudService<Group> for GroupService {
         }
     }
 
-    async fn get_all(&self, filter: EntityFilter) -> Result<Vec<Group>, anyhow::Error> {
+    async fn get_all(&self, filter: StorableFilter<Group>) -> Result<Vec<Group>, anyhow::Error> {
         let mut groups = self.storage().get_all(filter).await?;
         if groups.is_empty() {
             return Ok(groups);
@@ -87,7 +87,7 @@ impl CrudService<Group> for GroupService {
         Ok(groups)
     }
 
-    async fn get_one(&self, filter: EntityFilter) -> Result<Option<Group>, anyhow::Error> {
+    async fn get_one(&self, filter: StorableFilter<Group>) -> Result<Option<Group>, anyhow::Error> {
         let group = self.storage().get_one(filter).await?;
         match group {
             Some(mut g) => {
@@ -101,12 +101,17 @@ impl CrudService<Group> for GroupService {
 
     async fn get_paginated(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<Group>,
     ) -> Result<PaginatedResult<Group>, anyhow::Error> {
-        let mut paginated = self
-            .storage()
-            .get_paginated(filter, "created_at ASC")
-            .await?;
+        self.get_paginated_ordered(filter, "created_at ASC").await
+    }
+
+    async fn get_paginated_ordered(
+        &self,
+        filter: StorableFilter<Group>,
+        order_by: &str,
+    ) -> Result<PaginatedResult<Group>, anyhow::Error> {
+        let mut paginated = self.storage().get_paginated(filter, order_by).await?;
 
         if !paginated.items.is_empty() {
             let group_ids: Vec<Uuid> = paginated.items.iter().map(|g| g.id).collect();

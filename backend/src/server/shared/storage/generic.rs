@@ -1,15 +1,18 @@
 use crate::server::shared::{
     storage::{
-        filter::EntityFilter,
+        filter::StorableFilter,
         traits::{PaginatedResult, SqlValue, Storable, Storage},
     },
     types::api::ValidationError,
 };
 use async_trait::async_trait;
 use ipnetwork::IpNetwork;
-use sqlx::{PgPool, Postgres, postgres::PgArguments};
+use sqlx::{Executor, PgPool, Postgres, postgres::PgArguments};
 use std::{fmt::Display, marker::PhantomData};
 use uuid::Uuid;
+
+// Re-export for convenience
+pub use sqlx::postgres::PgConnection;
 
 pub struct GenericPostgresStorage<T: Storable> {
     pool: PgPool,
@@ -160,14 +163,18 @@ where
 
         Ok(value)
     }
-}
 
-#[async_trait]
-impl<T: Storable> Storage<T> for GenericPostgresStorage<T>
-where
-    T: Display,
-{
-    async fn create(&self, entity: &T) -> Result<T, anyhow::Error> {
+    // =========================================================================
+    // Internal executor-generic methods
+    // These accept any sqlx Executor (pool or transaction) and contain the
+    // actual implementation logic. Public methods delegate to these.
+    // =========================================================================
+
+    /// Internal: create entity with any executor
+    pub async fn create_with_executor<'e, E>(entity: &T, executor: E) -> Result<T, anyhow::Error>
+    where
+        E: Executor<'e, Database = Postgres>,
+    {
         let (columns, values) = entity.to_params()?;
         let query_str = Self::build_insert_query(&columns);
 
@@ -176,7 +183,7 @@ where
             query = Self::bind_value(query, value)?;
         }
 
-        match query.execute(&self.pool).await {
+        match query.execute(executor).await {
             Ok(_) => {
                 tracing::trace!("Created {}: {}", T::table_name(), entity);
                 Ok(entity.clone())
@@ -189,12 +196,102 @@ where
         }
     }
 
+    /// Internal: delete by filter with any executor
+    pub async fn delete_by_filter_with_executor<'e, E>(
+        filter: StorableFilter<T>,
+        executor: E,
+    ) -> Result<usize, anyhow::Error>
+    where
+        E: Executor<'e, Database = Postgres>,
+    {
+        let query_str = format!(
+            "DELETE FROM {} {}",
+            T::table_name(),
+            filter.to_where_clause()
+        );
+
+        let mut query = sqlx::query(&query_str);
+        for value in filter.values() {
+            query = Self::bind_value(query, value)?;
+        }
+
+        let result = query.execute(executor).await?;
+        let deleted_count = result.rows_affected() as usize;
+
+        tracing::trace!("Deleted {} {}s by filter", deleted_count, T::table_name());
+
+        Ok(deleted_count)
+    }
+
+    // =========================================================================
+    // Transaction support
+    // =========================================================================
+
+    /// Begin a new transaction. Use the returned `StorageTransaction` for
+    /// transactional operations, then call `commit()` to persist changes.
+    /// If dropped without committing, the transaction is automatically rolled back.
+    pub async fn begin_transaction(&self) -> Result<StorageTransaction<'_, T>, anyhow::Error> {
+        let tx = self.pool.begin().await?;
+        Ok(StorageTransaction {
+            tx,
+            _phantom: PhantomData,
+        })
+    }
+}
+
+/// A transactional wrapper around storage operations.
+/// Provides the same API as `GenericPostgresStorage` but executes within a transaction.
+/// Must call `commit()` to persist changes; automatically rolls back on drop.
+pub struct StorageTransaction<'a, T: Storable> {
+    tx: sqlx::Transaction<'a, Postgres>,
+    _phantom: PhantomData<T>,
+}
+
+impl<'a, T: Storable> StorageTransaction<'a, T>
+where
+    T: Display,
+{
+    /// Create an entity within the transaction
+    pub async fn create(&mut self, entity: &T) -> Result<T, anyhow::Error> {
+        GenericPostgresStorage::<T>::create_with_executor(entity, &mut *self.tx).await
+    }
+
+    /// Delete entities matching the filter within the transaction
+    pub async fn delete_by_filter(
+        &mut self,
+        filter: StorableFilter<T>,
+    ) -> Result<usize, anyhow::Error> {
+        GenericPostgresStorage::<T>::delete_by_filter_with_executor(filter, &mut *self.tx).await
+    }
+
+    /// Commit the transaction, persisting all changes
+    pub async fn commit(self) -> Result<(), anyhow::Error> {
+        self.tx.commit().await?;
+        Ok(())
+    }
+
+    /// Explicitly rollback the transaction (also happens automatically on drop)
+    pub async fn rollback(self) -> Result<(), anyhow::Error> {
+        self.tx.rollback().await?;
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl<T: Storable> Storage<T> for GenericPostgresStorage<T>
+where
+    T: Display,
+{
+    async fn create(&self, entity: &T) -> Result<T, anyhow::Error> {
+        Self::create_with_executor(entity, &self.pool).await
+    }
+
     async fn get_by_id(&self, id: &Uuid) -> Result<Option<T>, anyhow::Error> {
-        let id_filter = EntityFilter::unfiltered().entity_id(id);
+        let id_filter = StorableFilter::<T>::new().entity_id(id);
         self.get_one(id_filter).await
     }
 
-    async fn get_one(&self, filter: EntityFilter) -> Result<Option<T>, anyhow::Error> {
+    async fn get_one(&self, filter: StorableFilter<T>) -> Result<Option<T>, anyhow::Error> {
         let query_str = format!(
             "SELECT * FROM {} {}",
             T::table_name(),
@@ -214,13 +311,13 @@ where
         Ok(result)
     }
 
-    async fn get_all(&self, filter: EntityFilter) -> Result<Vec<T>, anyhow::Error> {
+    async fn get_all(&self, filter: StorableFilter<T>) -> Result<Vec<T>, anyhow::Error> {
         self.get_all_ordered(filter, "created_at ASC").await
     }
 
     async fn get_all_ordered(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         order_by: &str,
     ) -> Result<Vec<T>, anyhow::Error> {
         let pagination_clause = filter.to_pagination_clause();
@@ -254,7 +351,7 @@ where
 
     async fn get_paginated(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         order_by: &str,
     ) -> Result<PaginatedResult<T>, anyhow::Error> {
         let join_clause = filter.to_join_clause();
@@ -363,23 +460,7 @@ where
         Ok(deleted_count)
     }
 
-    async fn delete_by_filter(&self, filter: EntityFilter) -> Result<usize, anyhow::Error> {
-        let query_str = format!(
-            "DELETE FROM {} {}",
-            T::table_name(),
-            filter.to_where_clause()
-        );
-
-        let mut query = sqlx::query(&query_str);
-        for value in filter.values() {
-            query = Self::bind_value(query, value)?;
-        }
-
-        let result = query.execute(&self.pool).await?;
-        let deleted_count = result.rows_affected() as usize;
-
-        tracing::trace!("Deleted {} {}s by filter", deleted_count, T::table_name());
-
-        Ok(deleted_count)
+    async fn delete_by_filter(&self, filter: StorableFilter<T>) -> Result<usize, anyhow::Error> {
+        Self::delete_by_filter_with_executor(filter, &self.pool).await
     }
 }

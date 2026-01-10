@@ -1,19 +1,117 @@
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
+use crate::server::interfaces::r#impl::base::Interface;
 use crate::server::shared::extractors::Query;
-use crate::server::shared::handlers::query::{FilterQueryExtractor, NetworkFilterQuery};
+use crate::server::shared::handlers::ordering::OrderField;
+use crate::server::shared::handlers::query::{
+    FilterQueryExtractor, OrderDirection, PaginationParams,
+};
 use crate::server::shared::handlers::traits::{CrudHandlers, update_handler};
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::filter::StorableFilter;
+use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::api::{
     ApiError, ApiErrorResponse, ApiJson, ApiResponse, ApiResult, PaginatedApiResponse,
 };
 use crate::server::{config::AppState, subnets::r#impl::base::Subnet};
 use axum::extract::{Path, State};
 use axum::response::Json;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::IntoParams;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
+
+// ============================================================================
+// Subnet Ordering
+// ============================================================================
+
+/// Fields that subnets can be ordered/grouped by.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SubnetOrderField {
+    #[default]
+    CreatedAt,
+    Name,
+    Cidr,
+    SubnetType,
+    UpdatedAt,
+    NetworkId,
+}
+
+impl OrderField for SubnetOrderField {
+    fn to_sql(&self) -> &'static str {
+        match self {
+            Self::CreatedAt => "subnets.created_at",
+            Self::Name => "subnets.name",
+            Self::Cidr => "subnets.cidr",
+            Self::SubnetType => "subnets.subnet_type",
+            Self::UpdatedAt => "subnets.updated_at",
+            Self::NetworkId => "subnets.network_id",
+        }
+    }
+}
+
+// ============================================================================
+// Subnet Filter Query
+// ============================================================================
+
+/// Query parameters for filtering and ordering subnets.
+#[derive(Deserialize, Default, Debug, Clone, IntoParams)]
+pub struct SubnetFilterQuery {
+    /// Filter by network ID
+    pub network_id: Option<Uuid>,
+    /// Primary ordering field (used for grouping). Always sorts ASC to keep groups together.
+    pub group_by: Option<SubnetOrderField>,
+    /// Secondary ordering field (sorting within groups or standalone sort).
+    pub order_by: Option<SubnetOrderField>,
+    /// Direction for order_by field (group_by always uses ASC).
+    pub order_direction: Option<OrderDirection>,
+    /// Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.
+    #[param(minimum = 0, maximum = 1000)]
+    pub limit: Option<u32>,
+    /// Number of results to skip. Default: 0.
+    #[param(minimum = 0)]
+    pub offset: Option<u32>,
+}
+
+impl SubnetFilterQuery {
+    /// Build the ORDER BY clause.
+    pub fn apply_ordering(
+        &self,
+        filter: StorableFilter<Subnet>,
+    ) -> (StorableFilter<Subnet>, String) {
+        crate::server::shared::handlers::ordering::apply_ordering(
+            self.group_by,
+            self.order_by,
+            self.order_direction,
+            filter,
+            "subnets.created_at ASC",
+        )
+    }
+}
+
+impl FilterQueryExtractor for SubnetFilterQuery {
+    fn apply_to_filter<T: Storable>(
+        &self,
+        filter: StorableFilter<T>,
+        user_network_ids: &[Uuid],
+        _user_organization_id: Uuid,
+    ) -> StorableFilter<T> {
+        match self.network_id {
+            Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
+            Some(_) => filter.network_ids(&[]), // User doesn't have access - return empty
+            None => filter.network_ids(user_network_ids),
+        }
+    }
+
+    fn pagination(&self) -> PaginationParams {
+        PaginationParams {
+            limit: self.limit,
+            offset: self.offset,
+        }
+    }
+}
 
 // Generated handlers for most CRUD operations
 mod generated {
@@ -38,13 +136,15 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 ///
 /// Returns all subnets accessible to the authenticated user or daemon.
 /// Daemons can only access subnets within their assigned network.
+/// Supports pagination via `limit` and `offset` query parameters,
+/// and ordering via `group_by`, `order_by`, and `order_direction`.
 #[utoipa::path(
     get,
     path = "",
     tag = "subnets",
     operation_id = "list_subnets",
     summary = "List all subnets",
-    params(NetworkFilterQuery),
+    params(SubnetFilterQuery),
     responses(
         (status = 200, description = "List of subnets", body = PaginatedApiResponse<Subnet>),
     ),
@@ -53,7 +153,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 async fn get_all_subnets(
     state: State<Arc<AppState>>,
     auth: Authorized<Or<Viewer, IsDaemon>>,
-    query: Query<NetworkFilterQuery>,
+    query: Query<SubnetFilterQuery>,
 ) -> ApiResult<Json<PaginatedApiResponse<Subnet>>> {
     let network_ids = auth.network_ids();
     let organization_id = auth.organization_id();
@@ -63,7 +163,7 @@ async fn get_all_subnets(
         AuthenticatedEntity::Daemon { network_id, .. } => {
             // Daemons can only access subnets in their network
             // Return all results (no pagination applied)
-            let filter = EntityFilter::unfiltered().network_ids(&[network_id]);
+            let filter = StorableFilter::<Subnet>::new().network_ids(&[network_id]);
             let service = Subnet::get_service(&state);
             let result = service.get_all(filter).await.map_err(|e| {
                 tracing::error!(
@@ -85,16 +185,22 @@ async fn get_all_subnets(
             // Users/API keys - use standard filter with query params
             let org_id = organization_id
                 .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
-            let base_filter = EntityFilter::unfiltered().network_ids(&network_ids);
+            let base_filter = StorableFilter::<Subnet>::new().network_ids(&network_ids);
             let filter = query.apply_to_filter(base_filter, &network_ids, org_id);
+
             // Apply pagination
             let pagination = query.pagination();
             let filter = pagination.apply_to_filter(filter);
-            let service = Subnet::get_service(&state);
-            let result = service.get_paginated(filter).await.map_err(|e| {
-                tracing::error!(error = %e, "Failed to fetch subnets");
-                ApiError::internal_error(&e.to_string())
-            })?;
+
+            // Apply ordering
+            let (filter, order_by) = query.apply_ordering(filter);
+
+            let result = state
+                .services
+                .subnet_service
+                .get_paginated_ordered(filter, &order_by)
+                .await?;
+
             let limit = pagination.effective_limit().unwrap_or(0);
             let offset = pagination.effective_offset();
             Ok(Json(PaginatedApiResponse::success(
@@ -218,7 +324,7 @@ async fn update_subnet(
 
     if current.base.cidr != subnet.base.cidr {
         // CIDR is changing - validate that all existing interfaces are within the new CIDR
-        let filter = EntityFilter::unfiltered().subnet_id(&id);
+        let filter = StorableFilter::<Interface>::new().subnet_id(&id);
         let interfaces = state
             .services
             .interface_service

@@ -9,7 +9,7 @@ use crate::server::{
         },
         services::traits::{CrudService, EventBusService},
         storage::{
-            filter::EntityFilter,
+            filter::StorableFilter,
             generic::GenericPostgresStorage,
             traits::{Storable, Storage},
         },
@@ -58,7 +58,7 @@ impl CrudService<Subnet> for SubnetService {
         subnet: Subnet,
         authentication: AuthenticatedEntity,
     ) -> Result<Subnet, anyhow::Error> {
-        let filter = EntityFilter::unfiltered().network_ids(&[subnet.base.network_id]);
+        let filter = StorableFilter::<Subnet>::new().network_ids(&[subnet.base.network_id]);
         let all_subnets = self.storage.get_all(filter).await?;
 
         let subnet = if subnet.id == Uuid::nil() {

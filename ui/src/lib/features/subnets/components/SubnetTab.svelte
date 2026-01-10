@@ -6,7 +6,7 @@
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
 	import type { Subnet } from '../types/base';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
-	import type { FieldConfig } from '$lib/shared/components/data/types';
+	import { defineFields } from '$lib/shared/components/data/types';
 	import { Plus } from 'lucide-svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import {
@@ -18,6 +18,9 @@
 	} from '../queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import type { TabProps } from '$lib/shared/types';
+	import type { components } from '$lib/api/schema';
+
+	type SubnetOrderField = components['schemas']['SubnetOrderField'];
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -93,65 +96,40 @@
 	}
 
 	// Define field configuration for the DataTableControls
-	const subnetFields: FieldConfig<Subnet>[] = [
-		{
-			key: 'name',
-			label: 'Name',
-			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
-		},
-		{
-			key: 'description',
-			label: 'Description',
-			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: false
-		},
-		{
-			key: 'created_at',
-			label: 'Created',
-			type: 'date',
-			searchable: false,
-			filterable: false,
-			sortable: true
-		},
-		{
-			key: 'subnet_type',
-			label: 'Subnet Type',
-			type: 'string',
-			searchable: true,
-			filterable: true,
-			sortable: true
-		},
-		{
-			key: 'network_id',
-			type: 'string',
-			label: 'Network',
-			searchable: false,
-			filterable: true,
-			sortable: false,
-			getValue(item) {
-				return networksData.find((n) => n.id == item.network_id)?.name || 'Unknown Network';
-			}
-		},
-		{
-			key: 'tags',
-			label: 'Tags',
-			type: 'array',
-			searchable: true,
-			filterable: true,
-			sortable: false,
-			getValue: (entity) => {
-				// Return tag names for search/filter display
-				return entity.tags
-					.map((id) => tagsData.find((t) => t.id === id)?.name)
-					.filter((name): name is string => !!name);
-			}
-		}
-	];
+	// Uses defineFields to ensure all SubnetOrderField values are covered
+	let subnetFields = $derived(
+		defineFields<Subnet, SubnetOrderField>(
+			{
+				name: { label: 'Name', type: 'string', searchable: true },
+				cidr: { label: 'CIDR', type: 'string', searchable: true },
+				subnet_type: { label: 'Subnet Type', type: 'string', searchable: true, filterable: true },
+				network_id: {
+					label: 'Network',
+					type: 'string',
+					filterable: true,
+					groupable: true,
+					getValue: (item) =>
+						networksData.find((n) => n.id == item.network_id)?.name || 'Unknown Network'
+				},
+				created_at: { label: 'Created', type: 'date' },
+				updated_at: { label: 'Updated', type: 'date' }
+			},
+			[
+				{ key: 'description', label: 'Description', type: 'string', searchable: true },
+				{
+					key: 'tags',
+					label: 'Tags',
+					type: 'array',
+					searchable: true,
+					filterable: true,
+					getValue: (entity) =>
+						entity.tags
+							.map((id) => tagsData.find((t) => t.id === id)?.name)
+							.filter((name): name is string => !!name)
+				}
+			]
+		)
+	);
 </script>
 
 <div class="space-y-6">

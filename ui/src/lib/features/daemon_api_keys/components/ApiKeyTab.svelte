@@ -84,17 +84,13 @@
 			key: 'name',
 			label: 'Name',
 			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
+			searchable: true
 		},
 		{
 			key: 'network_id',
 			type: 'string',
 			label: 'Network',
-			searchable: false,
 			filterable: true,
-			sortable: false,
 			getValue(item) {
 				return networksData.find((n) => n.id == item.network_id)?.name || 'Unknown Network';
 			}
@@ -105,7 +101,6 @@
 			type: 'array',
 			searchable: true,
 			filterable: true,
-			sortable: false,
 			getValue: (entity) => {
 				// Return tag names for search/filter display
 				return entity.tags

@@ -632,7 +632,9 @@ export interface paths {
         };
         /**
          * Get all daemons
-         * @description Returns all daemons accessible to the user
+         * @description Returns all daemons accessible to the user.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
          */
         get: operations["get_daemons"];
         put?: never;
@@ -813,8 +815,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all groups */
-        get: operations["list_groups"];
+        /**
+         * List all groups
+         * @description Returns all groups the authenticated user has access to.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
+         */
+        get: operations["get_all_groups"];
         put?: never;
         /** Create a new group */
         post: operations["create_group"];
@@ -1492,6 +1499,8 @@ export interface paths {
          * List all subnets
          * @description Returns all subnets accessible to the authenticated user or daemon.
          *     Daemons can only access subnets within their assigned network.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
          */
         get: operations["list_subnets"];
         put?: never;
@@ -1550,8 +1559,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all tags */
-        get: operations["list_tags"];
+        /**
+         * List all tags
+         * @description Returns all tags in the authenticated user's organization.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
+         */
+        get: operations["get_all_tags"];
         put?: never;
         /**
          * Create a new tag
@@ -1910,23 +1924,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-<<<<<<< HEAD
-             *       "created_at": "2026-01-09T00:02:12.521266Z",
-             *       "id": "e06da099-8851-479d-8e6d-4031d00d8808",
-=======
-             *       "created_at": "2026-01-09T06:10:09.113654Z",
-             *       "id": "75e29fe1-6a27-49db-95ca-92262a00a6a6",
->>>>>>> fix/450-grouped-pagination
+             *       "created_at": "2026-01-10T15:49:40.581783Z",
+             *       "id": "106389d2-04e4-4e82-8e11-47a5a01f0253",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-<<<<<<< HEAD
-             *       "updated_at": "2026-01-09T00:02:12.521266Z"
-=======
-             *       "updated_at": "2026-01-09T06:10:09.113654Z"
->>>>>>> fix/450-grouped-pagination
+             *       "updated_at": "2026-01-10T15:49:40.581783Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2329,23 +2334,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-<<<<<<< HEAD
-             *           "created_at": "2026-01-09T00:02:12.518477Z",
-             *           "id": "e7cff844-c57b-4f35-9980-1872ca52502e",
-=======
-             *           "created_at": "2026-01-09T06:10:09.109942Z",
-             *           "id": "b782adc6-a784-42dd-9d06-29d3dead43ff",
->>>>>>> fix/450-grouped-pagination
+             *           "created_at": "2026-01-10T15:49:40.576767Z",
+             *           "id": "e61f02ed-e94c-4cb9-b3e5-c2c0f18bc1d7",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-<<<<<<< HEAD
-             *           "updated_at": "2026-01-09T00:02:12.518477Z"
-=======
-             *           "updated_at": "2026-01-09T06:10:09.109942Z"
->>>>>>> fix/450-grouped-pagination
+             *           "updated_at": "2026-01-10T15:49:40.576767Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -2354,11 +2350,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-<<<<<<< HEAD
-             *       "service_definition": "Sensu",
-=======
-             *       "service_definition": "Grocy",
->>>>>>> fix/450-grouped-pagination
+             *       "service_definition": "Scanopy Server",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -2641,23 +2633,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-<<<<<<< HEAD
-         *       "created_at": "2026-01-09T00:02:12.513247Z",
-         *       "id": "0ac89fb9-0aab-4f1f-9b39-44b109471562",
-=======
-         *       "created_at": "2026-01-09T06:10:09.101995Z",
-         *       "id": "aabbe8ae-3b48-48a9-9e09-f67ca384b2a3",
->>>>>>> fix/450-grouped-pagination
+         *       "created_at": "2026-01-10T15:49:40.565847Z",
+         *       "id": "18818e6c-fce3-4a8d-bc15-88a86b600c11",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-<<<<<<< HEAD
-         *       "updated_at": "2026-01-09T00:02:12.513247Z"
-=======
-         *       "updated_at": "2026-01-09T06:10:09.101995Z"
->>>>>>> fix/450-grouped-pagination
+         *       "updated_at": "2026-01-10T15:49:40.565847Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -2821,11 +2804,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-<<<<<<< HEAD
-         *           "service_definition": "Sensu",
-=======
-         *           "service_definition": "Grocy",
->>>>>>> fix/450-grouped-pagination
+         *           "service_definition": "Scanopy Server",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -2945,6 +2924,11 @@ export interface components {
         };
         /** @enum {string} */
         DaemonMode: "Push" | "Pull";
+        /**
+         * @description Fields that daemons can be ordered/grouped by.
+         * @enum {string}
+         */
+        DaemonOrderField: "created_at" | "name" | "last_seen" | "updated_at" | "network_id";
         /** @description Daemon registration request from daemon to server */
         DaemonRegistrationRequest: {
             capabilities: components["schemas"]["DaemonCapabilities"];
@@ -3150,7 +3134,7 @@ export interface components {
         /** @enum {string} */
         EdgeTypeDiscriminants: "Interface" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke";
         /** @enum {string} */
-        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "Subnet" | "Group" | "Topology" | "GroupBinding" | "EntityTag" | "UserApiKeyNetworkAccess" | "UserNetworkAccess" | "Unknown";
+        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "Subnet" | "Group" | "Topology" | "Unknown";
         EntityMetadata: {
             color: components["schemas"]["Color"];
             icon: string;
@@ -3219,6 +3203,11 @@ export interface components {
             source?: components["schemas"]["EntitySource"];
             tags: string[];
         };
+        /**
+         * @description Fields that groups can be ordered/grouped by.
+         * @enum {string}
+         */
+        GroupOrderField: "created_at" | "name" | "group_type" | "updated_at" | "network_id";
         /** @enum {string} */
         GroupType: "RequestPath" | "HubAndSpoke";
         /**
@@ -3584,6 +3573,20 @@ export interface components {
             success: boolean;
         };
         /** @description Response type for paginated list endpoints (pagination is always present in meta) */
+        PaginatedApiResponse_Group: {
+            data: (components["schemas"]["GroupBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
+            })[];
+            error?: string | null;
+            meta: components["schemas"]["PaginatedApiMeta"];
+            success: boolean;
+        };
+        /** @description Response type for paginated list endpoints (pagination is always present in meta) */
         PaginatedApiResponse_HostResponse: {
             data: {
                 /** Format: date-time */
@@ -3626,6 +3629,20 @@ export interface components {
         /** @description Response type for paginated list endpoints (pagination is always present in meta) */
         PaginatedApiResponse_Subnet: {
             data: (components["schemas"]["SubnetBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
+            })[];
+            error?: string | null;
+            meta: components["schemas"]["PaginatedApiMeta"];
+            success: boolean;
+        };
+        /** @description Response type for paginated list endpoints (pagination is always present in meta) */
+        PaginatedApiResponse_Tag: {
+            data: (components["schemas"]["TagBase"] & {
                 /** Format: date-time */
                 readonly created_at: string;
                 /** Format: uuid */
@@ -3868,23 +3885,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-<<<<<<< HEAD
-         *           "created_at": "2026-01-09T00:02:12.513200Z",
-         *           "id": "01e556e1-5cbb-4640-b78a-b5b586e147be",
-=======
-         *           "created_at": "2026-01-09T06:10:09.101912Z",
-         *           "id": "d4d8e096-de68-4ca9-a3f9-9a14af72ced6",
->>>>>>> fix/450-grouped-pagination
+         *           "created_at": "2026-01-10T15:49:40.565735Z",
+         *           "id": "a789c783-ac23-4e21-b90f-7527cabee228",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-<<<<<<< HEAD
-         *           "updated_at": "2026-01-09T00:02:12.513200Z"
-=======
-         *           "updated_at": "2026-01-09T06:10:09.101912Z"
->>>>>>> fix/450-grouped-pagination
+         *           "updated_at": "2026-01-10T15:49:40.565735Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -3893,11 +3901,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-<<<<<<< HEAD
-         *       "service_definition": "Sensu",
-=======
-         *       "service_definition": "Grocy",
->>>>>>> fix/450-grouped-pagination
+         *       "service_definition": "Scanopy Server",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -4058,6 +4062,11 @@ export interface components {
             subnet_type: components["schemas"]["SubnetType"];
             tags: string[];
         };
+        /**
+         * @description Fields that subnets can be ordered/grouped by.
+         * @enum {string}
+         */
+        SubnetOrderField: "created_at" | "name" | "cidr" | "subnet_type" | "updated_at" | "network_id";
         /** @enum {string} */
         SubnetType: "Internet" | "Remote" | "Gateway" | "VpnTunnel" | "Dmz" | "Lan" | "WiFi" | "IoT" | "Guest" | "DockerBridge" | "Management" | "Storage" | "Unknown" | "None";
         /**
@@ -4086,6 +4095,11 @@ export interface components {
             /** Format: uuid */
             organization_id: string;
         };
+        /**
+         * @description Fields that tags can be ordered/grouped by.
+         * @enum {string}
+         */
+        TagOrderField: "created_at" | "name" | "color" | "updated_at";
         /** @enum {string} */
         TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "SubscriptionCancelled";
         Topology: components["schemas"]["TopologyBase"] & {
@@ -5758,8 +5772,12 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
-                /** @description Filter by specific entity IDs (for selective loading) */
-                ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["DaemonOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["DaemonOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -6175,13 +6193,17 @@ export interface operations {
             };
         };
     };
-    list_groups: {
+    get_all_groups: {
         parameters: {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
-                /** @description Filter by specific entity IDs (for selective loading) */
-                ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["GroupOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["GroupOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -6199,12 +6221,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        data: components["schemas"]["Group"][];
-                        error?: string | null;
-                        meta: components["schemas"]["PaginatedApiMeta"];
-                        success: boolean;
-                    };
+                    "application/json": components["schemas"]["PaginatedApiResponse_Group"];
                 };
             };
         };
@@ -6383,6 +6400,8 @@ export interface operations {
                 network_id?: string | null;
                 /** @description Filter by specific entity IDs (for selective loading) */
                 ids?: string[] | null;
+                /** @description Filter by tag IDs (returns hosts that have ANY of the specified tags) */
+                tag_ids?: string[] | null;
                 /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
                 group_by?: null | components["schemas"]["HostOrderField"];
                 /** @description Secondary ordering field (sorting within groups or standalone sort). */
@@ -7601,6 +7620,8 @@ export interface operations {
                 host_id?: string | null;
                 /** @description Filter by specific entity IDs (for selective loading) */
                 ids?: string[] | null;
+                /** @description Filter by tag IDs (returns services that have ANY of the specified tags) */
+                tag_ids?: string[] | null;
                 /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
                 group_by?: null | components["schemas"]["ServiceOrderField"];
                 /** @description Secondary ordering field (sorting within groups or standalone sort). */
@@ -8070,8 +8091,12 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
-                /** @description Filter by specific entity IDs (for selective loading) */
-                ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["SubnetOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["SubnetOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -8261,9 +8286,15 @@ export interface operations {
             };
         };
     };
-    list_tags: {
+    get_all_tags: {
         parameters: {
             query?: {
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["TagOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["TagOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -8281,12 +8312,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        data: components["schemas"]["Tag"][];
-                        error?: string | null;
-                        meta: components["schemas"]["PaginatedApiMeta"];
-                        success: boolean;
-                    };
+                    "application/json": components["schemas"]["PaginatedApiResponse_Tag"];
                 };
             };
         };

@@ -11,7 +11,7 @@ use crate::server::config::AppState;
 use crate::server::shared::handlers::query::BindingQuery;
 use crate::server::shared::handlers::traits::{CrudHandlers, create_handler, update_handler};
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, ApiResponse, ApiResult};
 impl CrudHandlers for Binding {
     type Service = BindingService;
@@ -45,7 +45,7 @@ async fn validate_no_binding_type_conflict(
     match binding.base.binding_type {
         BindingType::Interface { interface_id } => {
             // Check for conflicting port bindings: same interface OR all-interfaces
-            let filter = EntityFilter::unfiltered().service_id(&service_id);
+            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
             let existing = state.services.binding_service.get_all(filter).await?;
 
             for existing_binding in existing {
@@ -72,7 +72,7 @@ async fn validate_no_binding_type_conflict(
             ..
         } => {
             // Check for conflicting interface binding on same interface
-            let filter = EntityFilter::unfiltered().service_id(&service_id);
+            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
             let existing = state.services.binding_service.get_all(filter).await?;
 
             for existing_binding in existing {
@@ -95,7 +95,7 @@ async fn validate_no_binding_type_conflict(
             interface_id: None, ..
         } => {
             // Port binding on all interfaces: conflicts with ANY interface binding
-            let filter = EntityFilter::unfiltered().service_id(&service_id);
+            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
             let existing = state.services.binding_service.get_all(filter).await?;
 
             for existing_binding in existing {
@@ -164,7 +164,7 @@ async fn create_binding(
     } = &binding.base.binding_type
     {
         let service_id = binding.service_id();
-        let filter = EntityFilter::unfiltered().service_id(&service_id);
+        let filter = StorableFilter::<Binding>::new().service_id(&service_id);
         let existing = state.services.binding_service.get_all(filter).await?;
 
         for existing_binding in existing {

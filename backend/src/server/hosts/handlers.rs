@@ -2,6 +2,7 @@ use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::extractors::Query;
+use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
 };
@@ -9,11 +10,12 @@ use crate::server::shared::handlers::traits::{
     BulkDeleteResponse, bulk_delete_handler, delete_handler,
 };
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::{filter::StorableFilter, traits::Storable};
 use crate::server::shared::types::api::{ApiErrorResponse, EmptyApiResponse};
 use crate::server::shared::validation::{validate_network_access, validate_read_access};
 use crate::server::{
     config::AppState,
+    daemons::r#impl::base::Daemon,
     hosts::r#impl::{
         api::{CreateHostRequest, DiscoveryHostRequest, HostResponse, UpdateHostRequest},
         base::Host,
@@ -48,9 +50,8 @@ pub enum HostOrderField {
     NetworkId,
 }
 
-impl HostOrderField {
-    /// Returns the SQL ORDER BY expression for this field.
-    pub fn to_sql(&self) -> &'static str {
+impl OrderField for HostOrderField {
+    fn to_sql(&self) -> &'static str {
         match self {
             Self::CreatedAt => "hosts.created_at",
             Self::Name => "hosts.name",
@@ -61,8 +62,7 @@ impl HostOrderField {
         }
     }
 
-    /// Returns the JOIN clause if this field requires one, None otherwise.
-    pub fn join_sql(&self) -> Option<&'static str> {
+    fn join_sql(&self) -> Option<&'static str> {
         match self {
             Self::VirtualizedBy => Some(
                 "LEFT JOIN services AS virt_service ON \
@@ -84,6 +84,8 @@ pub struct HostFilterQuery {
     pub network_id: Option<Uuid>,
     /// Filter by specific entity IDs (for selective loading)
     pub ids: Option<Vec<Uuid>>,
+    /// Filter by tag IDs (returns hosts that have ANY of the specified tags)
+    pub tag_ids: Option<Vec<Uuid>>,
     /// Primary ordering field (used for grouping). Always sorts ASC to keep groups together.
     pub group_by: Option<HostOrderField>,
     /// Secondary ordering field (sorting within groups or standalone sort).
@@ -101,49 +103,24 @@ pub struct HostFilterQuery {
 impl HostFilterQuery {
     /// Build the ORDER BY clause and apply any required JOINs to the filter.
     /// Returns: (modified_filter, order_by_sql)
-    pub fn apply_ordering(&self, mut filter: EntityFilter) -> (EntityFilter, String) {
-        let mut order_parts = Vec::new();
-
-        // Primary: group_by field (always ASC to keep groups together)
-        if let Some(group_field) = &self.group_by {
-            if let Some(join) = group_field.join_sql() {
-                filter = filter.join(join);
-            }
-            order_parts.push(format!("{} ASC", group_field.to_sql()));
-        }
-
-        // Secondary: order_by field with specified direction
-        if let Some(order_field) = &self.order_by {
-            // Only add JOIN if not already added by group_by
-            let group_join = self.group_by.and_then(|g| g.join_sql());
-            let order_join = order_field.join_sql();
-            if group_join != order_join
-                && let Some(join) = order_join
-            {
-                filter = filter.join(join);
-            }
-            let direction = self.order_direction.unwrap_or_default().to_sql();
-            order_parts.push(format!("{} {}", order_field.to_sql(), direction));
-        }
-
-        // Default: created_at ASC if nothing specified
-        let order_by = if order_parts.is_empty() {
-            "hosts.created_at ASC".to_string()
-        } else {
-            order_parts.join(", ")
-        };
-
-        (filter, order_by)
+    pub fn apply_ordering(&self, filter: StorableFilter<Host>) -> (StorableFilter<Host>, String) {
+        crate::server::shared::handlers::ordering::apply_ordering(
+            self.group_by,
+            self.order_by,
+            self.order_direction,
+            filter,
+            "hosts.created_at ASC",
+        )
     }
 }
 
 impl FilterQueryExtractor for HostFilterQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         // Apply IDs filter first if provided
         let filter = match &self.ids {
             Some(ids) if !ids.is_empty() => filter.entity_ids(ids),
@@ -200,8 +177,16 @@ async fn get_all_hosts(
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
-    let base_filter = EntityFilter::unfiltered().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Host>::new().network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
+
+    // Apply tag filter if specified
+    let filter = match &query.tag_ids {
+        Some(tag_ids) if !tag_ids.is_empty() => {
+            filter.has_any_tags(tag_ids, EntityDiscriminants::Host)
+        }
+        _ => filter,
+    };
 
     // Apply pagination
     let pagination = query.pagination();
@@ -647,11 +632,11 @@ pub async fn delete_host(
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
     // Pre-validation: Can't delete a host with an associated daemon
-    let host_filter = EntityFilter::unfiltered().host_id(&id);
+    let daemon_filter = StorableFilter::<Daemon>::new().host_id(&id);
     if state
         .services
         .daemon_service
-        .get_one(host_filter)
+        .get_one(daemon_filter)
         .await?
         .is_some()
     {
@@ -686,9 +671,9 @@ pub async fn bulk_delete_hosts(
 ) -> ApiResult<Json<ApiResponse<BulkDeleteResponse>>> {
     let daemon_service = &state.services.daemon_service;
 
-    let host_filter = EntityFilter::unfiltered().host_ids(&ids);
+    let daemon_filter = StorableFilter::<Daemon>::new().host_ids(&ids);
 
-    if !daemon_service.get_all(host_filter).await?.is_empty() {
+    if !daemon_service.get_all(daemon_filter).await?.is_empty() {
         return Err(ApiError::conflict(
             "One or more hosts has an associated daemon, and can't be deleted. Delete the daemon(s) first.",
         ));

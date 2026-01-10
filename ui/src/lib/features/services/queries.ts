@@ -34,6 +34,8 @@ export interface ServicesQueryParams {
 	order_by?: components['schemas']['ServiceOrderField'];
 	/** Direction for order_by field. */
 	order_direction?: components['schemas']['OrderDirection'];
+	/** Filter by tag IDs (returns services that have ANY of the specified tags). */
+	tag_ids?: string[];
 }
 
 /**
@@ -66,17 +68,27 @@ export function useServicesQuery(
 ) {
 	return createQuery(() => {
 		const params = typeof paramsOrGetter === 'function' ? paramsOrGetter() : paramsOrGetter;
-		const { limit, offset, network_id, host_id, group_by, order_by, order_direction } = params;
+		const { limit, offset, network_id, host_id, group_by, order_by, order_direction, tag_ids } =
+			params;
 
 		return {
 			queryKey: [
 				...queryKeys.services.all,
-				{ limit, offset, network_id, host_id, group_by, order_by, order_direction }
+				{ limit, offset, network_id, host_id, group_by, order_by, order_direction, tag_ids }
 			],
 			queryFn: async (): Promise<PaginatedResult<Service>> => {
 				const { data } = await apiClient.GET('/api/v1/services', {
 					params: {
-						query: { limit, offset, network_id, host_id, group_by, order_by, order_direction }
+						query: {
+							limit,
+							offset,
+							network_id,
+							host_id,
+							group_by,
+							order_by,
+							order_direction,
+							tag_ids
+						}
 					}
 				});
 				if (!data?.success || !data.data) {

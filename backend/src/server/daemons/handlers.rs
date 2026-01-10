@@ -4,9 +4,12 @@ use crate::server::daemons::r#impl::api::DaemonHeartbeatPayload;
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::events::types::TelemetryOperation;
 use crate::server::shared::extractors::Query;
-use crate::server::shared::handlers::query::{FilterQueryExtractor, NetworkFilterQuery};
+use crate::server::shared::handlers::ordering::OrderField;
+use crate::server::shared::handlers::query::{
+    FilterQueryExtractor, OrderDirection, PaginationParams,
+};
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::api::ApiErrorResponse;
 use crate::server::{
@@ -39,9 +42,100 @@ use axum::{
     response::Json,
 };
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::IntoParams;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
+
+// ============================================================================
+// Daemon Ordering
+// ============================================================================
+
+/// Fields that daemons can be ordered/grouped by.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DaemonOrderField {
+    #[default]
+    CreatedAt,
+    Name,
+    LastSeen,
+    UpdatedAt,
+    NetworkId,
+}
+
+impl OrderField for DaemonOrderField {
+    fn to_sql(&self) -> &'static str {
+        match self {
+            Self::CreatedAt => "daemons.created_at",
+            Self::Name => "daemons.name",
+            Self::LastSeen => "daemons.last_seen",
+            Self::UpdatedAt => "daemons.updated_at",
+            Self::NetworkId => "daemons.network_id",
+        }
+    }
+}
+
+// ============================================================================
+// Daemon Filter Query
+// ============================================================================
+
+/// Query parameters for filtering and ordering daemons.
+#[derive(Deserialize, Default, Debug, Clone, IntoParams)]
+pub struct DaemonFilterQuery {
+    /// Filter by network ID
+    pub network_id: Option<Uuid>,
+    /// Primary ordering field (used for grouping). Always sorts ASC to keep groups together.
+    pub group_by: Option<DaemonOrderField>,
+    /// Secondary ordering field (sorting within groups or standalone sort).
+    pub order_by: Option<DaemonOrderField>,
+    /// Direction for order_by field (group_by always uses ASC).
+    pub order_direction: Option<OrderDirection>,
+    /// Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.
+    #[param(minimum = 0, maximum = 1000)]
+    pub limit: Option<u32>,
+    /// Number of results to skip. Default: 0.
+    #[param(minimum = 0)]
+    pub offset: Option<u32>,
+}
+
+impl DaemonFilterQuery {
+    /// Build the ORDER BY clause.
+    pub fn apply_ordering(
+        &self,
+        filter: StorableFilter<Daemon>,
+    ) -> (StorableFilter<Daemon>, String) {
+        crate::server::shared::handlers::ordering::apply_ordering(
+            self.group_by,
+            self.order_by,
+            self.order_direction,
+            filter,
+            "daemons.created_at ASC",
+        )
+    }
+}
+
+impl FilterQueryExtractor for DaemonFilterQuery {
+    fn apply_to_filter<T: Storable>(
+        &self,
+        filter: StorableFilter<T>,
+        user_network_ids: &[Uuid],
+        _user_organization_id: Uuid,
+    ) -> StorableFilter<T> {
+        match self.network_id {
+            Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
+            Some(_) => filter.network_ids(&[]), // User doesn't have access - return empty
+            None => filter.network_ids(user_network_ids),
+        }
+    }
+
+    fn pagination(&self) -> PaginationParams {
+        PaginationParams {
+            limit: self.limit,
+            offset: self.offset,
+        }
+    }
+}
 
 // Generated handlers for operations that use generic CRUD logic
 mod generated {
@@ -71,14 +165,16 @@ pub fn create_internal_router() -> OpenApiRouter<Arc<AppState>> {
 
 /// Get all daemons
 ///
-/// Returns all daemons accessible to the user
+/// Returns all daemons accessible to the user.
+/// Supports pagination via `limit` and `offset` query parameters,
+/// and ordering via `group_by`, `order_by`, and `order_direction`.
 #[utoipa::path(
     get,
     path = "",
     tag = "daemons",
     operation_id = "get_daemons",
     summary = "Get all daemons",
-    params(NetworkFilterQuery),
+    params(DaemonFilterQuery),
     responses(
         (status = 200, description = "List of daemons", body = PaginatedApiResponse<DaemonResponse>),
     ),
@@ -87,7 +183,7 @@ pub fn create_internal_router() -> OpenApiRouter<Arc<AppState>> {
 async fn get_all(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Viewer>,
-    query: Query<NetworkFilterQuery>,
+    query: Query<DaemonFilterQuery>,
 ) -> ApiResult<Json<PaginatedApiResponse<DaemonResponse>>> {
     let network_ids = auth.network_ids();
     let organization_id = auth
@@ -95,12 +191,19 @@ async fn get_all(
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
     // Apply network filter and pagination
-    let base_filter = EntityFilter::unfiltered().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Daemon>::new().network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
     let pagination = query.pagination();
     let filter = pagination.apply_to_filter(filter);
 
-    let result = state.services.daemon_service.get_paginated(filter).await?;
+    // Apply ordering
+    let (filter, order_by) = query.apply_ordering(filter);
+
+    let result = state
+        .services
+        .daemon_service
+        .get_paginated_ordered(filter, &order_by)
+        .await?;
 
     let policy = DaemonVersionPolicy::default();
     let responses: Vec<DaemonResponse> = result

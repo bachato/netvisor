@@ -279,13 +279,13 @@ impl<T: ExternalServiceType> PermissionRequirement for IsExternalService<T> {
     fn check(entity: &AuthenticatedEntity) -> Result<(), ApiError> {
         match entity {
             AuthenticatedEntity::ExternalService { name } => {
-                if let Some(required_name) = T::required_name() {
-                    if name.to_lowercase() != required_name {
-                        return Err(ApiError::forbidden(&format!(
-                            "External service '{}' required",
-                            required_name
-                        )));
-                    }
+                if let Some(required_name) = T::required_name()
+                    && name.to_lowercase() != required_name
+                {
+                    return Err(ApiError::forbidden(&format!(
+                        "External service '{}' required",
+                        required_name
+                    )));
                 }
                 Ok(())
             }

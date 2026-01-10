@@ -14,7 +14,7 @@ use crate::server::{
     interfaces::r#impl::base::Interface,
     ports::r#impl::base::Port,
     services::r#impl::{definitions::ServiceDefinition, virtualization::ServiceVirtualization},
-    shared::{storage::filter::EntityFilter, types::entities::EntitySource},
+    shared::{storage::filter::StorableFilter, types::entities::EntitySource},
     topology::types::{
         base::TopologyOptions,
         edges::{Edge, EdgeStyle},
@@ -44,24 +44,24 @@ pub struct PaginatedResult<T> {
 pub trait Storage<T: Storable>: Send + Sync {
     async fn create(&self, entity: &T) -> Result<T, anyhow::Error>;
     async fn get_by_id(&self, id: &Uuid) -> Result<Option<T>, anyhow::Error>;
-    async fn get_all(&self, filter: EntityFilter) -> Result<Vec<T>, anyhow::Error>;
+    async fn get_all(&self, filter: StorableFilter<T>) -> Result<Vec<T>, anyhow::Error>;
     async fn get_all_ordered(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         order_by: &str,
     ) -> Result<Vec<T>, anyhow::Error>;
     /// Get entities with pagination, returning items and total count.
     /// The filter's limit/offset are applied to the query.
     async fn get_paginated(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         order_by: &str,
     ) -> Result<PaginatedResult<T>, anyhow::Error>;
-    async fn get_one(&self, filter: EntityFilter) -> Result<Option<T>, anyhow::Error>;
+    async fn get_one(&self, filter: StorableFilter<T>) -> Result<Option<T>, anyhow::Error>;
     async fn update(&self, entity: &mut T) -> Result<T, anyhow::Error>;
     async fn delete(&self, id: &Uuid) -> Result<(), anyhow::Error>;
     async fn delete_many(&self, ids: &[Uuid]) -> Result<usize, anyhow::Error>;
-    async fn delete_by_filter(&self, filter: EntityFilter) -> Result<usize, anyhow::Error>;
+    async fn delete_by_filter(&self, filter: StorableFilter<T>) -> Result<usize, anyhow::Error>;
 }
 
 /// Base trait for anything stored in the database, including junction tables.

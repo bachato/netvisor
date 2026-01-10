@@ -18,7 +18,7 @@ use crate::server::{
             types::{AuthEvent, AuthOperation, TelemetryEvent},
         },
         services::traits::CrudService,
-        storage::{filter::EntityFilter, traits::Storable},
+        storage::{filter::StorableFilter, traits::Storable},
     },
     users::{
         r#impl::{
@@ -92,7 +92,7 @@ impl AuthService {
         // Check if email already taken
         let all_users = self
             .user_service
-            .get_all(EntityFilter::unfiltered())
+            .get_all(StorableFilter::<User>::new())
             .await?;
 
         if all_users.iter().any(|u| u.base.email == request.email) {
@@ -367,7 +367,7 @@ impl AuthService {
         // Get user by email
         let all_users = self
             .user_service
-            .get_all(EntityFilter::unfiltered())
+            .get_all(StorableFilter::<User>::new())
             .await?;
 
         let user = all_users
@@ -445,7 +445,7 @@ impl AuthService {
 
         let all_users = self
             .user_service
-            .get_all(EntityFilter::unfiltered())
+            .get_all(StorableFilter::<User>::new())
             .await?;
 
         // Find user but don't expose if they exist or not

@@ -1,11 +1,12 @@
 use crate::server::auth::middleware::permissions::{Authorized, Member, Viewer};
+use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
 };
 use crate::server::shared::handlers::traits::update_handler;
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
-use crate::server::shared::storage::traits::Storage;
+use crate::server::shared::storage::filter::StorableFilter;
+use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::api::{
     ApiError, ApiErrorResponse, ApiResponse, ApiResult, PaginatedApiResponse,
 };
@@ -41,9 +42,8 @@ pub enum ServiceOrderField {
     Position,
 }
 
-impl ServiceOrderField {
-    /// Returns the SQL ORDER BY expression for this field.
-    pub fn to_sql(&self) -> &'static str {
+impl OrderField for ServiceOrderField {
+    fn to_sql(&self) -> &'static str {
         match self {
             Self::CreatedAt => "services.created_at",
             Self::Name => "services.name",
@@ -54,8 +54,7 @@ impl ServiceOrderField {
         }
     }
 
-    /// Returns the JOIN clause if this field requires one, None otherwise.
-    pub fn join_sql(&self) -> Option<&'static str> {
+    fn join_sql(&self) -> Option<&'static str> {
         match self {
             Self::Host => {
                 Some("LEFT JOIN hosts AS service_host ON services.host_id = service_host.id")
@@ -78,6 +77,8 @@ pub struct ServiceFilterQuery {
     pub host_id: Option<Uuid>,
     /// Filter by specific entity IDs (for selective loading)
     pub ids: Option<Vec<Uuid>>,
+    /// Filter by tag IDs (returns services that have ANY of the specified tags)
+    pub tag_ids: Option<Vec<Uuid>>,
     /// Primary ordering field (used for grouping). Always sorts ASC to keep groups together.
     pub group_by: Option<ServiceOrderField>,
     /// Secondary ordering field (sorting within groups or standalone sort).
@@ -95,49 +96,27 @@ pub struct ServiceFilterQuery {
 impl ServiceFilterQuery {
     /// Build the ORDER BY clause and apply any required JOINs to the filter.
     /// Returns: (modified_filter, order_by_sql)
-    pub fn apply_ordering(&self, mut filter: EntityFilter) -> (EntityFilter, String) {
-        let mut order_parts = Vec::new();
-
-        // Primary: group_by field (always ASC to keep groups together)
-        if let Some(group_field) = &self.group_by {
-            if let Some(join) = group_field.join_sql() {
-                filter = filter.join(join);
-            }
-            order_parts.push(format!("{} ASC", group_field.to_sql()));
-        }
-
-        // Secondary: order_by field with specified direction
-        if let Some(order_field) = &self.order_by {
-            // Only add JOIN if not already added by group_by
-            let group_join = self.group_by.and_then(|g| g.join_sql());
-            let order_join = order_field.join_sql();
-            if group_join != order_join
-                && let Some(join) = order_join
-            {
-                filter = filter.join(join);
-            }
-            let direction = self.order_direction.unwrap_or_default().to_sql();
-            order_parts.push(format!("{} {}", order_field.to_sql(), direction));
-        }
-
-        // Default: created_at ASC if nothing specified
-        let order_by = if order_parts.is_empty() {
-            "services.created_at ASC".to_string()
-        } else {
-            order_parts.join(", ")
-        };
-
-        (filter, order_by)
+    pub fn apply_ordering(
+        &self,
+        filter: StorableFilter<Service>,
+    ) -> (StorableFilter<Service>, String) {
+        crate::server::shared::handlers::ordering::apply_ordering(
+            self.group_by,
+            self.order_by,
+            self.order_direction,
+            filter,
+            "services.created_at ASC",
+        )
     }
 }
 
 impl FilterQueryExtractor for ServiceFilterQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         // Apply IDs filter first if provided
         let filter = match &self.ids {
             Some(ids) if !ids.is_empty() => filter.entity_ids(ids),
@@ -210,8 +189,17 @@ async fn get_all_services(
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
-    let base_filter = EntityFilter::unfiltered().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Service>::new().network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
+
+    // Apply tag filter if specified
+    let filter = match &query.tag_ids {
+        Some(tag_ids) if !tag_ids.is_empty() => filter.has_any_tags(
+            tag_ids,
+            crate::server::shared::entities::EntityDiscriminants::Service,
+        ),
+        _ => filter,
+    };
 
     // Apply pagination
     let pagination = query.pagination();
@@ -223,8 +211,7 @@ async fn get_all_services(
     let result = state
         .services
         .service_service
-        .storage()
-        .get_paginated(filter, &order_by)
+        .get_paginated_ordered(filter, &order_by)
         .await?;
 
     // Hydrate tags

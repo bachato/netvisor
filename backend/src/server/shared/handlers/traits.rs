@@ -6,7 +6,7 @@ use crate::server::{
         entities::{ChangeTriggersTopologyStaleness, Entity as EntityEnum},
         handlers::query::FilterQueryExtractor,
         services::traits::{CrudService, EventBusService},
-        storage::{filter::EntityFilter, traits::Entity},
+        storage::{filter::StorableFilter, traits::Entity},
         types::api::{ApiError, ApiResponse, ApiResult, PaginatedApiResponse},
         types::entities::EntitySource,
         validation::{
@@ -135,12 +135,12 @@ where
     let user_id = auth.user_id();
 
     let base_filter = if T::is_network_keyed() {
-        EntityFilter::unfiltered().network_ids(&network_ids)
+        StorableFilter::<T>::new().network_ids(&network_ids)
     } else if T::table_name() == "networks" {
         // Networks are org-scoped but should be filtered to only those the user has access to
-        EntityFilter::unfiltered().entity_ids(&network_ids)
+        StorableFilter::<T>::new().entity_ids(&network_ids)
     } else {
-        EntityFilter::unfiltered().organization_id(&organization_id)
+        StorableFilter::<T>::new().organization_id(&organization_id)
     };
 
     // Apply entity-specific filters
@@ -393,7 +393,7 @@ where
     let service = T::get_service(&state);
 
     // Fetch all entities by the requested IDs
-    let entity_filter = EntityFilter::unfiltered().entity_ids(&ids);
+    let entity_filter = StorableFilter::<T>::new().entity_ids(&ids);
     let entities = service.get_all(entity_filter).await?;
 
     // Verify we found all requested entities

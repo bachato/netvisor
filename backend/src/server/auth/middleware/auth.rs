@@ -5,11 +5,13 @@ use cidr::IpCidr;
 use crate::daemon::runtime::service::{INVALID_API_KEY_ERROR, REGISTERED_INVALID_KEY_ERROR};
 use crate::server::{
     config::AppState,
+    daemon_api_keys::r#impl::base::DaemonApiKey,
+    networks::r#impl::Network,
     shared::{
         api_key_common::{ApiKeyCommon, ApiKeyType, check_key_validity, hash_api_key},
         events::types::{AuthEvent, AuthOperation},
         services::traits::CrudService,
-        storage::filter::EntityFilter,
+        storage::filter::StorableFilter,
         types::api::ApiError,
     },
     users::r#impl::{base::User, permissions::UserOrgPermissions},
@@ -310,32 +312,32 @@ impl AuthenticatedEntity {
         {
             // Check for external service token (e.g., Prometheus metrics endpoint)
             // This must come before API key type detection since external tokens don't have prefixes
-            if let Some(metrics_token) = &app_state.config.metrics_token {
-                if !metrics_token.is_empty() && api_key_raw == metrics_token {
-                    // External service authentication
-                    let service_name = parts
-                        .headers
-                        .get("X-Service-Name")
-                        .and_then(|h| h.to_str().ok())
-                        .map(|s| s.to_lowercase())
-                        .unwrap_or_else(|| "unknown".to_string());
+            if let Some(metrics_token) = &app_state.config.metrics_token
+                && !metrics_token.is_empty()
+                && api_key_raw == metrics_token
+            {
+                // External service authentication
+                let service_name = parts
+                    .headers
+                    .get("X-Service-Name")
+                    .and_then(|h| h.to_str().ok())
+                    .map(|s| s.to_lowercase())
+                    .unwrap_or_else(|| "unknown".to_string());
 
-                    // Check IP restrictions for this service
-                    if let Some(allowed_ips) = app_state
-                        .config
-                        .external_service_allowed_ips
-                        .get(&service_name)
-                    {
-                        if !is_ip_allowed(ip, allowed_ips) {
-                            return Err(AuthError(ApiError::forbidden(&format!(
-                                "IP {} not allowed for external service '{}'",
-                                ip, service_name
-                            ))));
-                        }
-                    }
-
-                    return Ok(AuthenticatedEntity::ExternalService { name: service_name });
+                // Check IP restrictions for this service
+                if let Some(allowed_ips) = app_state
+                    .config
+                    .external_service_allowed_ips
+                    .get(&service_name)
+                    && !is_ip_allowed(ip, allowed_ips)
+                {
+                    return Err(AuthError(ApiError::forbidden(&format!(
+                        "IP {} not allowed for external service '{}'",
+                        ip, service_name
+                    ))));
                 }
+
+                return Ok(AuthenticatedEntity::ExternalService { name: service_name });
             }
 
             let hashed_key = hash_api_key(api_key_raw);
@@ -460,7 +462,7 @@ impl AuthenticatedEntity {
                             ))
                         })?;
 
-                    let api_key_filter = EntityFilter::unfiltered().api_key(hashed_key);
+                    let api_key_filter = StorableFilter::<DaemonApiKey>::new().api_key(hashed_key);
                     if let Ok(Some(mut api_key)) = app_state
                         .services
                         .daemon_api_key_service
@@ -575,7 +577,8 @@ impl AuthenticatedEntity {
             user.base.permissions,
             UserOrgPermissions::Owner | UserOrgPermissions::Admin
         ) {
-            let org_filter = EntityFilter::unfiltered().organization_id(&user.base.organization_id);
+            let org_filter =
+                StorableFilter::<Network>::new().organization_id(&user.base.organization_id);
 
             app_state
                 .services

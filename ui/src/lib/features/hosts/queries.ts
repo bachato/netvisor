@@ -149,6 +149,8 @@ export interface HostQueryOptions {
 	order_by?: components['schemas']['HostOrderField'];
 	/** Direction for order_by field. */
 	order_direction?: components['schemas']['OrderDirection'];
+	/** Filter by tag IDs (returns hosts that have ANY of the specified tags). */
+	tag_ids?: string[];
 }
 
 /**
@@ -194,7 +196,8 @@ export function useHostsQuery(optionsOrGetter: HostQueryOptions | (() => HostQue
 							offset: options.offset,
 							group_by: options.group_by,
 							order_by: options.order_by,
-							order_direction: options.order_direction
+							order_direction: options.order_direction,
+							tag_ids: options.tag_ids
 						}
 					}
 				});

@@ -14,7 +14,7 @@ use crate::server::shared::{
     position::Positioned,
     storage::{
         child::ChildStorableEntity,
-        filter::EntityFilter,
+        filter::StorableFilter,
         generic::GenericPostgresStorage,
         traits::{SqlValue, Storable, Storage},
     },
@@ -186,7 +186,7 @@ impl GroupBindingStorage {
 
     /// Get all binding IDs for a single group, ordered by position
     pub async fn get_for_group(&self, group_id: &Uuid) -> Result<Vec<Uuid>> {
-        let filter = EntityFilter::unfiltered().group_id(group_id);
+        let filter = StorableFilter::<GroupBinding>::new().group_id(group_id);
         let group_bindings = self.storage.get_all_ordered(filter, "position ASC").await?;
         Ok(group_bindings.iter().map(|gb| gb.binding_id()).collect())
     }
@@ -197,7 +197,7 @@ impl GroupBindingStorage {
             return Ok(HashMap::new());
         }
 
-        let filter = EntityFilter::unfiltered().group_ids(group_ids);
+        let filter = StorableFilter::<GroupBinding>::new().group_ids(group_ids);
         let group_bindings = self
             .storage
             .get_all_ordered(filter, "group_id ASC, position ASC")
@@ -214,10 +214,14 @@ impl GroupBindingStorage {
         Ok(result)
     }
 
-    /// Save binding IDs for a group (replaces all existing)
+    /// Save binding IDs for a group (replaces all existing).
+    /// Uses a transaction to ensure atomicity - if any insert fails, the delete is rolled back.
     pub async fn save_for_group(&self, group_id: &Uuid, binding_ids: &[Uuid]) -> Result<()> {
+        let mut tx = self.storage.begin_transaction().await?;
+
         // Delete existing bindings for this group
-        self.delete_for_group(group_id).await?;
+        let filter = StorableFilter::<GroupBinding>::new().group_id(group_id);
+        tx.delete_by_filter(filter).await?;
 
         // Insert new bindings with position
         for (position, binding_id) in binding_ids.iter().enumerate() {
@@ -226,22 +230,23 @@ impl GroupBindingStorage {
                 *binding_id,
                 position as i32,
             ));
-            self.storage.create(&group_binding).await?;
+            tx.create(&group_binding).await?;
         }
 
+        tx.commit().await?;
         Ok(())
     }
 
     /// Delete all binding associations for a group
     pub async fn delete_for_group(&self, group_id: &Uuid) -> Result<()> {
-        let filter = EntityFilter::unfiltered().group_id(group_id);
+        let filter = StorableFilter::<GroupBinding>::new().group_id(group_id);
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }
 
     /// Remove a specific binding from all groups
     pub async fn remove_binding(&self, binding_id: &Uuid) -> Result<()> {
-        let filter = EntityFilter::unfiltered().binding_id(binding_id);
+        let filter = StorableFilter::<GroupBinding>::new().binding_id(binding_id);
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }

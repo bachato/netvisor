@@ -15,6 +15,7 @@ import { getSubnetByIdFromCache } from '../subnets/queries';
 export const groupHoverState = writable<Map<string, boolean>>(new Map());
 export const edgeHoverState = writable<Map<string, boolean>>(new Map());
 export const connectedNodeIds = writable<Set<string>>(new Set());
+export const isExporting = writable(false);
 
 /**
  * Helper function to get all virtualized container interface IDs for a ServiceVirtualization edge

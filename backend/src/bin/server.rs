@@ -147,7 +147,7 @@ async fn main() -> anyhow::Result<()> {
         base_router
     };
 
-    let session_store = state.storage.sessions.clone();
+    let session_store = state.session_store.clone();
 
     let cors = if cfg!(debug_assertions) {
         // Development: Allow localhost with credentials

@@ -8,12 +8,14 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::header::CACHE_CONTROL;
 use axum::response::IntoResponse;
+use tower_sessions_sqlx_store::PostgresStore;
 use clap::Parser;
 use figment::{
     Figment,
     providers::{Env, Format, Serialized, Toml},
 };
 use serde::{Deserialize, Serialize};
+use tower_sessions::SessionManagerLayer;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use utoipa::ToSchema;
 
@@ -93,9 +95,11 @@ pub struct ServerCli {
     #[arg(long)]
     pub oidc_providers: Option<String>,
 
-    /// List of OIDC providers
     #[arg(long)]
     pub posthog_key: Option<String>,
+
+    #[arg(long)]
+    pub metrics_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -271,6 +275,9 @@ impl ServerConfig {
         if let Some(disable_registration) = cli_args.disable_registration {
             figment = figment.merge(("disable_registration", disable_registration));
         }
+        if let Some(metrics_token) = cli_args.metrics_token {
+            figment = figment.merge(("metrics_token", metrics_token));
+        }
 
         let mut config: ServerConfig = figment
             .extract()
@@ -300,17 +307,17 @@ impl ServerConfig {
                     .and_then(|s| s.strip_suffix(suffix))
                     .map(|s| s.to_lowercase());
 
-                if let Some(name) = service_name {
-                    if !name.is_empty() {
-                        let ips: Vec<String> = value
-                            .split(',')
-                            .map(|s| s.trim().to_string())
-                            .filter(|s| !s.is_empty())
-                            .collect();
+                if let Some(name) = service_name
+                    && !name.is_empty()
+                {
+                    let ips: Vec<String> = value
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect();
 
-                        if !ips.is_empty() {
-                            result.insert(name, ips);
-                        }
+                    if !ips.is_empty() {
+                        result.insert(name, ips);
                     }
                 }
             }
@@ -326,8 +333,8 @@ impl ServerConfig {
 
 pub struct AppState {
     pub config: ServerConfig,
-    pub storage: StorageFactory,
     pub services: ServiceFactory,
+    pub session_store: SessionManagerLayer<PostgresStore>
 }
 
 impl AppState {
@@ -338,8 +345,8 @@ impl AppState {
 
         Ok(Arc::new(Self {
             config,
-            storage,
             services,
+            session_store: storage.sessions
         }))
     }
 }

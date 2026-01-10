@@ -3,7 +3,7 @@ use crate::server::config::AppState;
 use crate::server::interfaces::r#impl::base::Interface;
 use crate::server::shared::handlers::traits::{BulkDeleteResponse, create_handler, update_handler};
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::types::api::{
     ApiError, ApiErrorResponse, ApiResponse, ApiResult, EmptyApiResponse,
 };
@@ -232,7 +232,7 @@ async fn bulk_delete_interfaces(
     let service = &state.services.interface_service;
 
     // Fetch all entities by the requested IDs
-    let entity_filter = EntityFilter::unfiltered().entity_ids(&ids);
+    let entity_filter = StorableFilter::<Interface>::new().entity_ids(&ids);
     let entities = service.get_all(entity_filter).await?;
 
     // Collect affected host IDs for renumbering

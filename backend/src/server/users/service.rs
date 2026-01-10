@@ -8,7 +8,7 @@ use crate::server::{
         },
         services::traits::{CrudService, EventBusService},
         storage::{
-            filter::EntityFilter,
+            filter::StorableFilter,
             generic::GenericPostgresStorage,
             traits::{Storable, Storage},
         },
@@ -58,7 +58,7 @@ impl CrudService<User> for UserService {
     async fn create(&self, user: User, authentication: AuthenticatedEntity) -> Result<User, Error> {
         let existing_user = self
             .user_storage
-            .get_one(EntityFilter::unfiltered().email(&user.base.email))
+            .get_one(StorableFilter::<User>::new().email(&user.base.email))
             .await?;
         if existing_user.is_some() {
             return Err(anyhow::anyhow!(
@@ -116,12 +116,12 @@ impl UserService {
     }
 
     pub async fn get_user_by_oidc(&self, oidc_subject: &str) -> Result<Option<User>> {
-        let oidc_filter = EntityFilter::unfiltered().oidc_subject(oidc_subject.to_string());
+        let oidc_filter = StorableFilter::<User>::new().oidc_subject(oidc_subject.to_string());
         self.user_storage.get_one(oidc_filter).await
     }
 
     pub async fn get_organization_owners(&self, organization_id: &Uuid) -> Result<Vec<User>> {
-        let filter: EntityFilter = EntityFilter::unfiltered()
+        let filter = StorableFilter::<User>::new()
             .organization_id(organization_id)
             .user_permissions(&UserOrgPermissions::Owner);
 

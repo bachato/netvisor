@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::storage::{
-    filter::EntityFilter,
+    filter::StorableFilter,
     generic::GenericPostgresStorage,
     traits::{Entity, SqlValue, Storable, Storage},
 };
@@ -154,7 +154,7 @@ impl EntityTagStorage {
         entity_id: &Uuid,
         entity_type: &EntityDiscriminants,
     ) -> Result<Vec<Uuid>> {
-        let filter = EntityFilter::unfiltered()
+        let filter = StorableFilter::<EntityTag>::new()
             .uuid_column("entity_id", entity_id)
             .entity_type(entity_type);
         let records = self.storage.get_all(filter).await?;
@@ -172,7 +172,7 @@ impl EntityTagStorage {
             return Ok(HashMap::new());
         }
 
-        let filter = EntityFilter::unfiltered()
+        let filter = StorableFilter::<EntityTag>::new()
             .uuid_columns("entity_id", entity_ids)
             .entity_type(entity_type);
         let records = self.storage.get_all(filter).await?;
@@ -219,7 +219,7 @@ impl EntityTagStorage {
         entity_type: EntityDiscriminants,
         tag_id: Uuid,
     ) -> Result<bool> {
-        let filter = EntityFilter::unfiltered()
+        let filter = StorableFilter::<EntityTag>::new()
             .uuid_column("entity_id", &entity_id)
             .entity_type(&entity_type)
             .tag_id(&tag_id);
@@ -228,22 +228,29 @@ impl EntityTagStorage {
         Ok(deleted > 0)
     }
 
-    /// Replace all tags for an entity with a new set
+    /// Replace all tags for an entity with a new set.
+    /// Uses a transaction to ensure atomicity - if any insert fails, the delete is rolled back.
     pub async fn set(
         &self,
         entity_id: Uuid,
         entity_type: EntityDiscriminants,
         tag_ids: Vec<Uuid>,
     ) -> Result<()> {
+        let mut tx = self.storage.begin_transaction().await?;
+
         // Delete existing tags
-        self.remove_all_for_entity(entity_id, entity_type).await?;
+        let filter = StorableFilter::<EntityTag>::new()
+            .uuid_column("entity_id", &entity_id)
+            .entity_type(&entity_type);
+        tx.delete_by_filter(filter).await?;
 
         // Insert new tags
         for tag_id in tag_ids {
             let entity_tag = EntityTag::new(EntityTagBase::new(entity_id, entity_type, tag_id));
-            self.storage.create(&entity_tag).await?;
+            tx.create(&entity_tag).await?;
         }
 
+        tx.commit().await?;
         Ok(())
     }
 
@@ -253,7 +260,7 @@ impl EntityTagStorage {
         entity_id: Uuid,
         entity_type: EntityDiscriminants,
     ) -> Result<()> {
-        let filter = EntityFilter::unfiltered()
+        let filter = StorableFilter::<EntityTag>::new()
             .uuid_column("entity_id", &entity_id)
             .entity_type(&entity_type);
 
@@ -294,7 +301,7 @@ impl EntityTagStorage {
             return Ok(0);
         }
 
-        let filter = EntityFilter::unfiltered()
+        let filter = StorableFilter::<EntityTag>::new()
             .uuid_columns("entity_id", entity_ids)
             .entity_type(&entity_type)
             .tag_id(&tag_id);

@@ -1,12 +1,12 @@
 use crate::server::{
     config::AppState,
-    services::{r#impl::base::Service, service::ServiceService},
-    shared::handlers::{query::HostChildQuery, traits::CrudHandlers},
+    services::{handlers::ServiceFilterQuery, r#impl::base::Service, service::ServiceService},
+    shared::handlers::traits::CrudHandlers,
 };
 
 impl CrudHandlers for Service {
     type Service = ServiceService;
-    type FilterQuery = HostChildQuery;
+    type FilterQuery = ServiceFilterQuery;
 
     fn get_service(state: &AppState) -> &Self::Service {
         &state.services.service_service

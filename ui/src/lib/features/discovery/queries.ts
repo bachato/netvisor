@@ -225,17 +225,13 @@ export const discoveryFields = (daemons: Daemon[]): FieldConfig<Discovery>[] => 
 		label: 'Name',
 		type: 'string',
 		searchable: true,
-		filterable: false,
-		sortable: true,
 		getValue: (item: Discovery) => item.name
 	},
 	{
 		key: 'daemon_id',
 		label: 'Daemon',
 		type: 'string',
-		searchable: false,
 		filterable: true,
-		sortable: true,
 		getValue: (item: Discovery) =>
 			daemons.find((d) => d.id == item.daemon_id)?.name ?? 'Unknown Daemon'
 	},
@@ -243,9 +239,7 @@ export const discoveryFields = (daemons: Daemon[]): FieldConfig<Discovery>[] => 
 		key: 'discovery_type',
 		label: 'Type',
 		type: 'string',
-		searchable: false,
 		filterable: true,
-		sortable: true,
 		getValue: (item: Discovery) => item.discovery_type.type
 	}
 ];

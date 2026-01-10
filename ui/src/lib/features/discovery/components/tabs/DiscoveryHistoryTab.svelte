@@ -78,8 +78,6 @@
 			label: 'Started At',
 			type: 'string',
 			searchable: true,
-			filterable: false,
-			sortable: true,
 			getValue: (item) => {
 				const results = item.run_type.type == 'Historical' ? item.run_type.results : null;
 				return results && results.started_at ? formatTimestamp(results.started_at) : 'Unknown';
@@ -90,8 +88,6 @@
 			label: 'Finished At',
 			type: 'string',
 			searchable: true,
-			filterable: false,
-			sortable: true,
 			getValue: (item) => {
 				const results = item.run_type.type == 'Historical' ? item.run_type.results : null;
 				return results && results.finished_at ? formatTimestamp(results.finished_at) : 'Unknown';
@@ -102,8 +98,6 @@
 			label: 'Duration',
 			type: 'string',
 			searchable: true,
-			filterable: false,
-			sortable: true,
 			getValue: (item) => {
 				const results = item.run_type.type == 'Historical' ? item.run_type.results : null;
 				if (results && results.finished_at && results.started_at) {

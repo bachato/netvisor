@@ -405,4 +405,15 @@
 	:global(.hide-for-export .branding-badge) {
 		opacity: 0;
 	}
+
+	/* Force full opacity on all nodes during export to disable focus effect */
+	:global(.hide-for-export .svelte-flow__node .card) {
+		opacity: 1 !important;
+		transition: none !important;
+	}
+
+	:global(.hide-for-export .svelte-flow__node > .relative) {
+		opacity: 1 !important;
+		transition: none !important;
+	}
 </style>

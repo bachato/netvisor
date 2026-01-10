@@ -41,6 +41,7 @@
 
 	// TanStack Query mutation for updating groups
 	const updateGroupMutation = useUpdateGroupMutation();
+	let isMutationPending = $derived(updateGroupMutation.isPending);
 
 	let group = $derived(topology ? topology.groups.find((g) => g.id == groupId) : null);
 
@@ -59,11 +60,13 @@
 	);
 
 	// Auto-save when styling changes (only in non-readonly mode)
+	// Guard against calling mutate while a mutation is already pending to prevent infinite loops
 	$effect(() => {
 		if (
 			!isReadonly &&
 			localGroup &&
 			group &&
+			!isMutationPending &&
 			(localGroup.color !== group.color || localGroup.edge_style !== group.edge_style)
 		) {
 			updateGroupMutation.mutate(localGroup);

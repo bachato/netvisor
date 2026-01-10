@@ -126,7 +126,7 @@
 				style="grid-template-columns: repeat({fields.length}, 1fr);"
 			>
 				{#each fields as field, i (field.label + i)}
-					<div class="flex min-w-0 flex-col">
+					<div class="flex min-w-0 flex-col overflow-hidden">
 						{#if field.snippet}
 							{@render field.snippet()}
 						{:else}
@@ -146,12 +146,12 @@
 													label={item.label}
 												/>
 											{/each}
-											{#if field.value.length > MAX_ITEMS_IN_LIST_VIEW}
-												<span class="text-tertiary flex-shrink-0 text-xs"
-													>+{field.value.length - MAX_ITEMS_IN_LIST_VIEW}</span
-												>
-											{/if}
 										</div>
+										{#if field.value.length > MAX_ITEMS_IN_LIST_VIEW}
+											<span class="text-tertiary text-xs"
+												>+{field.value.length - MAX_ITEMS_IN_LIST_VIEW}</span
+											>
+										{/if}
 									{:else}
 										<span class="text-muted text-xs"
 											>{field.emptyText || `No ${field.label.toLowerCase()}`}</span

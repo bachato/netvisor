@@ -81,25 +81,18 @@
 			key: 'name',
 			label: 'Name',
 			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
+			searchable: true
 		},
 		{
 			key: 'permissions',
 			type: 'string',
 			label: 'Permissions',
-			searchable: false,
-			filterable: true,
-			sortable: true
+			filterable: true
 		},
 		{
 			key: 'network_ids',
 			type: 'array',
 			label: 'Networks',
-			searchable: false,
-			filterable: false,
-			sortable: false,
 			getValue(item) {
 				const ids = item.network_ids ?? [];
 				return ids
@@ -113,7 +106,6 @@
 			type: 'array',
 			searchable: true,
 			filterable: true,
-			sortable: false,
 			getValue: (entity) => {
 				return (entity.tags ?? [])
 					.map((id) => tagsData.find((t) => t.id === id)?.name)
