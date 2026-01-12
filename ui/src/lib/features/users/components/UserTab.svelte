@@ -85,8 +85,6 @@
 			label: 'Email',
 			type: 'string',
 			searchable: true,
-			filterable: false,
-			sortable: true,
 			getValue(item) {
 				return isUser(item) ? item.data.email : '';
 			}
@@ -95,9 +93,7 @@
 			key: 'permissions',
 			label: 'Role',
 			type: 'string',
-			searchable: false,
 			filterable: true,
-			sortable: true,
 			getValue(item) {
 				return isUser(item) ? item.data.permissions : '';
 			}
@@ -106,9 +102,7 @@
 			key: 'oidc_provider',
 			label: 'Auth Method',
 			type: 'string',
-			searchable: false,
 			filterable: true,
-			sortable: false,
 			getValue(item) {
 				return isUser(item) ? item.data.oidc_provider || 'Email & Password' : '';
 			}

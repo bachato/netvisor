@@ -5,6 +5,7 @@ use async_trait::async_trait;
 
 use crate::server::{
     billing::service::BillingService,
+    networks::r#impl::Network,
     shared::{
         entities::{Entity, EntityDiscriminants},
         events::{
@@ -12,8 +13,9 @@ use crate::server::{
             types::{EntityOperation, Event},
         },
         services::traits::CrudService,
-        storage::filter::EntityFilter,
+        storage::filter::StorableFilter,
     },
+    users::r#impl::base::User,
 };
 
 #[async_trait]
@@ -52,12 +54,14 @@ impl EventSubscriber for BillingService {
             {
                 match e.entity_type {
                     Entity::Network(_) | Entity::User(_) => {
-                        let filter = EntityFilter::unfiltered().organization_id(&org_id);
+                        let network_filter =
+                            StorableFilter::<Network>::new().organization_id(&org_id);
+                        let user_filter = StorableFilter::<User>::new().organization_id(&org_id);
 
                         let network_count =
-                            self.network_service.get_all(filter.clone()).await?.len();
+                            self.network_service.get_all(network_filter).await?.len();
 
-                        let seat_count = self.user_service.get_all(filter).await?.len();
+                        let seat_count = self.user_service.get_all(user_filter).await?.len();
 
                         // When user has just been created org won't yet have a billing plan
                         if org.base.plan.is_none() {

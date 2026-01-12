@@ -2,16 +2,20 @@ use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::extractors::Query;
-use crate::server::shared::handlers::query::FilterQueryExtractor;
+use crate::server::shared::handlers::ordering::OrderField;
+use crate::server::shared::handlers::query::{
+    FilterQueryExtractor, OrderDirection, PaginationParams,
+};
 use crate::server::shared::handlers::traits::{
     BulkDeleteResponse, bulk_delete_handler, delete_handler,
 };
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::{filter::StorableFilter, traits::Storable};
 use crate::server::shared::types::api::{ApiErrorResponse, EmptyApiResponse};
 use crate::server::shared::validation::{validate_network_access, validate_read_access};
 use crate::server::{
     config::AppState,
+    daemons::r#impl::base::Daemon,
     hosts::r#impl::{
         api::{CreateHostRequest, DiscoveryHostRequest, HostResponse, UpdateHostRequest},
         base::Host,
@@ -21,10 +25,122 @@ use crate::server::{
 };
 use axum::extract::{Path, State};
 use axum::response::Json;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::IntoParams;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 use validator::Validate;
+
+// ============================================================================
+// Host Ordering
+// ============================================================================
+
+/// Fields that hosts can be ordered/grouped by.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum HostOrderField {
+    #[default]
+    CreatedAt,
+    Name,
+    Hostname,
+    UpdatedAt,
+    /// Sort by virtualizing service name. Requires JOIN to services table.
+    VirtualizedBy,
+    NetworkId,
+}
+
+impl OrderField for HostOrderField {
+    fn to_sql(&self) -> &'static str {
+        match self {
+            Self::CreatedAt => "hosts.created_at",
+            Self::Name => "hosts.name",
+            Self::Hostname => "hosts.hostname",
+            Self::UpdatedAt => "hosts.updated_at",
+            Self::NetworkId => "hosts.network_id",
+            Self::VirtualizedBy => "COALESCE(virt_service.name, '')",
+        }
+    }
+
+    fn join_sql(&self) -> Option<&'static str> {
+        match self {
+            Self::VirtualizedBy => Some(
+                "LEFT JOIN services AS virt_service ON \
+                 (hosts.virtualization->'details'->>'service_id')::uuid = virt_service.id",
+            ),
+            _ => None,
+        }
+    }
+}
+
+// ============================================================================
+// Host Filter Query
+// ============================================================================
+
+/// Query parameters for filtering and ordering hosts.
+#[derive(Deserialize, Default, Debug, Clone, IntoParams)]
+pub struct HostFilterQuery {
+    /// Filter by network ID
+    pub network_id: Option<Uuid>,
+    /// Filter by specific entity IDs (for selective loading)
+    pub ids: Option<Vec<Uuid>>,
+    /// Filter by tag IDs (returns hosts that have ANY of the specified tags)
+    pub tag_ids: Option<Vec<Uuid>>,
+    /// Primary ordering field (used for grouping). Always sorts ASC to keep groups together.
+    pub group_by: Option<HostOrderField>,
+    /// Secondary ordering field (sorting within groups or standalone sort).
+    pub order_by: Option<HostOrderField>,
+    /// Direction for order_by field (group_by always uses ASC).
+    pub order_direction: Option<OrderDirection>,
+    /// Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.
+    #[param(minimum = 0, maximum = 1000)]
+    pub limit: Option<u32>,
+    /// Number of results to skip. Default: 0.
+    #[param(minimum = 0)]
+    pub offset: Option<u32>,
+}
+
+impl HostFilterQuery {
+    /// Build the ORDER BY clause and apply any required JOINs to the filter.
+    /// Returns: (modified_filter, order_by_sql)
+    pub fn apply_ordering(&self, filter: StorableFilter<Host>) -> (StorableFilter<Host>, String) {
+        crate::server::shared::handlers::ordering::apply_ordering(
+            self.group_by,
+            self.order_by,
+            self.order_direction,
+            filter,
+            "hosts.created_at ASC",
+        )
+    }
+}
+
+impl FilterQueryExtractor for HostFilterQuery {
+    fn apply_to_filter<T: Storable>(
+        &self,
+        filter: StorableFilter<T>,
+        user_network_ids: &[Uuid],
+        _user_organization_id: Uuid,
+    ) -> StorableFilter<T> {
+        // Apply IDs filter first if provided
+        let filter = match &self.ids {
+            Some(ids) if !ids.is_empty() => filter.entity_ids(ids),
+            _ => filter,
+        };
+        // Then apply network filter
+        match self.network_id {
+            Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
+            Some(_) => filter.network_ids(&[]), // User doesn't have access - return empty
+            None => filter.network_ids(user_network_ids),
+        }
+    }
+
+    fn pagination(&self) -> PaginationParams {
+        PaginationParams {
+            limit: self.limit,
+            offset: self.offset,
+        }
+    }
+}
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
@@ -39,12 +155,13 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 ///
 /// Returns all hosts the authenticated user has access to, with their
 /// interfaces, ports, and services included. Supports pagination via
-/// `limit` and `offset` query parameters.
+/// `limit` and `offset` query parameters, and ordering via `group_by`,
+/// `order_by`, and `order_direction`.
 #[utoipa::path(
     get,
     path = "",
     tag = "hosts",
-    params(crate::server::shared::handlers::query::NetworkFilterQuery),
+    params(HostFilterQuery),
     responses(
         (status = 200, description = "List of hosts with their children", body = PaginatedApiResponse<HostResponse>),
     ),
@@ -53,24 +170,35 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 async fn get_all_hosts(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Viewer>,
-    Query(query): Query<crate::server::shared::handlers::query::NetworkFilterQuery>,
+    Query(query): Query<HostFilterQuery>,
 ) -> ApiResult<Json<PaginatedApiResponse<HostResponse>>> {
     let network_ids = auth.network_ids();
     let organization_id = auth
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
-    let base_filter = EntityFilter::unfiltered().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Host>::new().network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
+
+    // Apply tag filter if specified
+    let filter = match &query.tag_ids {
+        Some(tag_ids) if !tag_ids.is_empty() => {
+            filter.has_any_tags(tag_ids, EntityDiscriminants::Host)
+        }
+        _ => filter,
+    };
 
     // Apply pagination
     let pagination = query.pagination();
     let filter = pagination.apply_to_filter(filter);
 
+    // Apply ordering and JOINs
+    let (filter, order_by) = query.apply_ordering(filter);
+
     let result = state
         .services
         .host_service
-        .get_all_host_responses_paginated(filter)
+        .get_all_host_responses_paginated(filter, &order_by)
         .await?;
 
     // Get effective pagination values for response metadata
@@ -504,11 +632,11 @@ pub async fn delete_host(
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
     // Pre-validation: Can't delete a host with an associated daemon
-    let host_filter = EntityFilter::unfiltered().host_id(&id);
+    let daemon_filter = StorableFilter::<Daemon>::new().host_id(&id);
     if state
         .services
         .daemon_service
-        .get_one(host_filter)
+        .get_one(daemon_filter)
         .await?
         .is_some()
     {
@@ -543,9 +671,9 @@ pub async fn bulk_delete_hosts(
 ) -> ApiResult<Json<ApiResponse<BulkDeleteResponse>>> {
     let daemon_service = &state.services.daemon_service;
 
-    let host_filter = EntityFilter::unfiltered().host_ids(&ids);
+    let daemon_filter = StorableFilter::<Daemon>::new().host_ids(&ids);
 
-    if !daemon_service.get_all(host_filter).await?.is_empty() {
+    if !daemon_service.get_all(daemon_filter).await?.is_empty() {
         return Err(ApiError::conflict(
             "One or more hosts has an associated daemon, and can't be deleted. Delete the daemon(s) first.",
         ));

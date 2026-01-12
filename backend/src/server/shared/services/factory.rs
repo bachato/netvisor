@@ -7,24 +7,23 @@ use crate::server::{
     daemons::service::DaemonService,
     discovery::service::DiscoveryService,
     email::{plunk::PlunkEmailProvider, smtp::SmtpEmailProvider, traits::EmailService},
-    group_bindings::GroupBindingStorage,
-    groups::service::GroupService,
+    groups::{group_bindings::GroupBindingStorage, service::GroupService},
     hosts::service::HostService,
     interfaces::service::InterfaceService,
     invites::service::InviteService,
     logging::service::LoggingService,
+    metrics::service::MetricsService,
     networks::service::NetworkService,
     organizations::service::OrganizationService,
     ports::service::PortService,
     services::service::ServiceService,
-    shared::{
-        events::bus::EventBus,
-        services::entity_tags::EntityTagService,
-        storage::{entity_tags::EntityTagStorage, factory::StorageFactory},
-    },
+    shared::{events::bus::EventBus, storage::factory::StorageFactory},
     shares::service::ShareService,
     subnets::service::SubnetService,
-    tags::service::TagService,
+    tags::{
+        entity_tags::{EntityTagService, EntityTagStorage},
+        service::TagService,
+    },
     topology::service::main::TopologyService,
     user_api_keys::{
         r#impl::network_access::UserApiKeyNetworkAccessStorage, service::UserApiKeyService,
@@ -32,7 +31,11 @@ use crate::server::{
     users::{UserNetworkAccessStorage, service::UserService},
 };
 use anyhow::Result;
-use std::sync::Arc;
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
+use std::sync::{Arc, OnceLock};
+
+// Global Prometheus handle - the recorder can only be installed once per process
+static PROMETHEUS_HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
 
 pub struct ServiceFactory {
     pub user_service: Arc<UserService>,
@@ -56,6 +59,7 @@ pub struct ServiceFactory {
     pub email_service: Option<Arc<EmailService>>,
     pub event_bus: Arc<EventBus>,
     pub logging_service: Arc<LoggingService>,
+    pub metrics_service: Arc<MetricsService>,
     pub tag_service: Arc<TagService>,
     pub entity_tag_service: Arc<EntityTagService>,
     pub port_service: Arc<PortService>,
@@ -67,6 +71,18 @@ impl ServiceFactory {
         let event_bus = Arc::new(EventBus::new());
 
         let logging_service = Arc::new(LoggingService::new());
+
+        // Initialize Prometheus metrics recorder - uses global singleton since recorder
+        // can only be installed once per process (important for tests)
+        let prometheus_handle = PROMETHEUS_HANDLE
+            .get_or_init(|| {
+                PrometheusBuilder::new()
+                    .install_recorder()
+                    .expect("failed to install Prometheus recorder")
+            })
+            .clone();
+        let metrics_service = Arc::new(MetricsService::new(prometheus_handle));
+
         let tag_service = Arc::new(TagService::new(storage.tags.clone(), event_bus.clone()));
         let entity_tag_storage = Arc::new(EntityTagStorage::new(storage.pool.clone()));
         let entity_tag_service = Arc::new(EntityTagService::new(
@@ -232,11 +248,17 @@ impl ServiceFactory {
             None
         });
 
+        let public_url = config
+            .as_ref()
+            .map(|c| c.public_url.clone())
+            .unwrap_or_else(|| "http://localhost:3000".to_string());
+
         let auth_service = Arc::new(AuthService::new(
             user_service.clone(),
             organization_service.clone(),
             email_service.clone(),
             event_bus.clone(),
+            public_url,
         ));
 
         let oidc_service = config.and_then(|c| {
@@ -258,6 +280,7 @@ impl ServiceFactory {
             .await;
 
         event_bus.register_subscriber(logging_service.clone()).await;
+        event_bus.register_subscriber(metrics_service.clone()).await;
         event_bus
             .register_subscriber(organization_service.clone())
             .await;
@@ -292,6 +315,7 @@ impl ServiceFactory {
             email_service,
             event_bus,
             logging_service,
+            metrics_service,
             tag_service,
             entity_tag_service,
             port_service,

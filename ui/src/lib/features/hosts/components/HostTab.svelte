@@ -12,7 +12,7 @@
 	import HostEditor from './HostEditModal/HostEditor.svelte';
 	import HostConsolidationModal from './HostConsolidationModal.svelte';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
-	import type { FieldConfig } from '$lib/shared/components/data/types';
+	import { defineFields } from '$lib/shared/components/data/types';
 	import { Plus } from 'lucide-svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import type { TabProps } from '$lib/shared/types';
@@ -24,23 +24,42 @@
 		useUpdateHostMutation,
 		useDeleteHostMutation,
 		useBulkDeleteHostsMutation,
-		useConsolidateHostsMutation
+		useConsolidateHostsMutation,
+		type HostQueryOptions
 	} from '../queries';
 	import { useServicesByIds } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
+	import type { components } from '$lib/api/schema';
+
+	type HostOrderField = components['schemas']['HostOrderField'];
+	type OrderDirection = components['schemas']['OrderDirection'];
 
 	// Pagination state
-	const PAGE_SIZE = 20;
+	let pageSize = $state(20);
 	let currentPage = $state(1);
+
+	// Ordering state (for server-side ordering)
+	let groupBy = $state<HostOrderField | undefined>(undefined);
+	let orderBy = $state<HostOrderField | undefined>(undefined);
+	let orderDirection = $state<OrderDirection>('asc');
+
+	// Tag filter state (for server-side filtering)
+	let tagIds = $state<string[]>([]);
 
 	// Queries
 	const tagsQuery = useTagsQuery();
-	// Paginated hosts with server-side pagination
-	const hostsQuery = useHostsQuery(() => ({
-		limit: PAGE_SIZE,
-		offset: (currentPage - 1) * PAGE_SIZE
-	}));
+	// Paginated hosts with server-side pagination, ordering, and tag filtering
+	const hostsQuery = useHostsQuery(
+		(): HostQueryOptions => ({
+			limit: pageSize,
+			offset: (currentPage - 1) * pageSize,
+			group_by: groupBy,
+			order_by: orderBy,
+			order_direction: orderDirection,
+			tag_ids: tagIds.length > 0 ? tagIds : undefined
+		})
+	);
 	const networksQuery = useNetworksQuery();
 	useDaemonsQuery();
 
@@ -70,8 +89,27 @@
 	let isInitialLoading = $derived(hostsQuery.isPending && !hostsQuery.data);
 
 	// Page change handler for server-side pagination
-	function handlePageChange(page: number) {
+	function handlePageChange(page: number, newPageSize: number) {
 		currentPage = page;
+		pageSize = newPageSize;
+	}
+
+	// Order change handler for server-side ordering
+	// Values are now directly HostOrderField values from the orderField property
+	function handleOrderChange(
+		groupField: string | null,
+		orderField: string | null,
+		direction: 'asc' | 'desc'
+	) {
+		groupBy = (groupField as HostOrderField) ?? undefined;
+		orderBy = (orderField as HostOrderField) ?? undefined;
+		orderDirection = direction;
+	}
+
+	// Tag filter change handler for server-side filtering
+	function handleTagFilterChange(selectedTagIds: string[]) {
+		tagIds = selectedTagIds;
+		// Reset to page 1 is handled by DataControls
 	}
 
 	let showHostEditor = $state(false);
@@ -81,92 +119,57 @@
 	let showHostConsolidationModal = $state(false);
 
 	// Define field configuration for the DataTableControls
-	const hostFields: FieldConfig<Host>[] = [
-		{
-			key: 'name',
-			label: 'Name',
-			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
-		},
-		{
-			key: 'hostname',
-			label: 'Hostname',
-			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
-		},
-		{
-			key: 'description',
-			label: 'Description',
-			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: false
-		},
-		{
-			key: 'virtualized_by',
-			label: 'Virtualized By',
-			type: 'string',
-			searchable: false,
-			filterable: true,
-			sortable: true,
-			getValue: (host) => {
-				if (host.virtualization) {
-					const virtualizationService = servicesData.find(
-						(s) => s.id === host.virtualization?.details.service_id
-					);
-					if (virtualizationService) {
-						return virtualizationService?.name || 'Unknown Service';
+	// Uses defineFields to ensure all HostOrderField values are covered
+	let hostFields = $derived(
+		defineFields<Host, HostOrderField>(
+			{
+				name: { label: 'Name', type: 'string', searchable: true },
+				hostname: { label: 'Hostname', type: 'string', searchable: true },
+				virtualized_by: {
+					label: 'Virtualized By',
+					type: 'string',
+					filterable: true,
+					groupable: true,
+					getValue: (host) => {
+						if (host.virtualization) {
+							const virtualizationService = servicesData.find(
+								(s) => s.id === host.virtualization?.details.service_id
+							);
+							if (virtualizationService) {
+								return virtualizationService?.name || 'Unknown Service';
+							}
+						}
+						return 'Not Virtualized';
 					}
+				},
+				network_id: {
+					label: 'Network',
+					type: 'string',
+					filterable: true,
+					groupable: true,
+					getValue: (item) =>
+						networksData.find((n) => n.id == item.network_id)?.name || 'Unknown Network'
+				},
+				created_at: { label: 'Created', type: 'date' },
+				updated_at: { label: 'Updated', type: 'date' }
+			},
+			[
+				{ key: 'description', label: 'Description', type: 'string', searchable: true },
+				{ key: 'hidden', label: 'Hidden', type: 'boolean', filterable: true },
+				{
+					key: 'tags',
+					label: 'Tags',
+					type: 'array',
+					searchable: true,
+					filterable: true,
+					getValue: (entity) =>
+						entity.tags
+							.map((id) => tagsData.find((t) => t.id === id)?.name)
+							.filter((name): name is string => !!name)
 				}
-				return 'Not Virtualized';
-			}
-		},
-		{
-			key: 'created_at',
-			label: 'Created',
-			type: 'date',
-			searchable: false,
-			filterable: false,
-			sortable: true
-		},
-		{
-			key: 'hidden',
-			label: 'Hidden',
-			type: 'boolean',
-			searchable: false,
-			filterable: true,
-			sortable: false
-		},
-		{
-			key: 'network_id',
-			type: 'string',
-			label: 'Network',
-			searchable: false,
-			filterable: true,
-			sortable: false,
-			getValue(item) {
-				return networksData.find((n) => n.id == item.network_id)?.name || 'Unknown Network';
-			}
-		},
-		{
-			key: 'tags',
-			label: 'Tags',
-			type: 'array',
-			searchable: true,
-			filterable: true,
-			sortable: false,
-			getValue: (entity) => {
-				// Return tag names for search/filter display
-				return entity.tags
-					.map((id) => tagsData.find((t) => t.id === id)?.name)
-					.filter((name): name is string => !!name);
-			}
-		}
-	];
+			]
+		)
+	);
 
 	function handleCreateHost() {
 		editingHost = null;
@@ -294,6 +297,8 @@
 			getItemId={(item) => item.id}
 			serverPagination={hostsPagination}
 			onPageChange={handlePageChange}
+			onOrderChange={handleOrderChange}
+			onTagFilterChange={handleTagFilterChange}
 		>
 			{#snippet children(
 				item: Host,

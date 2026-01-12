@@ -9,9 +9,9 @@ use crate::server::{
             types::{EntityOperation, Event},
         },
         services::traits::CrudService,
-        storage::filter::EntityFilter as StorageFilter,
+        storage::filter::StorableFilter as StorageFilter,
     },
-    topology::service::main::TopologyService,
+    topology::{service::main::TopologyService, types::base::Topology},
 };
 use anyhow::Error;
 use async_trait::async_trait;
@@ -153,7 +153,7 @@ impl EventSubscriber for TopologyService {
 
         // Apply changes to all topologies in affected networks
         for network_id in network_ids {
-            let network_filter = StorageFilter::unfiltered().network_ids(&[network_id]);
+            let network_filter = StorageFilter::<Topology>::new().network_ids(&[network_id]);
             let topologies = self.get_all(network_filter).await?;
 
             let (hosts, interfaces, subnets, groups, ports, bindings) =

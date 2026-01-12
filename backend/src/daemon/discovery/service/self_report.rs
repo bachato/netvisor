@@ -16,7 +16,7 @@ use crate::{
             r#impl::{base::ServiceBase, definitions::ServiceDefinition, patterns::MatchDetails},
         },
         shared::{
-            storage::traits::StorableEntity,
+            storage::traits::Storable,
             types::entities::{DiscoveryMetadata, EntitySource},
         },
         subnets::r#impl::{base::Subnet, types::SubnetTypeDiscriminants},
@@ -100,8 +100,14 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
         let binding_ip = IpAddr::V4(binding_address.parse::<Ipv4Addr>()?);
 
         let interface_start = std::time::Instant::now();
+        let interface_filter = self.as_ref().config_store.get_interface_filter().await?;
         let (interfaces, subnets, _) = utils
-            .get_own_interfaces(self.discovery_type(), daemon_id, network_id)
+            .get_own_interfaces(
+                self.discovery_type(),
+                daemon_id,
+                network_id,
+                &interface_filter,
+            )
             .await?;
         tracing::debug!(
             elapsed_ms = interface_start.elapsed().as_millis(),

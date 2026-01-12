@@ -42,6 +42,8 @@ pub enum SubnetType {
     Guest,
 
     DockerBridge,
+    MacVlan,
+    IpVlan,
     Management,
     Storage,
 
@@ -65,6 +67,8 @@ impl FromStr for SubnetType {
             "IoT" => Ok(SubnetType::IoT),
             "Guest" => Ok(SubnetType::Guest),
             "DockerBridge" => Ok(SubnetType::DockerBridge),
+            "MacVlan" => Ok(SubnetType::MacVlan),
+            "IpVlan" => Ok(SubnetType::IpVlan),
             "Management" => Ok(SubnetType::Management),
             "Storage" => Ok(SubnetType::Storage),
             "Unknown" => Ok(SubnetType::Unknown),
@@ -115,6 +119,16 @@ impl SubnetType {
         // Storage networks
         if Self::match_interface_names(&["iscsi", "san", "storage"], interface_name) {
             return SubnetType::Storage;
+        }
+
+        // MacVLAN interfaces
+        if Self::match_interface_names(&["macvlan", "mvlan"], interface_name) {
+            return SubnetType::MacVlan;
+        }
+
+        // ipvlan interfaces
+        if Self::match_interface_names(&["ipvlan"], interface_name) {
+            return SubnetType::IpVlan;
         }
 
         // Standard LAN interfaces (catch-all for ethernet and Linux bridges)
@@ -181,6 +195,8 @@ impl EntityMetadataProvider for SubnetType {
 
             SubnetType::Management => Color::Gray,
             SubnetType::DockerBridge => Concept::Virtualization.color(),
+            SubnetType::MacVlan => Concept::Virtualization.color(),
+            SubnetType::IpVlan => Concept::Virtualization.color(),
             SubnetType::Storage => Concept::Storage.color(),
 
             SubnetType::Unknown => Color::Gray,
@@ -203,6 +219,8 @@ impl EntityMetadataProvider for SubnetType {
 
             SubnetType::Management => Icon::ServerCog,
             SubnetType::DockerBridge => Icon::Box,
+            SubnetType::MacVlan => Icon::Network,
+            SubnetType::IpVlan => Icon::Network,
             SubnetType::Storage => Concept::Storage.icon(),
 
             SubnetType::Unknown => EntityDiscriminants::Subnet.icon(),
@@ -228,6 +246,8 @@ impl TypeMetadataProvider for SubnetType {
 
             SubnetType::Management => "Management",
             SubnetType::DockerBridge => "Docker Bridge",
+            SubnetType::MacVlan => "MacVLAN",
+            SubnetType::IpVlan => "IpVLAN",
             SubnetType::Storage => "Storage",
 
             SubnetType::Unknown => "Unknown",
@@ -251,6 +271,8 @@ impl TypeMetadataProvider for SubnetType {
 
             SubnetType::Management => "Management network",
             SubnetType::DockerBridge => "Docker bridge network",
+            SubnetType::MacVlan => "MacVLAN network",
+            SubnetType::IpVlan => "IpVLAN network",
             SubnetType::Storage => "Storage network",
 
             SubnetType::Unknown => "Unknown network type",
@@ -264,7 +286,10 @@ impl TypeMetadataProvider for SubnetType {
             SubnetType::Remote | SubnetType::Internet | SubnetType::DockerBridge
         );
 
-        let is_for_containers = matches!(self, SubnetType::DockerBridge);
+        let is_for_containers = matches!(
+            self,
+            SubnetType::DockerBridge | SubnetType::MacVlan | SubnetType::IpVlan
+        );
 
         serde_json::json!({
             "network_scan_discovery_eligible": network_scan_discovery_eligible,

@@ -5,7 +5,7 @@
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import DaemonCard from './DaemonCard.svelte';
 	import CreateDaemonModal from './CreateDaemonModal.svelte';
-	import type { FieldConfig } from '$lib/shared/components/data/types';
+	import { defineFields } from '$lib/shared/components/data/types';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import { Plus } from 'lucide-svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
@@ -17,6 +17,9 @@
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
+	import type { components } from '$lib/api/schema';
+
+	type DaemonOrderField = components['schemas']['DaemonOrderField'];
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -66,41 +69,39 @@
 		return daemon.tags;
 	}
 
-	const daemonFields: FieldConfig<Daemon>[] = [
-		{
-			key: 'name',
-			label: 'Name',
-			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
-		},
-		{
-			key: 'tags',
-			label: 'Tags',
-			type: 'array',
-			searchable: true,
-			filterable: true,
-			sortable: false,
-			getValue: (entity) => {
-				// Return tag names for search/filter display
-				return entity.tags
-					.map((id) => tagsData.find((t) => t.id === id)?.name)
-					.filter((name): name is string => !!name);
-			}
-		},
-		{
-			key: 'network_id',
-			type: 'string',
-			label: 'Network',
-			searchable: false,
-			filterable: true,
-			sortable: false,
-			getValue(item) {
-				return networksData.find((n) => n.id == item.network_id)?.name || 'Unknown Network';
-			}
-		}
-	];
+	// Define field configuration for the DataTableControls
+	// Uses defineFields to ensure all DaemonOrderField values are covered
+	let daemonFields = $derived(
+		defineFields<Daemon, DaemonOrderField>(
+			{
+				name: { label: 'Name', type: 'string', searchable: true },
+				network_id: {
+					label: 'Network',
+					type: 'string',
+					filterable: true,
+					groupable: true,
+					getValue: (item) =>
+						networksData.find((n) => n.id == item.network_id)?.name || 'Unknown Network'
+				},
+				last_seen: { label: 'Last Seen', type: 'date' },
+				created_at: { label: 'Created', type: 'date' },
+				updated_at: { label: 'Updated', type: 'date' }
+			},
+			[
+				{
+					key: 'tags',
+					label: 'Tags',
+					type: 'array',
+					searchable: true,
+					filterable: true,
+					getValue: (entity) =>
+						entity.tags
+							.map((id) => tagsData.find((t) => t.id === id)?.name)
+							.filter((name): name is string => !!name)
+				}
+			]
+		)
+	);
 </script>
 
 <div class="space-y-6">

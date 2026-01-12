@@ -5,11 +5,11 @@ use crate::server::discovery::r#impl::types::RunType;
 use crate::server::shared::entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants};
 use crate::server::shared::events::bus::EventBus;
 use crate::server::shared::events::types::{EntityEvent, EntityOperation};
-use crate::server::shared::services::entity_tags::EntityTagService;
 use crate::server::shared::services::traits::{CrudService, EventBusService};
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::generic::GenericPostgresStorage;
-use crate::server::shared::storage::traits::{StorableEntity, Storage};
+use crate::server::shared::storage::traits::{Storable, Storage};
+use crate::server::tags::entity_tags::EntityTagService;
 use anyhow::anyhow;
 use anyhow::{Error, Result};
 use async_trait::async_trait;
@@ -344,7 +344,7 @@ impl DiscoveryService {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Scheduler not initialized"))?;
 
-        let filter = EntityFilter::unfiltered().scheduled_discovery();
+        let filter = StorableFilter::<Discovery>::new().scheduled_discovery();
 
         let discoveries = self.discovery_storage.get_all(filter).await?;
         let count = discoveries.len();

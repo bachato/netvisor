@@ -20,17 +20,15 @@ use crate::server::{
             bus::EventBus,
             types::{EntityEvent, EntityOperation},
         },
-        services::{
-            entity_tags::EntityTagService,
-            traits::{CrudService, EventBusService},
-        },
+        services::traits::{CrudService, EventBusService},
         storage::{
-            filter::EntityFilter,
+            filter::StorableFilter,
             generic::GenericPostgresStorage,
-            traits::{StorableEntity, Storage},
+            traits::{Storable, Storage},
         },
     },
     subnets::{r#impl::base::Subnet, service::SubnetService},
+    tags::entity_tags::EntityTagService,
     topology::{
         service::{
             context::TopologyContext, edge_builder::EdgeBuilder,
@@ -206,22 +204,37 @@ impl TopologyService {
         ),
         Error,
     > {
-        let network_filter = EntityFilter::unfiltered().network_ids(&[network_id]);
-        // Fetch all data
+        // Fetch all data - each service needs its own properly typed filter
         let hosts = self
             .host_service
-            .get_all(network_filter.clone().hidden_is(false))
+            .get_all(
+                StorableFilter::<Host>::new()
+                    .network_ids(&[network_id])
+                    .hidden_is(false),
+            )
             .await?;
 
         let interfaces = self
             .interface_service
-            .get_all(network_filter.clone())
+            .get_all(StorableFilter::<Interface>::new().network_ids(&[network_id]))
             .await?;
-        let subnets = self.subnet_service.get_all(network_filter.clone()).await?;
-        let groups = self.group_service.get_all(network_filter.clone()).await?;
+        let subnets = self
+            .subnet_service
+            .get_all(StorableFilter::<Subnet>::new().network_ids(&[network_id]))
+            .await?;
+        let groups = self
+            .group_service
+            .get_all(StorableFilter::<Group>::new().network_ids(&[network_id]))
+            .await?;
 
-        let ports = self.port_service.get_all(network_filter.clone()).await?;
-        let bindings = self.binding_service.get_all(network_filter.clone()).await?;
+        let ports = self
+            .port_service
+            .get_all(StorableFilter::<Port>::new().network_ids(&[network_id]))
+            .await?;
+        let bindings = self
+            .binding_service
+            .get_all(StorableFilter::<Binding>::new().network_ids(&[network_id]))
+            .await?;
 
         Ok((hosts, interfaces, subnets, groups, ports, bindings))
     }
@@ -231,11 +244,9 @@ impl TopologyService {
         network_id: Uuid,
         options: &TopologyOptions,
     ) -> Result<Vec<Service>, Error> {
-        let network_filter = EntityFilter::unfiltered().network_ids(&[network_id]);
-
         Ok(self
             .service_service
-            .get_all(network_filter.clone())
+            .get_all(StorableFilter::<Service>::new().network_ids(&[network_id]))
             .await?
             .iter()
             .filter(|s| {

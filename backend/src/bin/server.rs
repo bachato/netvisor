@@ -147,7 +147,7 @@ async fn main() -> anyhow::Result<()> {
         base_router
     };
 
-    let session_store = state.storage.sessions.clone();
+    let session_store = state.session_store.clone();
 
     let cors = if cfg!(debug_assertions) {
         // Development: Allow localhost with credentials
@@ -233,6 +233,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Health check endpoint without middleware (for kamal-proxy health checks)
+    // Metrics endpoint is now at /api/metrics with external service auth (see factory.rs)
     let app = Router::new()
         .route(
             "/api/health",
@@ -244,6 +245,7 @@ async fn main() -> anyhow::Result<()> {
                 }))
             }),
         )
+        .with_state(state.clone())
         .layer(cors)
         .merge(protected_app);
     let listener = tokio::net::TcpListener::bind(&listen_addr).await?;

@@ -1,6 +1,6 @@
 use crate::server::discovery::r#impl::types::DiscoveryType;
 use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
-use crate::server::shared::storage::traits::StorableEntity;
+use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::entities::{DiscoveryMetadata, EntitySource};
 use crate::server::subnets::r#impl::base::{Subnet, SubnetBase};
 use crate::server::subnets::r#impl::types::SubnetType;
@@ -93,6 +93,7 @@ pub trait DaemonUtils {
         discovery_type: DiscoveryType,
         daemon_id: Uuid,
         network_id: Uuid,
+        interface_filter: &[String],
     ) -> Result<
         (
             Vec<Interface>,
@@ -101,7 +102,32 @@ pub trait DaemonUtils {
         ),
         Error,
     > {
-        let interfaces = pnet::datalink::interfaces();
+        let all_interfaces = pnet::datalink::interfaces();
+
+        // Apply interface filter if specified
+        let interfaces: Vec<_> = if interface_filter.is_empty() {
+            all_interfaces
+        } else {
+            let filtered: Vec<_> = all_interfaces
+                .into_iter()
+                .filter(|iface| interface_filter.iter().any(|f| f == &iface.name))
+                .collect();
+
+            if filtered.is_empty() {
+                tracing::warn!(
+                    filter = ?interface_filter,
+                    "No interfaces matched the filter. Check --interface argument."
+                );
+            } else {
+                tracing::debug!(
+                    filter = ?interface_filter,
+                    matched = filtered.len(),
+                    "Filtered interfaces by --interfaces argument"
+                );
+            }
+
+            filtered
+        };
 
         tracing::debug!(
             interface_count = interfaces.len(),
@@ -270,23 +296,30 @@ pub trait DaemonUtils {
             .filter_map(|n| {
                 let driver = n.driver.as_deref().unwrap_or("bridge");
 
-                // Only include actual Docker bridge networks
-                // Skip: host (no separate CIDR), macvlan/ipvlan (attached to physical network),
-                // none (no networking), null (invalid)
-                if driver != "bridge" && driver != "overlay" {
-                    tracing::trace!(
-                        network_name = ?n.name,
-                        driver = driver,
-                        "Skipping non-bridge Docker network"
-                    );
-                    return None;
-                }
+                // Include Docker networks that can be scanned
+                // Skip: host (no separate CIDR), none (no networking), null (invalid)
+                let subnet_type = match driver {
+                    "bridge" | "overlay" => SubnetType::DockerBridge,
+                    "macvlan" => SubnetType::MacVlan,
+                    "ipvlan" => SubnetType::IpVlan,
+                    _ => {
+                        tracing::trace!(
+                            network_name = ?n.name,
+                            driver = driver,
+                            "Skipping unsupported Docker network driver"
+                        );
+                        return None;
+                    }
+                };
 
                 let network_name = n.name.clone().unwrap_or("Unknown Network".to_string());
-                n.ipam.clone().map(|ipam| (network_name, ipam))
+                n.ipam.clone().map(|ipam| (network_name, ipam, subnet_type))
             })
-            .filter_map(|(network_name, ipam)| ipam.config.map(|config| (network_name, config)))
-            .flat_map(|(network_name, configs)| {
+            .filter_map(|(network_name, ipam, subnet_type)| {
+                ipam.config
+                    .map(|config| (network_name, config, subnet_type))
+            })
+            .flat_map(|(network_name, configs, subnet_type)| {
                 configs
                     .iter()
                     .filter_map(|c| {
@@ -297,7 +330,7 @@ pub trait DaemonUtils {
                                 tags: Vec::new(),
                                 network_id,
                                 name: network_name.clone(),
-                                subnet_type: SubnetType::DockerBridge,
+                                subnet_type,
                                 source: EntitySource::Discovery {
                                     metadata: vec![DiscoveryMetadata::new(
                                         discovery_type.clone(),

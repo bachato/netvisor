@@ -21,7 +21,12 @@
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Topology, TopologyEdge } from '../../types/base';
-	import { getEdgeDisplayState, edgeHoverState, groupHoverState } from '../../interactions';
+	import {
+		getEdgeDisplayState,
+		edgeHoverState,
+		groupHoverState,
+		isExporting
+	} from '../../interactions';
 	import type { Node, Edge as FlowEdge } from '@xyflow/svelte';
 
 	let {
@@ -117,7 +122,9 @@
 
 	// Calculate base edge properties
 	let baseStrokeWidth = $derived(!$topologyOptions.local.no_fade_edges && shouldShowFull ? 3 : 2);
-	let baseOpacity = $derived(!$topologyOptions.local.no_fade_edges && !shouldShowFull ? 0.4 : 1);
+	let baseOpacity = $derived(
+		$isExporting ? 1 : !$topologyOptions.local.no_fade_edges && !shouldShowFull ? 0.4 : 1
+	);
 
 	// Calculate edge style for primary layer (dashed white overlay for group edges, or normal edge)
 	let edgeStyle = $derived.by(() => {

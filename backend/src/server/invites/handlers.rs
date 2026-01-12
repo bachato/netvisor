@@ -7,10 +7,11 @@ use crate::server::config::AppState;
 use crate::server::invites::r#impl::base::Invite;
 use crate::server::organizations::r#impl::api::CreateInviteRequest;
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::types::api::ApiResponse;
 use crate::server::shared::types::api::ApiResult;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, EmptyApiResponse};
+use crate::server::users::r#impl::base::User;
 use crate::server::users::r#impl::permissions::UserOrgPermissions;
 use anyhow::Error;
 use axum::Json;
@@ -84,12 +85,12 @@ async fn create_invite(
     if let Some(max_seats) = plan.config().included_seats
         && plan.config().seat_cents.is_none()
     {
-        let org_filter = EntityFilter::unfiltered().organization_id(&organization_id);
+        let user_filter = StorableFilter::<User>::new().organization_id(&organization_id);
 
         let current_members = state
             .services
             .user_service
-            .get_all(org_filter)
+            .get_all(user_filter)
             .await
             .unwrap_or_default()
             .len();
@@ -117,7 +118,7 @@ async fn create_invite(
         let all_users = state
             .services
             .user_service
-            .get_all(EntityFilter::unfiltered())
+            .get_all(StorableFilter::<User>::new())
             .await
             .unwrap_or_default();
 

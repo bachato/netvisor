@@ -228,3 +228,23 @@ impl Default for TopologyRequestOptions {
         }
     }
 }
+
+/// Lightweight request type for topology rebuild/refresh operations.
+///
+/// This type only includes the fields actually needed by the server - entity data
+/// (hosts, interfaces, services, etc.) is fetched fresh from the database.
+/// Using this instead of the full Topology dramatically reduces payload size
+/// for large networks (from MBs to KBs), fixing HTTP 413 errors.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TopologyRebuildRequest {
+    /// Network ID for authorization and data fetching
+    pub network_id: Uuid,
+    /// Topology options for graph building
+    pub options: TopologyOptions,
+    /// Existing nodes for position preservation during rebuild
+    #[serde(default)]
+    pub nodes: Vec<Node>,
+    /// Existing edges for reference during rebuild
+    #[serde(default)]
+    pub edges: Vec<Edge>,
+}

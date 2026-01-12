@@ -136,10 +136,16 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<NetworkScanDiscovery> {
 
         // Target all interfaced subnets if not
         } else {
+            let interface_filter = self.as_ref().config_store.get_interface_filter().await?;
             let (_, subnets, _) = self
                 .as_ref()
                 .utils
-                .get_own_interfaces(self.discovery_type(), daemon_id, network_id)
+                .get_own_interfaces(
+                    self.discovery_type(),
+                    daemon_id,
+                    network_id,
+                    &interface_filter,
+                )
                 .await?;
 
             // Filter out docker bridge subnets, those are handled in docker discovery
@@ -177,6 +183,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
     ) -> Result<Vec<Host>, Error> {
         let session = self.as_ref().get_session().await?;
 
+        let interface_filter = self.as_ref().config_store.get_interface_filter().await?;
         let (_, _, subnet_cidr_to_mac) = self
             .as_ref()
             .utils
@@ -184,6 +191,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                 self.discovery_type(),
                 session.info.daemon_id,
                 session.info.network_id,
+                &interface_filter,
             )
             .await?;
 
@@ -336,10 +344,13 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                 };
 
                 // Find the network interface for this subnet
+                // Match by both MAC and having an IP in the target subnet to handle
+                // bridge setups where physical and bridge interfaces share the same MAC
                 let pnet_source_mac = pnet::util::MacAddr::from(source_mac.bytes());
-                let interface = datalink::interfaces()
-                    .into_iter()
-                    .find(|iface| iface.mac.unwrap_or_default() == pnet_source_mac);
+                let interface = datalink::interfaces().into_iter().find(|iface| {
+                    iface.mac.unwrap_or_default() == pnet_source_mac
+                        && iface.ips.iter().any(|ip| cidr.contains(&ip.ip()))
+                });
 
                 let Some(interface) = interface else {
                     tracing::warn!(mac = %source_mac, "No interface found for MAC, skipping ARP scan");

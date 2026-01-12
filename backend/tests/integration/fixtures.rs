@@ -20,6 +20,10 @@ pub async fn generate_fixtures() {
         .await
         .expect("Failed to generate billing and features json");
 
+    generate_schema_mermaid()
+        .await
+        .expect("Failed to generate schema mermaid");
+
     // OpenAPI generation - public spec only (excludes internal endpoints)
     let openapi_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -159,5 +163,58 @@ async fn generate_billing_plans_json() -> Result<(), Box<dyn std::error::Error>>
     tokio::fs::write(path, json_string).await?;
 
     println!("✅ Generated billing-plans-next.json and features-next.json in ui/src/lib/data/");
+    Ok(())
+}
+
+async fn generate_schema_mermaid() -> Result<(), Box<dyn std::error::Error>> {
+    // Check if tbls is available (graceful skip for local dev without tbls)
+    let which = std::process::Command::new("which").arg("tbls").output();
+    if which.is_err() || !which.unwrap().status.success() {
+        println!("⚠️  tbls not found, skipping schema generation");
+        return Ok(());
+    }
+
+    let temp_dir = std::env::temp_dir().join("tbls-schema");
+    let _ = std::fs::remove_dir_all(&temp_dir);
+
+    // tbls runs on host, connects to exposed port 5435
+    let output = std::process::Command::new("tbls")
+        .args([
+            "doc",
+            "postgres://postgres:password@localhost:5435/scanopy?sslmode=disable",
+            temp_dir.to_str().unwrap(),
+            "--er-format",
+            "mermaid",
+            "--exclude",
+            "sqlx_migrations",
+            "--force",
+        ])
+        .output()?;
+
+    if !output.status.success() {
+        return Err(format!("tbls failed: {}", String::from_utf8_lossy(&output.stderr)).into());
+    }
+
+    // Extract mermaid block from README.md
+    let readme_path = temp_dir.join("README.md");
+    let readme_content = std::fs::read_to_string(&readme_path)?;
+
+    let mermaid = readme_content
+        .lines()
+        .skip_while(|line| *line != "```mermaid")
+        .skip(1) // skip the ```mermaid line
+        .take_while(|line| *line != "```")
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+
+    let schema_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("Failed to get parent directory")
+        .join("ui/static/schema-next.mermaid");
+
+    std::fs::write(&schema_path, mermaid)?;
+    println!("✅ Generated schema-next.mermaid");
     Ok(())
 }

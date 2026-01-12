@@ -7,13 +7,10 @@ use sqlx::{PgPool, Row, postgres::PgRow};
 use std::fmt::Display;
 use uuid::Uuid;
 
-use crate::server::shared::{
-    entities::EntityDiscriminants,
-    storage::{
-        filter::EntityFilter,
-        generic::GenericPostgresStorage,
-        traits::{SqlValue, StorableEntity, Storage},
-    },
+use crate::server::shared::storage::{
+    filter::StorableFilter,
+    generic::GenericPostgresStorage,
+    traits::{SqlValue, Storable, Storage},
 };
 
 /// The base data for a UserNetworkAccess junction record
@@ -68,7 +65,7 @@ impl Display for UserNetworkAccess {
     }
 }
 
-impl StorableEntity for UserNetworkAccess {
+impl Storable for UserNetworkAccess {
     type BaseData = UserNetworkAccessBase;
 
     fn table_name() -> &'static str {
@@ -87,20 +84,8 @@ impl StorableEntity for UserNetworkAccess {
         self.id
     }
 
-    fn network_id(&self) -> Option<Uuid> {
-        Some(self.base.network_id)
-    }
-
-    fn organization_id(&self) -> Option<Uuid> {
-        None
-    }
-
     fn created_at(&self) -> DateTime<Utc> {
         self.created_at
-    }
-
-    fn updated_at(&self) -> DateTime<Utc> {
-        self.created_at // Junction table doesn't have updated_at
     }
 
     fn set_id(&mut self, id: Uuid) {
@@ -109,14 +94,6 @@ impl StorableEntity for UserNetworkAccess {
 
     fn set_created_at(&mut self, time: DateTime<Utc>) {
         self.created_at = time;
-    }
-
-    fn set_updated_at(&mut self, _time: DateTime<Utc>) {
-        // No-op for junction table
-    }
-
-    fn entity_type() -> EntityDiscriminants {
-        EntityDiscriminants::UserNetworkAccess
     }
 
     fn to_params(&self) -> Result<(Vec<&'static str>, Vec<SqlValue>)> {
@@ -158,7 +135,7 @@ impl UserNetworkAccessStorage {
 
     /// Get all network IDs for a single user
     pub async fn get_for_user(&self, user_id: &Uuid) -> Result<Vec<Uuid>> {
-        let filter = EntityFilter::unfiltered().user_id(user_id);
+        let filter = StorableFilter::<UserNetworkAccess>::new().user_id(user_id);
         let access_records = self.storage.get_all(filter).await?;
         Ok(access_records.iter().map(|a| a.network_id()).collect())
     }
@@ -169,7 +146,7 @@ impl UserNetworkAccessStorage {
             return Ok(HashMap::new());
         }
 
-        let filter = EntityFilter::unfiltered().uuid_columns("user_id", user_ids);
+        let filter = StorableFilter::<UserNetworkAccess>::new().uuid_columns("user_id", user_ids);
         let access_records = self.storage.get_all(filter).await?;
 
         let mut result: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
@@ -183,23 +160,28 @@ impl UserNetworkAccessStorage {
         Ok(result)
     }
 
-    /// Save network IDs for a user (replaces all existing)
+    /// Save network IDs for a user (replaces all existing).
+    /// Uses a transaction to ensure atomicity - if any insert fails, the delete is rolled back.
     pub async fn save_for_user(&self, user_id: &Uuid, network_ids: &[Uuid]) -> Result<()> {
+        let mut tx = self.storage.begin_transaction().await?;
+
         // Delete existing access for this user
-        self.delete_for_user(user_id).await?;
+        let filter = StorableFilter::<UserNetworkAccess>::new().user_id(user_id);
+        tx.delete_by_filter(filter).await?;
 
         // Insert new access records
         for network_id in network_ids {
             let access = UserNetworkAccess::new(UserNetworkAccessBase::new(*user_id, *network_id));
-            self.storage.create(&access).await?;
+            tx.create(&access).await?;
         }
 
+        tx.commit().await?;
         Ok(())
     }
 
     /// Delete all network access for a user
     pub async fn delete_for_user(&self, user_id: &Uuid) -> Result<()> {
-        let filter = EntityFilter::unfiltered().user_id(user_id);
+        let filter = StorableFilter::<UserNetworkAccess>::new().user_id(user_id);
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }
@@ -214,7 +196,7 @@ impl UserNetworkAccessStorage {
 
     /// Remove a single network from a user's access
     pub async fn remove_network(&self, user_id: &Uuid, network_id: &Uuid) -> Result<()> {
-        let filter = EntityFilter::unfiltered()
+        let filter = StorableFilter::<UserNetworkAccess>::new()
             .user_id(user_id)
             .uuid_column("network_id", network_id);
         self.storage.delete_by_filter(filter).await?;

@@ -43,7 +43,8 @@ async fn async_main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let (_, path) = AppConfig::get_config_path()?;
+    // Get config path using daemon name for namespaced configs
+    let (_, path) = AppConfig::get_config_path_for_name(Some(&config.name))?;
     let path_str = path.to_str().unwrap_or("<invalid path>");
 
     // Initialize unified storage with full config

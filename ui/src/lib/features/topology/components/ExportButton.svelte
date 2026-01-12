@@ -5,6 +5,7 @@
 	import { pushError, pushSuccess } from '$lib/shared/stores/feedback';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
+	import { isExporting } from '../interactions';
 
 	const { getNodes, getEdges, getViewport, setViewport } = useSvelteFlow();
 
@@ -158,6 +159,7 @@
 		flowElement.style.height = `${imageHeight}px`;
 		setViewport(newViewport, { duration: 0 });
 		flowElement.classList.add('hide-for-export');
+		isExporting.set(true);
 
 		let watermark = document.createElement('div');
 
@@ -215,6 +217,7 @@
 			console.error('Export failed:', err);
 			pushError('Export failed');
 		} finally {
+			isExporting.set(false);
 			watermark.remove();
 			flowElement.classList.remove('hide-for-export');
 			flowElement.style.width = originalWidth;

@@ -101,7 +101,6 @@
 			type: 'string',
 			searchable: true,
 			filterable: true,
-			sortable: true,
 			getValue: (item) => item.run_type.type
 		},
 		{
@@ -110,7 +109,6 @@
 			type: 'array',
 			searchable: true,
 			filterable: true,
-			sortable: false,
 			getValue: (entity) => {
 				// Return tag names for search/filter display
 				return entity.tags

@@ -72,6 +72,8 @@ impl SubnetType {
 
             // Layer 3: Infrastructure
             SubnetType::DockerBridge => 3,
+            SubnetType::MacVlan => 3,
+            SubnetType::IpVlan => 3,
             SubnetType::Management => 3,
             SubnetType::Storage => 3,
 
@@ -102,6 +104,8 @@ impl SubnetType {
             SubnetType::Storage => 0,
             SubnetType::Management => 1,
             SubnetType::DockerBridge => 2,
+            SubnetType::MacVlan => 3,
+            SubnetType::IpVlan => 4,
 
             // Special
             SubnetType::Unknown => 999,

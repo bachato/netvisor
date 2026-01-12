@@ -6,8 +6,11 @@ use crate::server::{
     },
     billing::types::base::BillingPlan,
     config::AppState,
+    networks::r#impl::Network,
     organizations::r#impl::base::Organization,
-    shared::{services::traits::CrudService, storage::filter::EntityFilter, types::api::ApiError},
+    shared::{
+        services::traits::CrudService, storage::filter::StorableFilter, types::api::ApiError,
+    },
     users::r#impl::permissions::UserOrgPermissions,
 };
 use async_trait::async_trait;
@@ -149,7 +152,7 @@ impl FeatureCheck for CreateNetworkFeature {
         if let Some(max_networks) = ctx.plan.config().included_networks
             && ctx.plan.config().network_cents.is_none()
         {
-            let org_filter = EntityFilter::unfiltered().organization_id(&ctx.organization.id);
+            let org_filter = StorableFilter::<Network>::new().organization_id(&ctx.organization.id);
 
             let current_networks = ctx
                 .app_state

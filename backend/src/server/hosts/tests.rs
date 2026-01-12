@@ -4,13 +4,14 @@ use crate::{
     server::{
         auth::middleware::auth::AuthenticatedEntity,
         bindings::r#impl::base::Binding,
-        hosts::r#impl::api::{
-            BindingInput, InterfaceInput, PortInput, ServiceInput, UpdateHostRequest,
+        hosts::r#impl::{
+            api::{BindingInput, InterfaceInput, PortInput, ServiceInput, UpdateHostRequest},
+            base::Host,
         },
         services::definitions::ServiceDefinitionRegistry,
         shared::{
             services::traits::CrudService,
-            storage::{filter::EntityFilter, traits::Storage},
+            storage::{filter::StorableFilter, traits::Storage},
             types::entities::{DiscoveryMetadata, EntitySource},
         },
     },
@@ -41,7 +42,7 @@ async fn test_host_deduplication_on_create() {
         .await
         .unwrap();
 
-    let filter = EntityFilter::unfiltered().network_ids(&[network.id]);
+    let filter = StorableFilter::<Host>::new().network_ids(&[network.id]);
 
     let start_host_count = storage.hosts.get_all(filter.clone()).await.unwrap().len();
 

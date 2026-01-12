@@ -139,13 +139,19 @@ export function useDeleteTopologyMutation() {
 /**
  * Mutation hook for refreshing a topology
  * Note: Updated topology returns through SSE
+ * Uses lightweight request - only sends fields the server actually needs
  */
 export function useRefreshTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
 			await apiClient.POST('/api/v1/topology/{id}/refresh', {
 				params: { path: { id: topology.id } },
-				body: topology
+				body: {
+					network_id: topology.network_id,
+					options: topology.options,
+					nodes: [],
+					edges: []
+				}
 			});
 			return topology.id;
 		}
@@ -155,13 +161,20 @@ export function useRefreshTopologyMutation() {
 /**
  * Mutation hook for rebuilding a topology
  * Note: Updated topology returns through SSE
+ * Uses lightweight request - only sends fields the server actually needs
+ * (network_id, options, nodes/edges for position preservation)
  */
 export function useRebuildTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
 			await apiClient.POST('/api/v1/topology/{id}/rebuild', {
 				params: { path: { id: topology.id } },
-				body: topology
+				body: {
+					network_id: topology.network_id,
+					options: topology.options,
+					nodes: topology.nodes,
+					edges: topology.edges
+				}
 			});
 
 			// Track first topology rebuild (once per browser)
@@ -461,10 +474,15 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 				if (get(autoRebuild)) {
 					const currentId = get(selectedTopologyId);
 					if (currentId === update.id && !update.is_locked) {
-						// Trigger rebuild via API
+						// Trigger rebuild via API with minimal payload
 						apiClient.POST('/api/v1/topology/{id}/rebuild', {
 							params: { path: { id: update.id } },
-							body: update
+							body: {
+								network_id: update.network_id,
+								options: update.options,
+								nodes: update.nodes,
+								edges: update.edges
+							}
 						});
 					}
 					return;

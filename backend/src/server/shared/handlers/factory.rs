@@ -11,12 +11,12 @@ use crate::server::{
     daemon_api_keys::handlers as daemon_api_key_handlers, daemons::handlers as daemon_handlers,
     discovery::handlers as discovery_handlers, groups::handlers as group_handlers,
     hosts::handlers as host_handlers, interfaces::handlers as interface_handlers,
-    invites::handlers as invite_handlers, networks::handlers as network_handlers,
-    organizations::handlers as organization_handlers, ports::handlers as port_handlers,
-    services::handlers as service_handlers, shares::handlers as share_handlers,
-    subnets::handlers as subnet_handlers, tags::handlers as tag_handlers,
-    topology::handlers as topology_handlers, user_api_keys::handlers as user_api_key_handlers,
-    users::handlers as user_handlers,
+    invites::handlers as invite_handlers, metrics::handlers as metrics_handlers,
+    networks::handlers as network_handlers, organizations::handlers as organization_handlers,
+    ports::handlers as port_handlers, services::handlers as service_handlers,
+    shares::handlers as share_handlers, subnets::handlers as subnet_handlers,
+    tags::handlers as tag_handlers, topology::handlers as topology_handlers,
+    user_api_keys::handlers as user_api_key_handlers, users::handlers as user_handlers,
 };
 use axum::Json;
 use axum::Router;
@@ -102,6 +102,11 @@ fn create_exempt_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
         .nest("/api/auth", auth_handlers::create_router())
         .nest("/api/daemons", daemon_handlers::create_internal_router())
         .routes(utoipa_axum::routes!(get_version))
+        // Metrics endpoint for Prometheus scraping (external service auth)
+        .route(
+            "/api/metrics",
+            axum::routing::get(metrics_handlers::get_metrics),
+        )
 }
 
 /// Creates the OpenApiRouter with cacheable routes.

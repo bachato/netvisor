@@ -4,6 +4,7 @@ use crate::server::billing::plans::get_enterprise_plan;
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::billing::types::features::Feature;
 use crate::server::invites::service::InviteService;
+use crate::server::networks::r#impl::Network;
 use crate::server::networks::service::NetworkService;
 use crate::server::organizations::r#impl::base::Organization;
 use crate::server::organizations::service::OrganizationService;
@@ -11,7 +12,7 @@ use crate::server::shared::events::bus::EventBus;
 use crate::server::shared::events::types::TelemetryEvent;
 use crate::server::shared::events::types::TelemetryOperation;
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::types::metadata::TypeMetadataProvider;
 use crate::server::shares::service::ShareService;
 use crate::server::users::service::UserService;
@@ -811,7 +812,7 @@ impl BillingService {
             }
         }
 
-        let org_filter = EntityFilter::unfiltered().organization_id(&org_id);
+        let org_filter = StorableFilter::<Network>::new().organization_id(&org_id);
 
         // If they can't pay for networks, remove them
         if let Some(included_networks) = plan.config().included_networks

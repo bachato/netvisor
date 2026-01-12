@@ -1,6 +1,6 @@
 use crate::server::shared::entities::EntityDiscriminants;
-use crate::server::shared::services::entity_tags::EntityTagService;
-use crate::server::shared::storage::traits::{PaginatedResult, StorableEntity};
+use crate::server::shared::storage::traits::{PaginatedResult, Storable};
+use crate::server::tags::entity_tags::EntityTagService;
 use crate::server::{
     auth::middleware::auth::AuthenticatedEntity,
     bindings::{
@@ -20,7 +20,7 @@ use crate::server::{
         },
         position::next_position,
         services::traits::{ChildCrudService, CrudService, EventBusService},
-        storage::{filter::EntityFilter, generic::GenericPostgresStorage, traits::Storage},
+        storage::{filter::StorableFilter, generic::GenericPostgresStorage, traits::Storage},
         types::{api::ValidationError, entities::EntitySource},
     },
 };
@@ -81,7 +81,10 @@ impl CrudService<Service> for ServiceService {
         }
     }
 
-    async fn get_all(&self, filter: EntityFilter) -> Result<Vec<Service>, anyhow::Error> {
+    async fn get_all(
+        &self,
+        filter: StorableFilter<Service>,
+    ) -> Result<Vec<Service>, anyhow::Error> {
         let mut services = self.storage().get_all(filter).await?;
         if services.is_empty() {
             return Ok(services);
@@ -101,7 +104,10 @@ impl CrudService<Service> for ServiceService {
         Ok(services)
     }
 
-    async fn get_one(&self, filter: EntityFilter) -> Result<Option<Service>, anyhow::Error> {
+    async fn get_one(
+        &self,
+        filter: StorableFilter<Service>,
+    ) -> Result<Option<Service>, anyhow::Error> {
         let service = self.storage().get_one(filter).await?;
         match service {
             Some(mut s) => {
@@ -115,7 +121,7 @@ impl CrudService<Service> for ServiceService {
 
     async fn get_paginated(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<Service>,
     ) -> Result<PaginatedResult<Service>, anyhow::Error> {
         let mut paginated = self
             .storage()
@@ -155,7 +161,7 @@ impl CrudService<Service> for ServiceService {
         let lock = self.get_service_lock(&service.id).await;
         let _guard = lock.lock().await;
 
-        let filter = EntityFilter::unfiltered().host_id(&service.base.host_id);
+        let filter = StorableFilter::<Service>::new().host_id(&service.base.host_id);
         let existing_services = self.get_all(filter).await?;
 
         // Auto-assign position for new services (next available position on host)
@@ -421,7 +427,7 @@ impl ServiceService {
     /// Also loads bindings and tags for each service.
     pub async fn get_all_ordered(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<Service>,
         order_by: &str,
     ) -> Result<Vec<Service>> {
         let mut services = self.storage.get_all_ordered(filter, order_by).await?;
@@ -441,6 +447,31 @@ impl ServiceService {
         self.bulk_hydrate_tags(&mut services).await?;
 
         Ok(services)
+    }
+
+    /// Get paginated services matching filter, ordered by the specified column.
+    /// Also loads bindings and tags for each service.
+    pub async fn get_paginated_ordered(
+        &self,
+        filter: StorableFilter<Service>,
+        order_by: &str,
+    ) -> Result<PaginatedResult<Service>> {
+        let mut paginated = self.storage.get_paginated(filter, order_by).await?;
+
+        if !paginated.items.is_empty() {
+            let service_ids: Vec<Uuid> = paginated.items.iter().map(|s| s.id).collect();
+            let bindings_map = self.binding_service.get_for_parents(&service_ids).await?;
+
+            for service in &mut paginated.items {
+                if let Some(bindings) = bindings_map.get(&service.id) {
+                    service.base.bindings = bindings.clone();
+                }
+            }
+
+            self.bulk_hydrate_tags(&mut paginated.items).await?;
+        }
+
+        Ok(paginated)
     }
 
     async fn get_service_lock(&self, service_id: &Uuid) -> Arc<Mutex<()>> {
@@ -695,7 +726,7 @@ impl ServiceService {
         }
 
         // Get existing claimed bindings from database
-        let filter = EntityFilter::unfiltered().host_id(host_id);
+        let filter = StorableFilter::<Service>::new().host_id(host_id);
         let db_claimed: Vec<(Uuid, Option<Uuid>)> = self
             .get_all(filter)
             .await?
@@ -776,7 +807,7 @@ impl ServiceService {
             return Ok(());
         }
 
-        let filter = EntityFilter::unfiltered().host_id(host_id);
+        let filter = StorableFilter::<Service>::new().host_id(host_id);
         let other_services: Vec<_> = self
             .get_all(filter)
             .await?
@@ -1040,7 +1071,7 @@ impl ServiceService {
         updates: Option<&Service>,
         authenticated: AuthenticatedEntity,
     ) -> Result<(), Error> {
-        let filter = EntityFilter::unfiltered().network_ids(&[current_service.base.network_id]);
+        let filter = StorableFilter::<Group>::new().network_ids(&[current_service.base.network_id]);
         let groups = self.group_service.get_all(filter).await?;
 
         let _guard = self.group_update_lock.lock().await;

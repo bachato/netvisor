@@ -13,14 +13,20 @@
 		NodeRenderData,
 		Topology
 	} from '../../types/base';
-	import type { Writable } from 'svelte/store';
+	import { type Writable, get } from 'svelte/store';
 	import { formatPort } from '$lib/shared/utils/formatting';
-	import { connectedNodeIds } from '../../interactions';
+	import { connectedNodeIds, isExporting } from '../../interactions';
 	import { getContext } from 'svelte';
 	import type { Port } from '$lib/features/hosts/types/base';
 	import type { Node, Edge } from '@xyflow/svelte';
 
 	let { id, data, width, height }: NodeProps = $props();
+
+	// Subscribe to isExporting for reactivity
+	let isExportingValue = $state(get(isExporting));
+	isExporting.subscribe((value) => {
+		isExportingValue = value;
+	});
 
 	// Try to get topology from context (for share/embed pages), fallback to TanStack query
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
@@ -107,6 +113,7 @@
 
 	// Calculate if this node should fade out when another node is selected
 	let shouldFadeOut = $derived.by(() => {
+		if (isExportingValue) return false;
 		if (!selectedNode && !selectedEdge) return false;
 		if (!nodeRenderData) return false;
 

@@ -39,6 +39,9 @@ pub async fn request_logging_middleware(
         Some(AuthenticatedEntity::ApiKey { api_key_id, .. }) => {
             ("api_key", Some(api_key_id.to_string()))
         }
+        Some(AuthenticatedEntity::ExternalService { name }) => {
+            ("external_service", Some(name.clone()))
+        }
         Some(AuthenticatedEntity::System) => ("system", None),
         Some(AuthenticatedEntity::Anonymous) | None => ("anonymous", None),
     };
@@ -64,6 +67,26 @@ pub async fn request_logging_middleware(
         entity_id = entity_id,
         "request completed"
     );
+
+    // Record metrics
+    let method_str = method.to_string();
+    let status_str = status.to_string();
+
+    metrics::counter!(
+        "http_requests_total",
+        "method" => method_str.clone(),
+        "path" => path.clone(),
+        "status" => status_str,
+        "entity_type" => entity_type.to_string()
+    )
+    .increment(1);
+
+    metrics::histogram!(
+        "http_request_duration_seconds",
+        "method" => method_str,
+        "path" => path
+    )
+    .record(duration.as_secs_f64());
 
     response
 }

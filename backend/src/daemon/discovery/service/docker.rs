@@ -32,7 +32,7 @@ use crate::server::services::r#impl::patterns::MatchDetails;
 use crate::server::services::r#impl::virtualization::{
     DockerVirtualization, ServiceVirtualization,
 };
-use crate::server::shared::storage::traits::StorableEntity;
+use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::entities::{DiscoveryMetadata, EntitySource};
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::subnets::r#impl::types::SubnetTypeDiscriminants;
@@ -109,10 +109,16 @@ impl RunsDiscovery for DiscoveryRunner<DockerScanDiscovery> {
         let subnets = self.discover_create_subnets().await?;
 
         // Get host interfaces (needed for docker daemon service host matching)
+        let interface_filter = self.as_ref().config_store.get_interface_filter().await?;
         let (mut host_interfaces, _, _) = self
             .as_ref()
             .utils
-            .get_own_interfaces(self.discovery_type(), daemon_id, network_id)
+            .get_own_interfaces(
+                self.discovery_type(),
+                daemon_id,
+                network_id,
+                &interface_filter,
+            )
             .await?;
 
         // Update interface subnet IDs to match created subnets (they may differ if subnets already existed)
@@ -224,10 +230,16 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
             .await?
             .ok_or_else(|| anyhow::anyhow!("Network ID not set"))?;
 
+        let interface_filter = self.as_ref().config_store.get_interface_filter().await?;
         let (_, host_subnets, _) = self
             .as_ref()
             .utils
-            .get_own_interfaces(self.discovery_type(), daemon_id, network_id)
+            .get_own_interfaces(
+                self.discovery_type(),
+                daemon_id,
+                network_id,
+                &interface_filter,
+            )
             .await?;
 
         let docker = self

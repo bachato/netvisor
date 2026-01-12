@@ -1,9 +1,9 @@
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 use uuid::Uuid;
 
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::{filter::StorableFilter, traits::Storable};
 
 // ============================================================================
 // Pagination Parameters
@@ -47,8 +47,8 @@ impl PaginationParams {
         self.offset.unwrap_or(0)
     }
 
-    /// Apply pagination to an EntityFilter.
-    pub fn apply_to_filter(&self, filter: EntityFilter) -> EntityFilter {
+    /// Apply pagination to an StorableFilter.
+    pub fn apply_to_filter<T: Storable>(&self, filter: StorableFilter<T>) -> StorableFilter<T> {
         let filter = if let Some(limit) = self.effective_limit() {
             filter.limit(limit)
         } else {
@@ -59,18 +59,41 @@ impl PaginationParams {
 }
 
 // ============================================================================
+// Order Direction
+// ============================================================================
+
+/// Direction for ORDER BY clauses.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, utoipa::ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderDirection {
+    #[default]
+    Asc,
+    Desc,
+}
+
+impl OrderDirection {
+    /// Convert to SQL ORDER BY direction keyword.
+    pub fn to_sql(&self) -> &'static str {
+        match self {
+            Self::Asc => "ASC",
+            Self::Desc => "DESC",
+        }
+    }
+}
+
+// ============================================================================
 // Filter Query Extractor Trait
 // ============================================================================
 
 /// Trait for query structs that filter entities by network or organization.
 pub trait FilterQueryExtractor: DeserializeOwned + Send + Sync + Default {
     /// Apply query parameters to the filter, respecting user's access permissions.
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         user_organization_id: Uuid,
-    ) -> EntityFilter;
+    ) -> StorableFilter<T>;
 
     /// Get pagination parameters from the query.
     fn pagination(&self) -> PaginationParams;
@@ -97,12 +120,12 @@ pub struct NetworkFilterQuery {
 }
 
 impl FilterQueryExtractor for NetworkFilterQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         // Apply IDs filter first if provided
         let filter = match &self.ids {
             Some(ids) if !ids.is_empty() => filter.entity_ids(ids),
@@ -136,12 +159,12 @@ pub struct NoFilterQuery {
 }
 
 impl FilterQueryExtractor for NoFilterQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         _user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         // Don't apply additional filters (network_id / org_id permissioning is taken care of in handler)
         filter
     }
@@ -191,12 +214,12 @@ pub struct HostChildQuery {
 }
 
 impl FilterQueryExtractor for HostChildQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         // Apply IDs filter first if provided
         let filter = match &self.ids {
             Some(ids) if !ids.is_empty() => filter.entity_ids(ids),
@@ -243,12 +266,12 @@ pub struct BindingQuery {
 }
 
 impl FilterQueryExtractor for BindingQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         let mut filter = match self.network_id {
             Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
             Some(_) => filter.network_ids(&[]),
@@ -296,12 +319,12 @@ pub struct InterfaceQuery {
 }
 
 impl FilterQueryExtractor for InterfaceQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         let mut filter = match self.network_id {
             Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
             Some(_) => filter.network_ids(&[]),
@@ -343,12 +366,12 @@ pub struct DiscoveryQuery {
 }
 
 impl FilterQueryExtractor for DiscoveryQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         let mut filter = match self.network_id {
             Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
             Some(_) => filter.network_ids(&[]),
@@ -386,12 +409,12 @@ pub struct SharesQuery {
 }
 
 impl FilterQueryExtractor for SharesQuery {
-    fn apply_to_filter(
+    fn apply_to_filter<T: Storable>(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
         user_network_ids: &[Uuid],
         _user_organization_id: Uuid,
-    ) -> EntityFilter {
+    ) -> StorableFilter<T> {
         let mut filter = match self.network_id {
             Some(id) if user_network_ids.contains(&id) => filter.network_ids(&[id]),
             Some(_) => filter.network_ids(&[]),

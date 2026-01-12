@@ -3,7 +3,7 @@ use crate::server::auth::middleware::permissions::{Admin, Authorized, IsUser, Me
 use crate::server::shared::extractors::Query;
 use crate::server::shared::handlers::query::{FilterQueryExtractor, NoFilterQuery};
 use crate::server::shared::handlers::traits::{BulkDeleteResponse, CrudHandlers, delete_handler};
-use crate::server::shared::storage::filter::EntityFilter;
+use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::types::api::{
     ApiError, ApiErrorResponse, EmptyApiResponse, PaginatedApiResponse,
 };
@@ -110,7 +110,7 @@ pub async fn get_all_users(
         _ => return Err(ApiError::forbidden("User or API key required")),
     };
 
-    let org_filter = EntityFilter::unfiltered().organization_id(&organization_id);
+    let org_filter = StorableFilter::<User>::new().organization_id(&organization_id);
 
     let service = User::get_service(&state);
     // Fetch all users first (permission filtering happens in-memory)
@@ -421,7 +421,7 @@ pub async fn bulk_delete_users(
         _ => return Err(ApiError::forbidden("User or API key required")),
     };
 
-    let user_filter = EntityFilter::unfiltered().entity_ids(&ids);
+    let user_filter = StorableFilter::<User>::new().entity_ids(&ids);
     let users = state.services.user_service.get_all(user_filter).await?;
 
     if users.iter().any(|u| u.base.permissions > permissions) {

@@ -38,9 +38,7 @@
 			key: 'name',
 			label: 'Name',
 			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
+			searchable: true
 		},
 		{
 			key: 'topology_id',
@@ -48,7 +46,6 @@
 			type: 'string',
 			searchable: true,
 			filterable: true,
-			sortable: true,
 			getValue: (share) => {
 				return topologiesData.find((t) => t.id === share.topology_id)?.name || 'Unknown Topology';
 			}
@@ -57,9 +54,7 @@
 			key: 'network_id',
 			label: 'Network',
 			type: 'string',
-			searchable: false,
 			filterable: true,
-			sortable: true,
 			getValue: (share) => {
 				return networksData.find((n) => n.id === share.network_id)?.name || 'Unknown Network';
 			}
@@ -68,25 +63,17 @@
 			key: 'is_enabled',
 			label: 'Enabled',
 			type: 'boolean',
-			searchable: false,
-			filterable: true,
-			sortable: false
+			filterable: true
 		},
 		{
 			key: 'expires_at',
 			label: 'Expires',
-			type: 'date',
-			searchable: false,
-			filterable: false,
-			sortable: true
+			type: 'date'
 		},
 		{
 			key: 'created_at',
 			label: 'Created',
-			type: 'date',
-			searchable: false,
-			filterable: false,
-			sortable: true
+			type: 'date'
 		}
 	];
 

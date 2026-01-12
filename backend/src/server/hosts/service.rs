@@ -1,7 +1,7 @@
 use crate::server::{
     auth::middleware::auth::AuthenticatedEntity,
     bindings::r#impl::base::{Binding, BindingType},
-    daemons::service::DaemonService,
+    daemons::{r#impl::base::Daemon, service::DaemonService},
     hosts::r#impl::{
         api::{
             BindingInput, ConflictBehavior, CreateHostRequest, HostResponse, InterfaceInput,
@@ -19,20 +19,18 @@ use crate::server::{
             types::{EntityEvent, EntityOperation},
         },
         position::resolve_and_validate_input_positions,
-        services::{
-            entity_tags::EntityTagService,
-            traits::{ChildCrudService, CrudService, EventBusService},
-        },
+        services::traits::{ChildCrudService, CrudService, EventBusService},
         storage::{
-            filter::EntityFilter,
+            filter::StorableFilter,
             generic::GenericPostgresStorage,
-            traits::{PaginatedResult, StorableEntity, Storage},
+            traits::{Entity, PaginatedResult, Storable, Storage},
         },
         types::{
             api::ValidationError,
             entities::{EntitySource, EntitySourceDiscriminants},
         },
     },
+    tags::entity_tags::EntityTagService,
 };
 use anyhow::{Error, Result, anyhow};
 use async_trait::async_trait;
@@ -98,7 +96,7 @@ impl CrudService<Host> for HostService {
 
         tracing::trace!("Creating host {:?}", host);
 
-        let filter = EntityFilter::unfiltered().network_ids(&[host.base.network_id]);
+        let filter = StorableFilter::<Host>::new().network_ids(&[host.base.network_id]);
         let all_hosts = self.get_all(filter).await?;
 
         // Find existing host by ID (Host::eq only compares IDs)
@@ -250,10 +248,17 @@ impl HostService {
 
     /// Get a single host with all children hydrated for API response
     pub async fn get_host_response(&self, id: &Uuid) -> Result<Option<HostResponse>> {
-        let host = match self.get_by_id(id).await? {
+        let mut host = match self.get_by_id(id).await? {
             Some(h) => h,
             None => return Ok(None),
         };
+
+        // Hydrate tags from junction table
+        let tags = self
+            .entity_tag_service
+            .get_tags(id, &EntityDiscriminants::Host)
+            .await?;
+        host.base.tags = tags;
 
         let (interfaces, ports, services) = self.load_children_for_host(&host.id).await?;
         Ok(Some(HostResponse::from_host_with_children(
@@ -262,7 +267,10 @@ impl HostService {
     }
 
     /// Get all hosts with all children hydrated for API response
-    pub async fn get_all_host_responses(&self, filter: EntityFilter) -> Result<Vec<HostResponse>> {
+    pub async fn get_all_host_responses(
+        &self,
+        filter: StorableFilter<Host>,
+    ) -> Result<Vec<HostResponse>> {
         let hosts = self.get_all(filter).await?;
         if hosts.is_empty() {
             return Ok(vec![]);
@@ -272,9 +280,19 @@ impl HostService {
         let (interfaces_map, ports_map, services_map) =
             self.load_children_for_hosts(&host_ids).await?;
 
+        // Hydrate tags from junction table
+        let tags_map = self
+            .entity_tag_service
+            .get_tags_map(&host_ids, EntityDiscriminants::Host)
+            .await?;
+
         let responses = hosts
             .into_iter()
-            .map(|host| {
+            .map(|mut host| {
+                // Apply hydrated tags
+                if let Some(tags) = tags_map.get(&host.id) {
+                    host.base.tags = tags.clone();
+                }
                 let interfaces = interfaces_map.get(&host.id).cloned().unwrap_or_default();
                 let ports = ports_map.get(&host.id).cloned().unwrap_or_default();
                 let services = services_map.get(&host.id).cloned().unwrap_or_default();
@@ -285,12 +303,14 @@ impl HostService {
         Ok(responses)
     }
 
-    /// Get paginated hosts with all children hydrated for API response
+    /// Get paginated hosts with all children hydrated for API response.
+    /// Supports custom ordering via the `order_by` parameter.
     pub async fn get_all_host_responses_paginated(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<Host>,
+        order_by: &str,
     ) -> Result<PaginatedResult<HostResponse>> {
-        let result = self.get_paginated(filter).await?;
+        let result = self.storage().get_paginated(filter, order_by).await?;
 
         if result.items.is_empty() {
             return Ok(PaginatedResult {
@@ -303,10 +323,20 @@ impl HostService {
         let (interfaces_map, ports_map, services_map) =
             self.load_children_for_hosts(&host_ids).await?;
 
+        // Hydrate tags from junction table
+        let tags_map = self
+            .entity_tag_service
+            .get_tags_map(&host_ids, EntityDiscriminants::Host)
+            .await?;
+
         let responses = result
             .items
             .into_iter()
-            .map(|host| {
+            .map(|mut host| {
+                // Apply hydrated tags
+                if let Some(tags) = tags_map.get(&host.id) {
+                    host.base.tags = tags.clone();
+                }
                 let interfaces = interfaces_map.get(&host.id).cloned().unwrap_or_default();
                 let ports = ports_map.get(&host.id).cloned().unwrap_or_default();
                 let services = services_map.get(&host.id).cloned().unwrap_or_default();
@@ -329,7 +359,10 @@ impl HostService {
         let ports = self.port_service.get_for_host(host_id).await?;
         let services = self
             .service_service
-            .get_all_ordered(EntityFilter::unfiltered().host_id(host_id), "position ASC")
+            .get_all_ordered(
+                StorableFilter::<Service>::new().host_id(host_id),
+                "position ASC",
+            )
             .await?;
 
         Ok((interfaces, ports, services))
@@ -351,7 +384,7 @@ impl HostService {
         let services = self
             .service_service
             .get_all_ordered(
-                EntityFilter::unfiltered().host_ids(host_ids),
+                StorableFilter::<Service>::new().host_ids(host_ids),
                 "position ASC",
             )
             .await?;
@@ -541,7 +574,7 @@ impl HostService {
                 }
 
                 // Check by unique constraint (host_id, subnet_id, ip_address)
-                let filter = EntityFilter::unfiltered()
+                let filter = StorableFilter::<Interface>::new()
                     .host_id(&interface.base.host_id)
                     .subnet_id(&interface.base.subnet_id);
                 let existing_by_key: Vec<Interface> =
@@ -557,7 +590,7 @@ impl HostService {
                 // MAC fallback: find by (host_id, mac_address) when subnet differs
                 // This handles cases where subnet_id changed between discovery runs
                 if let Some(mac) = &interface.base.mac_address {
-                    let mac_filter = EntityFilter::unfiltered()
+                    let mac_filter = StorableFilter::<Interface>::new()
                         .host_id(&interface.base.host_id)
                         .mac_address(mac);
                     let existing_by_mac: Vec<Interface> =
@@ -1102,7 +1135,7 @@ impl HostService {
             return Ok(None);
         }
 
-        let filter = EntityFilter::unfiltered().network_ids(&[*network_id]);
+        let filter = StorableFilter::<Host>::new().network_ids(&[*network_id]);
         let all_hosts = self.get_all(filter).await?;
 
         if all_hosts.is_empty() {
@@ -1238,9 +1271,9 @@ impl HostService {
             return Err(ValidationError::new("Can't consolidate a host with itself").into());
         }
 
-        let host_filter = EntityFilter::unfiltered().host_id(&other_host.id);
+        let daemon_filter = StorableFilter::<Daemon>::new().host_id(&other_host.id);
 
-        if self.daemon_service.get_one(host_filter).await?.is_some() {
+        if self.daemon_service.get_one(daemon_filter).await?.is_some() {
             return Err(ValidationError::new(
                 "Can't consolidate a host that has a daemon associated with it. \
                  Consolidate the other host into the host with the daemon instead.",
@@ -1358,12 +1391,12 @@ impl HostService {
         // Get services for both hosts
         let destination_services = self
             .service_service
-            .get_all(EntityFilter::unfiltered().host_id(&destination_host.id))
+            .get_all(StorableFilter::<Service>::new().host_id(&destination_host.id))
             .await?;
 
         let other_services = self
             .service_service
-            .get_all(EntityFilter::unfiltered().host_id(&other_host.id))
+            .get_all(StorableFilter::<Service>::new().host_id(&other_host.id))
             .await?;
 
         // Transfer services, updating binding IDs using the maps
@@ -1476,7 +1509,7 @@ impl HostService {
         // Can't delete host with daemon
         if self
             .daemon_service
-            .get_one(EntityFilter::unfiltered().host_id(id))
+            .get_one(StorableFilter::<Daemon>::new().host_id(id))
             .await?
             .is_some()
         {

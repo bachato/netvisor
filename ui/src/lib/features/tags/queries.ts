@@ -159,11 +159,7 @@ const entityTypeToQueryKeyName: Record<EntityDiscriminants, keyof typeof queryKe
 	Binding: null,
 	Interface: null,
 	Topology: null,
-	Unknown: null,
-	GroupBinding: null,
-	EntityTag: null,
-	UserApiKeyNetworkAccess: null,
-	UserNetworkAccess: null
+	Unknown: null
 };
 
 /**

@@ -13,11 +13,14 @@
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
 	import type { Tag } from '../types/base';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
-	import type { FieldConfig } from '$lib/shared/components/data/types';
+	import { defineFields } from '$lib/shared/components/data/types';
 	import { Plus } from 'lucide-svelte';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
 	import type { TabProps } from '$lib/shared/types';
+	import type { components } from '$lib/api/schema';
+
+	type TagOrderField = components['schemas']['TagOrderField'];
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -89,40 +92,17 @@
 		}
 	}
 
-	const tagFields: FieldConfig<Tag>[] = [
+	// Define field configuration for the DataTableControls
+	// Uses defineFields to ensure all TagOrderField values are covered
+	const tagFields = defineFields<Tag, TagOrderField>(
 		{
-			key: 'name',
-			label: 'Name',
-			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
+			name: { label: 'Name', type: 'string', searchable: true },
+			color: { label: 'Color', type: 'string', filterable: true },
+			created_at: { label: 'Created', type: 'date' },
+			updated_at: { label: 'Updated', type: 'date' }
 		},
-		{
-			key: 'description',
-			label: 'Description',
-			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: false
-		},
-		{
-			key: 'color',
-			label: 'Color',
-			type: 'string',
-			searchable: false,
-			filterable: true,
-			sortable: true
-		},
-		{
-			key: 'created_at',
-			label: 'Created',
-			type: 'date',
-			searchable: false,
-			filterable: false,
-			sortable: true
-		}
-	];
+		[{ key: 'description', label: 'Description', type: 'string', searchable: true }]
+	);
 </script>
 
 <div class="space-y-6">

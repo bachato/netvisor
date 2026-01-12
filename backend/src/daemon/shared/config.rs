@@ -96,6 +96,10 @@ pub struct DaemonCli {
     /// Maximum ARP packets per second (default: 50, go more conservative for networks with enterprise switches)
     #[arg(long)]
     arp_rate_pps: Option<u32>,
+
+    /// Restrict daemon to specific network interface(s). Comma-separated for multiple (e.g., eth0,eth1). Leave empty for all interfaces. Only applies to network discovery
+    #[arg(long, value_delimiter = ',')]
+    interfaces: Option<Vec<String>>,
 }
 
 /// Unified configuration struct that handles both startup and runtime config
@@ -147,6 +151,9 @@ pub struct AppConfig {
     pub arp_retries: u32,
     #[serde(default = "default_arp_rate_pps")]
     pub arp_rate_pps: u32,
+    /// Network interfaces to restrict scanning to. Empty means all interfaces.
+    #[serde(default)]
+    pub interface_filter: Vec<String>,
 }
 
 fn default_arp_retries() -> u32 {
@@ -185,20 +192,37 @@ impl Default for AppConfig {
             use_npcap_arp: false,
             arp_retries: default_arp_retries(),
             arp_rate_pps: default_arp_rate_pps(),
+            interface_filter: Vec::new(),
         }
     }
 }
 
 impl AppConfig {
-    pub fn get_config_path() -> Result<(bool, PathBuf)> {
+    /// Get config path, optionally namespaced by daemon name.
+    /// If name is None or "scanopy-daemon" (default), uses legacy path for backward compat.
+    pub fn get_config_path_for_name(name: Option<&str>) -> Result<(bool, PathBuf)> {
         let proj_dirs = ProjectDirs::from("com", "scanopy", "daemon")
             .ok_or_else(|| anyhow::anyhow!("Unable to determine config directory"))?;
 
-        let config_path = proj_dirs.config_dir().join("config.json");
+        let config_path = match name {
+            // Use namespaced path for custom daemon names
+            Some(n) if n != "scanopy-daemon" => proj_dirs.config_dir().join(n).join("config.json"),
+            // Legacy path for default name or None
+            _ => proj_dirs.config_dir().join("config.json"),
+        };
+
         Ok((config_path.exists(), config_path))
     }
+
+    /// Get config path using default (legacy) location
+    pub fn get_config_path() -> Result<(bool, PathBuf)> {
+        Self::get_config_path_for_name(None)
+    }
+
     pub fn load(cli_args: DaemonCli) -> anyhow::Result<Self> {
-        let (config_exists, config_path) = AppConfig::get_config_path()?;
+        // Determine config path based on daemon name
+        let (config_exists, config_path) =
+            AppConfig::get_config_path_for_name(cli_args.name.as_deref())?;
 
         // Standard configuration layering: Defaults → Config file → Env → CLI (highest priority)
         let mut figment = Figment::from(Serialized::defaults(AppConfig::default()));
@@ -281,6 +305,9 @@ impl AppConfig {
         }
         if let Some(arp_rate_pps) = cli_args.arp_rate_pps {
             figment = figment.merge(("arp_rate_pps", arp_rate_pps));
+        }
+        if let Some(interface) = cli_args.interfaces {
+            figment = figment.merge(("interface_filter", interface));
         }
 
         let config: AppConfig = figment
@@ -504,6 +531,11 @@ impl ConfigStore {
     pub async fn get_arp_rate_pps(&self) -> Result<u32> {
         let config = self.config.read().await;
         Ok(config.arp_rate_pps)
+    }
+
+    pub async fn get_interface_filter(&self) -> Result<Vec<String>> {
+        let config = self.config.read().await;
+        Ok(config.interface_filter.clone())
     }
 }
 

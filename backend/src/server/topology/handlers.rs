@@ -9,7 +9,7 @@ use crate::server::{
             traits::{CrudHandlers, update_handler},
         },
         services::traits::CrudService,
-        storage::{filter::EntityFilter, traits::StorableEntity},
+        storage::{filter::StorableFilter, traits::Storable},
         types::api::{
             ApiError, ApiErrorResponse, ApiResponse, ApiResult, EmptyApiResponse,
             PaginatedApiResponse,
@@ -17,7 +17,7 @@ use crate::server::{
     },
     topology::{
         service::main::BuildGraphParams,
-        types::base::{SetEntitiesParams, Topology},
+        types::base::{SetEntitiesParams, Topology, TopologyRebuildRequest},
     },
 };
 use axum::{
@@ -37,8 +37,8 @@ use uuid::Uuid;
 // Generated handlers for generic CRUD operations
 mod generated {
     use super::*;
-    crate::crud_get_by_id_handler!(Topology, "topology", "topology");
-    crate::crud_delete_handler!(Topology, "topology", "topology");
+    crate::crud_get_by_id_handler!(Topology, "topologies", "topology");
+    crate::crud_delete_handler!(Topology, "topologies", "topology");
 }
 
 /// Topology endpoints are internal-only (hidden from public docs)
@@ -100,7 +100,7 @@ async fn get_all_topologies(
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
     // Apply network filter and pagination
-    let base_filter = EntityFilter::unfiltered().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Topology>::new().network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
     let pagination = query.pagination();
     let filter = pagination.apply_to_filter(filter);
@@ -233,22 +233,24 @@ async fn create_topology(
     path = "/{id}/refresh",
     tags = ["topology", "internal"],
     params(("id" = Uuid, Path, description = "Topology ID")),
-    request_body = Topology,
+    request_body = TopologyRebuildRequest,
     responses(
         (status = 200, description = "Topology refreshed", body = EmptyApiResponse),
         (status = 403, description = "Access denied", body = ApiErrorResponse),
+        (status = 404, description = "Topology not found", body = ApiErrorResponse),
     ),
      security(("user_api_key" = []), ("session" = []))
 )]
 async fn refresh(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Member>,
-    Json(mut topology): Json<Topology>,
+    Path(id): Path<Uuid>,
+    Json(request): Json<TopologyRebuildRequest>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
     let network_ids = auth.network_ids();
 
     // Validate user has access to this topology's network
-    if !network_ids.contains(&topology.base.network_id) {
+    if !network_ids.contains(&request.network_id) {
         return Err(ApiError::forbidden(
             "You don't have access to this topology's network",
         ));
@@ -256,11 +258,20 @@ async fn refresh(
 
     let service = Topology::get_service(&state);
 
+    // Fetch the existing topology
+    let mut topology = service
+        .get_by_id(&id)
+        .await?
+        .ok_or_else(|| ApiError::not_found(format!("Topology {} not found", id)))?;
+
+    // Update options from request
+    topology.base.options = request.options;
+
     let (hosts, interfaces, subnets, groups, ports, bindings) =
-        service.get_entity_data(topology.base.network_id).await?;
+        service.get_entity_data(request.network_id).await?;
 
     let services = service
-        .get_service_data(topology.base.network_id, &topology.base.options)
+        .get_service_data(request.network_id, &topology.base.options)
         .await?;
 
     topology.set_entities(SetEntitiesParams {
@@ -286,22 +297,24 @@ async fn refresh(
     path = "/{id}/rebuild",
     tags = ["topology", "internal"],
     params(("id" = Uuid, Path, description = "Topology ID")),
-    request_body = Topology,
+    request_body = TopologyRebuildRequest,
     responses(
         (status = 200, description = "Topology rebuilt", body = EmptyApiResponse),
         (status = 403, description = "Access denied", body = ApiErrorResponse),
+        (status = 404, description = "Topology not found", body = ApiErrorResponse),
     ),
      security(("user_api_key" = []), ("session" = []))
 )]
 async fn rebuild(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Member>,
-    Json(mut topology): Json<Topology>,
+    Path(id): Path<Uuid>,
+    Json(request): Json<TopologyRebuildRequest>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
     let network_ids = auth.network_ids();
 
     // Validate user has access to this topology's network
-    if !network_ids.contains(&topology.base.network_id) {
+    if !network_ids.contains(&request.network_id) {
         return Err(ApiError::forbidden(
             "You don't have access to this topology's network",
         ));
@@ -309,11 +322,20 @@ async fn rebuild(
 
     let service = Topology::get_service(&state);
 
+    // Fetch the existing topology
+    let mut topology = service
+        .get_by_id(&id)
+        .await?
+        .ok_or_else(|| ApiError::not_found(format!("Topology {} not found", id)))?;
+
+    // Update options from request
+    topology.base.options = request.options.clone();
+
     let (hosts, interfaces, subnets, groups, ports, bindings) =
-        service.get_entity_data(topology.base.network_id).await?;
+        service.get_entity_data(request.network_id).await?;
 
     let services = service
-        .get_service_data(topology.base.network_id, &topology.base.options)
+        .get_service_data(request.network_id, &topology.base.options)
         .await?;
 
     let (nodes, edges) = service.build_graph(BuildGraphParams {
@@ -325,8 +347,8 @@ async fn rebuild(
         groups: &groups,
         ports: &ports,
         bindings: &bindings,
-        old_nodes: &topology.base.nodes,
-        old_edges: &topology.base.edges,
+        old_nodes: &request.nodes,
+        old_edges: &request.edges,
     });
 
     topology.set_entities(SetEntitiesParams {

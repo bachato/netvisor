@@ -43,7 +43,7 @@
 	}: Props = $props();
 
 	// TanStack Query hooks
-	const servicesQuery = useServicesQuery();
+	const servicesQuery = useServicesQuery({ limit: 0 });
 	const networksQuery = useNetworksQuery();
 	// Use limit: 0 to get all hosts for group edit modal
 	const hostsQuery = useHostsQuery({ limit: 0 });
@@ -125,10 +125,11 @@
 		selectedNetworkId = defaults.network_id ?? '';
 	}
 
-	// Available service bindings (exclude already selected ones)
+	// Available service bindings (exclude already selected ones and Unclaimed Open Ports)
 	let availableServiceBindings = $derived.by(() => {
 		return servicesData
 			.filter((s) => s.network_id == selectedNetworkId)
+			.filter((s) => s.service_definition !== 'Unclaimed Open Ports')
 			.flatMap((s) => s.bindings)
 			.filter((sb) => !bindingIds.some((binding) => binding === sb.id));
 	});

@@ -4,11 +4,12 @@ use crate::server::auth::middleware::permissions::{Authorized, IsUser, Member, O
 use crate::server::auth::service::hash_password;
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::config::AppState;
+use crate::server::networks::r#impl::Network;
 use crate::server::organizations::r#impl::base::Organization;
 use crate::server::shared::handlers::traits::{CrudHandlers, update_handler};
 use crate::server::shared::services::traits::CrudService;
-use crate::server::shared::storage::filter::EntityFilter;
-use crate::server::shared::storage::traits::StorableEntity;
+use crate::server::shared::storage::filter::StorableFilter;
+use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::api::ApiResponse;
 use crate::server::shared::types::api::ApiResult;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, EmptyApiResponse};
@@ -191,7 +192,7 @@ pub async fn populate_demo_data(
         .services
         .user_service
         .get_all(
-            EntityFilter::unfiltered()
+            StorableFilter::<User>::new()
                 .organization_id(&org.id)
                 .user_permissions(&UserOrgPermissions::Admin),
         )
@@ -320,7 +321,7 @@ async fn reset_organization_data(
     organization_id: &Uuid,
     auth: AuthenticatedEntity,
 ) -> Result<(), ApiError> {
-    let org_filter = EntityFilter::unfiltered().organization_id(organization_id);
+    let org_filter = StorableFilter::<Network>::new().organization_id(organization_id);
     let network_ids: Vec<Uuid> = state
         .services
         .network_service
@@ -389,10 +390,11 @@ async fn reset_organization_data(
         .await?;
 
     // Delete non-owner users
+    let user_filter = StorableFilter::<User>::new().organization_id(organization_id);
     let non_owner_user_ids: Vec<Uuid> = state
         .services
         .user_service
-        .get_all(org_filter)
+        .get_all(user_filter)
         .await?
         .iter()
         .filter_map(|u| {

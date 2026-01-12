@@ -14,7 +14,9 @@ use figment::{
     providers::{Env, Format, Serialized, Toml},
 };
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use tower_sessions::SessionManagerLayer;
+use tower_sessions_sqlx_store::PostgresStore;
 use utoipa::ToSchema;
 
 use crate::server::shared::storage::factory::StorageFactory;
@@ -93,9 +95,11 @@ pub struct ServerCli {
     #[arg(long)]
     pub oidc_providers: Option<String>,
 
-    /// List of OIDC providers
     #[arg(long)]
     pub posthog_key: Option<String>,
+
+    #[arg(long)]
+    pub metrics_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,6 +132,15 @@ pub struct ServerConfig {
     // Testing
     #[serde(default)]
     pub enforce_billing_for_testing: bool,
+
+    // Metrics
+    pub metrics_token: Option<String>,
+
+    // External service IP restrictions
+    // Maps service name (lowercase) to list of allowed IPs/CIDRs
+    // Populated from SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS env vars
+    #[serde(default)]
+    pub external_service_allowed_ips: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
@@ -179,6 +192,8 @@ impl Default for ServerConfig {
             oidc_providers: None,
             posthog_key: None,
             enforce_billing_for_testing: false,
+            metrics_token: None,
+            external_service_allowed_ips: HashMap::new(),
         }
     }
 }
@@ -260,12 +275,55 @@ impl ServerConfig {
         if let Some(disable_registration) = cli_args.disable_registration {
             figment = figment.merge(("disable_registration", disable_registration));
         }
+        if let Some(metrics_token) = cli_args.metrics_token {
+            figment = figment.merge(("metrics_token", metrics_token));
+        }
 
-        let config: ServerConfig = figment
+        let mut config: ServerConfig = figment
             .extract()
             .map_err(|e| Error::msg(format!("Configuration error: {}", e)))?;
 
+        // Parse external service IP restrictions from env vars
+        // Format: SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS=192.168.1.0/24,10.0.0.1
+        config.external_service_allowed_ips = Self::load_external_service_allowed_ips();
+
         Ok(config)
+    }
+
+    /// Load external service IP restrictions from environment variables.
+    ///
+    /// Scans for env vars matching `SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS`
+    /// and parses them into a HashMap of service name -> allowed IPs.
+    fn load_external_service_allowed_ips() -> HashMap<String, Vec<String>> {
+        let mut result = HashMap::new();
+        let prefix = "SCANOPY_EXTERNAL_SERVICE_";
+        let suffix = "_ALLOWED_IPS";
+
+        for (key, value) in std::env::vars() {
+            if key.starts_with(prefix) && key.ends_with(suffix) {
+                // Extract service name from: SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS
+                let service_name = key
+                    .strip_prefix(prefix)
+                    .and_then(|s| s.strip_suffix(suffix))
+                    .map(|s| s.to_lowercase());
+
+                if let Some(name) = service_name
+                    && !name.is_empty()
+                {
+                    let ips: Vec<String> = value
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect();
+
+                    if !ips.is_empty() {
+                        result.insert(name, ips);
+                    }
+                }
+            }
+        }
+
+        result
     }
 
     pub fn database_url(&self) -> String {
@@ -275,8 +333,8 @@ impl ServerConfig {
 
 pub struct AppState {
     pub config: ServerConfig,
-    pub storage: StorageFactory,
     pub services: ServiceFactory,
+    pub session_store: SessionManagerLayer<PostgresStore>,
 }
 
 impl AppState {
@@ -287,8 +345,8 @@ impl AppState {
 
         Ok(Arc::new(Self {
             config,
-            storage,
             services,
+            session_store: storage.sessions,
         }))
     }
 }

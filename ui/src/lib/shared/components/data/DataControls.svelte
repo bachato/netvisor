@@ -13,22 +13,27 @@
 		CheckSquare,
 		Square
 	} from 'lucide-svelte';
-	import type { FieldConfig } from './types';
+	import {
+		type FieldConfig,
+		isOrderableField,
+		getFieldKey,
+		PAGE_SIZE_OPTIONS,
+		type PageSizeOption
+	} from './types';
 	import { onMount, type Snippet } from 'svelte';
 	import Tag from './Tag.svelte';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 	import {
+		useTagsQuery,
 		useBulkAddTagMutation,
 		useBulkRemoveTagMutation,
 		type EntityDiscriminants
 	} from '$lib/features/tags/queries';
+	import type { Color } from '$lib/shared/utils/styling';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import type { components } from '$lib/api/schema';
 
 	type PaginationMeta = components['schemas']['PaginationMeta'];
-
-	// Client-side pagination: 20 items per page
-	const PAGE_SIZE = 20;
 
 	let {
 		items = $bindable([]),
@@ -42,7 +47,13 @@
 		getItemId,
 		// Server-side pagination (optional)
 		serverPagination = null,
-		onPageChange = null
+		onPageChange = null,
+		// Server-side ordering callback (optional)
+		// Called when grouping or sorting changes, allowing parent to update query params
+		onOrderChange = null,
+		// Server-side tag filtering callback (optional)
+		// Called when tag filter selection changes, with array of selected tag IDs
+		onTagFilterChange = null
 	}: {
 		items: T[];
 		fields: FieldConfig<T>[];
@@ -54,9 +65,22 @@
 		children: Snippet<[T, 'card' | 'list', boolean, (selected: boolean) => void]>;
 		getItemId: (item: T) => string;
 		// Server-side pagination: when provided, pagination is server-controlled
+		// Callback receives both page and pageSize so parent can use in query
 		serverPagination?: PaginationMeta | null;
-		onPageChange?: ((page: number) => void) | null;
+		onPageChange?: ((page: number, pageSize: number) => void) | null;
+		// Server-side ordering: called when group/sort changes
+		// Args: (groupBy field key, orderBy field key, direction)
+		onOrderChange?:
+			| ((groupBy: string | null, orderBy: string | null, direction: 'asc' | 'desc') => void)
+			| null;
+		// Server-side tag filtering: called when tag filter changes
+		// Args: array of tag IDs to filter by
+		onTagFilterChange?: ((tagIds: string[]) => void) | null;
 	} = $props();
+
+	// Tags query for filter display
+	const tagsQuery = useTagsQuery();
+	let allTags = $derived(tagsQuery.data ?? []);
 
 	// Bulk tag mutations
 	const bulkAddTagMutation = useBulkAddTagMutation();
@@ -95,8 +119,9 @@
 	// View mode state
 	let viewMode = $state<'card' | 'list'>('card');
 
-	// Pagination state (client-side)
+	// Pagination state
 	let currentPage = $state(1);
+	let pageSize = $state<PageSizeOption>(20);
 
 	// Bulk selection state (always enabled when onBulkDelete is provided)
 	let selectedIds = new SvelteSet<string>();
@@ -117,6 +142,7 @@
 		showFilters: boolean;
 		viewMode: 'card' | 'list';
 		currentPage: number;
+		pageSize?: PageSizeOption;
 	}
 
 	// Load state from localStorage
@@ -169,6 +195,11 @@
 			if (state.currentPage) {
 				currentPage = state.currentPage;
 			}
+
+			// Restore page size
+			if (state.pageSize && PAGE_SIZE_OPTIONS.includes(state.pageSize)) {
+				pageSize = state.pageSize;
+			}
 		} catch (e) {
 			console.warn('Failed to load DataControls state from localStorage:', e);
 		}
@@ -195,7 +226,8 @@
 				selectedGroupField,
 				showFilters,
 				viewMode,
-				currentPage
+				currentPage,
+				pageSize
 			};
 
 			localStorage.setItem(storageKey, JSON.stringify(state));
@@ -207,21 +239,22 @@
 	// Initialize filter state from fields
 	$effect(() => {
 		fields.forEach((field) => {
-			if (field.filterable && !filterState[field.key]) {
+			const key = getFieldKey(field);
+			if (field.filterable && !filterState[key]) {
 				if (field.type === 'boolean') {
-					filterState[field.key] = {
+					filterState[key] = {
 						type: 'boolean',
 						values: new SvelteSet(),
 						showTrue: true,
 						showFalse: true
 					};
 				} else if (field.type === 'array') {
-					filterState[field.key] = {
+					filterState[key] = {
 						type: 'array',
 						values: new SvelteSet()
 					};
 				} else {
-					filterState[field.key] = {
+					filterState[key] = {
 						type: 'string',
 						values: new SvelteSet()
 					};
@@ -249,6 +282,7 @@
 					void showFilters;
 					void viewMode;
 					void currentPage;
+					void pageSize;
 
 					// Debounce saves
 					clearTimeout(saveTimeout);
@@ -272,7 +306,7 @@
 			return field.getValue(item);
 		}
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		return (item as any)[field.key] ?? null;
+		return (item as any)[getFieldKey(field)] ?? null;
 	}
 
 	// Get unique string values for a field (handles arrays by flattening)
@@ -295,10 +329,13 @@
 		return Array.from(values).sort();
 	}
 
-	// Get groupable fields (only string type fields, not arrays)
+	// Get groupable fields (orderable string fields with groupable !== false)
 	let groupableFields = $derived(
-		fields.filter((f) => f.type === 'string' && f.filterable !== false)
+		fields.filter((f) => f.type === 'string' && isOrderableField(f) && f.groupable !== false)
 	);
+
+	// Get sortable fields (only orderable fields)
+	let sortableFields = $derived(fields.filter(isOrderableField));
 
 	// Apply all filters, sorting, and grouping
 	let processedItems = $derived.by(() => {
@@ -325,8 +362,15 @@
 			const matchesF = fields.every((field) => {
 				if (!field.filterable) return true;
 
-				const filterConfig = filterState[field.key];
+				const fieldKey = getFieldKey(field);
+				const filterConfig = filterState[fieldKey];
 				if (!filterConfig) return true;
+
+				// Skip client-side tag filtering when server-side filtering is enabled
+				// (the parent handles filtering via onTagFilterChange callback)
+				if (fieldKey === 'tags' && onTagFilterChange) {
+					return true;
+				}
 
 				const value = getFieldValue(item, field);
 
@@ -355,7 +399,7 @@
 
 		// Sort
 		if (sortState.field) {
-			const field = fields.find((f) => f.key === sortState.field);
+			const field = fields.find((f) => getFieldKey(f) === sortState.field);
 			if (field) {
 				result = [...result].sort((a, b) => {
 					const aVal = getFieldValue(a, field);
@@ -406,7 +450,7 @@
 			return new SvelteMap([['All', processedItems]]);
 		}
 
-		const field = fields.find((f) => f.key === selectedGroupField);
+		const field = fields.find((f) => getFieldKey(f) === selectedGroupField);
 		if (!field) {
 			return new SvelteMap([['All', processedItems]]);
 		}
@@ -477,26 +521,48 @@
 		};
 	}
 
+	// Toggle tag filter (uses tag ID for server-side filtering)
+	function toggleTagFilter(tagId: string) {
+		const filter = filterState['tags'];
+		if (!filter || filter.type !== 'array') return;
+
+		const newValues = new SvelteSet(filter.values);
+		if (newValues.has(tagId)) {
+			newValues.delete(tagId);
+		} else {
+			newValues.add(tagId);
+		}
+
+		filterState = {
+			...filterState,
+			tags: {
+				...filter,
+				values: newValues
+			}
+		};
+	}
+
 	// Clear all filters
 	function clearFilters() {
 		const newFilterState: FilterState = {};
 
 		fields.forEach((field) => {
 			if (field.filterable) {
+				const key = getFieldKey(field);
 				if (field.type === 'boolean') {
-					newFilterState[field.key] = {
+					newFilterState[key] = {
 						type: 'boolean',
 						values: new SvelteSet(),
 						showTrue: true,
 						showFalse: true
 					};
 				} else if (field.type === 'array') {
-					newFilterState[field.key] = {
+					newFilterState[key] = {
 						type: 'array',
 						values: new SvelteSet()
 					};
 				} else {
-					newFilterState[field.key] = {
+					newFilterState[key] = {
 						type: 'string',
 						values: new SvelteSet()
 					};
@@ -602,7 +668,7 @@
 	let hasActiveFilters = $derived(
 		fields.some((field) => {
 			if (!field.filterable) return false;
-			const filter = filterState[field.key];
+			const filter = filterState[getFieldKey(field)];
 			if (!filter) return false;
 
 			if (field.type === 'boolean') {
@@ -622,15 +688,15 @@
 	// Effective current page: derived from server offset when using server-side pagination
 	let effectiveCurrentPage = $derived(
 		useServerPagination && serverPagination
-			? Math.floor(serverPagination.offset / PAGE_SIZE) + 1
+			? Math.floor(serverPagination.offset / pageSize) + 1
 			: currentPage
 	);
 
 	// Pagination derived values (server-side or client-side)
 	let totalPages = $derived(
 		useServerPagination && serverPagination
-			? Math.ceil(serverPagination.total_count / PAGE_SIZE)
-			: Math.ceil(processedItems.length / PAGE_SIZE)
+			? Math.ceil(serverPagination.total_count / pageSize)
+			: Math.ceil(processedItems.length / pageSize)
 	);
 	let canGoPrev = $derived(effectiveCurrentPage > 1);
 	let canGoNext = $derived(
@@ -641,12 +707,12 @@
 	let showingStart = $derived(
 		useServerPagination && serverPagination
 			? Math.min(serverPagination.offset + 1, serverPagination.total_count)
-			: Math.min((effectiveCurrentPage - 1) * PAGE_SIZE + 1, processedItems.length)
+			: Math.min((effectiveCurrentPage - 1) * pageSize + 1, processedItems.length)
 	);
 	let showingEnd = $derived(
 		useServerPagination && serverPagination
 			? Math.min(serverPagination.offset + processedItems.length, serverPagination.total_count)
-			: Math.min(effectiveCurrentPage * PAGE_SIZE, processedItems.length)
+			: Math.min(effectiveCurrentPage * pageSize, processedItems.length)
 	);
 	let totalCount = $derived(
 		useServerPagination && serverPagination ? serverPagination.total_count : processedItems.length
@@ -658,19 +724,98 @@
 	let paginatedItems = $derived(
 		useServerPagination
 			? processedItems
-			: processedItems.slice(
-					(effectiveCurrentPage - 1) * PAGE_SIZE,
-					effectiveCurrentPage * PAGE_SIZE
-				)
+			: processedItems.slice((effectiveCurrentPage - 1) * pageSize, effectiveCurrentPage * pageSize)
 	);
 
 	// Reset to page 1 when filters/search change and current page would be out of bounds
 	$effect(() => {
 		if (effectiveCurrentPage > totalPages && totalPages > 0) {
 			if (useServerPagination && onPageChange) {
-				onPageChange(1);
+				onPageChange(1, pageSize);
 			} else {
 				currentPage = 1;
+			}
+		}
+	});
+
+	// Track previous ordering state to detect changes and reset pagination
+	let prevGroupBy: string | null = null;
+	let prevOrderBy: string | null = null;
+	let prevDirection: 'asc' | 'desc' = 'asc';
+	let orderChangeInitialized = false;
+
+	// Notify parent of ordering changes and reset pagination
+	$effect(() => {
+		const groupBy = selectedGroupField;
+		const orderBy = sortState.field;
+		const direction = sortState.direction;
+
+		// Skip the initial run (state restoration)
+		if (!orderChangeInitialized) {
+			prevGroupBy = groupBy;
+			prevOrderBy = orderBy;
+			prevDirection = direction;
+			orderChangeInitialized = true;
+			return;
+		}
+
+		// Check if ordering actually changed
+		const orderChanged =
+			groupBy !== prevGroupBy || orderBy !== prevOrderBy || direction !== prevDirection;
+
+		if (orderChanged) {
+			prevGroupBy = groupBy;
+			prevOrderBy = orderBy;
+			prevDirection = direction;
+
+			// Reset to page 1 when ordering changes
+			if (useServerPagination && onPageChange) {
+				onPageChange(1, pageSize);
+			} else {
+				currentPage = 1;
+			}
+
+			// Notify parent of the change
+			if (onOrderChange) {
+				onOrderChange(groupBy, orderBy, direction);
+			}
+		}
+	});
+
+	// Track previous tag filter state to detect changes
+	let prevTagFilterValues: string[] = [];
+	let tagFilterInitialized = false;
+
+	// Notify parent of tag filter changes
+	$effect(() => {
+		const tagFilter = filterState['tags'];
+		const currentTagIds = tagFilter ? Array.from(tagFilter.values).sort() : [];
+
+		// Skip the initial run (state restoration)
+		if (!tagFilterInitialized) {
+			prevTagFilterValues = currentTagIds;
+			tagFilterInitialized = true;
+			return;
+		}
+
+		// Check if tag filter actually changed
+		const tagFilterChanged =
+			currentTagIds.length !== prevTagFilterValues.length ||
+			currentTagIds.some((id, i) => id !== prevTagFilterValues[i]);
+
+		if (tagFilterChanged) {
+			prevTagFilterValues = currentTagIds;
+
+			// Reset to page 1 when tag filter changes
+			if (useServerPagination && onPageChange) {
+				onPageChange(1, pageSize);
+			} else {
+				currentPage = 1;
+			}
+
+			// Notify parent of the change
+			if (onTagFilterChange) {
+				onTagFilterChange(currentTagIds);
 			}
 		}
 	});
@@ -679,7 +824,7 @@
 	function goToPrevPage() {
 		if (canGoPrev) {
 			if (useServerPagination && onPageChange) {
-				onPageChange(effectiveCurrentPage - 1);
+				onPageChange(effectiveCurrentPage - 1, pageSize);
 			} else {
 				currentPage = currentPage - 1;
 			}
@@ -689,10 +834,21 @@
 	function goToNextPage() {
 		if (canGoNext) {
 			if (useServerPagination && onPageChange) {
-				onPageChange(effectiveCurrentPage + 1);
+				onPageChange(effectiveCurrentPage + 1, pageSize);
 			} else {
 				currentPage = currentPage + 1;
 			}
+		}
+	}
+
+	// Page size change handler
+	function handlePageSizeChange(newSize: PageSizeOption) {
+		pageSize = newSize;
+		// Reset to page 1 when page size changes
+		if (useServerPagination && onPageChange) {
+			onPageChange(1, newSize);
+		} else {
+			currentPage = 1;
 		}
 	}
 </script>
@@ -700,25 +856,6 @@
 <div class="space-y-4">
 	<!-- Search and Filter Controls Bar -->
 	<div class="flex items-center gap-3">
-		<!-- Search Input -->
-		<div class="relative flex-1">
-			<Search class="text-tertiary absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-			<input
-				type="text"
-				bind:value={searchQuery}
-				placeholder="Search..."
-				class="input-field w-full pl-10 pr-10"
-			/>
-			{#if hasActiveSearch}
-				<button
-					onclick={clearSearch}
-					class="text-tertiary hover:text-secondary absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-				>
-					<X class="h-4 w-4" />
-				</button>
-			{/if}
-		</div>
-
 		<!-- Filter Toggle Button -->
 		{#if fields.some((f) => f.filterable)}
 			<button
@@ -767,8 +904,8 @@
 			<div class="relative">
 				<select bind:value={selectedGroupField} class="input-field appearance-none pr-8">
 					<option value={null}>No grouping</option>
-					{#each groupableFields as field (field.key)}
-						<option value={field.key}>Group by {field.label}</option>
+					{#each groupableFields as field (getFieldKey(field))}
+						<option value={getFieldKey(field)}>Group by {field.label}</option>
 					{/each}
 				</select>
 				{#if hasActiveGrouping}
@@ -782,8 +919,8 @@
 			</div>
 		{/if}
 
-		<!-- Sort Dropdown -->
-		{#if fields.some((f) => f.sortable !== false)}
+		<!-- Sort Dropdown (only orderable fields) -->
+		{#if sortableFields.length > 0}
 			<div class="relative">
 				<select
 					bind:value={sortState.field}
@@ -793,8 +930,8 @@
 					class="input-field appearance-none pr-8"
 				>
 					<option value={null}>Sort by...</option>
-					{#each fields.filter((f) => f.sortable !== false) as field (field.key)}
-						<option value={field.key}>{field.label}</option>
+					{#each sortableFields as field (getFieldKey(field))}
+						<option value={getFieldKey(field)}>{field.label}</option>
 					{/each}
 				</select>
 			</div>
@@ -810,6 +947,25 @@
 				{/if}
 			</button>
 		{/if}
+
+		<!-- Search Input -->
+		<div class="relative flex-1">
+			<Search class="text-tertiary absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+			<input
+				type="text"
+				bind:value={searchQuery}
+				placeholder="Search..."
+				class="input-field w-full pl-10 pr-10"
+			/>
+			{#if hasActiveSearch}
+				<button
+					onclick={clearSearch}
+					class="text-tertiary hover:text-secondary absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+				>
+					<X class="h-4 w-4" />
+				</button>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Bulk Action Bar (shown when items are selected) -->
@@ -869,18 +1025,19 @@
 			</div>
 
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{#each fields.filter((f) => f.filterable) as field (field.key)}
+				{#each fields.filter((f) => f.filterable) as field (getFieldKey(field))}
+					{@const fieldKey = getFieldKey(field)}
 					<div class="space-y-2">
 						<div class="text-secondary text-sm font-medium">{field.label}</div>
 
 						{#if field.type === 'boolean'}
-							{@const filter = filterState[field.key]}
+							{@const filter = filterState[fieldKey]}
 							<div class="space-y-1">
 								<label class="flex items-center gap-2">
 									<input
 										type="checkbox"
 										checked={filter?.showTrue}
-										onchange={() => toggleBooleanFilter(field.key, 'showTrue')}
+										onchange={() => toggleBooleanFilter(fieldKey, 'showTrue')}
 										class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
 									/>
 									<span class="text-secondary text-sm">Show True</span>
@@ -889,15 +1046,37 @@
 									<input
 										type="checkbox"
 										checked={filter?.showFalse}
-										onchange={() => toggleBooleanFilter(field.key, 'showFalse')}
+										onchange={() => toggleBooleanFilter(fieldKey, 'showFalse')}
 										class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
 									/>
 									<span class="text-secondary text-sm">Show False</span>
 								</label>
 							</div>
+						{:else if fieldKey === 'tags'}
+							<!-- Special tag filter with colored tags (stores tag IDs for server-side filtering) -->
+							{@const filter = filterState[fieldKey]}
+							<div
+								class="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto rounded border border-gray-600 bg-gray-800 p-2"
+							>
+								{#if allTags.length === 0}
+									<p class="text-tertiary text-xs">No tags available</p>
+								{:else}
+									{#each allTags as tag (tag.id)}
+										{@const isSelected = filter?.values.has(tag.id)}
+										<button
+											onclick={() => toggleTagFilter(tag.id)}
+											class="transition-opacity {isSelected
+												? 'opacity-100'
+												: 'opacity-50 hover:opacity-75'}"
+										>
+											<Tag label={tag.name} color={tag.color as Color} />
+										</button>
+									{/each}
+								{/if}
+							</div>
 						{:else}
 							{@const uniqueValues = getUniqueValues(field)}
-							{@const filter = filterState[field.key]}
+							{@const filter = filterState[fieldKey]}
 							<div
 								class="max-h-40 space-y-1 overflow-y-auto rounded border border-gray-600 bg-gray-800 p-2"
 							>
@@ -909,7 +1088,7 @@
 											<input
 												type="checkbox"
 												checked={filter?.values.has(value)}
-												onchange={() => toggleStringFilter(field.key, value)}
+												onchange={() => toggleStringFilter(fieldKey, value)}
 												class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
 											/>
 											<span class="text-secondary truncate text-sm" title={value}>{value}</span>
@@ -944,6 +1123,22 @@
 					{groupedItems.size === 1 ? 'group' : 'groups'}
 				</span>
 			{/if}
+			<!-- Page size selector (only show when there are more than 20 items) -->
+			{#if totalCount > 20}
+				<div class="flex items-center gap-2">
+					<span class="text-tertiary text-sm">Show</span>
+					<select
+						value={pageSize}
+						onchange={(e) =>
+							handlePageSizeChange(parseInt(e.currentTarget.value) as PageSizeOption)}
+						class="input-field mx-0 py-1 pr-6"
+					>
+						{#each PAGE_SIZE_OPTIONS as size (size)}
+							<option value={size}>{size}</option>
+						{/each}
+					</select>
+				</div>
+			{/if}
 			{#if totalPages > 1}
 				<div class="flex items-center gap-2">
 					<button
@@ -952,7 +1147,7 @@
 						class="btn-secondary p-1 disabled:cursor-not-allowed disabled:opacity-50"
 						title="Previous page"
 					>
-						<ChevronLeft class="h-4 w-4" />
+						<ChevronLeft class="h-5.5 w-5.5" />
 					</button>
 					<span class="text-secondary min-w-[80px] text-center">
 						Page {effectiveCurrentPage} of {totalPages}
@@ -963,7 +1158,7 @@
 						class="btn-secondary p-1 disabled:cursor-not-allowed disabled:opacity-50"
 						title="Next page"
 					>
-						<ChevronRight class="h-4 w-4" />
+						<ChevronRight class="h-5.5 w-5.5" />
 					</button>
 				</div>
 			{/if}

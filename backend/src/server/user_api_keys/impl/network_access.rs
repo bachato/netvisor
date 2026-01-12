@@ -8,11 +8,10 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::storage::{
-    filter::EntityFilter,
+    filter::StorableFilter,
     generic::GenericPostgresStorage,
-    traits::{SqlValue, StorableEntity, Storage},
+    traits::{SqlValue, Storable, Storage},
 };
 
 /// The base data for a UserApiKeyNetworkAccess junction record
@@ -67,7 +66,7 @@ impl Display for UserApiKeyNetworkAccess {
     }
 }
 
-impl StorableEntity for UserApiKeyNetworkAccess {
+impl Storable for UserApiKeyNetworkAccess {
     type BaseData = UserApiKeyNetworkAccessBase;
 
     fn table_name() -> &'static str {
@@ -86,20 +85,8 @@ impl StorableEntity for UserApiKeyNetworkAccess {
         self.id
     }
 
-    fn network_id(&self) -> Option<Uuid> {
-        Some(self.base.network_id)
-    }
-
-    fn organization_id(&self) -> Option<Uuid> {
-        None
-    }
-
     fn created_at(&self) -> DateTime<Utc> {
         self.created_at
-    }
-
-    fn updated_at(&self) -> DateTime<Utc> {
-        self.created_at // Junction table doesn't have updated_at
     }
 
     fn set_id(&mut self, id: Uuid) {
@@ -108,14 +95,6 @@ impl StorableEntity for UserApiKeyNetworkAccess {
 
     fn set_created_at(&mut self, time: DateTime<Utc>) {
         self.created_at = time;
-    }
-
-    fn set_updated_at(&mut self, _time: DateTime<Utc>) {
-        // No-op for junction table
-    }
-
-    fn entity_type() -> EntityDiscriminants {
-        EntityDiscriminants::UserApiKeyNetworkAccess
     }
 
     fn to_params(&self) -> Result<(Vec<&'static str>, Vec<SqlValue>)> {
@@ -157,7 +136,8 @@ impl UserApiKeyNetworkAccessStorage {
 
     /// Get all network IDs for a single API key
     pub async fn get_for_key(&self, api_key_id: &Uuid) -> Result<Vec<Uuid>> {
-        let filter = EntityFilter::unfiltered().uuid_column("api_key_id", api_key_id);
+        let filter =
+            StorableFilter::<UserApiKeyNetworkAccess>::new().uuid_column("api_key_id", api_key_id);
         let access_records = self.storage.get_all(filter).await?;
         Ok(access_records.iter().map(|a| a.network_id()).collect())
     }
@@ -168,7 +148,8 @@ impl UserApiKeyNetworkAccessStorage {
             return Ok(HashMap::new());
         }
 
-        let filter = EntityFilter::unfiltered().uuid_columns("api_key_id", api_key_ids);
+        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new()
+            .uuid_columns("api_key_id", api_key_ids);
         let access_records = self.storage.get_all(filter).await?;
 
         let mut result: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
@@ -182,10 +163,15 @@ impl UserApiKeyNetworkAccessStorage {
         Ok(result)
     }
 
-    /// Save network IDs for an API key (replaces all existing)
+    /// Save network IDs for an API key (replaces all existing).
+    /// Uses a transaction to ensure atomicity - if any insert fails, the delete is rolled back.
     pub async fn save_for_key(&self, api_key_id: &Uuid, network_ids: &[Uuid]) -> Result<()> {
+        let mut tx = self.storage.begin_transaction().await?;
+
         // Delete existing access for this key
-        self.delete_for_key(api_key_id).await?;
+        let filter =
+            StorableFilter::<UserApiKeyNetworkAccess>::new().uuid_column("api_key_id", api_key_id);
+        tx.delete_by_filter(filter).await?;
 
         // Insert new access records
         for network_id in network_ids {
@@ -193,15 +179,17 @@ impl UserApiKeyNetworkAccessStorage {
                 *api_key_id,
                 *network_id,
             ));
-            self.storage.create(&access).await?;
+            tx.create(&access).await?;
         }
 
+        tx.commit().await?;
         Ok(())
     }
 
     /// Delete all network access for an API key
     pub async fn delete_for_key(&self, api_key_id: &Uuid) -> Result<()> {
-        let filter = EntityFilter::unfiltered().uuid_column("api_key_id", api_key_id);
+        let filter =
+            StorableFilter::<UserApiKeyNetworkAccess>::new().uuid_column("api_key_id", api_key_id);
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }
@@ -219,7 +207,7 @@ impl UserApiKeyNetworkAccessStorage {
 
     /// Remove a single network from an API key's access
     pub async fn remove_network(&self, api_key_id: &Uuid, network_id: &Uuid) -> Result<()> {
-        let filter = EntityFilter::unfiltered()
+        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new()
             .uuid_column("api_key_id", api_key_id)
             .uuid_column("network_id", network_id);
         self.storage.delete_by_filter(filter).await?;

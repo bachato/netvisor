@@ -92,8 +92,9 @@
 			link: host.hostname ? `http://${host.hostname}` : undefined,
 			iconColor: entities.getColorHelper('Host').icon,
 			Icon:
-				serviceDefinitions.getIconComponent(hostServices[0]?.service_definition) ||
-				entities.getIconComponent('Host'),
+				hostServices.length > 0
+					? serviceDefinitions.getIconComponent(hostServices[0].service_definition)
+					: entities.getIconComponent('Host'),
 			fields: [
 				{
 					label: 'Description',

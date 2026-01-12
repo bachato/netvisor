@@ -1,4 +1,4 @@
-.PHONY: help build test clean format set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise
+.PHONY: help build test clean format generate-schema set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise
 
 help:
 	@echo "Scanopy Development Commands"
@@ -20,7 +20,8 @@ help:
 	@echo "  make test           - Run all tests"
 	@echo "  make lint           - Run all linters"
 	@echo "  make format         - Format all code"
-	@echo "  make generate-types - Generate TypeScript types from Rust"
+	@echo "  make generate-types  - Generate TypeScript types from Rust"
+	@echo "  make generate-schema - Generate database schema diagram (requires tbls)"
 	@echo "  make clean          - Clean build artifacts and containers"
 	@echo "  make install-dev-mac    - Install development dependencies on macOS"
 	@echo "  make install-dev-linux  - Install development dependencies on Linux"
@@ -113,6 +114,14 @@ generate-types:
 	@echo "Generating TypeScript types from OpenAPI spec..."
 	cd ui && npm run generate:api
 	@echo "TypeScript types exported to ui/src/lib/api/schema.d.ts"
+
+generate-schema:
+	@command -v tbls >/dev/null 2>&1 || { echo "Install tbls: brew install k1low/tap/tbls"; exit 1; }
+	@rm -rf /tmp/tbls-schema && \
+	tbls doc "postgres://postgres:password@localhost:5435/scanopy?sslmode=disable" /tmp/tbls-schema --er-format mermaid --exclude sqlx_migrations --force && \
+	awk '/^```mermaid$$/,/^```$$/{if(!/^```/)print}' /tmp/tbls-schema/README.md > ui/static/schema.mermaid && \
+	rm -rf /tmp/tbls-schema
+	@echo "✅ Generated ui/static/schema.mermaid"
 
 stripe-webhook:
 	stripe listen --forward-to http://localhost:60072/api/billing/webhooks

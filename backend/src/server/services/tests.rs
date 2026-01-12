@@ -4,9 +4,9 @@ use crate::{
     server::{
         auth::middleware::auth::AuthenticatedEntity,
         bindings::r#impl::base::Binding,
-        services::r#impl::patterns::MatchDetails,
+        services::r#impl::{base::Service, patterns::MatchDetails},
         shared::{
-            services::traits::CrudService, storage::filter::EntityFilter,
+            services::traits::CrudService, storage::filter::StorableFilter,
             types::entities::EntitySource,
         },
     },
@@ -106,7 +106,7 @@ async fn test_service_deduplication_on_create() {
         "Services should have been deduplicated"
     );
 
-    let filter = EntityFilter::unfiltered().host_id(&created1.id);
+    let filter = StorableFilter::<Service>::new().host_id(&created1.id);
     // Verify only one service in DB
     let all_services = services.service_service.get_all(filter).await.unwrap();
     assert_eq!(all_services.len(), 1);
@@ -933,7 +933,7 @@ async fn test_discovery_conflict_drops_service_orphans_to_open_ports() {
 
     // The conflicting service should have been dropped, but an OpenPorts service
     // should have been created with the valid port2 binding
-    let filter = EntityFilter::unfiltered().host_id(&created_host.id);
+    let filter = StorableFilter::<Service>::new().host_id(&created_host.id);
     let all_services = services.service_service.get_all(filter).await.unwrap();
 
     // Should have: ExistingService + OpenPorts (with orphaned port2 binding)
@@ -988,7 +988,7 @@ async fn test_open_ports_singleton_per_host() {
     use crate::server::services::definitions::open_ports::OpenPorts as OpenPortsDef;
     use crate::server::services::r#impl::base::ServiceBase;
     use crate::server::services::r#impl::definitions::ServiceDefinitionExt;
-    use crate::server::shared::storage::traits::StorableEntity;
+    use crate::server::shared::storage::traits::Storable;
 
     let (_, services, _container) = test_services().await;
 
@@ -1084,7 +1084,7 @@ async fn test_open_ports_singleton_per_host() {
     );
 
     // Should have both bindings now
-    let filter = EntityFilter::unfiltered().host_id(&created_host.id);
+    let filter = StorableFilter::<Service>::new().host_id(&created_host.id);
     let all_services = services.service_service.get_all(filter).await.unwrap();
 
     let open_ports_services: Vec<_> = all_services

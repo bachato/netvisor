@@ -9,22 +9,22 @@ use std::collections::HashMap;
 use crate::server::{
     auth::middleware::auth::AuthenticatedEntity,
     shared::{
-        entities::{ChangeTriggersTopologyStaleness, Entity},
+        entities::{ChangeTriggersTopologyStaleness, Entity as EntityEnum},
         events::{
             bus::EventBus,
             types::{EntityEvent, EntityOperation},
         },
-        services::entity_tags::EntityTagService,
         storage::{
             child::ChildStorableEntity,
-            filter::EntityFilter,
+            filter::StorableFilter,
             generic::GenericPostgresStorage,
-            traits::{PaginatedResult, StorableEntity, Storage},
+            traits::{Entity, PaginatedResult, Storage},
         },
     },
+    tags::entity_tags::EntityTagService,
 };
 
-pub trait EventBusService<T: Into<Entity> + Default> {
+pub trait EventBusService<T: Into<EntityEnum> + Default> {
     /// Event bus and helpers
     fn event_bus(&self) -> &Arc<EventBus>;
 
@@ -46,7 +46,7 @@ pub trait EventBusService<T: Into<Entity> + Default> {
 /// Helper trait for services that use generic storage
 /// Provides default implementations for common CRUD operations
 #[async_trait]
-pub trait CrudService<T: StorableEntity + Into<Entity> + Default>: EventBusService<T>
+pub trait CrudService<T: Entity + Into<EntityEnum> + Default>: EventBusService<T>
 where
     T: Display + ChangeTriggersTopologyStaleness<T>,
 {
@@ -93,7 +93,7 @@ where
     }
 
     /// Get all entities with filter
-    async fn get_all(&self, filter: EntityFilter) -> Result<Vec<T>, anyhow::Error> {
+    async fn get_all(&self, filter: StorableFilter<T>) -> Result<Vec<T>, anyhow::Error> {
         let mut all = self.storage().get_all(filter).await?;
         self.bulk_hydrate_tags(&mut all).await?;
         Ok(all)
@@ -102,7 +102,7 @@ where
     /// Get entities with pagination, returning items and total count.
     async fn get_paginated(
         &self,
-        filter: EntityFilter,
+        filter: StorableFilter<T>,
     ) -> Result<PaginatedResult<T>, anyhow::Error> {
         let mut paginated = self
             .storage()
@@ -114,8 +114,20 @@ where
         Ok(paginated)
     }
 
+    /// Get entities with pagination and custom ordering, returning items and total count.
+    /// Hydrates tags from junction table.
+    async fn get_paginated_ordered(
+        &self,
+        filter: StorableFilter<T>,
+        order_by: &str,
+    ) -> Result<PaginatedResult<T>, anyhow::Error> {
+        let mut paginated = self.storage().get_paginated(filter, order_by).await?;
+        self.bulk_hydrate_tags(&mut paginated.items).await?;
+        Ok(paginated)
+    }
+
     /// Get one entity with filter
-    async fn get_one(&self, filter: EntityFilter) -> Result<Option<T>, anyhow::Error> {
+    async fn get_one(&self, filter: StorableFilter<T>) -> Result<Option<T>, anyhow::Error> {
         if let Some(mut entity) = self.storage().get_one(filter).await? {
             self.hydrate_tags(&mut entity).await?;
             Ok(Some(entity))
@@ -311,9 +323,9 @@ where
         authentication: AuthenticatedEntity,
     ) -> Result<usize, anyhow::Error> {
         let filter = if T::is_network_keyed() {
-            EntityFilter::unfiltered().network_ids(network_ids)
+            StorableFilter::<T>::new().network_ids(network_ids)
         } else {
-            EntityFilter::unfiltered().organization_id(organization_id)
+            StorableFilter::<T>::new().organization_id(organization_id)
         };
 
         // Get entities for event publishing before deletion
@@ -359,15 +371,15 @@ where
 pub trait ChildCrudService<T>: CrudService<T>
 where
     T: ChildStorableEntity
-        + StorableEntity
-        + Into<Entity>
+        + Entity
+        + Into<EntityEnum>
         + Default
         + Display
         + ChangeTriggersTopologyStaleness<T>,
 {
     /// Get all entities for a single parent
     async fn get_for_parent(&self, parent_id: &Uuid) -> Result<Vec<T>, anyhow::Error> {
-        let filter = EntityFilter::unfiltered().uuid_column(T::parent_column(), parent_id);
+        let filter = StorableFilter::<T>::new().uuid_column(T::parent_column(), parent_id);
         self.get_all(filter).await
     }
 
@@ -380,7 +392,7 @@ where
             return Ok(HashMap::new());
         }
 
-        let filter = EntityFilter::unfiltered().uuid_columns(T::parent_column(), parent_ids);
+        let filter = StorableFilter::<T>::new().uuid_columns(T::parent_column(), parent_ids);
         let entities = self.get_all(filter).await?;
         // Note: get_all already hydrates tags, no need to call bulk_hydrate_tags again
 
@@ -461,7 +473,7 @@ where
         parent_id: &Uuid,
         authentication: AuthenticatedEntity,
     ) -> Result<usize, anyhow::Error> {
-        let filter = EntityFilter::unfiltered().uuid_column(T::parent_column(), parent_id);
+        let filter = StorableFilter::<T>::new().uuid_column(T::parent_column(), parent_id);
 
         let entities = self.storage().get_all(filter.clone()).await?;
 

@@ -1,6 +1,6 @@
 [package]
 name = "scanopy-server"
-version = "0.13.3"
+version = "0.13.5"
 edition = "2024"
 description = "Scanopy HTTP API server"
 
@@ -74,6 +74,10 @@ base64ct = "=1.6.0"
 config = "0.14"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# === Metrics ===
+metrics = "0.24"
+metrics-exporter-prometheus = { version = "0.16", default-features = false, features = ["http-listener"] }
 dotenv = "0.15"
 figment = { version = "0.10", features = ["json", "env", "toml"] }
 

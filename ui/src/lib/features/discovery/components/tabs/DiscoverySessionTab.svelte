@@ -34,9 +34,7 @@
 			key: 'name',
 			label: 'Name',
 			type: 'string',
-			searchable: true,
-			filterable: false,
-			sortable: true
+			searchable: true
 		},
 		{
 			key: 'discovery_type',
@@ -44,7 +42,6 @@
 			type: 'string',
 			searchable: true,
 			filterable: true,
-			sortable: true,
 			getValue: (item) => item.discovery_type.type
 		},
 		{
@@ -53,7 +50,6 @@
 			type: 'string',
 			searchable: true,
 			filterable: true,
-			sortable: true,
 			getValue: (item) => {
 				const daemon = daemonsData.find((d) => d.id == item.daemon_id);
 				return daemon ? daemon.name : 'Unknown Daemon';
@@ -64,16 +60,13 @@
 			label: 'Phase',
 			type: 'string',
 			searchable: true,
-			filterable: true,
-			sortable: true
+			filterable: true
 		},
 		{
 			key: 'started_at',
 			label: 'Started At',
 			type: 'string',
 			searchable: true,
-			filterable: false,
-			sortable: true,
 			getValue: (item) => (item.started_at ? formatTimestamp(item.started_at) : 'Not Started')
 		},
 		{
@@ -81,8 +74,6 @@
 			label: 'Finished At',
 			type: 'string',
 			searchable: true,
-			filterable: false,
-			sortable: true,
 			getValue: (item) => (item.finished_at ? formatTimestamp(item.finished_at) : 'Not Started')
 		}
 	]);

@@ -1,0 +1,18 @@
+[Unit]
+Description=Scanopy Network Discovery Daemon (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# %i is the instance name (e.g., eth0 from scanopy-daemon@eth0)
+ExecStart=/usr/local/bin/scanopy-daemon --name=%i --interface=%i
+Restart=always
+RestartSec=10
+User=root
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=scanopy-daemon-%i
+
+[Install]
+WantedBy=multi-user.target

@@ -5,13 +5,11 @@ use crate::server::{
     interfaces::r#impl::base::Interface,
     shared::{
         events::bus::EventBus,
-        services::{
-            entity_tags::EntityTagService,
-            traits::{ChildCrudService, CrudService, EventBusService},
-        },
-        storage::{filter::EntityFilter, generic::GenericPostgresStorage, traits::Storage},
+        services::traits::{ChildCrudService, CrudService, EventBusService},
+        storage::{filter::StorableFilter, generic::GenericPostgresStorage, traits::Storage},
         types::api::ValidationError,
     },
+    tags::entity_tags::EntityTagService,
 };
 use anyhow::Result;
 use std::collections::HashMap;
@@ -55,7 +53,7 @@ impl InterfaceService {
 
     /// Get all interfaces for a specific host, ordered by position
     pub async fn get_for_host(&self, host_id: &Uuid) -> Result<Vec<Interface>> {
-        let filter = EntityFilter::unfiltered().uuid_column("host_id", host_id);
+        let filter = StorableFilter::<Interface>::new().uuid_column("host_id", host_id);
         self.storage.get_all_ordered(filter, "position ASC").await
     }
 
@@ -65,7 +63,7 @@ impl InterfaceService {
             return Ok(HashMap::new());
         }
 
-        let filter = EntityFilter::unfiltered().uuid_columns("host_id", host_ids);
+        let filter = StorableFilter::<Interface>::new().uuid_columns("host_id", host_ids);
         let interfaces = self.storage.get_all_ordered(filter, "position ASC").await?;
 
         let mut result: HashMap<Uuid, Vec<Interface>> = HashMap::new();
@@ -81,7 +79,7 @@ impl InterfaceService {
 
     /// Get all interfaces for a specific subnet
     pub async fn get_for_subnet(&self, subnet_id: &Uuid) -> Result<Vec<Interface>> {
-        let filter = EntityFilter::unfiltered().subnet_id(subnet_id);
+        let filter = StorableFilter::<Interface>::new().subnet_id(subnet_id);
         self.storage.get_all(filter).await
     }
 

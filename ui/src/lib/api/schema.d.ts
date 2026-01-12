@@ -115,6 +115,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resend_verification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/reset-password": {
         parameters: {
             query?: never;
@@ -158,6 +174,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["update_password_auth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verify_email"];
         delete?: never;
         options?: never;
         head?: never;
@@ -632,7 +664,9 @@ export interface paths {
         };
         /**
          * Get all daemons
-         * @description Returns all daemons accessible to the user
+         * @description Returns all daemons accessible to the user.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
          */
         get: operations["get_daemons"];
         put?: never;
@@ -813,8 +847,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all groups */
-        get: operations["list_groups"];
+        /**
+         * List all groups
+         * @description Returns all groups the authenticated user has access to.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
+         */
+        get: operations["get_all_groups"];
         put?: never;
         /** Create a new group */
         post: operations["create_group"];
@@ -871,7 +910,8 @@ export interface paths {
          * List all hosts
          * @description Returns all hosts the authenticated user has access to, with their
          *     interfaces, ports, and services included. Supports pagination via
-         *     `limit` and `offset` query parameters.
+         *     `limit` and `offset` query parameters, and ordering via `group_by`,
+         *     `order_by`, and `order_direction`.
          */
         get: operations["get_all_hosts"];
         put?: never;
@@ -1310,8 +1350,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all services */
-        get: operations["list_services"];
+        /**
+         * List all services
+         * @description Returns all services the authenticated user has access to.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
+         */
+        get: operations["get_all_services"];
         put?: never;
         /**
          * Create a new service
@@ -1486,6 +1531,8 @@ export interface paths {
          * List all subnets
          * @description Returns all subnets accessible to the authenticated user or daemon.
          *     Daemons can only access subnets within their assigned network.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
          */
         get: operations["list_subnets"];
         put?: never;
@@ -1544,8 +1591,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all tags */
-        get: operations["list_tags"];
+        /**
+         * List all tags
+         * @description Returns all tags in the authenticated user's organization.
+         *     Supports pagination via `limit` and `offset` query parameters,
+         *     and ordering via `group_by`, `order_by`, and `order_direction`.
+         */
+        get: operations["get_all_tags"];
         put?: never;
         /**
          * Create a new tag
@@ -1879,7 +1931,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.13.2"
+         *       "server_version": "0.13.3"
          *     }
          */
         ApiMeta: {
@@ -1890,7 +1942,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.13.2
+             * @example 0.13.3
              */
             server_version: string;
         };
@@ -1904,14 +1956,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-01-08T02:40:35.790992Z",
-             *       "id": "5491e7b4-10fc-4bf1-bdff-c1029a74398d",
+             *       "created_at": "2026-01-10T23:04:42.635661Z",
+             *       "id": "b1651c99-6b52-4f02-87b5-86a839f975e4",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-01-08T02:40:35.790992Z"
+             *       "updated_at": "2026-01-10T23:04:42.635661Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2314,14 +2366,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-01-08T02:40:35.786793Z",
-             *           "id": "555fd07f-b892-4c92-bf69-3d6da019d0b5",
+             *           "created_at": "2026-01-10T23:04:42.631462Z",
+             *           "id": "03dc9d87-1e10-4958-990b-2a81cef6c416",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-01-08T02:40:35.786793Z"
+             *           "updated_at": "2026-01-10T23:04:42.631462Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -2330,7 +2382,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "NFS",
+             *       "service_definition": "Switch",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -2613,14 +2665,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-01-08T02:40:35.777869Z",
-         *       "id": "77f739bb-1726-409a-8400-aec5a26443e1",
+         *       "created_at": "2026-01-10T23:04:42.621931Z",
+         *       "id": "393ef68a-5f82-45c1-9d23-7e97285b1f2e",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-01-08T02:40:35.777869Z"
+         *       "updated_at": "2026-01-10T23:04:42.621931Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -2784,7 +2836,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "NFS",
+         *           "service_definition": "Switch",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -2904,6 +2956,11 @@ export interface components {
         };
         /** @enum {string} */
         DaemonMode: "Push" | "Pull";
+        /**
+         * @description Fields that daemons can be ordered/grouped by.
+         * @enum {string}
+         */
+        DaemonOrderField: "created_at" | "name" | "last_seen" | "updated_at" | "network_id";
         /** @description Daemon registration request from daemon to server */
         DaemonRegistrationRequest: {
             capabilities: components["schemas"]["DaemonCapabilities"];
@@ -3109,7 +3166,7 @@ export interface components {
         /** @enum {string} */
         EdgeTypeDiscriminants: "Interface" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke";
         /** @enum {string} */
-        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "Subnet" | "Group" | "Topology" | "GroupBinding" | "EntityTag" | "UserApiKeyNetworkAccess" | "UserNetworkAccess" | "Unknown";
+        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "Subnet" | "Group" | "Topology" | "Unknown";
         EntityMetadata: {
             color: components["schemas"]["Color"];
             icon: string;
@@ -3178,6 +3235,11 @@ export interface components {
             source?: components["schemas"]["EntitySource"];
             tags: string[];
         };
+        /**
+         * @description Fields that groups can be ordered/grouped by.
+         * @enum {string}
+         */
+        GroupOrderField: "created_at" | "name" | "group_type" | "updated_at" | "network_id";
         /** @enum {string} */
         GroupType: "RequestPath" | "HubAndSpoke";
         /**
@@ -3223,6 +3285,11 @@ export interface components {
         };
         /** @enum {string} */
         HostNamingFallback: "Ip" | "BestService";
+        /**
+         * @description Fields that hosts can be ordered/grouped by.
+         * @enum {string}
+         */
+        HostOrderField: "created_at" | "name" | "hostname" | "updated_at" | "virtualized_by" | "network_id";
         /**
          * @description Response type for host endpoints.
          *     Includes hydrated children (interfaces, ports, services).
@@ -3474,6 +3541,11 @@ export interface components {
             name: string;
             slug: string;
         };
+        /**
+         * @description Direction for ORDER BY clauses.
+         * @enum {string}
+         */
+        OrderDirection: "asc" | "desc";
         Organization: components["schemas"]["OrganizationBase"] & {
             /** Format: date-time */
             readonly created_at: string;
@@ -3499,7 +3571,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.13.2"
+         *       "server_version": "0.13.3"
          *     }
          */
         PaginatedApiMeta: {
@@ -3512,7 +3584,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.13.2
+             * @example 0.13.3
              */
             server_version: string;
         };
@@ -3527,6 +3599,20 @@ export interface components {
                 updated_at: string;
                 /** @description Computed version status including health and warnings */
                 version_status: components["schemas"]["DaemonVersionStatus"];
+            })[];
+            error?: string | null;
+            meta: components["schemas"]["PaginatedApiMeta"];
+            success: boolean;
+        };
+        /** @description Response type for paginated list endpoints (pagination is always present in meta) */
+        PaginatedApiResponse_Group: {
+            data: (components["schemas"]["GroupBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
             })[];
             error?: string | null;
             meta: components["schemas"]["PaginatedApiMeta"];
@@ -3559,8 +3645,36 @@ export interface components {
             success: boolean;
         };
         /** @description Response type for paginated list endpoints (pagination is always present in meta) */
+        PaginatedApiResponse_Service: {
+            data: (components["schemas"]["ServiceBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
+            })[];
+            error?: string | null;
+            meta: components["schemas"]["PaginatedApiMeta"];
+            success: boolean;
+        };
+        /** @description Response type for paginated list endpoints (pagination is always present in meta) */
         PaginatedApiResponse_Subnet: {
             data: (components["schemas"]["SubnetBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
+            })[];
+            error?: string | null;
+            meta: components["schemas"]["PaginatedApiMeta"];
+            success: boolean;
+        };
+        /** @description Response type for paginated list endpoints (pagination is always present in meta) */
+        PaginatedApiResponse_Tag: {
+            data: (components["schemas"]["TagBase"] & {
                 /** Format: date-time */
                 readonly created_at: string;
                 /** Format: uuid */
@@ -3769,6 +3883,11 @@ export interface components {
             password: string;
             terms_accepted: boolean;
         };
+        /** @description Request to resend verification email */
+        ResendVerificationRequest: {
+            /** Format: email */
+            email: string;
+        };
         ResetPasswordRequest: {
             password: string;
             token: string;
@@ -3803,14 +3922,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-01-08T02:40:35.777776Z",
-         *           "id": "e98f05f5-bb96-4beb-a4e8-b1f8dbf4cac3",
+         *           "created_at": "2026-01-10T23:04:42.621834Z",
+         *           "id": "504e786d-c77f-45f8-986b-55e69c761d0f",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-01-08T02:40:35.777776Z"
+         *           "updated_at": "2026-01-10T23:04:42.621834Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -3819,7 +3938,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "NFS",
+         *       "service_definition": "Switch",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -3885,6 +4004,11 @@ export interface components {
             tags?: string[];
             virtualization?: null | components["schemas"]["ServiceVirtualization"];
         };
+        /**
+         * @description Fields that services can be ordered/grouped by.
+         * @enum {string}
+         */
+        ServiceOrderField: "created_at" | "name" | "updated_at" | "host" | "network_id" | "position";
         /** ServiceVirtualization */
         ServiceVirtualization: {
             details: components["schemas"]["DockerVirtualization"];
@@ -3975,6 +4099,11 @@ export interface components {
             subnet_type: components["schemas"]["SubnetType"];
             tags: string[];
         };
+        /**
+         * @description Fields that subnets can be ordered/grouped by.
+         * @enum {string}
+         */
+        SubnetOrderField: "created_at" | "name" | "cidr" | "subnet_type" | "updated_at" | "network_id";
         /** @enum {string} */
         SubnetType: "Internet" | "Remote" | "Gateway" | "VpnTunnel" | "Dmz" | "Lan" | "WiFi" | "IoT" | "Guest" | "DockerBridge" | "Management" | "Storage" | "Unknown" | "None";
         /**
@@ -4003,6 +4132,11 @@ export interface components {
             /** Format: uuid */
             organization_id: string;
         };
+        /**
+         * @description Fields that tags can be ordered/grouped by.
+         * @enum {string}
+         */
+        TagOrderField: "created_at" | "name" | "color" | "updated_at";
         /** @enum {string} */
         TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "SubscriptionCancelled";
         Topology: components["schemas"]["TopologyBase"] & {
@@ -4055,6 +4189,27 @@ export interface components {
         TopologyOptions: {
             local: components["schemas"]["TopologyLocalOptions"];
             request: components["schemas"]["TopologyRequestOptions"];
+        };
+        /**
+         * @description Lightweight request type for topology rebuild/refresh operations.
+         *
+         *     This type only includes the fields actually needed by the server - entity data
+         *     (hosts, interfaces, services, etc.) is fetched fresh from the database.
+         *     Using this instead of the full Topology dramatically reduces payload size
+         *     for large networks (from MBs to KBs), fixing HTTP 413 errors.
+         */
+        TopologyRebuildRequest: {
+            /** @description Existing edges for reference during rebuild */
+            edges?: components["schemas"]["Edge"][];
+            /**
+             * Format: uuid
+             * @description Network ID for authorization and data fetching
+             */
+            network_id: string;
+            /** @description Existing nodes for position preservation during rebuild */
+            nodes?: components["schemas"]["Node"][];
+            /** @description Topology options for graph building */
+            options: components["schemas"]["TopologyOptions"];
         };
         TopologyRequestOptions: {
             group_docker_bridges_by_host: boolean;
@@ -4162,6 +4317,8 @@ export interface components {
         };
         UserBase: {
             email: string;
+            /** @description Whether the user has verified their email address */
+            email_verified?: boolean;
             network_ids: string[];
             /** Format: date-time */
             oidc_linked_at?: string | null;
@@ -4178,6 +4335,10 @@ export interface components {
         Uxy: {
             x: number;
             y: number;
+        };
+        /** @description Request to verify email using token */
+        VerifyEmailRequest: {
+            token: string;
         };
         /**
          * @description Health status for daemon versions
@@ -4457,6 +4618,48 @@ export interface operations {
             };
         };
     };
+    resend_verification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResendVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Verification email sent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Invalid request or already verified */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     reset_password: {
         parameters: {
             query?: never;
@@ -4556,6 +4759,39 @@ export interface operations {
             };
             /** @description Blocked in demo mode */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    verify_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description Email verified successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_User"];
+                };
+            };
+            /** @description Invalid or expired token */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5654,8 +5890,12 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
-                /** @description Filter by specific entity IDs (for selective loading) */
-                ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["DaemonOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["DaemonOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -6071,13 +6311,17 @@ export interface operations {
             };
         };
     };
-    list_groups: {
+    get_all_groups: {
         parameters: {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
-                /** @description Filter by specific entity IDs (for selective loading) */
-                ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["GroupOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["GroupOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -6095,12 +6339,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        data: components["schemas"]["Group"][];
-                        error?: string | null;
-                        meta: components["schemas"]["PaginatedApiMeta"];
-                        success: boolean;
-                    };
+                    "application/json": components["schemas"]["PaginatedApiResponse_Group"];
                 };
             };
         };
@@ -6279,6 +6518,14 @@ export interface operations {
                 network_id?: string | null;
                 /** @description Filter by specific entity IDs (for selective loading) */
                 ids?: string[] | null;
+                /** @description Filter by tag IDs (returns hosts that have ANY of the specified tags) */
+                tag_ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["HostOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["HostOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -7482,15 +7729,23 @@ export interface operations {
             };
         };
     };
-    list_services: {
+    get_all_services: {
         parameters: {
             query?: {
-                /** @description Filter by host ID */
-                host_id?: string | null;
                 /** @description Filter by network ID */
                 network_id?: string | null;
+                /** @description Filter by host ID */
+                host_id?: string | null;
                 /** @description Filter by specific entity IDs (for selective loading) */
                 ids?: string[] | null;
+                /** @description Filter by tag IDs (returns services that have ANY of the specified tags) */
+                tag_ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["ServiceOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["ServiceOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -7508,12 +7763,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        data: components["schemas"]["Service"][];
-                        error?: string | null;
-                        meta: components["schemas"]["PaginatedApiMeta"];
-                        success: boolean;
-                    };
+                    "application/json": components["schemas"]["PaginatedApiResponse_Service"];
                 };
             };
         };
@@ -7959,8 +8209,12 @@ export interface operations {
             query?: {
                 /** @description Filter by network ID */
                 network_id?: string | null;
-                /** @description Filter by specific entity IDs (for selective loading) */
-                ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["SubnetOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["SubnetOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -8150,9 +8404,15 @@ export interface operations {
             };
         };
     };
-    list_tags: {
+    get_all_tags: {
         parameters: {
             query?: {
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["TagOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["TagOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
                 limit?: number | null;
                 /** @description Number of results to skip. Default: 0. */
@@ -8170,12 +8430,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        data: components["schemas"]["Tag"][];
-                        error?: string | null;
-                        meta: components["schemas"]["PaginatedApiMeta"];
-                        success: boolean;
-                    };
+                    "application/json": components["schemas"]["PaginatedApiResponse_Tag"];
                 };
             };
         };
@@ -8679,7 +8934,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Topology"];
+                "application/json": components["schemas"]["TopologyRebuildRequest"];
             };
         };
         responses: {
@@ -8701,6 +8956,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Topology not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     refresh: {
@@ -8715,7 +8979,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Topology"];
+                "application/json": components["schemas"]["TopologyRebuildRequest"];
             };
         };
         responses: {
@@ -8730,6 +8994,15 @@ export interface operations {
             };
             /** @description Access denied */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Topology not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

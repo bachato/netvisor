@@ -64,10 +64,16 @@
 		const context = getOptionContext(option, index);
 
 		const searchTerm = filterText.toLowerCase();
-		const label = displayComponent.getLabel(option).toLowerCase();
+		const label = displayComponent.getLabel(option, context).toLowerCase();
 		const description = displayComponent.getDescription?.(option, context)?.toLowerCase() || '';
+		const tags = displayComponent.getTags?.(option, context) ?? [];
+		const tagLabels = tags.map((tag) => tag.label.toLowerCase()).join(' ');
 
-		return label.includes(searchTerm) || description.includes(searchTerm);
+		return (
+			label.includes(searchTerm) ||
+			description.includes(searchTerm) ||
+			tagLabels.includes(searchTerm)
+		);
 	});
 
 	// Group filtered options by category when getCategory is provided
