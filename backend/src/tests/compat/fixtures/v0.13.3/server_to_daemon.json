@@ -3,6 +3,7 @@
   "exchanges": [
     {
       "method": "POST",
+<<<<<<< HEAD
       "path": "/api/discovery/initiate",
       "request_body": {
         "discovery_type": {
@@ -29,15 +30,17 @@
       "request_body": {
         "api_key": "scp_d_A13Xqr7oAU1mZTtTCP5vUgQZ0Hd7yrYy",
         "network_id": "d0569d71-d5f8-405e-b628-d5f3bf31dd20"
+=======
+      "path": "/api/initialize",
+      "request_body": {
+        "api_key": "scp_d_qawU9MQMdo5ogl5teXdWn7NMfm4aasW2",
+        "network_id": "071e9d04-ce22-4bea-8cbb-640e76ff2e66"
+>>>>>>> weblate-scoping
       },
-      "response_status": 200,
+      "response_status": 500,
       "response_body": {
-        "data": "Daemon initialized successfully",
-        "meta": {
-          "api_version": 1,
-          "server_version": "0.13.3"
-        },
-        "success": true
+        "error": "Startup announcement failed: HTTP 404 Not Found",
+        "success": false
       }
     }
   ]

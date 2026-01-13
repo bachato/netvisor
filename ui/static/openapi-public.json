@@ -6394,11 +6394,29 @@
           "success"
         ],
         "properties": {
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Machine-readable error code for i18n translation"
+          },
           "error": {
             "type": [
               "string",
               "null"
             ]
+          },
+          "params": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Parameters for interpolating into the translated error message",
+            "additionalProperties": {},
+            "propertyNames": {
+              "type": "string"
+            }
           },
           "success": {
             "type": "boolean"
@@ -6501,14 +6519,23 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
+<<<<<<< HEAD
               "created_at": "2026-01-10T23:23:13.163852Z",
               "id": "b541cb07-24b2-44f6-90bf-4215e1042c22",
+=======
+              "created_at": "2026-01-12T02:26:22.555674Z",
+              "id": "4cfd8d76-6b40-4236-991a-dbff891b0912",
+>>>>>>> weblate-scoping
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
+<<<<<<< HEAD
               "updated_at": "2026-01-10T23:23:13.163852Z"
+=======
+              "updated_at": "2026-01-12T02:26:22.555674Z"
+>>>>>>> weblate-scoping
             }
           },
           "error": {
@@ -7798,14 +7825,23 @@
             "example": {
               "bindings": [
                 {
+<<<<<<< HEAD
                   "created_at": "2026-01-10T23:23:13.160182Z",
                   "id": "e9a07186-790f-4ac1-87e4-1c815e42b5e9",
+=======
+                  "created_at": "2026-01-12T02:26:22.551818Z",
+                  "id": "5a36a5d2-3f2d-4e86-9d40-01fcefdc8a51",
+>>>>>>> weblate-scoping
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
+<<<<<<< HEAD
                   "updated_at": "2026-01-10T23:23:13.160182Z"
+=======
+                  "updated_at": "2026-01-12T02:26:22.551818Z"
+>>>>>>> weblate-scoping
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -7814,7 +7850,11 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
+<<<<<<< HEAD
               "service_definition": "Switch",
+=======
+              "service_definition": "PeaNUT",
+>>>>>>> weblate-scoping
               "source": {
                 "type": "Manual"
               },
@@ -8921,14 +8961,23 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
+<<<<<<< HEAD
           "created_at": "2026-01-10T23:23:13.151327Z",
           "id": "348a8752-dffa-4505-b213-cc1a7824025e",
+=======
+          "created_at": "2026-01-12T02:26:22.543632Z",
+          "id": "e969d8a0-64c4-4daf-8cf5-dff7b191f155",
+>>>>>>> weblate-scoping
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
+<<<<<<< HEAD
           "updated_at": "2026-01-10T23:23:13.151327Z"
+=======
+          "updated_at": "2026-01-12T02:26:22.543632Z"
+>>>>>>> weblate-scoping
         }
       },
       "BindingBase": {
@@ -9331,7 +9380,11 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
+<<<<<<< HEAD
               "service_definition": "Switch",
+=======
+              "service_definition": "PeaNUT",
+>>>>>>> weblate-scoping
               "tags": [],
               "virtualization": null
             }
@@ -11995,14 +12048,23 @@
               "example": {
                 "bindings": [
                   {
+<<<<<<< HEAD
                     "created_at": "2026-01-10T23:23:13.159424Z",
                     "id": "2e8be836-6f23-4c83-964a-13ed12974b8a",
+=======
+                    "created_at": "2026-01-12T02:26:22.551003Z",
+                    "id": "7c29e505-ff51-48ba-b3e2-48aa5d732bbb",
+>>>>>>> weblate-scoping
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
+<<<<<<< HEAD
                     "updated_at": "2026-01-10T23:23:13.159424Z"
+=======
+                    "updated_at": "2026-01-12T02:26:22.551003Z"
+>>>>>>> weblate-scoping
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -12011,7 +12073,11 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
+<<<<<<< HEAD
                 "service_definition": "Switch",
+=======
+                "service_definition": "PeaNUT",
+>>>>>>> weblate-scoping
                 "source": {
                   "type": "Manual"
                 },
@@ -12881,14 +12947,23 @@
         "example": {
           "bindings": [
             {
+<<<<<<< HEAD
               "created_at": "2026-01-10T23:23:13.151272Z",
               "id": "98975266-37f9-4087-877a-2f9b7d2b0fd1",
+=======
+              "created_at": "2026-01-12T02:26:22.543581Z",
+              "id": "22f528b8-4c49-4116-8de6-973b8e5af46b",
+>>>>>>> weblate-scoping
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
+<<<<<<< HEAD
               "updated_at": "2026-01-10T23:23:13.151272Z"
+=======
+              "updated_at": "2026-01-12T02:26:22.543581Z"
+>>>>>>> weblate-scoping
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -12897,7 +12972,11 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
+<<<<<<< HEAD
           "service_definition": "Switch",
+=======
+          "service_definition": "PeaNUT",
+>>>>>>> weblate-scoping
           "source": {
             "type": "Manual"
           },

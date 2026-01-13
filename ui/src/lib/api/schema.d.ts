@@ -1924,7 +1924,13 @@ export interface components {
     schemas: {
         /** @description Error response type for API errors (no data field) */
         ApiErrorResponse: {
+            /** @description Machine-readable error code for i18n translation */
+            code?: string | null;
             error?: string | null;
+            /** @description Parameters for interpolating into the translated error message */
+            params?: {
+                [key: string]: unknown;
+            } | null;
             success: boolean;
         };
         /**
@@ -1956,14 +1962,23 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
+<<<<<<< HEAD
              *       "created_at": "2026-01-10T23:04:42.635661Z",
              *       "id": "b1651c99-6b52-4f02-87b5-86a839f975e4",
+=======
+             *       "created_at": "2026-01-12T02:23:03.212127Z",
+             *       "id": "1603d44e-366c-461e-bf6f-d790c3a107ab",
+>>>>>>> weblate-scoping
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
+<<<<<<< HEAD
              *       "updated_at": "2026-01-10T23:04:42.635661Z"
+=======
+             *       "updated_at": "2026-01-12T02:23:03.212127Z"
+>>>>>>> weblate-scoping
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2366,14 +2381,23 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
+<<<<<<< HEAD
              *           "created_at": "2026-01-10T23:04:42.631462Z",
              *           "id": "03dc9d87-1e10-4958-990b-2a81cef6c416",
+=======
+             *           "created_at": "2026-01-12T02:23:03.208081Z",
+             *           "id": "ec75ca9c-c440-4ec1-ad97-ec1add013fad",
+>>>>>>> weblate-scoping
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
+<<<<<<< HEAD
              *           "updated_at": "2026-01-10T23:04:42.631462Z"
+=======
+             *           "updated_at": "2026-01-12T02:23:03.208081Z"
+>>>>>>> weblate-scoping
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -2382,7 +2406,11 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
+<<<<<<< HEAD
              *       "service_definition": "Switch",
+=======
+             *       "service_definition": "PeaNUT",
+>>>>>>> weblate-scoping
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -2665,14 +2693,23 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
+<<<<<<< HEAD
          *       "created_at": "2026-01-10T23:04:42.621931Z",
          *       "id": "393ef68a-5f82-45c1-9d23-7e97285b1f2e",
+=======
+         *       "created_at": "2026-01-12T02:23:03.200146Z",
+         *       "id": "831995ac-ca09-4fa0-8745-566e73bc6ed0",
+>>>>>>> weblate-scoping
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
+<<<<<<< HEAD
          *       "updated_at": "2026-01-10T23:04:42.621931Z"
+=======
+         *       "updated_at": "2026-01-12T02:23:03.200146Z"
+>>>>>>> weblate-scoping
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -2836,7 +2873,11 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
+<<<<<<< HEAD
          *           "service_definition": "Switch",
+=======
+         *           "service_definition": "PeaNUT",
+>>>>>>> weblate-scoping
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -3922,14 +3963,23 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
+<<<<<<< HEAD
          *           "created_at": "2026-01-10T23:04:42.621834Z",
          *           "id": "504e786d-c77f-45f8-986b-55e69c761d0f",
+=======
+         *           "created_at": "2026-01-12T02:23:03.200070Z",
+         *           "id": "8353f429-497b-4e05-a5cb-80794ae5f03e",
+>>>>>>> weblate-scoping
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
+<<<<<<< HEAD
          *           "updated_at": "2026-01-10T23:04:42.621834Z"
+=======
+         *           "updated_at": "2026-01-12T02:23:03.200070Z"
+>>>>>>> weblate-scoping
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -3938,7 +3988,11 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
+<<<<<<< HEAD
          *       "service_definition": "Switch",
+=======
+         *       "service_definition": "PeaNUT",
+>>>>>>> weblate-scoping
          *       "source": {
          *         "type": "Manual"
          *       },
