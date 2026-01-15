@@ -99,7 +99,7 @@ async fn test_cannot_read_host_on_other_network(
         .client
         .get_expect_status(
             &format!("/api/v1/hosts/{}", created_host.id),
-            StatusCode::UNAUTHORIZED,
+            StatusCode::FORBIDDEN,
         )
         .await;
 
@@ -139,7 +139,7 @@ async fn test_cannot_create_host_on_other_network(
     // Should get 401 Unauthorized (or 403 Forbidden)
     let result = ctx
         .client
-        .post_expect_status("/api/v1/hosts", &host_request, StatusCode::UNAUTHORIZED)
+        .post_expect_status("/api/v1/hosts", &host_request, StatusCode::FORBIDDEN)
         .await;
 
     assert!(

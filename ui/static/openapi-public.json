@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.13.5\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.13.5\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.13.6\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.13.6\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -6445,12 +6445,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.13.5"
+            "example": "0.13.6"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.13.5"
+          "server_version": "0.13.6"
         }
       },
       "ApiResponse": {
@@ -6524,14 +6524,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-01-14T15:07:54.477953Z",
-              "id": "ea743ee6-bb2e-4a18-800a-37264c024834",
+              "created_at": "2026-01-15T18:16:42.426266Z",
+              "id": "525fadb8-2ece-42e9-8add-c7008932e4e1",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-14T15:07:54.477953Z"
+              "updated_at": "2026-01-15T18:16:42.426266Z"
             }
           },
           "error": {
@@ -7821,14 +7821,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-01-14T15:07:54.474014Z",
-                  "id": "17a99257-4fd9-49dc-8e92-629dbfb978c8",
+                  "created_at": "2026-01-15T18:16:42.423406Z",
+                  "id": "88e6d8eb-5155-4f09-adac-2eadff8e913c",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-14T15:07:54.474014Z"
+                  "updated_at": "2026-01-15T18:16:42.423406Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -7837,7 +7837,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Veeam",
+              "service_definition": "SABnzbd",
               "source": {
                 "type": "Manual"
               },
@@ -8944,14 +8944,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-01-14T15:07:54.465712Z",
-          "id": "33fb41f2-cb0f-4711-8ffe-bd2ce0389f78",
+          "created_at": "2026-01-15T18:16:42.418490Z",
+          "id": "03d55a3f-93d2-4cca-b68d-cbe3b2b43a3e",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-01-14T15:07:54.465712Z"
+          "updated_at": "2026-01-15T18:16:42.418490Z"
         }
       },
       "BindingBase": {
@@ -9354,7 +9354,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Veeam",
+              "service_definition": "SABnzbd",
               "tags": [],
               "virtualization": null
             }
@@ -11665,7 +11665,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.13.5"
+            "example": "0.13.6"
           }
         },
         "example": {
@@ -11676,7 +11676,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.13.5"
+          "server_version": "0.13.6"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -12018,14 +12018,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-01-14T15:07:54.473082Z",
-                    "id": "7ee24a72-cb2d-467e-b678-7530b4bf109c",
+                    "created_at": "2026-01-15T18:16:42.422565Z",
+                    "id": "b94df5a2-e26c-435a-a357-ee11314739a2",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-01-14T15:07:54.473082Z"
+                    "updated_at": "2026-01-15T18:16:42.422565Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -12034,7 +12034,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Veeam",
+                "service_definition": "SABnzbd",
                 "source": {
                   "type": "Manual"
                 },
@@ -12904,14 +12904,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-01-14T15:07:54.465603Z",
-              "id": "1c070780-6981-4145-9148-511630d7e6c4",
+              "created_at": "2026-01-15T18:16:42.418441Z",
+              "id": "3959b8ae-f6a9-44a3-b6ed-1e5ed20a4bc8",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-14T15:07:54.465603Z"
+              "updated_at": "2026-01-15T18:16:42.418441Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -12920,7 +12920,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Veeam",
+          "service_definition": "SABnzbd",
           "source": {
             "type": "Manual"
           },
@@ -14373,7 +14373,7 @@
     },
     {
       "name": "user_api_keys",
-      "description": "User API keys for programmatic access. Create and manage personal API keys with scoped permissions for automation and integrations."
+      "description": "\n            User API keys for programmatic access. Create and manage personal API keys with scoped permissions for automation and integrations.\n            \n            ## Permissions\n            \n            API keys inherit the permission level assigned at creation. Each level determines what resources the key can access:\n\n            | Permission | Network Resources | Tags       | Users                      |\n            | ---------- | ----------------- | ---------- | -------------------------- |\n            | **Viewer** | Read              | Read       | —                          |\n            | **Member** | Read/Write        | Read       | —                          |\n            | **Admin**  | Read/Write        | Read/Write | Read/Write (Member, Viewer)|\n            | **Owner**  | Read/Write        | Read/Write | Read/Write (all levels)    |\n\n            Network resources include hosts, subnets, services, and groups. Organization settings (name, billing) require a user session and are not accessible via API keys.\n        "
     },
     {
       "name": "users",
