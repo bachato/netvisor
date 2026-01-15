@@ -828,9 +828,9 @@ async fn test_user_api_key_network_access(ctx: &TestContext) -> Result<(), Strin
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
 
-    // Should be 401 Unauthorized (network access denied) or 404 Not Found (filtered out)
+    // Should be 403 Forbidden (network access denied) or 404 Not Found (filtered out)
     assert!(
-        response.status() == StatusCode::UNAUTHORIZED || response.status() == StatusCode::NOT_FOUND,
+        response.status() == StatusCode::FORBIDDEN || response.status() == StatusCode::NOT_FOUND,
         "API key should NOT access subnet on other network, got {}",
         response.status()
     );
