@@ -12,6 +12,9 @@ RUN npm ci --frozen-lockfile
 # Copy UI source code
 COPY ui/ ./
 
+# Copy i18n messages (paraglide source - referenced by ../messages/ from project.inlang)
+COPY messages/ ../messages/
+
 # Accept build-time configuration
 ARG PUBLIC_SERVER_HOSTNAME=default
 ARG PUBLIC_SERVER_PORT=60072
