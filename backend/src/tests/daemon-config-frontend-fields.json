@@ -90,6 +90,12 @@
     "helpText": "Maximum ARP packets per second (default: 50, go more conservative for networks with enterprise switches)"
   },
   {
+    "id": "scan_rate_pps",
+    "cliFlag": "--scan-rate-pps",
+    "envVar": "SCANOPY_SCAN_RATE_PPS",
+    "helpText": "Maximum port scan probes per second (default: 500, controls rate of TCP/UDP connection attempts to avoid overwhelming target hosts)"
+  },
+  {
     "id": "use_npcap_arp",
     "cliFlag": "--use-npcap-arp",
     "envVar": "SCANOPY_USE_NPCAP_ARP",
