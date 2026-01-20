@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use secrecy::SecretString;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -50,6 +51,8 @@ impl Storable for DaemonApiKey {
     }
 
     fn to_params(&self) -> Result<(Vec<&'static str>, Vec<SqlValue>), anyhow::Error> {
+        use secrecy::ExposeSecret;
+
         let Self {
             id,
             created_at,
@@ -63,8 +66,12 @@ impl Storable for DaemonApiKey {
                     network_id,
                     is_enabled,
                     tags: _, // Stored in entity_tags junction table
+                    plaintext,
                 },
         } = self.clone();
+
+        // Extract plaintext secret for storage (only for ServerPoll keys)
+        let plaintext_value = plaintext.map(|s| s.expose_secret().to_string());
 
         Ok((
             vec![
@@ -77,6 +84,7 @@ impl Storable for DaemonApiKey {
                 "name",
                 "is_enabled",
                 "key",
+                "plaintext",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -88,11 +96,17 @@ impl Storable for DaemonApiKey {
                 SqlValue::String(name),
                 SqlValue::Bool(is_enabled),
                 SqlValue::String(key),
+                SqlValue::OptionalString(plaintext_value),
             ],
         ))
     }
 
     fn from_row(row: &PgRow) -> Result<Self, anyhow::Error> {
+        // Wrap plaintext in SecretString for in-memory protection
+        let plaintext: Option<SecretString> = row
+            .get::<Option<String>, _>("plaintext")
+            .map(SecretString::from);
+
         Ok(DaemonApiKey {
             id: row.get("id"),
             created_at: row.get("created_at"),
@@ -105,6 +119,7 @@ impl Storable for DaemonApiKey {
                 is_enabled: row.get("is_enabled"),
                 network_id: row.get("network_id"),
                 tags: Vec::new(), // Hydrated from entity_tags junction table
+                plaintext,
             },
         })
     }

@@ -2469,6 +2469,66 @@
         ]
       }
     },
+    "/api/v1/daemons/provision": {
+      "post": {
+        "tags": [
+          "daemons"
+        ],
+        "summary": "Pre-provision a ServerPoll mode daemon",
+        "description": "Creates a daemon record on the server before the daemon is installed.\nThis is only for ServerPoll mode where the server initiates connections to the daemon.\nFor DaemonPoll mode, daemons self-register on startup.\n\nReturns the daemon record and an API key that must be configured on the daemon.",
+        "operationId": "provision_daemon",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProvisionDaemonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Daemon provisioned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_ProvisionDaemonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/daemons/{id}": {
       "get": {
         "tags": [
@@ -8565,14 +8625,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-01-15T18:16:42.394922Z",
-              "id": "c0a01184-b85d-4664-b003-0fc13115f82b",
+              "created_at": "2026-01-19T17:49:33.963944Z",
+              "id": "52ef9dfd-c951-4ffd-b853-e0ed201e9252",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-15T18:16:42.394922Z"
+              "updated_at": "2026-01-19T17:49:33.963944Z"
             }
           },
           "error": {
@@ -9644,6 +9704,45 @@
           }
         }
       },
+      "ApiResponse_ProvisionDaemonResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Response from provisioning a daemon.\nContains the daemon record and the API key (shown only once).",
+            "required": [
+              "daemon",
+              "daemon_api_key"
+            ],
+            "properties": {
+              "daemon": {
+                "$ref": "#/components/schemas/Daemon",
+                "description": "The created daemon record."
+              },
+              "daemon_api_key": {
+                "type": "string",
+                "description": "The API key (plaintext) for daemon authentication.\nThis is shown only once - store it securely."
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
       "ApiResponse_PublicConfigResponse": {
         "type": "object",
         "required": [
@@ -9862,14 +9961,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-01-15T18:16:42.390965Z",
-                  "id": "9c802a6d-1ef8-4d6f-b2d7-a077da705070",
+                  "created_at": "2026-01-19T17:49:33.960670Z",
+                  "id": "a0c3e2f3-aad2-4c0c-b606-e0c29b4060de",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-15T18:16:42.390965Z"
+                  "updated_at": "2026-01-19T17:49:33.960670Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -9878,7 +9977,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "SABnzbd",
+              "service_definition": "Active Directory",
               "source": {
                 "type": "Manual"
               },
@@ -10985,14 +11084,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-01-15T18:16:42.382219Z",
-          "id": "b48036ac-eefe-4773-99c0-0b3fdae5e754",
+          "created_at": "2026-01-19T17:49:33.953633Z",
+          "id": "70b4b995-a531-46ea-8b77-5d055089ae96",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-01-15T18:16:42.382219Z"
+          "updated_at": "2026-01-19T17:49:33.953633Z"
         }
       },
       "BindingBase": {
@@ -11395,7 +11494,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "SABnzbd",
+              "service_definition": "Active Directory",
               "tags": [],
               "virtualization": null
             }
@@ -11645,6 +11744,14 @@
           "user_id"
         ],
         "properties": {
+          "api_key_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Foreign key to API key used for ServerPoll authentication.\nNULL for DaemonPoll daemons or those not yet linked to a key."
+          },
           "capabilities": {
             "$ref": "#/components/schemas/DaemonCapabilities"
           },
@@ -11732,9 +11839,10 @@
       },
       "DaemonMode": {
         "type": "string",
+        "description": "Daemon operating mode that determines the communication pattern.\n\n- **DaemonPoll** (formerly \"Pull\"): Daemon makes outbound connections to the server.\n  The daemon registers itself and polls for work. Best for daemons behind NAT/firewall.\n\n- **ServerPoll** (formerly \"Push\"): Server makes connections to the daemon.\n  Server polls daemon for status and discovery results. Best for DMZ deployments\n  where daemon cannot make outbound connections.",
         "enum": [
-          "Push",
-          "Pull"
+          "server_poll",
+          "daemon_poll"
         ]
       },
       "DaemonOrderField": {
@@ -14059,14 +14167,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-01-15T18:16:42.389965Z",
-                    "id": "47249740-483b-4565-bdf9-9e91fd4f465e",
+                    "created_at": "2026-01-19T17:49:33.959821Z",
+                    "id": "8e8c8dbe-af6b-455e-853a-a174e4019170",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-01-15T18:16:42.389965Z"
+                    "updated_at": "2026-01-19T17:49:33.959821Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -14075,7 +14183,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "SABnzbd",
+                "service_definition": "Active Directory",
                 "source": {
                   "type": "Manual"
                 },
@@ -14646,6 +14754,48 @@
           }
         }
       },
+      "ProvisionDaemonRequest": {
+        "type": "object",
+        "description": "Request to pre-provision a ServerPoll mode daemon.\nThis creates the daemon record on the server before the daemon is installed.",
+        "required": [
+          "name",
+          "network_id",
+          "url"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the daemon."
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Network this daemon will be associated with."
+          },
+          "url": {
+            "type": "string",
+            "description": "URL where the server can reach the daemon (required for ServerPoll mode)."
+          }
+        }
+      },
+      "ProvisionDaemonResponse": {
+        "type": "object",
+        "description": "Response from provisioning a daemon.\nContains the daemon record and the API key (shown only once).",
+        "required": [
+          "daemon",
+          "daemon_api_key"
+        ],
+        "properties": {
+          "daemon": {
+            "$ref": "#/components/schemas/Daemon",
+            "description": "The created daemon record."
+          },
+          "daemon_api_key": {
+            "type": "string",
+            "description": "The API key (plaintext) for daemon authentication.\nThis is shown only once - store it securely."
+          }
+        }
+      },
       "ProxmoxVirtualization": {
         "type": "object",
         "required": [
@@ -14945,14 +15095,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-01-15T18:16:42.382174Z",
-              "id": "73cdffe1-6075-4228-8df7-0c9d4ee2b8d2",
+              "created_at": "2026-01-19T17:49:33.953581Z",
+              "id": "e7899df3-bb0f-4782-bd55-35cc8b9189e4",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-15T18:16:42.382174Z"
+              "updated_at": "2026-01-19T17:49:33.953581Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -14961,7 +15111,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "SABnzbd",
+          "service_definition": "Active Directory",
           "source": {
             "type": "Manual"
           },

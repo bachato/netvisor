@@ -2933,6 +2933,11 @@ export interface components {
             key: string;
         };
         DaemonBase: {
+            /**
+             * Format: uuid
+             * @description Links daemon to its API key for ServerPoll mode
+             */
+            api_key_id?: string | null;
             capabilities: components["schemas"]["DaemonCapabilities"];
             /** Format: uuid */
             host_id: string;
@@ -2963,7 +2968,7 @@ export interface components {
             url: string;
         };
         /** @enum {string} */
-        DaemonMode: "Push" | "Pull";
+        DaemonMode: "server_poll" | "daemon_poll";
         /**
          * @description Fields that daemons can be ordered/grouped by.
          * @enum {string}
@@ -2994,6 +2999,21 @@ export interface components {
             /** Format: uuid */
             host_id: string;
             server_capabilities?: null | components["schemas"]["ServerCapabilities"];
+        };
+        /** @description Request to pre-provision a ServerPoll mode daemon */
+        ProvisionDaemonRequest: {
+            /** @description Human-readable name for the daemon */
+            name: string;
+            /** Format: uuid */
+            network_id: string;
+            /** @description URL where the server can reach the daemon */
+            url: string;
+        };
+        /** @description Response from provisioning a daemon */
+        ProvisionDaemonResponse: {
+            daemon: components["schemas"]["Daemon"];
+            /** @description The API key (plaintext) for daemon authentication. Shown only once. */
+            daemon_api_key: string;
         };
         /** @description Daemon response for UI including computed version status */
         DaemonResponse: components["schemas"]["DaemonBase"] & {

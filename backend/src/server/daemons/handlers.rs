@@ -1,6 +1,9 @@
-use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Viewer};
+use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Viewer};
 use crate::server::billing::types::base::BillingPlan;
+use crate::server::daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase};
 use crate::server::daemons::r#impl::api::DaemonHeartbeatPayload;
+use crate::server::daemons::processor::DaemonStatusData;
+use crate::server::shared::api_key_common::{ApiKeyType, generate_api_key_for_storage};
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::events::types::TelemetryOperation;
 use crate::server::shared::extractors::Query;
@@ -12,6 +15,7 @@ use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::api::ApiErrorResponse;
+use crate::server::shared::validation::validate_network_access;
 use crate::server::{
     auth::middleware::auth::AuthenticatedEntity,
     config::AppState,
@@ -20,7 +24,7 @@ use crate::server::{
             DaemonCapabilities, DaemonRegistrationRequest, DaemonRegistrationResponse,
             DaemonResponse, DaemonStartupRequest, DiscoveryUpdatePayload, ServerCapabilities,
         },
-        base::{Daemon, DaemonBase},
+        base::{Daemon, DaemonBase, DaemonMode},
         version::DaemonVersionPolicy,
     },
     discovery::r#impl::{
@@ -42,6 +46,7 @@ use axum::{
     response::Json,
 };
 use chrono::Utc;
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::IntoParams;
@@ -150,6 +155,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(get_all))
         .routes(routes!(get_by_id, generated::delete))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(provision_daemon))
 }
 
 /// Daemon-internal endpoints (unversioned at /api/daemon)
@@ -429,6 +435,7 @@ async fn register_daemon(
         tags: Vec::new(),
         version: daemon_version,
         user_id,
+        api_key_id: None,
     });
 
     daemon.id = request.daemon_id;
@@ -587,41 +594,29 @@ async fn daemon_startup(
     Json(request): Json<DaemonStartupRequest>,
 ) -> ApiResult<Json<ApiResponse<ServerCapabilities>>> {
     let daemon_network_id = auth.network_ids()[0];
-    let service = &state.services.daemon_service;
 
-    let mut daemon = service
+    // Validate daemon exists and belongs to the authenticated daemon's network
+    let daemon = state
+        .services
+        .daemon_service
         .get_by_id(&id)
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to get daemon: {}", e)))?
         .ok_or_else(|| ApiError::entity_not_found::<Daemon>(id))?;
 
-    // Validate daemon belongs to the authenticated daemon's network
     if daemon.base.network_id != daemon_network_id {
         return Err(ApiError::entity_access_denied::<Daemon>(id));
     }
 
-    daemon.base.version = Some(request.daemon_version.clone());
-    daemon.base.last_seen = Utc::now();
-
-    service
-        .update(&mut daemon, auth.into_entity())
+    // Use processor for shared startup logic
+    let capabilities = state
+        .services
+        .daemon_processor
+        .process_startup(id, request.daemon_version, auth.into_entity())
         .await
-        .map_err(|e| ApiError::internal_error(&format!("Failed to update daemon: {}", e)))?;
+        .map_err(|e| ApiError::internal_error(&format!("Failed to process startup: {}", e)))?;
 
-    tracing::info!(
-        daemon_id = %id,
-        version = %request.daemon_version,
-        "Daemon startup"
-    );
-
-    let policy = DaemonVersionPolicy::default();
-    let status = policy.evaluate(Some(&request.daemon_version));
-
-    Ok(Json(ApiResponse::success(ServerCapabilities {
-        server_version: policy.latest.clone(),
-        minimum_daemon_version: policy.minimum_supported.clone(),
-        deprecation_warnings: status.warnings,
-    })))
+    Ok(Json(ApiResponse::success(capabilities)))
 }
 
 /// Update daemon capabilities
@@ -646,27 +641,27 @@ async fn update_capabilities(
     Json(updated_capabilities): Json<DaemonCapabilities>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
     let daemon_network_id = auth.network_ids()[0];
-    tracing::debug!(
-        id = %id,
-        capabilities = %updated_capabilities,
-        "Updating capabilities for daemon",
-    );
-    let service = &state.services.daemon_service;
 
-    let mut daemon = service
+    // Validate daemon exists and belongs to the authenticated daemon's network
+    let daemon = state
+        .services
+        .daemon_service
         .get_by_id(&id)
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to get daemon: {}", e)))?
         .ok_or_else(|| ApiError::entity_not_found::<Daemon>(id))?;
 
-    // Validate daemon belongs to the authenticated daemon's network
     if daemon.base.network_id != daemon_network_id {
         return Err(ApiError::entity_access_denied::<Daemon>(id));
     }
 
-    daemon.base.capabilities = updated_capabilities;
-
-    service.update(&mut daemon, auth.into_entity()).await?;
+    // Use processor for shared capabilities update logic
+    state
+        .services
+        .daemon_processor
+        .process_capabilities(id, updated_capabilities, auth.into_entity())
+        .await
+        .map_err(|e| ApiError::internal_error(&format!("Failed to update capabilities: {}", e)))?;
 
     Ok(Json(ApiResponse::success(())))
 }
@@ -694,28 +689,28 @@ async fn receive_heartbeat(
     Json(request): Json<DaemonHeartbeatPayload>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
     let daemon_network_id = auth.network_ids()[0];
-    let service = &state.services.daemon_service;
 
-    let mut daemon = service
+    // Validate daemon exists and belongs to the authenticated daemon's network
+    let daemon = state
+        .services
+        .daemon_service
         .get_by_id(&id)
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to get daemon: {}", e)))?
         .ok_or_else(|| ApiError::entity_not_found::<Daemon>(id))?;
 
-    // Validate daemon belongs to the authenticated daemon's network
     if daemon.base.network_id != daemon_network_id {
         return Err(ApiError::entity_access_denied::<Daemon>(id));
     }
 
-    daemon.base.last_seen = Utc::now();
-    daemon.base.url = request.url;
-    daemon.base.name = request.name;
-    daemon.base.mode = request.mode;
-
-    service
-        .update(&mut daemon, auth.into_entity())
+    // Use processor for shared heartbeat logic
+    let status_data = DaemonStatusData::from(request);
+    state
+        .services
+        .daemon_processor
+        .process_heartbeat(id, status_data, auth.into_entity())
         .await
-        .map_err(|e| ApiError::internal_error(&format!("Failed to update heartbeat: {}", e)))?;
+        .map_err(|e| ApiError::internal_error(&format!("Failed to process heartbeat: {}", e)))?;
 
     Ok(Json(ApiResponse::success(())))
 }
@@ -744,51 +739,196 @@ async fn receive_work_request(
     Json(request): Json<DaemonHeartbeatPayload>,
 ) -> ApiResult<Json<ApiResponse<(Option<DiscoveryUpdatePayload>, bool)>>> {
     let daemon_network_id = auth.network_ids()[0];
-    let service = &state.services.daemon_service;
 
-    let mut daemon = service
+    // Validate daemon exists and belongs to the authenticated daemon's network
+    let daemon = state
+        .services
+        .daemon_service
         .get_by_id(&daemon_id)
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to get daemon: {}", e)))?
         .ok_or_else(|| ApiError::entity_not_found::<Daemon>(daemon_id))?;
 
-    // Validate daemon belongs to the authenticated daemon's network
     if daemon.base.network_id != daemon_network_id {
         return Err(ApiError::entity_access_denied::<Daemon>(daemon_id));
     }
 
-    daemon.base.last_seen = Utc::now();
-    daemon.base.url = request.url;
-    daemon.base.name = request.name;
-    daemon.base.mode = request.mode;
-
-    service
-        .update(&mut daemon, auth.entity.clone())
+    // Use processor for shared heartbeat logic
+    let status_data = DaemonStatusData::from(request);
+    state
+        .services
+        .daemon_processor
+        .process_heartbeat(daemon_id, status_data, auth.entity.clone())
         .await
-        .map_err(|e| ApiError::internal_error(&format!("Failed to update heartbeat: {}", e)))?;
+        .map_err(|e| ApiError::internal_error(&format!("Failed to process heartbeat: {}", e)))?;
 
-    let sessions = state
+    // Use processor to get pending work and cancellation
+    let next_session = state
         .services
-        .discovery_service
-        .get_sessions_for_daemon(&daemon_id)
+        .daemon_processor
+        .get_pending_work(daemon_id)
         .await;
-    let (cancel, session_id_to_cancel) = state
+    let cancellation = state
         .services
-        .discovery_service
-        .pull_cancellation_for_daemon(&daemon_id)
+        .daemon_processor
+        .get_pending_cancellation(daemon_id)
         .await;
 
-    let next_session = sessions.first().cloned();
+    let has_cancellation = cancellation.is_some();
 
-    service
-        .receive_work_request(
-            daemon,
-            cancel,
-            session_id_to_cancel,
-            next_session.clone(),
-            auth.into_entity(),
-        )
-        .await?;
+    // Log work request for tracing/debugging (previously done in service.receive_work_request)
+    if next_session.is_some() || has_cancellation {
+        tracing::debug!(
+            daemon_id = %daemon_id,
+            has_work = next_session.is_some(),
+            has_cancellation = has_cancellation,
+            "Daemon work request processed"
+        );
+    }
 
-    Ok(Json(ApiResponse::success((next_session, cancel))))
+    Ok(Json(ApiResponse::success((next_session, has_cancellation))))
+}
+
+// ============================================================================
+// Pre-provisioning (ServerPoll mode only)
+// ============================================================================
+
+/// Request to pre-provision a ServerPoll mode daemon.
+/// This creates the daemon record on the server before the daemon is installed.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct ProvisionDaemonRequest {
+    /// Human-readable name for the daemon.
+    pub name: String,
+    /// Network this daemon will be associated with.
+    pub network_id: Uuid,
+    /// URL where the server can reach the daemon (required for ServerPoll mode).
+    pub url: String,
+}
+
+/// Response from provisioning a daemon.
+/// Contains the daemon record and the API key (shown only once).
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct ProvisionDaemonResponse {
+    /// The created daemon record.
+    pub daemon: Daemon,
+    /// The API key (plaintext) for daemon authentication.
+    /// This is shown only once - store it securely.
+    pub daemon_api_key: String,
+}
+
+/// Pre-provision a ServerPoll mode daemon
+///
+/// Creates a daemon record on the server before the daemon is installed.
+/// This is only for ServerPoll mode where the server initiates connections to the daemon.
+/// For DaemonPoll mode, daemons self-register on startup.
+///
+/// Returns the daemon record and an API key that must be configured on the daemon.
+#[utoipa::path(
+    post,
+    path = "/provision",
+    tag = "daemons",
+    operation_id = "provision_daemon",
+    summary = "Pre-provision a ServerPoll mode daemon",
+    request_body = ProvisionDaemonRequest,
+    responses(
+        (status = 201, description = "Daemon provisioned successfully", body = ApiResponse<ProvisionDaemonResponse>),
+        (status = 400, description = "Invalid request", body = ApiErrorResponse),
+        (status = 403, description = "Forbidden", body = ApiErrorResponse),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+async fn provision_daemon(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Member>,
+    Json(request): Json<ProvisionDaemonRequest>,
+) -> ApiResult<Json<ApiResponse<ProvisionDaemonResponse>>> {
+    let network_ids = auth.network_ids();
+    let user_id = auth.user_id().ok_or_else(ApiError::user_required)?;
+
+    // Validate network access
+    validate_network_access(Some(request.network_id), &network_ids, "provision daemon")?;
+
+    // Generate API key (plaintext + hash)
+    let (plaintext, hashed) = generate_api_key_for_storage(ApiKeyType::Daemon);
+
+    // Create API key record with plaintext stored (for ServerPoll mode)
+    let api_key = DaemonApiKey::new(DaemonApiKeyBase {
+        key: hashed,
+        name: format!("{} API Key", request.name),
+        last_used: None,
+        expires_at: None,
+        network_id: request.network_id,
+        is_enabled: true,
+        tags: Vec::new(),
+        plaintext: Some(SecretString::from(plaintext.clone())),
+    });
+
+    let created_api_key = state
+        .services
+        .daemon_api_key_service
+        .create(api_key, auth.entity.clone())
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to create API key for provisioned daemon");
+            ApiError::internal_error(&format!("Failed to create API key: {}", e))
+        })?;
+
+    // Create host record for the daemon
+    let host = Host::new(HostBase {
+        name: request.name.clone(),
+        network_id: request.network_id,
+        hostname: None,
+        description: None,
+        source: EntitySource::System,
+        virtualization: None,
+        hidden: false,
+        tags: Vec::new(),
+    });
+
+    let created_host = state
+        .services
+        .host_service
+        .create(host, auth.entity.clone())
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to create host for provisioned daemon");
+            ApiError::internal_error(&format!("Failed to create host: {}", e))
+        })?;
+
+    // Create daemon record with mode=ServerPoll and linked API key
+    let daemon = Daemon::new(DaemonBase {
+        host_id: created_host.id,
+        network_id: request.network_id,
+        url: request.url,
+        last_seen: Utc::now(),
+        capabilities: DaemonCapabilities::default(),
+        mode: DaemonMode::ServerPoll,
+        name: request.name,
+        tags: Vec::new(),
+        version: None,
+        user_id,
+        api_key_id: Some(created_api_key.id),
+    });
+
+    let created_daemon = state
+        .services
+        .daemon_service
+        .create(daemon, auth.entity.clone())
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to create provisioned daemon");
+            ApiError::internal_error(&format!("Failed to create daemon: {}", e))
+        })?;
+
+    tracing::info!(
+        daemon_id = %created_daemon.id,
+        network_id = %request.network_id,
+        user_id = %user_id,
+        "Daemon provisioned for ServerPoll mode"
+    );
+
+    Ok(Json(ApiResponse::success(ProvisionDaemonResponse {
+        daemon: created_daemon,
+        daemon_api_key: plaintext,
+    })))
 }
