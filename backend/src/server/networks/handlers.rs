@@ -25,6 +25,7 @@ mod generated {
     use super::*;
     crate::crud_get_all_handler!(Network, "networks", "network");
     crate::crud_get_by_id_handler!(Network, "networks", "network");
+    crate::crud_export_csv_handler!(Network, "networks", "network");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -36,6 +37,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             delete_network
         ))
         .routes(routes!(bulk_delete_networks))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Create a new network

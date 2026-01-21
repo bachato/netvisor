@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::{Row, postgres::PgRow};
 use uuid::Uuid;
 
@@ -9,6 +10,19 @@ use crate::server::{
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for Port export
+#[derive(Serialize)]
+pub struct PortCsvRow {
+    pub id: Uuid,
+    pub port_number: u16,
+    pub protocol: String,
+    pub port_type: String,
+    pub host_id: Uuid,
+    pub network_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Port {
     type BaseData = PortBase;
@@ -120,6 +134,35 @@ impl Storable for Port {
 }
 
 impl Entity for Port {
+    type CsvRow = PortCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "port_number",
+            "protocol",
+            "port_type",
+            "host_id",
+            "network_id",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        let config = self.base.port_type.config();
+        PortCsvRow {
+            id: self.id,
+            port_number: config.number,
+            protocol: format!("{:?}", config.protocol),
+            port_type: Self::port_type_string(&self.base.port_type),
+            host_id: self.base.host_id,
+            network_id: self.base.network_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Port
     }

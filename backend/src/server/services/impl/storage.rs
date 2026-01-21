@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -18,6 +19,20 @@ use crate::server::{
         types::entities::EntitySource,
     },
 };
+
+/// CSV row representation for Service export (excludes nested bindings)
+#[derive(Serialize)]
+pub struct ServiceCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub service_definition: String,
+    pub host_id: Uuid,
+    pub network_id: Uuid,
+    pub source: String,
+    pub position: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Service {
     type BaseData = ServiceBase;
@@ -135,6 +150,36 @@ impl Storable for Service {
 }
 
 impl Entity for Service {
+    type CsvRow = ServiceCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "service_definition",
+            "host_id",
+            "network_id",
+            "source",
+            "position",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        ServiceCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            service_definition: self.base.service_definition.id().to_string(),
+            host_id: self.base.host_id,
+            network_id: self.base.network_id,
+            source: format!("{:?}", self.base.source),
+            position: self.base.position,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Service
     }

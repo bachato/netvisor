@@ -23,12 +23,19 @@ use std::sync::Arc;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
+// Generated handlers for CSV export
+mod generated {
+    use super::*;
+    crate::crud_export_csv_handler!(User, "users", "user");
+}
+
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(get_all_users))
         .routes(routes!(get_user_by_id, update_user, delete_user))
         .routes(routes!(admin_update_user))
         .routes(routes!(bulk_delete_users))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Get user by ID

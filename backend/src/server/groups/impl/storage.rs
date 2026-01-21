@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -15,6 +16,20 @@ use crate::server::{
     },
     topology::types::edges::EdgeStyle,
 };
+
+/// CSV row representation for Group export (excludes nested binding_ids)
+#[derive(Serialize)]
+pub struct GroupCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub group_type: String,
+    pub color: String,
+    pub network_id: Uuid,
+    pub source: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Group {
     type BaseData = GroupBase;
@@ -140,6 +155,37 @@ impl Storable for Group {
 }
 
 impl Entity for Group {
+    type CsvRow = GroupCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "description",
+            "group_type",
+            "color",
+            "network_id",
+            "source",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        let group_type_str: &'static str = self.base.group_type.into();
+        GroupCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            description: self.base.description.clone(),
+            group_type: group_type_str.to_string(),
+            color: self.base.color.to_string(),
+            network_id: self.base.network_id,
+            source: format!("{:?}", self.base.source),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Group
     }

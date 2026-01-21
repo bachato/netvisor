@@ -33,6 +33,12 @@ use std::sync::Arc;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
+// Generated handlers for CSV export
+mod generated {
+    use super::*;
+    crate::crud_export_csv_handler!(UserApiKey, "user_api_keys", "user_api_key");
+}
+
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(get_all, create_user_api_key))
@@ -40,6 +46,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(update_user_api_key))
         .routes(routes!(rotate_key_handler))
         .routes(routes!(bulk_delete))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Get all user API keys for the current user

@@ -142,11 +142,18 @@ impl FilterQueryExtractor for HostFilterQuery {
     }
 }
 
+// Generated handlers for CSV export
+mod generated {
+    use super::*;
+    crate::crud_export_csv_handler!(Host, "hosts", "host");
+}
+
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(get_all_hosts, create_host))
         .routes(routes!(get_host_by_id, update_host, delete_host))
         .routes(routes!(bulk_delete_hosts))
+        .routes(routes!(generated::export_csv))
         .routes(routes!(consolidate_hosts))
         .routes(routes!(create_host_discovery))
 }

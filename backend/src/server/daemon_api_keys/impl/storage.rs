@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -10,6 +11,19 @@ use crate::server::{
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for DaemonApiKey export (excludes sensitive key field)
+#[derive(Serialize)]
+pub struct DaemonApiKeyCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub network_id: Uuid,
+    pub is_enabled: bool,
+    pub last_used: Option<DateTime<Utc>>,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for DaemonApiKey {
     type BaseData = DaemonApiKeyBase;
@@ -111,6 +125,34 @@ impl Storable for DaemonApiKey {
 }
 
 impl Entity for DaemonApiKey {
+    type CsvRow = DaemonApiKeyCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "network_id",
+            "is_enabled",
+            "last_used",
+            "expires_at",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        DaemonApiKeyCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            network_id: self.base.network_id,
+            is_enabled: self.base.is_enabled,
+            last_used: self.base.last_used,
+            expires_at: self.base.expires_at,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::DaemonApiKey
     }

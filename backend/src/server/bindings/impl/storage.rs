@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::{Row, postgres::PgRow};
 use uuid::Uuid;
 
@@ -9,6 +10,19 @@ use crate::server::{
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for Binding export
+#[derive(Serialize)]
+pub struct BindingCsvRow {
+    pub id: Uuid,
+    pub service_id: Uuid,
+    pub binding_type: String,
+    pub interface_id: Option<Uuid>,
+    pub port_id: Option<Uuid>,
+    pub network_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Binding {
     type BaseData = BindingBase;
@@ -120,6 +134,41 @@ impl Storable for Binding {
 }
 
 impl Entity for Binding {
+    type CsvRow = BindingCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "service_id",
+            "binding_type",
+            "interface_id",
+            "port_id",
+            "network_id",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        let (binding_type, interface_id, port_id) = match self.base.binding_type {
+            BindingType::Interface { interface_id } => ("Interface", Some(interface_id), None),
+            BindingType::Port {
+                port_id,
+                interface_id,
+            } => ("Port", interface_id, Some(port_id)),
+        };
+        BindingCsvRow {
+            id: self.id,
+            service_id: self.base.service_id,
+            binding_type: binding_type.to_string(),
+            interface_id,
+            port_id,
+            network_id: self.base.network_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Binding
     }

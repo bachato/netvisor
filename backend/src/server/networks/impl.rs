@@ -18,6 +18,16 @@ use validator::Validate;
 
 use crate::server::shared::storage::traits::{Entity, SqlValue, Storable};
 
+/// CSV row representation for Network export
+#[derive(Serialize)]
+pub struct NetworkCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub organization_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 #[derive(
     Debug, Clone, Serialize, Deserialize, Validate, PartialEq, Eq, Hash, Default, ToSchema,
 )]
@@ -157,6 +167,22 @@ impl Storable for Network {
 }
 
 impl Entity for Network {
+    type CsvRow = NetworkCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec!["id", "name", "organization_id", "created_at", "updated_at"]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        NetworkCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            organization_id: self.base.organization_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Network
     }

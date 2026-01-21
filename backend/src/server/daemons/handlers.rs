@@ -142,6 +142,7 @@ mod generated {
     use super::*;
     crate::crud_delete_handler!(Daemon, "daemons", "daemon");
     crate::crud_bulk_delete_handler!(Daemon, "daemons");
+    crate::crud_export_csv_handler!(Daemon, "daemons", "daemon");
 }
 
 /// User-facing daemon management endpoints (versioned at /api/v1/daemons)
@@ -150,6 +151,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(get_all))
         .routes(routes!(get_by_id, generated::delete))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Daemon-internal endpoints (unversioned at /api/daemon)

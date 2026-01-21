@@ -28,6 +28,7 @@ mod generated {
     crate::crud_get_by_id_handler!(Binding, "bindings", "binding");
     crate::crud_delete_handler!(Binding, "bindings", "binding");
     crate::crud_bulk_delete_handler!(Binding, "bindings");
+    crate::crud_export_csv_handler!(Binding, "bindings", "binding");
 }
 
 /// Validates that a binding doesn't conflict with existing bindings.
@@ -232,4 +233,5 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
 }

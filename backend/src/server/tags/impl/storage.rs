@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -10,6 +11,18 @@ use crate::server::{
     },
     tags::r#impl::base::{Tag, TagBase},
 };
+
+/// CSV row representation for Tag export
+#[derive(Serialize)]
+pub struct TagCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub color: String,
+    pub organization_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Tag {
     type BaseData = TagBase;
@@ -101,6 +114,32 @@ impl Storable for Tag {
 }
 
 impl Entity for Tag {
+    type CsvRow = TagCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "description",
+            "color",
+            "organization_id",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        TagCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            description: self.base.description.clone(),
+            color: self.base.color.to_string(),
+            organization_id: self.base.organization_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Tag
     }

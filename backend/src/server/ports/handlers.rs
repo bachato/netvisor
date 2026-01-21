@@ -28,6 +28,7 @@ mod generated {
     crate::crud_get_by_id_handler!(Port, "ports", "port");
     crate::crud_delete_handler!(Port, "ports", "port");
     crate::crud_bulk_delete_handler!(Port, "ports");
+    crate::crud_export_csv_handler!(Port, "ports", "port");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -39,6 +40,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Validate that port's host is on the same network as the port

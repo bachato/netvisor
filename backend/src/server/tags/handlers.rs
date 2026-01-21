@@ -106,6 +106,7 @@ mod generated {
     crate::crud_update_handler!(Tag, "tags", "tag");
     crate::crud_delete_handler!(Tag, "tags", "tag");
     crate::crud_bulk_delete_handler!(Tag, "tags");
+    crate::crud_export_csv_handler!(Tag, "tags", "tag");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -117,6 +118,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
         // Entity tag assignment routes
         .routes(routes!(bulk_add_tag))
         .routes(routes!(bulk_remove_tag))

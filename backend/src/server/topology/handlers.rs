@@ -42,6 +42,7 @@ mod generated {
     use super::*;
     crate::crud_get_by_id_handler!(Topology, "topologies", "topology");
     crate::crud_delete_handler!(Topology, "topologies", "topology");
+    crate::crud_export_csv_handler!(Topology, "topologies", "topology");
 }
 
 /// Topology endpoints are internal-only (hidden from public docs)
@@ -53,6 +54,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             update_topology,
             generated::delete
         ))
+        .routes(routes!(generated::export_csv))
         .routes(routes!(refresh))
         .routes(routes!(rebuild))
         .routes(routes!(update_node_position))

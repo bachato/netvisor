@@ -32,6 +32,7 @@ mod generated {
     crate::crud_get_by_id_handler!(DaemonApiKey, "daemon_api_keys", "daemon_api_key");
     crate::crud_delete_handler!(DaemonApiKey, "daemon_api_keys", "daemon_api_key");
     crate::crud_bulk_delete_handler!(DaemonApiKey, "daemon_api_keys");
+    crate::crud_export_csv_handler!(DaemonApiKey, "daemon_api_keys", "daemon_api_key");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -41,6 +42,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(update_daemon_api_key))
         .routes(routes!(rotate_key_handler))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Create daemon API key

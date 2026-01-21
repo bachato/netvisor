@@ -95,6 +95,15 @@ pub trait Entity: Storable {
     /// Entity type discriminant for the entity enum
     fn entity_type() -> EntityDiscriminants;
 
+    /// CSV row type for export. Must be Serialize.
+    type CsvRow: serde::Serialize;
+
+    /// Returns the CSV column headers for this entity type.
+    fn csv_headers() -> Vec<&'static str>;
+
+    /// Converts this entity to a CSV row struct.
+    fn to_csv_row(&self) -> Self::CsvRow;
+
     /// Singular name for error messages (e.g., "host")
     fn entity_name_singular() -> &'static str;
 

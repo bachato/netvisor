@@ -35,6 +35,7 @@ mod generated {
     crate::crud_get_by_id_handler!(Discovery, "discoveries", "discovery");
     crate::crud_delete_handler!(Discovery, "discoveries", "discovery");
     crate::crud_bulk_delete_handler!(Discovery, "discoveries");
+    crate::crud_export_csv_handler!(Discovery, "discoveries", "discovery");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -46,6 +47,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
         .routes(routes!(start_session))
         .routes(routes!(get_active_sessions))
         .routes(routes!(cancel_discovery))

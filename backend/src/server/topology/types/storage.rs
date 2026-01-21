@@ -15,9 +15,26 @@ use crate::server::{
     },
 };
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
+
+/// CSV row representation for Topology export (metadata only, excludes nested entities)
+#[derive(Serialize)]
+pub struct TopologyCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub network_id: Uuid,
+    pub is_stale: bool,
+    pub is_locked: bool,
+    pub locked_by: Option<Uuid>,
+    pub locked_at: Option<DateTime<Utc>>,
+    pub last_refreshed: DateTime<Utc>,
+    pub parent_id: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Topology {
     type BaseData = TopologyBase;
@@ -227,6 +244,40 @@ impl Storable for Topology {
 }
 
 impl Entity for Topology {
+    type CsvRow = TopologyCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "network_id",
+            "is_stale",
+            "is_locked",
+            "locked_by",
+            "locked_at",
+            "last_refreshed",
+            "parent_id",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        TopologyCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            network_id: self.base.network_id,
+            is_stale: self.base.is_stale,
+            is_locked: self.base.is_locked,
+            locked_by: self.base.locked_by,
+            locked_at: self.base.locked_at,
+            last_refreshed: self.base.last_refreshed,
+            parent_id: self.base.parent_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Topology
     }

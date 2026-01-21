@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use cidr::IpCidr;
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use std::str::FromStr;
@@ -16,6 +17,20 @@ use crate::server::{
         types::SubnetType,
     },
 };
+
+/// CSV row representation for Subnet export
+#[derive(Serialize)]
+pub struct SubnetCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub cidr: String,
+    pub subnet_type: String,
+    pub description: Option<String>,
+    pub network_id: Uuid,
+    pub source: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Subnet {
     type BaseData = SubnetBase;
@@ -126,6 +141,36 @@ impl Storable for Subnet {
 }
 
 impl Entity for Subnet {
+    type CsvRow = SubnetCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "cidr",
+            "subnet_type",
+            "description",
+            "network_id",
+            "source",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        SubnetCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            cidr: self.base.cidr.to_string(),
+            subnet_type: self.base.subnet_type.id().to_string(),
+            description: self.base.description.clone(),
+            network_id: self.base.network_id,
+            source: format!("{:?}", self.base.source),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Subnet
     }

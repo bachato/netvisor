@@ -12,6 +12,21 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+/// CSV row representation for Share export (excludes password_hash)
+#[derive(Serialize)]
+pub struct ShareCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub topology_id: Uuid,
+    pub network_id: Uuid,
+    pub created_by: Uuid,
+    pub is_enabled: bool,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub has_password: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 /// Share display options
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ToSchema)]
 pub struct ShareOptions {
@@ -204,6 +219,38 @@ impl Storable for Share {
 }
 
 impl Entity for Share {
+    type CsvRow = ShareCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "topology_id",
+            "network_id",
+            "created_by",
+            "is_enabled",
+            "expires_at",
+            "has_password",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        ShareCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            topology_id: self.base.topology_id,
+            network_id: self.base.network_id,
+            created_by: self.base.created_by,
+            is_enabled: self.base.is_enabled,
+            expires_at: self.base.expires_at,
+            has_password: self.requires_password(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Share
     }

@@ -22,6 +22,7 @@ mod generated {
     use super::*;
     crate::crud_get_by_id_handler!(Interface, "interfaces", "interface");
     crate::crud_get_all_handler!(Interface, "interfaces", "interface");
+    crate::crud_export_csv_handler!(Interface, "interfaces", "interface");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -33,6 +34,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             delete_interface
         ))
         .routes(routes!(bulk_delete_interfaces))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Validate that interface's host and subnet are on the same network as the interface,

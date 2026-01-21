@@ -114,6 +114,7 @@ mod generated {
     crate::crud_get_by_id_handler!(Group, "groups", "group");
     crate::crud_delete_handler!(Group, "groups", "group");
     crate::crud_bulk_delete_handler!(Group, "groups");
+    crate::crud_export_csv_handler!(Group, "groups", "group");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -125,6 +126,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
 }
 
 /// List all groups

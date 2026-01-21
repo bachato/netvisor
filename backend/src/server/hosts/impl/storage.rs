@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -14,6 +15,20 @@ use crate::server::{
         types::entities::EntitySource,
     },
 };
+
+/// CSV row representation for Host export
+#[derive(Serialize)]
+pub struct HostCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub hostname: Option<String>,
+    pub description: Option<String>,
+    pub network_id: Uuid,
+    pub source: String,
+    pub hidden: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Host {
     type BaseData = HostBase;
@@ -127,6 +142,36 @@ impl Storable for Host {
 }
 
 impl Entity for Host {
+    type CsvRow = HostCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "hostname",
+            "description",
+            "network_id",
+            "source",
+            "hidden",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        HostCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            hostname: self.base.hostname.clone(),
+            description: self.base.description.clone(),
+            network_id: self.base.network_id,
+            source: format!("{:?}", self.base.source),
+            hidden: self.base.hidden,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Host
     }

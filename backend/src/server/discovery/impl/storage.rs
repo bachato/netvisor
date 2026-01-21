@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -13,6 +14,19 @@ use crate::server::{
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for Discovery export
+#[derive(Serialize)]
+pub struct DiscoveryCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub discovery_type: String,
+    pub run_type: String,
+    pub daemon_id: Uuid,
+    pub network_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Discovery {
     type BaseData = DiscoveryBase;
@@ -117,6 +131,34 @@ impl Storable for Discovery {
 }
 
 impl Entity for Discovery {
+    type CsvRow = DiscoveryCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "discovery_type",
+            "run_type",
+            "daemon_id",
+            "network_id",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        DiscoveryCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            discovery_type: format!("{:?}", self.base.discovery_type),
+            run_type: format!("{:?}", self.base.run_type),
+            daemon_id: self.base.daemon_id,
+            network_id: self.base.network_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Discovery
     }

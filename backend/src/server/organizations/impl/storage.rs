@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -12,6 +13,16 @@ use crate::server::{
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for Organization export (excludes sensitive billing data)
+#[derive(Serialize)]
+pub struct OrganizationCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub plan_status: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Organization {
     type BaseData = OrganizationBase;
@@ -116,6 +127,22 @@ impl Storable for Organization {
 }
 
 impl Entity for Organization {
+    type CsvRow = OrganizationCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec!["id", "name", "plan_status", "created_at", "updated_at"]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        OrganizationCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            plan_status: self.base.plan_status.clone(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Organization
     }

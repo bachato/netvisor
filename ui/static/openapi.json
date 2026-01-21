@@ -1283,6 +1283,92 @@
         ]
       }
     },
+    "/api/v1/auth/daemon/export/csv": {
+      "get": {
+        "tags": [
+          "daemon_api_keys"
+        ],
+        "summary": "Export daemon_api_keys to CSV",
+        "description": "Export all daemon_api_keys matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_daemon_api_keys_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing daemon_api_keys",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/auth/daemon/{id}": {
       "get": {
         "tags": [
@@ -1669,6 +1755,63 @@
           }
         },
         "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/keys/export/csv": {
+      "get": {
+        "tags": [
+          "user_api_keys"
+        ],
+        "summary": "Export user_api_keys to CSV",
+        "description": "Export all user_api_keys matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_user_api_keys_csv",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing user_api_keys",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
           {
             "session": []
           }
@@ -2133,6 +2276,115 @@
         ]
       }
     },
+    "/api/v1/bindings/export/csv": {
+      "get": {
+        "tags": [
+          "bindings"
+        ],
+        "summary": "Export bindings to CSV",
+        "description": "Export all bindings matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_bindings_csv",
+        "parameters": [
+          {
+            "name": "service_id",
+            "in": "query",
+            "description": "Filter by service ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "port_id",
+            "in": "query",
+            "description": "Filter by port ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "interface_id",
+            "in": "query",
+            "description": "Filter by interface ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing bindings",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/bindings/{id}": {
       "get": {
         "tags": [
@@ -2456,6 +2708,124 @@
                   "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
                 }
               }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/daemons/export/csv": {
+      "get": {
+        "tags": [
+          "daemons"
+        ],
+        "summary": "Export daemons to CSV",
+        "description": "Export all daemons matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_daemons_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/DaemonOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/DaemonOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing daemons",
+            "content": {
+              "text/csv": {}
             }
           }
         },
@@ -2799,6 +3169,89 @@
                   "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
                 }
               }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/discovery/export/csv": {
+      "get": {
+        "tags": [
+          "discoveries"
+        ],
+        "summary": "Export discoveries to CSV",
+        "description": "Export all discoveries matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_discoveries_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "daemon_id",
+            "in": "query",
+            "description": "Filter by daemon ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing discoveries",
+            "content": {
+              "text/csv": {}
             }
           }
         },
@@ -3325,6 +3778,124 @@
         ]
       }
     },
+    "/api/v1/groups/export/csv": {
+      "get": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Export groups to CSV",
+        "description": "Export all groups matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_groups_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/GroupOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/GroupOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing groups",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/groups/{id}": {
       "get": {
         "tags": [
@@ -3812,6 +4383,156 @@
         ]
       }
     },
+    "/api/v1/hosts/export/csv": {
+      "get": {
+        "tags": [
+          "hosts"
+        ],
+        "summary": "Export hosts to CSV",
+        "description": "Export all hosts matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_hosts_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "tag_ids",
+            "in": "query",
+            "description": "Filter by tag IDs (returns hosts that have ANY of the specified tags)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/HostOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/HostOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing hosts",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/hosts/{destination_host}/consolidate/{other_host}": {
       "put": {
         "tags": [
@@ -4278,6 +4999,102 @@
                   "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/interfaces/export/csv": {
+      "get": {
+        "tags": [
+          "interfaces"
+        ],
+        "summary": "Export interfaces to CSV",
+        "description": "Export all interfaces matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_interfaces_csv",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "description": "Filter by host ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "subnet_id",
+            "in": "query",
+            "description": "Filter by subnet ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing interfaces",
+            "content": {
+              "text/csv": {}
             }
           }
         },
@@ -4822,6 +5639,63 @@
                   "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/networks/export/csv": {
+      "get": {
+        "tags": [
+          "networks"
+        ],
+        "summary": "Export networks to CSV",
+        "description": "Export all networks matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_networks_csv",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing networks",
+            "content": {
+              "text/csv": {}
             }
           }
         },
@@ -5464,6 +6338,105 @@
         ]
       }
     },
+    "/api/v1/ports/export/csv": {
+      "get": {
+        "tags": [
+          "ports"
+        ],
+        "summary": "Export ports to CSV",
+        "description": "Export all ports matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_ports_csv",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "description": "Filter by host ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing ports",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/ports/{id}": {
       "get": {
         "tags": [
@@ -5892,6 +6865,169 @@
         ]
       }
     },
+    "/api/v1/services/export/csv": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Export services to CSV",
+        "description": "Export all services matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_services_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "host_id",
+            "in": "query",
+            "description": "Filter by host ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "tag_ids",
+            "in": "query",
+            "description": "Filter by tag IDs (returns services that have ANY of the specified tags)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/ServiceOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/ServiceOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing services",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/services/{id}": {
       "get": {
         "tags": [
@@ -6252,6 +7388,89 @@
                   "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
                 }
               }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shares/export/csv": {
+      "get": {
+        "tags": [
+          "shares"
+        ],
+        "summary": "Export shares to CSV",
+        "description": "Export all shares matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_shares_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "topology_id",
+            "in": "query",
+            "description": "Filter by topology ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing shares",
+            "content": {
+              "text/csv": {}
             }
           }
         },
@@ -6738,6 +7957,124 @@
                   "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
                 }
               }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/subnets/export/csv": {
+      "get": {
+        "tags": [
+          "subnets"
+        ],
+        "summary": "Export subnets to CSV",
+        "description": "Export all subnets matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_subnets_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/SubnetOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/SubnetOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing subnets",
+            "content": {
+              "text/csv": {}
             }
           }
         },
@@ -7302,6 +8639,111 @@
         ]
       }
     },
+    "/api/v1/tags/export/csv": {
+      "get": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Export tags to CSV",
+        "description": "Export all tags matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_tags_csv",
+        "parameters": [
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/TagOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/TagOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing tags",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/tags/{id}": {
       "get": {
         "tags": [
@@ -7586,6 +9028,92 @@
                   "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/topology/export/csv": {
+      "get": {
+        "tags": [
+          "topologies"
+        ],
+        "summary": "Export topologies to CSV",
+        "description": "Export all topologies matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_topologies_csv",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing topologies",
+            "content": {
+              "text/csv": {}
             }
           }
         },
@@ -8138,6 +9666,63 @@
         ]
       }
     },
+    "/api/v1/users/export/csv": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Export users to CSV",
+        "description": "Export all users matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_users_csv",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing users",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/{id}": {
       "get": {
         "tags": [
@@ -8565,14 +10150,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-01-15T18:16:42.394922Z",
-              "id": "c0a01184-b85d-4664-b003-0fc13115f82b",
+              "created_at": "2026-01-16T05:18:23.717598Z",
+              "id": "93a743f1-43f4-40f7-9204-e8739d03b40d",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-15T18:16:42.394922Z"
+              "updated_at": "2026-01-16T05:18:23.717598Z"
             }
           },
           "error": {
@@ -9862,14 +11447,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-01-15T18:16:42.390965Z",
-                  "id": "9c802a6d-1ef8-4d6f-b2d7-a077da705070",
+                  "created_at": "2026-01-16T05:18:23.713916Z",
+                  "id": "51348965-17f2-4ecf-891c-9301bedbae35",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-15T18:16:42.390965Z"
+                  "updated_at": "2026-01-16T05:18:23.713916Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -9878,7 +11463,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "SABnzbd",
+              "service_definition": "GitHub",
               "source": {
                 "type": "Manual"
               },
@@ -10985,14 +12570,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-01-15T18:16:42.382219Z",
-          "id": "b48036ac-eefe-4773-99c0-0b3fdae5e754",
+          "created_at": "2026-01-16T05:18:23.706983Z",
+          "id": "7ab0b60d-a098-4449-b7e7-e514b23ac3bf",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-01-15T18:16:42.382219Z"
+          "updated_at": "2026-01-16T05:18:23.706983Z"
         }
       },
       "BindingBase": {
@@ -11395,7 +12980,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "SABnzbd",
+              "service_definition": "GitHub",
               "tags": [],
               "virtualization": null
             }
@@ -14059,14 +15644,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-01-15T18:16:42.389965Z",
-                    "id": "47249740-483b-4565-bdf9-9e91fd4f465e",
+                    "created_at": "2026-01-16T05:18:23.713035Z",
+                    "id": "f4aba1b3-5411-44b0-80cf-f27d163eada2",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-01-15T18:16:42.389965Z"
+                    "updated_at": "2026-01-16T05:18:23.713035Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -14075,7 +15660,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "SABnzbd",
+                "service_definition": "GitHub",
                 "source": {
                   "type": "Manual"
                 },
@@ -14945,14 +16530,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-01-15T18:16:42.382174Z",
-              "id": "73cdffe1-6075-4228-8df7-0c9d4ee2b8d2",
+              "created_at": "2026-01-16T05:18:23.706931Z",
+              "id": "e8ca9f52-6caa-4c0a-b642-532470debf08",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-15T18:16:42.382174Z"
+              "updated_at": "2026-01-16T05:18:23.706931Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -14961,7 +16546,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "SABnzbd",
+          "service_definition": "GitHub",
           "source": {
             "type": "Manual"
           },

@@ -150,6 +150,7 @@ mod generated {
     crate::crud_get_by_id_handler!(Service, "services", "service");
     crate::crud_delete_handler!(Service, "services", "service");
     crate::crud_bulk_delete_handler!(Service, "services");
+    crate::crud_export_csv_handler!(Service, "services", "service");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -161,6 +162,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
 }
 
 /// List all services

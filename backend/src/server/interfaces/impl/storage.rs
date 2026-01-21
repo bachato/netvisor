@@ -3,6 +3,7 @@ use std::net::IpAddr;
 use chrono::{DateTime, Utc};
 use ipnetwork::IpNetwork;
 use mac_address::MacAddress;
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -17,6 +18,21 @@ use crate::server::{
         },
     },
 };
+
+/// CSV row representation for Interface export
+#[derive(Serialize)]
+pub struct InterfaceCsvRow {
+    pub id: Uuid,
+    pub ip_address: String,
+    pub mac_address: Option<String>,
+    pub name: Option<String>,
+    pub host_id: Uuid,
+    pub subnet_id: Uuid,
+    pub network_id: Uuid,
+    pub position: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Interface {
     type BaseData = InterfaceBase;
@@ -131,6 +147,38 @@ impl Storable for Interface {
 }
 
 impl Entity for Interface {
+    type CsvRow = InterfaceCsvRow;
+
+    fn csv_headers() -> Vec<&'static str> {
+        vec![
+            "id",
+            "ip_address",
+            "mac_address",
+            "name",
+            "host_id",
+            "subnet_id",
+            "network_id",
+            "position",
+            "created_at",
+            "updated_at",
+        ]
+    }
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        InterfaceCsvRow {
+            id: self.id,
+            ip_address: self.base.ip_address.to_string(),
+            mac_address: self.base.mac_address.map(|m| m.to_string()),
+            name: self.base.name.clone(),
+            host_id: self.base.host_id,
+            subnet_id: self.base.subnet_id,
+            network_id: self.base.network_id,
+            position: self.base.position,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Interface
     }

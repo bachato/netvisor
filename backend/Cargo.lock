@@ -4878,6 +4878,7 @@ dependencies = [
  "clap",
  "comrak",
  "config",
+ "csv",
  "dhcproto",
  "directories-next",
  "dns-lookup",

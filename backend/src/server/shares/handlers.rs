@@ -45,6 +45,7 @@ mod generated {
     crate::crud_get_by_id_handler!(Share, "shares", "share");
     crate::crud_delete_handler!(Share, "shares", "share");
     crate::crud_bulk_delete_handler!(Share, "shares");
+    crate::crud_export_csv_handler!(Share, "shares", "share");
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -69,6 +70,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
         // Public routes (no auth required)
         .routes(routes!(get_public_share_metadata))
         .routes(routes!(verify_share_password))

@@ -194,6 +194,42 @@ macro_rules! crud_bulk_delete_handler {
     };
 }
 
+/// Generates an OpenAPI-annotated CSV export handler that delegates to `export_csv_handler::<T>`
+///
+/// # Example
+/// ```ignore
+/// crud_export_csv_handler!(Host, "hosts", "host");
+/// ```
+#[macro_export]
+macro_rules! crud_export_csv_handler {
+    ($entity:ty, $tag:expr, $singular:expr) => {
+        // Type alias for filter query
+        type __ExportCsvFilterQuery = <$entity as $crate::server::shared::handlers::traits::CrudHandlers>::FilterQuery;
+
+        #[utoipa::path(
+            get,
+            path = "/export/csv",
+            tag = $tag,
+            operation_id = concat!("export_", $tag, "_csv"),
+            summary = concat!("Export ", $tag, " to CSV"),
+            description = concat!("Export all ", $tag, " matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records."),
+            params(__ExportCsvFilterQuery),
+            responses(
+                (status = 200, description = concat!("CSV file containing ", $tag), content_type = "text/csv"),
+            ),
+            security(("user_api_key" = []), ("session" = []))
+        )]
+        pub async fn export_csv(
+            state: axum::extract::State<std::sync::Arc<$crate::server::config::AppState>>,
+            auth: $crate::server::auth::middleware::permissions::Authorized<$crate::server::auth::middleware::permissions::Viewer>,
+            query: $crate::server::shared::extractors::Query<__ExportCsvFilterQuery>,
+        ) -> $crate::server::shared::types::api::ApiResult<impl axum::response::IntoResponse> {
+            $crate::server::shared::handlers::csv::export_csv_handler::<$entity>(state, auth, query)
+                .await
+        }
+    };
+}
+
 /// Generates an OpenAPI-annotated get_all handler with query params derived from the filter query type.
 /// The filter query type must derive `IntoParams` for utoipa to extract the param documentation.
 ///
