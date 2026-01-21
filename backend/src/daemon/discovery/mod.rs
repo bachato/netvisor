@@ -1,3 +1,4 @@
+pub mod buffer;
 pub mod handlers;
 pub mod manager;
 pub mod service;

@@ -500,15 +500,15 @@ impl DiscoveryService {
             .or_default()
             .push(session_id);
 
-        let daemon_is_push = self
+        let daemon_is_server_poll = self
             .daemon_service
             .get_by_id(&discovery.base.daemon_id)
             .await?
-            .map(|d| d.base.mode == DaemonMode::Push)
+            .map(|d| d.base.mode == DaemonMode::ServerPoll)
             .unwrap_or(false);
 
-        // Initiate session on daemon if none are running and daemon is push
-        if !daemon_is_running_discovery && daemon_is_push {
+        // Initiate session on daemon if none are running and daemon is server_poll
+        if !daemon_is_running_discovery && daemon_is_server_poll {
             self.daemon_service
                 .send_discovery_request(
                     &discovery.base.daemon_id,
@@ -652,16 +652,16 @@ impl DiscoveryService {
             drop(sessions);
 
             // If any in queue and daemon is running push mode, initiate next session
-            // If daemon is pull mode, it will request next session on its next pull
-            let daemon_is_push = self
+            // If daemon is daemon_poll mode, it will request next session on its next poll
+            let daemon_is_server_poll = self
                 .daemon_service
                 .get_by_id(&daemon_id)
                 .await?
-                .map(|d| d.base.mode == DaemonMode::Push)
+                .map(|d| d.base.mode == DaemonMode::ServerPoll)
                 .unwrap_or(false);
 
             if let Some((discovery_type, session_id)) = next_session_info
-                && daemon_is_push
+                && daemon_is_server_poll
             {
                 tracing::debug!("Starting next session");
 
@@ -743,7 +743,7 @@ impl DiscoveryService {
             DiscoveryPhase::Started | DiscoveryPhase::Scanning => {
                 if let Some(daemon) = self.daemon_service.get_by_id(&daemon_id).await? {
                     match daemon.base.mode {
-                        DaemonMode::Push => {
+                        DaemonMode::ServerPoll => {
                             match self
                                 .daemon_service
                                 .send_discovery_cancellation(daemon, session_id, authentication)
@@ -821,8 +821,8 @@ impl DiscoveryService {
                             }
                             Ok(())
                         }
-                        DaemonMode::Pull => {
-                            // Add to pull cancellations
+                        DaemonMode::DaemonPoll => {
+                            // Add to daemon_poll cancellations
                             self.daemon_pull_cancellations
                                 .write()
                                 .await
@@ -938,7 +938,7 @@ impl DiscoveryService {
             match self.daemon_service.get_by_id(daemon_id).await {
                 Ok(Some(daemon)) => {
                     match daemon.base.mode {
-                        DaemonMode::Push => {
+                        DaemonMode::ServerPoll => {
                             // Send HTTP cancellation request (best effort)
                             let url = format!("{}/api/discovery/cancel", daemon.base.url);
                             let client = reqwest::Client::new();
@@ -968,8 +968,8 @@ impl DiscoveryService {
                                 }
                             }
                         }
-                        DaemonMode::Pull => {
-                            // Set cancellation flag for pull mode
+                        DaemonMode::DaemonPoll => {
+                            // Set cancellation flag for daemon_poll mode
                             self.daemon_pull_cancellations
                                 .write()
                                 .await
@@ -977,7 +977,7 @@ impl DiscoveryService {
                             tracing::info!(
                                 daemon_id = %daemon_id,
                                 session_id = %session_id,
-                                "Set cancellation flag for pull-mode daemon"
+                                "Set cancellation flag for daemon_poll-mode daemon"
                             );
                         }
                     }

@@ -174,13 +174,14 @@ pub fn daemon(network_id: &Uuid, host_id: &Uuid) -> Daemon {
         name: "daemon".to_string(),
         url: "http://192.168.1.50:60073".to_string(),
         last_seen: Utc::now(),
-        mode: DaemonMode::Push,
+        mode: DaemonMode::ServerPoll,
         capabilities: DaemonCapabilities {
             has_docker_socket: false,
             interfaced_subnet_ids: Vec::new(),
         },
         version: None,
         user_id: Uuid::nil(),
+        api_key_id: None,
     })
 }
 

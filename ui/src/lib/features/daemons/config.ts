@@ -74,13 +74,13 @@ export const fieldDefs: FieldDef[] = [
 		id: 'mode',
 		label: () => m.daemons_config_mode(),
 		type: 'select',
-		defaultValue: 'Push',
+		defaultValue: 'daemon_poll',
 		cliFlag: '--mode',
 		envVar: 'SCANOPY_MODE',
 		helpText: () => m.daemons_config_modeHelp(),
 		options: [
-			{ label: () => m.common_push(), value: 'Push' },
-			{ label: () => m.common_pull(), value: 'Pull' }
+			{ label: () => m.daemons_mode_daemonPoll(), value: 'daemon_poll' },
+			{ label: () => m.daemons_mode_serverPoll(), value: 'server_poll' }
 		],
 		disabled: (isNew) => !isNew
 	},
@@ -94,7 +94,7 @@ export const fieldDefs: FieldDef[] = [
 		helpText: () => m.daemons_config_daemonUrlHelp(),
 		placeholder: () => m.common_placeholderDaemonUrl(),
 		validators: [url],
-		showWhen: (values) => values.mode === 'Push'
+		showWhen: (values) => values.mode === 'server_poll'
 	},
 	// Network section
 	{

@@ -1389,13 +1389,14 @@ fn generate_daemons(
                     has_docker_socket: true,
                     interfaced_subnet_ids: vec![subnet.id],
                 },
-                mode: DaemonMode::Push,
+                mode: DaemonMode::ServerPoll,
                 name: "HQ Daemon".to_string(),
                 tags: vec![],
                 version: Version::parse(env!("CARGO_PKG_VERSION"))
                     .map(Some)
                     .unwrap_or_default(),
                 user_id,
+                api_key_id: None,
             },
         });
     }
@@ -1418,13 +1419,14 @@ fn generate_daemons(
                     has_docker_socket: true,
                     interfaced_subnet_ids: vec![subnet.id],
                 },
-                mode: DaemonMode::Push,
+                mode: DaemonMode::ServerPoll,
                 name: "Cloud Daemon".to_string(),
                 tags: vec![],
                 version: Version::parse(env!("CARGO_PKG_VERSION"))
                     .map(Some)
                     .unwrap_or_default(),
                 user_id,
+                api_key_id: None,
             },
         });
     }
@@ -1446,13 +1448,14 @@ fn generate_daemons(
                     has_docker_socket: false,
                     interfaced_subnet_ids: vec![subnet.id],
                 },
-                mode: DaemonMode::Push,
+                mode: DaemonMode::ServerPoll,
                 name: "Denver Daemon".to_string(),
                 tags: vec![],
                 version: Version::parse(env!("CARGO_PKG_VERSION"))
                     .map(Some)
                     .unwrap_or_default(),
                 user_id,
+                api_key_id: None,
             },
         });
     }
@@ -1473,11 +1476,12 @@ fn generate_daemons(
                     has_docker_socket: false,
                     interfaced_subnet_ids: vec![subnet.id],
                 },
-                mode: DaemonMode::Push,
+                mode: DaemonMode::ServerPoll,
                 name: "Riverside Daemon".to_string(),
                 tags: vec![],
                 version: None,
                 user_id,
+                api_key_id: None,
             },
         });
     }
@@ -1510,6 +1514,7 @@ fn generate_api_keys(networks: &[Network], now: DateTime<Utc>) -> Vec<DaemonApiK
                 network_id: find_network("Headquarters").id,
                 is_enabled: true,
                 tags: vec![],
+                plaintext: None,
             },
         },
         DaemonApiKey {
@@ -1524,6 +1529,7 @@ fn generate_api_keys(networks: &[Network], now: DateTime<Utc>) -> Vec<DaemonApiK
                 network_id: find_network("Cloud").id,
                 is_enabled: true,
                 tags: vec![],
+                plaintext: None,
             },
         },
         DaemonApiKey {
@@ -1538,6 +1544,7 @@ fn generate_api_keys(networks: &[Network], now: DateTime<Utc>) -> Vec<DaemonApiK
                 network_id: find_network("Denver").id,
                 is_enabled: true,
                 tags: vec![],
+                plaintext: None,
             },
         },
         DaemonApiKey {
@@ -1552,6 +1559,7 @@ fn generate_api_keys(networks: &[Network], now: DateTime<Utc>) -> Vec<DaemonApiK
                 network_id: find_network("Riverside").id,
                 is_enabled: true,
                 tags: vec![],
+                plaintext: None,
             },
         },
     ]

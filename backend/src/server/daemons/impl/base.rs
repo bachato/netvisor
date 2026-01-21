@@ -39,6 +39,10 @@ pub struct DaemonBase {
     pub version: Option<Version>,
     /// User responsible for maintaining this daemon
     pub user_id: Uuid,
+    /// Foreign key to API key used for ServerPoll authentication.
+    /// NULL for DaemonPoll daemons or those not yet linked to a key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key_id: Option<Uuid>,
 }
 
 #[derive(
@@ -75,6 +79,14 @@ impl Display for Daemon {
     }
 }
 
+/// Daemon operating mode that determines the communication pattern.
+///
+/// - **DaemonPoll** (formerly "Pull"): Daemon makes outbound connections to the server.
+///   The daemon registers itself and polls for work. Best for daemons behind NAT/firewall.
+///
+/// - **ServerPoll** (formerly "Push"): Server makes connections to the daemon.
+///   Server polls daemon for status and discovery results. Best for DMZ deployments
+///   where daemon cannot make outbound connections.
 #[derive(
     Debug,
     Display,
@@ -89,10 +101,15 @@ impl Display for Daemon {
     Hash,
     ToSchema,
 )]
+#[serde(rename_all = "snake_case")]
 pub enum DaemonMode {
+    /// Server polls daemon (daemon cannot make outbound connections)
+    #[serde(alias = "push", alias = "Push")]
+    ServerPoll,
+    /// Daemon polls server (default, firewall-friendly)
     #[default]
-    Push,
-    Pull,
+    #[serde(alias = "pull", alias = "Pull")]
+    DaemonPoll,
 }
 
 impl ChangeTriggersTopologyStaleness<Daemon> for Daemon {

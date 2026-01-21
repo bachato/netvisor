@@ -86,6 +86,7 @@ impl Storable for Daemon {
                     tags: _, // Stored in entity_tags junction table
                     version,
                     user_id,
+                    api_key_id,
                 },
         } = self.clone();
 
@@ -103,6 +104,7 @@ impl Storable for Daemon {
                 "mode",
                 "version",
                 "user_id",
+                "api_key_id",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -117,6 +119,7 @@ impl Storable for Daemon {
                 SqlValue::DaemonMode(mode),
                 SqlValue::OptionalString(version.map(|v| v.to_string())),
                 SqlValue::Uuid(user_id),
+                SqlValue::OptionalUuid(api_key_id),
             ],
         ))
     }
@@ -149,6 +152,7 @@ impl Storable for Daemon {
                 tags: Vec::new(), // Hydrated from entity_tags junction table
                 version,
                 user_id: row.get("user_id"),
+                api_key_id: row.get("api_key_id"),
             },
         })
     }
