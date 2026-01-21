@@ -332,6 +332,7 @@ async fn test_api_key_crud(ctx: &TestContext) -> Result<(), String> {
         network_id: ctx.network_id,
         is_enabled: true,
         tags: Vec::new(),
+        plaintext: None,
     });
 
     // Daemon API keys are now at /api/v1/auth/daemon

@@ -398,6 +398,7 @@ async fn apply_pending_setup(
                             network_id: network.id,
                             is_enabled: true,
                             tags: Vec::new(),
+                            plaintext: None,
                         }),
                         AuthenticatedEntity::System,
                     )
@@ -427,6 +428,7 @@ async fn apply_pending_setup(
                     network_id,
                     is_enabled: true,
                     tags: Vec::new(),
+                    plaintext: None,
                 }),
                 AuthenticatedEntity::System,
             )

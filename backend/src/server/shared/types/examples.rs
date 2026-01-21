@@ -247,6 +247,7 @@ pub fn daemon_api_key() -> DaemonApiKey {
             expires_at: None,
             is_enabled: true,
             tags: vec![],
+            plaintext: None,
         },
     }
 }
@@ -261,7 +262,7 @@ pub fn daemon() -> Daemon {
             network_id: ids::NETWORK,
             host_id: ids::HOST,
             url: "http://192.168.1.100:8080".to_string(),
-            mode: DaemonMode::Pull,
+            mode: DaemonMode::DaemonPoll,
             capabilities: DaemonCapabilities {
                 has_docker_socket: true,
                 interfaced_subnet_ids: vec![ids::SUBNET],
@@ -273,6 +274,7 @@ pub fn daemon() -> Daemon {
                 .map(Some)
                 .unwrap_or_default(),
             user_id: ids::USER,
+            api_key_id: None,
         },
     }
 }

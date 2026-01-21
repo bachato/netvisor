@@ -81,7 +81,7 @@ async fn async_main() -> anyhow::Result<()> {
     let runtime_service = state.services.runtime_service.clone();
 
     // Create HTTP server with config values
-    let api_router = create_router().with_state(state);
+    let api_router = create_router(state.clone()).with_state(state);
 
     let app = Router::new().merge(api_router).layer(
         ServiceBuilder::new()
@@ -143,45 +143,39 @@ async fn async_main() -> anyhow::Result<()> {
     }
 
     // Mode-specific ready message and runtime loop
-    if mode == DaemonMode::Push {
-        tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        tracing::info!("Daemon ready [Push mode]");
-        tracing::info!(
-            "  Server will call this daemon at {} to initiate discovery",
-            daemon_url
-        );
-        tracing::info!(
-            "  Sending heartbeat every {}s to confirm availability",
-            interval_secs
-        );
-        tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    match mode {
+        DaemonMode::ServerPoll => {
+            // ServerPoll mode: Server polls daemon, no outbound connections
+            tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            tracing::info!("Daemon ready [ServerPoll mode]");
+            tracing::info!(
+                "  Server will poll this daemon at {} for status and discovery",
+                daemon_url
+            );
+            tracing::info!("  No outbound connections - ideal for DMZ deployments");
+            tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            // No outbound loop needed - daemon just serves HTTP endpoints
+        }
+        DaemonMode::DaemonPoll => {
+            // DaemonPoll mode: Daemon polls server for work
+            tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            tracing::info!("Daemon ready [DaemonPoll mode]");
+            tracing::info!(
+                "  Polling server every {}s for discovery work",
+                interval_secs
+            );
+            tracing::info!("  No inbound connections required - firewall-friendly mode");
+            tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-        tokio::spawn(async move {
-            loop {
-                if let Err(e) = runtime_service.heartbeat().await {
-                    tracing::warn!("Heartbeat task failed: {}, retrying...", e);
-                    tokio::time::sleep(interval).await;
+            tokio::spawn(async move {
+                loop {
+                    if let Err(e) = runtime_service.request_work().await {
+                        tracing::warn!("Work request task failed: {}, retrying...", e);
+                        tokio::time::sleep(interval).await;
+                    }
                 }
-            }
-        });
-    } else {
-        tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        tracing::info!("Daemon ready [Pull mode]");
-        tracing::info!(
-            "  Polling server every {}s for discovery work",
-            interval_secs
-        );
-        tracing::info!("  No inbound connections required - firewall-friendly mode");
-        tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
-        tokio::spawn(async move {
-            loop {
-                if let Err(e) = runtime_service.request_work().await {
-                    tracing::warn!("Work request task failed: {}, retrying...", e);
-                    tokio::time::sleep(interval).await;
-                }
-            }
-        });
+            });
+        }
     }
 
     // Keep process alive until shutdown signal

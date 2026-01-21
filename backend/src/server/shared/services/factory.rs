@@ -4,7 +4,10 @@ use crate::server::{
     bindings::service::BindingService,
     config::ServerConfig,
     daemon_api_keys::service::DaemonApiKeyService,
-    daemons::service::DaemonService,
+    daemons::{
+        processor::{DaemonDataProcessor, DaemonProcessor},
+        service::DaemonService,
+    },
     discovery::service::DiscoveryService,
     email::{plunk::PlunkEmailProvider, smtp::SmtpEmailProvider, traits::EmailService},
     groups::{group_bindings::GroupBindingStorage, service::GroupService},
@@ -46,6 +49,7 @@ pub struct ServiceFactory {
     pub group_service: Arc<GroupService>,
     pub subnet_service: Arc<SubnetService>,
     pub daemon_service: Arc<DaemonService>,
+    pub daemon_processor: Arc<dyn DaemonDataProcessor>,
     pub topology_service: Arc<TopologyService>,
     pub service_service: Arc<ServiceService>,
     pub discovery_service: Arc<DiscoveryService>,
@@ -175,6 +179,14 @@ impl ServiceFactory {
             entity_tag_service.clone(),
         ));
 
+        // Create daemon processor for shared daemon data processing logic
+        let daemon_processor: Arc<dyn DaemonDataProcessor> = Arc::new(DaemonProcessor::new(
+            daemon_service.clone(),
+            discovery_service.clone(),
+            host_service.clone(),
+            subnet_service.clone(),
+        ));
+
         // ServiceService needs HostService for circular reference
         let _ = service_service.set_host_service(host_service.clone());
 
@@ -302,6 +314,7 @@ impl ServiceFactory {
             group_service,
             subnet_service,
             daemon_service,
+            daemon_processor,
             topology_service,
             service_service,
             discovery_service,
