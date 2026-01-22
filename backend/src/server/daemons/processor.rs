@@ -255,6 +255,7 @@ impl DaemonDataProcessor for DaemonProcessor {
                     host_request.interfaces,
                     host_request.ports,
                     host_request.services,
+                    host_request.if_entries,
                     auth.clone(),
                 )
                 .await?;
