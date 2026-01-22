@@ -1,3 +1,4 @@
+use crate::server::auth::middleware::features::{BlockedInDemoMode, RequireFeature};
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Viewer};
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase};
@@ -320,9 +321,9 @@ const DAILY_MIDNIGHT_CRON: &str = "0 0 0 * * *";
 async fn register_daemon(
     State(state): State<Arc<AppState>>,
     auth: Authorized<IsDaemon>,
+    _demo_check: RequireFeature<BlockedInDemoMode>,
     Json(request): Json<DaemonRegistrationRequest>,
 ) -> ApiResult<Json<ApiResponse<DaemonRegistrationResponse>>> {
-    // Check if this is a demo organization - block daemon registration
     let network = state
         .services
         .network_service
@@ -926,6 +927,13 @@ async fn provision_daemon(
         virtualization: None,
         hidden: false,
         tags: Vec::new(),
+        sys_descr: None,
+        sys_object_id: None,
+        sys_location: None,
+        sys_contact: None,
+        management_url: None,
+        chassis_id: None,
+        snmp_credential_id: None,
     });
 
     let created_host = state

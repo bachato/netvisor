@@ -95,10 +95,18 @@ mod tests {
                 source: EntitySource::Manual,
                 virtualization: None,
                 hidden: false,
+                sys_descr: None,
+                sys_object_id: None,
+                sys_location: None,
+                sys_contact: None,
+                management_url: None,
+                chassis_id: None,
+                snmp_credential_id: None,
             }),
             interfaces: vec![],
             ports: vec![],
             services: vec![],
+            if_entries: vec![],
         };
         buffer.push_host(host).await;
 
@@ -133,10 +141,18 @@ mod tests {
                             source: EntitySource::Manual,
                             virtualization: None,
                             hidden: false,
+                            sys_descr: None,
+                            sys_object_id: None,
+                            sys_location: None,
+                            sys_contact: None,
+                            management_url: None,
+                            chassis_id: None,
+                            snmp_credential_id: None,
                         }),
                         interfaces: vec![],
                         ports: vec![],
                         services: vec![],
+                        if_entries: vec![],
                     };
                     buf.push_host(host).await;
                 })
