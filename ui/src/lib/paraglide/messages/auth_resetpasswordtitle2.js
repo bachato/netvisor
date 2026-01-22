@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer } from '../runtime.js';
+import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer, experimentalStaticLocale } from '../runtime.js';
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_auth_resetpasswordtitle2 = /** @type {(inputs: {}) => LocalizedString} */ () => {
@@ -23,7 +23,7 @@ const auth_resetpasswordtitle2 = (inputs = {}, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.auth_resetpasswordtitle2(inputs) 
 	}
-	const locale = options.locale ?? getLocale()
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	trackMessageCall("auth_resetpasswordtitle2", locale)
 	return en_auth_resetpasswordtitle2(inputs)
 };

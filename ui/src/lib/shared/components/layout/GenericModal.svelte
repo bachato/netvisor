@@ -14,10 +14,10 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { X } from 'lucide-svelte';
-	import * as m from '$lib/paraglide/messages';
+	import { common_closeModal, common_modal } from '$lib/paraglide/messages';
 
 	let {
-		title = m.common_modal(),
+		title = common_modal(),
 		centerTitle = false,
 		isOpen = false,
 		onClose = null,
@@ -155,7 +155,7 @@
 							type="button"
 							onclick={handleClose}
 							class="btn-icon"
-							aria-label={m.common_closeModal()}
+							aria-label={common_closeModal()}
 						>
 							<X class="h-5 w-5" />
 						</button>

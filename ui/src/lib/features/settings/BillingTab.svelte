@@ -7,7 +7,26 @@
 	import InfoCard from '$lib/shared/components/data/InfoCard.svelte';
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_billingExtra,
+		common_billingUsage,
+		common_close,
+		common_included,
+		common_networks,
+		common_seats,
+		common_tryAgainLater,
+		settings_billing_billingQuestions,
+		settings_billing_canceled,
+		settings_billing_contactUs,
+		settings_billing_currentPlan,
+		settings_billing_manageSubscription,
+		settings_billing_needHelp,
+		settings_billing_pastDue,
+		settings_billing_per,
+		settings_billing_trialActive,
+		settings_billing_trialDays,
+		settings_billing_unableToLoad
+	} from '$lib/paraglide/messages';
 
 	let {
 		isOpen = false,
@@ -91,7 +110,7 @@
 				<InfoCard>
 					<svelte:fragment slot="default">
 						<div class="mb-3 flex items-center justify-between">
-							<h3 class="text-primary text-sm font-semibold">{m.settings_billing_currentPlan()}</h3>
+							<h3 class="text-primary text-sm font-semibold">{settings_billing_currentPlan()}</h3>
 							<div class="flex items-center gap-2">
 								{#if planActive}
 									<CheckCircle class="h-4 w-4 text-green-400" />
@@ -114,7 +133,7 @@
 										</p>
 										{#if org.plan.trial_days > 0 && org.plan_status === 'trialing'}
 											<p class="text-secondary mt-1 text-xs">
-												{m.settings_billing_trialDays({ days: org.plan.trial_days })}
+												{settings_billing_trialDays({ days: org.plan.trial_days })}
 											</p>
 										{/if}
 									</div>
@@ -123,7 +142,7 @@
 											${org.plan.base_cents / 100}
 										</p>
 										<p class="text-secondary text-xs">
-											{m.settings_billing_per({ rate: org.plan.rate })}
+											{settings_billing_per({ rate: org.plan.rate })}
 										</p>
 									</div>
 								</div>
@@ -133,14 +152,14 @@
 									<div class="border-t border-gray-700 pt-3">
 										<div class="flex items-baseline justify-between">
 											<div>
-												<p class="text-primary font-medium">{m.common_seats()}</p>
+												<p class="text-primary font-medium">{common_seats()}</p>
 												<p class="text-secondary text-sm">
-													{m.common_billingUsage({
+													{common_billingUsage({
 														count: seatCount,
 														included: org.plan.included_seats ?? 0
 													})}
 													{#if extraSeats > 0}
-														{m.common_billingExtra({
+														{common_billingExtra({
 															extra: extraSeats,
 															price: org.plan.seat_cents ? org.plan.seat_cents / 100 : 0
 														})}
@@ -154,11 +173,11 @@
 														+${extraSeatsCents / 100}
 													</p>
 													<p class="text-secondary text-xs">
-														{m.settings_billing_per({ rate: org.plan.rate })}
+														{settings_billing_per({ rate: org.plan.rate })}
 													</p>
 												</div>
 											{:else}
-												<p class="text-tertiary text-sm">{m.common_included()}</p>
+												<p class="text-tertiary text-sm">{common_included()}</p>
 											{/if}
 										</div>
 									</div>
@@ -169,14 +188,14 @@
 									<div class="border-t border-gray-700 pt-3">
 										<div class="flex items-baseline justify-between">
 											<div>
-												<p class="text-primary font-medium">{m.common_networks()}</p>
+												<p class="text-primary font-medium">{common_networks()}</p>
 												<p class="text-secondary text-sm">
-													{m.common_billingUsage({
+													{common_billingUsage({
 														count: networkCount,
 														included: org.plan.included_networks ?? 0
 													})}
 													{#if extraNetworks > 0}
-														{m.common_billingExtra({
+														{common_billingExtra({
 															extra: extraNetworks,
 															price: org.plan.network_cents ? org.plan.network_cents / 100 : 0
 														})}
@@ -190,11 +209,11 @@
 														+${extraNetworksCents / 100}
 													</p>
 													<p class="text-secondary text-xs">
-														{m.settings_billing_per({ rate: org.plan.rate })}
+														{settings_billing_per({ rate: org.plan.rate })}
 													</p>
 												</div>
 											{:else}
-												<p class="text-tertiary text-sm">{m.common_included()}</p>
+												<p class="text-tertiary text-sm">{common_included()}</p>
 											{/if}
 										</div>
 									</div>
@@ -205,19 +224,19 @@
 								<div
 									class="rounded-md border border-blue-800 bg-blue-900/30 p-3 text-sm text-blue-300"
 								>
-									{m.settings_billing_trialActive()}
+									{settings_billing_trialActive()}
 								</div>
 							{:else if org.plan_status === 'past_due'}
 								<div
 									class="rounded-md border border-red-800 bg-red-900/30 p-3 text-sm text-red-300"
 								>
-									{m.settings_billing_pastDue()}
+									{settings_billing_pastDue()}
 								</div>
 							{:else if org.plan_status === 'canceled'}
 								<div
 									class="rounded-md border border-yellow-800 bg-yellow-900/30 p-3 text-sm text-yellow-300"
 								>
-									{m.settings_billing_canceled()}
+									{settings_billing_canceled()}
 								</div>
 							{/if}
 						</div>
@@ -227,25 +246,25 @@
 				<!-- Actions -->
 				<div class="space-y-3">
 					<button onclick={handleManageSubscription} class="btn-primary w-full">
-						{m.settings_billing_manageSubscription()}
+						{settings_billing_manageSubscription()}
 					</button>
 				</div>
 
 				<!-- Additional Info -->
-				<InfoCard title={m.settings_billing_needHelp()}>
+				<InfoCard title={settings_billing_needHelp()}>
 					<p class="text-secondary text-sm">
-						{m.settings_billing_contactUs()}
+						{settings_billing_contactUs()}
 						<a href="mailto:billing@scanopy.net" class="text-blue-400 hover:underline"
 							>billing@scanopy.net</a
 						>
-						{m.settings_billing_billingQuestions()}
+						{settings_billing_billingQuestions()}
 					</p>
 				</InfoCard>
 			</div>
 		{:else}
 			<div class="text-secondary py-8 text-center">
-				<p>{m.settings_billing_unableToLoad()}</p>
-				<p class="text-tertiary mt-2 text-sm">{m.common_tryAgainLater()}</p>
+				<p>{settings_billing_unableToLoad()}</p>
+				<p class="text-tertiary mt-2 text-sm">{common_tryAgainLater()}</p>
 			</div>
 		{/if}
 	</div>
@@ -253,7 +272,7 @@
 	<!-- Footer -->
 	<div class="modal-footer">
 		<div class="flex justify-end">
-			<button type="button" onclick={onClose} class="btn-secondary">{m.common_close()}</button>
+			<button type="button" onclick={onClose} class="btn-secondary">{common_close()}</button>
 		</div>
 	</div>
 </div>

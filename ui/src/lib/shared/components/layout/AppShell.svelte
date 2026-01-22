@@ -16,7 +16,10 @@
 	import type { PostHog } from 'posthog-js';
 	import { browser } from '$app/environment';
 	import CookieConsent from '$lib/shared/components/feedback/CookieConsent.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		billing_subscriptionActivated,
+		billing_subscriptionDelayed
+	} from '$lib/paraglide/messages';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -94,7 +97,7 @@
 			);
 
 			if (orgData && isBillingPlanActive(orgData)) {
-				pushSuccess(m.billing_subscriptionActivated());
+				pushSuccess(billing_subscriptionActivated());
 				return true;
 			}
 
@@ -102,7 +105,7 @@
 			await new Promise((r) => setTimeout(r, 2000));
 		}
 
-		pushError(m.billing_subscriptionDelayed());
+		pushError(billing_subscriptionDelayed());
 		return false;
 	}
 

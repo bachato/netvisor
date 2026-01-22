@@ -11,7 +11,16 @@
 	import { Key } from 'lucide-svelte';
 	import Password from '$lib/shared/components/forms/input/Password.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		auth_backToLogin,
+		auth_goToLogin,
+		auth_passwordResetComplete,
+		auth_passwordUpdatedBody,
+		auth_passwordUpdatedTitle,
+		auth_resetPasswordTitle,
+		auth_setNewPassword,
+		common_resetting
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		isOpen?: boolean;
@@ -53,7 +62,7 @@
 
 <GenericModal
 	{isOpen}
-	title={resetComplete ? m.auth_passwordResetComplete() : m.auth_setNewPassword()}
+	title={resetComplete ? auth_passwordResetComplete() : auth_setNewPassword()}
 	size="md"
 	{onClose}
 	onOpen={handleOpen}
@@ -76,7 +85,7 @@
 	>
 		<div class="flex-1 overflow-auto p-6">
 			{#if resetComplete}
-				<InlineInfo title={m.auth_passwordUpdatedTitle()} body={m.auth_passwordUpdatedBody()} />
+				<InlineInfo title={auth_passwordUpdatedTitle()} body={auth_passwordUpdatedBody()} />
 			{:else}
 				<form.Field
 					name="password"
@@ -107,11 +116,11 @@
 			<div class="flex w-full flex-col gap-4">
 				{#if resetComplete}
 					<button type="button" onclick={onBackToLogin} class="btn-primary w-full">
-						{m.auth_goToLogin()}
+						{auth_goToLogin()}
 					</button>
 				{:else}
 					<button type="submit" disabled={resetting} class="btn-primary w-full">
-						{resetting ? m.common_resetting() : m.auth_resetPasswordTitle()}
+						{resetting ? common_resetting() : auth_resetPasswordTitle()}
 					</button>
 
 					<div class="text-center">
@@ -120,7 +129,7 @@
 							onclick={onBackToLogin}
 							class="text-sm font-medium text-blue-400 hover:text-blue-300"
 						>
-							{m.auth_backToLogin()}
+							{auth_backToLogin()}
 						</button>
 					</div>
 				{/if}

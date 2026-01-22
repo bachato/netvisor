@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer } from '../runtime.js';
+import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer, experimentalStaticLocale } from '../runtime.js';
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_discovery_name = /** @type {(inputs: {}) => LocalizedString} */ () => {
@@ -23,7 +23,7 @@ export const discovery_name = (inputs = {}, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.discovery_name(inputs) 
 	}
-	const locale = options.locale ?? getLocale()
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	trackMessageCall("discovery_name", locale)
 	return en_discovery_name(inputs)
 };

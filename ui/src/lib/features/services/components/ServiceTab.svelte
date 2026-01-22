@@ -20,7 +20,13 @@
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_services,
+		services_confirmBulkDelete,
+		services_confirmDelete,
+		services_noServicesYet,
+		services_subtitle
+	} from '$lib/paraglide/messages';
 
 	type ServiceOrderField = components['schemas']['ServiceOrderField'];
 	type OrderDirection = components['schemas']['OrderDirection'];
@@ -126,7 +132,7 @@
 	);
 
 	function handleDeleteService(service: Service) {
-		if (confirm(m.services_confirmDelete({ serviceName: service.name }))) {
+		if (confirm(services_confirmDelete({ serviceName: service.name }))) {
 			deleteServiceMutation.mutate(service.id);
 		}
 	}
@@ -142,7 +148,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.services_confirmBulkDelete({ count: ids.length }))) {
+		if (confirm(services_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteServicesMutation.mutateAsync(ids);
 		}
 	}
@@ -216,14 +222,14 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title={m.common_services()} subtitle={m.services_subtitle()} />
+	<TabHeader title={common_services()} subtitle={services_subtitle()} />
 
 	<!-- Loading state (only on initial load) -->
 	{#if isInitialLoading}
 		<Loading />
 	{:else if servicesData.length === 0 && !servicesPagination}
 		<!-- Empty state -->
-		<EmptyState title={m.services_noServicesYet()} subtitle="" />
+		<EmptyState title={services_noServicesYet()} subtitle="" />
 	{:else}
 		<DataControls
 			items={servicesData}

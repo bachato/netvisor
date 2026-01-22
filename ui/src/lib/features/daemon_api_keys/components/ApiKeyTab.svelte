@@ -18,7 +18,17 @@
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { TabProps } from '$lib/shared/types';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_create,
+		common_name,
+		common_network,
+		common_tags,
+		common_unknownNetwork,
+		daemonApiKeys_confirmBulkDelete,
+		daemonApiKeys_confirmDelete,
+		daemonApiKeys_noApiKeysYet,
+		daemonApiKeys_title
+	} from '$lib/paraglide/messages';
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -44,7 +54,7 @@
 	let editingApiKey = $state<ApiKey | null>(null);
 
 	async function handleDeleteApiKey(apiKey: ApiKey) {
-		if (confirm(m.daemonApiKeys_confirmDelete({ name: apiKey.name }))) {
+		if (confirm(daemonApiKeys_confirmDelete({ name: apiKey.name }))) {
 			deleteApiKeyMutation.mutate(apiKey.id);
 		}
 	}
@@ -71,7 +81,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.daemonApiKeys_confirmBulkDelete({ count: ids.length }))) {
+		if (confirm(daemonApiKeys_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteApiKeysMutation.mutateAsync(ids);
 		}
 	}
@@ -83,22 +93,22 @@
 	const apiKeyFields: FieldConfig<ApiKey>[] = [
 		{
 			key: 'name',
-			label: m.common_name(),
+			label: common_name(),
 			type: 'string',
 			searchable: true
 		},
 		{
 			key: 'network_id',
 			type: 'string',
-			label: m.common_network(),
+			label: common_network(),
 			filterable: true,
 			getValue(item) {
-				return networksData.find((n) => n.id == item.network_id)?.name || m.common_unknownNetwork();
+				return networksData.find((n) => n.id == item.network_id)?.name || common_unknownNetwork();
 			}
 		},
 		{
 			key: 'tags',
-			label: m.common_tags(),
+			label: common_tags(),
 			type: 'array',
 			searchable: true,
 			filterable: true,
@@ -114,11 +124,11 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title={m.daemonApiKeys_title()}>
+	<TabHeader title={daemonApiKeys_title()}>
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateApiKey}
-					><Plus class="h-5 w-5" />{m.common_create()}</button
+					><Plus class="h-5 w-5" />{common_create()}</button
 				>
 			{/if}
 		</svelte:fragment>
@@ -129,10 +139,10 @@
 	{:else if apiKeysData.length === 0}
 		<!-- Empty state -->
 		<EmptyState
-			title={m.daemonApiKeys_noApiKeysYet()}
+			title={daemonApiKeys_noApiKeysYet()}
 			subtitle=""
 			onClick={handleCreateApiKey}
-			cta={m.common_create()}
+			cta={common_create()}
 		/>
 	{:else}
 		<DataControls

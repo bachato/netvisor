@@ -7,7 +7,20 @@
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TextArea from '$lib/shared/components/forms/input/TextArea.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_email,
+		common_emailPlaceholder,
+		common_sending,
+		common_submit,
+		common_submitted,
+		onboarding_anotherIssue,
+		onboarding_emailNewsUpdates,
+		onboarding_emailOptional,
+		onboarding_feedbackError,
+		onboarding_feedbackPlaceholder,
+		onboarding_feedbackQuestion,
+		onboarding_feedbackThankYou
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		blocker: string;
@@ -65,11 +78,11 @@
 					message: feedbackText.trim()
 				});
 
-				pushSuccess(m.onboarding_feedbackThankYou());
+				pushSuccess(onboarding_feedbackThankYou());
 				hasSubmitted = true;
 			} catch (error) {
 				console.error('Failed to submit feedback:', error);
-				pushError(m.onboarding_feedbackError());
+				pushError(onboarding_feedbackError());
 			} finally {
 				isSubmitting = false;
 			}
@@ -89,10 +102,10 @@
 	<form.Field name="feedback">
 		{#snippet children(field)}
 			<TextArea
-				label={m.onboarding_feedbackQuestion()}
+				label={onboarding_feedbackQuestion()}
 				id="feedback"
 				{field}
-				placeholder={m.onboarding_feedbackPlaceholder()}
+				placeholder={onboarding_feedbackPlaceholder()}
 				rows={3}
 			/>
 		{/snippet}
@@ -106,18 +119,18 @@
 	>
 		{#snippet children(field)}
 			<TextInput
-				label={m.common_email()}
+				label={common_email()}
 				id="email"
 				{field}
-				placeholder={m.common_emailPlaceholder()}
-				helpText={m.onboarding_emailOptional()}
+				placeholder={common_emailPlaceholder()}
+				helpText={onboarding_emailOptional()}
 			/>
 		{/snippet}
 	</form.Field>
 
 	<form.Field name="subscribe">
 		{#snippet children(field)}
-			<Checkbox {field} id="subscribe" label={m.onboarding_emailNewsUpdates()} />
+			<Checkbox {field} id="subscribe" label={onboarding_emailNewsUpdates()} />
 		{/snippet}
 	</form.Field>
 
@@ -129,18 +142,18 @@
 					class="text-secondary hover:text-primary text-sm"
 					onclick={onOtherIssue}
 				>
-					{m.onboarding_anotherIssue()}
+					{onboarding_anotherIssue()}
 				</button>
 			{:else}
 				<div></div>
 			{/if}
 			<button type="button" class="btn-primary" disabled={!canSubmit} onclick={handleSubmit}>
 				{#if hasSubmitted}
-					{m.common_submitted()}
+					{common_submitted()}
 				{:else if isSubmitting}
-					{m.common_sending()}
+					{common_sending()}
 				{:else}
-					{m.common_submit()}
+					{common_submit()}
 				{/if}
 			</button>
 		</div>

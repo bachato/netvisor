@@ -11,7 +11,16 @@
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_ipAddress,
+		common_name,
+		common_placeholderInterface,
+		common_placeholderIpAddress,
+		hosts_interfaces_ipMustBeWithin,
+		hosts_interfaces_macAddress,
+		hosts_interfaces_macFormat,
+		hosts_interfaces_subnetInterface
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		iface: Interface;
@@ -46,7 +55,7 @@
 {#if subnet}
 	<div class="space-y-6">
 		<ConfigHeader
-			title={m.hosts_interfaces_subnetInterface({ name: subnet?.name ? subnet.name : subnet.cidr })}
+			title={hosts_interfaces_subnetInterface({ name: subnet?.name ? subnet.name : subnet.cidr })}
 			subtitle={subnet?.description}
 		/>
 
@@ -62,9 +71,9 @@
 			>
 				{#snippet children(field: AnyFieldApi)}
 					<TextInput
-						label={m.common_name()}
+						label={common_name()}
 						id="interface_{iface.id}"
-						placeholder={m.common_placeholderInterface()}
+						placeholder={common_placeholderInterface()}
 						{field}
 					/>
 				{/snippet}
@@ -84,11 +93,11 @@
 			>
 				{#snippet children(field: AnyFieldApi)}
 					<TextInput
-						label={m.common_ipAddress()}
+						label={common_ipAddress()}
 						id="interface_ip_{iface.id}"
-						placeholder={m.common_placeholderIpAddress()}
+						placeholder={common_placeholderIpAddress()}
 						required={true}
-						helpText={m.hosts_interfaces_ipMustBeWithin({ cidr: subnet.cidr })}
+						helpText={hosts_interfaces_ipMustBeWithin({ cidr: subnet.cidr })}
 						{field}
 					/>
 				{/snippet}
@@ -105,10 +114,10 @@
 			>
 				{#snippet children(field: AnyFieldApi)}
 					<TextInput
-						label={m.hosts_interfaces_macAddress()}
+						label={hosts_interfaces_macAddress()}
 						id="interface_mac_{iface.id}"
 						placeholder="00:1B:44:11:3A:B7"
-						helpText={m.hosts_interfaces_macFormat()}
+						helpText={hosts_interfaces_macFormat()}
 						{field}
 					/>
 				{/snippet}

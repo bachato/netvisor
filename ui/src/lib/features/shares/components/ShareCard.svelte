@@ -6,7 +6,23 @@
 	import { useTopologiesQuery } from '$lib/features/topology/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { entities } from '$lib/shared/stores/metadata';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_copied,
+		common_delete,
+		common_disabled,
+		common_edit,
+		common_enabled,
+		common_expires,
+		common_network,
+		common_never,
+		common_open,
+		common_status,
+		common_topology,
+		common_unknownNetwork,
+		shares_allowedDomains,
+		shares_copyUrl,
+		shares_unknownTopology
+	} from '$lib/paraglide/messages';
 
 	let {
 		share,
@@ -47,7 +63,7 @@
 	}
 
 	function formatExpiry(date: string | null): string {
-		if (!date) return m.common_never();
+		if (!date) return common_never();
 		const d = new Date(date);
 		return d.toLocaleDateString();
 	}
@@ -62,7 +78,7 @@
 			Icon: Link,
 			fields: [
 				{
-					label: m.common_topology(),
+					label: common_topology(),
 					value: topology
 						? [
 								{
@@ -71,10 +87,10 @@
 									color: entities.getColorHelper('Topology').color
 								}
 							]
-						: m.shares_unknownTopology()
+						: shares_unknownTopology()
 				},
 				{
-					label: m.common_network(),
+					label: common_network(),
 					value: network
 						? [
 								{
@@ -83,25 +99,25 @@
 									color: entities.getColorHelper('Network').color
 								}
 							]
-						: m.common_unknownNetwork()
+						: common_unknownNetwork()
 				},
 				{
-					label: m.common_status(),
-					value: share.is_enabled ? m.common_enabled() : m.common_disabled()
+					label: common_status(),
+					value: share.is_enabled ? common_enabled() : common_disabled()
 				},
 				{
-					label: m.common_expires(),
+					label: common_expires(),
 					value: formatExpiry(share.expires_at)
 				},
 				...(share.allowed_domains && share.allowed_domains.length > 0
-					? [{ label: m.shares_allowedDomains(), value: share.allowed_domains.join(', ') }]
+					? [{ label: shares_allowedDomains(), value: share.allowed_domains.join(', ') }]
 					: [])
 			],
 			actions: [
 				...(onDelete
 					? [
 							{
-								label: m.common_delete(),
+								label: common_delete(),
 								icon: Trash2,
 								class: 'btn-icon-danger',
 								onClick: () => onDelete(share)
@@ -109,17 +125,17 @@
 						]
 					: []),
 				{
-					label: copied ? m.common_copied() : m.shares_copyUrl(),
+					label: copied ? common_copied() : shares_copyUrl(),
 					icon: copied ? Check : Copy,
 					class: copied ? 'text-green-400' : '',
 					onClick: copyUrl
 				},
 				{
-					label: m.common_open(),
+					label: common_open(),
 					icon: ExternalLink,
 					onClick: openUrl
 				},
-				...(onEdit ? [{ label: m.common_edit(), icon: Edit, onClick: () => onEdit(share) }] : [])
+				...(onEdit ? [{ label: common_edit(), icon: Edit, onClick: () => onEdit(share) }] : [])
 			]
 		};
 	});

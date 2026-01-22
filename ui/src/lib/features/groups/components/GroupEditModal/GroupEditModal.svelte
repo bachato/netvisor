@@ -23,7 +23,28 @@
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_cancel,
+		common_create,
+		common_delete,
+		common_deleting,
+		common_description,
+		common_editName,
+		common_saving,
+		common_update,
+		groups_createGroup,
+		groups_descriptionPlaceholder,
+		groups_edgeAppearance,
+		groups_groupDetails,
+		groups_groupName,
+		groups_groupNamePlaceholder,
+		groups_groupType,
+		groups_loadingServices,
+		groups_noBindingsYet,
+		groups_selectBinding,
+		groups_serviceBindings,
+		groups_serviceBindingsHelp
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		group?: Group | null;
@@ -81,9 +102,9 @@
 
 	let isEditing = $derived(group !== null);
 	let title = $derived(
-		isEditing ? m.common_editName({ name: group?.name ?? '' }) : m.groups_createGroup()
+		isEditing ? common_editName({ name: group?.name ?? '' }) : groups_createGroup()
 	);
-	let saveLabel = $derived(isEditing ? m.common_update() : m.common_create());
+	let saveLabel = $derived(isEditing ? common_update() : common_create());
 
 	function getDefaultValues(): Group {
 		return group ? { ...group } : createEmptyGroupFormData(defaultNetworkId);
@@ -223,7 +244,7 @@
 			<div class="space-y-8">
 				<!-- Group Details Section -->
 				<div class="space-y-4">
-					<h3 class="text-primary text-lg font-medium">{m.groups_groupDetails()}</h3>
+					<h3 class="text-primary text-lg font-medium">{groups_groupDetails()}</h3>
 
 					<form.Field
 						name="name"
@@ -233,10 +254,10 @@
 					>
 						{#snippet children(field)}
 							<TextInput
-								label={m.groups_groupName()}
+								label={groups_groupName()}
 								id="name"
 								{field}
-								placeholder={m.groups_groupNamePlaceholder()}
+								placeholder={groups_groupNamePlaceholder()}
 								required
 							/>
 						{/snippet}
@@ -257,7 +278,7 @@
 					<form.Field name="group_type">
 						{#snippet children(field)}
 							<SelectInput
-								label={m.groups_groupType()}
+								label={groups_groupType()}
 								id="group_type"
 								{field}
 								options={groupTypeOptions}
@@ -274,10 +295,10 @@
 					>
 						{#snippet children(field)}
 							<TextArea
-								label={m.common_description()}
+								label={common_description()}
 								id="description"
 								{field}
-								placeholder={m.groups_descriptionPlaceholder()}
+								placeholder={groups_descriptionPlaceholder()}
 							/>
 						{/snippet}
 					</form.Field>
@@ -297,12 +318,10 @@
 					<div class="border-t border-gray-700 pt-6">
 						<div class="rounded-lg bg-gray-800/50 p-4">
 							<ListManager
-								label={m.groups_serviceBindings()}
-								helpText={m.groups_serviceBindingsHelp()}
-								placeholder={isServicesLoading
-									? m.groups_loadingServices()
-									: m.groups_selectBinding()}
-								emptyMessage={m.groups_noBindingsYet()}
+								label={groups_serviceBindings()}
+								helpText={groups_serviceBindingsHelp()}
+								placeholder={isServicesLoading ? groups_loadingServices() : groups_selectBinding()}
+								emptyMessage={groups_noBindingsYet()}
 								allowReorder={true}
 								allowItemEdit={() => false}
 								showSearch={true}
@@ -324,7 +343,7 @@
 				<!-- Edge Style Section -->
 				<div class="space-y-4">
 					<div class="border-t border-gray-700 pt-6">
-						<h3 class="text-primary mb-4 text-lg font-medium">{m.groups_edgeAppearance()}</h3>
+						<h3 class="text-primary mb-4 text-lg font-medium">{groups_edgeAppearance()}</h3>
 						<div class="rounded-lg bg-gray-800/50 p-4">
 							<EdgeStyleForm formData={edgeStyleFormData} />
 						</div>
@@ -348,7 +367,7 @@
 							onclick={handleDelete}
 							class="btn-danger"
 						>
-							{deleting ? m.common_deleting() : m.common_delete()}
+							{deleting ? common_deleting() : common_delete()}
 						</button>
 					{/if}
 				</div>
@@ -359,10 +378,10 @@
 						onclick={onClose}
 						class="btn-secondary"
 					>
-						{m.common_cancel()}
+						{common_cancel()}
 					</button>
 					<button type="submit" disabled={loading || deleting} class="btn-primary">
-						{loading ? m.common_saving() : saveLabel}
+						{loading ? common_saving() : saveLabel}
 					</button>
 				</div>
 			</div>

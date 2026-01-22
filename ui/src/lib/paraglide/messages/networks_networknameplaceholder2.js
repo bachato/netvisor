@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer } from '../runtime.js';
+import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer, experimentalStaticLocale } from '../runtime.js';
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_networks_networknameplaceholder2 = /** @type {(inputs: {}) => LocalizedString} */ () => {
@@ -23,7 +23,7 @@ const networks_networknameplaceholder2 = (inputs = {}, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.networks_networknameplaceholder2(inputs) 
 	}
-	const locale = options.locale ?? getLocale()
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	trackMessageCall("networks_networknameplaceholder2", locale)
 	return en_networks_networknameplaceholder2(inputs)
 };

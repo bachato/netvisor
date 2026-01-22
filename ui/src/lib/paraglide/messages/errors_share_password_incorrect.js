@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer } from '../runtime.js';
+import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer, experimentalStaticLocale } from '../runtime.js';
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_errors_share_password_incorrect = /** @type {(inputs: {}) => LocalizedString} */ () => {
@@ -23,7 +23,7 @@ export const errors_share_password_incorrect = (inputs = {}, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.errors_share_password_incorrect(inputs) 
 	}
-	const locale = options.locale ?? getLocale()
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	trackMessageCall("errors_share_password_incorrect", locale)
 	return en_errors_share_password_incorrect(inputs)
 };

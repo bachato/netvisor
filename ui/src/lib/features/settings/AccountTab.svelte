@@ -20,7 +20,38 @@
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import InfoRow from '$lib/shared/components/data/InfoRow.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_back,
+		common_close,
+		common_email,
+		common_emailAndPassword,
+		common_link,
+		common_logout,
+		common_organization,
+		common_permissions,
+		common_redirecting,
+		common_saveChanges,
+		common_saving,
+		common_unlink,
+		common_update,
+		common_userId,
+		settings_account_authMethods,
+		settings_account_credentialsUpdated,
+		settings_account_enterEmail,
+		settings_account_failedToUnlink,
+		settings_account_failedToUpdate,
+		settings_account_linkedOn,
+		settings_account_loadingUser,
+		settings_account_noChanges,
+		settings_account_notLinked,
+		settings_account_oidcLinkHelp,
+		settings_account_oidcUnlinked,
+		settings_account_signOut,
+		settings_account_unlinkFirst,
+		settings_account_updateCredentials,
+		settings_account_updateEmailPassword,
+		settings_account_userInfo
+	} from '$lib/paraglide/messages';
 
 	let {
 		subView = $bindable<'main' | 'credentials'>('main'),
@@ -65,7 +96,7 @@
 				}
 
 				if (Object.keys(updateRequest).length === 0) {
-					pushError(m.settings_account_noChanges());
+					pushError(settings_account_noChanges());
 					return;
 				}
 
@@ -75,10 +106,10 @@
 
 				if (data?.success && data.data) {
 					queryClient.setQueryData<User>(queryKeys.auth.currentUser(), data.data);
-					pushSuccess(m.settings_account_credentialsUpdated());
+					pushSuccess(settings_account_credentialsUpdated());
 					subView = 'main';
 				} else {
-					pushError(data?.error || m.settings_account_failedToUpdate());
+					pushError(data?.error || settings_account_failedToUpdate());
 				}
 			} finally {
 				savingCredentials = false;
@@ -110,9 +141,9 @@
 
 		if (data?.success && data.data) {
 			queryClient.setQueryData<User>(queryKeys.auth.currentUser(), data.data);
-			pushSuccess(m.settings_account_oidcUnlinked());
+			pushSuccess(settings_account_oidcUnlinked());
 		} else {
-			pushError(data?.error || m.settings_account_failedToUnlink());
+			pushError(data?.error || settings_account_failedToUnlink());
 		}
 	}
 
@@ -141,7 +172,7 @@
 
 	let hasLinkedOidc = $derived(!!user?.oidc_provider);
 	let showSave = $derived(subView === 'credentials');
-	let cancelLabel = $derived(subView === 'main' ? m.common_close() : m.common_back());
+	let cancelLabel = $derived(subView === 'main' ? common_close() : common_back());
 </script>
 
 <form
@@ -157,17 +188,17 @@
 			{#if user}
 				<div class="space-y-6">
 					<!-- User Info -->
-					<InfoCard title={m.settings_account_userInfo()}>
-						<InfoRow label={m.common_organization()}>{organization?.name}</InfoRow>
-						<InfoRow label={m.common_email()}>{user.email}</InfoRow>
-						<InfoRow label={m.common_permissions()} mono={true}>{user.permissions}</InfoRow>
-						<InfoRow label={m.common_userId()} mono={true}>{user.id}</InfoRow>
+					<InfoCard title={settings_account_userInfo()}>
+						<InfoRow label={common_organization()}>{organization?.name}</InfoRow>
+						<InfoRow label={common_email()}>{user.email}</InfoRow>
+						<InfoRow label={common_permissions()} mono={true}>{user.permissions}</InfoRow>
+						<InfoRow label={common_userId()} mono={true}>{user.id}</InfoRow>
 					</InfoCard>
 
 					<!-- Authentication Methods -->
 					<div>
 						<h3 class="text-primary mb-3 text-sm font-semibold">
-							{m.settings_account_authMethods()}
+							{settings_account_authMethods()}
 						</h3>
 						<div class="space-y-3">
 							<!-- Email & Password -->
@@ -177,10 +208,10 @@
 										<Key class="text-secondary h-5 w-5 flex-shrink-0" />
 										<div>
 											<p class="text-primary text-sm font-medium">
-												{m.common_emailAndPassword()}
+												{common_emailAndPassword()}
 											</p>
 											<p class="text-secondary text-xs">
-												{m.settings_account_updateEmailPassword()}
+												{settings_account_updateEmailPassword()}
 											</p>
 										</div>
 									</div>
@@ -192,7 +223,7 @@
 										}}
 										class="btn-primary"
 									>
-										{m.common_update()}
+										{common_update()}
 									</button>
 								</div>
 							</InfoCard>
@@ -201,7 +232,7 @@
 							{#if hasOidcProviders}
 								<div class="space-y-3">
 									<p class="text-secondary text-xs">
-										{m.settings_account_oidcLinkHelp()}
+										{settings_account_oidcLinkHelp()}
 									</p>
 
 									{#each oidcProviders as provider (provider.slug)}
@@ -219,18 +250,18 @@
 														<p class="text-primary text-sm font-medium">{provider.name}</p>
 														{#if isLinked}
 															<p class="text-secondary text-xs">
-																{m.settings_account_linkedOn({
+																{settings_account_linkedOn({
 																	date: new Date(user.oidc_linked_at || '').toLocaleDateString()
 																})}
 															</p>
 														{:else if isDisabled}
 															<p class="text-secondary text-xs">
-																{m.settings_account_unlinkFirst({
+																{settings_account_unlinkFirst({
 																	provider: linkedProvider?.name || ''
 																})}
 															</p>
 														{:else}
-															<p class="text-secondary text-xs">{m.settings_account_notLinked()}</p>
+															<p class="text-secondary text-xs">{settings_account_notLinked()}</p>
 														{/if}
 													</div>
 												</div>
@@ -240,7 +271,7 @@
 														onclick={() => unlinkOidcAccount(provider.slug)}
 														class="btn-danger"
 													>
-														{m.common_unlink()}
+														{common_unlink()}
 													</button>
 												{:else if !hasLinkedOidc}
 													<button
@@ -252,12 +283,12 @@
 														class={isDisabled ? 'btn-disabled' : 'btn-primary'}
 													>
 														{linkingProviderSlug == provider.slug
-															? m.common_redirecting()
-															: m.common_link()}
+															? common_redirecting()
+															: common_link()}
 													</button>
 												{:else}
 													<button type="button" disabled={isDisabled} class="btn-primary">
-														{m.common_link()}
+														{common_link()}
 													</button>
 												{/if}
 											</div>
@@ -273,20 +304,20 @@
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-4">
 								<LogOut class="text-secondary h-5 w-5" />
-								<span class="text-primary text-sm">{m.settings_account_signOut()}</span>
+								<span class="text-primary text-sm">{settings_account_signOut()}</span>
 							</div>
 							<button type="button" onclick={handleLogout} class="btn-secondary">
-								{m.common_logout()}
+								{common_logout()}
 							</button>
 						</div>
 					</InfoCard>
 				</div>
 			{:else}
-				<div class="text-secondary py-8 text-center">{m.settings_account_loadingUser()}</div>
+				<div class="text-secondary py-8 text-center">{settings_account_loadingUser()}</div>
 			{/if}
 		{:else if subView === 'credentials'}
 			<div class="space-y-2">
-				<p class="text-secondary mb-2 text-sm">{m.settings_account_updateCredentials()}</p>
+				<p class="text-secondary mb-2 text-sm">{settings_account_updateCredentials()}</p>
 				<div class="space-y-6">
 					<form.Field
 						name="email"
@@ -296,10 +327,10 @@
 					>
 						{#snippet children(field)}
 							<TextInput
-								label={m.common_email()}
+								label={common_email()}
 								id="email"
 								{field}
-								placeholder={m.settings_account_enterEmail()}
+								placeholder={settings_account_enterEmail()}
 							/>
 						{/snippet}
 					</form.Field>
@@ -337,7 +368,7 @@
 			</button>
 			{#if showSave}
 				<button type="submit" disabled={savingCredentials} class="btn-primary">
-					{savingCredentials ? m.common_saving() : m.common_saveChanges()}
+					{savingCredentials ? common_saving() : common_saveChanges()}
 				</button>
 			{/if}
 		</div>

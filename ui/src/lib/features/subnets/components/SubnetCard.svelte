@@ -5,7 +5,14 @@
 	import { isContainerSubnet } from '../queries';
 	import type { Subnet } from '../types/base';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_delete,
+		common_description,
+		common_edit,
+		common_noTypeSpecified,
+		common_tags,
+		subnets_subnetType
+	} from '$lib/paraglide/messages';
 
 	let {
 		subnet,
@@ -31,11 +38,11 @@
 		Icon: subnetTypes.getIconComponent(subnet.subnet_type),
 		fields: [
 			{
-				label: m.common_description(),
+				label: common_description(),
 				value: subnet.description
 			},
 			{
-				label: m.subnets_subnetType(),
+				label: subnets_subnetType(),
 				value: [
 					{
 						id: 'type',
@@ -43,16 +50,16 @@
 						color: subnetTypes.getColorString(subnet.subnet_type)
 					}
 				],
-				emptyText: m.common_noTypeSpecified()
+				emptyText: common_noTypeSpecified()
 			},
-			{ label: m.common_tags(), snippet: tagsSnippet }
+			{ label: common_tags(), snippet: tagsSnippet }
 		],
 
 		actions: [
 			...(onDelete
 				? [
 						{
-							label: m.common_delete(),
+							label: common_delete(),
 							icon: Trash2,
 							class: 'btn-icon-danger',
 							onClick: () => onDelete(subnet)
@@ -62,7 +69,7 @@
 			...(onEdit
 				? [
 						{
-							label: m.common_edit(),
+							label: common_edit(),
 							icon: Edit,
 							onClick: () => onEdit(subnet)
 						}
@@ -74,7 +81,7 @@
 
 {#snippet tagsSnippet()}
 	<div class="flex items-center gap-2">
-		<span class="text-secondary text-sm">{m.common_tags()}:</span>
+		<span class="text-secondary text-sm">{common_tags()}:</span>
 		<TagPickerInline selectedTagIds={subnet.tags} entityId={subnet.id} entityType="Subnet" />
 	</div>
 {/snippet}

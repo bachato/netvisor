@@ -13,7 +13,26 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { fieldDefs } from '../config';
 	import type { Daemon } from '../types/base';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_apiKey,
+		common_generateKey,
+		common_pressGenerateKey,
+		daemons_advancedConfiguration,
+		daemons_apiKeyHelp,
+		daemons_fixValidationErrors,
+		daemons_fixValidationErrorsBody,
+		daemons_generateNewKey,
+		daemons_generateNewKeyHelp,
+		daemons_linuxOnly,
+		daemons_option1,
+		daemons_option1Text,
+		daemons_option2,
+		daemons_option2Text,
+		daemons_pasteApiKey,
+		daemons_useExistingKey,
+		daemons_useExistingKeyHelp,
+		daemons_useKey
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		daemon?: Daemon | null;
@@ -349,7 +368,7 @@
 				{:else}
 					<ChevronRight class="h-4 w-4" />
 				{/if}
-				{m.daemons_advancedConfiguration()}
+				{daemons_advancedConfiguration()}
 			</button>
 
 			{#if advancedExpanded}
@@ -434,19 +453,19 @@
 			<form.Field name="keySource">
 				{#snippet children(field)}
 					<RadioGroup
-						label={m.common_apiKey()}
+						label={common_apiKey()}
 						id="key-source"
 						{field}
 						options={[
 							{
 								value: 'generate',
-								label: m.daemons_generateNewKey(),
-								helpText: m.daemons_generateNewKeyHelp()
+								label: daemons_generateNewKey(),
+								helpText: daemons_generateNewKeyHelp()
 							},
 							{
 								value: 'existing',
-								label: m.daemons_useExistingKey(),
-								helpText: m.daemons_useExistingKeyHelp()
+								label: daemons_useExistingKey(),
+								helpText: daemons_useExistingKeyHelp()
 							}
 						]}
 						disabled={keySet}
@@ -464,20 +483,20 @@
 						onclick={() => onGenerateKey?.()}
 					>
 						<RotateCcwKey />
-						<span>{m.common_generateKey()}</span>
+						<span>{common_generateKey()}</span>
 					</button>
 
 					<div class="flex-1">
 						<CodeContainer
 							language="bash"
 							expandable={false}
-							code={apiKey ? apiKey : m.common_pressGenerateKey()}
+							code={apiKey ? apiKey : common_pressGenerateKey()}
 						/>
 					</div>
 				</div>
 				{#if !apiKey}
 					<div class="text-tertiary mt-1 text-xs">
-						{m.daemons_apiKeyHelp()}
+						{daemons_apiKeyHelp()}
 					</div>
 				{/if}
 			{:else}
@@ -490,7 +509,7 @@
 									label=""
 									{field}
 									id="existing-key-input"
-									placeholder={m.daemons_pasteApiKey()}
+									placeholder={daemons_pasteApiKey()}
 									disabled={keySet}
 								/>
 							</div>
@@ -500,7 +519,7 @@
 								type="button"
 								onclick={() => onUseExistingKey?.()}
 							>
-								<span>{m.daemons_useKey()}</span>
+								<span>{daemons_useKey()}</span>
 							</button>
 						</div>
 					{/snippet}
@@ -518,22 +537,22 @@
 	{#if apiKey}
 		{#if hasErrors}
 			<InlineWarning
-				title={m.daemons_fixValidationErrors()}
-				body={m.daemons_fixValidationErrorsBody()}
+				title={daemons_fixValidationErrors()}
+				body={daemons_fixValidationErrorsBody()}
 			/>
 		{:else}
 			<div class="space-y-4">
 				<div class="text-secondary">
-					<b>{m.daemons_option1()}</b>
-					{m.daemons_option1Text()}
+					<b>{daemons_option1()}</b>
+					{daemons_option1Text()}
 				</div>
 				<CodeContainer language="bash" expandable={false} code={installScript} />
 				<CodeContainer language="bash" expandable={false} code={runCommand} />
 
 				<div class="text-secondary">
-					<b>{m.daemons_option2()}</b>
-					{m.daemons_option2Text()}
-					<span class="text-tertiary">{m.daemons_linuxOnly()}</span>
+					<b>{daemons_option2()}</b>
+					{daemons_option2Text()}
+					<span class="text-tertiary">{daemons_linuxOnly()}</span>
 				</div>
 				<CodeContainer language="yaml" expandable={false} code={dockerCompose} />
 			</div>

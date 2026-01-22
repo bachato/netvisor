@@ -6,7 +6,12 @@
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { Host } from '$lib/features/hosts/types/base';
 	import { useServicesQuery } from '$lib/features/services/queries';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		hosts_virtualization_addVmHost,
+		hosts_virtualization_noVmsYet,
+		hosts_virtualization_virtualMachines,
+		hosts_virtualization_vmHelp
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		service: Service;
@@ -90,10 +95,10 @@
 
 <div class="space-y-6">
 	<ListManager
-		label={m.hosts_virtualization_virtualMachines()}
-		helpText={m.hosts_virtualization_vmHelp({ serviceName: serviceMetadata?.name ?? '' })}
-		placeholder={m.hosts_virtualization_addVmHost()}
-		emptyMessage={m.hosts_virtualization_noVmsYet()}
+		label={hosts_virtualization_virtualMachines()}
+		helpText={hosts_virtualization_vmHelp({ serviceName: serviceMetadata?.name ?? '' })}
+		placeholder={hosts_virtualization_addVmHost()}
+		emptyMessage={hosts_virtualization_noVmsYet()}
 		allowReorder={false}
 		allowDuplicates={false}
 		showSearch={true}

@@ -2,7 +2,22 @@
 	import posthog from 'posthog-js';
 	import { dev } from '$app/environment';
 	import { onMount } from 'svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_analytics,
+		common_close,
+		common_customize,
+		common_necessary,
+		cookies_acceptAll,
+		cookies_alwaysOn,
+		cookies_analyticsDesc,
+		cookies_necessaryDesc,
+		cookies_preferences,
+		cookies_preferencesDesc,
+		cookies_rejectAll,
+		cookies_savePreferences,
+		cookies_settings,
+		cookies_settingsDesc
+	} from '$lib/paraglide/messages';
 
 	const COOKIE_NAME = 'scanopy_gdpr';
 	const COOKIE_DOMAIN = dev ? '' : '.scanopy.net';
@@ -102,8 +117,8 @@
 			{#if showSettings}
 				<div class="settings-panel">
 					<div class="settings-header">
-						<h3 class="title">{m.cookies_preferences()}</h3>
-						<button class="close-btn" onclick={closeSettings} aria-label={m.common_close()}>
+						<h3 class="title">{cookies_preferences()}</h3>
+						<button class="close-btn" onclick={closeSettings} aria-label={common_close()}>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="20"
@@ -122,7 +137,7 @@
 					</div>
 					<p class="settings-description">
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted i18n content -->
-						{@html m.cookies_preferencesDesc()}
+						{@html cookies_preferencesDesc()}
 					</p>
 
 					<div class="cookie-options">
@@ -131,12 +146,12 @@
 								<label class="option-label">
 									<input type="checkbox" checked disabled />
 									<span class="checkbox disabled"></span>
-									<span class="option-title">{m.common_necessary()}</span>
+									<span class="option-title">{common_necessary()}</span>
 								</label>
-								<span class="always-on">{m.cookies_alwaysOn()}</span>
+								<span class="always-on">{cookies_alwaysOn()}</span>
 							</div>
 							<p class="option-description">
-								{m.cookies_necessaryDesc()}
+								{cookies_necessaryDesc()}
 							</p>
 						</div>
 
@@ -145,42 +160,42 @@
 								<label class="option-label">
 									<input type="checkbox" bind:checked={preferences.analytics} />
 									<span class="checkbox"></span>
-									<span class="option-title">{m.common_analytics()}</span>
+									<span class="option-title">{common_analytics()}</span>
 								</label>
 							</div>
 							<p class="option-description">
-								{m.cookies_analyticsDesc()}
+								{cookies_analyticsDesc()}
 							</p>
 						</div>
 					</div>
 
 					<div class="settings-buttons">
-						<button class="btn btn-secondary" onclick={rejectAll}>{m.cookies_rejectAll()}</button>
-						<button class="btn btn-secondary" onclick={acceptAll}>{m.cookies_acceptAll()}</button>
+						<button class="btn btn-secondary" onclick={rejectAll}>{cookies_rejectAll()}</button>
+						<button class="btn btn-secondary" onclick={acceptAll}>{cookies_acceptAll()}</button>
 						<button class="btn btn-primary" onclick={savePreferences}
-							>{m.cookies_savePreferences()}</button
+							>{cookies_savePreferences()}</button
 						>
 					</div>
 				</div>
 			{:else}
 				<div class="content">
 					<div class="text-content">
-						<h3 class="title">{m.cookies_settings()}</h3>
+						<h3 class="title">{cookies_settings()}</h3>
 						<p class="description">
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted i18n content -->
-							{@html m.cookies_settingsDesc()}
+							{@html cookies_settingsDesc()}
 						</p>
 					</div>
 					<div class="buttons">
-						<button class="btn btn-link" onclick={openSettings}>{m.common_customize()}</button>
-						<button class="btn btn-secondary" onclick={rejectAll}>{m.cookies_rejectAll()}</button>
-						<button class="btn btn-primary" onclick={acceptAll}>{m.cookies_acceptAll()}</button>
+						<button class="btn btn-link" onclick={openSettings}>{common_customize()}</button>
+						<button class="btn btn-secondary" onclick={rejectAll}>{cookies_rejectAll()}</button>
+						<button class="btn btn-primary" onclick={acceptAll}>{cookies_acceptAll()}</button>
 					</div>
 				</div>
 			{/if}
 		</div>
 	{:else if hasConsented}
-		<button class="toggle" onclick={openSettings} aria-label={m.cookies_settings()}>
+		<button class="toggle" onclick={openSettings} aria-label={cookies_settings()}>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				width="20"

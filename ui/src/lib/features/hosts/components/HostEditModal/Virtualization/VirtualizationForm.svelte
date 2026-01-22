@@ -15,7 +15,17 @@
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useServicesQuery } from '$lib/features/services/queries';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_noServiceSelected,
+		hosts_virtualization_emptyMessage,
+		hosts_virtualization_pleaseSave,
+		hosts_virtualization_pleaseSaveBody,
+		hosts_virtualization_selectToManage,
+		hosts_virtualization_servicesHelp,
+		hosts_virtualization_servicesLabel,
+		hosts_virtualization_unknownType,
+		hosts_virtualization_unknownTypeSubtitle
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		virtualizationManagerServices: Service[];
@@ -43,9 +53,9 @@
 	<ListConfigEditor items={virtualizationManagerServices} onChange={onServiceChange}>
 		<svelte:fragment slot="list" let:items let:onEdit let:highlightedIndex>
 			<ListManager
-				label={m.hosts_virtualization_servicesLabel()}
-				helpText={m.hosts_virtualization_servicesHelp()}
-				emptyMessage={m.hosts_virtualization_emptyMessage()}
+				label={hosts_virtualization_servicesLabel()}
+				helpText={hosts_virtualization_servicesHelp()}
+				emptyMessage={hosts_virtualization_emptyMessage()}
 				{items}
 				itemClickAction="edit"
 				allowItemRemove={() => false}
@@ -64,8 +74,8 @@
 			{#if selectedItem}
 				{#if selectedItem.id == uuidv4Sentinel}
 					<InlineWarning
-						title={m.hosts_virtualization_pleaseSave({ name: selectedItem.name })}
-						body={m.hosts_virtualization_pleaseSaveBody({ name: selectedItem.name })}
+						title={hosts_virtualization_pleaseSave({ name: selectedItem.name })}
+						body={hosts_virtualization_pleaseSaveBody({ name: selectedItem.name })}
 					/>
 				{:else}
 					{@const virtualizationType = serviceDefinitions.getMetadata(
@@ -83,15 +93,15 @@
 						/>
 					{:else}
 						<EntityConfigEmpty
-							title={m.hosts_virtualization_unknownType()}
-							subtitle={m.hosts_virtualization_unknownTypeSubtitle()}
+							title={hosts_virtualization_unknownType()}
+							subtitle={hosts_virtualization_unknownTypeSubtitle()}
 						/>
 					{/if}
 				{/if}
 			{:else}
 				<EntityConfigEmpty
-					title={m.common_noServiceSelected()}
-					subtitle={m.hosts_virtualization_selectToManage()}
+					title={common_noServiceSelected()}
+					subtitle={hosts_virtualization_selectToManage()}
 				/>
 			{/if}
 		</svelte:fragment>

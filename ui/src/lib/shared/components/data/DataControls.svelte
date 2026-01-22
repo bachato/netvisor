@@ -22,7 +22,42 @@
 	} from './types';
 	import { onMount, type Snippet } from 'svelte';
 	import Tag from './Tag.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_active,
+		common_all,
+		common_clearAll,
+		common_clearSelection,
+		common_deleteSelected,
+		common_deselectAll,
+		common_filters,
+		common_group,
+		common_groupBy,
+		common_groups,
+		common_item,
+		common_items,
+		common_itemsSelected,
+		common_nextPage,
+		common_noCommonTags,
+		common_noGrouping,
+		common_noItems,
+		common_noTagsAvailable,
+		common_noValuesAvailable,
+		common_none,
+		common_pageOf,
+		common_previousPage,
+		common_searchPlaceholder,
+		common_selectAll,
+		common_show,
+		common_showFalse,
+		common_showTrue,
+		common_showingRange,
+		common_showingTotal,
+		common_sortBy,
+		common_switchToCardView,
+		common_switchToListView,
+		common_tags,
+		common_ungrouped
+	} from '$lib/paraglide/messages';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 	import {
 		useTagsQuery,
@@ -448,19 +483,19 @@
 	// Group items by selected field
 	let groupedItems = $derived.by(() => {
 		if (!selectedGroupField) {
-			return new SvelteMap([[m.common_all(), processedItems]]);
+			return new SvelteMap([[common_all(), processedItems]]);
 		}
 
 		const field = fields.find((f) => getFieldKey(f) === selectedGroupField);
 		if (!field) {
-			return new SvelteMap([[m.common_all(), processedItems]]);
+			return new SvelteMap([[common_all(), processedItems]]);
 		}
 
 		const groups = new SvelteMap<string, T[]>();
 
 		processedItems.forEach((item) => {
 			const value = getFieldValue(item, field);
-			const groupKey = value !== null && value !== undefined ? String(value) : m.common_ungrouped();
+			const groupKey = value !== null && value !== undefined ? String(value) : common_ungrouped();
 
 			if (!groups.has(groupKey)) {
 				groups.set(groupKey, []);
@@ -864,9 +899,9 @@
 				class="btn-secondary flex items-center gap-2"
 			>
 				<SlidersHorizontal class="h-4 w-4" />
-				{m.common_filters()}
+				{common_filters()}
 				{#if hasActiveFilters}
-					<Tag label={m.common_active()} color="Blue" />
+					<Tag label={common_active()} color="Blue" />
 				{/if}
 			</button>
 		{/if}
@@ -876,14 +911,14 @@
 			<button
 				onclick={allSelected ? selectNone : selectAll}
 				class="btn-secondary flex items-center gap-2"
-				title={allSelected ? m.common_deselectAll() : m.common_selectAll()}
+				title={allSelected ? common_deselectAll() : common_selectAll()}
 			>
 				{#if allSelected}
 					<Square class="h-4 w-4" />
 				{:else}
 					<CheckSquare class="h-4 w-4" />
 				{/if}
-				{allSelected ? m.common_none() : m.common_all()}
+				{allSelected ? common_none() : common_all()}
 			</button>
 		{/if}
 
@@ -891,7 +926,7 @@
 		<button
 			onclick={() => (viewMode = viewMode === 'card' ? 'list' : 'card')}
 			class="btn-secondary flex items-center gap-2"
-			title={viewMode === 'card' ? m.common_switchToListView() : m.common_switchToCardView()}
+			title={viewMode === 'card' ? common_switchToListView() : common_switchToCardView()}
 		>
 			{#if viewMode === 'card'}
 				<List class="h-5.5 w-5.5" />
@@ -904,9 +939,9 @@
 		{#if groupableFields.length > 0}
 			<div class="relative">
 				<select bind:value={selectedGroupField} class="input-field appearance-none pr-8">
-					<option value={null}>{m.common_noGrouping()}</option>
+					<option value={null}>{common_noGrouping()}</option>
 					{#each groupableFields as field (getFieldKey(field))}
-						<option value={getFieldKey(field)}>{m.common_groupBy({ field: field.label })}</option>
+						<option value={getFieldKey(field)}>{common_groupBy({ field: field.label })}</option>
 					{/each}
 				</select>
 				{#if hasActiveGrouping}
@@ -930,7 +965,7 @@
 					}}
 					class="input-field appearance-none pr-8"
 				>
-					<option value={null}>{m.common_sortBy()}</option>
+					<option value={null}>{common_sortBy()}</option>
 					{#each sortableFields as field (getFieldKey(field))}
 						<option value={getFieldKey(field)}>{field.label}</option>
 					{/each}
@@ -955,7 +990,7 @@
 			<input
 				type="text"
 				bind:value={searchQuery}
-				placeholder={m.common_searchPlaceholder()}
+				placeholder={common_searchPlaceholder()}
 				class="input-field w-full pl-10 pr-10"
 			/>
 			{#if hasActiveSearch}
@@ -975,22 +1010,22 @@
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-4">
 					<span class="text-primary text-sm font-medium">
-						{m.common_itemsSelected({
+						{common_itemsSelected({
 							count: selectedIds.size,
-							itemLabel: selectedIds.size === 1 ? m.common_item() : m.common_items()
+							itemLabel: selectedIds.size === 1 ? common_item() : common_items()
 						})}
 					</span>
 					<button
 						onclick={selectNone}
 						class="text-tertiary hover:text-secondary text-sm transition-colors"
 					>
-						{m.common_clearSelection()}
+						{common_clearSelection()}
 					</button>
 				</div>
 				{#if allowBulkDelete && onBulkDelete}
 					<button onclick={handleBulkDelete} class="btn-danger flex items-center gap-2">
 						<Trash2 class="h-4 w-4" />
-						{m.common_deleteSelected()}
+						{common_deleteSelected()}
 					</button>
 				{/if}
 			</div>
@@ -998,14 +1033,14 @@
 			<!-- Bulk Tagging -->
 			{#if hasBulkTagging}
 				<div class="flex items-center gap-3 border-t border-gray-700 pt-3">
-					<span class="text-secondary text-sm">{m.common_tags()}:</span>
+					<span class="text-secondary text-sm">{common_tags()}:</span>
 					<TagPickerInline
 						selectedTagIds={commonTags}
 						onAdd={handleBulkTagAdd}
 						onRemove={handleBulkTagRemove}
 					/>
 					{#if commonTags.length === 0 && selectedIds.size > 1}
-						<span class="text-tertiary text-xs">{m.common_noCommonTags()}</span>
+						<span class="text-tertiary text-xs">{common_noCommonTags()}</span>
 					{/if}
 				</div>
 			{/if}
@@ -1016,13 +1051,13 @@
 	{#if showFilters}
 		<div class="card space-y-4 p-4">
 			<div class="flex items-center justify-between">
-				<h3 class="text-primary text-sm font-semibold">{m.common_filters()}</h3>
+				<h3 class="text-primary text-sm font-semibold">{common_filters()}</h3>
 				{#if hasActiveFilters}
 					<button
 						onclick={clearFilters}
 						class="text-tertiary hover:text-secondary text-xs transition-colors"
 					>
-						{m.common_clearAll()}
+						{common_clearAll()}
 					</button>
 				{/if}
 			</div>
@@ -1043,7 +1078,7 @@
 										onchange={() => toggleBooleanFilter(fieldKey, 'showTrue')}
 										class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
 									/>
-									<span class="text-secondary text-sm">{m.common_showTrue()}</span>
+									<span class="text-secondary text-sm">{common_showTrue()}</span>
 								</label>
 								<label class="flex items-center gap-2">
 									<input
@@ -1052,7 +1087,7 @@
 										onchange={() => toggleBooleanFilter(fieldKey, 'showFalse')}
 										class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
 									/>
-									<span class="text-secondary text-sm">{m.common_showFalse()}</span>
+									<span class="text-secondary text-sm">{common_showFalse()}</span>
 								</label>
 							</div>
 						{:else if fieldKey === 'tags'}
@@ -1062,7 +1097,7 @@
 								class="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto rounded border border-gray-600 bg-gray-800 p-2"
 							>
 								{#if allTags.length === 0}
-									<p class="text-tertiary text-xs">{m.common_noTagsAvailable()}</p>
+									<p class="text-tertiary text-xs">{common_noTagsAvailable()}</p>
 								{:else}
 									{#each allTags as tag (tag.id)}
 										{@const isSelected = filter?.values.has(tag.id)}
@@ -1084,7 +1119,7 @@
 								class="max-h-40 space-y-1 overflow-y-auto rounded border border-gray-600 bg-gray-800 p-2"
 							>
 								{#if uniqueValues.length === 0}
-									<p class="text-tertiary text-xs">{m.common_noValuesAvailable()}</p>
+									<p class="text-tertiary text-xs">{common_noValuesAvailable()}</p>
 								{:else}
 									{#each uniqueValues as value (value)}
 										<label class="flex items-center gap-2">
@@ -1110,19 +1145,19 @@
 	<div class="text-tertiary flex items-center justify-between text-sm">
 		<span>
 			{#if totalCount === 0}
-				{m.common_noItems()}
+				{common_noItems()}
 			{:else if totalPages > 1}
-				{m.common_showingRange({
+				{common_showingRange({
 					start: showingStart,
 					end: showingEnd,
 					total: totalCount,
-					itemLabel: totalCount === 1 ? m.common_item() : m.common_items()
+					itemLabel: totalCount === 1 ? common_item() : common_items()
 				})}
 			{:else}
-				{m.common_showingTotal({
+				{common_showingTotal({
 					count: totalCount,
 					total: items.length,
-					itemLabel: items.length === 1 ? m.common_item() : m.common_items()
+					itemLabel: items.length === 1 ? common_item() : common_items()
 				})}
 			{/if}
 		</span>
@@ -1130,13 +1165,13 @@
 			{#if hasActiveGrouping}
 				<span>
 					{groupedItems.size}
-					{groupedItems.size === 1 ? m.common_group() : m.common_groups()}
+					{groupedItems.size === 1 ? common_group() : common_groups()}
 				</span>
 			{/if}
 			<!-- Page size selector (only show when there are more than 20 items) -->
 			{#if totalCount > 20}
 				<div class="flex items-center gap-2">
-					<span class="text-tertiary text-sm">{m.common_show()}</span>
+					<span class="text-tertiary text-sm">{common_show()}</span>
 					<select
 						value={pageSize}
 						onchange={(e) =>
@@ -1155,18 +1190,18 @@
 						onclick={goToPrevPage}
 						disabled={!canGoPrev}
 						class="btn-secondary p-1 disabled:cursor-not-allowed disabled:opacity-50"
-						title={m.common_previousPage()}
+						title={common_previousPage()}
 					>
 						<ChevronLeft class="h-5.5 w-5.5" />
 					</button>
 					<span class="text-secondary min-w-[80px] text-center">
-						{m.common_pageOf({ current: effectiveCurrentPage, total: totalPages })}
+						{common_pageOf({ current: effectiveCurrentPage, total: totalPages })}
 					</span>
 					<button
 						onclick={goToNextPage}
 						disabled={!canGoNext}
 						class="btn-secondary p-1 disabled:cursor-not-allowed disabled:opacity-50"
-						title={m.common_nextPage()}
+						title={common_nextPage()}
 					>
 						<ChevronRight class="h-5.5 w-5.5" />
 					</button>

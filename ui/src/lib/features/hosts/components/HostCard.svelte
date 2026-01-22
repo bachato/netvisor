@@ -9,7 +9,22 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_consolidate,
+		common_containers,
+		common_delete,
+		common_description,
+		common_edit,
+		common_hide,
+		common_interfaces,
+		common_services,
+		common_tags,
+		hosts_noContainers,
+		hosts_noInterfaces,
+		hosts_noServicesAssigned,
+		hosts_unknownService,
+		hosts_vmManagedBy
+	} from '$lib/paraglide/messages';
 
 	// Queries
 	const servicesQuery = useServicesQuery();
@@ -87,8 +102,8 @@
 			title: host.name,
 			...(host.virtualization !== null && virtualizationService
 				? {
-						subtitle: m.hosts_vmManagedBy({
-							serviceName: virtualizationService.name || m.hosts_unknownService()
+						subtitle: hosts_vmManagedBy({
+							serviceName: virtualizationService.name || hosts_unknownService()
 						})
 					}
 				: {}),
@@ -100,11 +115,11 @@
 					: entities.getIconComponent('Host'),
 			fields: [
 				{
-					label: m.common_description(),
+					label: common_description(),
 					value: host.description
 				},
 				{
-					label: m.common_services(),
+					label: common_services(),
 					value: hostServices
 						.filter((sv) => !containerIds.includes(sv.id))
 						.map((sv) => {
@@ -114,10 +129,10 @@
 								color: entities.getColorHelper('Service').color
 							};
 						}),
-					emptyText: m.hosts_noServicesAssigned()
+					emptyText: hosts_noServicesAssigned()
 				},
 				{
-					label: m.common_containers(),
+					label: common_containers(),
 					value: containers
 						.map((c) => {
 							return {
@@ -127,10 +142,10 @@
 							};
 						})
 						.sort((a) => (containerIds.includes(a.id) ? 1 : -1)),
-					emptyText: m.hosts_noContainers()
+					emptyText: hosts_noContainers()
 				},
 				{
-					label: m.common_interfaces(),
+					label: common_interfaces(),
 					value: hostInterfaces.map((i) => {
 						return {
 							id: i.id,
@@ -138,15 +153,15 @@
 							color: entities.getColorHelper('Interface').color
 						};
 					}),
-					emptyText: m.hosts_noInterfaces()
+					emptyText: hosts_noInterfaces()
 				},
-				{ label: m.common_tags(), snippet: tagsSnippet }
+				{ label: common_tags(), snippet: tagsSnippet }
 			],
 			actions: [
 				...(onDelete
 					? [
 							{
-								label: m.common_delete(),
+								label: common_delete(),
 								icon: Trash2,
 								class: 'btn-icon-danger',
 								onClick: () => onDelete(host),
@@ -155,19 +170,19 @@
 						]
 					: []),
 				...(onConsolidate
-					? [{ label: m.common_consolidate(), icon: Replace, onClick: () => onConsolidate(host) }]
+					? [{ label: common_consolidate(), icon: Replace, onClick: () => onConsolidate(host) }]
 					: []),
 				...(onHide
 					? [
 							{
-								label: m.common_hide(),
+								label: common_hide(),
 								icon: Eye,
 								class: host.hidden ? 'text-blue-400' : '',
 								onClick: () => onHide(host)
 							}
 						]
 					: []),
-				...(onEdit ? [{ label: m.common_edit(), icon: Edit, onClick: () => onEdit(host) }] : [])
+				...(onEdit ? [{ label: common_edit(), icon: Edit, onClick: () => onEdit(host) }] : [])
 			]
 		};
 	});

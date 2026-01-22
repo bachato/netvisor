@@ -18,7 +18,20 @@
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_create,
+		common_created,
+		common_daemons,
+		common_name,
+		common_network,
+		common_tags,
+		common_unknownNetwork,
+		common_updated,
+		daemons_confirmBulkDelete,
+		daemons_confirmDelete,
+		daemons_lastSeen,
+		daemons_noDaemonsYet
+	} from '$lib/paraglide/messages';
 
 	type DaemonOrderField = components['schemas']['DaemonOrderField'];
 
@@ -45,7 +58,7 @@
 	let daemon = $state<Daemon | null>(null);
 
 	function handleDeleteDaemon(daemon: Daemon) {
-		if (confirm(m.daemons_confirmDelete({ name: daemon.name }))) {
+		if (confirm(daemons_confirmDelete({ name: daemon.name }))) {
 			deleteDaemonMutation.mutate(daemon.id);
 		}
 	}
@@ -61,7 +74,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.daemons_confirmBulkDelete({ count: ids.length }))) {
+		if (confirm(daemons_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteDaemonsMutation.mutateAsync(ids);
 		}
 	}
@@ -75,23 +88,23 @@
 	let daemonFields = $derived(
 		defineFields<Daemon, DaemonOrderField>(
 			{
-				name: { label: m.common_name(), type: 'string', searchable: true },
+				name: { label: common_name(), type: 'string', searchable: true },
 				network_id: {
-					label: m.common_network(),
+					label: common_network(),
 					type: 'string',
 					filterable: true,
 					groupable: true,
 					getValue: (item) =>
-						networksData.find((n) => n.id == item.network_id)?.name || m.common_unknownNetwork()
+						networksData.find((n) => n.id == item.network_id)?.name || common_unknownNetwork()
 				},
-				last_seen: { label: m.daemons_lastSeen(), type: 'date' },
-				created_at: { label: m.common_created(), type: 'date' },
-				updated_at: { label: m.common_updated(), type: 'date' }
+				last_seen: { label: daemons_lastSeen(), type: 'date' },
+				created_at: { label: common_created(), type: 'date' },
+				updated_at: { label: common_updated(), type: 'date' }
 			},
 			[
 				{
 					key: 'tags',
-					label: m.common_tags(),
+					label: common_tags(),
 					type: 'array',
 					searchable: true,
 					filterable: true,
@@ -107,11 +120,11 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title={m.common_daemons()}>
+	<TabHeader title={common_daemons()}>
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateDaemon}
-					><Plus class="h-5 w-5" />{m.common_create()}</button
+					><Plus class="h-5 w-5" />{common_create()}</button
 				>
 			{/if}
 		</svelte:fragment>
@@ -123,10 +136,10 @@
 	{:else if daemonsData.length === 0}
 		<!-- Empty state -->
 		<EmptyState
-			title={m.daemons_noDaemonsYet()}
+			title={daemons_noDaemonsYet()}
 			subtitle=""
 			onClick={handleCreateDaemon}
-			cta={m.common_create()}
+			cta={common_create()}
 		/>
 	{:else}
 		<DataControls

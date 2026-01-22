@@ -20,7 +20,20 @@
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
 	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
 	import { TopologyDisplay } from '$lib/shared/components/forms/selection/display/TopologyDisplay.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_cancel,
+		common_editName,
+		common_name,
+		common_parent,
+		common_save,
+		common_saving,
+		topology_branchFromExisting,
+		topology_createTopology,
+		topology_creationMode,
+		topology_namePlaceholder,
+		topology_selectParent,
+		topology_startFresh
+	} from '$lib/paraglide/messages';
 
 	// TanStack Query hooks
 	const networksQuery = useNetworksQuery();
@@ -46,7 +59,7 @@
 
 	let isEditing = $derived(topo != null);
 	let title = $derived(
-		isEditing ? m.common_editName({ name: topo?.name ?? '' }) : m.topology_createTopology()
+		isEditing ? common_editName({ name: topo?.name ?? '' }) : topology_createTopology()
 	);
 
 	let loading = $state(false);
@@ -155,8 +168,8 @@
 
 	// Creation mode options
 	const creationModeOptions = [
-		{ value: 'branch', label: m.topology_branchFromExisting() },
-		{ value: 'fresh', label: m.topology_startFresh() }
+		{ value: 'branch', label: topology_branchFromExisting() },
+		{ value: 'fresh', label: topology_startFresh() }
 	];
 
 	// Available topologies for parent selection (exclude current and filter by network)
@@ -199,7 +212,7 @@
 					<form.Field name="creation_mode">
 						{#snippet children(field)}
 							<RadioGroup
-								label={m.topology_creationMode()}
+								label={topology_creationMode()}
 								id="creation_mode"
 								{field}
 								options={creationModeOptions}
@@ -214,7 +227,7 @@
 						{#snippet children(field)}
 							<div>
 								<RichSelect
-									label={isEditing ? m.common_parent() : m.topology_selectParent()}
+									label={isEditing ? common_parent() : topology_selectParent()}
 									displayComponent={TopologyDisplay}
 									required={false}
 									disabled={isEditing}
@@ -235,10 +248,10 @@
 				>
 					{#snippet children(field)}
 						<TextInput
-							label={m.common_name()}
+							label={common_name()}
 							id="name"
 							{field}
-							placeholder={m.topology_namePlaceholder()}
+							placeholder={topology_namePlaceholder()}
 							required
 						/>
 					{/snippet}
@@ -250,10 +263,10 @@
 		<div class="modal-footer">
 			<div class="flex items-center justify-end gap-3">
 				<button type="button" disabled={loading} onclick={onClose} class="btn-secondary">
-					{m.common_cancel()}
+					{common_cancel()}
 				</button>
 				<button type="submit" disabled={loading} class="btn-primary">
-					{loading ? m.common_saving() : m.common_save()}
+					{loading ? common_saving() : common_save()}
 				</button>
 			</div>
 		</div>

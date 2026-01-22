@@ -9,7 +9,12 @@
 	import AccountTab from './AccountTab.svelte';
 	import OrganizationTab from './OrganizationTab.svelte';
 	import BillingTab from './BillingTab.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_account,
+		common_billing,
+		common_organization,
+		common_settings
+	} from '$lib/paraglide/messages';
 
 	let {
 		isOpen = false,
@@ -36,9 +41,9 @@
 
 	// Define base tabs
 	let baseTabs = $derived<ModalTab[]>([
-		{ id: 'account', label: m.common_account(), icon: User },
-		{ id: 'organization', label: m.common_organization(), icon: Building2 },
-		{ id: 'billing', label: m.common_billing(), icon: CreditCard }
+		{ id: 'account', label: common_account(), icon: User },
+		{ id: 'organization', label: common_organization(), icon: Building2 },
+		{ id: 'billing', label: common_billing(), icon: CreditCard }
 	]);
 
 	// Filter tabs based on permissions
@@ -74,7 +79,7 @@
 
 <GenericModal
 	{isOpen}
-	title={m.common_settings()}
+	title={common_settings()}
 	size="xl"
 	onClose={handleClose}
 	onOpen={handleOpen}

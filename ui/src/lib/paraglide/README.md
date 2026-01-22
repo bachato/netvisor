@@ -2,7 +2,7 @@
 
 > Auto-generated i18n message functions. Import `messages.js` to use translated strings.
 
-Compiled from: `/Users/maya/dev/scanopy/ui/project.inlang`
+Compiled from: `./project.inlang`
 
 
 ## What is this folder?
@@ -82,7 +82,7 @@ See the [strategy documentation](https://inlang.com/m/gerre34r/library-inlang-pa
 
 ## Key concepts
 
-- **Tree-shakeable**: Each message is a function, enabling [up to 70% smaller bundles](https://inlang.com/m/gerre34r/library-inlang-paraglideJs/benchmark) than traditional i18n libraries.
+- **Tree-shakeable**: Each message is a function, enabling [up to 70% smaller i18n bundle sizes](https://inlang.com/m/gerre34r/library-inlang-paraglideJs/benchmark) than traditional i18n libraries.
 - **Typesafe**: Full TypeScript/JSDoc support with autocomplete.
 - **Variants**: Messages can have variants for pluralization, gender, etc.
 - **Fallbacks**: Missing translations fall back to the base locale.

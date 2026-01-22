@@ -7,7 +7,18 @@
 	import { Mail } from 'lucide-svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		auth_backToLogin,
+		auth_checkYourEmail,
+		auth_enterYourEmail,
+		auth_resetLinkSentBody,
+		auth_resetLinkSentTitle,
+		auth_resetPasswordInstructions,
+		auth_resetPasswordTitle,
+		auth_sendResetLink,
+		common_email,
+		common_sending
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		isOpen?: boolean;
@@ -48,7 +59,7 @@
 
 <GenericModal
 	{isOpen}
-	title={emailSent ? m.auth_checkYourEmail() : m.auth_resetPasswordTitle()}
+	title={emailSent ? auth_checkYourEmail() : auth_resetPasswordTitle()}
 	size="md"
 	{onClose}
 	onOpen={handleOpen}
@@ -71,11 +82,11 @@
 	>
 		<div class="flex-1 overflow-auto p-6">
 			{#if emailSent}
-				<InlineInfo title={m.auth_resetLinkSentTitle()} body={m.auth_resetLinkSentBody()} />
+				<InlineInfo title={auth_resetLinkSentTitle()} body={auth_resetLinkSentBody()} />
 			{:else}
 				<div class="space-y-6">
 					<p class="text-sm text-gray-400">
-						{m.auth_resetPasswordInstructions()}
+						{auth_resetPasswordInstructions()}
 					</p>
 
 					<form.Field
@@ -86,10 +97,10 @@
 					>
 						{#snippet children(field)}
 							<TextInput
-								label={m.common_email()}
+								label={common_email()}
 								id="email"
 								{field}
-								placeholder={m.auth_enterYourEmail()}
+								placeholder={auth_enterYourEmail()}
 								required
 							/>
 						{/snippet}
@@ -103,11 +114,11 @@
 			<div class="flex w-full flex-col gap-4">
 				{#if emailSent}
 					<button type="button" onclick={onBackToLogin} class="btn-primary w-full">
-						{m.auth_backToLogin()}
+						{auth_backToLogin()}
 					</button>
 				{:else}
 					<button type="submit" disabled={requesting} class="btn-primary w-full">
-						{requesting ? m.common_sending() : m.auth_sendResetLink()}
+						{requesting ? common_sending() : auth_sendResetLink()}
 					</button>
 
 					<div class="text-center">
@@ -116,7 +127,7 @@
 							onclick={onBackToLogin}
 							class="text-sm font-medium text-blue-400 hover:text-blue-300"
 						>
-							{m.auth_backToLogin()}
+							{auth_backToLogin()}
 						</button>
 					</div>
 				{/if}

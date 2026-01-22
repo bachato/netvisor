@@ -11,7 +11,20 @@
 	import EntityConfigEmpty from '$lib/shared/components/forms/EntityConfigEmpty.svelte';
 	import ConfirmationDialog from '$lib/shared/components/feedback/ConfirmationDialog.svelte';
 	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_cancel,
+		common_ports,
+		hosts_ports_customPort,
+		hosts_ports_deleteMessage,
+		hosts_ports_deleteTitle,
+		hosts_ports_emptyMessage,
+		hosts_ports_helpText,
+		hosts_ports_noSelected,
+		hosts_ports_placeholder,
+		hosts_ports_selectToConfig,
+		hosts_ports_wellKnownSubtitle,
+		hosts_ports_wellKnownTitle
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		formData: HostFormData;
@@ -144,14 +157,14 @@
 <ListConfigEditor bind:items={formData.ports}>
 	<svelte:fragment slot="list" let:items let:onEdit let:highlightedIndex>
 		<ListManager
-			label={m.common_ports()}
-			helpText={m.hosts_ports_helpText()}
-			placeholder={m.hosts_ports_placeholder()}
-			emptyMessage={m.hosts_ports_emptyMessage()}
+			label={common_ports()}
+			helpText={hosts_ports_helpText()}
+			placeholder={hosts_ports_placeholder()}
+			emptyMessage={hosts_ports_emptyMessage()}
 			allowReorder={false}
 			allowCreateNew={true}
 			itemClickAction="edit"
-			createNewLabel={m.hosts_ports_customPort()}
+			createNewLabel={hosts_ports_customPort()}
 			allowDuplicates={false}
 			options={selectablePorts}
 			{items}
@@ -178,14 +191,11 @@
 			{/key}
 		{:else if selectedItem && selectedItem.type != 'Custom'}
 			<EntityConfigEmpty
-				title={m.hosts_ports_wellKnownTitle()}
-				subtitle={m.hosts_ports_wellKnownSubtitle()}
+				title={hosts_ports_wellKnownTitle()}
+				subtitle={hosts_ports_wellKnownSubtitle()}
 			/>
 		{:else}
-			<EntityConfigEmpty
-				title={m.hosts_ports_noSelected()}
-				subtitle={m.hosts_ports_selectToConfig()}
-			/>
+			<EntityConfigEmpty title={hosts_ports_noSelected()} subtitle={hosts_ports_selectToConfig()} />
 		{/if}
 	</svelte:fragment>
 </ListConfigEditor>
@@ -194,11 +204,11 @@
 
 <ConfirmationDialog
 	isOpen={showDeleteConfirmation}
-	title={m.hosts_ports_deleteTitle()}
-	message={m.hosts_ports_deleteMessage()}
+	title={hosts_ports_deleteTitle()}
+	message={hosts_ports_deleteMessage()}
 	details={affectedServiceNames}
-	confirmLabel={m.hosts_ports_deleteTitle()}
-	cancelLabel={m.common_cancel()}
+	confirmLabel={hosts_ports_deleteTitle()}
+	cancelLabel={common_cancel()}
 	variant="warning"
 	onConfirm={confirmDelete}
 	onCancel={cancelDelete}

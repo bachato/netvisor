@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer } from '../runtime.js';
+import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer, experimentalStaticLocale } from '../runtime.js';
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_daemonapikeys_confirmbulkdelete4 = /** @type {(inputs: { count: NonNullable<unknown> }) => LocalizedString} */ (i) => {
@@ -23,7 +23,7 @@ const daemonapikeys_confirmbulkdelete4 = (inputs, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.daemonapikeys_confirmbulkdelete4(inputs) 
 	}
-	const locale = options.locale ?? getLocale()
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	trackMessageCall("daemonapikeys_confirmbulkdelete4", locale)
 	return en_daemonapikeys_confirmbulkdelete4(inputs)
 };

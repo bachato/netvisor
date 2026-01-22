@@ -5,7 +5,20 @@
 	import { onboardingStore } from '../../stores/onboarding';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		auth_scanopyLogo,
+		common_continue,
+		onboarding_alreadyHaveAccount,
+		onboarding_commercialNoticeBody,
+		onboarding_commercialNoticeTitle,
+		onboarding_haveQuestionsFirst,
+		onboarding_howWillYouUse,
+		onboarding_logInHere,
+		onboarding_readyToScan,
+		onboarding_tailorSetup,
+		onboarding_understandContinue,
+		onboarding_yesLetsGo
+	} from '$lib/paraglide/messages';
 
 	const configQuery = useConfigQuery();
 	// eslint-disable-next-line svelte/no-immutable-reactive-statements -- configQuery.data changes when query resolves
@@ -77,7 +90,7 @@
 
 <GenericModal
 	{isOpen}
-	title={m.onboarding_howWillYouUse()}
+	title={onboarding_howWillYouUse()}
 	{onClose}
 	size="lg"
 	centerTitle={true}
@@ -86,11 +99,11 @@
 	preventCloseOnClickOutside={true}
 >
 	{#snippet headerIcon()}
-		<img src="/logos/scanopy-logo.png" alt={m.auth_scanopyLogo()} class="h-8 w-8" />
+		<img src="/logos/scanopy-logo.png" alt={auth_scanopyLogo()} class="h-8 w-8" />
 	{/snippet}
 
 	<div class="space-y-6 p-6">
-		<p class="text-secondary text-center text-sm">{m.onboarding_tailorSetup()}</p>
+		<p class="text-secondary text-center text-sm">{onboarding_tailorSetup()}</p>
 
 		<!-- Use Case Cards -->
 		<div class="grid gap-3">
@@ -126,12 +139,12 @@
 				<div class="flex items-start gap-2">
 					<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
 					<div class="flex-1">
-						<p class="text-sm font-medium text-warning">{m.onboarding_commercialNoticeTitle()}</p>
+						<p class="text-sm font-medium text-warning">{onboarding_commercialNoticeTitle()}</p>
 						<p class="mt-1 text-sm text-warning">
-							{@html m.onboarding_commercialNoticeBody()}
+							{@html onboarding_commercialNoticeBody()}
 						</p>
 						<button type="button" class="btn-primary mt-4" on:click={handleLicenseAcknowledge}>
-							{m.onboarding_understandContinue()}
+							{onboarding_understandContinue()}
 						</button>
 					</div>
 				</div>
@@ -142,7 +155,7 @@
 			<!-- Cloud: Show ready to scan buttons (disabled until use case selected) -->
 			<div class="space-y-3">
 				<p class="text-secondary text-center text-sm">
-					{m.onboarding_readyToScan()}
+					{onboarding_readyToScan()}
 				</p>
 				<div class="flex gap-3">
 					<button
@@ -151,7 +164,7 @@
 						disabled={!canProceed}
 						on:click={handleReadyNo}
 					>
-						{m.onboarding_haveQuestionsFirst()}
+						{onboarding_haveQuestionsFirst()}
 					</button>
 					<button
 						type="button"
@@ -159,7 +172,7 @@
 						disabled={!canProceed}
 						on:click={handleReadyYes}
 					>
-						{m.onboarding_yesLetsGo()}
+						{onboarding_yesLetsGo()}
 					</button>
 				</div>
 			</div>
@@ -173,7 +186,7 @@
 						disabled={!canProceed}
 						on:click={handleContinue}
 					>
-						{m.common_continue()}
+						{common_continue()}
 					</button>
 				</div>
 			</div>
@@ -184,13 +197,13 @@
 		<div class="modal-footer">
 			{#if onSwitchToLogin}
 				<p class="text-secondary text-center text-sm">
-					{m.onboarding_alreadyHaveAccount()}
+					{onboarding_alreadyHaveAccount()}
 					<button
 						type="button"
 						on:click={onSwitchToLogin}
 						class="font-medium text-blue-400 hover:text-blue-300"
 					>
-						{m.onboarding_logInHere()}
+						{onboarding_logInHere()}
 					</button>
 				</p>
 			{/if}

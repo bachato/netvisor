@@ -18,7 +18,15 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_duration,
+		common_unknown,
+		discovery_confirmDeleteHistorical,
+		discovery_finishedAt,
+		discovery_historyTitle,
+		discovery_noHistorySessions,
+		discovery_startedAt
+	} from '$lib/paraglide/messages';
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -67,7 +75,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.discovery_confirmDeleteHistorical({ count: ids.length }))) {
+		if (confirm(discovery_confirmDeleteHistorical({ count: ids.length }))) {
 			await bulkDeleteDiscoveriesMutation.mutateAsync(ids);
 		}
 	}
@@ -76,31 +84,31 @@
 		...discoveryFields(daemonsData),
 		{
 			key: 'started_at',
-			label: m.discovery_startedAt(),
+			label: discovery_startedAt(),
 			type: 'string',
 			searchable: true,
 			getValue: (item) => {
 				const results = item.run_type.type == 'Historical' ? item.run_type.results : null;
 				return results && results.started_at
 					? formatTimestamp(results.started_at)
-					: m.common_unknown();
+					: common_unknown();
 			}
 		},
 		{
 			key: 'finished_at',
-			label: m.discovery_finishedAt(),
+			label: discovery_finishedAt(),
 			type: 'string',
 			searchable: true,
 			getValue: (item) => {
 				const results = item.run_type.type == 'Historical' ? item.run_type.results : null;
 				return results && results.finished_at
 					? formatTimestamp(results.finished_at)
-					: m.common_unknown();
+					: common_unknown();
 			}
 		},
 		{
 			key: 'duration',
-			label: m.common_duration(),
+			label: common_duration(),
 			type: 'string',
 			searchable: true,
 			getValue: (item) => {
@@ -108,7 +116,7 @@
 				if (results && results.finished_at && results.started_at) {
 					return formatDuration(results.started_at, results.finished_at);
 				}
-				return m.common_unknown();
+				return common_unknown();
 			}
 		}
 	]);
@@ -116,13 +124,13 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title={m.discovery_historyTitle()} />
+	<TabHeader title={discovery_historyTitle()} />
 
 	{#if isLoading}
 		<Loading />
 	{:else if discoveriesData.length === 0}
 		<!-- Empty state -->
-		<EmptyState title={m.discovery_noHistorySessions()} subtitle="" />
+		<EmptyState title={discovery_noHistorySessions()} subtitle="" />
 	{:else}
 		<DataControls
 			items={discoveriesData.filter((d) => d.run_type.type == 'Historical')}

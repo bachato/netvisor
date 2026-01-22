@@ -19,7 +19,26 @@
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_apiKeyNameHelp,
+		common_close,
+		common_delete,
+		common_deleting,
+		common_editName,
+		common_enableApiKey,
+		common_expirationDateOptional,
+		common_expirationNeverHelp,
+		common_failedGenerateApiKey,
+		common_failedRotateApiKey,
+		common_keyDetails,
+		common_name,
+		common_save,
+		common_saving,
+		daemonApiKeys_createApiKey,
+		daemonApiKeys_enableApiKeyHelp,
+		daemonApiKeys_namePlaceholder,
+		daemonApiKeys_noNetworkAvailable
+	} from '$lib/paraglide/messages';
 
 	// Shared components
 	import ApiKeyGenerator from '$lib/shared/components/api-keys/ApiKeyGenerator.svelte';
@@ -48,9 +67,7 @@
 
 	let isEditing = $derived(apiKey !== null);
 	let title = $derived(
-		isEditing
-			? m.common_editName({ name: apiKey?.name || 'API Key' })
-			: m.daemonApiKeys_createApiKey()
+		isEditing ? common_editName({ name: apiKey?.name || 'API Key' }) : daemonApiKeys_createApiKey()
 	);
 
 	// Get minimum date (now) in local time format for datetime-local input
@@ -109,7 +126,7 @@
 			if (defaultNetworkId) {
 				formData.network_id = defaultNetworkId;
 			} else {
-				pushError(m.daemonApiKeys_noNetworkAvailable());
+				pushError(daemonApiKeys_noNetworkAvailable());
 				return;
 			}
 		}
@@ -119,7 +136,7 @@
 			const result = await createApiKeyMutation.mutateAsync(formData);
 			generatedKey = result.keyString;
 		} catch {
-			pushError(m.common_failedGenerateApiKey());
+			pushError(common_failedGenerateApiKey());
 		} finally {
 			loading = false;
 		}
@@ -132,7 +149,7 @@
 			const newKey = await rotateApiKeyMutation.mutateAsync(formData.id);
 			generatedKey = newKey;
 		} catch {
-			pushError(m.common_failedRotateApiKey());
+			pushError(common_failedRotateApiKey());
 		} finally {
 			loading = false;
 		}
@@ -180,7 +197,7 @@
 			<div class="space-y-6">
 				<!-- Key Details Section -->
 				<div class="space-y-4">
-					<h3 class="text-primary text-lg font-medium">{m.common_keyDetails()}</h3>
+					<h3 class="text-primary text-lg font-medium">{common_keyDetails()}</h3>
 
 					<form.Field
 						name="name"
@@ -190,11 +207,11 @@
 					>
 						{#snippet children(field)}
 							<TextInput
-								label={m.common_name()}
+								label={common_name()}
 								id="name"
 								{field}
-								placeholder={m.daemonApiKeys_namePlaceholder()}
-								helpText={m.common_apiKeyNameHelp()}
+								placeholder={daemonApiKeys_namePlaceholder()}
+								helpText={common_apiKeyNameHelp()}
 								required
 							/>
 						{/snippet}
@@ -222,10 +239,10 @@
 					<form.Field name="expires_at">
 						{#snippet children(field)}
 							<DateInput
-								label={m.common_expirationDateOptional()}
+								label={common_expirationDateOptional()}
 								id="expires_at"
 								{field}
-								helpText={m.common_expirationNeverHelp()}
+								helpText={common_expirationNeverHelp()}
 								min={today}
 							/>
 						{/snippet}
@@ -235,8 +252,8 @@
 						{#snippet children(field)}
 							<Checkbox
 								{field}
-								label={m.common_enableApiKey()}
-								helpText={m.daemonApiKeys_enableApiKeyHelp()}
+								label={common_enableApiKey()}
+								helpText={daemonApiKeys_enableApiKeyHelp()}
 								id="enableApiKey"
 							/>
 						{/snippet}
@@ -270,7 +287,7 @@
 							onclick={handleDelete}
 							class="btn-danger"
 						>
-							{deleting ? m.common_deleting() : m.common_delete()}
+							{deleting ? common_deleting() : common_delete()}
 						</button>
 					{/if}
 				</div>
@@ -281,11 +298,11 @@
 						onclick={handleOnClose}
 						class="btn-secondary"
 					>
-						{m.common_close()}
+						{common_close()}
 					</button>
 					{#if isEditing}
 						<button type="submit" disabled={loading || deleting} class="btn-primary">
-							{loading ? m.common_saving() : m.common_save()}
+							{loading ? common_saving() : common_save()}
 						</button>
 					{/if}
 				</div>

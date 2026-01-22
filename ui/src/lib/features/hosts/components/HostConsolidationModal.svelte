@@ -12,7 +12,23 @@
 	import { useServicesQuery } from '$lib/features/services/queries';
 	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_back,
+		common_cancel,
+		common_consolidating,
+		common_next,
+		hosts_consolidateModal_chooseHost,
+		hosts_consolidateModal_hostWillBeDeleted,
+		hosts_consolidateModal_interfacesMigrated,
+		hosts_consolidateModal_portsMigrated,
+		hosts_consolidateModal_previewSubtitle,
+		hosts_consolidateModal_previewTitle,
+		hosts_consolidateModal_selectHost,
+		hosts_consolidateModal_servicesMigrated,
+		hosts_consolidateModal_title,
+		hosts_consolidateModal_warningBody,
+		hosts_consolidateModal_warningTitle
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		otherHost?: Host | null;
@@ -69,14 +85,14 @@
 			const actions = [
 				{
 					id: 'delete',
-					name: m.hosts_consolidateModal_hostWillBeDeleted({ name: otherHost.name })
+					name: hosts_consolidateModal_hostWillBeDeleted({ name: otherHost.name })
 				}
 			];
 
 			if (services.length > 0) {
 				actions.push({
 					id: 'services',
-					name: m.hosts_consolidateModal_servicesMigrated({
+					name: hosts_consolidateModal_servicesMigrated({
 						count: services.length,
 						source: otherHost.name,
 						destination: selectedTargetHost.name
@@ -87,7 +103,7 @@
 			if (interfaces.length > 0) {
 				actions.push({
 					id: 'interfaces',
-					name: m.hosts_consolidateModal_interfacesMigrated({
+					name: hosts_consolidateModal_interfacesMigrated({
 						count: interfaces.length,
 						source: otherHost.name,
 						destination: selectedTargetHost.name
@@ -98,7 +114,7 @@
 			if (ports.length > 0) {
 				actions.push({
 					id: 'ports',
-					name: m.hosts_consolidateModal_portsMigrated({
+					name: hosts_consolidateModal_portsMigrated({
 						count: ports.length,
 						source: otherHost.name,
 						destination: selectedTargetHost.name
@@ -158,7 +174,7 @@
 
 <GenericModal
 	{isOpen}
-	title={m.hosts_consolidateModal_title()}
+	title={hosts_consolidateModal_title()}
 	size="lg"
 	onClose={handleClose}
 	preventCloseOnClickOutside={loading}
@@ -189,8 +205,8 @@
 				<!-- Target selection -->
 				<div>
 					<RichSelect
-						label={m.hosts_consolidateModal_selectHost({ hostName: otherHost?.name ?? '' })}
-						placeholder={m.hosts_consolidateModal_chooseHost()}
+						label={hosts_consolidateModal_selectHost({ hostName: otherHost?.name ?? '' })}
+						placeholder={hosts_consolidateModal_chooseHost()}
 						selectedValue={selectedDestinationHostId}
 						options={availableHosts}
 						onSelect={handleHostSelect}
@@ -207,10 +223,10 @@
 			<div>
 				<div class="mb-6 text-center">
 					<h3 class="text-primary mb-2 text-lg font-medium">
-						{m.hosts_consolidateModal_previewTitle()}
+						{hosts_consolidateModal_previewTitle()}
 					</h3>
 					<p class="text-secondary text-sm">
-						{m.hosts_consolidateModal_previewSubtitle()}
+						{hosts_consolidateModal_previewSubtitle()}
 					</p>
 				</div>
 
@@ -220,8 +236,8 @@
 				<!-- Warning -->
 				<div class="mt-4">
 					<InlineWarning
-						title={m.hosts_consolidateModal_warningTitle()}
-						body={m.hosts_consolidateModal_warningBody()}
+						title={hosts_consolidateModal_warningTitle()}
+						body={hosts_consolidateModal_warningBody()}
 					/>
 				</div>
 			</div>
@@ -238,12 +254,12 @@
 				<div class="flex items-center gap-3">
 					{#if showPreview}
 						<button type="button" disabled={loading} onclick={handleBack} class="btn-secondary">
-							{m.common_back()}
+							{common_back()}
 						</button>
 					{/if}
 
 					<button type="button" disabled={loading} onclick={handleClose} class="btn-secondary">
-						{m.common_cancel()}
+						{common_cancel()}
 					</button>
 
 					{#if !showPreview}
@@ -253,7 +269,7 @@
 							onclick={handleTargetSelection}
 							class="btn-primary"
 						>
-							{m.common_next()}
+							{common_next()}
 						</button>
 					{:else}
 						<button
@@ -262,7 +278,7 @@
 							onclick={handleConsolidate}
 							class="btn-danger"
 						>
-							{loading ? m.common_consolidating() : m.hosts_consolidateModal_title()}
+							{loading ? common_consolidating() : hosts_consolidateModal_title()}
 						</button>
 					{/if}
 				</div>

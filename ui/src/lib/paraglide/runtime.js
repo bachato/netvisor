@@ -76,6 +76,9 @@ export let serverAsyncLocalStorage = undefined;
 export const disableAsyncLocalStorage = false;
 export const experimentalMiddlewareLocaleSplitting = false;
 export const isServer = typeof window === 'undefined';
+/** @type {Locale | undefined} */
+// @ts-ignore - injected by bundlers at compile time
+export const experimentalStaticLocale = undefined;
 /**
  * Sets the server side async local storage.
  *
@@ -112,6 +115,12 @@ let localeInitiallySet = false;
 /**
  * Get the current locale.
  *
+ * The locale is resolved using your configured strategies (URL, cookie, localStorage, etc.)
+ * in the order they are defined. In SSR contexts, the locale is retrieved from AsyncLocalStorage
+ * which is set by the `paraglideMiddleware()`.
+ *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/strategy - Configure locale detection strategies
+ *
  * @example
  *   if (getLocale() === 'de') {
  *     console.log('Germany 🇩🇪');
@@ -122,6 +131,9 @@ let localeInitiallySet = false;
  * @type {() => Locale}
  */
 export let getLocale = () => {
+    if (experimentalStaticLocale !== undefined) {
+        return assertIsLocale(experimentalStaticLocale);
+    }
     /** @type {string | undefined} */
     let locale;
     // if running in a server-side rendering context
@@ -187,17 +199,17 @@ export let getLocale = () => {
     throw new Error("No locale found. Read the docs https://inlang.com/m/gerre34r/library-inlang-paraglideJs/errors#no-locale-found");
 };
 /**
- * Overwrite the \`getLocale()\` function.
+ * Overwrite the `getLocale()` function.
  *
- * Use this function to overwrite how the locale is resolved. For example,
- * you can resolve the locale from the browser's preferred language,
- * a cookie, env variable, or a user's preference.
+ * Use this function to overwrite how the locale is resolved. This is useful
+ * for custom locale resolution or advanced use cases like SSG with concurrent rendering.
+ *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/strategy
  *
  * @example
  *   overwriteGetLocale(() => {
- *     // resolve the locale from a cookie. fallback to the base locale.
  *     return Cookies.get('locale') ?? baseLocale
- *   }
+ *   });
  *
  * @type {(fn: () => Locale) => void}
  */
@@ -227,13 +239,15 @@ const navigateOrReload = (newLocation) => {
 /**
  * Set the locale.
  *
- * Set locale reloads the site by default on the client. Reloading
- * can be disabled by passing \`reload: false\` as an option. If
- * reloading is disabled, you need to ensure that the UI is updated
- * to reflect the new locale.
+ * Updates the locale using your configured strategies (cookie, localStorage, URL, etc.).
+ * By default, this reloads the page on the client to reflect the new locale. Reloading
+ * can be disabled by passing `reload: false` as an option, but you'll need to ensure
+ * the UI updates to reflect the new locale.
  *
- * If any custom strategy's \`setLocale\` function is async, then this
- * function will become async as well.
+ * If any custom strategy's `setLocale` function is async, then this function
+ * will become async as well.
+ *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/strategy
  *
  * @example
  *   setLocale('en');
@@ -710,6 +724,8 @@ function defaultUrlPatternExtractLocale(url) {
  * For client-side UI components, use `localizeHref()` instead, which provides
  * a more convenient API with relative paths and automatic locale detection.
  *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/i18n-routing
+ *
  * @example
  * ```typescript
  * // Server middleware example
@@ -815,6 +831,8 @@ function localizeUrlDefaultPattern(url, options) {
  *
  * For client-side UI components, use `deLocalizeHref()` instead, which provides
  * a more convenient API with relative paths.
+ *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/i18n-routing
  *
  * @example
  * ```typescript
@@ -1034,6 +1052,8 @@ export function aggregateGroups(match) {
  *
  * When called in the browser without arguments, the current `window.location.href` is used.
  *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/i18n-routing#client-side-redirects
+ *
  * @example
  * // Client side usage (e.g. TanStack Router beforeLoad hook)
  * async function beforeLoad({ location }) {
@@ -1132,6 +1152,8 @@ function normalizeUrl(url) {
  * - Automatically detects current locale if not specified
  * - Handles string input/output instead of URL objects
  *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/i18n-routing
+ *
  * @example
  * ```typescript
  * // In a React/Vue/Svelte component
@@ -1190,6 +1212,8 @@ export function localizeHref(href, options) {
  * - Returns relative paths when possible
  * - Handles string input/output instead of URL objects
  *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/i18n-routing
+ *
  * @example
  * ```typescript
  * // In a React/Vue/Svelte component
@@ -1217,7 +1241,6 @@ export function localizeHref(href, options) {
  *
  * @param {string} href - The href to de-localize (can be relative or absolute)
  * @returns {string} The de-localized href, relative if input was relative
- * @see deLocalizeUrl - For low-level URL de-localization in server contexts
  */
 export function deLocalizeHref(href) {
     const url = new URL(href, getUrlOrigin());
@@ -1244,26 +1267,47 @@ export function trackMessageCall(safeModuleId, locale) {
 }
 
 /**
- * Generates a list of localized URLs for all provided URLs.
+ * Generates localized URL variants for all provided URLs based on your configured locales and URL patterns.
  *
- * This is useful for SSG (Static Site Generation) and sitemap generation.
- * NextJS and other frameworks use this function for SSG.
+ * This function is essential for Static Site Generation (SSG) where you need to tell your framework
+ * which pages to pre-render at build time. It's also useful for generating sitemaps and
+ * `<link rel="alternate" hreflang>` tags for SEO.
+ *
+ * The function respects your `urlPatterns` configuration - if you have translated pathnames
+ * (e.g., `/about` → `/ueber-uns` for German), it will generate the correct localized paths.
+ *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/static-site-generation
  *
  * @example
- * ```typescript
- * const urls = generateStaticLocalizedUrls([
- *   "https://example.com/about",
- *   "https://example.com/blog",
+ * // Basic usage - generate all locale variants for a list of paths
+ * const localizedUrls = generateStaticLocalizedUrls([
+ *   "/",
+ *   "/about",
+ *   "/blog/post-1",
  * ]);
- * urls[0].href // => "https://example.com/about"
- * urls[1].href // => "https://example.com/blog"
- * urls[2].href // => "https://example.com/de/about"
- * urls[3].href // => "https://example.com/de/blog"
- * ...
- * ```
+ * // Returns URL objects for each locale:
+ * // ["/en/", "/de/", "/en/about", "/de/about", "/en/blog/post-1", "/de/blog/post-1"]
  *
- * @param {(string | URL)[]} urls - List of URLs to generate localized versions for. Can be absolute URLs or paths.
- * @returns {URL[]} List of localized URLs as URL objects
+ * @example
+ * // Use with framework SSG APIs
+ * // SvelteKit
+ * export function entries() {
+ *   const paths = ["/", "/about", "/contact"];
+ *   return generateStaticLocalizedUrls(paths).map(url => ({
+ *     locale: extractLocaleFromUrl(url)
+ *   }));
+ * }
+ *
+ * @example
+ * // Sitemap generation
+ * const allPages = ["/", "/about", "/blog"];
+ * const sitemapUrls = generateStaticLocalizedUrls(allPages);
+ *
+ * @param {(string | URL)[]} urls - List of canonical URLs or paths to generate localized versions for.
+ *   Can be absolute URLs (`https://example.com/about`) or paths (`/about`).
+ *   Paths are resolved against `http://localhost` internally.
+ * @returns {URL[]} Array of URL objects representing all localized variants.
+ *   The order follows each input URL with all its locale variants before moving to the next URL.
  */
 export function generateStaticLocalizedUrls(urls) {
     const localizedUrls = new Set();
@@ -1368,6 +1412,8 @@ export function isCustomStrategy(strategy) {
 /**
  * Defines a custom strategy that is executed on the server.
  *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/strategy#write-your-own-strategy
+ *
  * @param {any} strategy The name of the custom strategy to define. Must follow the pattern custom-name with alphanumeric characters, hyphens, or underscores.
  * @param {CustomServerStrategyHandler} handler The handler for the custom strategy, which should implement
  * the method getLocale.
@@ -1381,6 +1427,8 @@ export function defineCustomServerStrategy(strategy, handler) {
 }
 /**
  * Defines a custom strategy that is executed on the client.
+ *
+ * @see https://inlang.com/m/gerre34r/library-inlang-paraglideJs/strategy#write-your-own-strategy
  *
  * @param {any} strategy The name of the custom strategy to define. Must follow the pattern custom-name with alphanumeric characters, hyphens, or underscores.
  * @param {CustomClientStrategyHandler} handler The handler for the custom strategy, which should implement the

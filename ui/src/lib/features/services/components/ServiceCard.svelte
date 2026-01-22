@@ -12,7 +12,20 @@
 	import { matchConfidenceColor, matchConfidenceLabel } from '$lib/shared/types';
 	import { SvelteMap } from 'svelte/reactivity';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_delete,
+		common_edit,
+		common_interfaceBindings,
+		common_portBindings,
+		common_tags,
+		common_unbound,
+		services_confidenceUnavailable,
+		services_matchConfidence,
+		services_noInterfacesAssigned,
+		services_noPortsAssigned,
+		services_notDiscoveredService,
+		services_onHost
+	} from '$lib/paraglide/messages';
 
 	// TanStack Query hooks
 	const subnetsQuery = useSubnetsQuery();
@@ -72,7 +85,7 @@
 				const portList = ports.map((p) => formatPort(p)).join(', ');
 				const label = iface
 					? `${iface.name ? iface.name + ': ' : ''} ${iface.ip_address} (${portList})`
-					: `${m.common_unbound()} (${portList})`;
+					: `${common_unbound()} (${portList})`;
 				return {
 					id: iface?.id ?? 'unbound',
 					label,
@@ -99,48 +112,48 @@
 	// Build card data
 	let cardData = $derived({
 		title: service.name,
-		subtitle: m.services_onHost({ hostName: host.name }),
+		subtitle: services_onHost({ hostName: host.name }),
 		iconColor: serviceDefinitions.getColorHelper(service.service_definition).icon,
 		Icon: serviceDefinitions.getIconComponent(service.service_definition),
 		fields: [
 			{
-				label: m.common_portBindings(),
+				label: common_portBindings(),
 				value: groupedPortBindings,
-				emptyText: m.services_noPortsAssigned()
+				emptyText: services_noPortsAssigned()
 			},
 			{
-				label: m.common_interfaceBindings(),
+				label: common_interfaceBindings(),
 				value: ifaces.map((iface: Interface) => ({
 					id: iface.id,
 					label: formatInterface(iface, isContainerSubnetFn),
 					color: entities.getColorHelper('Interface').color
 				})),
-				emptyText: m.services_noInterfacesAssigned()
+				emptyText: services_noInterfacesAssigned()
 			},
 			{
-				label: m.services_matchConfidence(),
+				label: services_matchConfidence(),
 				value: [
 					{
 						id: service.id,
 						label:
 							service.source.type == 'DiscoveryWithMatch'
 								? matchConfidenceLabel(service.source.details.confidence)
-								: m.services_notDiscoveredService(),
+								: services_notDiscoveredService(),
 						color:
 							service.source.type == 'DiscoveryWithMatch'
 								? matchConfidenceColor(service.source.details.confidence)
 								: 'Gray'
 					}
 				],
-				emptyText: m.services_confidenceUnavailable()
+				emptyText: services_confidenceUnavailable()
 			},
-			{ label: m.common_tags(), snippet: tagsSnippet }
+			{ label: common_tags(), snippet: tagsSnippet }
 		],
 		actions: [
 			...(onDelete
 				? [
 						{
-							label: m.common_delete(),
+							label: common_delete(),
 							icon: Trash2,
 							class: 'btn-icon-danger',
 							onClick: () => onDelete(service)
@@ -150,7 +163,7 @@
 			...(onEdit
 				? [
 						{
-							label: m.common_edit(),
+							label: common_edit(),
 							icon: Edit,
 							class: 'btn-icon',
 							onClick: () => onEdit(service)

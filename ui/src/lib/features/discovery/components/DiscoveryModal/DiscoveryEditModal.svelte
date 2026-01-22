@@ -15,7 +15,22 @@
 	import { pushError } from '$lib/shared/stores/feedback';
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import type { Host } from '$lib/features/hosts/types/base';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_cancel,
+		common_close,
+		common_delete,
+		common_deleting,
+		common_saving,
+		discovery_couldNotGetNetworkId,
+		discovery_createDiscovery,
+		discovery_createScheduled,
+		discovery_edit,
+		discovery_failedToDelete,
+		discovery_failedToSave,
+		discovery_noDaemonSelected,
+		discovery_updateDiscovery,
+		discovery_viewRun
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		discovery?: Discovery | null;
@@ -52,9 +67,9 @@
 	let title = $derived(
 		isEditing
 			? isHistoricalRun
-				? m.discovery_viewRun({ name: discovery?.name ?? '' })
-				: m.discovery_edit({ name: discovery?.name ?? '' })
-			: m.discovery_createScheduled()
+				? discovery_viewRun({ name: discovery?.name ?? '' })
+				: discovery_edit({ name: discovery?.name ?? '' })
+			: discovery_createScheduled()
 	);
 
 	let daemon = $derived(daemons.find((d) => d.id === formData.daemon_id) || null);
@@ -100,12 +115,12 @@
 					}
 					onClose();
 				} catch (error) {
-					pushError(error instanceof Error ? error.message : m.discovery_failedToSave());
+					pushError(error instanceof Error ? error.message : discovery_failedToSave());
 				} finally {
 					loading = false;
 				}
 			} else {
-				pushError(m.discovery_couldNotGetNetworkId());
+				pushError(discovery_couldNotGetNetworkId());
 			}
 		}
 	}));
@@ -151,7 +166,7 @@
 				await onDelete(discovery.id);
 				onClose();
 			} catch (error) {
-				pushError(error instanceof Error ? error.message : m.discovery_failedToDelete());
+				pushError(error instanceof Error ? error.message : discovery_failedToDelete());
 			} finally {
 				deleting = false;
 			}
@@ -166,9 +181,7 @@
 		}
 	});
 
-	let saveLabel = $derived(
-		isEditing ? m.discovery_updateDiscovery() : m.discovery_createDiscovery()
-	);
+	let saveLabel = $derived(isEditing ? discovery_updateDiscovery() : discovery_createDiscovery());
 	let showSave = $derived(!isHistoricalRun);
 
 	let colorHelper = entities.getColorHelper('Discovery');
@@ -196,7 +209,7 @@
 				{:else if daemon}
 					<DiscoveryTypeForm {form} bind:formData {readOnly} {daemonHostId} {daemon} />
 				{:else}
-					<InlineWarning body={m.discovery_noDaemonSelected()} />
+					<InlineWarning body={discovery_noDaemonSelected()} />
 				{/if}
 
 				{#if isEditing}
@@ -215,7 +228,7 @@
 							onclick={handleDelete}
 							class="btn-danger"
 						>
-							{deleting ? m.common_deleting() : m.common_delete()}
+							{deleting ? common_deleting() : common_delete()}
 						</button>
 					{/if}
 				</div>
@@ -226,11 +239,11 @@
 						onclick={onClose}
 						class="btn-secondary"
 					>
-						{isHistoricalRun ? m.common_close() : m.common_cancel()}
+						{isHistoricalRun ? common_close() : common_cancel()}
 					</button>
 					{#if showSave}
 						<button type="submit" disabled={loading || deleting} class="btn-primary">
-							{loading ? m.common_saving() : saveLabel}
+							{loading ? common_saving() : saveLabel}
 						</button>
 					{/if}
 				</div>

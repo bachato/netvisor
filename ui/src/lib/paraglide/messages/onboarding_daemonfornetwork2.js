@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer } from '../runtime.js';
+import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer, experimentalStaticLocale } from '../runtime.js';
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_onboarding_daemonfornetwork2 = /** @type {(inputs: { networkName: NonNullable<unknown> }) => LocalizedString} */ (i) => {
@@ -23,7 +23,7 @@ const onboarding_daemonfornetwork2 = (inputs, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.onboarding_daemonfornetwork2(inputs) 
 	}
-	const locale = options.locale ?? getLocale()
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	trackMessageCall("onboarding_daemonfornetwork2", locale)
 	return en_onboarding_daemonfornetwork2(inputs)
 };

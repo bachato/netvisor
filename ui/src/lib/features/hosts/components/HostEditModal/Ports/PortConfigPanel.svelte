@@ -5,7 +5,13 @@
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_protocol,
+		hosts_ports_configSubtitle,
+		hosts_ports_configTitle,
+		hosts_ports_portNumber,
+		hosts_ports_portNumberHelp
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		port: Port;
@@ -37,7 +43,7 @@
 </script>
 
 <div class="space-y-6">
-	<ConfigHeader title={m.hosts_ports_configTitle()} subtitle={m.hosts_ports_configSubtitle()} />
+	<ConfigHeader title={hosts_ports_configTitle()} subtitle={hosts_ports_configSubtitle()} />
 
 	<div class="space-y-4">
 		<form.Field
@@ -54,12 +60,12 @@
 		>
 			{#snippet children(field: AnyFieldApi)}
 				<TextInput
-					label={m.hosts_ports_portNumber()}
+					label={hosts_ports_portNumber()}
 					id="port_{port.id}_number"
 					placeholder="80"
 					type="number"
 					required={true}
-					helpText={m.hosts_ports_portNumberHelp()}
+					helpText={hosts_ports_portNumberHelp()}
 					{field}
 				/>
 			{/snippet}
@@ -73,7 +79,7 @@
 		>
 			{#snippet children(field: AnyFieldApi)}
 				<SelectInput
-					label={m.common_protocol()}
+					label={common_protocol()}
 					id="port_{port.id}_protocol"
 					options={protocolOptions}
 					{field}

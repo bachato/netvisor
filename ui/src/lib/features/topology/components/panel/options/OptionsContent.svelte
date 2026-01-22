@@ -2,7 +2,34 @@
 	import { topologyOptions } from '../../../queries';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_categories,
+		common_docker,
+		common_infrastructure,
+		common_title,
+		common_visual,
+		topology_dontFadeEdges,
+		topology_dontFadeEdgesHelp,
+		topology_groupDockerBridges,
+		topology_groupDockerBridgesHelp,
+		topology_hideEdgeTypes,
+		topology_hideEdgeTypesHelp,
+		topology_hidePorts,
+		topology_hidePortsHelp,
+		topology_hideResizeHandles,
+		topology_hideResizeHandlesHelp,
+		topology_hideServiceCategories,
+		topology_hideServiceCategoriesHelp,
+		topology_hideStuff,
+		topology_hideVmOnContainer,
+		topology_hideVmOnContainerHelp,
+		topology_leftZone,
+		topology_leftZoneCategoriesHelp,
+		topology_leftZoneTitleHelp,
+		topology_multiselectHelp,
+		topology_showGatewayInLeftZone,
+		topology_showGatewayInLeftZoneHelp
+	} from '$lib/paraglide/messages';
 
 	// Dynamic options loaded on mount
 	let serviceCategories: { value: string; label: string }[] = $derived.by(() => {
@@ -35,99 +62,99 @@
 		// Visual section
 		{
 			id: 'no_fade_edges',
-			label: () => m.topology_dontFadeEdges(),
+			label: () => topology_dontFadeEdges(),
 			type: 'boolean',
 			path: 'local',
 			key: 'no_fade_edges',
-			helpText: () => m.topology_dontFadeEdgesHelp(),
-			section: () => m.common_visual()
+			helpText: () => topology_dontFadeEdgesHelp(),
+			section: () => common_visual()
 		},
 		{
 			id: 'hide_resize_handles',
-			label: () => m.topology_hideResizeHandles(),
+			label: () => topology_hideResizeHandles(),
 			type: 'boolean',
 			path: 'local',
 			key: 'hide_resize_handles',
-			helpText: () => m.topology_hideResizeHandlesHelp(),
-			section: () => m.common_visual()
+			helpText: () => topology_hideResizeHandlesHelp(),
+			section: () => common_visual()
 		},
 		// Docker section
 		{
 			id: 'group_docker_bridges_by_host',
-			label: () => m.topology_groupDockerBridges(),
+			label: () => topology_groupDockerBridges(),
 			type: 'boolean',
 			path: 'request',
 			key: 'group_docker_bridges_by_host',
-			helpText: () => m.topology_groupDockerBridgesHelp(),
-			section: () => m.common_docker()
+			helpText: () => topology_groupDockerBridgesHelp(),
+			section: () => common_docker()
 		},
 		{
 			id: 'hide_vm_title_on_docker_container',
-			label: () => m.topology_hideVmOnContainer(),
+			label: () => topology_hideVmOnContainer(),
 			type: 'boolean',
 			path: 'request',
 			key: 'hide_vm_title_on_docker_container',
-			helpText: () => m.topology_hideVmOnContainerHelp(),
-			section: () => m.common_docker()
+			helpText: () => topology_hideVmOnContainerHelp(),
+			section: () => common_docker()
 		},
 		// Left Zone section
 		{
 			id: 'left_zone_title',
-			label: () => m.common_title(),
+			label: () => common_title(),
 			type: 'string',
 			path: 'local',
 			key: 'left_zone_title',
-			helpText: () => m.topology_leftZoneTitleHelp(),
-			section: () => m.topology_leftZone(),
-			placeholder: () => m.common_infrastructure()
+			helpText: () => topology_leftZoneTitleHelp(),
+			section: () => topology_leftZone(),
+			placeholder: () => common_infrastructure()
 		},
 		{
 			id: 'left_zone_service_categories',
-			label: () => m.common_categories(),
+			label: () => common_categories(),
 			type: 'multiselect',
 			path: 'request',
 			key: 'left_zone_service_categories',
-			helpText: () => m.topology_leftZoneCategoriesHelp(),
-			section: () => m.topology_leftZone(),
+			helpText: () => topology_leftZoneCategoriesHelp(),
+			section: () => topology_leftZone(),
 			getOptions: () => serviceCategories
 		},
 		{
 			id: 'show_gateway_in_left_zone',
-			label: () => m.topology_showGatewayInLeftZone(),
+			label: () => topology_showGatewayInLeftZone(),
 			type: 'boolean',
 			path: 'request',
 			key: 'show_gateway_in_left_zone',
-			helpText: () => m.topology_showGatewayInLeftZoneHelp(),
-			section: () => m.topology_leftZone()
+			helpText: () => topology_showGatewayInLeftZoneHelp(),
+			section: () => topology_leftZone()
 		},
 		// Hide Stuff section
 		{
 			id: 'hide_ports',
-			label: () => m.topology_hidePorts(),
+			label: () => topology_hidePorts(),
 			type: 'boolean',
 			path: 'request',
 			key: 'hide_ports',
-			helpText: () => m.topology_hidePortsHelp(),
-			section: () => m.topology_hideStuff()
+			helpText: () => topology_hidePortsHelp(),
+			section: () => topology_hideStuff()
 		},
 		{
 			id: 'hide_service_categories',
-			label: () => m.topology_hideServiceCategories(),
+			label: () => topology_hideServiceCategories(),
 			type: 'multiselect',
 			path: 'request',
 			key: 'hide_service_categories',
-			helpText: () => m.topology_hideServiceCategoriesHelp(),
-			section: () => m.topology_hideStuff(),
+			helpText: () => topology_hideServiceCategoriesHelp(),
+			section: () => topology_hideStuff(),
 			getOptions: () => serviceCategories
 		},
 		{
 			id: 'hide_edge_types',
-			label: () => m.topology_hideEdgeTypes(),
+			label: () => topology_hideEdgeTypes(),
 			type: 'multiselect',
 			path: 'local',
 			key: 'hide_edge_types',
-			helpText: () => m.topology_hideEdgeTypesHelp(),
-			section: () => m.topology_hideStuff(),
+			helpText: () => topology_hideEdgeTypesHelp(),
+			section: () => topology_hideStuff(),
 			getOptions: () => eTypes
 		}
 	];
@@ -146,9 +173,10 @@
 	// Track expanded sections
 	let expandedSections = $state<Record<string, boolean>>(
 		Object.fromEntries(
-			[m.common_visual(), m.common_docker(), m.topology_leftZone(), m.topology_hideStuff()].map(
-				(name) => [name, true]
-			)
+			[common_visual(), common_docker(), topology_leftZone(), topology_hideStuff()].map((name) => [
+				name,
+				true
+			])
 		)
 	);
 
@@ -200,7 +228,7 @@
 	<!-- Helper text -->
 	<div class="rounded bg-gray-800/50 pt-2">
 		<p class="text-tertiary text-[10px] leading-tight">
-			{m.topology_multiselectHelp()}
+			{topology_multiselectHelp()}
 		</p>
 	</div>
 

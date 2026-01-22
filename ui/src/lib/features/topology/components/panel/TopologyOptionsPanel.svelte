@@ -4,7 +4,13 @@
 	import OptionsContent from './options/OptionsContent.svelte';
 	import InspectorNode from './inspectors/InspectorNode.svelte';
 	import InspectorEdge from './inspectors/InspectorEdge.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_inspector,
+		common_options,
+		topology_clickToInspect,
+		topology_collapsePanel,
+		topology_expandPanel
+	} from '$lib/paraglide/messages';
 
 	// Add tab state
 	let activeTab: 'options' | 'inspector' = $state('options');
@@ -31,7 +37,7 @@
 				<button
 					class="btn-icon rounded-xl p-3"
 					onclick={() => optionsPanelExpanded.set(false)}
-					aria-label={m.topology_collapsePanel()}
+					aria-label={topology_collapsePanel()}
 				>
 					<ChevronLeft class="text-secondary h-5 w-5" />
 				</button>
@@ -43,7 +49,7 @@
 					onclick={() => (activeTab = 'options')}
 				>
 					<Settings class="mr-1 inline h-4 w-4" />
-					{m.common_options()}
+					{common_options()}
 				</button>
 				<button
 					class="flex-1 px-4 py-3 text-sm font-medium transition-colors {activeTab === 'inspector'
@@ -52,7 +58,7 @@
 					onclick={() => (activeTab = 'inspector')}
 				>
 					<Info class="mr-1 inline h-4 w-4" />
-					{m.common_inspector()}
+					{common_inspector()}
 				</button>
 			</div>
 
@@ -71,7 +77,7 @@
 						{/key}
 					{:else}
 						<div class="text-tertiary py-8 text-center text-sm">
-							{m.topology_clickToInspect()}
+							{topology_clickToInspect()}
 						</div>
 					{/if}
 				{/if}
@@ -81,7 +87,7 @@
 			<button
 				class="btn-icon rounded-2xl p-3"
 				onclick={() => optionsPanelExpanded.set(true)}
-				aria-label={m.topology_expandPanel()}
+				aria-label={topology_expandPanel()}
 			>
 				<ChevronRight class="text-secondary h-5 w-5" />
 			</button>

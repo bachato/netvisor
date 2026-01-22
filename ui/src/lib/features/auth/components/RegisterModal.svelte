@@ -16,7 +16,23 @@
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { onboardingStore } from '../stores/onboarding';
 	import type { RegisterRequest } from '../types/base';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		auth_createAccountWith,
+		auth_createAccountWithEmail,
+		auth_createYourAccount,
+		auth_creatingAccount,
+		auth_enterYourEmail,
+		auth_scanopyLogo,
+		auth_signUpForUpdates,
+		auth_termsAndPrivacy,
+		auth_youreAllSetBodyMultiple,
+		auth_youreAllSetBodySingle,
+		auth_youreAllSetTitle,
+		auth_youreInvitedBody,
+		auth_youreInvitedTitle,
+		common_email,
+		common_or
+	} from '$lib/paraglide/messages';
 
 	let {
 		orgName = null,
@@ -111,7 +127,7 @@
 
 <GenericModal
 	{isOpen}
-	title={m.auth_createYourAccount()}
+	title={auth_createYourAccount()}
 	size="lg"
 	{onClose}
 	onOpen={handleOpen}
@@ -121,7 +137,7 @@
 	centerTitle={true}
 >
 	{#snippet headerIcon()}
-		<img src="/logos/scanopy-logo.png" alt={m.auth_scanopyLogo()} class="h-8 w-8" />
+		<img src="/logos/scanopy-logo.png" alt={auth_scanopyLogo()} class="h-8 w-8" />
 	{/snippet}
 
 	<form
@@ -136,8 +152,8 @@
 			{#if orgName && invitedBy}
 				<div class="mb-6">
 					<InlineInfo
-						title={m.auth_youreInvitedTitle()}
-						body={m.auth_youreInvitedBody({ orgName, invitedBy })}
+						title={auth_youreInvitedTitle()}
+						body={auth_youreInvitedBody({ orgName, invitedBy })}
 					/>
 				</div>
 			{/if}
@@ -145,10 +161,10 @@
 			{#if hasPendingDaemons}
 				<div class="mb-6">
 					<InlineSuccess
-						title={m.auth_youreAllSetTitle()}
+						title={auth_youreAllSetTitle()}
 						body={networksWithDaemons.length === 1
-							? m.auth_youreAllSetBodySingle({ networkNames: pendingNetworkNames })
-							: m.auth_youreAllSetBodyMultiple({ networkNames: pendingNetworkNames })}
+							? auth_youreAllSetBodySingle({ networkNames: pendingNetworkNames })
+							: auth_youreAllSetBodyMultiple({ networkNames: pendingNetworkNames })}
 					/>
 				</div>
 			{/if}
@@ -162,10 +178,10 @@
 				>
 					{#snippet children(field)}
 						<TextInput
-							label={m.common_email()}
+							label={common_email()}
 							id="email"
 							{field}
-							placeholder={m.auth_enterYourEmail()}
+							placeholder={auth_enterYourEmail()}
 							required
 						/>
 					{/snippet}
@@ -204,7 +220,7 @@
 							{#if enableTermsCheckbox}
 								<form.Field name="terms_accepted">
 									{#snippet children(field)}
-										<Checkbox label={m.auth_termsAndPrivacy()} helpText="" {field} id="terms" />
+										<Checkbox label={auth_termsAndPrivacy()} helpText="" {field} id="terms" />
 									{/snippet}
 								</form.Field>
 							{/if}
@@ -215,7 +231,7 @@
 							disabled={registering || (enableTermsCheckbox && !termsAccepted)}
 							class="btn-primary w-full"
 						>
-							{registering ? m.auth_creatingAccount() : m.auth_createAccountWithEmail()}
+							{registering ? auth_creatingAccount() : auth_createAccountWithEmail()}
 						</button>
 
 						{#if hasOidcProviders}
@@ -224,7 +240,7 @@
 									<div class="w-full border-t border-gray-600"></div>
 								</div>
 								<div class="relative flex justify-center text-sm">
-									<span class="bg-gray-900 px-2 text-gray-400">{m.common_or()}</span>
+									<span class="bg-gray-900 px-2 text-gray-400">{common_or()}</span>
 								</div>
 							</div>
 
@@ -239,7 +255,7 @@
 										{#if provider.logo}
 											<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
 										{/if}
-										{m.auth_createAccountWith({ provider: provider.name })}
+										{auth_createAccountWith({ provider: provider.name })}
 									</button>
 								{/each}
 							</div>
@@ -249,12 +265,7 @@
 							{#if enableEmailOptIn}
 								<form.Field name="subscribed">
 									{#snippet children(field)}
-										<Checkbox
-											{field}
-											label={m.auth_signUpForUpdates()}
-											id="subscribe"
-											helpText=""
-										/>
+										<Checkbox {field} label={auth_signUpForUpdates()} id="subscribe" helpText="" />
 									{/snippet}
 								</form.Field>
 							{/if}

@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer } from '../runtime.js';
+import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isServer, experimentalStaticLocale } from '../runtime.js';
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_users_hasallnetworks2 = /** @type {(inputs: { permissions: NonNullable<unknown> }) => LocalizedString} */ (i) => {
@@ -23,7 +23,7 @@ const users_hasallnetworks2 = (inputs, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.users_hasallnetworks2(inputs) 
 	}
-	const locale = options.locale ?? getLocale()
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	trackMessageCall("users_hasallnetworks2", locale)
 	return en_users_hasallnetworks2(inputs)
 };

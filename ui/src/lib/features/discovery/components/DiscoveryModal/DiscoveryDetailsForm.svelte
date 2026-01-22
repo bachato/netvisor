@@ -7,7 +7,14 @@
 	import type { Discovery } from '../../types/base';
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_daemon,
+		discovery_daemonHelp,
+		discovery_daemonSelect,
+		discovery_details,
+		discovery_name,
+		discovery_namePlaceholder
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +28,7 @@
 </script>
 
 <div class="space-y-4">
-	<h3 class="text-primary text-lg font-medium">{m.discovery_details()}</h3>
+	<h3 class="text-primary text-lg font-medium">{discovery_details()}</h3>
 
 	<form.Field
 		name="name"
@@ -31,9 +38,9 @@
 	>
 		{#snippet children(field: AnyFieldApi)}
 			<TextInput
-				label={m.discovery_name()}
+				label={discovery_name()}
 				id="name"
-				placeholder={m.discovery_namePlaceholder()}
+				placeholder={discovery_namePlaceholder()}
 				required={true}
 				{field}
 				disabled={readOnly}
@@ -44,9 +51,9 @@
 	<!-- Daemon Selection -->
 	<div class="space-y-2">
 		<RichSelect
-			label={m.common_daemon()}
+			label={common_daemon()}
 			required={true}
-			placeholder={m.discovery_daemonSelect()}
+			placeholder={discovery_daemonSelect()}
 			disabled={readOnly}
 			selectedValue={formData.daemon_id}
 			options={daemons}
@@ -58,7 +65,7 @@
 				}
 			}}
 		/>
-		<p class="text-tertiary text-xs">{m.discovery_daemonHelp()}</p>
+		<p class="text-tertiary text-xs">{discovery_daemonHelp()}</p>
 	</div>
 
 	<TagPicker bind:selectedTagIds={formData.tags} />

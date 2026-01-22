@@ -5,7 +5,15 @@
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TextArea from '$lib/shared/components/forms/input/TextArea.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		billing_inquiryLabel,
+		billing_inquiryPlaceholder,
+		billing_requestInfo,
+		billing_sendRequest,
+		common_cancel,
+		common_email,
+		common_sending
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		isOpen?: boolean;
@@ -49,7 +57,7 @@
 </script>
 
 <GenericModal
-	title={m.billing_requestInfo({ planName })}
+	title={billing_requestInfo({ planName })}
 	{isOpen}
 	{onClose}
 	onOpen={handleOpen}
@@ -74,7 +82,7 @@
 				>
 					{#snippet children(field)}
 						<TextInput
-							label={m.common_email()}
+							label={common_email()}
 							id="inquiry-email"
 							{field}
 							placeholder="your@email.com"
@@ -86,10 +94,10 @@
 				<form.Field name="message">
 					{#snippet children(field)}
 						<TextArea
-							label={m.billing_inquiryLabel()}
+							label={billing_inquiryLabel()}
 							id="inquiry-message"
 							{field}
-							placeholder={m.billing_inquiryPlaceholder({ planName })}
+							placeholder={billing_inquiryPlaceholder({ planName })}
 							rows={5}
 						/>
 					{/snippet}
@@ -100,10 +108,10 @@
 		<div class="modal-footer">
 			<div class="flex items-center justify-end gap-3">
 				<button type="button" disabled={loading} onclick={onClose} class="btn-secondary">
-					{m.common_cancel()}
+					{common_cancel()}
 				</button>
 				<button type="submit" disabled={loading} class="btn-primary">
-					{loading ? m.common_sending() : m.billing_sendRequest()}
+					{loading ? common_sending() : billing_sendRequest()}
 				</button>
 			</div>
 		</div>

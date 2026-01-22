@@ -15,7 +15,18 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useUsersQuery, useBulkDeleteUsersMutation } from '../queries';
 	import type { TabProps } from '$lib/shared/types';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_email,
+		common_emailAndPassword,
+		common_role,
+		common_users,
+		users_authMethod,
+		users_confirmBulkDelete,
+		users_inviteUser,
+		users_noUsersFound,
+		users_noUsersSubtitle,
+		users_subtitle
+	} from '$lib/paraglide/messages';
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -64,7 +75,7 @@
 	);
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.users_confirmBulkDelete({ count: ids.length }))) {
+		if (confirm(users_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteUsersMutation.mutateAsync(ids);
 		}
 	}
@@ -83,7 +94,7 @@
 	const userFields: FieldConfig<UserOrInvite>[] = [
 		{
 			key: 'email',
-			label: m.common_email(),
+			label: common_email(),
 			type: 'string',
 			searchable: true,
 			getValue(item) {
@@ -92,7 +103,7 @@
 		},
 		{
 			key: 'permissions',
-			label: m.common_role(),
+			label: common_role(),
 			type: 'string',
 			filterable: true,
 			getValue(item) {
@@ -101,11 +112,11 @@
 		},
 		{
 			key: 'oidc_provider',
-			label: m.users_authMethod(),
+			label: users_authMethod(),
 			type: 'string',
 			filterable: true,
 			getValue(item) {
-				return isUser(item) ? item.data.oidc_provider || m.common_emailAndPassword() : '';
+				return isUser(item) ? item.data.oidc_provider || common_emailAndPassword() : '';
 			}
 		}
 	];
@@ -113,12 +124,12 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title={m.common_users()} subtitle={m.users_subtitle()}>
+	<TabHeader title={common_users()} subtitle={users_subtitle()}>
 		<svelte:fragment slot="actions">
 			{#if canInviteUsers}
 				<button class="btn-primary flex items-center" onclick={handleCreateInvite}>
 					<UserPlus class="mr-2 h-5 w-5" />
-					{m.users_inviteUser()}
+					{users_inviteUser()}
 				</button>
 			{/if}
 		</svelte:fragment>
@@ -129,7 +140,7 @@
 		<Loading />
 	{:else if combinedItems.length === 0}
 		<!-- Empty state -->
-		<EmptyState title={m.users_noUsersFound()} subtitle={m.users_noUsersSubtitle()} />
+		<EmptyState title={users_noUsersFound()} subtitle={users_noUsersSubtitle()} />
 	{:else}
 		<DataControls
 			items={combinedItems}

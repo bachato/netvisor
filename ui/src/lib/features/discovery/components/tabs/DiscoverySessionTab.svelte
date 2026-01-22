@@ -10,7 +10,18 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import type { TabProps } from '$lib/shared/types';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_daemon,
+		common_name,
+		common_phase,
+		discovery_activeSessionsTitle,
+		discovery_discoveryType,
+		discovery_finishedAt,
+		discovery_noActiveSessions,
+		discovery_notStarted,
+		discovery_startedAt,
+		discovery_unknownDaemon
+	} from '$lib/paraglide/messages';
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -33,13 +44,13 @@
 	let discoveryFields = $derived.by((): FieldConfig<DiscoveryUpdatePayload>[] => [
 		{
 			key: 'name',
-			label: m.common_name(),
+			label: common_name(),
 			type: 'string',
 			searchable: true
 		},
 		{
 			key: 'discovery_type',
-			label: m.discovery_discoveryType(),
+			label: discovery_discoveryType(),
 			type: 'string',
 			searchable: true,
 			filterable: true,
@@ -47,49 +58,49 @@
 		},
 		{
 			key: 'daemon',
-			label: m.common_daemon(),
+			label: common_daemon(),
 			type: 'string',
 			searchable: true,
 			filterable: true,
 			getValue: (item) => {
 				const daemon = daemonsData.find((d) => d.id == item.daemon_id);
-				return daemon ? daemon.name : m.discovery_unknownDaemon();
+				return daemon ? daemon.name : discovery_unknownDaemon();
 			}
 		},
 		{
 			key: 'phase',
-			label: m.common_phase(),
+			label: common_phase(),
 			type: 'string',
 			searchable: true,
 			filterable: true
 		},
 		{
 			key: 'started_at',
-			label: m.discovery_startedAt(),
+			label: discovery_startedAt(),
 			type: 'string',
 			searchable: true,
 			getValue: (item) =>
-				item.started_at ? formatTimestamp(item.started_at) : m.discovery_notStarted()
+				item.started_at ? formatTimestamp(item.started_at) : discovery_notStarted()
 		},
 		{
 			key: 'finished_at',
-			label: m.discovery_finishedAt(),
+			label: discovery_finishedAt(),
 			type: 'string',
 			searchable: true,
 			getValue: (item) =>
-				item.finished_at ? formatTimestamp(item.finished_at) : m.discovery_notStarted()
+				item.finished_at ? formatTimestamp(item.finished_at) : discovery_notStarted()
 		}
 	]);
 </script>
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title={m.discovery_activeSessionsTitle()} />
+	<TabHeader title={discovery_activeSessionsTitle()} />
 	{#if isLoading}
 		<Loading />
 	{:else if sessionsList.length === 0}
 		<!-- Empty state -->
-		<EmptyState title={m.discovery_noActiveSessions()} subtitle="" />
+		<EmptyState title={discovery_noActiveSessions()} subtitle="" />
 	{:else}
 		<DataControls
 			items={sessionsList}

@@ -8,7 +8,19 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useDeleteUserMutation } from '$lib/features/users/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_all,
+		common_authentication,
+		common_delete,
+		common_edit,
+		common_emailAndPassword,
+		common_joined,
+		common_networks,
+		common_role,
+		common_unknownNetwork,
+		common_you,
+		users_confirmDeleteUser
+	} from '$lib/paraglide/messages';
 
 	let {
 		user,
@@ -41,7 +53,7 @@
 	});
 
 	function handleDeleteUser() {
-		if (confirm(m.users_confirmDeleteUser())) {
+		if (confirm(users_confirmDeleteUser())) {
 			deleteUserMutation.mutate(user.id);
 		}
 	}
@@ -65,13 +77,13 @@
 		status:
 			user.id == currentUser?.id
 				? {
-						label: m.common_you(),
+						label: common_you(),
 						color: 'Yellow' as Color
 					}
 				: null,
 		fields: [
 			{
-				label: m.common_role(),
+				label: common_role(),
 				value: [
 					{
 						id: user.id,
@@ -81,27 +93,27 @@
 				]
 			},
 			{
-				label: m.common_authentication(),
-				value: user.oidc_provider || m.common_emailAndPassword()
+				label: common_authentication(),
+				value: user.oidc_provider || common_emailAndPassword()
 			},
 			{
-				label: m.common_joined(),
+				label: common_joined(),
 				value: formatTimestamp(user.created_at)
 			},
 			{
-				label: m.common_networks(),
+				label: common_networks(),
 				value:
 					user.permissions == 'Admin' || user.permissions == 'Owner'
 						? [
 								{
 									id: user.id,
-									label: m.common_all(),
+									label: common_all(),
 									color: entities.getColorHelper('Network').color
 								}
 							]
 						: user.network_ids.map((n) => ({
 								id: n,
-								label: networksData.find((net) => net.id == n)?.name ?? m.common_unknownNetwork(),
+								label: networksData.find((net) => net.id == n)?.name ?? common_unknownNetwork(),
 								color: entities.getColorHelper('Network').color
 							}))
 			}
@@ -110,13 +122,13 @@
 			canManage && user.id != currentUser?.id
 				? [
 						{
-							label: m.common_delete(),
+							label: common_delete(),
 							icon: Trash2,
 							onClick: () => handleDeleteUser(),
 							class: 'btn-icon-danger'
 						},
 						{
-							label: m.common_edit(),
+							label: common_edit(),
 							icon: Edit,
 							onClick: () => handleEditUser(),
 							class: 'btn-icon'

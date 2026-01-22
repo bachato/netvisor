@@ -8,7 +8,12 @@
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import { ChevronDown, ChevronRight, ExternalLink } from 'lucide-svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		auth_scanopyLogo,
+		onboarding_continueSetup,
+		onboarding_letUsHelp,
+		onboarding_whatDoYouNeed
+	} from '$lib/paraglide/messages';
 
 	export let isOpen: boolean;
 	export let useCase: UseCase;
@@ -45,7 +50,7 @@
 
 <GenericModal
 	{isOpen}
-	title={m.onboarding_whatDoYouNeed()}
+	title={onboarding_whatDoYouNeed()}
 	{onClose}
 	size="lg"
 	centerTitle={true}
@@ -53,11 +58,11 @@
 	preventCloseOnClickOutside={true}
 >
 	{#snippet headerIcon()}
-		<img src="/logos/scanopy-logo.png" alt={m.auth_scanopyLogo()} class="h-8 w-8" />
+		<img src="/logos/scanopy-logo.png" alt={auth_scanopyLogo()} class="h-8 w-8" />
 	{/snippet}
 
 	<div class="space-y-1 p-6">
-		<p class="text-secondary mb-3 text-center text-sm">{m.onboarding_letUsHelp()}</p>
+		<p class="text-secondary mb-3 text-center text-sm">{onboarding_letUsHelp()}</p>
 
 		{#each blockerOptions as blockerId (blockerId)}
 			{@const blocker = BLOCKERS[blockerId]}
@@ -113,7 +118,7 @@
 		<div class="modal-footer">
 			<div class="flex justify-end">
 				<button type="button" class="btn-primary" on:click={handleContinueSetup}>
-					{m.onboarding_continueSetup()}
+					{onboarding_continueSetup()}
 				</button>
 			</div>
 		</div>

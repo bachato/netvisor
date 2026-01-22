@@ -19,7 +19,20 @@
 	import { permissions } from '$lib/shared/stores/metadata';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_color,
+		common_confirmDeleteName,
+		common_create,
+		common_created,
+		common_description,
+		common_name,
+		common_tags,
+		common_updated,
+		tags_confirmBulkDelete,
+		tags_noTagsHelp,
+		tags_noTagsYet,
+		tags_subtitle
+	} from '$lib/paraglide/messages';
 
 	type TagOrderField = components['schemas']['TagOrderField'];
 
@@ -65,7 +78,7 @@
 	}
 
 	async function handleDeleteTag(tag: Tag) {
-		if (confirm(m.common_confirmDeleteName({ name: tag.name }))) {
+		if (confirm(common_confirmDeleteName({ name: tag.name }))) {
 			await deleteTagMutation.mutateAsync(tag.id);
 		}
 	}
@@ -88,7 +101,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.tags_confirmBulkDelete({ count: ids.length }))) {
+		if (confirm(tags_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteTagsMutation.mutateAsync(ids);
 		}
 	}
@@ -97,21 +110,21 @@
 	// Uses defineFields to ensure all TagOrderField values are covered
 	const tagFields = defineFields<Tag, TagOrderField>(
 		{
-			name: { label: m.common_name(), type: 'string', searchable: true },
-			color: { label: m.common_color(), type: 'string', filterable: true },
-			created_at: { label: m.common_created(), type: 'date' },
-			updated_at: { label: m.common_updated(), type: 'date' }
+			name: { label: common_name(), type: 'string', searchable: true },
+			color: { label: common_color(), type: 'string', filterable: true },
+			created_at: { label: common_created(), type: 'date' },
+			updated_at: { label: common_updated(), type: 'date' }
 		},
-		[{ key: 'description', label: m.common_description(), type: 'string', searchable: true }]
+		[{ key: 'description', label: common_description(), type: 'string', searchable: true }]
 	);
 </script>
 
 <div class="space-y-6">
-	<TabHeader title={m.common_tags()} subtitle={m.tags_subtitle()}>
+	<TabHeader title={common_tags()} subtitle={tags_subtitle()}>
 		<svelte:fragment slot="actions">
 			{#if canManageNetworks}
 				<button class="btn-primary flex items-center" onclick={handleCreateTag}>
-					<Plus class="h-5 w-5" />{m.common_create()}
+					<Plus class="h-5 w-5" />{common_create()}
 				</button>
 			{/if}
 		</svelte:fragment>
@@ -121,10 +134,10 @@
 		<Loading />
 	{:else if tags.length === 0}
 		<EmptyState
-			title={m.tags_noTagsYet()}
-			subtitle={m.tags_noTagsHelp()}
+			title={tags_noTagsYet()}
+			subtitle={tags_noTagsHelp()}
 			onClick={handleCreateTag}
-			cta={m.common_create()}
+			cta={common_create()}
 		/>
 	{:else}
 		<DataControls

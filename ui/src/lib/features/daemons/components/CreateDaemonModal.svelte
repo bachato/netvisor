@@ -16,7 +16,23 @@
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import CreateDaemonForm from './CreateDaemonForm.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_close,
+		common_continue,
+		common_failedGenerateApiKey,
+		daemons_activateAfterCreation,
+		daemons_activateAfterCreationBody,
+		daemons_createDaemon,
+		daemons_doThisLater,
+		daemons_enterApiKey,
+		daemons_keyNotAvailableWarning,
+		daemons_networkCannotChange,
+		daemons_option1,
+		daemons_option2,
+		daemons_setupScanning,
+		daemons_stopDaemonContainer,
+		daemons_stopDaemonProcess
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		isOpen?: boolean;
@@ -82,7 +98,7 @@
 
 		const trimmedKey = daemonFormRef?.getExistingKeyInput()?.trim() ?? '';
 		if (!trimmedKey) {
-			pushError(m.daemons_enterApiKey());
+			pushError(daemons_enterApiKey());
 			return;
 		}
 
@@ -104,7 +120,7 @@
 			const result = await createApiKeyMutation.mutateAsync(newApiKey);
 			keyState = result.keyString;
 		} catch {
-			pushError(m.common_failedGenerateApiKey());
+			pushError(common_failedGenerateApiKey());
 		}
 	}
 
@@ -114,7 +130,7 @@
 	);
 
 	let colorHelper = entities.getColorHelper('Daemon');
-	let title = $derived(onboardingMode ? m.daemons_setupScanning() : m.daemons_createDaemon());
+	let title = $derived(onboardingMode ? daemons_setupScanning() : daemons_createDaemon());
 </script>
 
 <GenericModal
@@ -139,14 +155,14 @@
 				{#if onboardingMode}
 					<!-- Onboarding mode: show info banner -->
 					<InlineInfo
-						title={m.daemons_activateAfterCreation()}
-						body={m.daemons_activateAfterCreationBody()}
+						title={daemons_activateAfterCreation()}
+						body={daemons_activateAfterCreationBody()}
 					/>
 				{:else if !daemon}
 					<SelectNetwork
 						bind:selectedNetworkId
 						disabled={!!key}
-						disabledReason={m.daemons_networkCannotChange()}
+						disabledReason={daemons_networkCannotChange()}
 					/>
 				{/if}
 
@@ -165,16 +181,16 @@
 
 				<!-- Existing daemon with new key warning -->
 				{#if daemon && key && selectedNetworkId}
-					<InlineWarning title={m.daemons_keyNotAvailableWarning()} />
+					<InlineWarning title={daemons_keyNotAvailableWarning()} />
 
 					<div class="text-secondary mt-3">
-						<b>{m.daemons_option1()}</b>
-						{m.daemons_stopDaemonProcess()}
+						<b>{daemons_option1()}</b>
+						{daemons_stopDaemonProcess()}
 					</div>
 					<CodeContainer language="bash" expandable={false} code={existingDaemonRunCommand} />
 					<div class="text-secondary mt-3">
-						<b>{m.daemons_option2()}</b>
-						{m.daemons_stopDaemonContainer()}
+						<b>{daemons_option2()}</b>
+						{daemons_stopDaemonContainer()}
 					</div>
 					<CodeContainer
 						language="bash"
@@ -191,17 +207,17 @@
 				<div class="flex w-full items-center justify-between gap-4">
 					{#if onSkip}
 						<button type="button" class="btn-secondary" onclick={onSkip}>
-							{m.daemons_doThisLater()}
+							{daemons_doThisLater()}
 						</button>
 					{/if}
 					<button type="button" class="btn-primary ml-auto" onclick={onContinue ?? handleOnClose}>
-						{m.common_continue()}
+						{common_continue()}
 					</button>
 				</div>
 			{:else}
 				<div class="flex items-center justify-end">
 					<button type="button" class="btn-secondary" onclick={handleOnClose}>
-						{m.common_close()}
+						{common_close()}
 					</button>
 				</div>
 			{/if}

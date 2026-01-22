@@ -21,7 +21,15 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_confirmDeleteName,
+		common_schedule,
+		common_tags,
+		discovery_confirmDeleteScheduled,
+		discovery_noScheduledSessions,
+		discovery_runType,
+		discovery_scheduledTitle
+	} from '$lib/paraglide/messages';
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -62,7 +70,7 @@
 	}
 
 	function handleDeleteDiscovery(discovery: Discovery) {
-		if (confirm(m.common_confirmDeleteName({ name: discovery.name }))) {
+		if (confirm(common_confirmDeleteName({ name: discovery.name }))) {
 			deleteDiscoveryMutation.mutate(discovery.id);
 		}
 	}
@@ -89,7 +97,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.discovery_confirmDeleteScheduled({ count: ids.length }))) {
+		if (confirm(discovery_confirmDeleteScheduled({ count: ids.length }))) {
 			await bulkDeleteDiscoveriesMutation.mutateAsync(ids);
 		}
 	}
@@ -98,7 +106,7 @@
 		...discoveryFields(daemonsData),
 		{
 			key: 'run_type',
-			label: m.discovery_runType(),
+			label: discovery_runType(),
 			type: 'string',
 			searchable: true,
 			filterable: true,
@@ -106,7 +114,7 @@
 		},
 		{
 			key: 'tags',
-			label: m.common_tags(),
+			label: common_tags(),
 			type: 'array',
 			searchable: true,
 			filterable: true,
@@ -122,11 +130,11 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title={m.discovery_scheduledTitle()}>
+	<TabHeader title={discovery_scheduledTitle()}>
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateDiscovery}
-					><Plus class="h-5 w-5" />{m.common_schedule()}</button
+					><Plus class="h-5 w-5" />{common_schedule()}</button
 				>
 			{/if}
 		</svelte:fragment>
@@ -137,10 +145,10 @@
 	{:else if discoveriesData.length === 0}
 		<!-- Empty state -->
 		<EmptyState
-			title={m.discovery_noScheduledSessions()}
+			title={discovery_noScheduledSessions()}
 			subtitle=""
 			onClick={isReadOnly ? undefined : handleCreateDiscovery}
-			cta={isReadOnly ? undefined : m.common_schedule()}
+			cta={isReadOnly ? undefined : common_schedule()}
 		/>
 	{:else}
 		<DataControls

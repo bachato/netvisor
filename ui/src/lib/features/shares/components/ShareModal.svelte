@@ -24,7 +24,48 @@
 	import InlineSuccess from '$lib/shared/components/feedback/InlineSuccess.svelte';
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
 	import { generateShareUrl, generateEmbedCode } from '../queries';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_cancel,
+		common_create,
+		common_delete,
+		common_deleting,
+		common_done,
+		common_editName,
+		common_enabled,
+		common_failedToDelete,
+		common_failedToSave,
+		common_height,
+		common_name,
+		common_password,
+		common_save,
+		common_saving,
+		common_width,
+		shares_accessControl,
+		shares_allowedDomainsHelp,
+		shares_allowedDomainsPlaceholder,
+		shares_allowedEmbedDomains,
+		shares_cacheInfoBody,
+		shares_cacheInfoTitle,
+		shares_created,
+		shares_createdHelp,
+		shares_displayOptions,
+		shares_embedCode,
+		shares_embedDimensions,
+		shares_embedsRequirePlan,
+		shares_enabledHelp,
+		shares_expirationDate,
+		shares_expirationHelp,
+		shares_namePlaceholder,
+		shares_passwordHelpCreate,
+		shares_passwordHelpEdit,
+		shares_passwordPlaceholder,
+		shares_shareTopology,
+		shares_shareUrl,
+		shares_showExportButton,
+		shares_showInspectPanel,
+		shares_showZoomControls,
+		shares_upgradeForEmbeds
+	} from '$lib/paraglide/messages';
 
 	let {
 		isOpen = false,
@@ -69,9 +110,9 @@
 
 	let isEditing = $derived(share !== null);
 	let title = $derived(
-		isEditing ? m.common_editName({ name: share?.name || '' }) : m.shares_shareTopology()
+		isEditing ? common_editName({ name: share?.name || '' }) : shares_shareTopology()
 	);
-	let saveLabel = $derived(isEditing ? m.common_save() : m.common_create());
+	let saveLabel = $derived(isEditing ? common_save() : common_create());
 
 	let hasEmbedsFeature = $derived(
 		organization?.plan ? billingPlans.getMetadata(organization.plan.type).features.embeds : true
@@ -140,7 +181,7 @@
 					createdShare = result;
 				}
 			} catch (error) {
-				pushError(error instanceof Error ? error.message : m.common_failedToSave());
+				pushError(error instanceof Error ? error.message : common_failedToSave());
 			} finally {
 				loading = false;
 			}
@@ -170,7 +211,7 @@
 			await deleteShareMutation.mutateAsync(share.id);
 			handleClose();
 		} catch (error) {
-			pushError(error instanceof Error ? error.message : m.common_failedToDelete());
+			pushError(error instanceof Error ? error.message : common_failedToDelete());
 		} finally {
 			deleting = false;
 		}
@@ -208,8 +249,8 @@
 			<div class="space-y-6">
 				{#if isEditing}
 					<InlineInfo
-						title={m.shares_cacheInfoTitle()}
-						body={m.shares_cacheInfoBody()}
+						title={shares_cacheInfoTitle()}
+						body={shares_cacheInfoBody()}
 						dismissableKey="share-cache-info"
 					/>
 				{/if}
@@ -224,10 +265,10 @@
 					>
 						{#snippet children(field)}
 							<TextInput
-								label={m.common_name()}
+								label={common_name()}
 								id="share-name"
 								{field}
-								placeholder={m.shares_namePlaceholder()}
+								placeholder={shares_namePlaceholder()}
 								required
 								disabled={!!createdShare}
 							/>
@@ -236,19 +277,19 @@
 				</div>
 
 				<div class="card card-static space-y-3">
-					<span class="text-secondary text-m">{m.shares_accessControl()}</span>
+					<span class="text-secondary text-m">{shares_accessControl()}</span>
 
 					<!-- Password -->
 					<form.Field name="password">
 						{#snippet children(field)}
 							<TextInput
-								label={m.common_password()}
+								label={common_password()}
 								id="share-password"
 								type="password"
 								{field}
-								placeholder={m.shares_passwordPlaceholder()}
+								placeholder={shares_passwordPlaceholder()}
 								disabled={!!createdShare}
-								helpText={isEditing ? m.shares_passwordHelpEdit() : m.shares_passwordHelpCreate()}
+								helpText={isEditing ? shares_passwordHelpEdit() : shares_passwordHelpCreate()}
 							/>
 						{/snippet}
 					</form.Field>
@@ -259,10 +300,10 @@
 							{#snippet children(field)}
 								<DateInput
 									{field}
-									label={m.shares_expirationDate()}
+									label={shares_expirationDate()}
 									id="expires-at"
 									disabled={!!createdShare}
-									helpText={m.shares_expirationHelp()}
+									helpText={shares_expirationHelp()}
 								/>
 							{/snippet}
 						</form.Field>
@@ -270,11 +311,11 @@
 							<form.Field name="is_enabled">
 								{#snippet children(field)}
 									<Checkbox
-										label={m.common_enabled()}
+										label={common_enabled()}
 										id="is-enabled"
 										{field}
 										disabled={!!createdShare}
-										helpText={m.shares_enabledHelp()}
+										helpText={shares_enabledHelp()}
 									/>
 								{/snippet}
 							</form.Field>
@@ -285,23 +326,23 @@
 					<form.Field name="allowed_domains">
 						{#snippet children(field)}
 							<TextInput
-								label={m.shares_allowedEmbedDomains()}
+								label={shares_allowedEmbedDomains()}
 								id="allowed-domains"
 								{field}
-								placeholder={m.shares_allowedDomainsPlaceholder()}
+								placeholder={shares_allowedDomainsPlaceholder()}
 								disabled={!!createdShare}
-								helpText={m.shares_allowedDomainsHelp()}
+								helpText={shares_allowedDomainsHelp()}
 							/>
 						{/snippet}
 					</form.Field>
 				</div>
 
 				<div class="card card-static space-y-3">
-					<span class="text-secondary text-m">{m.shares_displayOptions()}</span>
+					<span class="text-secondary text-m">{shares_displayOptions()}</span>
 					<form.Field name="show_zoom_controls">
 						{#snippet children(field)}
 							<Checkbox
-								label={m.shares_showZoomControls()}
+								label={shares_showZoomControls()}
 								id="show-zoom-controls"
 								{field}
 								disabled={!!createdShare}
@@ -311,7 +352,7 @@
 					<form.Field name="show_inspect_panel">
 						{#snippet children(field)}
 							<Checkbox
-								label={m.shares_showInspectPanel()}
+								label={shares_showInspectPanel()}
 								id="show-inspect-panel"
 								{field}
 								disabled={!!createdShare}
@@ -321,19 +362,19 @@
 					<form.Field name="show_export_button">
 						{#snippet children(field)}
 							<Checkbox
-								label={m.shares_showExportButton()}
+								label={shares_showExportButton()}
 								id="show-export-button"
 								{field}
 								disabled={!!createdShare}
 							/>
 						{/snippet}
 					</form.Field>
-					<span class="block text-sm font-medium text-gray-300">{m.shares_embedDimensions()}</span>
+					<span class="block text-sm font-medium text-gray-300">{shares_embedDimensions()}</span>
 					<div class="grid grid-cols-2 gap-4">
 						<form.Field name="embed_width">
 							{#snippet children(field)}
 								<TextInput
-									label={m.common_width()}
+									label={common_width()}
 									id="embed-width"
 									type="number"
 									{field}
@@ -344,7 +385,7 @@
 						<form.Field name="embed_height">
 							{#snippet children(field)}
 								<TextInput
-									label={m.common_height()}
+									label={common_height()}
 									id="embed-height"
 									type="number"
 									{field}
@@ -359,22 +400,16 @@
 				{#if createdShare || isEditing}
 					<div class="space-y-4">
 						{#if createdShare}
-							<InlineSuccess title={m.shares_created()} body={m.shares_createdHelp()} />
+							<InlineSuccess title={shares_created()} body={shares_createdHelp()} />
 						{/if}
 						<div>
-							<span class="mb-1 block text-sm font-medium text-gray-300">{m.shares_shareUrl()}</span
-							>
+							<span class="mb-1 block text-sm font-medium text-gray-300">{shares_shareUrl()}</span>
 							<CodeContainer language="bash" expandable={false} code={generateShareUrl(shareId)} />
 						</div>
 						<div class="space-y-2">
-							<span class="mb-1 block text-sm font-medium text-gray-300"
-								>{m.shares_embedCode()}</span
-							>
+							<span class="mb-1 block text-sm font-medium text-gray-300">{shares_embedCode()}</span>
 							{#if !hasEmbedsFeature}
-								<InlineInfo
-									title={m.shares_embedsRequirePlan()}
-									body={m.shares_upgradeForEmbeds()}
-								/>
+								<InlineInfo title={shares_embedsRequirePlan()} body={shares_upgradeForEmbeds()} />
 							{:else}
 								<CodeContainer
 									language="html"
@@ -399,7 +434,7 @@
 							onclick={handleDelete}
 							class="btn-danger"
 						>
-							{deleting ? m.common_deleting() : m.common_delete()}
+							{deleting ? common_deleting() : common_delete()}
 						</button>
 					{/if}
 				</div>
@@ -410,11 +445,11 @@
 						onclick={handleClose}
 						class="btn-secondary"
 					>
-						{createdShare ? m.common_done() : m.common_cancel()}
+						{createdShare ? common_done() : common_cancel()}
 					</button>
 					{#if !createdShare}
 						<button type="submit" disabled={loading || deleting} class="btn-primary">
-							{loading ? m.common_saving() : saveLabel}
+							{loading ? common_saving() : saveLabel}
 						</button>
 					{/if}
 				</div>

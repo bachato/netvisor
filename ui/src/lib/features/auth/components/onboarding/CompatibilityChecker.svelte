@@ -4,7 +4,22 @@
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import InlineSuccess from '$lib/shared/components/feedback/InlineSuccess.svelte';
 	import type { UseCase } from '../../types/base';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		onboarding_binaryExecutable,
+		onboarding_compatibleBody,
+		onboarding_compatibleTitle,
+		onboarding_dockerCompose,
+		onboarding_dockerLinuxOnlyTitle,
+		onboarding_dockerLinuxWarning,
+		onboarding_dockerMacWarning,
+		onboarding_dockerWindowsWarning,
+		onboarding_freebsdNotSupported,
+		onboarding_installMethodQuestion,
+		onboarding_notSupportedTitle,
+		onboarding_openbsdNotSupported,
+		onboarding_osNotSupported,
+		onboarding_osQuestion
+	} from '$lib/paraglide/messages';
 
 	let {
 		useCase
@@ -27,8 +42,8 @@
 	];
 
 	let methodOptions = $derived([
-		{ id: 'binary' as InstallMethod, label: m.onboarding_binaryExecutable() },
-		{ id: 'docker' as InstallMethod, label: m.onboarding_dockerCompose() }
+		{ id: 'binary' as InstallMethod, label: onboarding_binaryExecutable() },
+		{ id: 'docker' as InstallMethod, label: onboarding_dockerCompose() }
 	]);
 
 	// Check if OS is unsupported (BSD variants)
@@ -61,18 +76,18 @@
 
 	let warningBody = $derived(
 		selectedOS === 'macos'
-			? m.onboarding_dockerMacWarning()
+			? onboarding_dockerMacWarning()
 			: selectedOS === 'windows'
-				? m.onboarding_dockerWindowsWarning()
-				: m.onboarding_dockerLinuxWarning()
+				? onboarding_dockerWindowsWarning()
+				: onboarding_dockerLinuxWarning()
 	);
 
 	let incompatibleBody = $derived(
 		selectedOS === 'freebsd'
-			? m.onboarding_freebsdNotSupported()
+			? onboarding_freebsdNotSupported()
 			: selectedOS === 'openbsd'
-				? m.onboarding_openbsdNotSupported()
-				: m.onboarding_osNotSupported()
+				? onboarding_openbsdNotSupported()
+				: onboarding_osNotSupported()
 	);
 
 	function handleOsSelect(os: OS) {
@@ -101,7 +116,7 @@
 <div class="space-y-6">
 	<!-- OS Selection -->
 	<div class="space-y-3" role="group" aria-label="Operating system selection">
-		<span class="text-secondary block text-sm font-medium">{m.onboarding_osQuestion()}</span>
+		<span class="text-secondary block text-sm font-medium">{onboarding_osQuestion()}</span>
 		<div class="flex gap-2">
 			{#each osOptions as option (option.id)}
 				<button
@@ -119,7 +134,7 @@
 	{#if selectedOS && !isUnsupportedOS}
 		<div class="space-y-3" role="group" aria-label="Install method selection">
 			<span class="text-secondary block text-sm font-medium"
-				>{m.onboarding_installMethodQuestion()}</span
+				>{onboarding_installMethodQuestion()}</span
 			>
 			<div class="flex gap-2">
 				{#each methodOptions as option (option.id)}
@@ -137,10 +152,10 @@
 
 	<!-- Compatibility Result -->
 	{#if compatibility === 'compatible'}
-		<InlineSuccess title={m.onboarding_compatibleTitle()} body={m.onboarding_compatibleBody()} />
+		<InlineSuccess title={onboarding_compatibleTitle()} body={onboarding_compatibleBody()} />
 	{:else if compatibility === 'warning'}
-		<InlineWarning title={m.onboarding_dockerLinuxOnlyTitle()} body={warningBody} />
+		<InlineWarning title={onboarding_dockerLinuxOnlyTitle()} body={warningBody} />
 	{:else if compatibility === 'incompatible'}
-		<InlineDanger title={m.onboarding_notSupportedTitle()} body={incompatibleBody} />
+		<InlineDanger title={onboarding_notSupportedTitle()} body={incompatibleBody} />
 	{/if}
 </div>

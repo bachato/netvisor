@@ -7,7 +7,19 @@
 	import { toColor } from '$lib/shared/utils/styling';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_color,
+		common_delete,
+		common_description,
+		common_edit,
+		common_noTypeSpecified,
+		common_services,
+		common_tags,
+		groups_edgeStyleLabel,
+		groups_groupType,
+		groups_loadingServices,
+		groups_noServicesInGroup
+	} from '$lib/paraglide/messages';
 
 	// Queries
 	const servicesQuery = useServicesQuery();
@@ -66,11 +78,11 @@
 		Icon: groupTypes.getIconComponent(group.group_type),
 		fields: [
 			{
-				label: m.common_description(),
+				label: common_description(),
 				value: group.description
 			},
 			{
-				label: m.groups_groupType(),
+				label: groups_groupType(),
 				value: [
 					{
 						id: 'type',
@@ -78,10 +90,10 @@
 						color: groupTypes.getColorString(group.group_type)
 					}
 				],
-				emptyText: m.common_noTypeSpecified()
+				emptyText: common_noTypeSpecified()
 			},
 			{
-				label: m.common_color(),
+				label: common_color(),
 				value: [
 					{
 						id: 'color',
@@ -89,10 +101,10 @@
 						color: group.color
 					}
 				],
-				emptyText: m.common_noTypeSpecified()
+				emptyText: common_noTypeSpecified()
 			},
 			{
-				label: m.groups_edgeStyleLabel(),
+				label: groups_edgeStyleLabel(),
 				value: [
 					{
 						id: 'type',
@@ -100,10 +112,10 @@
 						color: toColor('gray')
 					}
 				],
-				emptyText: m.common_noTypeSpecified()
+				emptyText: common_noTypeSpecified()
 			},
 			{
-				label: m.common_services(),
+				label: common_services(),
 				value: groupServiceLabels.map(({ id, label }, i) => {
 					return {
 						id: id + i,
@@ -111,30 +123,30 @@
 						color: entities.getColorString('Service')
 					};
 				}),
-				emptyText: isServicesLoading ? m.groups_loadingServices() : m.groups_noServicesInGroup()
+				emptyText: isServicesLoading ? groups_loadingServices() : groups_noServicesInGroup()
 			},
-			{ label: m.common_tags(), snippet: tagsSnippet }
+			{ label: common_tags(), snippet: tagsSnippet }
 		],
 
 		actions: [
 			...(onDelete
 				? [
 						{
-							label: m.common_delete(),
+							label: common_delete(),
 							icon: Trash2,
 							class: 'btn-icon-danger',
 							onClick: () => onDelete(group)
 						}
 					]
 				: []),
-			...(onEdit ? [{ label: m.common_edit(), icon: Edit, onClick: () => onEdit(group) }] : [])
+			...(onEdit ? [{ label: common_edit(), icon: Edit, onClick: () => onEdit(group) }] : [])
 		]
 	});
 </script>
 
 {#snippet tagsSnippet()}
 	<div class="flex items-center gap-2">
-		<span class="text-secondary text-sm">{m.common_tags()}:</span>
+		<span class="text-secondary text-sm">{common_tags()}:</span>
 		<TagPickerInline selectedTagIds={group.tags} entityId={group.id} entityType="Group" />
 	</div>
 {/snippet}

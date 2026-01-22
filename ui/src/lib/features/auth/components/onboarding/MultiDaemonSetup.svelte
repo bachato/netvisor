@@ -7,7 +7,20 @@
 	import { onboardingStore } from '../../stores/onboarding';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import type { NetworkSetup } from '../../types/base';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_settingUp,
+		onboarding_configureRemaining,
+		onboarding_continueToRegistration,
+		onboarding_daemonForNetwork,
+		onboarding_daemonInstallInfo,
+		onboarding_daemonsActivateBody,
+		onboarding_daemonsActivateTitle,
+		onboarding_installLater,
+		onboarding_installLaterHelp,
+		onboarding_installNow,
+		onboarding_installNowHelp,
+		onboarding_startScanning
+	} from '$lib/paraglide/messages';
 
 	// Convert string to kebab-case
 	function toKebabCase(str: string): string {
@@ -149,7 +162,7 @@
 
 <GenericModal
 	{isOpen}
-	title={m.onboarding_startScanning()}
+	title={onboarding_startScanning()}
 	{onClose}
 	size="xl"
 	showCloseButton={false}
@@ -157,13 +170,10 @@
 >
 	<div class="space-y-6 overflow-y-auto p-6">
 		<p class="text-secondary text-sm">
-			{m.onboarding_daemonInstallInfo()}
+			{onboarding_daemonInstallInfo()}
 		</p>
 
-		<InlineInfo
-			title={m.onboarding_daemonsActivateTitle()}
-			body={m.onboarding_daemonsActivateBody()}
-		/>
+		<InlineInfo title={onboarding_daemonsActivateTitle()} body={onboarding_daemonsActivateBody()} />
 
 		<!-- Network cards -->
 		<div class="space-y-4">
@@ -188,15 +198,15 @@
 									{/if}
 									<div>
 										<span class="text-secondary"
-											>{m.onboarding_daemonForNetwork({ networkName: network.name })}</span
+											>{onboarding_daemonForNetwork({ networkName: network.name })}</span
 										>
 										{#if state.choice === 'install_later'}
 											<div class="text-tertiary text-xs">
-												{m.onboarding_installLaterHelp()}
+												{onboarding_installLaterHelp()}
 											</div>
 										{:else if state.choice === 'install_now'}
 											<div class="text-xs text-success">
-												{m.onboarding_installNowHelp()}
+												{onboarding_installNowHelp()}
 											</div>
 										{/if}
 									</div>
@@ -209,7 +219,7 @@
 											class="btn-secondary"
 											onclick={() => network.id && handleInstallLater(network.id)}
 										>
-											{m.onboarding_installLater()}
+											{onboarding_installLater()}
 										</button>
 										<button
 											type="button"
@@ -228,7 +238,7 @@
 											class="btn-secondary"
 											onclick={() => network.id && handleInstallNow(network.id)}
 										>
-											{m.onboarding_installNow()}
+											{onboarding_installNow()}
 										</button>
 									{/if}
 								</div>
@@ -256,7 +266,7 @@
 											disabled={state.isLoading}
 											onclick={() => network.id && handleInstallLater(network.id)}
 										>
-											{m.onboarding_installLater()}
+											{onboarding_installLater()}
 										</button>
 										<button
 											type="button"
@@ -264,7 +274,7 @@
 											disabled={state.isLoading}
 											onclick={() => network.id && handleInstallNow(network.id)}
 										>
-											{state.isLoading ? m.common_settingUp() : m.onboarding_installNow()}
+											{state.isLoading ? common_settingUp() : onboarding_installNow()}
 										</button>
 									</div>
 								{/if}
@@ -280,9 +290,7 @@
 		<div class="modal-footer">
 			<div class="flex justify-end">
 				<button type="button" class="btn-primary" disabled={!allConfigured} onclick={onComplete}>
-					{allConfigured
-						? m.onboarding_continueToRegistration()
-						: m.onboarding_configureRemaining()}
+					{allConfigured ? onboarding_continueToRegistration() : onboarding_configureRemaining()}
 				</button>
 			</div>
 		</div>

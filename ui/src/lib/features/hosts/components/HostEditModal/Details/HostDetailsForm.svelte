@@ -7,7 +7,14 @@
 	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_description,
+		common_hostname,
+		common_name,
+		common_placeholderHostname,
+		hosts_details_descriptionPlaceholder,
+		hosts_details_namePlaceholder
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		host?: Host | null;
@@ -36,9 +43,9 @@
 		>
 			{#snippet children(field: AnyFieldApi)}
 				<TextInput
-					label={m.common_name()}
+					label={common_name()}
 					id="name"
-					placeholder={m.hosts_details_namePlaceholder()}
+					placeholder={hosts_details_namePlaceholder()}
 					required={true}
 					{field}
 				/>
@@ -53,9 +60,9 @@
 		>
 			{#snippet children(field: AnyFieldApi)}
 				<TextInput
-					label={m.common_hostname()}
+					label={common_hostname()}
 					id="hostname"
-					placeholder={m.common_placeholderHostname()}
+					placeholder={common_placeholderHostname()}
 					{field}
 				/>
 			{/snippet}
@@ -72,9 +79,9 @@
 	>
 		{#snippet children(field: AnyFieldApi)}
 			<TextArea
-				label={m.common_description()}
+				label={common_description()}
 				id="description"
-				placeholder={m.hosts_details_descriptionPlaceholder()}
+				placeholder={hosts_details_descriptionPlaceholder()}
 				{field}
 			/>
 		{/snippet}

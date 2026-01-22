@@ -5,7 +5,25 @@
 	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import EntityList from '$lib/shared/components/data/EntityList.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_cancel,
+		common_entities,
+		common_entity,
+		common_groupsLabel,
+		common_hosts,
+		common_interfaces,
+		common_lock,
+		common_ports,
+		common_rebuild,
+		common_services,
+		common_subnets,
+		common_tip,
+		topology_bindingsRemoved,
+		topology_entitiesRemoved,
+		topology_lockTipBody,
+		topology_removedWarning,
+		topology_reviewConflicts
+	} from '$lib/paraglide/messages';
 
 	export let isOpen: boolean;
 	export let topology: Topology;
@@ -58,49 +76,49 @@
 		if (removedHosts.length > 0) {
 			items.push({
 				id: 'hosts-header',
-				name: `${m.common_hosts()}: ${removedHosts.map((h) => h.name).join(', ')}`
+				name: `${common_hosts()}: ${removedHosts.map((h) => h.name).join(', ')}`
 			});
 		}
 
 		if (removedServices.length > 0) {
 			items.push({
 				id: 'services-header',
-				name: `${m.common_services()}: ${removedServices.map((s) => s.name).join(', ')}`
+				name: `${common_services()}: ${removedServices.map((s) => s.name).join(', ')}`
 			});
 		}
 
 		if (removedSubnets.length > 0) {
 			items.push({
 				id: 'subnets-header',
-				name: `${m.common_subnets()}: ${removedSubnets.map((s) => s.name).join(', ')}`
+				name: `${common_subnets()}: ${removedSubnets.map((s) => s.name).join(', ')}`
 			});
 		}
 
 		if (removedGroups.length > 0) {
 			items.push({
 				id: 'groups-header',
-				name: `${m.common_groupsLabel()}: ${removedGroups.map((g) => g.name).join(', ')}`
+				name: `${common_groupsLabel()}: ${removedGroups.map((g) => g.name).join(', ')}`
 			});
 		}
 
 		if (removedInterfaces.length > 0) {
 			items.push({
 				id: 'interfaces-header',
-				name: `${m.common_interfaces()}: ${removedInterfaces.map((i) => i.ip_address).join(', ')}`
+				name: `${common_interfaces()}: ${removedInterfaces.map((i) => i.ip_address).join(', ')}`
 			});
 		}
 
 		if (removedPorts.length > 0) {
 			items.push({
 				id: 'ports-header',
-				name: `${m.common_ports()}: ${removedPorts.map((p) => `${p.number}/${p.protocol}`).join(', ')}`
+				name: `${common_ports()}: ${removedPorts.map((p) => `${p.number}/${p.protocol}`).join(', ')}`
 			});
 		}
 
 		if (removedBindings.length > 0) {
 			items.push({
 				id: 'bindings-header',
-				name: m.topology_bindingsRemoved({ count: removedBindings.length })
+				name: topology_bindingsRemoved({ count: removedBindings.length })
 			});
 		}
 
@@ -108,7 +126,7 @@
 	})();
 </script>
 
-<GenericModal {isOpen} onClose={onCancel} title={m.topology_reviewConflicts()} size="lg">
+<GenericModal {isOpen} onClose={onCancel} title={topology_reviewConflicts()} size="lg">
 	{#snippet headerIcon()}
 		<AlertTriangle class="h-6 w-6 text-red-600 dark:text-red-400" />
 	{/snippet}
@@ -116,32 +134,32 @@
 	<div class="space-y-4 p-6">
 		<!-- Warning header -->
 		<InlineDanger
-			title={m.topology_entitiesRemoved({
+			title={topology_entitiesRemoved({
 				count: totalRemoved,
-				entity: totalRemoved === 1 ? m.common_entity() : m.common_entities()
+				entity: totalRemoved === 1 ? common_entity() : common_entities()
 			})}
-			body={m.topology_removedWarning()}
+			body={topology_removedWarning()}
 		/>
 
 		<!-- List removed entities -->
 		<EntityList title="" items={allRemovedEntities} />
 
 		<!-- Info box -->
-		<InlineInfo title={m.common_tip()} body={m.topology_lockTipBody()} />
+		<InlineInfo title={common_tip()} body={topology_lockTipBody()} />
 	</div>
 
 	{#snippet footer()}
 		<div class="modal-footer">
 			<div class="flex w-full items-center justify-between">
-				<button class="btn-secondary" on:click={onCancel}> {m.common_cancel()} </button>
+				<button class="btn-secondary" on:click={onCancel}> {common_cancel()} </button>
 				<div class="flex gap-3">
 					<button class="btn-primary flex items-center gap-2" on:click={onLock}>
 						<Lock class="h-4 w-4" />
-						{m.common_lock()}
+						{common_lock()}
 					</button>
 					<button class="btn-danger flex items-center gap-2" on:click={onConfirm}>
 						<RefreshCcw class="h-4 w-4" />
-						{m.common_rebuild()}
+						{common_rebuild()}
 					</button>
 				</div>
 			</div>

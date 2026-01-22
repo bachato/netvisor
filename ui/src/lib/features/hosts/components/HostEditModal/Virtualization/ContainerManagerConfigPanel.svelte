@@ -4,7 +4,12 @@
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_containers,
+		hosts_virtualization_addContainer,
+		hosts_virtualization_containerHelp,
+		hosts_virtualization_noContainersYet
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		service: Service;
@@ -84,10 +89,10 @@
 
 <div class="space-y-6">
 	<ListManager
-		label={m.common_containers()}
-		helpText={m.hosts_virtualization_containerHelp({ serviceName: serviceMetadata?.name ?? '' })}
-		placeholder={m.hosts_virtualization_addContainer()}
-		emptyMessage={m.hosts_virtualization_noContainersYet()}
+		label={common_containers()}
+		helpText={hosts_virtualization_containerHelp({ serviceName: serviceMetadata?.name ?? '' })}
+		placeholder={hosts_virtualization_addContainer()}
+		emptyMessage={hosts_virtualization_noContainersYet()}
 		allowReorder={false}
 		allowDuplicates={false}
 		allowItemEdit={() => false}

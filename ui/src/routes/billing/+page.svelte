@@ -17,7 +17,7 @@
 	import { pushSuccess, pushError } from '$lib/shared/stores/feedback';
 	import PlanInquiryModal from '$lib/features/billing/PlanInquiryModal.svelte';
 	import { trackEvent, getPosthogDistinctId } from '$lib/shared/utils/analytics';
-	import * as m from '$lib/paraglide/messages';
+	import { billing_inquiryFailed, billing_inquirySuccess } from '$lib/paraglide/messages';
 
 	// Create helpers from static fixtures (no API calls needed)
 	const billingPlanHelpers = createStaticHelpers<BillingPlanMetadata>(billingPlansJson);
@@ -106,7 +106,7 @@
 	async function handleInquirySubmit(email: string, message: string) {
 		const plunkKey = configData?.plunk_key;
 		if (!plunkKey) {
-			pushError(m.billing_inquiryFailed());
+			pushError(billing_inquiryFailed());
 			return;
 		}
 
@@ -134,10 +134,10 @@
 				})
 			});
 
-			pushSuccess(m.billing_inquirySuccess());
+			pushSuccess(billing_inquirySuccess());
 		} catch (error) {
 			console.error('Failed to send plan inquiry:', error);
-			pushError(m.billing_inquiryFailed());
+			pushError(billing_inquiryFailed());
 		}
 	}
 </script>

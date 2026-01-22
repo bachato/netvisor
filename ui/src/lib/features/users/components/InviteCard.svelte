@@ -7,7 +7,18 @@
 	import type { OrganizationInvite } from '$lib/features/organizations/types';
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_expires,
+		common_notApplicable,
+		common_permissions,
+		common_revoke,
+		common_url,
+		invites_confirmRevoke,
+		invites_createdBy,
+		invites_pendingInvite,
+		invites_sentTo,
+		invites_unknownUser
+	} from '$lib/paraglide/messages';
 
 	let { invite, viewMode }: { invite: OrganizationInvite; viewMode: 'card' | 'list' } = $props();
 
@@ -23,7 +34,7 @@
 	const revokeInviteMutation = useRevokeInviteMutation();
 
 	function handleRevokeInvite() {
-		if (confirm(m.invites_confirmRevoke())) {
+		if (confirm(invites_confirmRevoke())) {
 			revokeInviteMutation.mutate(invite.id);
 		}
 	}
@@ -38,28 +49,28 @@
 
 	// Build card data
 	let cardData = $derived({
-		title: m.invites_pendingInvite(),
+		title: invites_pendingInvite(),
 		iconColor: entities.getColorHelper('User').icon,
 		Icon: UserPlus,
 		fields: [
 			{
-				label: m.common_url(),
+				label: common_url(),
 				value: formatInviteUrl(invite)
 			},
 			{
-				label: m.common_permissions(),
+				label: common_permissions(),
 				value: invite.permissions
 			},
 			{
-				label: m.invites_createdBy(),
-				value: usersData.find((u) => u.id == invite.created_by)?.email || m.invites_unknownUser()
+				label: invites_createdBy(),
+				value: usersData.find((u) => u.id == invite.created_by)?.email || invites_unknownUser()
 			},
 			{
-				label: m.invites_sentTo(),
-				value: invite.send_to ? invite.send_to : m.common_notApplicable()
+				label: invites_sentTo(),
+				value: invite.send_to ? invite.send_to : common_notApplicable()
 			},
 			{
-				label: m.common_expires(),
+				label: common_expires(),
 				value: formatTimestamp(invite.expires_at)
 			}
 		],
@@ -67,7 +78,7 @@
 			...(canManage
 				? [
 						{
-							label: m.common_revoke(),
+							label: common_revoke(),
 							icon: UserX,
 							class: 'btn-icon-danger',
 							onClick: () => handleRevokeInvite()

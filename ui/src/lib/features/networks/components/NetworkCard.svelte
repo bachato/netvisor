@@ -8,7 +8,14 @@
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_daemons,
+		common_delete,
+		common_edit,
+		common_groupsLabel,
+		common_subnets,
+		common_tags
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		network: Network;
@@ -56,7 +63,7 @@
 		Icon: entities.getIconComponent('Network'),
 		fields: [
 			{
-				label: m.common_daemons(),
+				label: common_daemons(),
 				value: networkDaemons.map((d) => {
 					return {
 						id: d.id,
@@ -66,7 +73,7 @@
 				})
 			},
 			{
-				label: m.common_subnets(),
+				label: common_subnets(),
 				value: networkSubnets.map((s) => {
 					return {
 						id: s.id,
@@ -76,7 +83,7 @@
 				})
 			},
 			{
-				label: m.common_groupsLabel(),
+				label: common_groupsLabel(),
 				value: networkGroups.map((g) => {
 					return {
 						id: g.id,
@@ -85,20 +92,20 @@
 					};
 				})
 			},
-			{ label: m.common_tags(), snippet: tagsSnippet }
+			{ label: common_tags(), snippet: tagsSnippet }
 		],
 
 		actions: [
 			...(canManageNetworks
 				? [
 						{
-							label: m.common_delete(),
+							label: common_delete(),
 							icon: Trash2,
 							class: 'btn-icon-danger',
 							onClick: () => onDelete(network)
 						},
 						{
-							label: m.common_edit(),
+							label: common_edit(),
 							icon: Edit,
 							onClick: () => onEdit(network)
 						}
@@ -110,7 +117,7 @@
 
 {#snippet tagsSnippet()}
 	<div class="flex items-center gap-2">
-		<span class="text-secondary text-sm">{m.common_tags()}:</span>
+		<span class="text-secondary text-sm">{common_tags()}:</span>
 		<TagPickerInline selectedTagIds={network.tags} entityId={network.id} entityType="Network" />
 	</div>
 {/snippet}

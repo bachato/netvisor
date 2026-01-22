@@ -6,7 +6,16 @@
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { RotateCcwKey } from 'lucide-svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		apiKeys_rotateKey,
+		apiKeys_rotateWarningBody,
+		apiKeys_rotateWarningTitle,
+		apiKeys_saveKeyNowBody,
+		apiKeys_saveKeyNowTitle,
+		common_generateKey,
+		common_generating,
+		common_pressGenerateKey
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		/** The generated key string to display (null if not yet generated) */
@@ -32,17 +41,17 @@
 	}
 
 	let buttonText = $derived(
-		loading ? m.common_generating() : isEditing ? m.apiKeys_rotateKey() : m.common_generateKey()
+		loading ? common_generating() : isEditing ? apiKeys_rotateKey() : common_generateKey()
 	);
 </script>
 
 <div class="space-y-3">
 	{#if !generatedKey && isEditing}
-		<InlineWarning title={m.apiKeys_rotateWarningTitle()} body={m.apiKeys_rotateWarningBody()} />
+		<InlineWarning title={apiKeys_rotateWarningTitle()} body={apiKeys_rotateWarningBody()} />
 	{/if}
 
 	{#if generatedKey}
-		<InlineWarning title={m.apiKeys_saveKeyNowTitle()} body={m.apiKeys_saveKeyNowBody()} />
+		<InlineWarning title={apiKeys_saveKeyNowTitle()} body={apiKeys_saveKeyNowBody()} />
 	{/if}
 
 	<div class="flex items-start gap-2">
@@ -60,7 +69,7 @@
 			<CodeContainer
 				language="bash"
 				expandable={false}
-				code={generatedKey ? generatedKey : m.common_pressGenerateKey()}
+				code={generatedKey ? generatedKey : common_pressGenerateKey()}
 			/>
 		</div>
 	</div>

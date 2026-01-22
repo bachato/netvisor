@@ -2,7 +2,7 @@
 	import { toastStore, dismissToast, type Toast } from '$lib/shared/stores/feedback';
 	import { fly } from 'svelte/transition';
 	import { AlertCircle, AlertTriangle, Info, CheckCircle, X } from 'lucide-svelte';
-	import * as m from '$lib/paraglide/messages';
+	import { common_dismiss } from '$lib/paraglide/messages';
 
 	$: toasts = $toastStore;
 
@@ -119,7 +119,7 @@
 							type="button"
 							on:click={() => dismissToast(toast.id)}
 							class="flex-shrink-0 rounded p-1 {colors.button} transition-colors hover:bg-white/10"
-							title={m.common_dismiss()}
+							title={common_dismiss()}
 						>
 							<X class="h-4 w-4" />
 						</button>

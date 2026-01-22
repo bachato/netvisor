@@ -13,7 +13,12 @@
 	import { permissions } from '$lib/shared/stores/metadata';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { onMount } from 'svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_creating,
+		common_unknown,
+		tags_addTag,
+		tags_createTagQuoted
+	} from '$lib/paraglide/messages';
 
 	/**
 	 * Compact inline tag picker for use in cards and bulk actions.
@@ -248,7 +253,7 @@
 			<span
 				class="inline-flex items-center gap-1 rounded-full bg-gray-600 px-2 py-0.5 text-xs font-medium text-gray-300"
 			>
-				{m.common_unknown()}
+				{common_unknown()}
 				{#if !disabled && (onRemove || isEntityMode)}
 					<button
 						type="button"
@@ -271,7 +276,7 @@
 					bind:this={inputElement}
 					bind:value={inputValue}
 					type="text"
-					placeholder={m.tags_addTag()}
+					placeholder={tags_addTag()}
 					class="h-5 w-24 rounded-full border border-gray-600 bg-gray-700 px-2 text-xs text-gray-200 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 					onfocus={() => (isDropdownOpen = true)}
 					onblur={handleBlur}
@@ -308,7 +313,7 @@
 			>
 				<Plus class="h-3 w-3 shrink-0 text-green-400" />
 				<span class="text-primary">
-					{isCreating ? m.common_creating() : m.tags_createTagQuoted({ name: inputValue.trim() })}
+					{isCreating ? common_creating() : tags_createTagQuoted({ name: inputValue.trim() })}
 				</span>
 			</button>
 		{/if}

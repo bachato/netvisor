@@ -10,7 +10,26 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import InfoCard from '$lib/shared/components/data/InfoCard.svelte';
 	import InfoRow from '$lib/shared/components/data/InfoRow.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_close,
+		common_email,
+		common_userId,
+		common_version,
+		support_description,
+		support_discordDesc,
+		support_emailDesc,
+		support_incorrectDetection,
+		support_incorrectDetectionDesc,
+		support_info,
+		support_orgId,
+		support_reportBug,
+		support_reportBugDesc,
+		support_requestFeature,
+		support_requestFeatureDesc,
+		support_title,
+		support_userGuide,
+		support_userGuideDesc
+	} from '$lib/paraglide/messages';
 
 	type SupportOption = {
 		title: string;
@@ -45,36 +64,36 @@
 	let supportOptions = $derived.by(() => {
 		const options: SupportOption[] = [
 			{
-				title: m.support_userGuide(),
-				description: m.support_userGuideDesc(),
+				title: support_userGuide(),
+				description: support_userGuideDesc(),
 				url: 'https://scanopy.net/docs/',
 				color: 'Gray',
 				icon: BookOpen
 			},
 			{
-				title: m.support_incorrectDetection(),
-				description: m.support_incorrectDetectionDesc(),
+				title: support_incorrectDetection(),
+				description: support_incorrectDetectionDesc(),
 				url: 'https://github.com/scanopy/scanopy/issues/new?template=service-detection-issue.md',
 				color: 'Yellow',
 				icon: AlertTriangle
 			},
 			{
-				title: m.support_requestFeature(),
-				description: m.support_requestFeatureDesc(),
+				title: support_requestFeature(),
+				description: support_requestFeatureDesc(),
 				url: 'https://github.com/scanopy/scanopy/issues/new?template=feature_request.md',
 				color: 'Green',
 				icon: Lightbulb
 			},
 			{
-				title: m.support_reportBug(),
-				description: m.support_reportBugDesc(),
+				title: support_reportBug(),
+				description: support_reportBugDesc(),
 				url: 'https://github.com/scanopy/scanopy/issues/new?template=bug_report.md',
 				color: 'Red',
 				icon: Bug
 			},
 			{
 				title: 'Discord',
-				description: m.support_discordDesc(),
+				description: support_discordDesc(),
 				url: 'https://discord.gg/b7ffQr8AcZ',
 				color: 'Indigo',
 				icon: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/discord.svg'
@@ -83,8 +102,8 @@
 
 		if (hasEmailSupport) {
 			options.push({
-				title: m.common_email(),
-				description: m.support_emailDesc(),
+				title: common_email(),
+				description: support_emailDesc(),
 				url: 'mailto:support@scanopy.net',
 				color: 'Blue',
 				icon: Mail
@@ -99,7 +118,7 @@
 	}
 </script>
 
-<GenericModal {isOpen} title={m.support_title()} {onClose} size="xl">
+<GenericModal {isOpen} title={support_title()} {onClose} size="xl">
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={LifeBuoy} color="Blue" />
 	{/snippet}
@@ -107,7 +126,7 @@
 	<div class="flex min-h-0 flex-1 flex-col">
 		<div class="flex-1 space-y-6 overflow-auto p-6">
 			<p class="text-secondary text-sm">
-				{m.support_description()}
+				{support_description()}
 			</p>
 
 			<div class="grid grid-cols-2 gap-3">
@@ -132,18 +151,18 @@
 					</button>
 				{/each}
 			</div>
-			<InfoCard title={m.support_info()}>
-				<InfoRow label={m.common_version()}>{VERSION}</InfoRow>
-				<InfoRow label={m.support_orgId()} mono={true}>
+			<InfoCard title={support_info()}>
+				<InfoRow label={common_version()}>{VERSION}</InfoRow>
+				<InfoRow label={support_orgId()} mono={true}>
 					{organization?.id ?? '—'}
 				</InfoRow>
-				<InfoRow label={m.common_userId()} mono={true}>{currentUser?.id ?? '—'}</InfoRow>
+				<InfoRow label={common_userId()} mono={true}>{currentUser?.id ?? '—'}</InfoRow>
 			</InfoCard>
 		</div>
 
 		<div class="modal-footer">
 			<div class="flex justify-end">
-				<button type="button" onclick={onClose} class="btn-secondary">{m.common_close()}</button>
+				<button type="button" onclick={onClose} class="btn-secondary">{common_close()}</button>
 			</div>
 		</div>
 	</div>

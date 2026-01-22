@@ -13,7 +13,17 @@
 	import EntityConfigEmpty from '$lib/shared/components/forms/EntityConfigEmpty.svelte';
 	import ListSelectItem from '$lib/shared/components/forms/selection/ListSelectItem.svelte';
 	import { ArrowRightLeft } from 'lucide-svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_noServiceSelected,
+		common_services,
+		hosts_services_emptyMessage,
+		hosts_services_helpText,
+		hosts_services_invalidIndex,
+		hosts_services_placeholder,
+		hosts_services_selectToConfig,
+		hosts_services_transferBindingsTitle,
+		hosts_services_transferPorts
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		formData: HostFormData;
@@ -89,7 +99,7 @@
 			updatedServices[index] = service;
 			formData.services = updatedServices;
 		} else {
-			pushError(m.hosts_services_invalidIndex());
+			pushError(hosts_services_invalidIndex());
 		}
 	}
 
@@ -124,10 +134,10 @@
 		>
 			{@const isTransferringPortBindings = selectedPortBindings.length > 0}
 			<ListManager
-				label={m.common_services()}
-				helpText={m.hosts_services_helpText()}
-				placeholder={m.hosts_services_placeholder()}
-				emptyMessage={m.hosts_services_emptyMessage()}
+				label={common_services()}
+				helpText={hosts_services_helpText()}
+				placeholder={hosts_services_placeholder()}
+				emptyMessage={hosts_services_emptyMessage()}
 				options={availableServiceTypes}
 				itemClickAction="edit"
 				showSearch={true}
@@ -163,12 +173,12 @@
 									handleTransferPorts(item, highlightedItem);
 								}}
 								class="btn-secondary flex-shrink-0 text-xs"
-								title={m.hosts_services_transferBindingsTitle({
+								title={hosts_services_transferBindingsTitle({
 									count: selectedPortBindings.length
 								})}
 							>
 								<ArrowRightLeft size={12} />
-								<span>{m.hosts_services_transferPorts()}</span>
+								<span>{hosts_services_transferPorts()}</span>
 							</button>
 						{/if}
 					</div>
@@ -194,8 +204,8 @@
 
 			{#if !selectedItem}
 				<EntityConfigEmpty
-					title={m.common_noServiceSelected()}
-					subtitle={m.hosts_services_selectToConfig()}
+					title={common_noServiceSelected()}
+					subtitle={hosts_services_selectToConfig()}
 				/>
 			{/if}
 		</svelte:fragment>

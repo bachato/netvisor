@@ -19,7 +19,7 @@ impl ServiceDefinition for PeaNut {
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {
-        Pattern::Endpoint(PortType::Http3000, "/api/v1/info", "peanut", None)
+        Pattern::Endpoint(PortType::Http8080, "/api/v1/info", "peanut", None)
     }
 
     fn logo_url(&self) -> &'static str {

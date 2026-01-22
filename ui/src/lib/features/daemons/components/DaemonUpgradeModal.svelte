@@ -6,7 +6,20 @@
 	import { ArrowBigUpDash } from 'lucide-svelte';
 	import type { Daemon } from '../types/base';
 	import { VERSION } from '$lib/version';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_close,
+		daemons_binaryInstallation,
+		daemons_binaryInstallationHelp,
+		daemons_currentVersion,
+		daemons_dockerApplyChanges,
+		daemons_dockerComposeInstallation,
+		daemons_dockerLatestTag,
+		daemons_dockerPinnedVersion,
+		daemons_latestVersion,
+		daemons_restartDaemon,
+		daemons_updateAvailable,
+		daemons_upgradeDaemon
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		isOpen?: boolean;
@@ -27,7 +40,7 @@ docker compose up -d`;
 	let colorHelper = entities.getColorHelper('Daemon');
 </script>
 
-<GenericModal {isOpen} title={m.daemons_upgradeDaemon()} size="lg" {onClose}>
+<GenericModal {isOpen} title={daemons_upgradeDaemon()} size="lg" {onClose}>
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={ArrowBigUpDash} color={colorHelper.color} />
 	{/snippet}
@@ -36,45 +49,45 @@ docker compose up -d`;
 		<div class="flex-1 overflow-auto p-6">
 			<div class="space-y-6">
 				<p class="text-secondary">
-					{m.daemons_updateAvailable()} <span class="text-primary font-medium">{daemon.name}</span>.
+					{daemons_updateAvailable()} <span class="text-primary font-medium">{daemon.name}</span>.
 					{#if daemon.version_status.version}
-						{m.daemons_currentVersion()}
+						{daemons_currentVersion()}
 						<span class="font-mono">{daemon.version_status.version}.</span>
 					{/if}
-					{m.daemons_latestVersion()} <span class="font-mono">{VERSION}.</span>
+					{daemons_latestVersion()} <span class="font-mono">{VERSION}.</span>
 				</p>
 
 				<!-- Binary Installation -->
 				<div class="space-y-3">
-					<h3 class="text-primary font-medium">{m.daemons_binaryInstallation()}</h3>
+					<h3 class="text-primary font-medium">{daemons_binaryInstallation()}</h3>
 					<p class="text-secondary text-sm">
-						{m.daemons_binaryInstallationHelp()}
+						{daemons_binaryInstallationHelp()}
 					</p>
 					<CodeContainer language="bash" expandable={false} code={binaryUpgradeCommand} />
 					<p class="text-secondary text-sm">
-						{m.daemons_restartDaemon()}
+						{daemons_restartDaemon()}
 					</p>
 				</div>
 
 				<!-- Docker Compose Installation -->
 				<div class="space-y-3">
-					<h3 class="text-primary font-medium">{m.daemons_dockerComposeInstallation()}</h3>
+					<h3 class="text-primary font-medium">{daemons_dockerComposeInstallation()}</h3>
 
 					<div class="space-y-2">
 						<p class="text-secondary text-sm">
-							{m.daemons_dockerLatestTag()}
+							{daemons_dockerLatestTag()}
 						</p>
 						<CodeContainer language="bash" expandable={false} code={dockerComposeLatestPull} />
 					</div>
 
 					<div class="space-y-2">
 						<p class="text-secondary text-sm">
-							{m.daemons_dockerPinnedVersion()}
+							{daemons_dockerPinnedVersion()}
 							<span class="font-mono">docker-compose.yml</span>:
 						</p>
 						<CodeContainer language="yaml" expandable={false} code={dockerComposeImageLine} />
 						<p class="text-secondary text-sm">
-							{m.daemons_dockerApplyChanges()}
+							{daemons_dockerApplyChanges()}
 						</p>
 					</div>
 				</div>
@@ -84,7 +97,7 @@ docker compose up -d`;
 		<!-- Footer -->
 		<div class="modal-footer">
 			<div class="flex items-center justify-end">
-				<button type="button" class="btn-secondary" onclick={onClose}>{m.common_close()}</button>
+				<button type="button" class="btn-secondary" onclick={onClose}>{common_close()}</button>
 			</div>
 		</div>
 	</div>

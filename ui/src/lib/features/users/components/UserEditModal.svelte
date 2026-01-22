@@ -14,7 +14,23 @@
 	import { pushSuccess, pushError } from '$lib/shared/stores/feedback';
 	import type { User, UserOrgPermissions } from '../types';
 	import type { Network } from '$lib/features/networks/types';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_authentication,
+		common_cancel,
+		common_email,
+		common_emailAndPassword,
+		common_networks,
+		common_saveChanges,
+		common_saving,
+		users_editUser,
+		users_editUserTitle,
+		users_hasAllNetworks,
+		users_networkAccessHelp,
+		users_permissionsLevel,
+		users_permissionsLevelHelp,
+		users_updateFailed,
+		users_updateSuccess
+	} from '$lib/paraglide/messages';
 
 	let {
 		isOpen = $bindable(false),
@@ -95,10 +111,10 @@
 				};
 
 				await updateUserMutation.mutateAsync(updatedUser);
-				pushSuccess(m.users_updateSuccess({ email: user.email }));
+				pushSuccess(users_updateSuccess({ email: user.email }));
 				onClose();
 			} catch (err) {
-				pushError(m.users_updateFailed({ error: String(err) }));
+				pushError(users_updateFailed({ error: String(err) }));
 			}
 		}
 	}));
@@ -138,7 +154,7 @@
 		}
 	}
 
-	let title = $derived(user ? m.users_editUser({ email: user.email }) : m.users_editUserTitle());
+	let title = $derived(user ? users_editUser({ email: user.email }) : users_editUserTitle());
 </script>
 
 <GenericModal
@@ -171,13 +187,13 @@
 					<div class="card card-static">
 						<div class="space-y-2">
 							<div class="flex items-center justify-between">
-								<span class="text-secondary text-sm">{m.common_email()}</span>
+								<span class="text-secondary text-sm">{common_email()}</span>
 								<span class="text-primary text-sm font-medium">{user.email}</span>
 							</div>
 							<div class="flex items-center justify-between">
-								<span class="text-secondary text-sm">{m.common_authentication()}</span>
+								<span class="text-secondary text-sm">{common_authentication()}</span>
 								<span class="text-primary text-sm"
-									>{user.oidc_provider || m.common_emailAndPassword()}</span
+									>{user.oidc_provider || common_emailAndPassword()}</span
 								>
 							</div>
 						</div>
@@ -192,11 +208,11 @@
 					>
 						{#snippet children(field)}
 							<SelectInput
-								label={m.users_permissionsLevel()}
+								label={users_permissionsLevel()}
 								id="permissions"
 								{field}
 								options={permissionOptions}
-								helpText={m.users_permissionsLevelHelp()}
+								helpText={users_permissionsLevelHelp()}
 							/>
 						{/snippet}
 					</form.Field>
@@ -204,8 +220,8 @@
 					<!-- Network Assignment (only for Member/Viewer) -->
 					{#if !networksNotNeeded.includes(permissionsValue as UserOrgPermissions)}
 						<ListManager
-							label={m.common_networks()}
-							helpText={m.users_networkAccessHelp()}
+							label={common_networks()}
+							helpText={users_networkAccessHelp()}
 							required={true}
 							allowReorder={false}
 							allowAddFromOptions={true}
@@ -222,7 +238,7 @@
 					{:else}
 						<div class="card card-static">
 							<p class="text-secondary text-sm">
-								{m.users_hasAllNetworks({ permissions: permissionsValue })}
+								{users_hasAllNetworks({ permissions: permissionsValue })}
 							</p>
 						</div>
 					{/if}
@@ -234,10 +250,10 @@
 		<div class="modal-footer">
 			<div class="flex items-center justify-end gap-3">
 				<button type="button" disabled={loading} onclick={handleClose} class="btn-secondary">
-					{m.common_cancel()}
+					{common_cancel()}
 				</button>
 				<button type="submit" disabled={loading} class="btn-primary">
-					{loading ? m.common_saving() : m.common_saveChanges()}
+					{loading ? common_saving() : common_saveChanges()}
 				</button>
 			</div>
 		</div>

@@ -1,7 +1,17 @@
 <script lang="ts">
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import { AlertCircle } from 'lucide-svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_password,
+		common_passwordConfirm,
+		common_passwordContainsLowercase,
+		common_passwordContainsNumber,
+		common_passwordContainsUppercase,
+		common_passwordCreatePlaceholder,
+		common_passwordMinChars,
+		common_passwordReenterPlaceholder,
+		common_passwordRequirements
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		passwordField: AnyFieldApi;
@@ -19,8 +29,8 @@
 		required = true
 	}: Props = $props();
 
-	let passwordLabel = $derived(label ?? m.common_password());
-	let confirmPasswordLabel = $derived(confirmLabel ?? m.common_passwordConfirm());
+	let passwordLabel = $derived(label ?? common_password());
+	let confirmPasswordLabel = $derived(confirmLabel ?? common_passwordConfirm());
 
 	// Password requirements derived from field value
 	let value = $derived(passwordField.state.value as string);
@@ -54,7 +64,7 @@
 			value={passwordField.state.value}
 			onblur={() => passwordField.handleBlur()}
 			oninput={(e) => passwordField.handleChange(e.currentTarget.value)}
-			placeholder={m.common_passwordCreatePlaceholder()}
+			placeholder={common_passwordCreatePlaceholder()}
 			class="input-field"
 			class:input-field-error={showPasswordErrors}
 		/>
@@ -62,22 +72,22 @@
 		<!-- Password Requirements -->
 		{#if value}
 			<div class="space-y-1 rounded-md bg-gray-700 p-3">
-				<p class="text-xs font-medium text-gray-300">{m.common_passwordRequirements()}</p>
+				<p class="text-xs font-medium text-gray-300">{common_passwordRequirements()}</p>
 				<p class="text-xs {passwordLongEnough ? 'text-green-400' : 'text-gray-400'}">
 					{passwordLongEnough ? '✓' : '○'}
-					{m.common_passwordMinChars()}
+					{common_passwordMinChars()}
 				</p>
 				<p class="text-xs {hasUppercase ? 'text-green-400' : 'text-gray-400'}">
 					{hasUppercase ? '✓' : '○'}
-					{m.common_passwordContainsUppercase()}
+					{common_passwordContainsUppercase()}
 				</p>
 				<p class="text-xs {hasLowercase ? 'text-green-400' : 'text-gray-400'}">
 					{hasLowercase ? '✓' : '○'}
-					{m.common_passwordContainsLowercase()}
+					{common_passwordContainsLowercase()}
 				</p>
 				<p class="text-xs {hasNumber ? 'text-green-400' : 'text-gray-400'}">
 					{hasNumber ? '✓' : '○'}
-					{m.common_passwordContainsNumber()}
+					{common_passwordContainsNumber()}
 				</p>
 			</div>
 		{/if}
@@ -102,7 +112,7 @@
 				value={confirmPasswordField.state.value}
 				onblur={() => confirmPasswordField.handleBlur()}
 				oninput={(e) => confirmPasswordField.handleChange(e.currentTarget.value)}
-				placeholder={m.common_passwordReenterPlaceholder()}
+				placeholder={common_passwordReenterPlaceholder()}
 				class="input-field"
 				class:input-field-error={showConfirmErrors}
 			/>

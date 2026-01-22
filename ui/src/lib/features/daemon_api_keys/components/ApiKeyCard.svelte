@@ -5,7 +5,19 @@
 	import { Edit, Trash2 } from 'lucide-svelte';
 	import type { ApiKey } from '../types/base';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_created,
+		common_delete,
+		common_edit,
+		common_enabled,
+		common_expired,
+		common_expires,
+		common_never,
+		common_no,
+		common_tags,
+		common_yes,
+		daemonApiKeys_lastUsed
+	} from '$lib/paraglide/messages';
 
 	let {
 		apiKey,
@@ -30,36 +42,36 @@
 		Icon: entities.getIconComponent('DaemonApiKey'),
 		fields: [
 			{
-				label: m.common_created(),
+				label: common_created(),
 				value: formatTimestamp(apiKey.created_at)
 			},
 			{
-				label: m.daemonApiKeys_lastUsed(),
-				value: apiKey.last_used ? formatTimestamp(apiKey.last_used) : m.common_never()
+				label: daemonApiKeys_lastUsed(),
+				value: apiKey.last_used ? formatTimestamp(apiKey.last_used) : common_never()
 			},
 			{
-				label: m.common_expires(),
+				label: common_expires(),
 				value: apiKey.expires_at
 					? new Date(apiKey.expires_at) < new Date()
-						? m.common_expired()
+						? common_expired()
 						: formatTimestamp(apiKey.expires_at)
-					: m.common_never()
+					: common_never()
 			},
 			{
-				label: m.common_enabled(),
-				value: apiKey.is_enabled ? m.common_yes() : m.common_no()
+				label: common_enabled(),
+				value: apiKey.is_enabled ? common_yes() : common_no()
 			},
-			{ label: m.common_tags(), snippet: tagsSnippet }
+			{ label: common_tags(), snippet: tagsSnippet }
 		],
 		actions: [
 			{
-				label: m.common_delete(),
+				label: common_delete(),
 				icon: Trash2,
 				class: 'btn-icon-danger',
 				onClick: () => onDelete(apiKey)
 			},
 			{
-				label: m.common_edit(),
+				label: common_edit(),
 				icon: Edit,
 				class: 'btn-icon',
 				onClick: () => onEdit(apiKey)
@@ -70,7 +82,7 @@
 
 {#snippet tagsSnippet()}
 	<div class="flex items-center gap-2">
-		<span class="text-secondary text-sm">{m.common_tags()}:</span>
+		<span class="text-secondary text-sm">{common_tags()}:</span>
 		<TagPickerInline selectedTagIds={apiKey.tags} entityId={apiKey.id} entityType="DaemonApiKey" />
 	</div>
 {/snippet}

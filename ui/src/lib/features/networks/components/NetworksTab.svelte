@@ -12,7 +12,15 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
 	import type { TabProps } from '$lib/shared/types';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_create,
+		common_name,
+		common_networks,
+		common_tags,
+		networks_confirmBulkDelete,
+		networks_confirmDelete,
+		networks_noNetworksYet
+	} from '$lib/paraglide/messages';
 
 	let { isReadOnly = false }: TabProps = $props();
 	import {
@@ -64,7 +72,7 @@
 	);
 
 	function handleDeleteNetwork(network: Network) {
-		if (confirm(m.networks_confirmDelete({ name: network.name }))) {
+		if (confirm(networks_confirmDelete({ name: network.name }))) {
 			deleteNetworkMutation.mutate(network.id);
 		}
 	}
@@ -80,7 +88,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.networks_confirmBulkDelete({ count: ids.length }))) {
+		if (confirm(networks_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteNetworksMutation.mutateAsync(ids);
 		}
 	}
@@ -118,13 +126,13 @@
 	const networkFields: FieldConfig<Network>[] = [
 		{
 			key: 'name',
-			label: m.common_name(),
+			label: common_name(),
 			type: 'string',
 			searchable: true
 		},
 		{
 			key: 'tags',
-			label: m.common_tags(),
+			label: common_tags(),
 			type: 'array',
 			searchable: true,
 			filterable: true,
@@ -140,11 +148,11 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<TabHeader title={m.common_networks()}>
+	<TabHeader title={common_networks()}>
 		<svelte:fragment slot="actions">
 			{#if canManageNetworks}
 				<button class="btn-primary flex items-center" onclick={handleCreateNetwork}
-					><Plus class="h-5 w-5" />{m.common_create()}</button
+					><Plus class="h-5 w-5" />{common_create()}</button
 				>
 			{/if}
 		</svelte:fragment>
@@ -156,10 +164,10 @@
 	{:else if networksData.length === 0}
 		<!-- Empty state -->
 		<EmptyState
-			title={m.networks_noNetworksYet()}
+			title={networks_noNetworksYet()}
 			subtitle=""
 			onClick={handleCreateNetwork}
-			cta={m.common_create()}
+			cta={common_create()}
 		/>
 	{:else}
 		<DataControls

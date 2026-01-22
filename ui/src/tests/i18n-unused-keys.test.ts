@@ -37,11 +37,22 @@ function isDynamicKey(key: string): boolean {
 }
 
 function isKeyUsed(key: string, sourceFiles: string[], fileContents: Map<string, string>): boolean {
-	const pattern = `m.${key}(`;
+	// Check for both namespace imports (m.key) and named imports (key directly)
+	const namespacePattern = `m.${key}(`;
+	const namedPattern = `${key}(`;
+	const importPattern = /from\s+['"]\$lib\/paraglide\/messages['"]/;
 
 	for (const file of sourceFiles) {
 		const content = fileContents.get(file);
-		if (content && content.includes(pattern)) {
+		if (!content) continue;
+
+		// Check namespace import pattern
+		if (content.includes(namespacePattern)) {
+			return true;
+		}
+
+		// Check named import pattern (only if file imports from paraglide)
+		if (content.includes(namedPattern) && importPattern.test(content)) {
 			return true;
 		}
 	}

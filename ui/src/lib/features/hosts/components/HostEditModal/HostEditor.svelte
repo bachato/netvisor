@@ -26,7 +26,28 @@
 	import VirtualizationForm from './Virtualization/VirtualizationForm.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { pushError } from '$lib/shared/stores/feedback';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_back,
+		common_cancel,
+		common_delete,
+		common_deleting,
+		common_details,
+		common_editName,
+		common_interfaces,
+		common_next,
+		common_ports,
+		common_saving,
+		common_serviceConfiguration,
+		common_services,
+		common_virtualization,
+		hosts_createHost,
+		hosts_editor_basicInfo,
+		hosts_editor_interfacesDesc,
+		hosts_editor_updateHost,
+		hosts_editor_virtualizationDesc,
+		hosts_failedToDelete,
+		hosts_failedToSave
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		host?: Host | null;
@@ -59,7 +80,7 @@
 
 	let isEditing = $derived(host !== null);
 	let title = $derived(
-		isEditing ? m.common_editName({ name: host?.name ?? '' }) : m.hosts_createHost()
+		isEditing ? common_editName({ name: host?.name ?? '' }) : hosts_createHost()
 	);
 
 	// formData holds structural data (ids, network_id, tags, etc.)
@@ -145,7 +166,7 @@
 				handleClose();
 			}
 		} catch (error) {
-			pushError(error instanceof Error ? error.message : m.hosts_failedToSave());
+			pushError(error instanceof Error ? error.message : hosts_failedToSave());
 		} finally {
 			loading = false;
 		}
@@ -226,35 +247,35 @@
 	let tabs = $derived([
 		{
 			id: 'details',
-			label: m.common_details(),
+			label: common_details(),
 			icon: Info,
-			description: m.hosts_editor_basicInfo()
+			description: hosts_editor_basicInfo()
 		},
 		{
 			id: 'interfaces',
-			label: m.common_interfaces(),
+			label: common_interfaces(),
 			icon: entities.getIconComponent('Interface'),
-			description: m.hosts_editor_interfacesDesc()
+			description: hosts_editor_interfacesDesc()
 		},
 		{
 			id: 'ports',
-			label: m.common_ports(),
+			label: common_ports(),
 			icon: entities.getIconComponent('Port'),
-			description: m.common_serviceConfiguration()
+			description: common_serviceConfiguration()
 		},
 		{
 			id: 'services',
-			label: m.common_services(),
+			label: common_services(),
 			icon: entities.getIconComponent('Service'),
-			description: m.common_serviceConfiguration()
+			description: common_serviceConfiguration()
 		},
 		...(vmManagerServices && vmManagerServices.length > 0
 			? [
 					{
 						id: 'virtualization',
-						label: m.common_virtualization(),
+						label: common_virtualization(),
 						icon: concepts.getIconComponent('Virtualization'),
-						description: m.hosts_editor_virtualizationDesc()
+						description: hosts_editor_virtualizationDesc()
 					}
 				]
 			: [])
@@ -311,7 +332,7 @@
 				await onDelete(host.id);
 				handleClose();
 			} catch (error) {
-				pushError(error instanceof Error ? error.message : m.hosts_failedToDelete());
+				pushError(error instanceof Error ? error.message : hosts_failedToDelete());
 			} finally {
 				deleting = false;
 			}
@@ -347,12 +368,12 @@
 	// Dynamic labels based on create/edit mode and tab position
 	let saveLabel = $derived(
 		isEditing
-			? m.hosts_editor_updateHost()
+			? hosts_editor_updateHost()
 			: currentTabIndex === tabs.length - 1
-				? m.hosts_createHost()
-				: m.common_next()
+				? hosts_createHost()
+				: common_next()
 	);
-	let cancelLabel = $derived(isEditing ? m.common_cancel() : m.common_back());
+	let cancelLabel = $derived(isEditing ? common_cancel() : common_back());
 	let showCancel = $derived(isEditing ? true : currentTabIndex !== 0);
 </script>
 
@@ -455,7 +476,7 @@
 							onclick={handleDelete}
 							class="btn-danger"
 						>
-							{deleting ? m.common_deleting() : m.common_delete()}
+							{deleting ? common_deleting() : common_delete()}
 						</button>
 					{/if}
 				</div>
@@ -471,7 +492,7 @@
 						</button>
 					{/if}
 					<button type="submit" disabled={loading || deleting} class="btn-primary">
-						{loading ? m.common_saving() : saveLabel}
+						{loading ? common_saving() : saveLabel}
 					</button>
 				</div>
 			</div>

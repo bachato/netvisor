@@ -1,17 +1,27 @@
 <script lang="ts">
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import { AlertTriangle } from 'lucide-svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_confirmAction,
+		common_areYouSure,
+		common_confirm,
+		common_cancel
+	} from '$lib/paraglide/messages';
 
 	export let isOpen: boolean = false;
-	export let title: string = m.common_confirmAction();
-	export let message: string = m.common_areYouSure();
+	export let title: string | undefined = undefined;
+	export let message: string | undefined = undefined;
 	export let details: string[] = [];
-	export let confirmLabel: string = m.common_confirm();
-	export let cancelLabel: string = m.common_cancel();
+	export let confirmLabel: string | undefined = undefined;
+	export let cancelLabel: string | undefined = undefined;
 	export let variant: 'danger' | 'warning' | 'info' = 'warning';
 	export let onConfirm: () => void;
 	export let onCancel: () => void;
+
+	$: resolvedTitle = title ?? common_confirmAction();
+	$: resolvedMessage = message ?? common_areYouSure();
+	$: resolvedConfirmLabel = confirmLabel ?? common_confirm();
+	$: resolvedCancelLabel = cancelLabel ?? common_cancel();
 
 	const variantClasses = {
 		danger: 'bg-red-900/20 border-red-600 text-red-400',
@@ -32,11 +42,11 @@
 	};
 </script>
 
-<GenericModal {isOpen} {title} onClose={onCancel} size="sm">
+<GenericModal {isOpen} title={resolvedTitle} onClose={onCancel} size="sm">
 	<div class="space-y-4">
 		<div class="flex items-start gap-3">
 			<AlertTriangle class="h-5 w-5 flex-shrink-0 {iconColors[variant]}" />
-			<p class="text-secondary text-sm">{message}</p>
+			<p class="text-secondary text-sm">{resolvedMessage}</p>
 		</div>
 
 		{#if details.length > 0}
@@ -54,10 +64,10 @@
 		<div class="modal-footer">
 			<div class="flex justify-end gap-3">
 				<button type="button" class="btn-secondary" on:click={onCancel}>
-					{cancelLabel}
+					{resolvedCancelLabel}
 				</button>
 				<button type="button" class={confirmButtonClasses[variant]} on:click={onConfirm}>
-					{confirmLabel}
+					{resolvedConfirmLabel}
 				</button>
 			</div>
 		</div>

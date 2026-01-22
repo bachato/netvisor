@@ -16,7 +16,26 @@
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_bindings,
+		common_details,
+		common_interfaceBindings,
+		common_name,
+		common_portBindings,
+		hosts_services_bindingsHelp,
+		hosts_services_couldNotFindService,
+		hosts_services_couldNotFindServiceToRemove,
+		hosts_services_interfaceBindingsHelp,
+		hosts_services_namePlaceholder,
+		hosts_services_newBinding,
+		hosts_services_noAvailableInterfaces,
+		hosts_services_noAvailablePortCombos,
+		hosts_services_noInterfaces,
+		hosts_services_noPorts,
+		hosts_services_portBindingsHelp,
+		hosts_services_portRequired,
+		hosts_services_selectBinding
+	} from '$lib/paraglide/messages';
 
 	// TanStack Query hooks
 	const servicesQuery = useServicesQuery();
@@ -175,22 +194,22 @@
 	// Port Binding Handlers
 	function handleCreatePortBinding() {
 		if (!service) {
-			pushWarning(m.hosts_services_couldNotFindService());
+			pushWarning(hosts_services_couldNotFindService());
 			return;
 		}
 
 		if (host.interfaces.length === 0) {
-			pushWarning(m.hosts_services_noInterfaces());
+			pushWarning(hosts_services_noInterfaces());
 			return;
 		}
 
 		if (host.ports.length === 0) {
-			pushWarning(m.hosts_services_noPorts());
+			pushWarning(hosts_services_noPorts());
 			return;
 		}
 
 		if (!canCreatePortBinding) {
-			pushWarning(m.hosts_services_noAvailablePortCombos());
+			pushWarning(hosts_services_noAvailablePortCombos());
 			return;
 		}
 
@@ -215,7 +234,7 @@
 
 	function handleRemovePortBinding(index: number) {
 		if (!service) {
-			pushWarning(m.hosts_services_couldNotFindServiceToRemove());
+			pushWarning(hosts_services_couldNotFindServiceToRemove());
 			return;
 		}
 
@@ -249,17 +268,17 @@
 	// Interface Binding Handlers
 	function handleCreateInterfaceBinding() {
 		if (!service) {
-			pushWarning(m.hosts_services_couldNotFindService());
+			pushWarning(hosts_services_couldNotFindService());
 			return;
 		}
 
 		if (host.interfaces.length === 0) {
-			pushWarning(m.hosts_services_noInterfaces());
+			pushWarning(hosts_services_noInterfaces());
 			return;
 		}
 
 		if (!canCreateInterfaceBinding) {
-			pushWarning(m.hosts_services_noAvailableInterfaces());
+			pushWarning(hosts_services_noAvailableInterfaces());
 			return;
 		}
 
@@ -283,7 +302,7 @@
 
 	function handleRemoveInterfaceBinding(index: number) {
 		if (!service) {
-			pushWarning(m.hosts_services_couldNotFindServiceToRemove());
+			pushWarning(hosts_services_couldNotFindServiceToRemove());
 			return;
 		}
 
@@ -321,7 +340,7 @@
 
 		<!-- Basic Configuration -->
 		<div class="space-y-4">
-			<div class="text-primary font-medium">{m.common_details()}</div>
+			<div class="text-primary font-medium">{common_details()}</div>
 			<!-- Service Name Field -->
 			<form.Field
 				name={nameFieldName}
@@ -335,9 +354,9 @@
 			>
 				{#snippet children(field: AnyFieldApi)}
 					<TextInput
-						label={m.common_name()}
+						label={common_name()}
 						id="service_name_{service.id}"
-						placeholder={m.hosts_services_namePlaceholder()}
+						placeholder={hosts_services_namePlaceholder()}
 						required={true}
 						{field}
 					/>
@@ -352,19 +371,19 @@
 		</div>
 
 		<div>
-			<div class="text-primary font-medium">{m.common_bindings()}</div>
+			<div class="text-primary font-medium">{common_bindings()}</div>
 			<span class="text-muted text-xs">
-				{m.hosts_services_bindingsHelp()}
+				{hosts_services_bindingsHelp()}
 			</span>
 		</div>
 		<!-- Port Bindings -->
 		<div class="space-y-4">
 			{#key `${service.id}`}
 				<ListManager
-					label={m.common_portBindings()}
-					helpText={m.hosts_services_portBindingsHelp()}
-					placeholder={m.hosts_services_selectBinding()}
-					createNewLabel={m.hosts_services_newBinding()}
+					label={common_portBindings()}
+					helpText={hosts_services_portBindingsHelp()}
+					placeholder={hosts_services_selectBinding()}
+					createNewLabel={hosts_services_newBinding()}
 					allowDuplicates={false}
 					allowItemEdit={() => true}
 					allowItemRemove={() => true}
@@ -401,8 +420,8 @@
 				<form.Field
 					name={`services[${index}].bindings[${bindingIndex}].port_id`}
 					validators={{
-						onChange: () => (!binding.port_id ? m.hosts_services_portRequired() : undefined),
-						onBlur: () => (!binding.port_id ? m.hosts_services_portRequired() : undefined)
+						onChange: () => (!binding.port_id ? hosts_services_portRequired() : undefined),
+						onBlur: () => (!binding.port_id ? hosts_services_portRequired() : undefined)
 					}}
 				>
 					{#snippet children(field: AnyFieldApi)}
@@ -416,10 +435,10 @@
 		<div class="space-y-4">
 			{#key service.id}
 				<ListManager
-					label={m.common_interfaceBindings()}
-					helpText={m.hosts_services_interfaceBindingsHelp()}
-					placeholder={m.hosts_services_selectBinding()}
-					createNewLabel={m.hosts_services_newBinding()}
+					label={common_interfaceBindings()}
+					helpText={hosts_services_interfaceBindingsHelp()}
+					placeholder={hosts_services_selectBinding()}
+					createNewLabel={hosts_services_newBinding()}
 					allowDuplicates={false}
 					allowItemEdit={() => true}
 					allowItemRemove={() => true}

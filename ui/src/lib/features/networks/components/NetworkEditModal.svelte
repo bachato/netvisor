@@ -12,7 +12,20 @@
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_cancel,
+		common_couldNotLoadUser,
+		common_create,
+		common_delete,
+		common_deleting,
+		common_details,
+		common_editName,
+		common_name,
+		common_saving,
+		common_update,
+		networks_createNetwork,
+		networks_networkNamePlaceholder
+	} from '$lib/paraglide/messages';
 
 	let {
 		network = null,
@@ -39,9 +52,9 @@
 
 	let isEditing = $derived(network !== null);
 	let title = $derived(
-		isEditing ? m.common_editName({ name: network?.name ?? '' }) : m.networks_createNetwork()
+		isEditing ? common_editName({ name: network?.name ?? '' }) : networks_createNetwork()
 	);
-	let saveLabel = $derived(isEditing ? m.common_update() : m.common_create());
+	let saveLabel = $derived(isEditing ? common_update() : common_create());
 
 	function getDefaultValues() {
 		return network
@@ -54,7 +67,7 @@
 		defaultValues: { ...createEmptyNetworkFormData(), seedData: true },
 		onSubmit: async ({ value }) => {
 			if (!organization) {
-				pushError(m.common_couldNotLoadUser());
+				pushError(common_couldNotLoadUser());
 				onClose();
 				return;
 			}
@@ -119,7 +132,7 @@
 			<div class="space-y-8">
 				<!-- Network Details Section -->
 				<div class="space-y-4">
-					<h3 class="text-primary text-lg font-medium">{m.common_details()}</h3>
+					<h3 class="text-primary text-lg font-medium">{common_details()}</h3>
 
 					<form.Field
 						name="name"
@@ -129,10 +142,10 @@
 					>
 						{#snippet children(field)}
 							<TextInput
-								label={m.common_name()}
+								label={common_name()}
 								id="name"
 								{field}
-								placeholder={m.networks_networkNamePlaceholder()}
+								placeholder={networks_networkNamePlaceholder()}
 								required
 							/>
 						{/snippet}
@@ -165,7 +178,7 @@
 							onclick={handleDelete}
 							class="btn-danger"
 						>
-							{deleting ? m.common_deleting() : m.common_delete()}
+							{deleting ? common_deleting() : common_delete()}
 						</button>
 					{/if}
 				</div>
@@ -176,10 +189,10 @@
 						onclick={onClose}
 						class="btn-secondary"
 					>
-						{m.common_cancel()}
+						{common_cancel()}
 					</button>
 					<button type="submit" disabled={loading || deleting} class="btn-primary">
-						{loading ? m.common_saving() : saveLabel}
+						{loading ? common_saving() : saveLabel}
 					</button>
 				</div>
 			</div>

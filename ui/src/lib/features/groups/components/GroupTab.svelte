@@ -20,7 +20,23 @@
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_confirmDeleteName,
+		common_create,
+		common_created,
+		common_description,
+		common_groupsLabel,
+		common_name,
+		common_network,
+		common_tags,
+		common_unknownNetwork,
+		common_updated,
+		groups_confirmBulkDelete,
+		groups_groupType,
+		groups_noGroupsHelp,
+		groups_noGroupsYet,
+		groups_subtitle
+	} from '$lib/paraglide/messages';
 
 	type GroupOrderField = components['schemas']['GroupOrderField'];
 
@@ -58,7 +74,7 @@
 	}
 
 	function handleDeleteGroup(group: Group) {
-		if (confirm(m.common_confirmDeleteName({ name: group.name }))) {
+		if (confirm(common_confirmDeleteName({ name: group.name }))) {
 			deleteGroupMutation.mutate(group.id);
 		}
 	}
@@ -89,7 +105,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.groups_confirmBulkDelete({ count: ids.length }))) {
+		if (confirm(groups_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteGroupsMutation.mutateAsync(ids);
 		}
 	}
@@ -103,29 +119,29 @@
 	let groupFields = $derived(
 		defineFields<Group, GroupOrderField>(
 			{
-				name: { label: m.common_name(), type: 'string', searchable: true },
+				name: { label: common_name(), type: 'string', searchable: true },
 				group_type: {
-					label: m.groups_groupType(),
+					label: groups_groupType(),
 					type: 'string',
 					searchable: true,
 					filterable: true
 				},
 				network_id: {
-					label: m.common_network(),
+					label: common_network(),
 					type: 'string',
 					filterable: true,
 					groupable: true,
 					getValue: (item) =>
-						networksData.find((n) => n.id == item.network_id)?.name || m.common_unknownNetwork()
+						networksData.find((n) => n.id == item.network_id)?.name || common_unknownNetwork()
 				},
-				created_at: { label: m.common_created(), type: 'date' },
-				updated_at: { label: m.common_updated(), type: 'date' }
+				created_at: { label: common_created(), type: 'date' },
+				updated_at: { label: common_updated(), type: 'date' }
 			},
 			[
-				{ key: 'description', label: m.common_description(), type: 'string', searchable: true },
+				{ key: 'description', label: common_description(), type: 'string', searchable: true },
 				{
 					key: 'tags',
-					label: m.common_tags(),
+					label: common_tags(),
 					type: 'array',
 					searchable: true,
 					filterable: true,
@@ -140,11 +156,11 @@
 </script>
 
 <div class="space-y-6">
-	<TabHeader title={m.common_groupsLabel()} subtitle={m.groups_subtitle()}>
+	<TabHeader title={common_groupsLabel()} subtitle={groups_subtitle()}>
 		<svelte:fragment slot="actions">
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateGroup}
-					><Plus class="h-5 w-5" />{m.common_create()}</button
+					><Plus class="h-5 w-5" />{common_create()}</button
 				>
 			{/if}
 		</svelte:fragment>
@@ -155,10 +171,10 @@
 	{:else if groupsData.length === 0}
 		<!-- Empty state -->
 		<EmptyState
-			title={m.groups_noGroupsYet()}
-			subtitle={m.groups_noGroupsHelp()}
+			title={groups_noGroupsYet()}
+			subtitle={groups_noGroupsHelp()}
 			onClick={handleCreateGroup}
-			cta={m.common_create()}
+			cta={common_create()}
 		/>
 	{:else}
 		<DataControls

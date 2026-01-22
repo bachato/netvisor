@@ -6,7 +6,7 @@
 	import 'prismjs/components/prism-json';
 	import 'prismjs/components/prism-bash';
 	import 'prismjs/themes/prism-twilight.css';
-	import * as m from '$lib/paraglide/messages';
+	import { common_copied, common_copy, common_failedToCopy } from '$lib/paraglide/messages';
 
 	export let code: string;
 	export let expandable: boolean = true;
@@ -18,9 +18,9 @@
 	async function copyJson() {
 		try {
 			await navigator.clipboard.writeText(code);
-			pushSuccess(m.common_copied());
+			pushSuccess(common_copied());
 		} catch (error) {
-			pushWarning(m.common_failedToCopy({ error: String(error) }));
+			pushWarning(common_failedToCopy({ error: String(error) }));
 		}
 	}
 
@@ -50,8 +50,8 @@
 		<div class="relative">
 			{#if isSecureContext}
 				<div class="absolute right-2 top-2 z-10">
-					<button type="button" class="btn-icon" title={m.common_copy()} on:click={copyJson}>
-						{m.common_copy()}
+					<button type="button" class="btn-icon" title={common_copy()} on:click={copyJson}>
+						{common_copy()}
 					</button>
 				</div>
 			{/if}

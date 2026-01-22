@@ -8,7 +8,18 @@
 	import { onboardingStore } from '../../stores/onboarding';
 	import { Plus, Trash2 } from 'lucide-svelte';
 	import { trackEvent } from '$lib/shared/utils/analytics';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		auth_scanopyLogo,
+		common_continue,
+		common_settingUp,
+		onboarding_addAnotherNetwork,
+		onboarding_mspNetworkHelp,
+		onboarding_orgHelpText,
+		onboarding_removeNetwork,
+		onboarding_visualizeCompany,
+		onboarding_visualizeHomelab,
+		onboarding_visualizeMsp
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		isOpen?: boolean;
@@ -110,10 +121,10 @@
 
 	let title = $derived(
 		useCase === 'msp'
-			? m.onboarding_visualizeMsp()
+			? onboarding_visualizeMsp()
 			: useCase === 'company'
-				? m.onboarding_visualizeCompany()
-				: m.onboarding_visualizeHomelab()
+				? onboarding_visualizeCompany()
+				: onboarding_visualizeHomelab()
 	);
 </script>
 
@@ -129,7 +140,7 @@
 	centerTitle={true}
 >
 	{#snippet headerIcon()}
-		<img src="/logos/scanopy-logo.png" alt={m.auth_scanopyLogo()} class="h-8 w-8" />
+		<img src="/logos/scanopy-logo.png" alt={auth_scanopyLogo()} class="h-8 w-8" />
 	{/snippet}
 
 	<form
@@ -153,7 +164,7 @@
 							label={useCaseConfig.orgLabel}
 							id="organizationName"
 							placeholder={useCaseConfig.orgPlaceholder}
-							helpText={useCase === 'homelab' ? '' : m.onboarding_orgHelpText()}
+							helpText={useCase === 'homelab' ? '' : onboarding_orgHelpText()}
 							required={true}
 							{field}
 						/>
@@ -178,9 +189,7 @@
 											{field}
 											required={index == 0}
 											placeholder={useCaseConfig.networkPlaceholder}
-											helpText={index === 0 && useCase === 'msp'
-												? m.onboarding_mspNetworkHelp()
-												: ''}
+											helpText={index === 0 && useCase === 'msp' ? onboarding_mspNetworkHelp() : ''}
 										/>
 									{/snippet}
 								</form.Field>
@@ -190,7 +199,7 @@
 									type="button"
 									class="btn-icon-danger"
 									onclick={() => removeNetwork(index)}
-									aria-label={m.onboarding_removeNetwork()}
+									aria-label={onboarding_removeNetwork()}
 								>
 									<Trash2 class="h-4 w-4" />
 								</button>
@@ -205,7 +214,7 @@
 							onclick={addNetwork}
 						>
 							<Plus class="h-4 w-4" />
-							{m.onboarding_addAnotherNetwork()}
+							{onboarding_addAnotherNetwork()}
 						</button>
 					{/if}
 				</div>
@@ -215,7 +224,7 @@
 		<div class="modal-footer">
 			<div class="flex w-full flex-col gap-4">
 				<button type="submit" disabled={loading} class="btn-primary w-full">
-					{loading ? m.common_settingUp() : m.common_continue()}
+					{loading ? common_settingUp() : common_continue()}
 				</button>
 			</div>
 		</div>

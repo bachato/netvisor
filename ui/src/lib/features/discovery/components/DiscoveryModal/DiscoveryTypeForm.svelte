@@ -10,7 +10,42 @@
 	import { generateCronSchedule } from '../../queries';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_days,
+		common_hours,
+		common_ipAddress,
+		discovery_adHoc,
+		discovery_adHocDescription,
+		discovery_allSubnetsScanned,
+		discovery_bestService,
+		discovery_configuration,
+		discovery_daemonHostMissing,
+		discovery_daemonHostMissingHelp,
+		discovery_discoveryType,
+		discovery_dockerScan,
+		discovery_hostNameFallback,
+		discovery_hostNameFallbackHelp,
+		discovery_manualDiscovery,
+		discovery_manualDiscoveryHelp,
+		discovery_networkScan,
+		discovery_noDays,
+		discovery_noHours,
+		discovery_nonInterfacedSubnet,
+		discovery_nonInterfacedSubnetWarning,
+		discovery_oneDay,
+		discovery_oneHour,
+		discovery_runType,
+		discovery_scheduleConfiguration,
+		discovery_scheduleHelp,
+		discovery_scheduled,
+		discovery_scheduledDescription,
+		discovery_selectSubnet,
+		discovery_selfReport,
+		discovery_targetSubnets,
+		discovery_targetSubnetsHelp,
+		discovery_xDays,
+		discovery_xHours
+	} from '$lib/paraglide/messages';
 
 	// Props
 	interface Props {
@@ -32,23 +67,23 @@
 
 	// Discovery type options
 	let discoveryTypeOptions = $derived([
-		{ value: 'Network', label: m.discovery_networkScan(), disabled: false },
+		{ value: 'Network', label: discovery_networkScan(), disabled: false },
 		{
 			value: 'Docker',
-			label: m.discovery_dockerScan(),
+			label: discovery_dockerScan(),
 			disabled: daemonHostId == null || !daemon.capabilities.has_docker_socket
 		},
-		{ value: 'SelfReport', label: m.discovery_selfReport(), disabled: daemonHostId == null }
+		{ value: 'SelfReport', label: discovery_selfReport(), disabled: daemonHostId == null }
 	]);
 
 	let hostNameFallbackOptions = $derived([
-		{ value: 'Ip', label: m.common_ipAddress() },
-		{ value: 'BestService', label: m.discovery_bestService() }
+		{ value: 'Ip', label: common_ipAddress() },
+		{ value: 'BestService', label: discovery_bestService() }
 	]);
 
 	let runTypeOptions = $derived([
-		{ value: 'AdHoc', label: m.discovery_adHoc() },
-		{ value: 'Scheduled', label: m.discovery_scheduled() }
+		{ value: 'AdHoc', label: discovery_adHoc() },
+		{ value: 'Scheduled', label: discovery_scheduled() }
 	]);
 
 	// Handle run type changes - update formData when form field changes
@@ -168,11 +203,7 @@
 		Array.from({ length: 31 }, (_, i) => ({
 			value: String(i),
 			label:
-				i === 0
-					? m.discovery_noDays()
-					: i === 1
-						? m.discovery_oneDay()
-						: m.discovery_xDays({ count: i })
+				i === 0 ? discovery_noDays() : i === 1 ? discovery_oneDay() : discovery_xDays({ count: i })
 		}))
 	);
 
@@ -181,17 +212,17 @@
 			value: String(i),
 			label:
 				i === 0
-					? m.discovery_noHours()
+					? discovery_noHours()
 					: i === 1
-						? m.discovery_oneHour()
-						: m.discovery_xHours({ count: i })
+						? discovery_oneHour()
+						: discovery_xHours({ count: i })
 		}))
 	);
 </script>
 
 <div class="space-y-6">
 	<div class="border-t border-gray-700 pt-6">
-		<h3 class="text-primary mb-4 text-lg font-medium">{m.discovery_configuration()}</h3>
+		<h3 class="text-primary mb-4 text-lg font-medium">{discovery_configuration()}</h3>
 
 		<div class="space-y-4">
 			<!-- Run Type Selection -->
@@ -203,7 +234,7 @@
 			>
 				{#snippet children(field: AnyFieldApi)}
 					<SelectInput
-						label={m.discovery_runType()}
+						label={discovery_runType()}
 						id="run_type"
 						options={runTypeOptions}
 						{field}
@@ -211,8 +242,8 @@
 					/>
 					<p class="text-tertiary mt-1 text-xs">
 						{field.state.value === 'AdHoc'
-							? m.discovery_adHocDescription()
-							: m.discovery_scheduledDescription()}
+							? discovery_adHocDescription()
+							: discovery_scheduledDescription()}
 					</p>
 				{/snippet}
 			</form.Field>
@@ -226,7 +257,7 @@
 			>
 				{#snippet children(field: AnyFieldApi)}
 					<SelectInput
-						label={m.discovery_discoveryType()}
+						label={discovery_discoveryType()}
 						id="discovery_type"
 						options={discoveryTypeOptions}
 						{field}
@@ -240,8 +271,8 @@
 
 			{#if daemonHostId == null}
 				<InlineWarning
-					title={m.discovery_daemonHostMissing()}
-					body={m.discovery_daemonHostMissingHelp()}
+					title={discovery_daemonHostMissing()}
+					body={discovery_daemonHostMissingHelp()}
 				/>
 			{/if}
 
@@ -255,12 +286,12 @@
 				>
 					{#snippet children(field: AnyFieldApi)}
 						<SelectInput
-							label={m.discovery_hostNameFallback()}
+							label={discovery_hostNameFallback()}
 							id="host_name_fallback"
 							options={hostNameFallbackOptions}
 							{field}
 							disabled={readOnly}
-							helpText={m.discovery_hostNameFallbackHelp()}
+							helpText={discovery_hostNameFallbackHelp()}
 						/>
 					{/snippet}
 				</form.Field>
@@ -269,10 +300,10 @@
 			{#if formData.discovery_type.type === 'Network'}
 				<div class="rounded-lg bg-gray-800/50 p-4">
 					<ListManager
-						label={m.discovery_targetSubnets()}
-						helpText={m.discovery_targetSubnetsHelp()}
-						placeholder={m.discovery_selectSubnet()}
-						emptyMessage={m.discovery_allSubnetsScanned()}
+						label={discovery_targetSubnets()}
+						helpText={discovery_targetSubnetsHelp()}
+						placeholder={discovery_selectSubnet()}
+						emptyMessage={discovery_allSubnetsScanned()}
 						allowReorder={false}
 						allowItemEdit={() => false}
 						showSearch={true}
@@ -286,8 +317,8 @@
 				</div>
 				{#if nonInterfacedSubnets.length > 0}
 					<InlineWarning
-						title={m.discovery_nonInterfacedSubnet()}
-						body={m.discovery_nonInterfacedSubnetWarning({
+						title={discovery_nonInterfacedSubnet()}
+						body={discovery_nonInterfacedSubnetWarning({
 							subnets: nonInterfacedSubnets.join('\n')
 						})}
 					/>
@@ -299,11 +330,11 @@
 	<!-- Frequency Configuration (only for scheduled runs) -->
 	{#if formData.run_type.type === 'Scheduled'}
 		<div class="border-t border-gray-700 pt-6">
-			<h3 class="text-primary mb-4 text-lg font-medium">{m.discovery_scheduleConfiguration()}</h3>
+			<h3 class="text-primary mb-4 text-lg font-medium">{discovery_scheduleConfiguration()}</h3>
 
 			<div class="space-y-4">
 				<p class="text-tertiary text-sm">
-					{m.discovery_scheduleHelp()}
+					{discovery_scheduleHelp()}
 				</p>
 
 				<div class="grid grid-cols-2 gap-4">
@@ -318,7 +349,7 @@
 					>
 						{#snippet children(field: AnyFieldApi)}
 							<SelectInput
-								label={m.common_days()}
+								label={common_days()}
 								id="frequency_days"
 								options={dayOptions}
 								{field}
@@ -338,7 +369,7 @@
 					>
 						{#snippet children(field: AnyFieldApi)}
 							<SelectInput
-								label={m.common_hours()}
+								label={common_hours()}
 								id="frequency_hours"
 								options={hourOptions}
 								{field}
@@ -367,9 +398,9 @@
 						/>
 					</svg>
 					<div>
-						<h4 class="mb-1 text-sm font-medium text-gray-300">{m.discovery_manualDiscovery()}</h4>
+						<h4 class="mb-1 text-sm font-medium text-gray-300">{discovery_manualDiscovery()}</h4>
 						<p class="text-sm text-gray-400">
-							{m.discovery_manualDiscoveryHelp()}
+							{discovery_manualDiscoveryHelp()}
 						</p>
 					</div>
 				</div>

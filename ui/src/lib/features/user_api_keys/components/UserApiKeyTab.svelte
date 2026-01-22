@@ -18,7 +18,19 @@
 	} from '../queries';
 	import type { TabProps } from '$lib/shared/types';
 	import InlineSuccess from '$lib/shared/components/feedback/InlineSuccess.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_apiKeys,
+		common_create,
+		common_name,
+		common_networks,
+		common_permissions,
+		common_tags,
+		userApiKeys_confirmBulkDelete,
+		userApiKeys_confirmDelete,
+		userApiKeys_noApiKeysSubtitle,
+		userApiKeys_noApiKeysYet,
+		userApiKeys_subtitle
+	} from '$lib/paraglide/messages';
 
 	let { isReadOnly = false }: TabProps = $props();
 
@@ -42,7 +54,7 @@
 	let editingApiKey = $state<UserApiKey | null>(null);
 
 	async function handleDelete(apiKey: UserApiKey) {
-		if (confirm(m.userApiKeys_confirmDelete({ name: apiKey.name }))) {
+		if (confirm(userApiKeys_confirmDelete({ name: apiKey.name }))) {
 			deleteMutation.mutate(apiKey.id);
 		}
 	}
@@ -69,7 +81,7 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(m.userApiKeys_confirmBulkDelete({ count: ids.length }))) {
+		if (confirm(userApiKeys_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteMutation.mutateAsync(ids);
 		}
 	}
@@ -81,20 +93,20 @@
 	const apiKeyFields: FieldConfig<UserApiKey>[] = [
 		{
 			key: 'name',
-			label: m.common_name(),
+			label: common_name(),
 			type: 'string',
 			searchable: true
 		},
 		{
 			key: 'permissions',
 			type: 'string',
-			label: m.common_permissions(),
+			label: common_permissions(),
 			filterable: true
 		},
 		{
 			key: 'network_ids',
 			type: 'array',
-			label: m.common_networks(),
+			label: common_networks(),
 			getValue(item) {
 				const ids = item.network_ids ?? [];
 				return ids
@@ -104,7 +116,7 @@
 		},
 		{
 			key: 'tags',
-			label: m.common_tags(),
+			label: common_tags(),
 			type: 'array',
 			searchable: true,
 			filterable: true,
@@ -118,7 +130,7 @@
 </script>
 
 <div class="space-y-6">
-	<TabHeader title={m.common_apiKeys()} subtitle={m.userApiKeys_subtitle()}>
+	<TabHeader title={common_apiKeys()} subtitle={userApiKeys_subtitle()}>
 		<svelte:fragment slot="actions">
 			<InlineSuccess
 				title="Share your integration with the community!"
@@ -127,7 +139,7 @@
 			></InlineSuccess>
 			{#if !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreate}>
-					<Plus class="h-5 w-5" />{m.common_create()}
+					<Plus class="h-5 w-5" />{common_create()}
 				</button>
 			{/if}
 		</svelte:fragment>
@@ -137,10 +149,10 @@
 		<Loading />
 	{:else if userApiKeysData.length === 0}
 		<EmptyState
-			title={m.userApiKeys_noApiKeysYet()}
-			subtitle={m.userApiKeys_noApiKeysSubtitle()}
+			title={userApiKeys_noApiKeysYet()}
+			subtitle={userApiKeys_noApiKeysSubtitle()}
 			onClick={handleCreate}
-			cta={m.common_create()}
+			cta={common_create()}
 		/>
 	{:else}
 		<DataControls

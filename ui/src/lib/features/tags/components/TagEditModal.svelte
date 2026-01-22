@@ -13,7 +13,23 @@
 	import { pushError } from '$lib/shared/stores/feedback';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TextArea from '$lib/shared/components/forms/input/TextArea.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import {
+		common_cancel,
+		common_color,
+		common_couldNotLoadOrganization,
+		common_create,
+		common_delete,
+		common_deleting,
+		common_description,
+		common_details,
+		common_editName,
+		common_name,
+		common_saving,
+		common_update,
+		tags_createTag,
+		tags_descriptionPlaceholder,
+		tags_tagNamePlaceholder
+	} from '$lib/paraglide/messages';
 
 	let {
 		tag = null,
@@ -39,10 +55,8 @@
 	let deleting = $state(false);
 
 	let isEditing = $derived(tag !== null);
-	let title = $derived(
-		isEditing ? m.common_editName({ name: tag?.name ?? '' }) : m.tags_createTag()
-	);
-	let saveLabel = $derived(isEditing ? m.common_update() : m.common_create());
+	let title = $derived(isEditing ? common_editName({ name: tag?.name ?? '' }) : tags_createTag());
+	let saveLabel = $derived(isEditing ? common_update() : common_create());
 
 	function getDefaultValues(): Tag {
 		if (tag) return { ...tag };
@@ -55,7 +69,7 @@
 		defaultValues: createDefaultTag(''),
 		onSubmit: async ({ value }) => {
 			if (!organization) {
-				pushError(m.common_couldNotLoadOrganization());
+				pushError(common_couldNotLoadOrganization());
 				onClose();
 				return;
 			}
@@ -121,7 +135,7 @@
 			<div class="space-y-8">
 				<!-- Tag Details Section -->
 				<div class="space-y-4">
-					<h3 class="text-primary text-lg font-medium">{m.common_details()}</h3>
+					<h3 class="text-primary text-lg font-medium">{common_details()}</h3>
 
 					<form.Field
 						name="name"
@@ -131,10 +145,10 @@
 					>
 						{#snippet children(field)}
 							<TextInput
-								label={m.common_name()}
+								label={common_name()}
 								id="name"
 								{field}
-								placeholder={m.tags_tagNamePlaceholder()}
+								placeholder={tags_tagNamePlaceholder()}
 								required
 							/>
 						{/snippet}
@@ -148,10 +162,10 @@
 					>
 						{#snippet children(field)}
 							<TextArea
-								label={m.common_description()}
+								label={common_description()}
 								id="description"
 								{field}
-								placeholder={m.tags_descriptionPlaceholder()}
+								placeholder={tags_descriptionPlaceholder()}
 							/>
 						{/snippet}
 					</form.Field>
@@ -160,7 +174,7 @@
 					<form.Field name="color">
 						{#snippet children(field)}
 							<div class="space-y-3">
-								<div class="text-secondary block text-sm font-medium">{m.common_color()}</div>
+								<div class="text-secondary block text-sm font-medium">{common_color()}</div>
 								<div class="grid grid-cols-7 gap-2">
 									{#each AVAILABLE_COLORS as color (color)}
 										{@const ch = createColorHelper(color)}
@@ -199,7 +213,7 @@
 							onclick={handleDelete}
 							class="btn-danger"
 						>
-							{deleting ? m.common_deleting() : m.common_delete()}
+							{deleting ? common_deleting() : common_delete()}
 						</button>
 					{/if}
 				</div>
@@ -210,10 +224,10 @@
 						onclick={onClose}
 						class="btn-secondary"
 					>
-						{m.common_cancel()}
+						{common_cancel()}
 					</button>
 					<button type="submit" disabled={loading || deleting} class="btn-primary">
-						{loading ? m.common_saving() : saveLabel}
+						{loading ? common_saving() : saveLabel}
 					</button>
 				</div>
 			</div>
