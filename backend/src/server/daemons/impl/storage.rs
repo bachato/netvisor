@@ -87,6 +87,7 @@ impl Storable for Daemon {
                     version,
                     user_id,
                     api_key_id,
+                    is_unreachable,
                 },
         } = self.clone();
 
@@ -105,12 +106,13 @@ impl Storable for Daemon {
                 "version",
                 "user_id",
                 "api_key_id",
+                "is_unreachable",
             ],
             vec![
                 SqlValue::Uuid(id),
                 SqlValue::Timestamp(created_at),
                 SqlValue::Timestamp(updated_at),
-                SqlValue::Timestamp(last_seen),
+                SqlValue::OptionTimestamp(last_seen),
                 SqlValue::Uuid(network_id),
                 SqlValue::Uuid(host_id),
                 SqlValue::DaemonCapabilities(capabilities),
@@ -120,6 +122,7 @@ impl Storable for Daemon {
                 SqlValue::OptionalString(version.map(|v| v.to_string())),
                 SqlValue::Uuid(user_id),
                 SqlValue::OptionalUuid(api_key_id),
+                SqlValue::Bool(is_unreachable),
             ],
         ))
     }
@@ -153,6 +156,7 @@ impl Storable for Daemon {
                 version,
                 user_id: row.get("user_id"),
                 api_key_id: row.get("api_key_id"),
+                is_unreachable: row.get("is_unreachable"),
             },
         })
     }

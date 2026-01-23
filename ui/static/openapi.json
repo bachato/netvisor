@@ -778,66 +778,6 @@
         ]
       }
     },
-    "/api/daemons/{id}/heartbeat": {
-      "post": {
-        "tags": [
-          "daemons",
-          "internal"
-        ],
-        "summary": "Receive daemon heartbeat",
-        "description": "Internal endpoint for daemons to send periodic heartbeats.\nUpdates the daemon's last_seen timestamp and current status.",
-        "operationId": "receive_heartbeat",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Daemon ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DaemonHeartbeatPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Heartbeat received",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Daemon not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "daemon_api_key": []
-          }
-        ]
-      }
-    },
     "/api/daemons/{id}/request-work": {
       "post": {
         "tags": [
@@ -863,7 +803,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DaemonHeartbeatPayload"
+                "$ref": "#/components/schemas/DaemonStatusPayload"
               }
             }
           },
@@ -2925,6 +2865,68 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/daemons/{id}/retry-connection": {
+      "post": {
+        "tags": [
+          "daemons"
+        ],
+        "summary": "Retry connection to unreachable daemon",
+        "description": "Resets the is_reachable flag for a daemon that was marked unreachable\ndue to repeated polling failures. The poller will attempt to contact\nthe daemon again on the next cycle.",
+        "operationId": "retry_daemon_connection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection retry initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -10150,14 +10152,23 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
+<<<<<<< HEAD
               "created_at": "2026-01-16T05:18:23.717598Z",
               "id": "93a743f1-43f4-40f7-9204-e8739d03b40d",
+=======
+              "created_at": "2026-01-22T19:43:12.630230Z",
+              "id": "216b76ca-4790-428c-beaa-abd23f82c2d0",
+>>>>>>> 438-daemon-push
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
+<<<<<<< HEAD
               "updated_at": "2026-01-16T05:18:23.717598Z"
+=======
+              "updated_at": "2026-01-22T19:43:12.630230Z"
+>>>>>>> 438-daemon-push
             }
           },
           "error": {
@@ -11229,6 +11240,48 @@
           }
         }
       },
+<<<<<<< HEAD
+=======
+      "ApiResponse_ProvisionDaemonResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Response from provisioning a daemon.\nContains the daemon record and the API key (shown only once).",
+            "required": [
+              "daemon",
+              "daemon_api_key"
+            ],
+            "properties": {
+              "daemon": {
+                "$ref": "#/components/schemas/DaemonResponse",
+                "description": "The created daemon record (with version status)."
+              },
+              "daemon_api_key": {
+                "type": "string",
+                "description": "The API key (plaintext) for daemon authentication.\nThis is shown only once - store it securely."
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+>>>>>>> 438-daemon-push
       "ApiResponse_PublicConfigResponse": {
         "type": "object",
         "required": [
@@ -11447,14 +11500,23 @@
             "example": {
               "bindings": [
                 {
+<<<<<<< HEAD
                   "created_at": "2026-01-16T05:18:23.713916Z",
                   "id": "51348965-17f2-4ecf-891c-9301bedbae35",
+=======
+                  "created_at": "2026-01-22T19:43:12.625875Z",
+                  "id": "4ffef4ab-ee68-4fae-b4b8-2cd312067dae",
+>>>>>>> 438-daemon-push
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
+<<<<<<< HEAD
                   "updated_at": "2026-01-16T05:18:23.713916Z"
+=======
+                  "updated_at": "2026-01-22T19:43:12.625875Z"
+>>>>>>> 438-daemon-push
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11463,7 +11525,11 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
+<<<<<<< HEAD
               "service_definition": "GitHub",
+=======
+              "service_definition": "Lubelogger",
+>>>>>>> 438-daemon-push
               "source": {
                 "type": "Manual"
               },
@@ -12570,14 +12636,23 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
+<<<<<<< HEAD
           "created_at": "2026-01-16T05:18:23.706983Z",
           "id": "7ab0b60d-a098-4449-b7e7-e514b23ac3bf",
+=======
+          "created_at": "2026-01-22T19:43:12.619614Z",
+          "id": "bc9b2e0d-7b33-4e56-9e33-cf5d116a4f29",
+>>>>>>> 438-daemon-push
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
+<<<<<<< HEAD
           "updated_at": "2026-01-16T05:18:23.706983Z"
+=======
+          "updated_at": "2026-01-22T19:43:12.619614Z"
+>>>>>>> 438-daemon-push
         }
       },
       "BindingBase": {
@@ -12980,7 +13055,11 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
+<<<<<<< HEAD
               "service_definition": "GitHub",
+=======
+              "service_definition": "Lubelogger",
+>>>>>>> 438-daemon-push
               "tags": [],
               "virtualization": null
             }
@@ -13222,7 +13301,6 @@
           "host_id",
           "network_id",
           "url",
-          "last_seen",
           "capabilities",
           "mode",
           "name",
@@ -13237,9 +13315,17 @@
             "type": "string",
             "format": "uuid"
           },
+          "is_reachable": {
+            "type": "boolean",
+            "description": "Whether the daemon is reachable (for ServerPoll circuit breaker).\nSet to false after repeated polling failures, reset via retry-connection endpoint."
+          },
           "last_seen": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
+            "description": "Timestamp of last successful contact with daemon.\nNULL for provisioned ServerPoll daemons that haven't been contacted yet.",
             "readOnly": true
           },
           "mode": {
@@ -13293,25 +13379,6 @@
               "type": "string",
               "format": "uuid"
             }
-          }
-        }
-      },
-      "DaemonHeartbeatPayload": {
-        "type": "object",
-        "required": [
-          "url",
-          "name",
-          "mode"
-        ],
-        "properties": {
-          "mode": {
-            "$ref": "#/components/schemas/DaemonMode"
-          },
-          "name": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
           }
         }
       },
@@ -13484,6 +13551,33 @@
           "daemon_version": {
             "type": "string",
             "description": "Daemon software version (semver format)"
+          }
+        }
+      },
+      "DaemonStatusPayload": {
+        "type": "object",
+        "description": "Daemon status payload sent when polling for work or in heartbeats.\nUsed by DaemonPoll mode to send status alongside work requests,\nand by ServerPoll mode when processing daemon status.",
+        "required": [
+          "url",
+          "name",
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/DaemonMode"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Daemon software version (optional for backwards compat)"
           }
         }
       },
@@ -15644,14 +15738,23 @@
               "example": {
                 "bindings": [
                   {
+<<<<<<< HEAD
                     "created_at": "2026-01-16T05:18:23.713035Z",
                     "id": "f4aba1b3-5411-44b0-80cf-f27d163eada2",
+=======
+                    "created_at": "2026-01-22T19:43:12.625016Z",
+                    "id": "add417cf-db48-4a36-bfcf-a812b23b22b1",
+>>>>>>> 438-daemon-push
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
+<<<<<<< HEAD
                     "updated_at": "2026-01-16T05:18:23.713035Z"
+=======
+                    "updated_at": "2026-01-22T19:43:12.625016Z"
+>>>>>>> 438-daemon-push
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -15660,7 +15763,11 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
+<<<<<<< HEAD
                 "service_definition": "GitHub",
+=======
+                "service_definition": "Lubelogger",
+>>>>>>> 438-daemon-push
                 "source": {
                   "type": "Manual"
                 },
@@ -16231,6 +16338,51 @@
           }
         }
       },
+<<<<<<< HEAD
+=======
+      "ProvisionDaemonRequest": {
+        "type": "object",
+        "description": "Request to pre-provision a ServerPoll mode daemon.\nThis creates the daemon record on the server before the daemon is installed.",
+        "required": [
+          "name",
+          "network_id",
+          "url"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the daemon."
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Network this daemon will be associated with."
+          },
+          "url": {
+            "type": "string",
+            "description": "URL where the server can reach the daemon (required for ServerPoll mode)."
+          }
+        }
+      },
+      "ProvisionDaemonResponse": {
+        "type": "object",
+        "description": "Response from provisioning a daemon.\nContains the daemon record and the API key (shown only once).",
+        "required": [
+          "daemon",
+          "daemon_api_key"
+        ],
+        "properties": {
+          "daemon": {
+            "$ref": "#/components/schemas/DaemonResponse",
+            "description": "The created daemon record (with version status)."
+          },
+          "daemon_api_key": {
+            "type": "string",
+            "description": "The API key (plaintext) for daemon authentication.\nThis is shown only once - store it securely."
+          }
+        }
+      },
+>>>>>>> 438-daemon-push
       "ProxmoxVirtualization": {
         "type": "object",
         "required": [
@@ -16530,14 +16682,23 @@
         "example": {
           "bindings": [
             {
+<<<<<<< HEAD
               "created_at": "2026-01-16T05:18:23.706931Z",
               "id": "e8ca9f52-6caa-4c0a-b642-532470debf08",
+=======
+              "created_at": "2026-01-22T19:43:12.619563Z",
+              "id": "43cab530-edbe-4c86-8a68-42865f428cb5",
+>>>>>>> 438-daemon-push
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
+<<<<<<< HEAD
               "updated_at": "2026-01-16T05:18:23.706931Z"
+=======
+              "updated_at": "2026-01-22T19:43:12.619563Z"
+>>>>>>> 438-daemon-push
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -16546,7 +16707,11 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
+<<<<<<< HEAD
           "service_definition": "GitHub",
+=======
+          "service_definition": "Lubelogger",
+>>>>>>> 438-daemon-push
           "source": {
             "type": "Manual"
           },

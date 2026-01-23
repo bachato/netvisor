@@ -1,3 +1,4 @@
+use crate::daemon::runtime::state::BufferedEntities;
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
 use crate::server::shared::entities::EntityDiscriminants;
@@ -484,16 +485,6 @@ async fn create_host_discovery(
     auth: Authorized<IsDaemon>,
     Json(request): Json<DiscoveryHostRequest>,
 ) -> ApiResult<Json<ApiResponse<HostResponse>>> {
-    let host_service = &state.services.host_service;
-
-    let DiscoveryHostRequest {
-        host,
-        interfaces,
-        ports,
-        services,
-        if_entries,
-    } = request;
-
     // Get daemon network_id from entity
     let daemon_network_id = auth
         .network_ids()
@@ -501,22 +492,30 @@ async fn create_host_discovery(
         .copied()
         .ok_or_else(|| ApiError::forbidden("Daemon has no network assignment"))?;
 
-    if host.base.network_id != daemon_network_id {
+    if request.host.base.network_id != daemon_network_id {
         return Err(ApiError::forbidden(
             "Daemon cannot create hosts on networks it's not assigned to",
         ));
     }
 
-    let host_response = host_service
-        .discover_host(
-            host,
-            interfaces,
-            ports,
-            services,
-            if_entries,
-            auth.into_entity(),
-        )
+    // Delegate to processor for shared discovery logic
+    // This ensures both DaemonPoll and ServerPoll modes use the same logic
+    let entities = BufferedEntities {
+        hosts: vec![request],
+        subnets: vec![],
+    };
+
+    let created = state
+        .services
+        .daemon_service
+        .process_discovery_entities(entities, auth.into_entity())
         .await?;
+
+    let (_, host_response) = created
+        .hosts
+        .into_iter()
+        .next()
+        .ok_or_else(|| ApiError::internal_error("No host returned from processor"))?;
 
     Ok(Json(ApiResponse::success(host_response)))
 }
