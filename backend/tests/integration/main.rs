@@ -10,6 +10,7 @@
 //! - Handler validation tests
 
 mod billing;
+mod compat;
 mod crud;
 mod discovery;
 #[cfg(feature = "generate-fixtures")]
@@ -159,6 +160,17 @@ async fn integration_tests() {
     }
 
     // =========================================================================
+    // Phase 7: API Compatibility Tests
+    // =========================================================================
+    println!("\n============================================================");
+    println!("Phase 7: API Compatibility Tests");
+    println!("============================================================");
+
+    compat::run_compat_tests(daemon.id, network.id, organization.id, user.id)
+        .await
+        .expect("Compatibility tests failed");
+
+    // =========================================================================
     // Summary
     // =========================================================================
     println!("\n============================================================");
@@ -171,4 +183,5 @@ async fn integration_tests() {
     println!("   - Permission & access control tests");
     #[cfg(feature = "generate-fixtures")]
     println!("   - Fixture generation");
+    println!("   - API compatibility tests");
 }

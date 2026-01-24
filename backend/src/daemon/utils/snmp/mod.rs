@@ -19,7 +19,7 @@ use std::net::IpAddr;
 use tokio::time::timeout;
 use tracing::debug;
 
-use crate::server::discovery::r#impl::types::SnmpQueryCredential;
+use crate::server::snmp_credentials::r#impl::discovery::SnmpQueryCredential;
 
 /// Perform a complete SNMP poll of a device
 /// Returns system info, interface table, and neighbor information

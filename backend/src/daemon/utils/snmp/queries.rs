@@ -9,7 +9,7 @@ use std::net::IpAddr;
 use tokio::time::timeout;
 use tracing::{debug, trace, warn};
 
-use crate::server::discovery::r#impl::types::SnmpQueryCredential;
+use crate::server::snmp_credentials::r#impl::discovery::SnmpQueryCredential;
 
 use super::oids::{self, oid_to_vec, parse_oid};
 use super::session::{MAX_WALK_ENTRIES, SNMP_TIMEOUT, create_session};

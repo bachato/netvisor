@@ -48,7 +48,7 @@ pub struct HostService {
     port_service: Arc<PortService>,
     service_service: Arc<ServiceService>,
     if_entry_service: Arc<IfEntryService>,
-    daemon_service: Arc<DaemonService>,
+    pub daemon_service: Arc<DaemonService>,
     host_locks: Arc<Mutex<HashMap<Uuid, Arc<Mutex<()>>>>>,
     event_bus: Arc<EventBus>,
     entity_tag_service: Arc<EntityTagService>,

@@ -110,6 +110,7 @@ jobs:
       - name: Generate daemon config fixture
         run: |
           cd ui && npm ci --ignore-scripts
+          npx svelte-kit sync
           npx vite-node scripts/export-daemon-field-defs.ts docs > ../website/src/lib/fixtures/daemon-config.json
 
       - name: Get previous release tag

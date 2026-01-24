@@ -259,22 +259,6 @@ impl Storable for Topology {
 impl Entity for Topology {
     type CsvRow = TopologyCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "network_id",
-            "is_stale",
-            "is_locked",
-            "locked_by",
-            "locked_at",
-            "last_refreshed",
-            "parent_id",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         TopologyCsvRow {
             id: self.id,

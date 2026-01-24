@@ -1,19 +1,29 @@
 use crate::server::{
+    hosts::{r#impl::base::Host, service::HostService},
+    interfaces::{r#impl::base::Interface, service::InterfaceService},
+    networks::service::NetworkService,
     shared::{
         events::bus::EventBus,
         services::traits::{CrudService, EventBusService},
-        storage::generic::GenericPostgresStorage,
+        storage::{filter::StorableFilter, generic::GenericPostgresStorage},
     },
-    snmp_credentials::r#impl::base::SnmpCredential,
+    snmp_credentials::r#impl::{
+        base::SnmpCredential,
+        discovery::{SnmpCredentialMapping, SnmpIpOverride, SnmpQueryCredential},
+    },
     tags::entity_tags::EntityTagService,
 };
-use std::sync::Arc;
+use anyhow::Error;
+use std::sync::{Arc, OnceLock};
 use uuid::Uuid;
 
 pub struct SnmpCredentialService {
     storage: Arc<GenericPostgresStorage<SnmpCredential>>,
     event_bus: Arc<EventBus>,
     entity_tag_service: Arc<EntityTagService>,
+    network_service: Arc<NetworkService>,
+    interface_service: Arc<InterfaceService>,
+    host_service: OnceLock<Arc<HostService>>,
 }
 
 impl EventBusService<SnmpCredential> for SnmpCredentialService {
@@ -45,11 +55,79 @@ impl SnmpCredentialService {
         storage: Arc<GenericPostgresStorage<SnmpCredential>>,
         event_bus: Arc<EventBus>,
         entity_tag_service: Arc<EntityTagService>,
+        network_service: Arc<NetworkService>,
+        interface_service: Arc<InterfaceService>,
     ) -> Self {
         Self {
             storage,
             event_bus,
             entity_tag_service,
+            network_service,
+            interface_service,
+            host_service: OnceLock::new(),
         }
+    }
+
+    // ========================================================================
+    // Dependency injection (for breaking circular dependency with HostService)
+    // ========================================================================
+
+    /// Set the host service dependency after construction.
+    /// This breaks the circular dependency: HostService needs DaemonService,
+    /// and DaemonService needs HostService.
+    pub fn set_host_service(&self, service: Arc<HostService>) -> Result<(), Arc<HostService>> {
+        self.host_service.set(service)
+    }
+
+    pub async fn build_credentials_for_discovery(
+        &self,
+        network_id: Uuid,
+    ) -> Result<SnmpCredentialMapping, Error> {
+        let host_service = self
+            .host_service
+            .get()
+            .ok_or_else(|| anyhow::anyhow!("HostService not initialized"))?;
+        let host_filter = StorableFilter::<Host>::new().network_ids(&[network_id]);
+        let hosts = host_service.get_all(host_filter).await?;
+
+        let interface_filter = StorableFilter::<Interface>::new().network_ids(&[network_id]);
+        let interfaces = self.interface_service.get_all(interface_filter).await?;
+
+        let network_credential: Option<SnmpQueryCredential> = if let Some(network) =
+            self.network_service.get_by_id(&network_id).await?
+            && let Some(cred_id) = network.base.snmp_credential_id
+            && let Some(cred) = self.get_by_id(&cred_id).await?
+        {
+            Some(cred.into())
+        } else {
+            None
+        };
+
+        let host_credential_ids: Vec<(Uuid, Uuid)> = hosts
+            .iter()
+            .filter_map(|h| h.base.snmp_credential_id.map(|cred_id| (h.id, cred_id)))
+            .collect();
+
+        let mut overrides: Vec<SnmpIpOverride> = Vec::new();
+
+        for (host_id, snmp_id) in host_credential_ids {
+            if let Some(snmp_cred) = self.get_by_id(&snmp_id).await? {
+                overrides.extend(
+                    interfaces
+                        .iter()
+                        .filter(|i| i.base.host_id == host_id)
+                        .map(|i| SnmpIpOverride {
+                            ip: i.base.ip_address,
+                            credential: snmp_cred.clone().into(),
+                        })
+                        .collect::<Vec<SnmpIpOverride>>(),
+                );
+            }
+        }
+
+        Ok(SnmpCredentialMapping {
+            default_credential: network_credential,
+            ip_overrides: overrides,
+        })
     }
 }

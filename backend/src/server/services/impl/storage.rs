@@ -152,20 +152,6 @@ impl Storable for Service {
 impl Entity for Service {
     type CsvRow = ServiceCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "service_definition",
-            "host_id",
-            "network_id",
-            "source",
-            "position",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         ServiceCsvRow {
             id: self.id,

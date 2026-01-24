@@ -26,7 +26,7 @@ pub struct DaemonCsvRow {
     pub host_id: Uuid,
     pub network_id: Uuid,
     pub user_id: Uuid,
-    pub last_seen: DateTime<Utc>,
+    pub last_seen: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -164,21 +164,6 @@ impl Storable for Daemon {
 
 impl Entity for Daemon {
     type CsvRow = DaemonCsvRow;
-
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "mode",
-            "version",
-            "host_id",
-            "network_id",
-            "user_id",
-            "last_seen",
-            "created_at",
-            "updated_at",
-        ]
-    }
 
     fn to_csv_row(&self) -> Self::CsvRow {
         DaemonCsvRow {

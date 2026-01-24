@@ -108,6 +108,7 @@ impl Display for Daemon {
     ToSchema,
 )]
 #[serde(rename_all = "snake_case")]
+#[value(rename_all = "snake_case")]
 pub enum DaemonMode {
     /// Server polls daemon (daemon cannot make outbound connections)
     #[serde(alias = "push", alias = "Push")]

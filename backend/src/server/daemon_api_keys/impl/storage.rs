@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
-use serde::Serialize;
 use secrecy::SecretString;
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -141,19 +141,6 @@ impl Storable for DaemonApiKey {
 
 impl Entity for DaemonApiKey {
     type CsvRow = DaemonApiKeyCsvRow;
-
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "network_id",
-            "is_enabled",
-            "last_used",
-            "expires_at",
-            "created_at",
-            "updated_at",
-        ]
-    }
 
     fn to_csv_row(&self) -> Self::CsvRow {
         DaemonApiKeyCsvRow {

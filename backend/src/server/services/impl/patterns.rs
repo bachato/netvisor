@@ -905,6 +905,7 @@ mod tests {
     use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback};
     use crate::server::services::r#impl::base::Service;
     use crate::server::services::r#impl::virtualization::ServiceVirtualization;
+    use crate::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
     use crate::tests::{network, organization};
     use uuid::Uuid;
 
@@ -969,7 +970,7 @@ mod tests {
                 discovery_type: DiscoveryType::Network {
                     subnet_ids: None,
                     host_naming_fallback: HostNamingFallback::BestService,
-                    snmp_credentials: None,
+                    snmp_credentials: SnmpCredentialMapping::default(),
                 },
                 gateway_ips: vec![],
                 endpoint_responses,

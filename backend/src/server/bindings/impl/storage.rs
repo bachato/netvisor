@@ -136,19 +136,6 @@ impl Storable for Binding {
 impl Entity for Binding {
     type CsvRow = BindingCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "service_id",
-            "binding_type",
-            "interface_id",
-            "port_id",
-            "network_id",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         let (binding_type, interface_id, port_id) = match self.base.binding_type {
             BindingType::Interface { interface_id } => ("Interface", Some(interface_id), None),

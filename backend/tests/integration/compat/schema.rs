@@ -112,18 +112,18 @@ fn resolve_refs_recursive(openapi: &Value, schema: Value) -> Value {
     match schema {
         Value::Object(mut map) => {
             // If this object has a $ref, resolve it
-            if let Some(ref_val) = map.get("$ref") {
-                if let Some(ref_path) = ref_val.as_str() {
-                    let parts: Vec<&str> = ref_path.trim_start_matches("#/").split('/').collect();
-                    let mut current = openapi;
-                    for part in parts {
-                        current = match current.get(part) {
-                            Some(v) => v,
-                            None => return Value::Object(map),
-                        };
-                    }
-                    return resolve_refs_recursive(openapi, current.clone());
+            if let Some(ref_val) = map.get("$ref")
+                && let Some(ref_path) = ref_val.as_str()
+            {
+                let parts: Vec<&str> = ref_path.trim_start_matches("#/").split('/').collect();
+                let mut current = openapi;
+                for part in parts {
+                    current = match current.get(part) {
+                        Some(v) => v,
+                        None => return Value::Object(map),
+                    };
                 }
+                return resolve_refs_recursive(openapi, current.clone());
             }
 
             // Recursively resolve refs in all values

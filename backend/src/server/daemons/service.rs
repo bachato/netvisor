@@ -28,7 +28,7 @@ use crate::server::billing::types::base::BillingPlan;
 use crate::server::daemon_api_keys::service::DaemonApiKeyService;
 use crate::server::daemons::r#impl::api::{
     DaemonCapabilities, DaemonDiscoveryRequest, DaemonRegistrationRequest,
-    DaemonRegistrationResponse, DiscoveryUpdatePayload, ServerCapabilities,
+    DaemonRegistrationResponse, DiscoveryUpdatePayload, FirstContactRequest, ServerCapabilities,
 };
 use crate::server::daemons::r#impl::base::{Daemon, DaemonBase, DaemonMode};
 use crate::server::daemons::r#impl::version::DaemonVersionPolicy;
@@ -48,6 +48,7 @@ use crate::server::shared::storage::generic::GenericPostgresStorage;
 use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::api::{ApiError, ApiResponse};
 use crate::server::shared::types::entities::EntitySource;
+use crate::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
 use crate::server::subnets::service::SubnetService;
 use crate::server::tags::entity_tags::EntityTagService;
 use crate::server::users::service::UserService;
@@ -223,15 +224,17 @@ impl DaemonService {
         .await
     }
 
-    /// Send POST request to daemon with auth and retry (no response data expected).
+    /// Send POST request to daemon with auth and retry.
     /// Uses exponential backoff: 5 retries, 5-30s delays.
-    async fn post_to_daemon(
+    /// Returns `Option<T>` - `Some(data)` if response contains data, `None` otherwise.
+    /// For endpoints that don't return data, use `::<serde_json::Value>` and ignore result.
+    async fn post_to_daemon<T: serde::de::DeserializeOwned>(
         &self,
         daemon: &Daemon,
         api_key: &str,
         path: &str,
         body: &impl serde::Serialize,
-    ) -> Result<()> {
+    ) -> Result<Option<T>> {
         let url = format!("{}{}", daemon.base.url, path);
         let daemon_id = daemon.id;
         let body_json = serde_json::to_value(body)?;
@@ -249,7 +252,19 @@ impl DaemonService {
                 anyhow::bail!("POST {} failed: HTTP {}", path, response.status());
             }
 
-            Ok(())
+            let api_response: ApiResponse<T> = response.json().await?;
+
+            if !api_response.success {
+                anyhow::bail!(
+                    "POST {} failed: {}",
+                    path,
+                    api_response
+                        .error
+                        .unwrap_or_else(|| "Unknown error".to_string())
+                );
+            }
+
+            Ok(api_response.data)
         })
         .retry(
             ExponentialBuilder::default()
@@ -299,13 +314,14 @@ impl DaemonService {
             return Ok(());
         }
 
-        self.post_to_daemon(
-            daemon,
-            api_key,
-            "/api/discovery/entities-created",
-            &created_entities,
-        )
-        .await?;
+        let _: Option<serde_json::Value> = self
+            .post_to_daemon(
+                daemon,
+                api_key,
+                "/api/discovery/entities-created",
+                &created_entities,
+            )
+            .await?;
 
         tracing::debug!(
             daemon_id = %daemon.id,
@@ -330,7 +346,8 @@ impl DaemonService {
             "Sending discovery request to daemon"
         );
 
-        self.post_to_daemon(daemon, api_key, "/api/discovery/initiate", &request)
+        let _: Option<serde_json::Value> = self
+            .post_to_daemon(daemon, api_key, "/api/discovery/initiate", &request)
             .await?;
 
         tracing::info!(
@@ -349,7 +366,8 @@ impl DaemonService {
         api_key: &str,
         session_id: Uuid,
     ) -> Result<(), Error> {
-        self.post_to_daemon(daemon, api_key, "/api/discovery/cancel", &session_id)
+        let _: Option<serde_json::Value> = self
+            .post_to_daemon(daemon, api_key, "/api/discovery/cancel", &session_id)
             .await?;
 
         tracing::info!(
@@ -359,6 +377,26 @@ impl DaemonService {
         );
 
         Ok(())
+    }
+
+    /// Send first contact request to ServerPoll daemon.
+    /// This assigns the daemon its server-side ID and returns the daemon's status.
+    async fn send_first_contact(&self, daemon: &Daemon, api_key: &str) -> Result<DaemonStatus> {
+        let policy = DaemonVersionPolicy::default();
+        let server_capabilities = ServerCapabilities {
+            server_version: policy.latest.clone(),
+            minimum_daemon_version: policy.minimum_supported.clone(),
+            deprecation_warnings: vec![],
+        };
+
+        let request = FirstContactRequest {
+            daemon_id: daemon.id,
+            server_capabilities,
+        };
+
+        self.post_to_daemon(daemon, api_key, "/api/first-contact", &request)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("First contact response missing daemon status"))
     }
 
     /// Initialize a local daemon (for integrated daemon setup)
@@ -403,7 +441,7 @@ impl DaemonService {
     // ========================================================================
 
     /// Process a heartbeat from a daemon
-    pub async fn process_heartbeat(
+    pub async fn process_status(
         &self,
         daemon_id: Uuid,
         status: DaemonStatus,
@@ -541,10 +579,17 @@ impl DaemonService {
             virtualization: None,
             hidden: false,
             tags: Vec::new(),
+            sys_descr: None,
+            sys_object_id: None,
+            sys_location: None,
+            sys_contact: None,
+            management_url: None,
+            chassis_id: None,
+            snmp_credential_id: None,
         });
 
         let host_response = host_service
-            .discover_host(dummy_host, vec![], vec![], vec![], auth.clone())
+            .discover_host(dummy_host, vec![], vec![], vec![], vec![], auth.clone())
             .await?;
 
         // If user_id is nil (old daemon), fall back to org owner
@@ -666,6 +711,7 @@ impl DaemonService {
                     host_request.interfaces,
                     host_request.ports,
                     host_request.services,
+                    host_request.if_entries,
                     auth.clone(),
                 )
                 .await?;
@@ -685,13 +731,34 @@ impl DaemonService {
         })
     }
 
-    /// Get pending discovery work for a daemon
+    /// Get pending discovery work for a daemon.
+    /// When work is returned, the session is immediately transitioned to Starting phase
+    /// to prevent it from being dispatched again on subsequent poll cycles.
+    /// Returns None if there's already an active session running on the daemon.
     pub async fn get_pending_work(&self, daemon_id: Uuid) -> Option<DiscoveryUpdatePayload> {
+        // Don't dispatch new work if there's already an active session
+        if self
+            .discovery_service
+            .has_active_session_for_daemon(&daemon_id)
+            .await
+        {
+            return None;
+        }
+
         let sessions = self
             .discovery_service
             .get_sessions_for_daemon(&daemon_id)
             .await;
-        sessions.first().cloned()
+
+        if let Some(work) = sessions.first().cloned() {
+            // Transition to Starting so this won't be returned again
+            self.discovery_service
+                .transition_session_to_starting(work.session_id)
+                .await;
+            Some(work)
+        } else {
+            None
+        }
     }
 
     /// Get pending cancellation request for a daemon
@@ -780,10 +847,11 @@ impl DaemonService {
                 .await?;
         }
 
-        // Create Network discovery job
+        // Create Network discovery job; snmp hydrated at session start
         let network_discovery_type = DiscoveryType::Network {
             subnet_ids: None,
             host_naming_fallback: HostNamingFallback::BestService,
+            snmp_credentials: SnmpCredentialMapping::default(),
         };
 
         let network_discovery = self
@@ -896,10 +964,20 @@ impl DaemonService {
             .into_iter()
             .map(|daemon| {
                 let sem = self.poll_semaphore.clone();
+                let daemon_id = daemon.id;
+                let daemon_name = daemon.base.name.clone();
                 async move {
                     let _permit = sem.acquire().await.expect("Semaphore closed");
                     // poll_daemon handles retries internally via backon
-                    let _ = self.poll_daemon(&daemon).await;
+                    // Errors are logged inside poll_daemon, but log unexpected ones here too
+                    if let Err(e) = self.poll_daemon(&daemon).await {
+                        tracing::debug!(
+                            daemon_id = %daemon_id,
+                            daemon_name = %daemon_name,
+                            error = %e,
+                            "Poll cycle failed for daemon"
+                        );
+                    }
                 }
             })
             .collect();
@@ -943,27 +1021,26 @@ impl DaemonService {
     /// Uses backon for retry with exponential backoff.
     /// Marks daemon unreachable after UNREACHABLE_THRESHOLD failures.
     async fn poll_daemon(&self, daemon: &Daemon) -> Result<()> {
-        // Get the API key for this daemon
-        let api_key = self.get_daemon_api_key(daemon).await?;
+        tracing::debug!(
+            daemon_id = %daemon.id,
+            daemon_name = %daemon.base.name,
+            daemon_url = %daemon.base.url,
+            api_key_id = ?daemon.base.api_key_id,
+            "Starting poll for daemon"
+        );
 
-        // Poll status (retry is built into the helper)
-        let status = match self.poll_status(daemon, &api_key).await {
-            Ok(status) => status,
+        // Get the API key for this daemon
+        let api_key = match self.get_daemon_api_key(daemon).await {
+            Ok(key) => key,
             Err(e) => {
-                // Backon exhausted retries - mark daemon unreachable
-                tracing::warn!(
+                // API key lookup failure is a configuration error, not a network error.
+                // Log it clearly so the user can fix it.
+                tracing::error!(
                     daemon_id = %daemon.id,
                     daemon_name = %daemon.base.name,
-                    "Marking daemon unreachable after {} failures",
-                    UNREACHABLE_THRESHOLD
+                    error = %e,
+                    "Failed to get API key for daemon - check that daemon has api_key_id set and the key has plaintext stored"
                 );
-                if let Err(mark_err) = self.mark_daemon_unreachable(daemon.id).await {
-                    tracing::error!(
-                        daemon_id = %daemon.id,
-                        "Failed to mark daemon as unreachable: {}",
-                        mark_err
-                    );
-                }
                 return Err(e);
             }
         };
@@ -971,11 +1048,74 @@ impl DaemonService {
         // Check if this is first contact (last_seen was None)
         let is_first_contact = daemon.base.last_seen.is_none();
 
+        // Get status - either via first contact (which assigns daemon ID) or regular poll
+        let status = if is_first_contact {
+            tracing::info!(
+                daemon_id = %daemon.id,
+                daemon_name = %daemon.base.name,
+                "First contact with ServerPoll daemon - assigning ID"
+            );
+
+            // Send first contact to assign daemon its server-side ID
+            // This must succeed before we can proceed - without the correct ID,
+            // discovery updates from the daemon won't be recognized by the server
+            match self.send_first_contact(daemon, &api_key).await {
+                Ok(status) => status,
+                Err(e) => {
+                    // First contact failed - abort poll entirely
+                    // No point continuing since discovery updates won't work without correct ID
+                    tracing::warn!(
+                        daemon_id = %daemon.id,
+                        daemon_name = %daemon.base.name,
+                        error = %e,
+                        "First contact failed - aborting poll (will retry next cycle)"
+                    );
+                    // Mark unreachable after threshold failures
+                    tracing::warn!(
+                        daemon_id = %daemon.id,
+                        daemon_name = %daemon.base.name,
+                        "Marking daemon unreachable after {} failures",
+                        UNREACHABLE_THRESHOLD
+                    );
+                    if let Err(mark_err) = self.mark_daemon_unreachable(daemon.id).await {
+                        tracing::error!(
+                            daemon_id = %daemon.id,
+                            "Failed to mark daemon as unreachable: {}",
+                            mark_err
+                        );
+                    }
+                    return Err(e);
+                }
+            }
+        } else {
+            // Regular status poll (retry is built into the helper)
+            match self.poll_status(daemon, &api_key).await {
+                Ok(status) => status,
+                Err(e) => {
+                    // Backon exhausted retries - mark daemon unreachable
+                    tracing::warn!(
+                        daemon_id = %daemon.id,
+                        daemon_name = %daemon.base.name,
+                        "Marking daemon unreachable after {} failures",
+                        UNREACHABLE_THRESHOLD
+                    );
+                    if let Err(mark_err) = self.mark_daemon_unreachable(daemon.id).await {
+                        tracing::error!(
+                            daemon_id = %daemon.id,
+                            "Failed to mark daemon as unreachable: {}",
+                            mark_err
+                        );
+                    }
+                    return Err(e);
+                }
+            }
+        };
+
         let auth = AuthenticatedEntity::System;
 
-        // Process heartbeat with status data
+        // Process status data
         if let Err(e) = self
-            .process_heartbeat(daemon.id, status.clone(), auth.clone())
+            .process_status(daemon.id, status.clone(), auth.clone())
             .await
         {
             tracing::warn!(

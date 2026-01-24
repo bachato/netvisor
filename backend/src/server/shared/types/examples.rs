@@ -43,7 +43,10 @@ use crate::server::{
         r#impl::base::{Service, ServiceBase},
     },
     shared::types::{Color, entities::EntitySource},
-    snmp_credentials::r#impl::base::{SnmpCredential, SnmpCredentialBase, SnmpVersion},
+    snmp_credentials::r#impl::{
+        base::{SnmpCredential, SnmpCredentialBase, SnmpVersion},
+        discovery::SnmpCredentialMapping,
+    },
     subnets::r#impl::{
         base::{Subnet, SubnetBase},
         types::SubnetType,
@@ -347,7 +350,7 @@ pub fn discovery() -> Discovery {
             discovery_type: DiscoveryType::Network {
                 subnet_ids: Some(vec![ids::SUBNET]),
                 host_naming_fallback: Default::default(),
-                snmp_credentials: None,
+                snmp_credentials: SnmpCredentialMapping::default(),
             },
             run_type: RunType::AdHoc {
                 last_run: Some(example_timestamp()),

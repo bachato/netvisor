@@ -12,7 +12,10 @@
 		Trash2,
 		CheckSquare,
 		Square,
-		Download
+		Download,
+		Filter,
+		ArrowUpNarrowWide,
+		ArrowDownWideNarrow
 	} from 'lucide-svelte';
 	import {
 		type FieldConfig,
@@ -33,6 +36,7 @@
 		common_filters,
 		common_group,
 		common_groupBy,
+		common_groupByLabel,
 		common_groups,
 		common_item,
 		common_items,
@@ -54,6 +58,7 @@
 		common_showingRange,
 		common_showingTotal,
 		common_sortBy,
+		common_sortByLabel,
 		common_switchToCardView,
 		common_switchToListView,
 		common_tags,
@@ -930,133 +935,271 @@
 			isExporting = false;
 		}
 	}
+
+	// Sticky detection
+	let isStuck = $state(false);
+	let sentinelRef: HTMLDivElement | null = $state(null);
+
+	$effect(() => {
+		const sentinel = sentinelRef;
+		if (!sentinel) return;
+
+		// Find the scroll container (the main element with overflow-auto)
+		const scrollContainer = sentinel.closest('main');
+
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				// Only set stuck if actually scrolled down (prevents flash on tab switch)
+				const scrollTop = scrollContainer?.scrollTop ?? 0;
+				isStuck = !entry.isIntersecting && scrollTop > 0;
+			},
+			{ threshold: 0, root: scrollContainer }
+		);
+		observer.observe(sentinel);
+
+		return () => observer.disconnect();
+	});
 </script>
 
 <div class="space-y-4">
-	<!-- Search and Filter Controls Bar -->
-	<div class="flex items-center gap-3">
-		<!-- Filter Toggle Button -->
-		{#if fields.some((f) => f.filterable)}
-			<button
-				onclick={() => (showFilters = !showFilters)}
-				class="btn-secondary flex items-center gap-2"
-			>
-				<SlidersHorizontal class="h-4 w-4" />
-				{common_filters()}
-				{#if hasActiveFilters}
-					<Tag label={common_active()} color="Blue" />
-				{/if}
-			</button>
-		{/if}
+	<!-- Sentinel for sticky detection -->
+	<div bind:this={sentinelRef} class="h-0 w-full"></div>
 
-		<!-- CSV Export Button -->
-		{#if onCsvExport}
-			<button
-				onclick={handleCsvExport}
-				disabled={isExporting}
-				class="btn-secondary flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				<Download class="h-4 w-4" />
-				{isExporting ? 'Exporting...' : 'CSV'}
-			</button>
-		{/if}
+	<!-- Sticky Controls Bar -->
+	<div
+		class="sticky top-0 z-20 -mx-8 border-b bg-[#1a1d29] px-8 pb-4 {isStuck
+			? 'border-gray-700 pt-4 shadow-lg'
+			: 'border-transparent'}"
+	>
+		<div class="flex items-end justify-between">
+			<!-- Left: Search + Filter/Group/Sort -->
+			<div class="flex items-end gap-4">
+				<!-- Search Input -->
+				<div class="relative w-64 min-w-48">
+					<Search class="text-tertiary absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+					<input
+						type="text"
+						bind:value={searchQuery}
+						placeholder={common_searchPlaceholder()}
+						class="input-field w-full pl-10 pr-10"
+					/>
+					{#if hasActiveSearch}
+						<button
+							onclick={clearSearch}
+							class="text-tertiary hover:text-secondary absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+						>
+							<X class="h-4 w-4" />
+						</button>
+					{/if}
+				</div>
 
-		<!-- Select All/None Buttons (show if bulk operations are available) -->
-		{#if onBulkDelete || hasBulkTagging}
-			<button
-				onclick={allSelected ? selectNone : selectAll}
-				class="btn-secondary flex items-center gap-2"
-				title={allSelected ? common_deselectAll() : common_selectAll()}
-			>
-				{#if allSelected}
-					<Square class="h-4 w-4" />
-				{:else}
-					<CheckSquare class="h-4 w-4" />
-				{/if}
-				{allSelected ? common_none() : common_all()}
-			</button>
-		{/if}
+				<!-- Data Controls Group (Filter, Group, Sort) -->
+				<div class="flex items-end gap-3">
+					<!-- Filter Toggle -->
+					{#if fields.some((f) => f.filterable)}
+						<button
+							onclick={() => (showFilters = !showFilters)}
+							class="btn-secondary flex h-[42px] items-center gap-2"
+						>
+							<Filter class="h-4 w-4" />
+							{#if hasActiveFilters}
+								<Tag label={common_active()} color="Blue" />
+							{/if}
+						</button>
+					{/if}
 
-		<!-- View Mode Toggle -->
-		<button
-			onclick={() => (viewMode = viewMode === 'card' ? 'list' : 'card')}
-			class="btn-secondary flex items-center gap-2"
-			title={viewMode === 'card' ? common_switchToListView() : common_switchToCardView()}
-		>
-			{#if viewMode === 'card'}
-				<List class="h-5.5 w-5.5" />
-			{:else}
-				<LayoutGrid class="h-5.5 w-5.5" />
-			{/if}
-		</button>
+					<!-- Group By Dropdown -->
+					{#if groupableFields.length > 0}
+						<div class="flex flex-col gap-1">
+							<span class="text-tertiary text-xs">{common_groupByLabel()}</span>
+							<div class="relative">
+								<select bind:value={selectedGroupField} class="input-secondary pr-8">
+									<option value={null}>{common_none()}</option>
+									{#each groupableFields as field (getFieldKey(field))}
+										<option value={getFieldKey(field)}>{field.label}</option>
+									{/each}
+								</select>
+								{#if hasActiveGrouping}
+									<button
+										onclick={clearGrouping}
+										class="text-tertiary hover:text-secondary absolute right-8 top-1/2 -translate-y-1/2 transition-colors"
+									>
+										<X class="h-3 w-3" />
+									</button>
+								{/if}
+							</div>
+						</div>
+					{/if}
 
-		<!-- Group By Dropdown -->
-		{#if groupableFields.length > 0}
-			<div class="relative">
-				<select bind:value={selectedGroupField} class="input-field appearance-none pr-8">
-					<option value={null}>{common_noGrouping()}</option>
-					{#each groupableFields as field (getFieldKey(field))}
-						<option value={getFieldKey(field)}>{common_groupBy({ field: field.label })}</option>
-					{/each}
-				</select>
-				{#if hasActiveGrouping}
+					<!-- Sort Dropdown + Direction -->
+					{#if sortableFields.length > 0}
+						<div class="flex flex-col gap-1">
+							<span class="text-tertiary text-xs">{common_sortByLabel()}</span>
+							<div class="flex items-center gap-1">
+								<select
+									bind:value={sortState.field}
+									onchange={() => {
+										if (!sortState.field) sortState = { ...sortState, direction: 'asc' };
+									}}
+									class="input-secondary pr-8"
+								>
+									<option value={null}>{common_none()}</option>
+									{#each sortableFields as field (getFieldKey(field))}
+										<option value={getFieldKey(field)}>{field.label}</option>
+									{/each}
+								</select>
+								{#if sortState.field}
+									<button
+										onclick={() => toggleSort(sortState.field || '')}
+										class="btn-secondary h-[42px]"
+										title={sortState.direction === 'asc' ? 'Ascending' : 'Descending'}
+									>
+										{#if sortState.direction === 'asc'}
+											<ArrowUpNarrowWide class="h-5 w-5" />
+										{:else}
+											<ArrowDownWideNarrow class="h-5 w-5" />
+										{/if}
+									</button>
+								{/if}
+							</div>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Right: View & Actions Group -->
+			<div class="flex items-end gap-2">
+				<!-- View Mode Toggle -->
+				<button
+					onclick={() => (viewMode = viewMode === 'card' ? 'list' : 'card')}
+					class="btn-secondary h-[42px]"
+					title={viewMode === 'card' ? common_switchToListView() : common_switchToCardView()}
+				>
+					{#if viewMode === 'card'}
+						<List class="h-5 w-5" />
+					{:else}
+						<LayoutGrid class="h-5 w-5" />
+					{/if}
+				</button>
+
+				<!-- Select All/None -->
+				{#if onBulkDelete || hasBulkTagging}
 					<button
-						onclick={clearGrouping}
-						class="text-tertiary hover:text-secondary absolute right-8 top-1/2 -translate-y-1/2 transition-colors"
+						onclick={allSelected ? selectNone : selectAll}
+						class="btn-secondary h-[42px]"
+						title={allSelected ? common_deselectAll() : common_selectAll()}
 					>
-						<X class="h-3 w-3" />
+						{#if allSelected}
+							<Square class="h-5 w-5" />
+						{:else}
+							<CheckSquare class="h-5 w-5" />
+						{/if}
+					</button>
+				{/if}
+
+				<!-- CSV Export -->
+				{#if onCsvExport}
+					<button
+						onclick={handleCsvExport}
+						disabled={isExporting}
+						class="btn-secondary h-[42px] disabled:cursor-not-allowed disabled:opacity-50"
+						title={isExporting ? 'Exporting...' : 'Export CSV'}
+					>
+						<Download class="h-5 w-5" />
 					</button>
 				{/if}
 			</div>
-		{/if}
+		</div>
 
-		<!-- Sort Dropdown (only orderable fields) -->
-		{#if sortableFields.length > 0}
-			<div class="relative">
-				<select
-					bind:value={sortState.field}
-					onchange={() => {
-						if (!sortState.field) sortState = { ...sortState, direction: 'asc' };
-					}}
-					class="input-field appearance-none pr-8"
-				>
-					<option value={null}>{common_sortBy()}</option>
-					{#each sortableFields as field (getFieldKey(field))}
-						<option value={getFieldKey(field)}>{field.label}</option>
+		<!-- Filter Panel (inside sticky wrapper) -->
+		{#if showFilters}
+			<div class="mt-4 rounded-lg border border-gray-700 bg-gray-800/70 p-5">
+				<div class="flex items-center justify-between">
+					<h3 class="text-primary text-sm font-semibold">{common_filters()}</h3>
+					{#if hasActiveFilters}
+						<button
+							onclick={clearFilters}
+							class="text-tertiary hover:text-secondary text-xs transition-colors"
+						>
+							{common_clearAll()}
+						</button>
+					{/if}
+				</div>
+
+				<div class="mt-4 grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2 lg:grid-cols-3">
+					{#each fields.filter((f) => f.filterable) as field (getFieldKey(field))}
+						{@const fieldKey = getFieldKey(field)}
+						<div class="space-y-2">
+							<div class="text-secondary text-sm font-medium">{field.label}</div>
+
+							{#if field.type === 'boolean'}
+								{@const filter = filterState[fieldKey]}
+								<div class="space-y-1.5">
+									<label class="flex cursor-pointer items-center gap-2">
+										<input
+											type="checkbox"
+											checked={filter?.showTrue}
+											onchange={() => toggleBooleanFilter(fieldKey, 'showTrue')}
+											class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
+										/>
+										<span class="text-secondary text-sm">{common_showTrue()}</span>
+									</label>
+									<label class="flex cursor-pointer items-center gap-2">
+										<input
+											type="checkbox"
+											checked={filter?.showFalse}
+											onchange={() => toggleBooleanFilter(fieldKey, 'showFalse')}
+											class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
+										/>
+										<span class="text-secondary text-sm">{common_showFalse()}</span>
+									</label>
+								</div>
+							{:else if fieldKey === 'tags'}
+								<!-- Special tag filter with colored tags (stores tag IDs for server-side filtering) -->
+								{@const filter = filterState[fieldKey]}
+								<div class="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+									{#if allTags.length === 0}
+										<p class="text-tertiary text-xs">{common_noTagsAvailable()}</p>
+									{:else}
+										{#each allTags as tag (tag.id)}
+											{@const isSelected = filter?.values.has(tag.id)}
+											<button
+												onclick={() => toggleTagFilter(tag.id)}
+												class="transition-opacity {isSelected
+													? 'opacity-100'
+													: 'opacity-50 hover:opacity-75'}"
+											>
+												<Tag label={tag.name} color={tag.color as Color} />
+											</button>
+										{/each}
+									{/if}
+								</div>
+							{:else}
+								{@const uniqueValues = getUniqueValues(field)}
+								{@const filter = filterState[fieldKey]}
+								<div class="max-h-32 space-y-1.5 overflow-y-auto">
+									{#if uniqueValues.length === 0}
+										<p class="text-tertiary text-xs">{common_noValuesAvailable()}</p>
+									{:else}
+										{#each uniqueValues as value (value)}
+											<label class="flex cursor-pointer items-center gap-2">
+												<input
+													type="checkbox"
+													checked={filter?.values.has(value)}
+													onchange={() => toggleStringFilter(fieldKey, value)}
+													class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
+												/>
+												<span class="text-secondary truncate text-sm" title={value}>{value}</span>
+											</label>
+										{/each}
+									{/if}
+								</div>
+							{/if}
+						</div>
 					{/each}
-				</select>
+				</div>
 			</div>
 		{/if}
-
-		<!-- Sort Direction Toggle -->
-		{#if sortState.field}
-			<button onclick={() => toggleSort(sortState.field || '')} class="btn-secondary">
-				{#if sortState.direction === 'asc'}
-					<ChevronUp class="h-5.5 w-5.5" />
-				{:else}
-					<ChevronDown class="h-5.5 w-5.5" />
-				{/if}
-			</button>
-		{/if}
-
-		<!-- Search Input -->
-		<div class="relative flex-1">
-			<Search class="text-tertiary absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-			<input
-				type="text"
-				bind:value={searchQuery}
-				placeholder={common_searchPlaceholder()}
-				class="input-field w-full pl-10 pr-10"
-			/>
-			{#if hasActiveSearch}
-				<button
-					onclick={clearSearch}
-					class="text-tertiary hover:text-secondary absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-				>
-					<X class="h-4 w-4" />
-				</button>
-			{/if}
-		</div>
 	</div>
 
 	<!-- Bulk Action Bar (shown when items are selected) -->
@@ -1099,100 +1242,6 @@
 					{/if}
 				</div>
 			{/if}
-		</div>
-	{/if}
-
-	<!-- Filter Panel -->
-	{#if showFilters}
-		<div class="card space-y-4 p-4">
-			<div class="flex items-center justify-between">
-				<h3 class="text-primary text-sm font-semibold">{common_filters()}</h3>
-				{#if hasActiveFilters}
-					<button
-						onclick={clearFilters}
-						class="text-tertiary hover:text-secondary text-xs transition-colors"
-					>
-						{common_clearAll()}
-					</button>
-				{/if}
-			</div>
-
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{#each fields.filter((f) => f.filterable) as field (getFieldKey(field))}
-					{@const fieldKey = getFieldKey(field)}
-					<div class="space-y-2">
-						<div class="text-secondary text-sm font-medium">{field.label}</div>
-
-						{#if field.type === 'boolean'}
-							{@const filter = filterState[fieldKey]}
-							<div class="space-y-1">
-								<label class="flex items-center gap-2">
-									<input
-										type="checkbox"
-										checked={filter?.showTrue}
-										onchange={() => toggleBooleanFilter(fieldKey, 'showTrue')}
-										class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
-									/>
-									<span class="text-secondary text-sm">{common_showTrue()}</span>
-								</label>
-								<label class="flex items-center gap-2">
-									<input
-										type="checkbox"
-										checked={filter?.showFalse}
-										onchange={() => toggleBooleanFilter(fieldKey, 'showFalse')}
-										class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
-									/>
-									<span class="text-secondary text-sm">{common_showFalse()}</span>
-								</label>
-							</div>
-						{:else if fieldKey === 'tags'}
-							<!-- Special tag filter with colored tags (stores tag IDs for server-side filtering) -->
-							{@const filter = filterState[fieldKey]}
-							<div
-								class="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto rounded border border-gray-600 bg-gray-800 p-2"
-							>
-								{#if allTags.length === 0}
-									<p class="text-tertiary text-xs">{common_noTagsAvailable()}</p>
-								{:else}
-									{#each allTags as tag (tag.id)}
-										{@const isSelected = filter?.values.has(tag.id)}
-										<button
-											onclick={() => toggleTagFilter(tag.id)}
-											class="transition-opacity {isSelected
-												? 'opacity-100'
-												: 'opacity-50 hover:opacity-75'}"
-										>
-											<Tag label={tag.name} color={tag.color as Color} />
-										</button>
-									{/each}
-								{/if}
-							</div>
-						{:else}
-							{@const uniqueValues = getUniqueValues(field)}
-							{@const filter = filterState[fieldKey]}
-							<div
-								class="max-h-40 space-y-1 overflow-y-auto rounded border border-gray-600 bg-gray-800 p-2"
-							>
-								{#if uniqueValues.length === 0}
-									<p class="text-tertiary text-xs">{common_noValuesAvailable()}</p>
-								{:else}
-									{#each uniqueValues as value (value)}
-										<label class="flex items-center gap-2">
-											<input
-												type="checkbox"
-												checked={filter?.values.has(value)}
-												onchange={() => toggleStringFilter(fieldKey, value)}
-												class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
-											/>
-											<span class="text-secondary truncate text-sm" title={value}>{value}</span>
-										</label>
-									{/each}
-								{/if}
-							</div>
-						{/if}
-					</div>
-				{/each}
-			</div>
 		</div>
 	{/if}
 

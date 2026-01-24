@@ -95,14 +95,10 @@ where
 }
 
 /// Build CSV data from a list of entities.
+/// Headers are derived automatically from the CsvRow struct field names.
 fn build_csv<T: Entity>(entities: &[T]) -> Result<Vec<u8>, csv::Error> {
     let mut wtr = csv::Writer::from_writer(vec![]);
 
-    // Write headers
-    let headers = T::csv_headers();
-    wtr.write_record(&headers)?;
-
-    // Write rows
     for entity in entities {
         wtr.serialize(entity.to_csv_row())?;
     }

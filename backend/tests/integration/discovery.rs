@@ -35,25 +35,25 @@ pub async fn run_discovery(client: &TestClient) -> Result<(), String> {
                         let text = String::from_utf8_lossy(&bytes);
 
                         for line in text.lines() {
-                            if let Some(data) = line.strip_prefix("data: ") {
-                                if let Ok(update) = serde_json::from_str::<DiscoveryUpdatePayload>(data) {
-                                    if !matches!(update.discovery_type, DiscoveryType::Network { .. }) {
-                                        continue;
-                                    }
+                            if let Some(data) = line.strip_prefix("data: ")
+                                && let Ok(update) = serde_json::from_str::<DiscoveryUpdatePayload>(data)
+                            {
+                                if !matches!(update.discovery_type, DiscoveryType::Network { .. }) {
+                                    continue;
+                                }
 
-                                    println!(
-                                        "📊 Discovery: {} - {}%",
-                                        update.phase,
-                                        update.progress,
-                                    );
+                                println!(
+                                    "📊 Discovery: {} - {}%",
+                                    update.phase,
+                                    update.progress,
+                                );
 
-                                    if update.finished_at.is_some() {
-                                        if let Some(error) = &update.error {
-                                            return Err(format!("Discovery failed: {}", error));
-                                        }
-                                        println!("✅ Discovery completed!");
-                                        return Ok(());
+                                if update.finished_at.is_some() {
+                                    if let Some(error) = &update.error {
+                                        return Err(format!("Discovery failed: {}", error));
                                     }
+                                    println!("✅ Discovery completed!");
+                                    return Ok(());
                                 }
                             }
                         }

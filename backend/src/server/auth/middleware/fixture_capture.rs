@@ -38,7 +38,7 @@ pub async fn capture_fixtures_middleware(request: Request, next: Next) -> Respon
     static CAPTURED: Mutex<Vec<CapturedExchange>> = Mutex::new(Vec::new());
 
     fn fixtures_dir() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/tests/compat/fixtures")
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/integration/compat/fixtures")
     }
 
     fn manifest_path(version: &str) -> PathBuf {

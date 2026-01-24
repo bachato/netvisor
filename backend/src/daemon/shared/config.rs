@@ -69,7 +69,7 @@ pub struct DaemonCli {
     #[arg(long)]
     docker_proxy_ssl_chain: Option<String>,
 
-    /// Select whether the daemon will Pull work from the server or have work Pushed to it. If set to Push, you will need to ensure that network you are deploying the daemon on can be reached by the server by opening/forwarding the port to the daemon, and provide the Daemon URL where the server should try to reach the daemon. If set to Pull, no port opening/forwarding is needed
+    /// DaemonPoll: Daemon connects to server; works behind NAT/firewall without opening ports. ServerPoll: Server connects to daemon, for deployments where daemon cannot make outbound connections - requires providing Daemon URL
     #[arg(long)]
     mode: Option<DaemonMode>,
 
@@ -77,7 +77,7 @@ pub struct DaemonCli {
     #[arg(long)]
     allow_self_signed_certs: Option<bool>,
 
-    /// Public URL where server can reach daemon in Push mode. Defaults to auto-detected IP + Daemon Port if not set
+    /// Public URL where server can reach daemon in ServerPoll mode
     #[arg(long)]
     daemon_url: Option<String>,
 

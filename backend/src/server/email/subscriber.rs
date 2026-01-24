@@ -8,7 +8,6 @@ use crate::server::{
 };
 use anyhow::Error;
 use async_trait::async_trait;
-use std::collections::HashMap;
 
 /// Billing lifecycle operations that should include metadata for Plunk segmentation
 const BILLING_LIFECYCLE_OPS: &[TelemetryOperation] = &[
@@ -22,12 +21,8 @@ const BILLING_LIFECYCLE_OPS: &[TelemetryOperation] = &[
 #[async_trait]
 impl EventSubscriber for EmailService {
     fn event_filter(&self) -> EventFilter {
-        EventFilter {
-            entity_operations: Some(HashMap::new()),
-            auth_operations: Some(vec![]),
-            telemetry_operations: None, // Subscribe to all telemetry events
-            network_ids: Some(vec![]),
-        }
+        // Subscribe to all telemetry events
+        EventFilter::telemetry_only(None)
     }
 
     async fn handle_events(&self, events: Vec<Event>) -> Result<(), Error> {

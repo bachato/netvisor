@@ -6,6 +6,7 @@ Thank you for your interest in contributing to Scanopy! We welcome contributions
 
 - [Getting Started](#getting-started)
 - [Ways to Contribute](#ways-to-contribute)
+  - [Translations](#5-translations)
 - [Development Environment Setup](#development-environment-setup)
 - [Development Workflow](#development-workflow)
 - [Adding Service Definitions](#adding-service-definitions)
@@ -53,6 +54,17 @@ For larger features or bug fixes:
 - Follow the development workflow below
 - Write tests for new functionality
 - Update documentation as needed
+
+### 5. Translations
+
+Help make Scanopy accessible to users worldwide by contributing translations:
+
+- **Weblate**: [hosted.weblate.org/engage/scanopy](https://hosted.weblate.org/engage/scanopy/)
+- No coding required - translate directly in your browser
+- Review and improve existing translations
+- Suggest new languages
+
+This is a great way to contribute without needing to set up a development environment!
 
 ## Development Environment Setup
 

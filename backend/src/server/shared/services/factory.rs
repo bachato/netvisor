@@ -134,6 +134,11 @@ impl ServiceFactory {
             event_bus.clone(),
         ));
 
+        let interface_service = Arc::new(InterfaceService::new(
+            storage.interfaces.clone(),
+            event_bus.clone(),
+        ));
+
         let subnet_service = Arc::new(SubnetService::new(
             storage.subnets.clone(),
             event_bus.clone(),
@@ -155,20 +160,6 @@ impl ServiceFactory {
             event_bus.clone(),
         ));
 
-        // Already implements Arc internally due to scheduler + sessions
-        let discovery_service = DiscoveryService::new(
-            storage.discovery.clone(),
-            event_bus.clone(),
-            entity_tag_service.clone(),
-        )
-        .await?;
-
-        let snmp_credential_service = Arc::new(SnmpCredentialService::new(
-            storage.snmp_credentials.clone(),
-            event_bus.clone(),
-            entity_tag_service.clone(),
-        ));
-
         let service_service = Arc::new(ServiceService::new(
             storage.services.clone(),
             binding_service.clone(),
@@ -177,17 +168,29 @@ impl ServiceFactory {
             entity_tag_service.clone(),
         ));
 
-        let interface_service = Arc::new(InterfaceService::new(
-            storage.interfaces.clone(),
-            event_bus.clone(),
-        ));
-
         // IfEntryService needs InterfaceService for validation
         let if_entry_service = Arc::new(IfEntryService::new(
             storage.if_entries.clone(),
             event_bus.clone(),
             interface_service.clone(),
         ));
+
+        let snmp_credential_service = Arc::new(SnmpCredentialService::new(
+            storage.snmp_credentials.clone(),
+            event_bus.clone(),
+            entity_tag_service.clone(),
+            network_service.clone(),
+            interface_service.clone(),
+        ));
+
+        // Already implements Arc internally due to scheduler + sessions
+        let discovery_service = DiscoveryService::new(
+            storage.discovery.clone(),
+            event_bus.clone(),
+            entity_tag_service.clone(),
+            snmp_credential_service.clone(),
+        )
+        .await?;
 
         // Create DaemonService with most dependencies directly (not host_service - circular)
         let daemon_service = Arc::new(DaemonService::new(
@@ -217,6 +220,7 @@ impl ServiceFactory {
         // Set HostService where there's a circular reference
         let _ = service_service.set_host_service(host_service.clone());
         let _ = daemon_service.set_host_service(host_service.clone());
+        let _ = snmp_credential_service.set_host_service(host_service.clone());
 
         let topology_service = Arc::new(TopologyService::new(
             host_service.clone(),
@@ -310,6 +314,7 @@ impl ServiceFactory {
         event_bus
             .register_subscriber(organization_service.clone())
             .await;
+        event_bus.register_subscriber(host_service.clone()).await;
 
         if let Some(billing_service) = billing_service.clone() {
             event_bus.register_subscriber(billing_service).await;

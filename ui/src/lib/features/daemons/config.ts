@@ -28,7 +28,6 @@ interface FieldDef {
 }
 
 export const fieldDefs: FieldDef[] = [
-	// Docs-only fields (not shown in UI form, but needed for documentation)
 	{
 		id: 'serverUrl',
 		label: () => m.daemons_config_serverUrl(),

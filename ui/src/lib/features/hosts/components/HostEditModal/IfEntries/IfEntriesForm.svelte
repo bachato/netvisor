@@ -1,8 +1,16 @@
 <script lang="ts">
 	import type { HostFormData, IfEntry } from '$lib/features/hosts/types/base';
-	import { OPER_STATUS_LABELS } from '$lib/features/snmp/types/base';
+	import { getOperStatusLabels } from '$lib/features/snmp/types/base';
 	import IfEntryConfigPanel from './IfEntryConfigPanel.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
+	import {
+		common_unknown,
+		hosts_ifEntries_noInterfaces,
+		hosts_ifEntries_noInterfacesHelp,
+		hosts_ifEntries_selectToView,
+		hosts_ifEntries_subtitle,
+		hosts_ifEntries_title
+	} from '$lib/paraglide/messages';
 
 	interface Props {
 		formData: HostFormData;
@@ -26,7 +34,8 @@
 	}
 
 	function getEntryDescription(entry: IfEntry): string {
-		const status = entry.oper_status ? OPER_STATUS_LABELS[entry.oper_status] : 'Unknown';
+		const operStatusLabels = getOperStatusLabels();
+		const status = entry.oper_status ? operStatusLabels[entry.oper_status] : common_unknown();
 		return `Index ${entry.if_index} - ${status}`;
 	}
 
@@ -47,9 +56,9 @@
 				<div class="text-secondary mb-2">
 					<IfEntryIcon class="mx-auto h-12 w-12 opacity-50" />
 				</div>
-				<h3 class="text-primary text-lg font-medium">No SNMP Interfaces</h3>
+				<h3 class="text-primary text-lg font-medium">{hosts_ifEntries_noInterfaces()}</h3>
 				<p class="text-muted mt-1 text-sm">
-					SNMP interface entries will appear here after discovery.
+					{hosts_ifEntries_noInterfacesHelp()}
 				</p>
 			</div>
 		</div>
@@ -58,9 +67,9 @@
 		<div class="w-80 flex-shrink-0 overflow-y-auto border-r border-gray-700">
 			<div class="border-b border-gray-700 p-4">
 				<h3 class="text-primary text-sm font-medium">
-					SNMP Interfaces ({sortedIfEntries.length})
+					{hosts_ifEntries_title({ count: sortedIfEntries.length })}
 				</h3>
-				<p class="text-muted mt-1 text-xs">Physical interfaces from SNMP ifTable</p>
+				<p class="text-muted mt-1 text-xs">{hosts_ifEntries_subtitle()}</p>
 			</div>
 			<ul class="divide-y divide-gray-700">
 				{#each sortedIfEntries as entry (entry.id)}
@@ -106,7 +115,7 @@
 				<IfEntryConfigPanel ifEntry={selectedIfEntry} />
 			{:else}
 				<div class="flex h-full items-center justify-center p-6">
-					<p class="text-muted text-sm">Select an interface to view details</p>
+					<p class="text-muted text-sm">{hosts_ifEntries_selectToView()}</p>
 				</div>
 			{/if}
 		</div>

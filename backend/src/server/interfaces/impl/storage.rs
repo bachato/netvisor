@@ -149,21 +149,6 @@ impl Storable for Interface {
 impl Entity for Interface {
     type CsvRow = InterfaceCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "ip_address",
-            "mac_address",
-            "name",
-            "host_id",
-            "subnet_id",
-            "network_id",
-            "position",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         InterfaceCsvRow {
             id: self.id,

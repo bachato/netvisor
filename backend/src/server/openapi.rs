@@ -29,7 +29,7 @@ use crate::server::tags::handlers::TagOrderField;
 /// Tag used to mark endpoints that should be hidden from public documentation
 /// but included in the full OpenAPI spec for client generation.
 const INTERNAL_TAG: &str = "internal";
-const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// OpenAPI base configuration
 ///

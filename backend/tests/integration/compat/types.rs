@@ -21,7 +21,7 @@ pub struct FixtureManifest {
     pub exchanges: Vec<CapturedExchange>,
 }
 
-const FIXTURES_DIR: &str = "src/tests/compat/fixtures";
+const FIXTURES_DIR: &str = "tests/integration/compat/fixtures";
 
 /// Load all fixture versions that have the specified manifest file.
 pub fn get_fixture_versions(manifest_name: &str) -> Vec<String> {

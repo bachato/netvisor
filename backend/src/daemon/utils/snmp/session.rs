@@ -7,8 +7,8 @@ use snmp2::AsyncSession;
 use std::net::IpAddr;
 use std::time::Duration;
 
-use crate::server::discovery::r#impl::types::SnmpQueryCredential;
 use crate::server::snmp_credentials::r#impl::base::SnmpVersion;
+use crate::server::snmp_credentials::r#impl::discovery::SnmpQueryCredential;
 
 /// Default timeout for SNMP operations
 pub const SNMP_TIMEOUT: Duration = Duration::from_secs(5);

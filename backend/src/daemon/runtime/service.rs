@@ -8,7 +8,6 @@ use crate::server::daemons::r#impl::api::{
     DaemonStartupRequest, DaemonStatusPayload, DiscoveryUpdatePayload, ServerCapabilities,
 };
 use crate::server::daemons::r#impl::base::Daemon;
-use crate::server::daemons::r#impl::version::DeprecationSeverity;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse};
 use anyhow::Result;
 use backon::{ExponentialBuilder, Retryable};
@@ -308,6 +307,17 @@ impl DaemonRuntimeService {
             }
         }
 
+        // ServerPoll daemons don't self-register - they're provisioned via the server UI
+        // and wait for the server to poll them
+        let mode = self.config.get_mode().await?;
+        if mode == crate::server::daemons::r#impl::base::DaemonMode::ServerPoll {
+            tracing::info!(
+                target: LOG_TARGET,
+                "  Status:          ServerPoll mode - skipping registration (daemon must be provisioned via server)"
+            );
+            return Ok(());
+        }
+
         self.register_with_server(daemon_id, network_id, has_docker_client)
             .await?;
 
@@ -502,7 +512,7 @@ impl DaemonRuntimeService {
                 tracing::info!(target: LOG_TARGET, "  Min daemon ver:  {}", capabilities.minimum_daemon_version);
 
                 // Log any deprecation warnings from the server
-                self.log_deprecation_warnings(&capabilities);
+                capabilities.log_warnings();
 
                 Ok(())
             }
@@ -514,32 +524,6 @@ impl DaemonRuntimeService {
                     "Startup announcement failed"
                 );
                 Err(e)
-            }
-        }
-    }
-
-    /// Log deprecation warnings received from the server.
-    fn log_deprecation_warnings(&self, capabilities: &ServerCapabilities) {
-        for warning in &capabilities.deprecation_warnings {
-            let msg = format!(
-                "{}{}",
-                warning.message,
-                warning
-                    .sunset_date
-                    .as_ref()
-                    .map(|d| format!(" (sunset: {})", d))
-                    .unwrap_or_default()
-            );
-            match warning.severity {
-                DeprecationSeverity::Critical => {
-                    tracing::error!(target: LOG_TARGET, "{}", msg);
-                }
-                DeprecationSeverity::Warning => {
-                    tracing::warn!(target: LOG_TARGET, "{}", msg);
-                }
-                DeprecationSeverity::Info => {
-                    tracing::info!(target: LOG_TARGET, "{}", msg);
-                }
             }
         }
     }

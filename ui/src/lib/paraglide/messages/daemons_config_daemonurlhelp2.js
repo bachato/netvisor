@@ -3,7 +3,7 @@ import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isS
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_daemons_config_daemonurlhelp2 = /** @type {(inputs: {}) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Public URL where server can reach daemon in Push mode. Defaults to auto-detected IP + Daemon Port if not set`)
+	return /** @type {LocalizedString} */ (`Public URL where server can reach daemon in ServerPoll mode`)
 };
 
 /**

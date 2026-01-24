@@ -372,6 +372,10 @@ pub trait DiscoversNetworkedEntities:
             }
         }
 
+        // Clear entity buffer - all await_*() calls have completed by now
+        // (either successfully found Created entries or timed out)
+        self.as_ref().entity_buffer.clear_all().await;
+
         let mut current_session = self.as_ref().current_session.write().await;
         if let Some(session) = current_session.as_ref()
             && session.info.session_id == session_id
@@ -579,7 +583,8 @@ pub trait DiscoversNetworkedEntities:
 const ENTITY_CREATION_MAX_RETRIES: usize = 5;
 
 /// Timeout for waiting for server confirmation in ServerPoll mode.
-const SERVER_POLL_CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
+/// Must be > 2x poll interval (30s) to handle worst-case timing.
+const SERVER_POLL_CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(120);
 
 #[async_trait]
 pub trait CreatesDiscoveredEntities:
@@ -656,7 +661,7 @@ pub trait CreatesDiscoveredEntities:
                     request.interfaces,
                     request.ports,
                     request.services,
-                    request.if_entries
+                    request.if_entries,
                 ))
             }
         }

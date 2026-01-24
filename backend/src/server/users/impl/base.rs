@@ -325,20 +325,6 @@ impl Storable for User {
 impl Entity for User {
     type CsvRow = UserCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "email",
-            "permissions",
-            "organization_id",
-            "email_verified",
-            "oidc_provider",
-            "terms_accepted_at",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         UserCsvRow {
             id: self.id,

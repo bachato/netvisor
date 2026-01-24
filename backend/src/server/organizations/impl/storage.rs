@@ -129,10 +129,6 @@ impl Storable for Organization {
 impl Entity for Organization {
     type CsvRow = OrganizationCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec!["id", "name", "plan_status", "created_at", "updated_at"]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         OrganizationCsvRow {
             id: self.id,

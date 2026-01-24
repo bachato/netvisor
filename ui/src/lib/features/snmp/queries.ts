@@ -8,6 +8,14 @@ import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-qu
 import { queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { SnmpCredential } from './types/base';
+import {
+	snmp_failedToBulkDelete,
+	snmp_failedToCreate,
+	snmp_failedToDelete,
+	snmp_failedToFetch,
+	snmp_failedToFetchSingle,
+	snmp_failedToUpdate
+} from '$lib/paraglide/messages';
 
 /**
  * Query hook for fetching all SNMP credentials
@@ -20,7 +28,7 @@ export function useSnmpCredentialsQuery() {
 				params: { query: { limit: 0 } }
 			});
 			if (!data?.success || !data.data) {
-				throw new Error(data?.error || 'Failed to fetch SNMP credentials');
+				throw new Error(data?.error || snmp_failedToFetch());
 			}
 			return data.data;
 		}
@@ -38,7 +46,7 @@ export function useSnmpCredentialQuery(id: string) {
 				params: { path: { id } }
 			});
 			if (!data?.success || !data.data) {
-				throw new Error(data?.error || 'Failed to fetch SNMP credential');
+				throw new Error(data?.error || snmp_failedToFetchSingle());
 			}
 			return data.data;
 		},
@@ -56,7 +64,7 @@ export function useCreateSnmpCredentialMutation() {
 		mutationFn: async (credential: SnmpCredential) => {
 			const { data } = await apiClient.POST('/api/v1/snmp-credentials', { body: credential });
 			if (!data?.success || !data.data) {
-				throw new Error(data?.error || 'Failed to create SNMP credential');
+				throw new Error(data?.error || snmp_failedToCreate());
 			}
 			return data.data;
 		},
@@ -81,7 +89,7 @@ export function useUpdateSnmpCredentialMutation() {
 				body: credential
 			});
 			if (!data?.success || !data.data) {
-				throw new Error(data?.error || 'Failed to update SNMP credential');
+				throw new Error(data?.error || snmp_failedToUpdate());
 			}
 			return data.data;
 		},
@@ -110,7 +118,7 @@ export function useDeleteSnmpCredentialMutation() {
 				params: { path: { id } }
 			});
 			if (!data?.success) {
-				throw new Error(data?.error || 'Failed to delete SNMP credential');
+				throw new Error(data?.error || snmp_failedToDelete());
 			}
 			return id;
 		},
@@ -134,7 +142,7 @@ export function useBulkDeleteSnmpCredentialsMutation() {
 		mutationFn: async (ids: string[]) => {
 			const { data } = await apiClient.POST('/api/v1/snmp-credentials/bulk-delete', { body: ids });
 			if (!data?.success) {
-				throw new Error(data?.error || 'Failed to delete SNMP credentials');
+				throw new Error(data?.error || snmp_failedToBulkDelete());
 			}
 			return ids;
 		},

@@ -15,6 +15,7 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useUsersQuery, useBulkDeleteUsersMutation } from '../queries';
 	import type { TabProps } from '$lib/shared/types';
+	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import {
 		common_email,
 		common_emailAndPassword,
@@ -90,6 +91,11 @@
 		editingUser = null;
 	}
 
+	// CSV export handler (exports users only, not invites)
+	async function handleCsvExport() {
+		await downloadCsv('User', {});
+	}
+
 	// Only define fields for users (invites won't be filtered/sorted)
 	const userFields: FieldConfig<UserOrInvite>[] = [
 		{
@@ -148,6 +154,7 @@
 			storageKey="scanopy-users-table-state"
 			onBulkDelete={handleBulkDelete}
 			getItemId={(item) => item.id}
+			onCsvExport={handleCsvExport}
 		>
 			{#snippet children(
 				item: UserOrInvite,

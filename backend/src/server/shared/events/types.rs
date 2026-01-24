@@ -1,8 +1,14 @@
-use crate::server::{auth::middleware::auth::AuthenticatedEntity, shared::entities::Entity};
+use crate::{
+    daemon::discovery::types::base::DiscoveryPhase,
+    server::{
+        auth::middleware::auth::AuthenticatedEntity, daemons::r#impl::api::DiscoveryUpdatePayload,
+        discovery::r#impl::types::DiscoveryType, shared::entities::Entity,
+    },
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::{fmt::Display, net::IpAddr};
-use strum::IntoDiscriminant;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize)]
@@ -10,6 +16,7 @@ pub enum Event {
     Entity(Box<EntityEvent>),
     Auth(AuthEvent),
     Telemetry(TelemetryEvent),
+    Discovery(DiscoverySessionEvent),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -17,6 +24,7 @@ pub enum EventOperation {
     EntityOperation(EntityOperation),
     AuthOperation(AuthOperation),
     TelemetryOperation(TelemetryOperation),
+    DiscoveryOperation(DiscoveryPhase),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -36,6 +44,7 @@ impl EventOperation {
             EventOperation::TelemetryOperation(telemetry_operation) => {
                 telemetry_operation.log_level()
             }
+            EventOperation::DiscoveryOperation(phase) => phase.log_level(),
         }
     }
 }
@@ -48,6 +57,7 @@ impl Display for EventOperation {
             EventOperation::TelemetryOperation(telemetry_operation) => {
                 telemetry_operation.to_string()
             }
+            EventOperation::DiscoveryOperation(phase) => phase.to_string(),
         };
 
         write!(f, "{}", string)
@@ -72,12 +82,19 @@ impl From<TelemetryOperation> for EventOperation {
     }
 }
 
+impl From<DiscoveryPhase> for EventOperation {
+    fn from(value: DiscoveryPhase) -> Self {
+        Self::DiscoveryOperation(value)
+    }
+}
+
 impl Event {
     pub fn id(&self) -> Uuid {
         match self {
             Event::Auth(a) => a.id,
             Event::Entity(e) => e.id,
             Event::Telemetry(t) => t.id,
+            Event::Discovery(d) => d.id,
         }
     }
 
@@ -86,6 +103,7 @@ impl Event {
             Event::Auth(a) => a.organization_id,
             Event::Entity(e) => e.organization_id,
             Event::Telemetry(t) => Some(t.organization_id),
+            Event::Discovery(_) => None,
         }
     }
 
@@ -94,6 +112,7 @@ impl Event {
             Event::Auth(_) => None,
             Event::Entity(e) => e.network_id,
             Event::Telemetry(_) => None,
+            Event::Discovery(d) => Some(d.network_id),
         }
     }
 
@@ -102,6 +121,7 @@ impl Event {
             Event::Auth(e) => e.metadata.clone(),
             Event::Entity(e) => e.metadata.clone(),
             Event::Telemetry(e) => e.metadata.clone(),
+            Event::Discovery(d) => d.metadata.clone(),
         }
     }
 
@@ -110,6 +130,7 @@ impl Event {
             Event::Auth(e) => e.authentication.clone(),
             Event::Entity(e) => e.authentication.clone(),
             Event::Telemetry(e) => e.authentication.clone(),
+            Event::Discovery(d) => d.authentication.clone(),
         }
     }
 
@@ -118,6 +139,7 @@ impl Event {
             Event::Auth(e) => e.operation.clone().into(),
             Event::Entity(e) => e.operation.clone().into(),
             Event::Telemetry(e) => e.operation.clone().into(),
+            Event::Discovery(d) => d.phase.into(),
         }
     }
 
@@ -170,6 +192,12 @@ impl Event {
                     operation = %event.operation,
                 );
             }
+            Event::Discovery(event) => {
+                tracing::info!(
+                    phase = %event.phase,
+                    session_id = %event.session_id
+                )
+            }
         }
     }
 }
@@ -177,45 +205,10 @@ impl Event {
 impl Display for Event {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Event::Auth(a) => write!(
-                f,
-                "{{ id: {}, user_id: {}, organization_id: {}, operation: {}, timestamp: {}, ip_address: {}, user_agent: {}, metadata: {}, authentication: {} }}",
-                a.id,
-                a.user_id
-                    .map(|u| u.to_string())
-                    .unwrap_or("None".to_string()),
-                a.organization_id
-                    .map(|u| u.to_string())
-                    .unwrap_or("None".to_string()),
-                a.operation,
-                a.timestamp,
-                a.ip_address,
-                a.user_agent.clone().unwrap_or("Unknown".to_string()),
-                a.metadata,
-                a.authentication
-            ),
-            Event::Entity(e) => write!(
-                f,
-                "{{ id: {}, entity_type: {}, entity_id: {}, network_id: {}, organization_id: {}, operation: {}, timestamp: {}, metadata: {}, authentication: {} }}",
-                e.id,
-                e.entity_type.discriminant(),
-                e.entity_id,
-                e.network_id
-                    .map(|u| u.to_string())
-                    .unwrap_or("None".to_string()),
-                e.organization_id
-                    .map(|u| u.to_string())
-                    .unwrap_or("None".to_string()),
-                e.operation,
-                e.timestamp,
-                e.metadata,
-                e.authentication
-            ),
-            Event::Telemetry(t) => write!(
-                f,
-                "{{ id: {}, authentication: {}, organization_id: {}, operation: {}, timestamp: {}, metadata: {} }}",
-                t.id, t.authentication, t.organization_id, t.operation, t.timestamp, t.metadata,
-            ),
+            Event::Auth(a) => write!(f, "{a}"),
+            Event::Entity(e) => write!(f, "{e}"),
+            Event::Telemetry(t) => write!(f, "{t}"),
+            Event::Discovery(d) => write!(f, "{d}"),
         }
     }
 }
@@ -335,8 +328,6 @@ pub enum EntityOperation {
     Created,
     Updated,
     Deleted,
-    DiscoveryStarted,
-    DiscoveryCancelled,
 }
 
 impl EntityOperation {
@@ -476,6 +467,88 @@ impl Display for TelemetryEvent {
             f,
             "{{ id: {}, organization_id: {}, operation: {}, authentication: {} }}",
             self.id, self.organization_id, self.operation, self.authentication
+        )
+    }
+}
+
+impl DiscoveryPhase {
+    fn log_level(&self) -> EventLogLevel {
+        EventLogLevel::Info
+    }
+}
+
+impl DiscoveryUpdatePayload {
+    pub fn into_discovery_event(&self) -> DiscoverySessionEvent {
+        DiscoverySessionEvent {
+            id: Uuid::new_v4(),
+            network_id: self.network_id,
+            session_id: self.session_id,
+            daemon_id: self.daemon_id,
+            discovery_type: self.discovery_type.clone(),
+            phase: self.phase,
+            timestamp: Utc::now(),
+            authentication: AuthenticatedEntity::System,
+            metadata: json!({}),
+        }
+    }
+
+    pub fn into_discovery_event_with_auth(
+        &self,
+        auth: AuthenticatedEntity,
+    ) -> DiscoverySessionEvent {
+        let mut event = self.into_discovery_event();
+        event.authentication = auth;
+        event
+    }
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct DiscoverySessionEvent {
+    pub id: Uuid,
+    pub network_id: Uuid,
+    pub session_id: Uuid,
+    pub daemon_id: Uuid,
+    pub discovery_type: DiscoveryType,
+    pub phase: DiscoveryPhase,
+    pub timestamp: DateTime<Utc>,
+    pub authentication: AuthenticatedEntity,
+    pub metadata: serde_json::Value,
+}
+
+impl DiscoverySessionEvent {
+    /// Create a new DiscoverySessionEvent.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: Uuid,
+        session_id: Uuid,
+        network_id: Uuid,
+        daemon_id: Uuid,
+        phase: DiscoveryPhase,
+        discovery_type: DiscoveryType,
+        timestamp: DateTime<Utc>,
+        authentication: AuthenticatedEntity,
+        metadata: serde_json::Value,
+    ) -> Self {
+        Self {
+            id,
+            session_id,
+            network_id,
+            daemon_id,
+            discovery_type,
+            phase,
+            timestamp,
+            authentication,
+            metadata,
+        }
+    }
+}
+
+impl Display for DiscoverySessionEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{{ id: {}, session_id: {}, phase: {}, authentication: {} }}",
+            self.id, self.session_id, self.phase, self.authentication
         )
     }
 }

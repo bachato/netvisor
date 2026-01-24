@@ -19,14 +19,20 @@
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
 	import type { TabProps } from '$lib/shared/types';
+	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import type { components } from '$lib/api/schema';
 	import {
 		common_confirmDeleteName,
 		common_create,
 		common_created,
 		common_name,
+		common_snmpCredentials,
 		common_updated,
-		common_version
+		common_version,
+		snmp_confirmBulkDelete,
+		snmp_noCredentialsHelp,
+		snmp_noCredentialsYet,
+		snmp_subtitle
 	} from '$lib/paraglide/messages';
 
 	type SnmpCredentialOrderField = components['schemas']['SnmpCredentialOrderField'];
@@ -104,9 +110,14 @@
 	}
 
 	async function handleBulkDelete(ids: string[]) {
-		if (confirm(`Delete ${ids.length} SNMP credential(s)? This cannot be undone.`)) {
+		if (confirm(snmp_confirmBulkDelete({ count: ids.length }))) {
 			await bulkDeleteCredentialsMutation.mutateAsync(ids);
 		}
+	}
+
+	// CSV export handler
+	async function handleCsvExport() {
+		await downloadCsv('SnmpCredential', {});
 	}
 
 	// Define field configuration for the DataTableControls
@@ -122,10 +133,7 @@
 </script>
 
 <div class="space-y-6">
-	<TabHeader
-		title="SNMP Credentials"
-		subtitle="Manage SNMP credentials for network device discovery"
-	>
+	<TabHeader title={common_snmpCredentials()} subtitle={snmp_subtitle()}>
 		<svelte:fragment slot="actions">
 			{#if canManage}
 				<button class="btn-primary flex items-center" onclick={handleCreateCredential}>
@@ -139,8 +147,8 @@
 		<Loading />
 	{:else if credentials.length === 0}
 		<EmptyState
-			title="No SNMP credentials yet"
-			subtitle="Create credentials to enable SNMP discovery on your networks"
+			title={snmp_noCredentialsYet()}
+			subtitle={snmp_noCredentialsHelp()}
 			onClick={handleCreateCredential}
 			cta={common_create()}
 		/>
@@ -152,6 +160,7 @@
 			storageKey="scanopy-snmp-credentials-table-state"
 			onBulkDelete={handleBulkDelete}
 			getItemId={(item) => item.id}
+			onCsvExport={handleCsvExport}
 		>
 			{#snippet children(
 				item: SnmpCredential,

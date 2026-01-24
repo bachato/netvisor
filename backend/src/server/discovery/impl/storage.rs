@@ -133,19 +133,6 @@ impl Storable for Discovery {
 impl Entity for Discovery {
     type CsvRow = DiscoveryCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "discovery_type",
-            "run_type",
-            "daemon_id",
-            "network_id",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         DiscoveryCsvRow {
             id: self.id,

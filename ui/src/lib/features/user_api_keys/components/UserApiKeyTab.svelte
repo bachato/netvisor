@@ -17,6 +17,7 @@
 		type UserApiKey
 	} from '../queries';
 	import type { TabProps } from '$lib/shared/types';
+	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import InlineSuccess from '$lib/shared/components/feedback/InlineSuccess.svelte';
 	import {
 		common_apiKeys,
@@ -88,6 +89,11 @@
 
 	function getUserApiKeyTags(apiKey: UserApiKey): string[] {
 		return apiKey.tags ?? [];
+	}
+
+	// CSV export handler
+	async function handleCsvExport() {
+		await downloadCsv('UserApiKey', {});
 	}
 
 	const apiKeyFields: FieldConfig<UserApiKey>[] = [
@@ -163,6 +169,7 @@
 			getItemTags={getUserApiKeyTags}
 			storageKey="scanopy-user-api-keys-table-state"
 			getItemId={(item) => item.id}
+			onCsvExport={handleCsvExport}
 		>
 			{#snippet children(
 				item: UserApiKey,

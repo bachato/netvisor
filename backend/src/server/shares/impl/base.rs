@@ -221,21 +221,6 @@ impl Storable for Share {
 impl Entity for Share {
     type CsvRow = ShareCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "topology_id",
-            "network_id",
-            "created_by",
-            "is_enabled",
-            "expires_at",
-            "has_password",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         ShareCsvRow {
             id: self.id,

@@ -132,25 +132,13 @@ impl EntityBuffer {
         if let Some(entry) = hosts.get_mut(&pending_id) {
             // Update the host in the request with the actual server data
             // Convert HostResponse to Host using the to_host() method
-            if let BufferedEntity::Pending(req) = entry {
+            if let BufferedEntity::Pending(_) = entry {
                 let updated_req = DiscoveryHostRequest {
                     host: actual.to_host(),
-                    // Use children from HostResponse if available, otherwise keep pending data
-                    interfaces: if actual.interfaces.is_empty() {
-                        req.interfaces.clone()
-                    } else {
-                        actual.interfaces
-                    },
-                    ports: if actual.ports.is_empty() {
-                        req.ports.clone()
-                    } else {
-                        actual.ports
-                    },
-                    services: if actual.services.is_empty() {
-                        req.services.clone()
-                    } else {
-                        actual.services
-                    },
+                    interfaces: actual.interfaces,
+                    ports: actual.ports,
+                    services: actual.services,
+                    if_entries: actual.if_entries,
                 };
                 *entry = BufferedEntity::Created {
                     pending_id,
@@ -186,25 +174,54 @@ impl EntityBuffer {
     }
 
     // ========================================================================
-    // Drain methods (for polling)
+    // Polling methods (for ServerPoll mode)
     // ========================================================================
 
-    /// Drain all buffered entities and return them (clears the buffer).
-    pub async fn drain(&self) -> BufferedEntities {
+    /// Get all pending entities for sending to server (non-destructive).
+    /// Entities remain in buffer until the discovery session ends.
+    ///
+    /// This is used by ServerPoll mode where:
+    /// 1. Server polls daemon → get_pending() returns pending entities
+    /// 2. Server processes entities → sends confirmation back
+    /// 3. Daemon receives confirmation → mark_*_created() updates state
+    /// 4. Session ends → clear_all() removes all entries
+    pub async fn get_pending(&self) -> BufferedEntities {
         let hosts = {
-            let mut hosts = self.hosts.write().await;
-            let drained: Vec<DiscoveryHostRequest> =
-                hosts.drain().map(|(_, e)| e.get_data().clone()).collect();
-            drained
+            let hosts = self.hosts.read().await;
+            hosts
+                .values()
+                .filter(|e| e.is_pending())
+                .map(|e| e.get_data().clone())
+                .collect()
         };
 
         let subnets = {
-            let mut subnets = self.subnets.write().await;
-            let drained: Vec<Subnet> = subnets.drain().map(|(_, e)| e.get_data().clone()).collect();
-            drained
+            let subnets = self.subnets.read().await;
+            subnets
+                .values()
+                .filter(|e| e.is_pending())
+                .map(|e| e.get_data().clone())
+                .collect()
         };
 
         BufferedEntities { hosts, subnets }
+    }
+
+    /// Clear all entities from buffer (both pending and created).
+    /// Call at session boundaries when all await_*() calls have completed.
+    ///
+    /// This is the cleanup step at the end of discovery sessions:
+    /// - Created entries: confirmed by server, no longer needed
+    /// - Pending entries: timed out or never confirmed, stale
+    pub async fn clear_all(&self) {
+        {
+            let mut hosts = self.hosts.write().await;
+            hosts.clear();
+        }
+        {
+            let mut subnets = self.subnets.write().await;
+            subnets.clear();
+        }
     }
 
     /// Check if the buffer is empty.
@@ -246,7 +263,7 @@ mod tests {
     };
 
     #[tokio::test]
-    async fn test_entity_buffer_push_and_drain() {
+    async fn test_entity_buffer_push_and_get_pending() {
         let buffer = EntityBuffer::new();
 
         // Push a host
@@ -279,13 +296,14 @@ mod tests {
         assert!(!buffer.is_empty().await);
         assert_eq!(buffer.count().await, (1, 0));
 
-        // Drain and verify
-        let entities = buffer.drain().await;
+        // Get pending - should return hosts without clearing
+        let entities = buffer.get_pending().await;
         assert_eq!(entities.hosts.len(), 1);
         assert!(entities.subnets.is_empty());
 
-        // Verify buffer is empty after drain
-        assert!(buffer.is_empty().await);
+        // Verify buffer still has content (non-destructive)
+        assert!(!buffer.is_empty().await);
+        assert_eq!(buffer.pending_count().await, (1, 0));
     }
 
     #[tokio::test]
@@ -328,7 +346,7 @@ mod tests {
             handle.await.unwrap();
         }
 
-        let entities = buffer.drain().await;
+        let entities = buffer.get_pending().await;
         assert_eq!(entities.hosts.len(), 10);
     }
 
@@ -378,7 +396,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_drain_returns_all_entities() {
+    async fn test_get_pending_only_returns_pending() {
         use crate::server::subnets::r#impl::{base::SubnetBase, types::SubnetType};
         use chrono::Utc;
         use cidr::{IpCidr, Ipv4Cidr};
@@ -426,11 +444,153 @@ mod tests {
             .mark_subnet_created(subnet1.id, subnet1.clone())
             .await;
 
-        // Drain should return all entities (both pending and created)
-        let all = buffer.drain().await;
-        assert_eq!(all.subnets.len(), 2);
+        // get_pending should only return the pending subnet (subnet2)
+        let pending = buffer.get_pending().await;
+        assert_eq!(pending.subnets.len(), 1);
+        assert_eq!(pending.subnets[0].id, subnet2.id);
 
-        // Verify buffer is empty after drain
+        // Buffer still has both (one pending, one created)
+        assert_eq!(buffer.count().await, (0, 2));
+        assert_eq!(buffer.pending_count().await, (0, 1));
+    }
+
+    #[tokio::test]
+    async fn test_clear_all_removes_pending_and_created() {
+        use crate::server::subnets::r#impl::{base::SubnetBase, types::SubnetType};
+        use chrono::Utc;
+        use cidr::{IpCidr, Ipv4Cidr};
+        use std::net::Ipv4Addr;
+
+        let buffer = EntityBuffer::new();
+        let network_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        // Push two subnets
+        let subnet1 = Subnet {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: SubnetBase {
+                name: "subnet-1".to_string(),
+                cidr: IpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(192, 168, 1, 0), 24).unwrap()),
+                network_id,
+                description: None,
+                subnet_type: SubnetType::Unknown,
+                source: EntitySource::Manual,
+                tags: vec![],
+            },
+        };
+        let subnet2 = Subnet {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: SubnetBase {
+                name: "subnet-2".to_string(),
+                cidr: IpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(192, 168, 2, 0), 24).unwrap()),
+                network_id,
+                description: None,
+                subnet_type: SubnetType::Unknown,
+                source: EntitySource::Manual,
+                tags: vec![],
+            },
+        };
+
+        buffer.push_subnet(subnet1.clone()).await;
+        buffer.push_subnet(subnet2.clone()).await;
+
+        // Mark one as created, one stays pending
+        buffer
+            .mark_subnet_created(subnet1.id, subnet1.clone())
+            .await;
+
+        // Verify we have one created, one pending
+        assert_eq!(buffer.count().await, (0, 2));
+        assert_eq!(buffer.pending_count().await, (0, 1));
+
+        // clear_all removes everything
+        buffer.clear_all().await;
+
+        // Buffer should be empty
+        assert!(buffer.is_empty().await);
+        assert_eq!(buffer.count().await, (0, 0));
+        assert_eq!(buffer.pending_count().await, (0, 0));
+    }
+
+    #[tokio::test]
+    async fn test_full_server_poll_lifecycle() {
+        // This test simulates the full ServerPoll mode lifecycle:
+        // 1. Discovery pushes subnet to buffer
+        // 2. Server polls → get_pending() returns pending entities
+        // 3. Server processes and sends confirmation
+        // 4. Daemon receives confirmation → mark_subnet_created()
+        // 5. await_subnet() can now find the created subnet
+        // 6. clear_created() removes confirmed entities
+
+        use crate::server::subnets::r#impl::{base::SubnetBase, types::SubnetType};
+        use chrono::Utc;
+        use cidr::{IpCidr, Ipv4Cidr};
+        use std::net::Ipv4Addr;
+        use std::time::Duration;
+
+        let buffer = EntityBuffer::new();
+        let network_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        // Step 1: Discovery pushes subnet
+        let pending_id = Uuid::new_v4();
+        let subnet = Subnet {
+            id: pending_id,
+            created_at: now,
+            updated_at: now,
+            base: SubnetBase {
+                name: "discovered-subnet".to_string(),
+                cidr: IpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(192, 168, 1, 0), 24).unwrap()),
+                network_id,
+                description: None,
+                subnet_type: SubnetType::Unknown,
+                source: EntitySource::Manual,
+                tags: vec![],
+            },
+        };
+        buffer.push_subnet(subnet.clone()).await;
+        assert_eq!(buffer.pending_count().await, (0, 1));
+
+        // Step 2: Server polls - get_pending() returns pending entities
+        let polled = buffer.get_pending().await;
+        assert_eq!(polled.subnets.len(), 1);
+        assert_eq!(polled.subnets[0].id, pending_id);
+
+        // Entry is still in buffer (non-destructive)
+        assert_eq!(buffer.pending_count().await, (0, 1));
+
+        // Step 3: Server processes (simulated - creates with same or different ID)
+        // In this case, server deduped to existing subnet with different ID
+        let actual_id = Uuid::new_v4();
+        let actual_subnet = Subnet {
+            id: actual_id,
+            created_at: now,
+            updated_at: now,
+            base: subnet.base.clone(),
+        };
+
+        // Step 4: Daemon receives confirmation
+        let id_changed = buffer
+            .mark_subnet_created(pending_id, actual_subnet.clone())
+            .await;
+        assert!(id_changed.is_some());
+        let (old_id, new_id) = id_changed.unwrap();
+        assert_eq!(old_id, pending_id);
+        assert_eq!(new_id, actual_id);
+
+        // Step 5: await_subnet can now find the created subnet
+        let found = buffer
+            .await_subnet(&pending_id, Duration::from_millis(100))
+            .await;
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().id, actual_id);
+
+        // Step 6: Session ends - clear_all removes all entities
+        buffer.clear_all().await;
         assert!(buffer.is_empty().await);
     }
 }

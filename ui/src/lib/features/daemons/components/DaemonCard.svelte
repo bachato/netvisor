@@ -60,7 +60,7 @@
 	// Compute status tag based on version_status and reachability
 	let status: TagProps | null = $derived.by(() => {
 		// Unreachable takes priority - it's a critical status
-		if (daemon.is_reachable === false) {
+		if (daemon.is_unreachable === true) {
 			return { label: 'Unreachable', color: toColor('red') };
 		}
 		switch (daemon.version_status.status) {
@@ -131,7 +131,12 @@
 							value: linkedApiKey.name
 						}
 					]
-				: []),
+				: [
+						{
+							label: 'API Key',
+							value: daemon.mode == 'server_poll' ? 'Not Found' : 'N/A'
+						}
+					]),
 			{
 				label: 'Has Docker Socket',
 				value: [
@@ -198,7 +203,7 @@
 					]
 				: []),
 			// Show retry button for unreachable ServerPoll daemons
-			...(daemon.is_reachable === false && daemon.mode === 'server_poll'
+			...(daemon.is_unreachable === true && daemon.mode === 'server_poll'
 				? [
 						{
 							label: 'Retry Connection',

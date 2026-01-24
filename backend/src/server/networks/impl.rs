@@ -184,10 +184,6 @@ impl Storable for Network {
 impl Entity for Network {
     type CsvRow = NetworkCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec!["id", "name", "organization_id", "created_at", "updated_at"]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         NetworkCsvRow {
             id: self.id,

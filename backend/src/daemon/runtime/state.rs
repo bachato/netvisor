@@ -151,9 +151,15 @@ impl DaemonState {
         })
     }
 
-    /// Drain buffered entities since last call.
-    /// Returns accumulated hosts/subnets and clears the buffer.
-    pub async fn drain_entities(&self) -> BufferedEntities {
-        self.entity_buffer.drain().await
+    /// Get pending buffered entities for sending to server.
+    /// Returns pending hosts/subnets without clearing them from the buffer.
+    ///
+    /// In ServerPoll mode, the lifecycle is:
+    /// 1. Server polls → get_pending_entities() returns pending entities
+    /// 2. Server processes entities → sends confirmation back
+    /// 3. Daemon receives confirmation → buffer.mark_*_created() updates state
+    /// 4. Session ends → buffer.clear_all() removes all entities
+    pub async fn get_pending_entities(&self) -> BufferedEntities {
+        self.entity_buffer.get_pending().await
     }
 }

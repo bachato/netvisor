@@ -44,11 +44,15 @@
 		common_virtualization,
 		hosts_createHost,
 		hosts_editor_basicInfo,
+		hosts_editor_ifEntriesTab,
 		hosts_editor_interfacesDesc,
+		hosts_editor_snmpTab,
+		hosts_editor_snmpTabDesc,
 		hosts_editor_updateHost,
 		hosts_editor_virtualizationDesc,
 		hosts_failedToDelete,
-		hosts_failedToSave
+		hosts_failedToSave,
+		hosts_ifEntries_subtitle
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -186,7 +190,10 @@
 			description: formData.description || '',
 			interfaces: formData.interfaces || [],
 			ports: formData.ports || [],
-			services: formData.services || []
+			services: formData.services || [],
+			credential_mode: (formData.snmp_credential_id ? 'override' : 'default') as
+				| 'default'
+				| 'override'
 		},
 		onSubmit: async ({ value }) => {
 			await performSubmission(value);
@@ -287,18 +294,18 @@
 		// SNMP tab - always shown (users can set credential before discovery)
 		{
 			id: 'snmp',
-			label: 'SNMP',
+			label: hosts_editor_snmpTab(),
 			icon: entities.getIconComponent('SnmpCredential'),
-			description: 'SNMP credential and system information'
+			description: hosts_editor_snmpTabDesc()
 		},
 		// IfEntries tab - only show when data exists (populated by discovery)
 		...(formData.if_entries && formData.if_entries.length > 0
 			? [
 					{
 						id: 'if-entries',
-						label: 'SNMP Interfaces',
+						label: hosts_editor_ifEntriesTab(),
 						icon: entities.getIconComponent('IfEntry'),
-						description: 'Physical interfaces from SNMP ifTable'
+						description: hosts_ifEntries_subtitle()
 					}
 				]
 			: [])
@@ -336,7 +343,8 @@
 			description: formData.description || '',
 			interfaces: formData.interfaces || [],
 			ports: formData.ports || [],
-			services: formData.services || []
+			services: formData.services || [],
+			credential_mode: formData.snmp_credential_id ? 'override' : 'default'
 		});
 
 		activeTab = 'details'; // Reset to first tab
@@ -492,7 +500,7 @@
 			{#if activeTab === 'snmp'}
 				<div class="h-full">
 					<div class="relative flex-1">
-						<SnmpForm bind:formData {isEditing} network={currentNetwork} />
+						<SnmpForm bind:formData {form} {isEditing} network={currentNetwork} />
 					</div>
 				</div>
 			{/if}

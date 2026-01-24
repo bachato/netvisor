@@ -188,6 +188,10 @@
 		for (const def of fieldDefs) {
 			const value = values[def.id];
 
+			if (def.docsOnly) {
+				continue;
+			}
+
 			if (value === '' || value === null || value === undefined) {
 				continue;
 			}
@@ -234,6 +238,10 @@
 
 		for (const def of fieldDefs) {
 			const value = values[def.id];
+
+			if (def.docsOnly) {
+				continue;
+			}
 
 			if (value === '' || value === null || value === undefined) {
 				continue;
@@ -323,7 +331,9 @@
 	<!-- Basic Fields -->
 	{#each basicFieldDefs as def (def.id)}
 		{#if !def.showWhen || def.showWhen(formValues)}
-			{#if def.type === 'string'}
+			{#if def.docsOnly}
+				<div></div>
+			{:else if def.type === 'string'}
 				<form.Field name={def.id} validators={getValidators(def.id)}>
 					{#snippet children(field)}
 						<TextInput
@@ -378,7 +388,9 @@
 							<div class="text-secondary text-m mb-3 font-medium">{section.name()}</div>
 							<div class="grid grid-cols-2 gap-4">
 								{#each section.fields as def (def.id)}
-									{#if def.type === 'string'}
+									{#if def.docsOnly}
+										<div></div>
+									{:else if def.type === 'string'}
 										<form.Field name={def.id} validators={getValidators(def.id)}>
 											{#snippet children(field)}
 												<TextInput

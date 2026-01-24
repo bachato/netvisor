@@ -127,19 +127,34 @@ async fn async_main() -> anyhow::Result<()> {
         tracing::info!("  Concurrent:      {} parallel scans", concurrent_scans);
     }
 
-    // Initialize services if we have credentials
-    if let Some(network_id) = network_id {
-        if let Some(api_key) = api_key {
-            runtime_service
-                .initialize_services(network_id, api_key.clone())
-                .await?;
-        } else {
-            tracing::warn!(
-                "Daemon is missing an API key. Go to discovery tab in UI to generate an API key."
-            );
+    // Initialize services based on mode
+    match mode {
+        DaemonMode::DaemonPoll => {
+            // DaemonPoll mode: Register with server and poll for work
+            if let Some(network_id) = network_id {
+                if let Some(api_key) = api_key {
+                    runtime_service
+                        .initialize_services(network_id, api_key.clone())
+                        .await?;
+                } else {
+                    tracing::warn!(
+                        "Daemon is missing an API key. Go to discovery tab in UI to generate an API key."
+                    );
+                }
+            } else {
+                tracing::info!("Missing network ID - waiting for server to hit /api/initialize...");
+            }
         }
-    } else {
-        tracing::info!("Missing network ID - waiting for server to hit /api/initialize...");
+        DaemonMode::ServerPoll => {
+            // ServerPoll mode: Don't register - daemon was provisioned via server UI
+            // Just serve HTTP endpoints and wait for server to poll
+            if api_key.is_none() {
+                tracing::warn!(
+                    "ServerPoll daemon has no API key configured. \
+                     Configure with the key from provision response."
+                );
+            }
+        }
     }
 
     // Mode-specific ready message and runtime loop
@@ -152,7 +167,7 @@ async fn async_main() -> anyhow::Result<()> {
                 "  Server will poll this daemon at {} for status and discovery",
                 daemon_url
             );
-            tracing::info!("  No outbound connections - ideal for DMZ deployments");
+            tracing::info!("  No outbound connections");
             tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             // No outbound loop needed - daemon just serves HTTP endpoints
         }
@@ -164,7 +179,7 @@ async fn async_main() -> anyhow::Result<()> {
                 "  Polling server every {}s for discovery work",
                 interval_secs
             );
-            tracing::info!("  No inbound connections required - firewall-friendly mode");
+            tracing::info!("  No inbound connections");
             tracing::info!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
             tokio::spawn(async move {

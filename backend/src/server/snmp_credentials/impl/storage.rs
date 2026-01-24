@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use secrecy::{ExposeSecret, SecretString};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -11,6 +12,18 @@ use crate::server::{
     },
     snmp_credentials::r#impl::base::{SnmpCredential, SnmpCredentialBase},
 };
+
+/// CSV row representation for SnmpCredential export
+#[derive(Serialize)]
+pub struct SnmpCredentialCsvRow {
+    pub id: Uuid,
+    pub organization_id: Uuid,
+    pub name: String,
+    pub version: String,
+    pub community: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for SnmpCredential {
     type BaseData = SnmpCredentialBase;
@@ -106,6 +119,20 @@ impl Storable for SnmpCredential {
 }
 
 impl Entity for SnmpCredential {
+    type CsvRow = SnmpCredentialCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        SnmpCredentialCsvRow {
+            id: self.id,
+            organization_id: self.base.organization_id,
+            name: self.base.name.clone(),
+            version: self.base.version.to_string(),
+            community: "********".to_string(), // Redact sensitive data
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::SnmpCredential
     }

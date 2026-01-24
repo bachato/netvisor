@@ -2,11 +2,7 @@
 
 > Auto-generated i18n message functions. Import `messages.js` to use translated strings.
 
-<<<<<<< HEAD
-Compiled from: `/Users/maya/dev/scanopy-snmp/ui/project.inlang`
-=======
-Compiled from: `/Users/maya/dev/scanopy-438-daemon-push/ui/project.inlang`
->>>>>>> 438-daemon-push
+Compiled from: `/Users/maya/dev/scanopy/ui/project.inlang`
 
 
 ## What is this folder?

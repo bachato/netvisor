@@ -5,7 +5,7 @@
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
-	import type { SnmpCredential, SnmpVersion } from '../types/base';
+	import type { SnmpCredential } from '../types/base';
 	import { createDefaultSnmpCredential } from '../types/base';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { Key } from 'lucide-svelte';
@@ -23,8 +23,17 @@
 		common_name,
 		common_saving,
 		common_update,
-		common_version
+		common_version,
+		m,
+		snmp_communityString,
+		snmp_communityStringHelp,
+		snmp_communityStringPlaceholder,
+		snmp_createCredential,
+		snmp_namePlaceholder,
+		snmp_versionV2c,
+		snmp_versionV3ComingSoon
 	} from '$lib/paraglide/messages';
+	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 
 	let {
 		credential = null,
@@ -51,7 +60,7 @@
 
 	let isEditing = $derived(credential !== null);
 	let title = $derived(
-		isEditing ? common_editName({ name: credential?.name ?? '' }) : 'Create SNMP Credential'
+		isEditing ? common_editName({ name: credential?.name ?? '' }) : snmp_createCredential()
 	);
 	let saveLabel = $derived(isEditing ? common_update() : common_create());
 
@@ -131,6 +140,7 @@
 			<div class="space-y-8">
 				<!-- Credential Details Section -->
 				<div class="space-y-4">
+					<p class="text-secondary">{m.snmp_modalCreateHelpText()}</p>
 					<h3 class="text-primary text-lg font-medium">{common_details()}</h3>
 
 					<form.Field
@@ -144,7 +154,7 @@
 								label={common_name()}
 								id="name"
 								{field}
-								placeholder="Production RO"
+								placeholder={snmp_namePlaceholder()}
 								required
 							/>
 						{/snippet}
@@ -156,15 +166,15 @@
 								<label for="version" class="text-secondary block text-sm font-medium">
 									{common_version()}
 								</label>
-								<select
+								<SelectInput
+									label={common_version()}
 									id="version"
-									value={field.state.value}
-									onchange={(e) => field.handleChange(e.currentTarget.value as SnmpVersion)}
-									class="select-input w-full"
-								>
-									<option value="V2c">SNMPv2c</option>
-									<option value="V3" disabled>SNMPv3 (coming soon)</option>
-								</select>
+									{field}
+									options={[
+										{ value: 'V2c', label: snmp_versionV2c() },
+										{ value: 'V3', label: snmp_versionV3ComingSoon(), disabled: true }
+									]}
+								/>
 							</div>
 						{/snippet}
 					</form.Field>
@@ -177,13 +187,13 @@
 					>
 						{#snippet children(field)}
 							<TextInput
-								label="Community String"
+								label={snmp_communityString()}
 								id="community"
 								type="password"
 								{field}
-								placeholder="public"
+								placeholder={snmp_communityStringPlaceholder()}
 								required
-								helpText="The SNMP community string for read-only access"
+								helpText={snmp_communityStringHelp()}
 							/>
 						{/snippet}
 					</form.Field>

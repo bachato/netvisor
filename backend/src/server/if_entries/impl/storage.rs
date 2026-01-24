@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use mac_address::MacAddress;
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -14,6 +15,36 @@ use crate::server::{
         },
     },
 };
+
+/// CSV row representation for IfEntry export
+#[derive(Serialize)]
+pub struct IfEntryCsvRow {
+    pub id: Uuid,
+    pub host_id: Uuid,
+    pub network_id: Uuid,
+    pub if_index: i32,
+    pub if_descr: String,
+    pub if_alias: Option<String>,
+    pub if_type: i32,
+    pub speed_bps: Option<i64>,
+    pub admin_status: String,
+    pub oper_status: String,
+    pub mac_address: Option<String>,
+    pub interface_id: Option<Uuid>,
+    pub neighbor: Option<String>,
+    pub lldp_chassis_id: Option<String>,
+    pub lldp_port_id: Option<String>,
+    pub lldp_sys_name: Option<String>,
+    pub lldp_port_desc: Option<String>,
+    pub lldp_mgmt_addr: Option<String>,
+    pub lldp_sys_desc: Option<String>,
+    pub cdp_device_id: Option<String>,
+    pub cdp_port_id: Option<String>,
+    pub cdp_platform: Option<String>,
+    pub cdp_address: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for IfEntry {
     type BaseData = IfEntryBase;
@@ -249,6 +280,49 @@ impl Storable for IfEntry {
 }
 
 impl Entity for IfEntry {
+    type CsvRow = IfEntryCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        IfEntryCsvRow {
+            id: self.id,
+            host_id: self.base.host_id,
+            network_id: self.base.network_id,
+            if_index: self.base.if_index,
+            if_descr: self.base.if_descr.clone(),
+            if_alias: self.base.if_alias.clone(),
+            if_type: self.base.if_type,
+            speed_bps: self.base.speed_bps,
+            admin_status: format!("{:?}", self.base.admin_status),
+            oper_status: format!("{:?}", self.base.oper_status),
+            mac_address: self.base.mac_address.map(|m| m.to_string()),
+            interface_id: self.base.interface_id,
+            neighbor: self.base.neighbor.as_ref().map(|n| match n {
+                Neighbor::IfEntry(id) => format!("IfEntry:{}", id),
+                Neighbor::Host(id) => format!("Host:{}", id),
+            }),
+            lldp_chassis_id: self
+                .base
+                .lldp_chassis_id
+                .as_ref()
+                .and_then(|c| serde_json::to_string(c).ok()),
+            lldp_port_id: self
+                .base
+                .lldp_port_id
+                .as_ref()
+                .and_then(|p| serde_json::to_string(p).ok()),
+            lldp_sys_name: self.base.lldp_sys_name.clone(),
+            lldp_port_desc: self.base.lldp_port_desc.clone(),
+            lldp_mgmt_addr: self.base.lldp_mgmt_addr.map(|a| a.to_string()),
+            lldp_sys_desc: self.base.lldp_sys_desc.clone(),
+            cdp_device_id: self.base.cdp_device_id.clone(),
+            cdp_port_id: self.base.cdp_port_id.clone(),
+            cdp_platform: self.base.cdp_platform.clone(),
+            cdp_address: self.base.cdp_address.map(|a| a.to_string()),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::IfEntry
     }

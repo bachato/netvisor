@@ -34,11 +34,13 @@ mod generated {
     use super::*;
     crate::crud_get_all_handler!(IfEntry, "if-entries", "if_entry");
     crate::crud_get_by_id_handler!(IfEntry, "if-entries", "if_entry");
+    crate::crud_export_csv_handler!(IfEntry, "if-entries", "if_entry");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(generated::get_all, create_if_entry))
+        .routes(routes!(generated::export_csv))
         .routes(routes!(
             generated::get_by_id,
             update_if_entry,

@@ -1,0 +1,26 @@
+{
+  "version": "0.13.6",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/daemons/01d86a6c-6c61-462e-8ebe-3b462239e096/startup",
+      "request_body": {
+        "daemon_version": "0.13.6"
+      },
+      "response_status": 404,
+      "response_body": {
+        "code": "entity_not_found",
+        "error": "daemon with ID '01d86a6c-6c61-462e-8ebe-3b462239e096' not found",
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.13.6"
+        },
+        "params": {
+          "entity": "daemon",
+          "id": "01d86a6c-6c61-462e-8ebe-3b462239e096"
+        },
+        "success": false
+      }
+    }
+  ]
+}

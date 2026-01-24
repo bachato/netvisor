@@ -118,11 +118,13 @@ impl FilterQueryExtractor for SnmpCredentialFilterQuery {
 mod generated {
     use super::*;
     crate::crud_get_by_id_handler!(SnmpCredential, "snmp-credentials", "snmp_credential");
+    crate::crud_export_csv_handler!(SnmpCredential, "snmp-credentials", "snmp_credential");
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(get_all_snmp_credentials, create_snmp_credential))
+        .routes(routes!(generated::export_csv))
         .routes(routes!(
             generated::get_by_id,
             update_snmp_credential,

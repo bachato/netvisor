@@ -14,6 +14,7 @@
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
+	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
 	import { useSnmpCredentialsQuery } from '$lib/features/snmp/queries';
 	import { SnmpCredentialDisplay } from '$lib/shared/components/forms/selection/display/SnmpCredentialDisplay.svelte';
 	import {
@@ -77,9 +78,13 @@
 			: { ...createEmptyNetworkFormData(), seedData: true };
 	}
 
-	// Create form
+	// Create form with additional snmp_mode field for UI
 	const form = createForm(() => ({
-		defaultValues: { ...createEmptyNetworkFormData(), seedData: true },
+		defaultValues: {
+			...createEmptyNetworkFormData(),
+			seedData: true,
+			snmp_mode: 'none' as 'none' | 'custom'
+		},
 		onSubmit: async ({ value }) => {
 			if (!organization) {
 				pushError(common_couldNotLoadUser());
@@ -106,10 +111,38 @@
 		}
 	}));
 
+	// Local state for snmp_mode to enable Svelte 5 reactivity
+	let snmpMode = $state<'none' | 'custom'>('none');
+	let previousSnmpMode = $state<'none' | 'custom'>('none');
+
+	// Sync snmp mode from form store and handle changes
+	$effect(() => {
+		return form.store.subscribe(() => {
+			const newMode = (form.state.values as { snmp_mode?: string }).snmp_mode as 'none' | 'custom';
+			if (newMode !== previousSnmpMode) {
+				previousSnmpMode = newMode;
+				snmpMode = newMode;
+				// Update snmp_credential_id based on mode change
+				if (newMode === 'none') {
+					form.setFieldValue('snmp_credential_id', null);
+				} else if (snmpCredentials.length > 0 && !form.state.values.snmp_credential_id) {
+					form.setFieldValue('snmp_credential_id', snmpCredentials[0].id);
+				}
+			}
+		});
+	});
+
 	// Reset form when modal opens
 	function handleOpen() {
 		const defaults = getDefaultValues();
-		form.reset(defaults);
+		const hasCredential = defaults.snmp_credential_id !== null;
+		const mode = hasCredential ? 'custom' : 'none';
+		form.reset({
+			...defaults,
+			snmp_mode: mode
+		});
+		snmpMode = mode;
+		previousSnmpMode = mode;
 	}
 
 	async function handleSubmit() {
@@ -126,6 +159,12 @@
 			}
 		}
 	}
+
+	// SNMP mode options
+	const snmpModeOptions = [
+		{ value: 'none', label: 'No SNMP (disabled)' },
+		{ value: 'custom', label: 'Select credential' }
+	];
 
 	let colorHelper = entities.getColorHelper('Network');
 </script>
@@ -175,27 +214,41 @@
 						{/snippet}
 					</form.Field>
 
-					<form.Field name="snmp_credential_id">
+					<form.Field name="snmp_mode">
 						{#snippet children(field)}
-							<RichSelect
+							<RadioGroup
 								label="Default SNMP Credential"
-								placeholder="No SNMP (disabled)"
-								required={false}
-								selectedValue={field.state.value}
-								options={snmpCredentials}
-								displayComponent={SnmpCredentialDisplay}
-								onSelect={(id) => field.handleChange(id)}
+								id="snmp_mode"
+								{field}
+								options={snmpModeOptions}
 								disabled={isNonOwnerInDemo}
 							/>
-							<p class="text-muted mt-1 text-xs">
-								{#if isNonOwnerInDemo}
-									SNMP settings are read-only in demo mode.
-								{:else}
-									Setting a credential enables SNMP discovery for this network. Hosts can override.
-								{/if}
-							</p>
 						{/snippet}
 					</form.Field>
+
+					{#if snmpMode === 'custom'}
+						<form.Field name="snmp_credential_id">
+							{#snippet children(field)}
+								<RichSelect
+									label="Select Credential"
+									required={false}
+									selectedValue={field.state.value}
+									options={snmpCredentials}
+									displayComponent={SnmpCredentialDisplay}
+									onSelect={(id) => field.handleChange(id)}
+									disabled={isNonOwnerInDemo}
+								/>
+							{/snippet}
+						</form.Field>
+					{/if}
+
+					<p class="text-muted mt-1 text-xs">
+						{#if isNonOwnerInDemo}
+							SNMP settings are read-only in demo mode.
+						{:else}
+							Setting a credential enables SNMP discovery for this network. Hosts can override.
+						{/if}
+					</p>
 				</div>
 
 				{#if isEditing && network}

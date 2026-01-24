@@ -25,6 +25,7 @@ export const ERROR_CODES = {
 	auth_user_not_found: "User with ID '{id}' not found",
 	auth_daemon_key_not_created:
 		'Daemon is trying to register with an API key that has not yet been created',
+	auth_demo_mode: 'This action is disabled in demo mode',
 	entity_not_found: "{entity} with ID '{id}' not found",
 	entity_already_exists: "{entity} '{name}' already exists",
 	entity_in_use: "Cannot delete {entity} '{name}' because it's used by {used_by}",
@@ -85,6 +86,7 @@ export interface ErrorParams {
 	auth_oidc_provider_error: { provider: string | number };
 	auth_user_not_found: { id: string | number };
 	auth_daemon_key_not_created: Record<string, never>;
+	auth_demo_mode: Record<string, never>;
 	entity_not_found: { entity: string | number; id: string | number };
 	entity_already_exists: { entity: string | number; name: string | number };
 	entity_in_use: { entity: string | number; name: string | number; used_by: string | number };

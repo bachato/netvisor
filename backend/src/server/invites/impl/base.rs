@@ -208,19 +208,6 @@ impl Storable for Invite {
 impl Entity for Invite {
     type CsvRow = InviteCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "organization_id",
-            "permissions",
-            "created_by",
-            "send_to",
-            "expires_at",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         InviteCsvRow {
             id: self.id,

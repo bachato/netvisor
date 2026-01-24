@@ -192,6 +192,16 @@
 		@apply border-red-500 focus:border-red-500 focus:ring-red-500;
 	}
 
+	/* Secondary input/select - transparent style for toolbars, matches btn-secondary */
+	.input-secondary {
+		@apply h-[42px] bg-transparent hover:bg-gray-800;
+		@apply border border-gray-700 hover:border-gray-600;
+		@apply rounded-md px-4 py-2 font-medium text-gray-400 hover:text-gray-200;
+		@apply transition-colors duration-150;
+		@apply cursor-pointer appearance-none;
+		@apply focus:border-gray-600 focus:outline-none;
+	}
+
 	/* Dropdown/select components */
 	.select-trigger {
 		@apply flex w-full items-center justify-between rounded-md border border-gray-600 bg-gray-700/50;
@@ -221,6 +231,16 @@
 	/* Datetime picker styling */
 	input[type='datetime-local'] {
 		color-scheme: dark;
+	}
+
+	/* Radio button styling */
+	input[type='radio'] {
+		accent-color: rgb(37, 99, 235);
+	}
+
+	input[type='radio']:checked {
+		background-color: rgb(37, 99, 235);
+		border-color: rgb(37, 99, 235);
 	}
 
 	/* List items (for ListSelectItem, cards, etc) */

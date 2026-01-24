@@ -7,7 +7,7 @@ use crate::{
     server::{
         daemons::r#impl::{
             base::{Daemon, DaemonBase, DaemonMode},
-            version::{DaemonVersionStatus, DeprecationWarning},
+            version::{DaemonVersionStatus, DeprecationSeverity, DeprecationWarning},
         },
         discovery::r#impl::types::DiscoveryType,
     },
@@ -177,6 +177,45 @@ pub struct ServerCapabilities {
     pub deprecation_warnings: Vec<DeprecationWarning>,
 }
 
+impl ServerCapabilities {
+    /// Log deprecation warnings from the server.
+    /// Logs each warning at the appropriate severity level.
+    pub fn log_warnings(&self) {
+        for warning in &self.deprecation_warnings {
+            let msg = format!(
+                "{}{}",
+                warning.message,
+                warning
+                    .sunset_date
+                    .as_ref()
+                    .map(|d| format!(" (sunset: {})", d))
+                    .unwrap_or_default()
+            );
+            match warning.severity {
+                DeprecationSeverity::Critical => {
+                    tracing::error!(target: "daemon", "{}", msg);
+                }
+                DeprecationSeverity::Warning => {
+                    tracing::warn!(target: "daemon", "{}", msg);
+                }
+                DeprecationSeverity::Info => {
+                    tracing::info!(target: "daemon", "{}", msg);
+                }
+            }
+        }
+    }
+}
+
+/// First contact request from server to ServerPoll daemon.
+/// Sent on first poll to assign the daemon its server-side ID.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct FirstContactRequest {
+    /// The daemon's server-assigned ID
+    pub daemon_id: Uuid,
+    /// Server capabilities (version, deprecation warnings)
+    pub server_capabilities: ServerCapabilities,
+}
+
 /// Daemon response for UI including computed version status
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DaemonResponse {
@@ -187,4 +226,27 @@ pub struct DaemonResponse {
     pub base: DaemonBase,
     /// Computed version status including health and warnings
     pub version_status: DaemonVersionStatus,
+}
+
+/// Request to pre-provision a ServerPoll mode daemon.
+/// This creates the daemon record on the server before the daemon is installed.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct ProvisionDaemonRequest {
+    /// Human-readable name for the daemon.
+    pub name: String,
+    /// Network this daemon will be associated with.
+    pub network_id: Uuid,
+    /// URL where the server can reach the daemon (required for ServerPoll mode).
+    pub url: String,
+}
+
+/// Response from provisioning a daemon.
+/// Contains the daemon record and the API key (shown only once).
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct ProvisionDaemonResponse {
+    /// The created daemon record (with version status).
+    pub daemon: DaemonResponse,
+    /// The API key (plaintext) for daemon authentication.
+    /// This is shown only once - store it securely.
+    pub daemon_api_key: String,
 }

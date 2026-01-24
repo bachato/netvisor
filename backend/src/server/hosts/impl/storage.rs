@@ -172,20 +172,6 @@ impl Storable for Host {
 impl Entity for Host {
     type CsvRow = HostCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "hostname",
-            "description",
-            "network_id",
-            "source",
-            "hidden",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         HostCsvRow {
             id: self.id,

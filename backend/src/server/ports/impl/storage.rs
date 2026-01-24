@@ -136,19 +136,6 @@ impl Storable for Port {
 impl Entity for Port {
     type CsvRow = PortCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "port_number",
-            "protocol",
-            "port_type",
-            "host_id",
-            "network_id",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         let config = self.base.port_type.config();
         PortCsvRow {

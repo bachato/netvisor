@@ -145,21 +145,6 @@ impl Storable for UserApiKey {
 impl Entity for UserApiKey {
     type CsvRow = UserApiKeyCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "user_id",
-            "organization_id",
-            "permissions",
-            "is_enabled",
-            "last_used",
-            "expires_at",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         UserApiKeyCsvRow {
             id: self.id,

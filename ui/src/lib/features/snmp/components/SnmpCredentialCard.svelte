@@ -1,11 +1,16 @@
 <script lang="ts">
-	import { Edit, Trash2, Key } from 'lucide-svelte';
+	import { Edit, Trash2 } from 'lucide-svelte';
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import type { SnmpCredential } from '../types/base';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
-	import { common_delete, common_edit, common_version } from '$lib/paraglide/messages';
+	import {
+		common_delete,
+		common_edit,
+		common_version,
+		snmp_versionV2cShort
+	} from '$lib/paraglide/messages';
 
 	let {
 		credential,
@@ -35,14 +40,14 @@
 	let cardData = $derived({
 		title: credential.name,
 		iconColor: colorHelper.icon,
-		Icon: Key,
+		Icon: entities.getIconComponent('SnmpCredential'),
 		fields: [
 			{
 				label: common_version(),
 				value: [
 					{
 						id: 'version',
-						label: credential.version ?? 'V2c',
+						label: credential.version ?? snmp_versionV2cShort(),
 						color: colorHelper.color
 					}
 				]

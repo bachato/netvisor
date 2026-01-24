@@ -1,8 +1,10 @@
-use crate::server::auth::middleware::features::{BlockedInDemoMode, RequireFeature};
 use crate::daemon::runtime::state::DaemonStatus;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Viewer};
 use crate::server::daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase};
-use crate::server::daemons::r#impl::api::DaemonStatusPayload;
+use crate::server::daemons::r#impl::api::{
+    DaemonStatusPayload, ProvisionDaemonRequest, ProvisionDaemonResponse,
+};
+use crate::server::openapi::SERVER_VERSION;
 use crate::server::shared::api_key_common::{ApiKeyType, generate_api_key_for_storage};
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::extractors::Query;
@@ -24,12 +26,6 @@ use crate::server::{
         },
         base::{Daemon, DaemonBase, DaemonMode},
         version::DaemonVersionPolicy,
-    },
-    discovery::r#impl::{
-        base::{Discovery, DiscoveryBase},
-        types::{
-            DiscoveryType, HostNamingFallback, RunType, SnmpCredentialMapping, SnmpQueryCredential,
-        },
     },
     hosts::r#impl::base::{Host, HostBase},
     shared::types::{
@@ -311,7 +307,6 @@ async fn get_by_id(
 async fn register_daemon(
     State(state): State<Arc<AppState>>,
     auth: Authorized<IsDaemon>,
-    _demo_check: RequireFeature<BlockedInDemoMode>,
     Json(request): Json<DaemonRegistrationRequest>,
 ) -> ApiResult<Json<ApiResponse<DaemonRegistrationResponse>>> {
     // Delegate to processor for shared registration logic
@@ -467,7 +462,7 @@ async fn receive_work_request(
     state
         .services
         .daemon_service
-        .process_heartbeat(daemon_id, status, auth.entity.clone())
+        .process_status(daemon_id, status, auth.entity.clone())
         .await?;
 
     // Use processor to get pending work and cancellation
@@ -500,29 +495,6 @@ async fn receive_work_request(
 // ============================================================================
 // Pre-provisioning (ServerPoll mode only)
 // ============================================================================
-
-/// Request to pre-provision a ServerPoll mode daemon.
-/// This creates the daemon record on the server before the daemon is installed.
-#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
-pub struct ProvisionDaemonRequest {
-    /// Human-readable name for the daemon.
-    pub name: String,
-    /// Network this daemon will be associated with.
-    pub network_id: Uuid,
-    /// URL where the server can reach the daemon (required for ServerPoll mode).
-    pub url: String,
-}
-
-/// Response from provisioning a daemon.
-/// Contains the daemon record and the API key (shown only once).
-#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
-pub struct ProvisionDaemonResponse {
-    /// The created daemon record (with version status).
-    pub daemon: DaemonResponse,
-    /// The API key (plaintext) for daemon authentication.
-    /// This is shown only once - store it securely.
-    pub daemon_api_key: String,
-}
 
 /// Pre-provision a ServerPoll mode daemon
 ///
@@ -610,6 +582,13 @@ async fn provision_daemon(
             ApiError::internal_error(&format!("Failed to create host: {}", e))
         })?;
 
+    let version = semver::Version::parse(SERVER_VERSION).map_err(|_| {
+        ApiError::internal_error(&format!(
+            "Could not parse server version {}",
+            SERVER_VERSION
+        ))
+    })?;
+
     // Create daemon record with mode=ServerPoll and linked API key
     // last_seen is None until first successful contact from poller
     let daemon = Daemon::new(DaemonBase {
@@ -621,7 +600,7 @@ async fn provision_daemon(
         mode: DaemonMode::ServerPoll,
         name: request.name,
         tags: Vec::new(),
-        version: None,
+        version: Some(version),
         user_id,
         api_key_id: Some(created_api_key.id),
         is_unreachable: false,

@@ -1,4 +1,4 @@
-.PHONY: help build test clean format generate-schema generate-messages set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise
+.PHONY: help build test clean format generate-schema generate-messages seed-dev set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise
 
 help:
 	@echo "Scanopy Development Commands"
@@ -7,6 +7,7 @@ help:
 	@echo "  make setup-db       - Set up database"
 	@echo "  make clean-db       - Clean up database"
 	@echo "  make migrate-db     - Run any database migrations"
+	@echo "  make seed-dev       - Create dev user after migrate-db (dev@localhost / password123)"
 	@echo "  make clean-daemon   - Remove daemon config file"
 	@echo "  make dump-db        - Dump database to /scanopy"
 	@echo "  make dev-server     - Start server dev environment"
@@ -57,6 +58,14 @@ clean-db:
 
 migrate-db:
 	cd backend && sqlx migrate run --database-url postgresql://postgres:password@localhost:5432/scanopy
+
+seed-dev:
+	@echo "Seeding dev database with test user..."
+	@docker exec -i scanopy-postgres psql -U postgres -d scanopy < backend/scripts/seed-dev.sql && \
+		echo "" && \
+		echo "Dev user created! Login with:" && \
+		echo "  Email: dev@localhost.com" && \
+		echo "  Password: password123"
 
 clean-daemon:
 	rm -rf ~/Library/Application\ Support/com.scanopy.daemon

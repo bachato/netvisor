@@ -1791,6 +1791,66 @@
         ]
       }
     },
+    "/api/v1/daemons/provision": {
+      "post": {
+        "tags": [
+          "daemons"
+        ],
+        "summary": "Pre-provision a ServerPoll mode daemon",
+        "description": "Creates a daemon record on the server before the daemon is installed.\nThis is only for ServerPoll mode where the server initiates connections to the daemon.\nFor DaemonPoll mode, daemons self-register on startup.\n\nReturns the daemon record and an API key that must be configured on the daemon.",
+        "operationId": "provision_daemon",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProvisionDaemonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Daemon provisioned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_ProvisionDaemonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/daemons/{id}": {
       "get": {
         "tags": [
@@ -1908,7 +1968,7 @@
           "daemons"
         ],
         "summary": "Retry connection to unreachable daemon",
-        "description": "Resets the is_reachable flag for a daemon that was marked unreachable\ndue to repeated polling failures. The poller will attempt to contact\nthe daemon again on the next cycle.",
+        "description": "Resets the is_unreachable flag for a daemon that was marked unreachable\ndue to repeated polling failures. The poller will attempt to contact\nthe daemon again on the next cycle.",
         "operationId": "retry_daemon_connection",
         "parameters": [
           {
@@ -3684,6 +3744,503 @@
           },
           "409": {
             "description": "Host has associated daemon",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/if-entries": {
+      "get": {
+        "tags": [
+          "if-entries"
+        ],
+        "summary": "List all if-entries",
+        "operationId": "list_if-entries",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "description": "Filter by host ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of if-entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Response type for paginated list endpoints (pagination is always present in meta)",
+                  "required": [
+                    "success",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/IfEntry"
+                      }
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedApiMeta"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "if-entries"
+        ],
+        "summary": "Create a new if entry",
+        "description": "Creates an SNMP ifTable entry for a host. These are typically created by\nSNMP discovery, but can also be created manually.",
+        "operationId": "create_if_entry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IfEntry"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "If entry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_IfEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Network mismatch or duplicate if_index",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/if-entries/bulk-delete": {
+      "post": {
+        "tags": [
+          "if-entries"
+        ],
+        "summary": "Bulk delete if-entries",
+        "operationId": "bulk_delete_if_entries",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "if-entries deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/if-entries/export/csv": {
+      "get": {
+        "tags": [
+          "if-entries"
+        ],
+        "summary": "Export if-entries to CSV",
+        "description": "Export all if-entries matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_if-entries_csv",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "description": "Filter by host ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing if-entries",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/if-entries/{id}": {
+      "get": {
+        "tags": [
+          "if-entries"
+        ],
+        "summary": "Get if_entry by ID",
+        "operationId": "get_if_entry_by_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "IfEntry ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "IfEntry found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_IfEntry"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "IfEntry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "if-entries"
+        ],
+        "summary": "Update an if entry",
+        "operationId": "update_if_entry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "If entry ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IfEntry"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "If entry updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_IfEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Network mismatch or invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "If entry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "if-entries"
+        ],
+        "summary": "Delete if_entry",
+        "operationId": "delete_if_entry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "if_entry ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "if_entry deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "if_entry not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -6479,6 +7036,500 @@
         ]
       }
     },
+    "/api/v1/snmp-credentials": {
+      "get": {
+        "tags": [
+          "snmp-credentials"
+        ],
+        "summary": "List all SNMP credentials",
+        "description": "Returns all SNMP credentials in the authenticated user's organization.\nThe community string is returned for authorized users - handle with care.",
+        "operationId": "get_all_snmp_credentials",
+        "parameters": [
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/SnmpCredentialOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/SnmpCredentialOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of SNMP credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedApiResponse_SnmpCredential"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "snmp-credentials"
+        ],
+        "summary": "Create a new SNMP credential",
+        "description": "Creates an SNMP credential scoped to your organization. Credential names must\nbe unique within the organization.\n\n### Validation\n\n- Name must be 1-100 characters\n- Name must be unique within your organization\n- Community string is required",
+        "operationId": "create_snmp_credential",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnmpCredential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "SNMP credential created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_SnmpCredential"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Credential name already exists in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/snmp-credentials/bulk-delete": {
+      "post": {
+        "tags": [
+          "snmp-credentials"
+        ],
+        "summary": "Bulk delete snmp-credentials",
+        "operationId": "bulk_delete_snmp_credentials",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "snmp-credentials deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/snmp-credentials/export/csv": {
+      "get": {
+        "tags": [
+          "snmp-credentials"
+        ],
+        "summary": "Export snmp-credentials to CSV",
+        "description": "Export all snmp-credentials matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_snmp-credentials_csv",
+        "parameters": [
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Primary ordering field (used for grouping). Always sorts ASC to keep groups together.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/SnmpCredentialOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Secondary ordering field (sorting within groups or standalone sort).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/SnmpCredentialOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "description": "Direction for order_by field (group_by always uses ASC).",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing snmp-credentials",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/snmp-credentials/{id}": {
+      "get": {
+        "tags": [
+          "snmp-credentials"
+        ],
+        "summary": "Get snmp_credential by ID",
+        "operationId": "get_snmp_credential_by_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "SnmpCredential ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SnmpCredential found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_SnmpCredential"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SnmpCredential not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "snmp-credentials"
+        ],
+        "summary": "Update snmp_credential",
+        "operationId": "update_snmp_credential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "snmp_credential ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnmpCredential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "snmp_credential updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_SnmpCredential"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "snmp_credential not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "snmp-credentials"
+        ],
+        "summary": "Delete snmp_credential",
+        "operationId": "delete_snmp_credential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "snmp_credential ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "snmp_credential deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "snmp_credential not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/subnets": {
       "get": {
         "tags": [
@@ -8171,23 +9222,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-<<<<<<< HEAD
-              "created_at": "2026-01-16T05:18:23.717594Z",
-              "id": "2ff3165e-e889-4caa-a0ed-7e793712221a",
-=======
-              "created_at": "2026-01-22T19:43:12.630160Z",
-              "id": "533c240e-83e2-4729-bfe9-66d802499106",
->>>>>>> 438-daemon-push
+              "created_at": "2026-01-24T14:34:04.823352Z",
+              "id": "e71e8740-ab76-4eef-8abc-47c30d0097da",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-<<<<<<< HEAD
-              "updated_at": "2026-01-16T05:18:23.717594Z"
-=======
-              "updated_at": "2026-01-22T19:43:12.630160Z"
->>>>>>> 438-daemon-push
+              "updated_at": "2026-01-24T14:34:04.823352Z"
             }
           },
           "error": {
@@ -8713,7 +9755,7 @@
         "properties": {
           "data": {
             "type": "object",
-            "description": "Response type for host endpoints.\nIncludes hydrated children (interfaces, ports, services).",
+            "description": "Response type for host endpoints.\nIncludes children (interfaces, ports, services, if_entries).",
             "required": [
               "id",
               "created_at",
@@ -8725,9 +9767,16 @@
               "tags",
               "interfaces",
               "ports",
-              "services"
+              "services",
+              "if_entries"
             ],
             "properties": {
+              "chassis_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "created_at": {
                 "type": "string",
                 "format": "date-time"
@@ -8751,11 +9800,24 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "if_entries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/IfEntry"
+                },
+                "description": "SNMP ifTable entries"
+              },
               "interfaces": {
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/Interface"
                 }
+              },
+              "management_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "name": {
                 "type": "string"
@@ -8776,8 +9838,39 @@
                   "$ref": "#/components/schemas/Service"
                 }
               },
+              "snmp_credential_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
               "source": {
                 "$ref": "#/components/schemas/EntitySource"
+              },
+              "sys_contact": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "sys_descr": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "sys_location": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "sys_object_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "tags": {
                 "type": "array",
@@ -8807,13 +9900,42 @@
               "hidden": false,
               "hostname": "web-server-01.local",
               "id": "550e8400-e29b-41d4-a716-446655440003",
+              "if_entries": [
+                {
+                  "admin_status": "Up",
+                  "cdp_address": null,
+                  "cdp_device_id": null,
+                  "cdp_platform": null,
+                  "cdp_port_id": null,
+                  "created_at": "2026-01-15T10:30:00Z",
+                  "host_id": "550e8400-e29b-41d4-a716-446655440003",
+                  "id": "550e8400-e29b-41d4-a716-44665544000f",
+                  "if_alias": "Uplink to Core Switch",
+                  "if_descr": "GigabitEthernet0/1",
+                  "if_index": 1,
+                  "if_type": 6,
+                  "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                  "lldp_chassis_id": null,
+                  "lldp_mgmt_addr": null,
+                  "lldp_port_desc": null,
+                  "lldp_port_id": null,
+                  "lldp_sys_desc": null,
+                  "lldp_sys_name": null,
+                  "mac_address": "DE:AD:BE:EF:CA:FE",
+                  "neighbor": null,
+                  "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                  "oper_status": "Up",
+                  "speed_bps": 1000000000,
+                  "updated_at": "2026-01-15T10:30:00Z"
+                }
+              ],
               "interfaces": [
                 {
                   "created_at": "2026-01-15T10:30:00Z",
                   "host_id": "550e8400-e29b-41d4-a716-446655440003",
                   "id": "550e8400-e29b-41d4-a716-446655440005",
                   "ip_address": "192.168.1.100",
-                  "mac_address": "DE:AD:BE:EF:12:34",
+                  "mac_address": "DE:AD:BE:EF:CA:FE",
                   "name": "eth0",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
@@ -8835,7 +9957,35 @@
                   "updated_at": "2026-01-15T10:30:00Z"
                 }
               ],
-              "services": [],
+              "services": [
+                {
+                  "bindings": [
+                    {
+                      "created_at": "2026-01-24T14:34:04.808795Z",
+                      "id": "cd1fcbea-f341-48b6-bd56-bcd34744413d",
+                      "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                      "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                      "port_id": "550e8400-e29b-41d4-a716-446655440006",
+                      "service_id": "550e8400-e29b-41d4-a716-446655440007",
+                      "type": "Port",
+                      "updated_at": "2026-01-24T14:34:04.808795Z"
+                    }
+                  ],
+                  "created_at": "2026-01-15T10:30:00Z",
+                  "host_id": "550e8400-e29b-41d4-a716-446655440003",
+                  "id": "550e8400-e29b-41d4-a716-446655440007",
+                  "name": "nginx",
+                  "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                  "position": 0,
+                  "service_definition": "Autobrr",
+                  "source": {
+                    "type": "Manual"
+                  },
+                  "tags": [],
+                  "updated_at": "2026-01-15T10:30:00Z",
+                  "virtualization": null
+                }
+              ],
               "source": {
                 "type": "Manual"
               },
@@ -8843,6 +9993,59 @@
               "updated_at": "2026-01-15T10:30:00Z",
               "virtualization": null
             }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_IfEntry": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IfEntryBase"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "updated_at"
+                ],
+                "properties": {
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  }
+                }
+              }
+            ]
           },
           "error": {
             "type": [
@@ -8901,7 +10104,7 @@
               "host_id": "550e8400-e29b-41d4-a716-446655440003",
               "id": "550e8400-e29b-41d4-a716-446655440005",
               "ip_address": "192.168.1.100",
-              "mac_address": "DE:AD:BE:EF:12:34",
+              "mac_address": "DE:AD:BE:EF:CA:FE",
               "name": "eth0",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
@@ -9259,8 +10462,6 @@
           }
         }
       },
-<<<<<<< HEAD
-=======
       "ApiResponse_ProvisionDaemonResponse": {
         "type": "object",
         "required": [
@@ -9300,7 +10501,6 @@
           }
         }
       },
->>>>>>> 438-daemon-push
       "ApiResponse_PublicConfigResponse": {
         "type": "object",
         "required": [
@@ -9519,23 +10719,14 @@
             "example": {
               "bindings": [
                 {
-<<<<<<< HEAD
-                  "created_at": "2026-01-16T05:18:23.713959Z",
-                  "id": "bb19bfc4-30ae-4c23-b5c6-621991636e23",
-=======
-                  "created_at": "2026-01-22T19:43:12.625868Z",
-                  "id": "8949e0b4-0b44-4d4f-ad0c-6316afc27954",
->>>>>>> 438-daemon-push
+                  "created_at": "2026-01-24T14:34:04.819195Z",
+                  "id": "c7ae330e-222d-4f41-a6ba-cfb8cf34eefc",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-<<<<<<< HEAD
-                  "updated_at": "2026-01-16T05:18:23.713959Z"
-=======
-                  "updated_at": "2026-01-22T19:43:12.625868Z"
->>>>>>> 438-daemon-push
+                  "updated_at": "2026-01-24T14:34:04.819195Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -9544,11 +10735,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-<<<<<<< HEAD
-              "service_definition": "GitHub",
-=======
-              "service_definition": "Lubelogger",
->>>>>>> 438-daemon-push
+              "service_definition": "Autobrr",
               "source": {
                 "type": "Manual"
               },
@@ -9619,6 +10806,59 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/ShareBase"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "updated_at"
+                ],
+                "properties": {
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  }
+                }
+              }
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_SnmpCredential": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SnmpCredentialBase"
               },
               {
                 "type": "object",
@@ -10655,23 +11895,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-<<<<<<< HEAD
-          "created_at": "2026-01-16T05:18:23.706998Z",
-          "id": "c967680f-d47d-4981-8a5d-1a8ead65c4f1",
-=======
-          "created_at": "2026-01-22T19:43:12.619619Z",
-          "id": "3f090beb-48b2-4f6e-ae78-05d89b11370d",
->>>>>>> 438-daemon-push
+          "created_at": "2026-01-24T14:34:04.809005Z",
+          "id": "30dce216-d0cf-44a4-9468-4aaa4af03d72",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-<<<<<<< HEAD
-          "updated_at": "2026-01-16T05:18:23.706998Z"
-=======
-          "updated_at": "2026-01-22T19:43:12.619619Z"
->>>>>>> 438-daemon-push
+          "updated_at": "2026-01-24T14:34:04.809005Z"
         }
       },
       "BindingBase": {
@@ -10977,6 +12208,12 @@
           "tags"
         ],
         "properties": {
+          "chassis_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "description": {
             "type": [
               "string",
@@ -10992,12 +12229,25 @@
               "null"
             ]
           },
+          "if_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IfEntryInput"
+            },
+            "description": "SNMP interface entries (ifTable data) - server assigns UUIDs"
+          },
           "interfaces": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/InterfaceInput"
             },
             "description": "Interfaces to create with this host (client provides UUIDs)"
+          },
+          "management_url": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "type": "string"
@@ -11019,6 +12269,37 @@
               "$ref": "#/components/schemas/ServiceInput"
             },
             "description": "Services to create with this host (can reference interfaces/ports by their UUIDs)"
+          },
+          "snmp_credential_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "sys_contact": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sys_descr": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sys_location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sys_object_id": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "tags": {
             "type": "array",
@@ -11042,6 +12323,7 @@
           "description": "Primary web server",
           "hidden": false,
           "hostname": "web-server-01.local",
+          "if_entries": [],
           "interfaces": [
             {
               "id": "550e8400-e29b-41d4-a716-446655440005",
@@ -11074,11 +12356,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-<<<<<<< HEAD
-              "service_definition": "GitHub",
-=======
-              "service_definition": "Lubelogger",
->>>>>>> 438-daemon-push
+              "service_definition": "Autobrr",
               "tags": [],
               "virtualization": null
             }
@@ -11327,6 +12605,14 @@
           "user_id"
         ],
         "properties": {
+          "api_key_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Foreign key to API key used for ServerPoll authentication.\nNULL for DaemonPoll daemons or those not yet linked to a key."
+          },
           "capabilities": {
             "$ref": "#/components/schemas/DaemonCapabilities"
           },
@@ -11334,9 +12620,9 @@
             "type": "string",
             "format": "uuid"
           },
-          "is_reachable": {
+          "is_unreachable": {
             "type": "boolean",
-            "description": "Whether the daemon is reachable (for ServerPoll circuit breaker).\nSet to false after repeated polling failures, reset via retry-connection endpoint."
+            "description": "Whether the daemon is unreachable (for ServerPoll circuit breaker).\nSet to true after repeated polling failures, reset via retry-connection endpoint."
           },
           "last_seen": {
             "type": [
@@ -11403,9 +12689,10 @@
       },
       "DaemonMode": {
         "type": "string",
+        "description": "Daemon operating mode that determines the communication pattern.\n\n- **DaemonPoll** (formerly \"Pull\"): Daemon makes outbound connections to the server.\n  The daemon registers itself and polls for work. Best for daemons behind NAT/firewall.\n\n- **ServerPoll** (formerly \"Push\"): Server makes connections to the daemon.\n  Server polls daemon for status and discovery results. Best for DMZ deployments\n  where daemon cannot make outbound connections.",
         "enum": [
-          "Push",
-          "Pull"
+          "server_poll",
+          "daemon_poll"
         ]
       },
       "DaemonOrderField": {
@@ -11745,6 +13032,13 @@
           "host": {
             "$ref": "#/components/schemas/Host"
           },
+          "if_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IfEntry"
+            },
+            "description": "SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled"
+          },
           "interfaces": {
             "type": "array",
             "items": {
@@ -11801,6 +13095,14 @@
           "Cancelled"
         ]
       },
+      "DiscoveryProtocol": {
+        "type": "string",
+        "description": "Protocol that discovered the physical link between network devices",
+        "enum": [
+          "LLDP",
+          "CDP"
+        ]
+      },
       "DiscoveryType": {
         "oneOf": [
           {
@@ -11834,6 +13136,10 @@
             "properties": {
               "host_naming_fallback": {
                 "$ref": "#/components/schemas/HostNamingFallback"
+              },
+              "snmp_credentials": {
+                "$ref": "#/components/schemas/SnmpCredentialMapping",
+                "description": "SNMP credentials for querying devices during discovery\nServer builds this mapping before initiating discovery"
               },
               "subnet_ids": {
                 "type": [
@@ -12148,6 +13454,35 @@
                 "format": "uuid"
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "Physical link discovered via LLDP/CDP neighbor discovery",
+            "required": [
+              "source_if_entry_id",
+              "target_if_entry_id",
+              "protocol",
+              "edge_type"
+            ],
+            "properties": {
+              "edge_type": {
+                "type": "string",
+                "enum": [
+                  "PhysicalLink"
+                ]
+              },
+              "protocol": {
+                "$ref": "#/components/schemas/DiscoveryProtocol"
+              },
+              "source_if_entry_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "target_if_entry_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
           }
         ]
       },
@@ -12158,7 +13493,8 @@
           "HostVirtualization",
           "ServiceVirtualization",
           "RequestPath",
-          "HubAndSpoke"
+          "HubAndSpoke",
+          "PhysicalLink"
         ]
       },
       "EntityDiscriminants": {
@@ -12179,6 +13515,8 @@
           "Port",
           "Binding",
           "Interface",
+          "IfEntry",
+          "SnmpCredential",
           "Subnet",
           "Group",
           "Topology",
@@ -12495,6 +13833,13 @@
           "tags"
         ],
         "properties": {
+          "chassis_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "LLDP lldpLocChassisId - globally unique device identifier for deduplication"
+          },
           "description": {
             "type": [
               "string",
@@ -12510,6 +13855,13 @@
               "null"
             ]
           },
+          "management_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "URL for device management interface (manual or discovered)"
+          },
           "name": {
             "type": "string"
           },
@@ -12517,8 +13869,44 @@
             "type": "string",
             "format": "uuid"
           },
+          "snmp_credential_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Per-host SNMP credential override (null = use network default)"
+          },
           "source": {
             "$ref": "#/components/schemas/EntitySource"
+          },
+          "sys_contact": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP sysContact.0 - admin contact info"
+          },
+          "sys_descr": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP sysDescr.0 - full system description"
+          },
+          "sys_location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP sysLocation.0 - physical location"
+          },
+          "sys_object_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP sysObjectID.0 - vendor OID for device identification"
           },
           "tags": {
             "type": "array",
@@ -12560,7 +13948,7 @@
       },
       "HostResponse": {
         "type": "object",
-        "description": "Response type for host endpoints.\nIncludes hydrated children (interfaces, ports, services).",
+        "description": "Response type for host endpoints.\nIncludes children (interfaces, ports, services, if_entries).",
         "required": [
           "id",
           "created_at",
@@ -12572,9 +13960,16 @@
           "tags",
           "interfaces",
           "ports",
-          "services"
+          "services",
+          "if_entries"
         ],
         "properties": {
+          "chassis_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time"
@@ -12598,11 +13993,24 @@
             "type": "string",
             "format": "uuid"
           },
+          "if_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IfEntry"
+            },
+            "description": "SNMP ifTable entries"
+          },
           "interfaces": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Interface"
             }
+          },
+          "management_url": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "type": "string"
@@ -12623,8 +14031,39 @@
               "$ref": "#/components/schemas/Service"
             }
           },
+          "snmp_credential_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
           "source": {
             "$ref": "#/components/schemas/EntitySource"
+          },
+          "sys_contact": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sys_descr": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sys_location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sys_object_id": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "tags": {
             "type": "array",
@@ -12654,13 +14093,42 @@
           "hidden": false,
           "hostname": "web-server-01.local",
           "id": "550e8400-e29b-41d4-a716-446655440003",
+          "if_entries": [
+            {
+              "admin_status": "Up",
+              "cdp_address": null,
+              "cdp_device_id": null,
+              "cdp_platform": null,
+              "cdp_port_id": null,
+              "created_at": "2026-01-15T10:30:00Z",
+              "host_id": "550e8400-e29b-41d4-a716-446655440003",
+              "id": "550e8400-e29b-41d4-a716-44665544000f",
+              "if_alias": "Uplink to Core Switch",
+              "if_descr": "GigabitEthernet0/1",
+              "if_index": 1,
+              "if_type": 6,
+              "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+              "lldp_chassis_id": null,
+              "lldp_mgmt_addr": null,
+              "lldp_port_desc": null,
+              "lldp_port_id": null,
+              "lldp_sys_desc": null,
+              "lldp_sys_name": null,
+              "mac_address": "DE:AD:BE:EF:CA:FE",
+              "neighbor": null,
+              "network_id": "550e8400-e29b-41d4-a716-446655440002",
+              "oper_status": "Up",
+              "speed_bps": 1000000000,
+              "updated_at": "2026-01-15T10:30:00Z"
+            }
+          ],
           "interfaces": [
             {
               "created_at": "2026-01-15T10:30:00Z",
               "host_id": "550e8400-e29b-41d4-a716-446655440003",
               "id": "550e8400-e29b-41d4-a716-446655440005",
               "ip_address": "192.168.1.100",
-              "mac_address": "DE:AD:BE:EF:12:34",
+              "mac_address": "DE:AD:BE:EF:CA:FE",
               "name": "eth0",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
@@ -12682,7 +14150,35 @@
               "updated_at": "2026-01-15T10:30:00Z"
             }
           ],
-          "services": [],
+          "services": [
+            {
+              "bindings": [
+                {
+                  "created_at": "2026-01-24T14:34:04.808520Z",
+                  "id": "41a3dddf-e432-4ead-b489-c088e829caab",
+                  "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                  "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                  "port_id": "550e8400-e29b-41d4-a716-446655440006",
+                  "service_id": "550e8400-e29b-41d4-a716-446655440007",
+                  "type": "Port",
+                  "updated_at": "2026-01-24T14:34:04.808520Z"
+                }
+              ],
+              "created_at": "2026-01-15T10:30:00Z",
+              "host_id": "550e8400-e29b-41d4-a716-446655440003",
+              "id": "550e8400-e29b-41d4-a716-446655440007",
+              "name": "nginx",
+              "network_id": "550e8400-e29b-41d4-a716-446655440002",
+              "position": 0,
+              "service_definition": "Autobrr",
+              "source": {
+                "type": "Manual"
+              },
+              "tags": [],
+              "updated_at": "2026-01-15T10:30:00Z",
+              "virtualization": null
+            }
+          ],
           "source": {
             "type": "Manual"
           },
@@ -12714,6 +14210,302 @@
           }
         ],
         "title": "HostVirtualization"
+      },
+      "IfAdminStatus": {
+        "type": "string",
+        "description": "SNMP ifAdminStatus values per IF-MIB RFC 2863",
+        "enum": [
+          "Up",
+          "Down",
+          "Testing"
+        ]
+      },
+      "IfEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/IfEntryBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "created_at",
+              "updated_at"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              }
+            }
+          }
+        ]
+      },
+      "IfEntryBase": {
+        "type": "object",
+        "required": [
+          "host_id",
+          "network_id",
+          "if_index",
+          "if_descr",
+          "if_type",
+          "admin_status",
+          "oper_status"
+        ],
+        "properties": {
+          "admin_status": {
+            "$ref": "#/components/schemas/IfAdminStatus",
+            "description": "SNMP ifAdminStatus: 1=up, 2=down, 3=testing"
+          },
+          "cdp_address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Remote management IP from CDP (cdpCacheAddress)"
+          },
+          "cdp_device_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Remote device ID from CDP (typically hostname, locally unique)"
+          },
+          "cdp_platform": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Remote platform from CDP (e.g., \"Cisco IOS\")"
+          },
+          "cdp_port_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Remote port ID from CDP"
+          },
+          "host_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "if_alias": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP ifAlias - user-configured description"
+          },
+          "if_descr": {
+            "type": "string",
+            "description": "SNMP ifDescr - interface description (e.g., GigabitEthernet0/1)"
+          },
+          "if_index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "SNMP ifIndex - stable identifier within device"
+          },
+          "if_type": {
+            "type": "integer",
+            "format": "int32",
+            "description": "SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)"
+          },
+          "interface_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "FK to Interface entity - this port's IP assignment (must be on same host)"
+          },
+          "lldp_chassis_id": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LldpChassisId",
+                "description": "Remote chassis identifier from LLDP neighbor (globally/locally unique)"
+              }
+            ]
+          },
+          "lldp_mgmt_addr": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Remote management IP from LLDP neighbor (lldpRemManAddr)"
+          },
+          "lldp_port_desc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Remote port description from LLDP neighbor (lldpRemPortDesc)"
+          },
+          "lldp_port_id": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LldpPortId",
+                "description": "Remote port identifier from LLDP neighbor"
+              }
+            ]
+          },
+          "lldp_sys_desc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Remote system description from LLDP neighbor (lldpRemSysDesc) - platform info"
+          },
+          "lldp_sys_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Remote system name from LLDP neighbor (lldpRemSysName)"
+          },
+          "mac_address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "MAC address from SNMP ifPhysAddress - immutable once set"
+          },
+          "neighbor": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Neighbor",
+                "description": "Resolved neighbor connection (mutually exclusive: either IfEntry or Host)"
+              }
+            ]
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "oper_status": {
+            "$ref": "#/components/schemas/IfOperStatus",
+            "description": "SNMP ifOperStatus: 1=up, 2=down, 3=testing, 4=unknown, 5=dormant, 6=notPresent, 7=lowerLayerDown"
+          },
+          "speed_bps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Interface speed from ifSpeed/ifHighSpeed in bits per second"
+          }
+        }
+      },
+      "IfEntryInput": {
+        "type": "object",
+        "description": "Input for creating an SNMP interface entry (ifTable data).\nUsed in CreateHostRequest. Server assigns UUIDs since nothing references\nIfEntry IDs at creation time (neighbor resolution is done server-side).",
+        "required": [
+          "if_index",
+          "if_descr"
+        ],
+        "properties": {
+          "admin_status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IfAdminStatus",
+                "description": "SNMP ifAdminStatus"
+              }
+            ]
+          },
+          "if_alias": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP ifAlias - user-configured description"
+          },
+          "if_descr": {
+            "type": "string",
+            "description": "SNMP ifDescr - interface description (e.g., GigabitEthernet0/1)"
+          },
+          "if_index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "SNMP ifIndex - stable identifier within device"
+          },
+          "if_type": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)"
+          },
+          "interface_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Optional FK to Interface - links this SNMP port to its IP assignment"
+          },
+          "mac_address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "MAC address from SNMP ifPhysAddress"
+          },
+          "oper_status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IfOperStatus",
+                "description": "SNMP ifOperStatus"
+              }
+            ]
+          },
+          "speed_bps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Interface speed in bits per second"
+          }
+        }
+      },
+      "IfOperStatus": {
+        "type": "string",
+        "description": "SNMP ifOperStatus values per IF-MIB RFC 2863",
+        "enum": [
+          "Up",
+          "Down",
+          "Testing",
+          "Unknown",
+          "Dormant",
+          "NotPresent",
+          "LowerLayerDown"
+        ]
       },
       "Interface": {
         "allOf": [
@@ -12751,7 +14543,7 @@
           "host_id": "550e8400-e29b-41d4-a716-446655440003",
           "id": "550e8400-e29b-41d4-a716-446655440005",
           "ip_address": "192.168.1.100",
-          "mac_address": "DE:AD:BE:EF:12:34",
+          "mac_address": "DE:AD:BE:EF:CA:FE",
           "name": "eth0",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
@@ -12766,7 +14558,6 @@
           "host_id",
           "subnet_id",
           "ip_address",
-          "mac_address",
           "name"
         ],
         "properties": {
@@ -12781,7 +14572,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "MAC address discovered from ARP, SNMP, or Docker - immutable once set"
           },
           "name": {
             "type": [
@@ -12939,6 +14731,296 @@
             "type": "integer"
           }
         }
+      },
+      "LldpChassisId": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Subtype 1: Chassis component (e.g., backplane serial number)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "ChassisComponent"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 1: Chassis component (e.g., backplane serial number)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 2: Interface alias (ifAlias from IF-MIB)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "InterfaceAlias"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 2: Interface alias (ifAlias from IF-MIB)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 3: Port component (e.g., backplane port number)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "PortComponent"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 3: Port component (e.g., backplane port number)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 4: MAC address (most common)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "MacAddress"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 4: MAC address (most common)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 5: Network address (IP address stored as string)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "NetworkAddress"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 5: Network address (IP address stored as string)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 6: Interface name (ifName from IF-MIB)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "InterfaceName"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 6: Interface name (ifName from IF-MIB)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 7: Locally assigned (device-specific identifier)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "LocallyAssigned"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 7: Locally assigned (device-specific identifier)"
+              }
+            }
+          }
+        ],
+        "description": "LLDP Chassis ID subtypes per IEEE 802.1AB.\n\nThe chassis ID identifies the remote device. Different network equipment\nmay use different subtypes depending on configuration and capabilities."
+      },
+      "LldpPortId": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Subtype 1: Interface alias (ifAlias from IF-MIB)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "InterfaceAlias"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 1: Interface alias (ifAlias from IF-MIB)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 2: Port component (e.g., backplane port number)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "PortComponent"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 2: Port component (e.g., backplane port number)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 3: MAC address",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "MacAddress"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 3: MAC address"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 4: Network address (IP address stored as string)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "NetworkAddress"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 4: Network address (IP address stored as string)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 5: Interface name (ifName from IF-MIB)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "InterfaceName"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 5: Interface name (ifName from IF-MIB)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 6: Agent circuit ID (used by some providers)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "AgentCircuitId"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 6: Agent circuit ID (used by some providers)"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Subtype 7: Locally assigned (device-specific identifier)",
+            "required": [
+              "value",
+              "subtype"
+            ],
+            "properties": {
+              "subtype": {
+                "type": "string",
+                "enum": [
+                  "LocallyAssigned"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "description": "Subtype 7: Locally assigned (device-specific identifier)"
+              }
+            }
+          }
+        ],
+        "description": "LLDP Port ID subtypes per IEEE 802.1AB.\n\nThe port ID identifies the specific port on the remote device."
       },
       "LoginRequest": {
         "type": "object",
@@ -13109,6 +15191,53 @@
           }
         }
       },
+      "Neighbor": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Full resolution - the specific remote port was identified",
+            "required": [
+              "id",
+              "type"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Full resolution - the specific remote port was identified"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "IfEntry"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Partial resolution - the remote device was identified but not the specific port",
+            "required": [
+              "id",
+              "type"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Partial resolution - the remote device was identified but not the specific port"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Host"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Resolved LLDP/CDP neighbor connection.\n\nRepresents the remote endpoint this port connects to, discovered via LLDP or CDP.\nThe two variants are mutually exclusive and represent different resolution states."
+      },
       "Network": {
         "allOf": [
           {
@@ -13163,6 +15292,14 @@
           "organization_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "snmp_credential_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Default SNMP credential for this network (hosts can override).\nWhen set, SNMP discovery is enabled for this network."
           },
           "tags": {
             "type": "array",
@@ -13566,7 +15703,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "description": "Response type for host endpoints.\nIncludes hydrated children (interfaces, ports, services).",
+              "description": "Response type for host endpoints.\nIncludes children (interfaces, ports, services, if_entries).",
               "required": [
                 "id",
                 "created_at",
@@ -13578,9 +15715,16 @@
                 "tags",
                 "interfaces",
                 "ports",
-                "services"
+                "services",
+                "if_entries"
               ],
               "properties": {
+                "chassis_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "created_at": {
                   "type": "string",
                   "format": "date-time"
@@ -13604,11 +15748,24 @@
                   "type": "string",
                   "format": "uuid"
                 },
+                "if_entries": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IfEntry"
+                  },
+                  "description": "SNMP ifTable entries"
+                },
                 "interfaces": {
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Interface"
                   }
+                },
+                "management_url": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "name": {
                   "type": "string"
@@ -13629,8 +15786,39 @@
                     "$ref": "#/components/schemas/Service"
                   }
                 },
+                "snmp_credential_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
                 "source": {
                   "$ref": "#/components/schemas/EntitySource"
+                },
+                "sys_contact": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "sys_descr": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "sys_location": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "sys_object_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "tags": {
                   "type": "array",
@@ -13660,13 +15848,42 @@
                 "hidden": false,
                 "hostname": "web-server-01.local",
                 "id": "550e8400-e29b-41d4-a716-446655440003",
+                "if_entries": [
+                  {
+                    "admin_status": "Up",
+                    "cdp_address": null,
+                    "cdp_device_id": null,
+                    "cdp_platform": null,
+                    "cdp_port_id": null,
+                    "created_at": "2026-01-15T10:30:00Z",
+                    "host_id": "550e8400-e29b-41d4-a716-446655440003",
+                    "id": "550e8400-e29b-41d4-a716-44665544000f",
+                    "if_alias": "Uplink to Core Switch",
+                    "if_descr": "GigabitEthernet0/1",
+                    "if_index": 1,
+                    "if_type": 6,
+                    "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                    "lldp_chassis_id": null,
+                    "lldp_mgmt_addr": null,
+                    "lldp_port_desc": null,
+                    "lldp_port_id": null,
+                    "lldp_sys_desc": null,
+                    "lldp_sys_name": null,
+                    "mac_address": "DE:AD:BE:EF:CA:FE",
+                    "neighbor": null,
+                    "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                    "oper_status": "Up",
+                    "speed_bps": 1000000000,
+                    "updated_at": "2026-01-15T10:30:00Z"
+                  }
+                ],
                 "interfaces": [
                   {
                     "created_at": "2026-01-15T10:30:00Z",
                     "host_id": "550e8400-e29b-41d4-a716-446655440003",
                     "id": "550e8400-e29b-41d4-a716-446655440005",
                     "ip_address": "192.168.1.100",
-                    "mac_address": "DE:AD:BE:EF:12:34",
+                    "mac_address": "DE:AD:BE:EF:CA:FE",
                     "name": "eth0",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
@@ -13688,7 +15905,35 @@
                     "updated_at": "2026-01-15T10:30:00Z"
                   }
                 ],
-                "services": [],
+                "services": [
+                  {
+                    "bindings": [
+                      {
+                        "created_at": "2026-01-24T14:34:04.799181Z",
+                        "id": "411bddac-828c-40a4-9356-9a32e7ae582f",
+                        "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                        "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                        "port_id": "550e8400-e29b-41d4-a716-446655440006",
+                        "service_id": "550e8400-e29b-41d4-a716-446655440007",
+                        "type": "Port",
+                        "updated_at": "2026-01-24T14:34:04.799181Z"
+                      }
+                    ],
+                    "created_at": "2026-01-15T10:30:00Z",
+                    "host_id": "550e8400-e29b-41d4-a716-446655440003",
+                    "id": "550e8400-e29b-41d4-a716-446655440007",
+                    "name": "nginx",
+                    "network_id": "550e8400-e29b-41d4-a716-446655440002",
+                    "position": 0,
+                    "service_definition": "Autobrr",
+                    "source": {
+                      "type": "Manual"
+                    },
+                    "tags": [],
+                    "updated_at": "2026-01-15T10:30:00Z",
+                    "virtualization": null
+                  }
+                ],
                 "source": {
                   "type": "Manual"
                 },
@@ -13757,23 +16002,14 @@
               "example": {
                 "bindings": [
                   {
-<<<<<<< HEAD
-                    "created_at": "2026-01-16T05:18:23.713032Z",
-                    "id": "7e5b95ff-ad85-43a7-a007-681761cab3a2",
-=======
-                    "created_at": "2026-01-22T19:43:12.625003Z",
-                    "id": "7f87c977-f7cd-464a-b1d4-e09b31cd6f87",
->>>>>>> 438-daemon-push
+                    "created_at": "2026-01-24T14:34:04.818194Z",
+                    "id": "f4b99b9f-d95e-47ac-b5de-7e7c9e0b83f8",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-<<<<<<< HEAD
-                    "updated_at": "2026-01-16T05:18:23.713032Z"
-=======
-                    "updated_at": "2026-01-22T19:43:12.625003Z"
->>>>>>> 438-daemon-push
+                    "updated_at": "2026-01-24T14:34:04.818194Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -13782,11 +16018,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-<<<<<<< HEAD
-                "service_definition": "GitHub",
-=======
-                "service_definition": "Lubelogger",
->>>>>>> 438-daemon-push
+                "service_definition": "Autobrr",
                 "source": {
                   "type": "Manual"
                 },
@@ -13794,6 +16026,64 @@
                 "updated_at": "2026-01-15T10:30:00Z",
                 "virtualization": null
               }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginatedApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PaginatedApiResponse_SnmpCredential": {
+        "type": "object",
+        "description": "Response type for paginated list endpoints (pagination is always present in meta)",
+        "required": [
+          "success",
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SnmpCredentialBase"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "updated_at"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "readOnly": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                }
+              ]
             }
           },
           "error": {
@@ -14357,8 +16647,6 @@
           }
         }
       },
-<<<<<<< HEAD
-=======
       "ProvisionDaemonRequest": {
         "type": "object",
         "description": "Request to pre-provision a ServerPoll mode daemon.\nThis creates the daemon record on the server before the daemon is installed.",
@@ -14401,7 +16689,6 @@
           }
         }
       },
->>>>>>> 438-daemon-push
       "ProxmoxVirtualization": {
         "type": "object",
         "required": [
@@ -14701,23 +16988,14 @@
         "example": {
           "bindings": [
             {
-<<<<<<< HEAD
-              "created_at": "2026-01-16T05:18:23.706945Z",
-              "id": "d3c67e39-182d-4a05-8c0d-89fdac7c5f8b",
-=======
-              "created_at": "2026-01-22T19:43:12.619567Z",
-              "id": "9f706e50-212d-4b57-9a6d-f984b8b3f611",
->>>>>>> 438-daemon-push
+              "created_at": "2026-01-24T14:34:04.808937Z",
+              "id": "3ec46306-8625-45c2-889c-364334254638",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-<<<<<<< HEAD
-              "updated_at": "2026-01-16T05:18:23.706945Z"
-=======
-              "updated_at": "2026-01-22T19:43:12.619567Z"
->>>>>>> 438-daemon-push
+              "updated_at": "2026-01-24T14:34:04.808937Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -14726,11 +17004,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-<<<<<<< HEAD
-          "service_definition": "GitHub",
-=======
-          "service_definition": "Lubelogger",
->>>>>>> 438-daemon-push
+          "service_definition": "Autobrr",
           "source": {
             "type": "Manual"
           },
@@ -15099,6 +17373,139 @@
           }
         }
       },
+      "SnmpCredential": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SnmpCredentialBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "created_at",
+              "updated_at"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              }
+            }
+          }
+        ]
+      },
+      "SnmpCredentialBase": {
+        "type": "object",
+        "required": [
+          "organization_id",
+          "name",
+          "community"
+        ],
+        "properties": {
+          "community": {
+            "type": "string",
+            "description": "SNMPv2c community string (stored encrypted)\nFor V3, this would be extended with auth/priv credentials\nRedacted in API responses for security"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "$ref": "#/components/schemas/SnmpVersion",
+            "description": "SNMP version (V2c or V3)"
+          }
+        }
+      },
+      "SnmpCredentialMapping": {
+        "type": "object",
+        "description": "SNMP credential mapping for network discovery\nServer builds this before initiating discovery; daemon uses it during scan",
+        "properties": {
+          "default_credential": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SnmpQueryCredential",
+                "description": "Network default credential (used when IP not in overrides)"
+              }
+            ]
+          },
+          "ip_overrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnmpIpOverride"
+            },
+            "description": "Per-IP overrides (from host.snmp_credential_id where host has known IPs)"
+          }
+        }
+      },
+      "SnmpCredentialOrderField": {
+        "type": "string",
+        "enum": [
+          "created_at",
+          "name",
+          "version",
+          "updated_at"
+        ]
+      },
+      "SnmpIpOverride": {
+        "type": "object",
+        "description": "IP-specific SNMP credential override",
+        "required": [
+          "ip",
+          "credential"
+        ],
+        "properties": {
+          "credential": {
+            "$ref": "#/components/schemas/SnmpQueryCredential",
+            "description": "Credential to use for this IP"
+          },
+          "ip": {
+            "type": "string",
+            "description": "IP address for this override"
+          }
+        }
+      },
+      "SnmpQueryCredential": {
+        "type": "object",
+        "description": "Minimal SNMP credential for daemon queries (version + community only)\nDoes not include organization_id, name, timestamps - just what's needed for SNMP queries",
+        "required": [
+          "community"
+        ],
+        "properties": {
+          "community": {
+            "type": "string",
+            "description": "SNMPv2c community string"
+          },
+          "version": {
+            "$ref": "#/components/schemas/SnmpVersion",
+            "description": "SNMP version (V2c or V3)"
+          }
+        }
+      },
+      "SnmpVersion": {
+        "type": "string",
+        "description": "SNMP protocol version",
+        "enum": [
+          "V2c",
+          "V3"
+        ]
+      },
       "Subnet": {
         "allOf": [
           {
@@ -15364,6 +17771,7 @@
           "subnets",
           "services",
           "groups",
+          "if_entries",
           "is_stale",
           "last_refreshed",
           "is_locked",
@@ -15373,7 +17781,8 @@
           "removed_services",
           "removed_groups",
           "removed_ports",
-          "removed_bindings"
+          "removed_bindings",
+          "removed_if_entries"
         ],
         "properties": {
           "bindings": {
@@ -15398,6 +17807,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Host"
+            }
+          },
+          "if_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IfEntry"
             }
           },
           "interfaces": {
@@ -15480,6 +17895,13 @@
               "format": "uuid"
             }
           },
+          "removed_if_entries": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
           "removed_interfaces": {
             "type": "array",
             "items": {
@@ -15529,6 +17951,36 @@
           }
         }
       },
+      "TopologyEdgeHandleUpdate": {
+        "type": "object",
+        "description": "Lightweight request type for updating an edge's handles.\n\nUsed for edge reconnect operations - instead of sending the entire topology,\nonly sends the edge ID and new handle positions.\nFixes HTTP 413 errors on edge reconnect operations.",
+        "required": [
+          "network_id",
+          "edge_id",
+          "source_handle",
+          "target_handle"
+        ],
+        "properties": {
+          "edge_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the edge to update"
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Network ID for authorization"
+          },
+          "source_handle": {
+            "$ref": "#/components/schemas/EdgeHandle",
+            "description": "New source handle position"
+          },
+          "target_handle": {
+            "$ref": "#/components/schemas/EdgeHandle",
+            "description": "New target handle position"
+          }
+        }
+      },
       "TopologyLocalOptions": {
         "type": "object",
         "required": [
@@ -15552,6 +18004,88 @@
           },
           "no_fade_edges": {
             "type": "boolean"
+          }
+        }
+      },
+      "TopologyMetadataUpdate": {
+        "type": "object",
+        "description": "Lightweight request type for updating topology metadata.\n\nUsed for editing topology name/parent - instead of sending the entire topology\n(which includes all hosts, interfaces, services, etc.), only sends the metadata fields.\nFixes HTTP 413 errors on metadata edit operations.",
+        "required": [
+          "network_id",
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "New name for the topology"
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Network ID for authorization"
+          },
+          "parent_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "New parent topology ID (optional)"
+          }
+        }
+      },
+      "TopologyNodePositionUpdate": {
+        "type": "object",
+        "description": "Lightweight request type for updating a single node's position.\n\nUsed for drag operations - instead of sending the entire topology (which can be\nseveral megabytes for large networks), only sends the node ID and new position.\nFixes HTTP 413 errors on drag operations.",
+        "required": [
+          "network_id",
+          "node_id",
+          "position"
+        ],
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Network ID for authorization"
+          },
+          "node_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the node to update"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Ixy",
+            "description": "New position for the node"
+          }
+        }
+      },
+      "TopologyNodeResizeUpdate": {
+        "type": "object",
+        "description": "Lightweight request type for updating a node's size and position.\n\nUsed for subnet resize operations - instead of sending the entire topology,\nonly sends the node ID, new size, and new position.\nFixes HTTP 413 errors on resize operations.",
+        "required": [
+          "network_id",
+          "node_id",
+          "size",
+          "position"
+        ],
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Network ID for authorization"
+          },
+          "node_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the node to update"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Ixy",
+            "description": "New position for the node"
+          },
+          "size": {
+            "$ref": "#/components/schemas/Uxy",
+            "description": "New size for the node"
           }
         }
       },
@@ -16168,6 +18702,14 @@
     {
       "name": "shares",
       "description": "Shared network views. Create read-only shareable links to your network topology."
+    },
+    {
+      "name": "snmp-credentials",
+      "description": "SNMP credentials for network device discovery. Manage credentials used to query SNMP-enabled devices."
+    },
+    {
+      "name": "if-entries",
+      "description": "SNMP interface entries (ifTable). Physical and logical interfaces discovered via SNMP on hosts."
     },
     {
       "name": "subnets",

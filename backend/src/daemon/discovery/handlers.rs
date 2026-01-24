@@ -24,11 +24,11 @@ pub async fn handle_discovery_request(
         request.session_id
     );
 
-    state
-        .services
-        .discovery_manager
-        .initiate_session(request)
-        .await;
+    let manager = &state.services.discovery_manager;
+
+    if !manager.try_initiate_session(request).await {
+        return Err(ApiError::conflict("Discovery session already in progress"));
+    }
 
     Ok(Json(ApiResponse::success(DaemonDiscoveryResponse {
         session_id,

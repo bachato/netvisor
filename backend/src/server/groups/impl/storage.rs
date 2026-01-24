@@ -157,20 +157,6 @@ impl Storable for Group {
 impl Entity for Group {
     type CsvRow = GroupCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "description",
-            "group_type",
-            "color",
-            "network_id",
-            "source",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         let group_type_str: &'static str = self.base.group_type.into();
         GroupCsvRow {

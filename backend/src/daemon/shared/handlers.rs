@@ -2,12 +2,16 @@ use crate::{
     daemon::{
         discovery::handlers as discovery_handlers,
         runtime::{
+            service::LOG_TARGET,
             state::{CreatedEntitiesPayload, DaemonStatus, DiscoveryPollResponse},
             types::{DaemonAppState, InitializeDaemonRequest},
         },
         shared::auth::server_auth_middleware,
     },
-    server::shared::types::api::{ApiResponse, ApiResult},
+    server::{
+        daemons::r#impl::api::{DaemonCapabilities, FirstContactRequest},
+        shared::types::api::{ApiResponse, ApiResult},
+    },
 };
 use axum::{
     Json, Router,
@@ -30,6 +34,7 @@ pub fn create_router(state: Arc<DaemonAppState>) -> Router<Arc<DaemonAppState>> 
     // Discovery initiate/cancel require auth to prevent unauthorized scans
     let authenticated_routes = Router::new()
         .route("/api/status", get(get_status))
+        .route("/api/first-contact", post(handle_first_contact))
         .route("/api/poll", get(get_discovery_poll))
         .route(
             "/api/discovery/entities-created",
@@ -105,13 +110,82 @@ async fn get_status(
     Ok(Json(ApiResponse::success(status)))
 }
 
+/// Handle first contact from server (for ServerPoll mode).
+/// Server calls this on first poll to assign the daemon its server-side ID.
+/// Returns daemon status (same as GET /api/status) to avoid extra round-trip.
+async fn handle_first_contact(
+    State(state): State<Arc<DaemonAppState>>,
+    Json(request): Json<FirstContactRequest>,
+) -> ApiResult<Json<ApiResponse<DaemonStatus>>> {
+    let current_id = state.config.get_id().await.unwrap_or_default();
+
+    tracing::info!(
+        target: LOG_TARGET,
+        current_id = %current_id,
+        assigned_id = %request.daemon_id,
+        "Received first contact from server"
+    );
+
+    // Store the server-assigned daemon ID
+    if let Err(e) = state.config.set_id(request.daemon_id).await {
+        tracing::error!(
+            target: LOG_TARGET,
+            error = %e,
+            "Failed to store assigned daemon ID"
+        );
+    } else {
+        tracing::info!(
+            target: LOG_TARGET,
+            daemon_id = %request.daemon_id,
+            "Stored server-assigned daemon ID"
+        );
+    }
+
+    // Log server capabilities
+    tracing::info!(
+        target: LOG_TARGET,
+        "  Server version:  {}",
+        request.server_capabilities.server_version
+    );
+    tracing::info!(
+        target: LOG_TARGET,
+        "  Min daemon ver:  {}",
+        request.server_capabilities.minimum_daemon_version
+    );
+
+    // Log deprecation warnings
+    request.server_capabilities.log_warnings();
+
+    // Bootstrap docker socket availability so first discovery knows whether to run docker
+    let (has_docker_socket, _) = state
+        .services
+        .runtime_service
+        .check_docker_availability()
+        .await;
+
+    let capabilities = DaemonCapabilities {
+        has_docker_socket,
+        interfaced_subnet_ids: vec![],
+    };
+
+    state.config.set_capabilities(capabilities).await?;
+
+    // Return current status (saves an extra round-trip)
+    let status = state.services.daemon_state.get_status().await;
+    Ok(Json(ApiResponse::success(status)))
+}
+
 /// Get discovery poll data (for ServerPoll mode).
-/// Returns current progress and any buffered entities since last poll.
+/// Returns current progress and any pending buffered entities.
+///
+/// Note: Entities remain in the buffer until the server confirms them
+/// via POST /api/discovery/entities-created. This prevents the race condition
+/// where entities are removed before confirmation can be received.
 async fn get_discovery_poll(
     State(state): State<Arc<DaemonAppState>>,
 ) -> ApiResult<Json<ApiResponse<DiscoveryPollResponse>>> {
     let progress = state.services.daemon_state.get_progress().await;
-    let entities = state.services.daemon_state.drain_entities().await;
+    let entities = state.services.daemon_state.get_pending_entities().await;
 
     Ok(Json(ApiResponse::success(DiscoveryPollResponse {
         progress,
@@ -121,11 +195,25 @@ async fn get_discovery_poll(
 
 /// Receive created entity confirmations from server (for ServerPoll mode).
 /// Server sends back actual entities (with deduped IDs) after processing polled entities.
+///
+/// This completes the ServerPoll entity lifecycle:
+/// 1. Discovery pushes entity to buffer (Pending state)
+/// 2. Server polls → get_pending() returns pending entities
+/// 3. Server processes entities → sends confirmation here
+/// 4. This handler marks entities as Created → await_*() can now find them
+///
+/// Note: Created entries are NOT cleared immediately. They remain in the buffer
+/// so that await_*() calls can find them. Since get_pending() only returns
+/// Pending entries, the server won't re-process them. Cleanup happens when
+/// the discovery service clears the buffer at session boundaries.
 async fn receive_created_entities(
     State(state): State<Arc<DaemonAppState>>,
     Json(payload): Json<CreatedEntitiesPayload>,
 ) -> ApiResult<Json<ApiResponse<String>>> {
     let buffer = state.services.daemon_state.entity_buffer();
+
+    let subnet_count = payload.subnets.len();
+    let host_count = payload.hosts.len();
 
     // Mark subnets as created with actual server data
     for (pending_id, actual_subnet) in payload.subnets {
@@ -144,7 +232,17 @@ async fn receive_created_entities(
         buffer.mark_host_created(pending_id, actual_host).await;
     }
 
-    tracing::info!("Received created entities confirmation from server");
+    // Note: We intentionally do NOT call clear_created() here.
+    // The await_*() methods poll for Created entries, and if we clear immediately,
+    // there's a race condition where the entry is removed before the polling loop
+    // can observe it. Entries remain as Created (won't be re-sent by get_pending())
+    // and can be cleaned up at session boundaries.
+
+    tracing::info!(
+        subnets = subnet_count,
+        hosts = host_count,
+        "Received and processed created entities confirmation from server"
+    );
 
     Ok(Json(ApiResponse::success(
         "Created entities acknowledged".to_string(),

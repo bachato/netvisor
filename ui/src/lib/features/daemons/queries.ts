@@ -128,7 +128,7 @@ export function useRetryDaemonConnectionMutation() {
 			// Update the daemon in the cache to mark as reachable
 			queryClient.setQueryData<Daemon[]>(
 				queryKeys.daemons.all,
-				(old) => old?.map((d) => (d.id === id ? { ...d, is_reachable: true } : d)) ?? []
+				(old) => old?.map((d) => (d.id === id ? { ...d, is_unreachable: false } : d)) ?? []
 			);
 		}
 	}));

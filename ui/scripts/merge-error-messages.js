@@ -19,9 +19,10 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UI_DIR = join(__dirname, '..');
+const PROJECT_ROOT = join(UI_DIR, '..');
 
 const GENERATED_FILE = join(UI_DIR, 'src/lib/generated/error-messages.json');
-const MESSAGES_FILE = join(UI_DIR, 'messages/en.json');
+const MESSAGES_FILE = join(PROJECT_ROOT, 'messages/en.json');
 
 function main() {
 	// Check if generated file exists

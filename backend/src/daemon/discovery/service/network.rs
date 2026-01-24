@@ -8,16 +8,15 @@ use crate::daemon::utils::scanner::{
     PORT_SCAN_BATCH_MAX, can_arp_scan, probe_host_capacity, scan_endpoints, scan_tcp_ports,
     scan_udp_ports,
 };
-use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback};
-use crate::daemon::utils::scanner::{can_arp_scan, scan_endpoints, scan_tcp_ports, scan_udp_ports};
 use crate::daemon::utils::snmp::{self, IfTableEntry};
-use crate::server::discovery::r#impl::types::{
-    DiscoveryType, HostNamingFallback, SnmpCredentialMapping, SnmpQueryCredential,
-};
+use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback};
 use crate::server::if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus};
 use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
 use crate::server::ports::r#impl::base::PortType;
 use crate::server::services::r#impl::base::{Service, ServiceMatchBaselineParams};
+use crate::server::snmp_credentials::r#impl::discovery::{
+    SnmpCredentialMapping, SnmpQueryCredential,
+};
 use crate::server::subnets::r#impl::types::SubnetTypeDiscriminants;
 use crate::{
     daemon::utils::base::DaemonUtils,
@@ -61,14 +60,14 @@ const PROGRESS_GRACE_PHASE: u8 = 5; // 95-100%: Grace period
 pub struct NetworkScanDiscovery {
     subnet_ids: Option<Vec<Uuid>>,
     host_naming_fallback: HostNamingFallback,
-    snmp_credentials: Option<SnmpCredentialMapping>,
+    snmp_credentials: SnmpCredentialMapping,
 }
 
 impl NetworkScanDiscovery {
     pub fn new(
         subnet_ids: Option<Vec<Uuid>>,
         host_naming_fallback: HostNamingFallback,
-        snmp_credentials: Option<SnmpCredentialMapping>,
+        snmp_credentials: SnmpCredentialMapping,
     ) -> Self {
         Self {
             subnet_ids,
@@ -621,7 +620,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                 let batches_completed = batches_completed.clone();
 
                                 total_batches.fetch_add(batches_per_host, Ordering::Relaxed);
-                                let snmp_credential = self.get_snmp_credential_for_ip(ip);
+                                let snmp_credential = self.domain.snmp_credentials.get_credential_for_ip(&ip);
                                 pending_scans.push(Box::pin(async move {
                                     let result = self
                                         .deep_scan_host(DeepScanParams {
@@ -679,7 +678,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         let hosts_scanned = hosts_scanned.clone();
                         let last_activity = last_activity.clone();
                         let batches_completed = batches_completed.clone();
-                        let snmp_credential = self.get_snmp_credential_for_ip(ip);
+                        let snmp_credential = self.domain.snmp_credentials.get_credential_for_ip(&ip);
 
                         pending_scans.push(Box::pin(async move {
                             let result = self
@@ -1209,23 +1208,5 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             .api_client
             .get("/api/v1/subnets", "Failed to get subnets")
             .await
-    }
-
-    /// Get the SNMP credential to use for a given IP address.
-    /// Checks for IP-specific overrides first, then falls back to default.
-    fn get_snmp_credential_for_ip(&self, ip: IpAddr) -> Option<SnmpQueryCredential> {
-        let Some(mapping) = &self.domain.snmp_credentials else {
-            return None;
-        };
-
-        // Check for IP-specific override
-        for override_entry in &mapping.ip_overrides {
-            if override_entry.ip == ip {
-                return Some(override_entry.credential.clone());
-            }
-        }
-
-        // Fall back to default credential
-        mapping.default_credential.clone()
     }
 }

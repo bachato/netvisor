@@ -116,6 +116,7 @@ impl EntityMetadataProvider for EntityDiscriminants {
             EntityDiscriminants::Discovery => Color::Green,
             EntityDiscriminants::DaemonApiKey => Color::Yellow,
             EntityDiscriminants::UserApiKey => Color::Yellow,
+            EntityDiscriminants::SnmpCredential => Color::Orange,
             EntityDiscriminants::User => Color::Blue,
             EntityDiscriminants::Invite => Color::Green,
             EntityDiscriminants::Share => Color::Teal,
@@ -128,7 +129,6 @@ impl EntityMetadataProvider for EntityDiscriminants {
             EntityDiscriminants::Binding => Color::Purple,
             EntityDiscriminants::IfEntry => Color::Teal,
 
-            EntityDiscriminants::SnmpCredential => Color::Orange,
             EntityDiscriminants::Subnet => Color::Orange,
             EntityDiscriminants::Group => Color::Rose,
             EntityDiscriminants::Topology => Color::Pink,

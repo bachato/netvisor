@@ -143,20 +143,6 @@ impl Storable for Subnet {
 impl Entity for Subnet {
     type CsvRow = SubnetCsvRow;
 
-    fn csv_headers() -> Vec<&'static str> {
-        vec![
-            "id",
-            "name",
-            "cidr",
-            "subnet_type",
-            "description",
-            "network_id",
-            "source",
-            "created_at",
-            "updated_at",
-        ]
-    }
-
     fn to_csv_row(&self) -> Self::CsvRow {
         SubnetCsvRow {
             id: self.id,
