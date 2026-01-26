@@ -8,11 +8,7 @@
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import { CheckCircle } from 'lucide-svelte';
 	import { getPosthogDistinctId, trackEvent } from '$lib/shared/utils/analytics';
-	import {
-		billing_requestInfo,
-		common_cancel,
-		common_sending
-	} from '$lib/paraglide/messages';
+	import { billing_requestInfo, common_cancel, common_sending } from '$lib/paraglide/messages';
 
 	interface Props {
 		isOpen?: boolean;
@@ -163,13 +159,7 @@
 						}}
 					>
 						{#snippet children(field)}
-							<TextInput
-								label="Name"
-								id="inquiry-name"
-								{field}
-								placeholder="Your name"
-								required
-							/>
+							<TextInput label="Name" id="inquiry-name" {field} placeholder="Your name" required />
 						{/snippet}
 					</form.Field>
 

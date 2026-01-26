@@ -21,8 +21,9 @@ mod permissions;
 mod validations;
 
 use infra::{
-    ContainerManager, TestClient, TestContext, create_test_db_pool, setup_authenticated_user,
-    wait_for_daemon, wait_for_network, wait_for_organization,
+    ContainerManager, TestClient, TestContext, clear_discovery_data, create_test_db_pool,
+    provision_serverpoll_daemon, setup_authenticated_user, wait_for_daemon, wait_for_network,
+    wait_for_organization,
 };
 
 /// Single integration test that runs all test categories with shared containers.
@@ -41,10 +42,10 @@ async fn integration_tests() {
     let client = TestClient::new();
 
     // =========================================================================
-    // Phase 1: Full Integration Flow
+    // Phase 1a: DaemonPoll Integration Flow
     // =========================================================================
     println!("\n============================================================");
-    println!("Phase 1: Full Integration Flow");
+    println!("Phase 1a: DaemonPoll Integration Flow");
     println!("============================================================\n");
 
     let user = setup_authenticated_user(&client)
@@ -64,16 +65,16 @@ async fn integration_tests() {
         .expect("Failed to find network");
     println!("✅ Network: {}", network.base.name);
 
-    println!("\n=== Waiting for Daemon ===");
+    println!("\n=== Waiting for DaemonPoll Daemon ===");
     let daemon = wait_for_daemon(&client)
         .await
         .expect("Failed to find daemon");
-    println!("✅ Daemon registered: {}", daemon.id);
+    println!("✅ DaemonPoll daemon registered: {}", daemon.id);
 
-    // Run discovery
+    // Run discovery with DaemonPoll daemon
     discovery::run_discovery(&client)
         .await
-        .expect("Discovery failed");
+        .expect("DaemonPoll discovery failed");
 
     // Verify service discovered
     let _service = discovery::verify_home_assistant_discovered(&client)
@@ -87,7 +88,38 @@ async fn integration_tests() {
         .await
         .expect("Failed to create tag");
 
-    println!("\n✅ Full integration flow completed!");
+    println!("\n✅ DaemonPoll integration flow completed!");
+
+    // =========================================================================
+    // Phase 1b: ServerPoll Integration Flow
+    // =========================================================================
+    println!("\n============================================================");
+    println!("Phase 1b: ServerPoll Integration Flow");
+    println!("============================================================\n");
+
+    // Clear discovery data from DaemonPoll run
+    clear_discovery_data().expect("Failed to clear discovery data");
+
+    // Provision and initialize ServerPoll daemon
+    let serverpoll_provision = provision_serverpoll_daemon(&client, network.id)
+        .await
+        .expect("Failed to provision ServerPoll daemon");
+    let serverpoll_api_key = serverpoll_provision.daemon_api_key.clone();
+
+    // Run discovery with ServerPoll daemon
+    discovery::run_discovery(&client)
+        .await
+        .expect("ServerPoll discovery failed");
+
+    // Verify service discovered
+    let _service = discovery::verify_home_assistant_discovered(&client)
+        .await
+        .expect("Failed to find Home Assistant (ServerPoll)");
+
+    println!("\n✅ ServerPoll integration flow completed!");
+
+    // Clear discovery data before other tests
+    clear_discovery_data().expect("Failed to clear discovery data");
 
     // =========================================================================
     // Phase 2: CRUD Endpoint Tests
@@ -166,9 +198,15 @@ async fn integration_tests() {
     println!("Phase 7: API Compatibility Tests");
     println!("============================================================");
 
-    compat::run_compat_tests(daemon.id, network.id, organization.id, user.id)
-        .await
-        .expect("Compatibility tests failed");
+    compat::run_compat_tests(
+        daemon.id,
+        network.id,
+        organization.id,
+        user.id,
+        &serverpoll_api_key,
+    )
+    .await
+    .expect("Compatibility tests failed");
 
     // =========================================================================
     // Summary
@@ -176,7 +214,8 @@ async fn integration_tests() {
     println!("\n============================================================");
     println!("ALL INTEGRATION TESTS PASSED!");
     println!("============================================================");
-    println!("   - Full integration flow");
+    println!("   - DaemonPoll integration flow");
+    println!("   - ServerPoll integration flow");
     println!("   - CRUD endpoint tests");
     println!("   - Billing middleware tests");
     println!("   - Handler validation tests");

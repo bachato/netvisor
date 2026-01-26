@@ -209,25 +209,23 @@ pub async fn replay_exchange(
 }
 
 /// Paths that should be skipped during replay.
-///
-/// Some are skipped because they have complex entity dependencies that
-/// can't be satisfied by simple ID substitution.
-const SKIP_PATH_PREFIXES: &[&str] = &[
-    // Creates host with interfaces referencing subnet_id that was generated
-    // server-side (not the fixture's ID)
-    "/api/v1/hosts/discovery",
-];
+/// Note: Intentionally empty - discovery data is now cleared before compat tests
+/// run, giving fixtures a clean slate without FK constraint issues.
+const SKIP_PATH_PREFIXES: &[&str] = &[];
 
 /// Path suffixes that indicate deprecated endpoints.
-const SKIP_PATH_SUFFIXES: &[&str] = &[
-    // Deprecated: heartbeat functionality merged into /request-work
-    "/heartbeat",
-];
+/// Note: Intentionally empty - we want compat tests to fail when deprecated
+/// endpoints are removed. This catches breaking changes.
+const SKIP_PATH_SUFFIXES: &[&str] = &[];
 
 /// Check if an exchange path should be skipped.
 fn should_skip_path(path: &str) -> bool {
-    SKIP_PATH_PREFIXES.iter().any(|prefix| path.starts_with(prefix))
-        || SKIP_PATH_SUFFIXES.iter().any(|suffix| path.ends_with(suffix))
+    SKIP_PATH_PREFIXES
+        .iter()
+        .any(|prefix| path.starts_with(prefix))
+        || SKIP_PATH_SUFFIXES
+            .iter()
+            .any(|suffix| path.ends_with(suffix))
 }
 
 /// Replay all exchanges from a manifest.
@@ -315,8 +313,8 @@ pub async fn run_server_compat_tests(server_url: &str, ctx: &ReplayContext) -> R
 /// Run daemon compatibility tests - replays old server requests against current daemon.
 /// Returns Ok(()) if all fixtures replay successfully, Err with details otherwise.
 ///
-/// Note: Daemon compat tests require the daemon to be running in a mode that exposes
-/// an HTTP API (e.g., not DaemonPoll mode). If the daemon isn't reachable, tests are skipped.
+/// Note: This requires a ServerPoll daemon (exposes HTTP API) to be running.
+/// The test environment should include a daemon-serverpoll container.
 pub async fn run_daemon_compat_tests(daemon_url: &str, ctx: &ReplayContext) -> Result<(), String> {
     let versions = get_fixture_versions("server_to_daemon.json");
     if versions.is_empty() {
@@ -328,23 +326,6 @@ pub async fn run_daemon_compat_tests(daemon_url: &str, ctx: &ReplayContext) -> R
         .timeout(std::time::Duration::from_secs(5))
         .build()
         .map_err(|e| format!("Failed to create client: {}", e))?;
-
-    // Check if daemon is reachable before running tests
-    // In DaemonPoll mode, the daemon doesn't expose an HTTP API
-    let health_url = format!("{}/api/health", daemon_url);
-    match client.get(&health_url).send().await {
-        Ok(_) => {}
-        Err(e) if e.is_connect() || e.is_timeout() => {
-            println!(
-                "  Daemon at {} is not reachable (may be running in poll mode), skipping daemon compat tests",
-                daemon_url
-            );
-            return Ok(());
-        }
-        Err(_) => {
-            // Other errors (like 404) mean daemon is reachable, continue with tests
-        }
-    }
 
     for version in versions {
         let Some(manifest) = load_manifest(&version, "server_to_daemon.json") else {

@@ -25,7 +25,7 @@ fn get_default_plans() -> Vec<BillingPlan> {
             included_networks: Some(3),
         }),
         BillingPlan::Team(PlanConfig {
-            base_cents: 14999,
+            base_cents: 89999,
             rate: BillingRate::Month,
             trial_days: 7,
             seat_cents: Some(1000),
@@ -34,7 +34,7 @@ fn get_default_plans() -> Vec<BillingPlan> {
             included_networks: Some(15),
         }),
         BillingPlan::Business(PlanConfig {
-            base_cents: 39999,
+            base_cents: 24999,
             rate: BillingRate::Month,
             trial_days: 14,
             seat_cents: Some(800),

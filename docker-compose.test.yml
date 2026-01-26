@@ -88,6 +88,42 @@ services:
       scanopy-dev:
         ipv4_address: 172.25.0.4
 
+  daemon-serverpoll:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    privileged: true
+    restart: unless-stopped
+    environment:
+      - SCANOPY_MODE=server_poll
+      - SCANOPY_DAEMON_PORT=60074
+      - SCANOPY_BIND_ADDRESS=0.0.0.0
+      - SCANOPY_NAME=scanopy-daemon-serverpoll
+      - SCANOPY_LOG_LEVEL=debug
+    volumes:
+      - ./backend:/app
+      - ./data/daemon_serverpoll_config:/root/.config/scanopy/daemon
+      - cargo-cache:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - rust-target:/app/target
+    command: sh -c "cargo run --bin daemon --features generate-fixtures"
+    # Wait for daemon to be healthy first - they share the same cargo target
+    # directory, so compiling sequentially avoids lock contention
+    depends_on:
+      daemon:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:60074/api/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 600s
+    ports:
+      - "60074:60074"
+    networks:
+      scanopy-dev:
+        ipv4_address: 172.25.0.7
+
   homeassistant:
     image: lscr.io/linuxserver/homeassistant:latest
     container_name: homeassistant-discovery

@@ -9282,14 +9282,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-01-25T22:56:13.072925Z",
-              "id": "2f52d078-e6b6-471f-9456-e157217a334d",
+              "created_at": "2026-01-26T18:39:03.837903Z",
+              "id": "ec6132ad-5297-4cea-8276-4f8bfd8cb3bb",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-25T22:56:13.072925Z"
+              "updated_at": "2026-01-26T18:39:03.837903Z"
             }
           },
           "error": {
@@ -10021,14 +10021,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-01-25T22:56:13.052848Z",
-                      "id": "e40bd15e-826e-4bac-a9b1-7ee15eb14677",
+                      "created_at": "2026-01-26T18:39:03.828404Z",
+                      "id": "b66b667d-cf1c-4118-aa0b-96da50770668",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-01-25T22:56:13.052848Z"
+                      "updated_at": "2026-01-26T18:39:03.828404Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10037,7 +10037,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Kerberos",
+                  "service_definition": "AMQP",
                   "source": {
                     "type": "Manual"
                   },
@@ -10824,14 +10824,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-01-25T22:56:13.067105Z",
-                  "id": "fda67fdf-b04f-4303-8f94-98d8929b6ef5",
+                  "created_at": "2026-01-26T18:39:03.835034Z",
+                  "id": "a6b24cac-7423-4ab0-aa7e-70ff1c304c69",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-25T22:56:13.067105Z"
+                  "updated_at": "2026-01-26T18:39:03.835034Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -10840,7 +10840,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kerberos",
+              "service_definition": "AMQP",
               "source": {
                 "type": "Manual"
               },
@@ -12000,14 +12000,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-01-25T22:56:13.053046Z",
-          "id": "eeb0abe8-37aa-4709-88fe-858e7cdea581",
+          "created_at": "2026-01-26T18:39:03.828580Z",
+          "id": "524df272-9c8a-4404-b54a-a8173e925913",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-01-25T22:56:13.053046Z"
+          "updated_at": "2026-01-26T18:39:03.828580Z"
         }
       },
       "BindingBase": {
@@ -12461,7 +12461,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Kerberos",
+              "service_definition": "AMQP",
               "tags": [],
               "virtualization": null
             }
@@ -14265,14 +14265,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-01-25T22:56:13.052559Z",
-                  "id": "f5bc89cd-c460-4775-a9d2-5c6a79275a63",
+                  "created_at": "2026-01-26T18:39:03.828162Z",
+                  "id": "4dedd578-0a3e-4eb3-8c8b-f8885ba45f09",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-25T22:56:13.052559Z"
+                  "updated_at": "2026-01-26T18:39:03.828162Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14281,7 +14281,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kerberos",
+              "service_definition": "AMQP",
               "source": {
                 "type": "Manual"
               },
@@ -16074,14 +16074,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-01-25T22:56:13.040415Z",
-                        "id": "bb6366b6-3129-460f-bb11-c0c2560d7ce2",
+                        "created_at": "2026-01-26T18:39:03.823847Z",
+                        "id": "df6cdf10-7b1a-4060-b509-ccb7a6d92ac8",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-01-25T22:56:13.040415Z"
+                        "updated_at": "2026-01-26T18:39:03.823847Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16090,7 +16090,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Kerberos",
+                    "service_definition": "AMQP",
                     "source": {
                       "type": "Manual"
                     },
@@ -16167,14 +16167,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-01-25T22:56:13.065536Z",
-                    "id": "2523d07e-8793-49e4-ae50-36bb861400cf",
+                    "created_at": "2026-01-26T18:39:03.834176Z",
+                    "id": "41fca81b-9d68-4548-a105-395c848f5a1c",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-01-25T22:56:13.065536Z"
+                    "updated_at": "2026-01-26T18:39:03.834176Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16183,7 +16183,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Kerberos",
+                "service_definition": "AMQP",
                 "source": {
                   "type": "Manual"
                 },
@@ -17153,14 +17153,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-01-25T22:56:13.052980Z",
-              "id": "aa033eea-84ab-4244-8269-0fce7a9c50f2",
+              "created_at": "2026-01-26T18:39:03.828519Z",
+              "id": "e33c31b9-93df-4441-87d8-bb829cd1f4db",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-25T22:56:13.052980Z"
+              "updated_at": "2026-01-26T18:39:03.828519Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17169,7 +17169,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Kerberos",
+          "service_definition": "AMQP",
           "source": {
             "type": "Manual"
           },
