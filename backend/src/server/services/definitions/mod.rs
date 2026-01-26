@@ -246,6 +246,7 @@ pub mod proxmox_datacenter_manager;
 
 // Monitoring
 pub mod apc;
+pub mod beszel_agent;
 pub mod cadvisor;
 pub mod coolercontrol;
 pub mod elastic_apm;
@@ -267,6 +268,7 @@ pub mod splunk;
 pub mod uptime_kuma;
 pub mod wazuh;
 pub mod zabbix;
+pub mod zabbix_agent;
 pub mod zipkin;
 
 // Communication
