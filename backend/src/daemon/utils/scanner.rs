@@ -495,6 +495,7 @@ pub async fn scan_udp_ports(
                         Ok(None)
                     }
                 }
+                47808 => test_bacnet_service(ip).await,
                 _ => Ok(None),
             };
 
@@ -894,4 +895,57 @@ async fn wait_for_dhcp_responses(
     }
 
     Ok(None)
+}
+
+/// Test if a host is running a BACnet service on UDP port 47808
+pub async fn test_bacnet_service(ip: IpAddr) -> Result<Option<u16>, Error> {
+    let socket = UdpSocket::bind("0.0.0.0:0").await?;
+    let target = SocketAddr::new(ip, 47808);
+
+    // BACnet Who-Is probe packet
+    // BVLC header + NPDU + Who-Is APDU
+    let bacnet_probe: [u8; 12] = [
+        0x81, // BVLC type indicator
+        0x0a, // Original-Unicast-NPDU
+        0x00, 0x0c, // Length: 12 bytes (big-endian)
+        0x01, // NPDU version 1
+        0x04, // NPDU control: expecting reply, no DNET/DLEN/DADR
+        0x00, // Hop count (unused for unicast)
+        0x00, // Reserved
+        0x10, // APDU type: Unconfirmed service request
+        0x08, // Service choice: Who-Is
+        0x00, // No device instance range (optional field)
+        0x00, // Padding to reach 12 bytes
+    ];
+
+    if socket.send_to(&bacnet_probe, target).await.is_err() {
+        return Ok(None);
+    }
+
+    let mut response_buf = [0u8; 512];
+    match timeout(
+        Duration::from_millis(2000),
+        socket.recv_from(&mut response_buf),
+    )
+    .await
+    {
+        Ok(Ok((len, from))) => {
+            // Verify response is from the target IP
+            if from.ip() != ip {
+                return Ok(None);
+            }
+
+            // Check for valid BACnet response:
+            // - At least 4 bytes (minimum BVLC header)
+            // - First byte is 0x81 (BVLC type indicator)
+            if len >= 4 && response_buf[0] == 0x81 {
+                tracing::debug!("BACnet service detected on {}:47808", ip);
+                return Ok(Some(47808));
+            }
+
+            Ok(None)
+        }
+        Ok(Err(_)) => Ok(None),
+        Err(_) => Ok(None), // Timeout
+    }
 }

@@ -295,6 +295,7 @@ pub mod client;
 
 // IoT
 pub mod amazon_echo;
+pub mod bacnet;
 pub mod camera;
 pub mod chromecast;
 pub mod frigate;
