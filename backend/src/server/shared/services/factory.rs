@@ -9,6 +9,7 @@ use crate::server::{
     email::{plunk::PlunkEmailProvider, smtp::SmtpEmailProvider, traits::EmailService},
     groups::{group_bindings::GroupBindingStorage, service::GroupService},
     hosts::service::HostService,
+    hubspot::service::HubSpotService,
     if_entries::service::IfEntryService,
     interfaces::service::InterfaceService,
     invites::service::InviteService,
@@ -59,6 +60,7 @@ pub struct ServiceFactory {
     pub oidc_service: Option<Arc<OidcService>>,
     pub billing_service: Option<Arc<BillingService>>,
     pub email_service: Option<Arc<EmailService>>,
+    pub hubspot_service: Option<Arc<HubSpotService>>,
     pub event_bus: Arc<EventBus>,
     pub logging_service: Arc<LoggingService>,
     pub metrics_service: Arc<MetricsService>,
@@ -291,6 +293,13 @@ impl ServiceFactory {
             public_url,
         ));
 
+        // Create HubSpot service if API key is configured (before config is consumed)
+        let hubspot_service = config.as_ref().and_then(|c| {
+            c.hubspot_api_key
+                .as_ref()
+                .map(|api_key| Arc::new(HubSpotService::new(api_key.clone())))
+        });
+
         let oidc_service = config.and_then(|c| {
             if let Some(oidc_providers) = c.oidc_providers {
                 return Some(Arc::new(OidcService::new(
@@ -324,6 +333,10 @@ impl ServiceFactory {
             event_bus.register_subscriber(email_service).await;
         }
 
+        if let Some(hubspot_service) = hubspot_service.clone() {
+            event_bus.register_subscriber(hubspot_service).await;
+        }
+
         // Register DaemonService as subscriber for discovery events
         event_bus.register_subscriber(daemon_service.clone()).await;
 
@@ -347,6 +360,7 @@ impl ServiceFactory {
             oidc_service,
             billing_service,
             email_service,
+            hubspot_service,
             event_bus,
             logging_service,
             metrics_service,

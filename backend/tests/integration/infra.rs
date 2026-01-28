@@ -26,8 +26,10 @@ const TEST_DATABASE_URL: &str = "postgres://postgres:password@localhost:5435/sca
 
 pub const BASE_URL: &str = "http://localhost:60072";
 pub const TEST_PASSWORD: &str = "TestPassword123!";
-/// ServerPoll daemon URL - exposes HTTP API for testing
+/// ServerPoll daemon URL for test client (localhost - accessible from host)
 pub const SERVERPOLL_DAEMON_URL: &str = "http://localhost:60074";
+/// ServerPoll daemon URL for server (Docker internal network)
+const SERVERPOLL_DAEMON_URL_INTERNAL: &str = "http://daemon-serverpoll:60074";
 
 // =============================================================================
 // Container Management
@@ -46,6 +48,22 @@ impl ContainerManager {
 
     pub fn start(&mut self) -> Result<(), String> {
         println!("Starting containers with docker compose...");
+
+        // First, bring down any existing containers and remove volumes
+        // This ensures a clean database for each test run
+        // Clean up old containers but preserve volumes (cargo-cache, rust-target, etc.)
+        // This makes subsequent test runs much faster since dependencies are already compiled
+        println!("  Cleaning up old containers...");
+        let _ = Command::new("docker")
+            .args([
+                "compose",
+                "-f",
+                "docker-compose.test.yml",
+                "down",
+                "--remove-orphans",
+            ])
+            .current_dir("..")
+            .output();
 
         let status = Command::new("docker")
             .args([
@@ -206,6 +224,19 @@ impl TestClient {
             .map_err(|e| format!("PUT {} failed: {}", path, e))?;
 
         self.parse_response(response, &format!("PUT {}", path))
+            .await
+    }
+
+    /// POST request with no body
+    pub async fn post_empty<T: DeserializeOwned>(&self, path: &str) -> Result<T, String> {
+        let response = self
+            .client
+            .post(format!("{}{}", BASE_URL, path))
+            .send()
+            .await
+            .map_err(|e| format!("POST {} failed: {}", path, e))?;
+
+        self.parse_response(response, &format!("POST {}", path))
             .await
     }
 
@@ -499,13 +530,14 @@ pub async fn provision_serverpoll_daemon(
     println!("\n=== Provisioning ServerPoll Daemon ===");
 
     // Step 1: Provision daemon on server (creates record + generates API key)
+    // Use internal URL so server can reach daemon via Docker network
     let provision_response: ProvisionDaemonResponse = client
         .post(
             "/api/v1/daemons/provision",
             &serde_json::json!({
                 "name": "scanopy-daemon-serverpoll",
                 "network_id": network_id,
-                "url": SERVERPOLL_DAEMON_URL
+                "url": SERVERPOLL_DAEMON_URL_INTERNAL
             }),
         )
         .await?;

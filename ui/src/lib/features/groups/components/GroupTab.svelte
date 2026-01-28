@@ -18,6 +18,7 @@
 	} from '../queries';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
+	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
@@ -47,6 +48,8 @@
 	const tagsQuery = useTagsQuery();
 	const groupsQuery = useGroupsQuery();
 	const networksQuery = useNetworksQuery();
+	// Load all hosts to populate services cache for GroupCard display
+	const hostsQuery = useHostsQuery({ limit: 0 });
 	useServicesCacheQuery();
 
 	// Mutations
@@ -59,7 +62,7 @@
 	let tagsData = $derived(tagsQuery.data ?? []);
 	let groupsData = $derived(groupsQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
-	let isLoading = $derived(groupsQuery.isPending);
+	let isLoading = $derived(groupsQuery.isPending || hostsQuery.isPending);
 
 	let showGroupEditor = $state(false);
 	let editingGroup = $state<Group | null>(null);

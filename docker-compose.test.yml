@@ -95,6 +95,7 @@ services:
     privileged: true
     restart: unless-stopped
     environment:
+      - SCANOPY_SERVER_URL=http://server:60072
       - SCANOPY_MODE=server_poll
       - SCANOPY_DAEMON_PORT=60074
       - SCANOPY_BIND_ADDRESS=0.0.0.0

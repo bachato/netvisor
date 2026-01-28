@@ -208,14 +208,32 @@ export function useHostsQuery(optionsOrGetter: HostQueryOptions | (() => HostQue
 
 				const responses = data.data;
 
-				// Extract and populate child caches
+				// Extract child data from current response
 				const allInterfaces = responses.flatMap((r) => r.interfaces);
 				const allPorts = responses.flatMap((r) => r.ports);
 				const allServices = responses.flatMap((r) => r.services);
 
-				queryClient.setQueryData(queryKeys.interfaces.all, allInterfaces);
-				queryClient.setQueryData(queryKeys.ports.all, allPorts);
-				queryClient.setQueryData(queryKeys.services.all, allServices);
+				// Get host IDs from current response to merge correctly
+				const currentHostIds = new Set(responses.map((r) => r.id));
+
+				// Merge: keep data from other hosts, update current hosts
+				queryClient.setQueryData<Interface[]>(queryKeys.interfaces.all, (old) => {
+					if (!old) return allInterfaces;
+					const others = old.filter((i) => !currentHostIds.has(i.host_id));
+					return [...others, ...allInterfaces];
+				});
+
+				queryClient.setQueryData<Port[]>(queryKeys.ports.all, (old) => {
+					if (!old) return allPorts;
+					const others = old.filter((p) => !currentHostIds.has(p.host_id));
+					return [...others, ...allPorts];
+				});
+
+				queryClient.setQueryData<Service[]>(queryKeys.services.all, (old) => {
+					if (!old) return allServices;
+					const others = old.filter((s) => !currentHostIds.has(s.host_id));
+					return [...others, ...allServices];
+				});
 
 				// Return host primitives with pagination metadata
 				return {

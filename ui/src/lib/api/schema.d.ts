@@ -247,6 +247,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/billing/inquiry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit enterprise plan inquiry
+         * @description Creates a contact and company in HubSpot for sales follow-up.
+         *     This endpoint does not require authentication.
+         */
+        post: operations["submit_enterprise_inquiry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/billing/plans": {
         parameters: {
             query?: never;
@@ -2619,14 +2640,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-01-25T22:56:13.076918Z",
-             *       "id": "24870b26-1b85-4fe5-bc63-34657b9bd95b",
+             *       "created_at": "2026-01-27T01:19:41.849454Z",
+             *       "id": "9a953f47-bb40-4425-8614-674cb12e249d",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-01-25T22:56:13.076918Z"
+             *       "updated_at": "2026-01-27T01:19:41.849454Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2857,14 +2878,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-01-25T22:56:13.053260Z",
-             *               "id": "25d6b52d-f17e-4f7e-8e61-9bee0341f845",
+             *               "created_at": "2026-01-27T01:19:41.832863Z",
+             *               "id": "068a8b6c-4a80-4159-a04d-77ebf7a18a01",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-01-25T22:56:13.053260Z"
+             *               "updated_at": "2026-01-27T01:19:41.832863Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -2873,7 +2894,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Kerberos",
+             *           "service_definition": "Lidarr",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3139,14 +3160,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-01-25T22:56:13.069131Z",
-             *           "id": "471aafe0-e962-464e-a571-dd1ab6cf92b6",
+             *           "created_at": "2026-01-27T01:19:41.843662Z",
+             *           "id": "4ce0df18-7cd8-4469-a665-ad287b1d4b46",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-01-25T22:56:13.069131Z"
+             *           "updated_at": "2026-01-27T01:19:41.843662Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3155,7 +3176,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Kerberos",
+             *       "service_definition": "Lidarr",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3451,14 +3472,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-01-25T22:56:13.053442Z",
-         *       "id": "a6096085-f374-43c1-b568-33ac809fae65",
+         *       "created_at": "2026-01-27T01:19:41.833064Z",
+         *       "id": "245adb47-6ff2-4d7a-96cb-dc006829437a",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-01-25T22:56:13.053442Z"
+         *       "updated_at": "2026-01-27T01:19:41.833064Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3623,7 +3644,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Kerberos",
+         *           "service_definition": "Lidarr",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4019,6 +4040,25 @@ export interface components {
         };
         /** @enum {string} */
         EdgeTypeDiscriminants: "Interface" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke" | "PhysicalLink";
+        /** @description Enterprise plan inquiry request */
+        EnterpriseInquiryRequest: {
+            /** @description Company name */
+            company: string;
+            /** @description Contact email */
+            email: string;
+            /** @description Contact name */
+            name: string;
+            /** @description Network count: 1-5, 6-20, 21-50, 50+ */
+            network_count?: string | null;
+            /** @description Plan type being inquired about */
+            plan_type?: string | null;
+            /** @description Team/company size: 1-10, 11-25, 26-50, 51-100, 101-250, 251-500, 501-1000, 1001+ */
+            team_size: string;
+            /** @description Urgency: immediately, 1-3 months, 3-6 months, exploring */
+            urgency?: string | null;
+            /** @description Use case description */
+            use_case: string;
+        };
         /** @enum {string} */
         EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "IfEntry" | "SnmpCredential" | "Subnet" | "Group" | "Topology" | "Unknown";
         EntityMetadata: {
@@ -4231,14 +4271,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-01-25T22:56:13.052997Z",
-         *               "id": "d44c64c4-ca3e-43b6-8550-9961a7ecd221",
+         *               "created_at": "2026-01-27T01:19:41.832584Z",
+         *               "id": "d140bbbb-57a8-4de2-98b5-55b9a032434b",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-01-25T22:56:13.052997Z"
+         *               "updated_at": "2026-01-27T01:19:41.832584Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4247,7 +4287,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Kerberos",
+         *           "service_definition": "Lidarr",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5150,14 +5190,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-01-25T22:56:13.053381Z",
-         *           "id": "1dd61722-01b3-4049-9764-6037b1f7eee4",
+         *           "created_at": "2026-01-27T01:19:41.832992Z",
+         *           "id": "08617667-3faf-42e8-8806-7508ba440bd8",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-01-25T22:56:13.053381Z"
+         *           "updated_at": "2026-01-27T01:19:41.832992Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5166,7 +5206,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Kerberos",
+         *       "service_definition": "Lidarr",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -5420,7 +5460,7 @@ export interface components {
          */
         TagOrderField: "created_at" | "name" | "color" | "updated_at";
         /** @enum {string} */
-        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "SubscriptionCancelled";
+        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "SubscriptionCancelled" | "FirstNetworkCreated" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted";
         Topology: components["schemas"]["TopologyBase"] & {
             /** Format: date-time */
             readonly created_at: string;
@@ -6240,6 +6280,39 @@ export interface operations {
                 };
             };
             /** @description Invalid plan or billing not enabled */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    submit_enterprise_inquiry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnterpriseInquiryRequest"];
+            };
+        };
+        responses: {
+            /** @description Inquiry submitted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Invalid request or HubSpot not configured */
             400: {
                 headers: {
                     [name: string]: unknown;

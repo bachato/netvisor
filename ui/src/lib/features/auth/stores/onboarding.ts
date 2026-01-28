@@ -15,6 +15,9 @@ export interface OnboardingState {
 	daemonSetups: Map<string, DaemonSetupState>; // keyed by network id
 	populateSeedData: boolean;
 	currentBlocker: BlockerType | null;
+	// HubSpot qualification data (company/msp only, not persisted to DB)
+	jobTitle: string | null;
+	companySize: string | null;
 }
 
 const initialState: OnboardingState = {
@@ -24,7 +27,9 @@ const initialState: OnboardingState = {
 	networks: [{ name: '' }],
 	daemonSetups: new Map(),
 	populateSeedData: true,
-	currentBlocker: null
+	currentBlocker: null,
+	jobTitle: null,
+	companySize: null
 };
 
 function createOnboardingStore() {
@@ -38,7 +43,9 @@ function createOnboardingStore() {
 				...initialState,
 				networks: [{ name: '' }],
 				daemonSetups: new Map(),
-				useCase: state.useCase // Preserve for billing page
+				useCase: state.useCase, // Preserve for billing page
+				jobTitle: null,
+				companySize: null
 			})),
 
 		setUseCase: (useCase: UseCase) =>
@@ -122,6 +129,18 @@ function createOnboardingStore() {
 			update((state) => ({
 				...state,
 				currentBlocker: blocker
+			})),
+
+		setJobTitle: (jobTitle: string | null) =>
+			update((state) => ({
+				...state,
+				jobTitle
+			})),
+
+		setCompanySize: (companySize: string | null) =>
+			update((state) => ({
+				...state,
+				companySize
 			})),
 
 		// Get the current state synchronously

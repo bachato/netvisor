@@ -9,6 +9,7 @@ pub mod email;
 pub mod github;
 pub mod groups;
 pub mod hosts;
+pub mod hubspot;
 pub mod if_entries;
 pub mod interfaces;
 pub mod invites;

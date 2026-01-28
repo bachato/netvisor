@@ -412,9 +412,6 @@ pub enum TelemetryOperation {
     FirstApiKeyCreated,
     FirstDaemonRegistered,
     FirstTopologyRebuild,
-    // FirstDiscoveryStarted,
-    // FirstDiscoveryCompleted,
-    // FirstHostDiscovered,
 
     // Billing lifecycle (for email automation)
     CheckoutStarted,
@@ -422,6 +419,19 @@ pub enum TelemetryOperation {
     TrialStarted,
     TrialEnded,
     SubscriptionCancelled,
+
+    // Activation milestones (HubSpot CRM tracking)
+    FirstNetworkCreated,
+    FirstDiscoveryCompleted,
+    FirstHostDiscovered,
+    SecondNetworkCreated,
+
+    // Engagement signals (HubSpot CRM tracking)
+    FirstTagCreated,
+    FirstUserApiKeyCreated,
+    FirstSnmpCredentialCreated,
+    InviteSent,
+    InviteAccepted,
 }
 
 impl TelemetryOperation {

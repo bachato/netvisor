@@ -17,7 +17,6 @@
 		common_tags,
 		groups_edgeStyleLabel,
 		groups_groupType,
-		groups_loadingServices,
 		groups_noServicesInGroup
 	} from '$lib/paraglide/messages';
 
@@ -26,7 +25,6 @@
 
 	// Derived data
 	let servicesData = $derived(servicesQuery.data ?? []);
-	let isServicesLoading = $derived(servicesQuery.isLoading);
 
 	let {
 		group,
@@ -123,7 +121,7 @@
 						color: entities.getColorString('Service')
 					};
 				}),
-				emptyText: isServicesLoading ? groups_loadingServices() : groups_noServicesInGroup()
+				emptyText: groups_noServicesInGroup()
 			},
 			{ label: common_tags(), snippet: tagsSnippet }
 		],

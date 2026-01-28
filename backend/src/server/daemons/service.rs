@@ -695,7 +695,13 @@ impl DaemonService {
         Ok(())
     }
 
-    /// Process discovered entities from a daemon
+    /// Process discovered entities from a daemon.
+    ///
+    /// This function processes entities with best-effort semantics: if one entity fails,
+    /// we continue processing the rest and return confirmations for successfully processed
+    /// entities. This is critical for ServerPoll mode where the daemon is waiting for
+    /// confirmations - failing the entire batch due to one bad entity would cause the
+    /// daemon to timeout and stall.
     pub async fn process_discovery_entities(
         &self,
         entities: BufferedEntities,
@@ -708,11 +714,14 @@ impl DaemonService {
 
         let mut created_hosts = Vec::new();
         let mut created_subnets = Vec::new();
+        let mut host_failures = 0;
+        let mut subnet_failures = 0;
 
-        // Process each discovered host
+        // Process each discovered host - continue on failure to avoid blocking entire batch
         for host_request in entities.hosts {
             let pending_id = host_request.host.id;
-            let host_response = host_service
+            let host_name = host_request.host.base.name.clone();
+            match host_service
                 .discover_host(
                     host_request.host,
                     host_request.interfaces,
@@ -721,15 +730,51 @@ impl DaemonService {
                     host_request.if_entries,
                     auth.clone(),
                 )
-                .await?;
-            created_hosts.push((pending_id, host_response));
+                .await
+            {
+                Ok(host_response) => {
+                    created_hosts.push((pending_id, host_response));
+                }
+                Err(e) => {
+                    host_failures += 1;
+                    tracing::warn!(
+                        pending_id = %pending_id,
+                        host_name = %host_name,
+                        error = %e,
+                        "Failed to process discovered host - skipping (daemon will retry or timeout)"
+                    );
+                }
+            }
         }
 
-        // Process discovered subnets
+        // Process discovered subnets - continue on failure to avoid blocking entire batch
         for subnet in entities.subnets {
             let pending_id = subnet.id;
-            let actual_subnet = self.subnet_service.create(subnet, auth.clone()).await?;
-            created_subnets.push((pending_id, actual_subnet));
+            let cidr = subnet.base.cidr;
+            match self.subnet_service.create(subnet, auth.clone()).await {
+                Ok(actual_subnet) => {
+                    created_subnets.push((pending_id, actual_subnet));
+                }
+                Err(e) => {
+                    subnet_failures += 1;
+                    tracing::warn!(
+                        pending_id = %pending_id,
+                        cidr = %cidr,
+                        error = %e,
+                        "Failed to process discovered subnet - skipping (daemon will retry or timeout)"
+                    );
+                }
+            }
+        }
+
+        if host_failures > 0 || subnet_failures > 0 {
+            tracing::info!(
+                hosts_created = created_hosts.len(),
+                hosts_failed = host_failures,
+                subnets_created = created_subnets.len(),
+                subnets_failed = subnet_failures,
+                "Entity processing completed with some failures"
+            );
         }
 
         Ok(CreatedEntitiesPayload {

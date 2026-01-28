@@ -218,14 +218,25 @@ const SKIP_PATH_PREFIXES: &[&str] = &[];
 /// endpoints are removed. This catches breaking changes.
 const SKIP_PATH_SUFFIXES: &[&str] = &[];
 
+/// Paths that should be skipped during daemon replay tests.
+/// Note: Intentionally empty - we cancel discovery sessions between fixtures.
+const SKIP_DAEMON_PATH_PREFIXES: &[&str] = &[];
+
 /// Check if an exchange path should be skipped.
-fn should_skip_path(path: &str) -> bool {
-    SKIP_PATH_PREFIXES
+fn should_skip_path(path: &str, is_daemon_test: bool) -> bool {
+    let skip_general = SKIP_PATH_PREFIXES
         .iter()
         .any(|prefix| path.starts_with(prefix))
         || SKIP_PATH_SUFFIXES
             .iter()
-            .any(|suffix| path.ends_with(suffix))
+            .any(|suffix| path.ends_with(suffix));
+
+    let skip_daemon = is_daemon_test
+        && SKIP_DAEMON_PATH_PREFIXES
+            .iter()
+            .any(|prefix| path.starts_with(prefix));
+
+    skip_general || skip_daemon
 }
 
 /// Replay all exchanges from a manifest.
@@ -242,6 +253,7 @@ pub async fn replay_manifest(
     manifest: &FixtureManifest,
     ctx: &ReplayContext,
     openapi: Option<&serde_json::Value>,
+    is_daemon_test: bool,
 ) -> Vec<Result<ReplayResult, String>> {
     let mut results = Vec::new();
 
@@ -253,7 +265,7 @@ pub async fn replay_manifest(
         }
 
         // Skip paths with complex entity dependencies
-        if should_skip_path(&exchange.path) {
+        if should_skip_path(&exchange.path, is_daemon_test) {
             continue;
         }
 
@@ -266,7 +278,11 @@ pub async fn replay_manifest(
 
 /// Run server compatibility tests - replays old daemon requests against current server.
 /// Returns Ok(()) if all fixtures replay successfully, Err with details otherwise.
-pub async fn run_server_compat_tests(server_url: &str, ctx: &ReplayContext) -> Result<(), String> {
+pub async fn run_server_compat_tests(
+    server_url: &str,
+    ctx: &ReplayContext,
+    clear_data_fn: impl Fn() -> Result<(), String>,
+) -> Result<(), String> {
     let versions = get_fixture_versions("daemon_to_server.json");
     if versions.is_empty() {
         println!("  No daemon_to_server fixtures found, skipping");
@@ -276,6 +292,9 @@ pub async fn run_server_compat_tests(server_url: &str, ctx: &ReplayContext) -> R
     let client = reqwest::Client::new();
 
     for version in versions {
+        // Clear discovery data before each fixture version to prevent CIDR/ID collisions
+        clear_data_fn()?;
+
         let Some(manifest) = load_manifest(&version, "daemon_to_server.json") else {
             continue;
         };
@@ -290,7 +309,8 @@ pub async fn run_server_compat_tests(server_url: &str, ctx: &ReplayContext) -> R
 
         println!("  Testing server compatibility with daemon v{}", version);
 
-        let results = replay_manifest(&client, server_url, &manifest, ctx, openapi.as_ref()).await;
+        let results =
+            replay_manifest(&client, server_url, &manifest, ctx, openapi.as_ref(), false).await;
 
         for result in results {
             match result {
@@ -308,6 +328,62 @@ pub async fn run_server_compat_tests(server_url: &str, ctx: &ReplayContext) -> R
     }
 
     Ok(())
+}
+
+/// Cancel any active discovery session on the daemon and wait for it to stop.
+/// Returns Ok(()) even if no session is running (409 is expected).
+async fn cancel_daemon_discovery_internal(
+    daemon_url: &str,
+    api_key: &str,
+    session_id: Option<Uuid>,
+) -> Result<(), String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .map_err(|e| format!("Failed to create client: {}", e))?;
+
+    // Use a nil UUID if we don't know the session ID - daemon will cancel current session
+    let session_id = session_id.unwrap_or(Uuid::nil());
+
+    let response = client
+        .post(format!("{}/api/discovery/cancel", daemon_url))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&session_id)
+        .send()
+        .await;
+
+    match response {
+        Ok(r) if r.status().is_success() => {
+            // Cancellation was signaled. Poll until we get 409 (no session running).
+            // Use 30 second timeout (120 * 250ms) to debug if cancel eventually works
+            for i in 0..120 {
+                tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                let check = client
+                    .post(format!("{}/api/discovery/cancel", daemon_url))
+                    .header("Authorization", format!("Bearer {}", api_key))
+                    .json(&session_id)
+                    .send()
+                    .await;
+                if let Ok(r) = check {
+                    if r.status().as_u16() == 409 {
+                        println!("    Session stopped after {} ms", (i + 1) * 250);
+                        return Ok(());
+                    }
+                }
+            }
+            Err("Discovery session did not stop within 30 seconds after cancellation".to_string())
+        }
+        Ok(r) if r.status().as_u16() == 409 => Ok(()), // No session running - that's fine
+        Ok(r) => {
+            let status = r.status();
+            let body = r.text().await.unwrap_or_default();
+            Err(format!(
+                "Failed to cancel daemon discovery: {} - {}",
+                status, body
+            ))
+        }
+        Err(e) => Err(format!("Failed to cancel daemon discovery: {}", e)),
+    }
 }
 
 /// Run daemon compatibility tests - replays old server requests against current daemon.
@@ -328,6 +404,10 @@ pub async fn run_daemon_compat_tests(daemon_url: &str, ctx: &ReplayContext) -> R
         .map_err(|e| format!("Failed to create client: {}", e))?;
 
     for version in versions {
+        // Cancel any active discovery sessions before each fixture version
+        // This ensures the daemon is in a clean state for /api/discovery/initiate requests
+        cancel_daemon_discovery_internal(daemon_url, &ctx.api_key, None).await?;
+
         let Some(manifest) = load_manifest(&version, "server_to_daemon.json") else {
             continue;
         };
@@ -342,7 +422,8 @@ pub async fn run_daemon_compat_tests(daemon_url: &str, ctx: &ReplayContext) -> R
 
         println!("  Testing daemon compatibility with server v{}", version);
 
-        let results = replay_manifest(&client, daemon_url, &manifest, ctx, openapi.as_ref()).await;
+        let results =
+            replay_manifest(&client, daemon_url, &manifest, ctx, openapi.as_ref(), true).await;
 
         for result in results {
             match result {

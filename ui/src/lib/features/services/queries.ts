@@ -115,14 +115,11 @@ export function useServicesQuery(
 export function useServicesCacheQuery() {
 	return createQuery(() => ({
 		queryKey: queryKeys.services.all,
-		queryFn: async () => {
-			// Services are populated by hosts query, return empty if not yet populated
-			return [] as Service[];
-		},
-		// Don't refetch - data comes from hosts query
+		initialData: [] as Service[],
 		staleTime: Infinity,
 		refetchOnMount: false,
-		refetchOnWindowFocus: false
+		refetchOnWindowFocus: false,
+		enabled: false
 	}));
 }
 

@@ -19,14 +19,11 @@ export type { Interface };
 export function useInterfacesQuery() {
 	return createQuery(() => ({
 		queryKey: queryKeys.interfaces.all,
-		queryFn: async () => {
-			// Interfaces are populated by hosts query, return empty if not yet populated
-			return [] as Interface[];
-		},
-		// Don't refetch - data comes from hosts query
+		initialData: [] as Interface[],
 		staleTime: Infinity,
 		refetchOnMount: false,
-		refetchOnWindowFocus: false
+		refetchOnWindowFocus: false,
+		enabled: false
 	}));
 }
 

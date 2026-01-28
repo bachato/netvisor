@@ -77,7 +77,7 @@
 	const subnetsQuery = useSubnetsQuery();
 
 	let servicesData = $derived(servicesQuery.data ?? []);
-	let isServicesLoading = $derived(servicesQuery.isLoading);
+	let isServicesLoading = $derived(hostsQuery.isPending);
 	let networksData = $derived(networksQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let interfacesData = $derived(interfacesQuery.data ?? []);

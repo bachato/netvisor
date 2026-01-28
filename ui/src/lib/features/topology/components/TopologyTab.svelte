@@ -28,7 +28,6 @@
 	import { TopologyDisplay } from '$lib/shared/components/forms/selection/display/TopologyDisplay.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
-	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { useUsersQuery } from '$lib/features/users/queries';
@@ -67,8 +66,6 @@
 	);
 
 	// Queries - TanStack Query handles deduplication
-	// Use limit: 0 to get all hosts for topology visualization
-	const hostsQuery = useHostsQuery({ limit: 0 });
 	const subnetsQuery = useSubnetsQuery();
 	const groupsQuery = useGroupsQuery();
 	const usersQuery = useUsersQuery({ enabled: () => canViewUsers });
@@ -84,10 +81,7 @@
 	let usersData = $derived(usersQuery.data ?? []);
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let isLoading = $derived(
-		hostsQuery.isPending ||
-			subnetsQuery.isPending ||
-			groupsQuery.isPending ||
-			topologiesQuery.isPending
+		subnetsQuery.isPending || groupsQuery.isPending || topologiesQuery.isPending
 	);
 
 	// Selected topology (derived from ID + query data)

@@ -7,8 +7,9 @@
 	import TextArea from '$lib/shared/components/forms/input/TextArea.svelte';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import { CheckCircle } from 'lucide-svelte';
-	import { getPosthogDistinctId, trackEvent } from '$lib/shared/utils/analytics';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { billing_requestInfo, common_cancel, common_sending } from '$lib/paraglide/messages';
+	import { apiClient } from '$lib/api/client';
 
 	interface Props {
 		isOpen?: boolean;
@@ -24,12 +25,33 @@
 	let status = $state<'idle' | 'success' | 'error'>('idle');
 	let submitError = $state('');
 
+	// HubSpot standard company size ranges
 	const teamSizeOptions = [
 		{ value: '', label: 'Select team size', disabled: true },
 		{ value: '1-10', label: '1-10 employees' },
-		{ value: '11-50', label: '11-50 employees' },
-		{ value: '51-200', label: '51-200 employees' },
-		{ value: '200+', label: '200+ employees' }
+		{ value: '11-25', label: '11-25 employees' },
+		{ value: '26-50', label: '26-50 employees' },
+		{ value: '51-100', label: '51-100 employees' },
+		{ value: '101-250', label: '101-250 employees' },
+		{ value: '251-500', label: '251-500 employees' },
+		{ value: '501-1000', label: '501-1000 employees' },
+		{ value: '1001+', label: '1001+ employees' }
+	];
+
+	const urgencyOptions = [
+		{ value: '', label: 'Select timeline', disabled: true },
+		{ value: 'immediately', label: 'Immediately' },
+		{ value: '1-3 months', label: '1-3 months' },
+		{ value: '3-6 months', label: '3-6 months' },
+		{ value: 'exploring', label: 'Just exploring' }
+	];
+
+	const networkCountOptions = [
+		{ value: '', label: 'Select network count', disabled: true },
+		{ value: '1-5', label: '1-5 networks' },
+		{ value: '6-20', label: '6-20 networks' },
+		{ value: '21-50', label: '21-50 networks' },
+		{ value: '50+', label: '50+ networks' }
 	];
 
 	function getDefaultValues() {
@@ -38,7 +60,9 @@
 			name: '',
 			company: '',
 			teamSize: '',
-			useCase: ''
+			useCase: '',
+			urgency: '',
+			networkCount: ''
 		};
 	}
 
@@ -48,31 +72,25 @@
 			loading = true;
 			submitError = '';
 
-			const posthogId = getPosthogDistinctId();
-
 			try {
-				const formData = new FormData();
-				formData.append('email', value.email.trim());
-				formData.append('subject', `${planName} Plan Inquiry`);
-				formData.append('name', value.name.trim());
-				formData.append('company', value.company.trim());
-				formData.append('team_size', value.teamSize);
-				formData.append('use_case', value.useCase.trim());
-				formData.append('plan_type', planType);
-				if (posthogId) {
-					formData.append('posthog_id', posthogId);
-				}
-
-				const response = await fetch('https://formbold.com/s/3dk7E', {
-					method: 'POST',
-					body: formData
+				const response = await apiClient.POST('/api/billing/inquiry', {
+					body: {
+						email: value.email.trim(),
+						name: value.name.trim(),
+						company: value.company.trim(),
+						team_size: value.teamSize,
+						use_case: value.useCase.trim(),
+						urgency: value.urgency || undefined,
+						network_count: value.networkCount || undefined,
+						plan_type: planType || undefined
+					}
 				});
 
-				if (response.ok) {
+				if (response.data?.success) {
 					status = 'success';
 					trackEvent('plan_inquiry_submitted', { planType, success: true });
 				} else {
-					throw new Error('Failed to submit');
+					throw new Error(response.data?.error || 'Failed to submit');
 				}
 			} catch (err) {
 				console.error('Plan inquiry form error:', err);
@@ -188,10 +206,32 @@
 					>
 						{#snippet children(field)}
 							<SelectInput
-								label="Team Size"
+								label="Company Size"
 								id="inquiry-team-size"
 								{field}
 								options={teamSizeOptions}
+							/>
+						{/snippet}
+					</form.Field>
+
+					<form.Field name="urgency">
+						{#snippet children(field)}
+							<SelectInput
+								label="How soon do you need a solution?"
+								id="inquiry-urgency"
+								{field}
+								options={urgencyOptions}
+							/>
+						{/snippet}
+					</form.Field>
+
+					<form.Field name="networkCount">
+						{#snippet children(field)}
+							<SelectInput
+								label="How many networks/sites?"
+								id="inquiry-network-count"
+								{field}
+								options={networkCountOptions}
 							/>
 						{/snippet}
 					</form.Field>
