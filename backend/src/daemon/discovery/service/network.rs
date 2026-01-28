@@ -113,7 +113,7 @@ impl RunsDiscovery for DiscoveryRunner<NetworkScanDiscovery> {
         cancel: CancellationToken,
     ) -> Result<(), Error> {
         // Ignore docker bridge subnets, they are discovered through Docker Discovery
-        let subnets: Vec<Subnet> = self.discover_create_subnets().await?;
+        let subnets: Vec<Subnet> = self.discover_create_subnets(&cancel).await?;
 
         self.start_discovery(request).await?;
 
@@ -138,7 +138,10 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<NetworkScanDiscovery> {
             .await
     }
 
-    async fn discover_create_subnets(&self) -> Result<Vec<Subnet>, Error> {
+    async fn discover_create_subnets(
+        &self,
+        cancel: &CancellationToken,
+    ) -> Result<Vec<Subnet>, Error> {
         let daemon_id = self.as_ref().config_store.get_id().await?;
         let network_id = self
             .as_ref()
@@ -188,7 +191,9 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<NetworkScanDiscovery> {
                     true
                 })
                 .collect();
-            let subnet_futures = subnets.iter().map(|subnet| self.create_subnet(subnet));
+            let subnet_futures = subnets
+                .iter()
+                .map(|subnet| self.create_subnet(subnet, cancel));
             try_join_all(subnet_futures).await?
         };
 
@@ -1092,7 +1097,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             let if_entries_count = if_entries.len();
 
             if let Ok(host_response) = self
-                .create_host(host, interfaces, ports, services, if_entries)
+                .create_host(host, interfaces, ports, services, if_entries, &cancel)
                 .await
             {
                 tracing::info!(

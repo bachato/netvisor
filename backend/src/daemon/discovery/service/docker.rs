@@ -106,7 +106,7 @@ impl RunsDiscovery for DiscoveryRunner<DockerScanDiscovery> {
         self.start_discovery(request).await?;
 
         // Get and create docker and host subnets
-        let subnets = self.discover_create_subnets().await?;
+        let subnets = self.discover_create_subnets(&cancel).await?;
 
         // Get host interfaces (needed for docker daemon service host matching)
         let interface_filter = self.as_ref().config_store.get_interfaces().await?;
@@ -132,7 +132,9 @@ impl RunsDiscovery for DiscoveryRunner<DockerScanDiscovery> {
         }
 
         // Create service for docker daemon (pass interfaces for proper host matching)
-        let (_, services) = self.create_docker_daemon_service(&host_interfaces).await?;
+        let (_, services) = self
+            .create_docker_daemon_service(&host_interfaces, &cancel)
+            .await?;
 
         let docker_daemon_service = services
             .first()
@@ -220,7 +222,10 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
         Ok(gateway_ips)
     }
 
-    async fn discover_create_subnets(&self) -> Result<Vec<Subnet>, Error> {
+    async fn discover_create_subnets(
+        &self,
+        cancel: &CancellationToken,
+    ) -> Result<Vec<Subnet>, Error> {
         let daemon_id = self.as_ref().config_store.get_id().await?;
 
         let network_id = self
@@ -267,7 +272,9 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
 
         let subnets: Vec<Subnet> = [host_subnets, filtered_docker_subnets].concat();
 
-        let subnet_futures = subnets.iter().map(|subnet| self.create_subnet(subnet));
+        let subnet_futures = subnets
+            .iter()
+            .map(|subnet| self.create_subnet(subnet, cancel));
         let subnets = try_join_all(subnet_futures).await?;
 
         Ok(subnets)
@@ -280,6 +287,7 @@ impl DiscoveryRunner<DockerScanDiscovery> {
     pub async fn create_docker_daemon_service(
         &self,
         host_interfaces: &[Interface],
+        cancel: &CancellationToken,
     ) -> Result<(Host, Vec<Service>), Error> {
         let daemon_id = self.as_ref().config_store.get_id().await?;
         let network_id = self
@@ -341,6 +349,7 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                 vec![], // No ports for docker daemon host
                 vec![docker_service],
                 vec![], // No SNMP if_entries for docker discovery
+                cancel,
             )
             .await?;
 
@@ -533,7 +542,7 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                     host.id = self.domain.host_id;
 
                     if let Ok(host_response) = self
-                        .create_host(host, interfaces, ports, services, vec![])
+                        .create_host(host, interfaces, ports, services, vec![], cancel)
                         .await
                     {
                         return Ok::<Option<(Host, Vec<Service>)>, Error>(Some((
@@ -790,7 +799,7 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                 });
 
                 if let Ok(host_response) = self
-                    .create_host(host, interfaces, ports, services.clone(), vec![])
+                    .create_host(host, interfaces, ports, services.clone(), vec![], cancel)
                     .await
                 {
                     return Ok::<Option<(Host, Vec<Service>)>, Error>(Some((

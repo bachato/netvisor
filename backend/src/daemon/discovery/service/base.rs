@@ -121,6 +121,11 @@ pub struct DaemonDiscoveryService {
     pub utils: PlatformDaemonUtils,
     pub current_session: Arc<RwLock<Option<DiscoverySession>>>,
     pub entity_buffer: Arc<EntityBuffer>,
+    /// Stores the terminal state (Complete/Failed/Cancelled) for ServerPoll mode.
+    /// In ServerPoll mode, the server polls for progress updates. If the session ends
+    /// between polls, we need to retain the terminal state so the server can receive it.
+    /// This is cleared when a new session starts.
+    pub terminal_payload: Arc<RwLock<Option<DiscoveryUpdatePayload>>>,
 }
 
 impl DaemonDiscoveryService {
@@ -131,6 +136,7 @@ impl DaemonDiscoveryService {
             utils: create_system_utils(),
             current_session: Arc::new(RwLock::new(None)),
             entity_buffer,
+            terminal_payload: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -241,7 +247,10 @@ pub trait DiscoversNetworkedEntities:
 {
     async fn get_gateway_ips(&self) -> Result<Vec<IpAddr>, Error>;
 
-    async fn discover_create_subnets(&self) -> Result<Vec<Subnet>, Error>;
+    async fn discover_create_subnets(
+        &self,
+        cancel: &CancellationToken,
+    ) -> Result<Vec<Subnet>, Error>;
 
     async fn initialize_discovery_session(
         &self,
@@ -270,6 +279,11 @@ pub trait DiscoversNetworkedEntities:
         };
 
         let session = DiscoverySession::new(session_info, gateway_ips);
+
+        // Clear terminal payload from previous session (if any) when starting new session
+        let mut terminal_payload = self.as_ref().terminal_payload.write().await;
+        *terminal_payload = None;
+        drop(terminal_payload);
 
         let mut current_session = self.as_ref().current_session.write().await;
         *current_session = Some(session);
@@ -320,20 +334,20 @@ pub trait DiscoversNetworkedEntities:
             .last_progress
             .load(std::sync::atomic::Ordering::Relaxed);
 
-        match &discovery_result {
+        // Build the terminal update based on result
+        let terminal_update = match &discovery_result {
             Ok(_) => {
                 tracing::info!(
                     session_id = %session_id,
                     progress = 100,
                     "Discovery session completed successfully"
                 );
-                self.report_discovery_update(DiscoverySessionUpdate {
+                DiscoverySessionUpdate {
                     phase: DiscoveryPhase::Complete,
                     progress: 100,
                     error: None,
                     finished_at: Some(Utc::now()),
-                })
-                .await?;
+                }
             }
             Err(_) if cancel.is_cancelled() => {
                 tracing::warn!(
@@ -341,13 +355,12 @@ pub trait DiscoversNetworkedEntities:
                     progress = %final_progress,
                     "Discovery session cancelled"
                 );
-                self.report_discovery_update(DiscoverySessionUpdate {
+                DiscoverySessionUpdate {
                     phase: DiscoveryPhase::Cancelled,
                     progress: final_progress,
                     error: None,
                     finished_at: Some(Utc::now()),
-                })
-                .await?;
+                }
             }
             Err(e) => {
                 tracing::error!(
@@ -361,16 +374,31 @@ pub trait DiscoversNetworkedEntities:
                     .map(|e| e.to_string())
                     .unwrap_or(format!("Critical error: {}", e));
 
-                self.report_discovery_update(DiscoverySessionUpdate {
+                cancel.cancel();
+                DiscoverySessionUpdate {
                     phase: DiscoveryPhase::Failed,
                     progress: final_progress,
                     error: Some(error),
                     finished_at: Some(Utc::now()),
-                })
-                .await?;
-                cancel.cancel();
+                }
             }
-        }
+        };
+
+        // Report the terminal update (in DaemonPoll mode, this POSTs to server)
+        self.report_discovery_update(terminal_update.clone())
+            .await?;
+
+        // Store terminal payload for ServerPoll mode - the server polls for progress
+        // and needs to receive the terminal state even after current_session is cleared.
+        // This payload persists until a new session starts.
+        let terminal_payload = DiscoveryUpdatePayload::from_state_and_update(
+            self.discovery_type(),
+            session.info.clone(),
+            terminal_update,
+        );
+        let mut stored_terminal = self.as_ref().terminal_payload.write().await;
+        *stored_terminal = Some(terminal_payload);
+        drop(stored_terminal);
 
         // Clear entity buffer - all await_*() calls have completed by now
         // (either successfully found Created entries or timed out)
@@ -601,6 +629,7 @@ pub trait CreatesDiscoveredEntities:
         ports: Vec<Port>,
         services: Vec<Service>,
         if_entries: Vec<IfEntry>,
+        cancel: &CancellationToken,
     ) -> Result<HostResponse, Error> {
         let service = self.as_ref();
         let mode = service.config_store.get_mode().await?;
@@ -647,10 +676,14 @@ pub trait CreatesDiscoveredEntities:
                 // Wait for server to poll and confirm creation
                 let actual_host = service
                     .entity_buffer
-                    .await_host(&pending_id, SERVER_POLL_CONFIRMATION_TIMEOUT)
+                    .await_host(&pending_id, SERVER_POLL_CONFIRMATION_TIMEOUT, cancel)
                     .await
                     .ok_or_else(|| {
-                        anyhow!("Timeout waiting for host creation confirmation from server")
+                        if cancel.is_cancelled() {
+                            anyhow!("Discovery cancelled while waiting for host creation")
+                        } else {
+                            anyhow!("Timeout waiting for host creation confirmation from server")
+                        }
                     })?;
 
                 // Build a HostResponse from the confirmed host
@@ -671,7 +704,11 @@ pub trait CreatesDiscoveredEntities:
     ///
     /// In DaemonPoll mode: Immediately sends to server and returns the response.
     /// In ServerPoll mode: Buffers the subnet for server to poll, waits for confirmation.
-    async fn create_subnet(&self, subnet: &Subnet) -> Result<Subnet, Error> {
+    async fn create_subnet(
+        &self,
+        subnet: &Subnet,
+        cancel: &CancellationToken,
+    ) -> Result<Subnet, Error> {
         let service = self.as_ref();
         let mode = service.config_store.get_mode().await?;
         let pending_id = subnet.id;
@@ -709,10 +746,14 @@ pub trait CreatesDiscoveredEntities:
                 // Wait for server to poll and confirm creation
                 service
                     .entity_buffer
-                    .await_subnet(&pending_id, SERVER_POLL_CONFIRMATION_TIMEOUT)
+                    .await_subnet(&pending_id, SERVER_POLL_CONFIRMATION_TIMEOUT, cancel)
                     .await
                     .ok_or_else(|| {
-                        anyhow!("Timeout waiting for subnet creation confirmation from server")
+                        if cancel.is_cancelled() {
+                            anyhow!("Discovery cancelled while waiting for subnet creation")
+                        } else {
+                            anyhow!("Timeout waiting for subnet creation confirmation from server")
+                        }
                     })
             }
         }

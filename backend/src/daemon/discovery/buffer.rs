@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::sync::RwLock;
 use tokio::time::Instant;
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::{
@@ -96,10 +97,19 @@ impl EntityBuffer {
     }
 
     /// Wait for a subnet to be confirmed by server (with timeout).
-    /// Returns None if timeout expires before confirmation.
-    pub async fn await_subnet(&self, pending_id: &Uuid, timeout: Duration) -> Option<Subnet> {
+    /// Returns None if timeout expires or cancellation is signaled before confirmation.
+    pub async fn await_subnet(
+        &self,
+        pending_id: &Uuid,
+        timeout: Duration,
+        cancel: &CancellationToken,
+    ) -> Option<Subnet> {
         let deadline = Instant::now() + timeout;
         loop {
+            // Check cancellation first - allows quick exit when discovery is cancelled
+            if cancel.is_cancelled() {
+                return None;
+            }
             {
                 let subnets = self.subnets.read().await;
                 if let Some(entry) = subnets.get(pending_id)
@@ -172,9 +182,19 @@ impl EntityBuffer {
     }
 
     /// Wait for a host to be confirmed by server (with timeout).
-    pub async fn await_host(&self, pending_id: &Uuid, timeout: Duration) -> Option<Host> {
+    /// Returns None if timeout expires or cancellation is signaled before confirmation.
+    pub async fn await_host(
+        &self,
+        pending_id: &Uuid,
+        timeout: Duration,
+        cancel: &CancellationToken,
+    ) -> Option<Host> {
         let deadline = Instant::now() + timeout;
         loop {
+            // Check cancellation first - allows quick exit when discovery is cancelled
+            if cancel.is_cancelled() {
+                return None;
+            }
             {
                 let hosts = self.hosts.read().await;
                 if let Some(entry) = hosts.get(pending_id)
@@ -600,8 +620,9 @@ mod tests {
         assert_eq!(new_id, actual_id);
 
         // Step 5: await_subnet can now find the created subnet
+        let cancel = CancellationToken::new();
         let found = buffer
-            .await_subnet(&pending_id, Duration::from_millis(100))
+            .await_subnet(&pending_id, Duration::from_millis(100), &cancel)
             .await;
         assert!(found.is_some());
         assert_eq!(found.unwrap().id, actual_id);

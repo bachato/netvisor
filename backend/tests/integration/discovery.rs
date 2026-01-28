@@ -2,17 +2,66 @@
 
 use crate::infra::{BASE_URL, TestClient, retry};
 use scanopy::server::daemons::r#impl::api::DiscoveryUpdatePayload;
-use scanopy::server::discovery::r#impl::types::DiscoveryType;
+use scanopy::server::discovery::r#impl::base::{Discovery, DiscoveryBase};
+use scanopy::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback, RunType};
 use scanopy::server::groups::r#impl::base::{Group, GroupBase};
 use scanopy::server::services::definitions::home_assistant::HomeAssistant;
 use scanopy::server::services::r#impl::base::Service;
 use scanopy::server::shared::storage::traits::Storable;
 use scanopy::server::shared::types::metadata::HasId;
+use scanopy::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
 use scanopy::server::tags::r#impl::base::{Tag, TagBase};
 use uuid::Uuid;
 
-pub async fn run_discovery(client: &TestClient) -> Result<(), String> {
-    println!("🔌 Connecting to SSE stream...");
+/// Trigger discovery for a specific daemon by creating a Discovery record and starting the session.
+/// Returns the session_id so callers can track the specific session.
+pub async fn trigger_discovery(
+    client: &TestClient,
+    daemon_id: Uuid,
+    network_id: Uuid,
+) -> Result<Uuid, String> {
+    println!("\n=== Creating Discovery for ServerPoll Daemon ===");
+
+    // Create a Discovery record
+    let discovery = Discovery {
+        id: Uuid::nil(), // Server assigns ID
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+        base: DiscoveryBase {
+            discovery_type: DiscoveryType::Network {
+                subnet_ids: None, // Discover all subnets on the network
+                host_naming_fallback: HostNamingFallback::BestService,
+                snmp_credentials: SnmpCredentialMapping::default(),
+            },
+            run_type: RunType::AdHoc { last_run: None },
+            name: "ServerPoll Integration Test Discovery".to_string(),
+            daemon_id,
+            network_id,
+            tags: vec![],
+        },
+    };
+
+    let created_discovery: Discovery = client.post("/api/v1/discovery", &discovery).await?;
+    println!("✅ Created Discovery record: {}", created_discovery.id);
+
+    // Start the discovery session
+    let update: DiscoveryUpdatePayload = client
+        .post("/api/v1/discovery/start-session", &created_discovery.id)
+        .await?;
+    println!("✅ Started discovery session: {}", update.session_id);
+
+    Ok(update.session_id)
+}
+
+/// Wait for a discovery session to complete via SSE stream.
+/// If session_id is provided, filters to only that specific session.
+/// If None, accepts any Network discovery update (useful for DaemonPoll auto-discovery).
+pub async fn run_discovery(client: &TestClient, session_id: Option<Uuid>) -> Result<(), String> {
+    if let Some(sid) = session_id {
+        println!("🔌 Connecting to SSE stream for session {}...", sid);
+    } else {
+        println!("🔌 Connecting to SSE stream (waiting for any Network discovery)...");
+    }
 
     let mut event_source = client
         .client
@@ -41,12 +90,21 @@ pub async fn run_discovery(client: &TestClient) -> Result<(), String> {
                             if let Some(data) = line.strip_prefix("data: ")
                                 && let Ok(update) = serde_json::from_str::<DiscoveryUpdatePayload>(data)
                             {
-                                if !matches!(update.discovery_type, DiscoveryType::Network { .. }) {
-                                    continue;
+                                // If filtering by session_id, skip other sessions
+                                if let Some(expected_sid) = session_id {
+                                    if update.session_id != expected_sid {
+                                        continue;
+                                    }
+                                } else {
+                                    // No session_id filter - only accept Network discoveries
+                                    if !matches!(update.discovery_type, DiscoveryType::Network { .. }) {
+                                        continue;
+                                    }
                                 }
 
                                 println!(
-                                    "📊 Discovery: {} - {}%",
+                                    "📊 Discovery [{}]: {} - {}%",
+                                    update.session_id,
                                     update.phase,
                                     update.progress,
                                 );

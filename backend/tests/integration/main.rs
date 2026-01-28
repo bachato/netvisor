@@ -42,10 +42,10 @@ async fn integration_tests() {
     let client = TestClient::new();
 
     // =========================================================================
-    // Phase 1a: DaemonPoll Integration Flow
+    // Phase 1: Minimal Setup for Compat Tests
     // =========================================================================
     println!("\n============================================================");
-    println!("Phase 1a: DaemonPoll Integration Flow");
+    println!("Phase 1: Minimal Setup");
     println!("============================================================\n");
 
     let user = setup_authenticated_user(&client)
@@ -65,67 +65,95 @@ async fn integration_tests() {
         .expect("Failed to find network");
     println!("✅ Network: {}", network.base.name);
 
+    // =========================================================================
+    // Phase 2: DaemonPoll Discovery (creates subnets needed for compat tests)
+    // =========================================================================
+    println!("\n============================================================");
+    println!("Phase 2: DaemonPoll Discovery");
+    println!("============================================================\n");
+
     println!("\n=== Waiting for DaemonPoll Daemon ===");
     let daemon = wait_for_daemon(&client)
         .await
         .expect("Failed to find daemon");
     println!("✅ DaemonPoll daemon registered: {}", daemon.id);
 
-    // Run discovery with DaemonPoll daemon
-    discovery::run_discovery(&client)
+    // Run discovery - this creates subnets that compat tests need
+    // Pass None for session_id since DaemonPoll auto-starts discovery
+    discovery::run_discovery(&client, None)
         .await
         .expect("DaemonPoll discovery failed");
 
-    // Verify service discovered
-    let _service = discovery::verify_home_assistant_discovered(&client)
-        .await
-        .expect("Failed to find Home Assistant");
-
-    let _group = discovery::create_group(&client, network.id)
-        .await
-        .expect("Failed to create group");
-    let _tag = discovery::create_tag(&client, organization.id)
-        .await
-        .expect("Failed to create tag");
-
-    println!("\n✅ DaemonPoll integration flow completed!");
+    println!("\n✅ DaemonPoll discovery completed!");
 
     // =========================================================================
-    // Phase 1b: ServerPoll Integration Flow
+    // Phase 3: ServerPoll Provisioning
     // =========================================================================
     println!("\n============================================================");
-    println!("Phase 1b: ServerPoll Integration Flow");
+    println!("Phase 3: ServerPoll Provisioning");
     println!("============================================================\n");
 
-    // Clear discovery data from DaemonPoll run
+    // Clear discovery data but keep network structure
     clear_discovery_data().expect("Failed to clear discovery data");
 
-    // Provision and initialize ServerPoll daemon
+    // Provision ServerPoll daemon (needed for compat tests)
     let serverpoll_provision = provision_serverpoll_daemon(&client, network.id)
         .await
         .expect("Failed to provision ServerPoll daemon");
+    let serverpoll_daemon_id = serverpoll_provision.daemon.id;
     let serverpoll_api_key = serverpoll_provision.daemon_api_key.clone();
+    println!("✅ ServerPoll daemon provisioned: {}", serverpoll_daemon_id);
 
-    // Run discovery with ServerPoll daemon
-    discovery::run_discovery(&client)
+    // =========================================================================
+    // Phase 4: API Compatibility Tests
+    // =========================================================================
+    println!("\n============================================================");
+    println!("Phase 4: API Compatibility Tests");
+    println!("============================================================");
+
+    compat::run_compat_tests(
+        daemon.id, // Use DaemonPoll daemon ID (like original)
+        network.id,
+        organization.id,
+        user.id,
+        &serverpoll_api_key,
+    )
+    .await
+    .expect("Compatibility tests failed");
+
+    // =========================================================================
+    // Phase 5: Full Integration Verification
+    // =========================================================================
+    println!("\n============================================================");
+    println!("Phase 5: Full Integration Verification");
+    println!("============================================================\n");
+
+    // Clear and run ServerPoll discovery
+    clear_discovery_data().expect("Failed to clear discovery data");
+
+    // Trigger discovery for the ServerPoll daemon and get the session_id
+    let session_id = discovery::trigger_discovery(&client, serverpoll_daemon_id, network.id)
+        .await
+        .expect("Failed to trigger discovery for ServerPoll daemon");
+
+    // Wait for this specific session to complete via SSE stream
+    // (filters by session_id to avoid catching stalled sessions from other daemons)
+    discovery::run_discovery(&client, Some(session_id))
         .await
         .expect("ServerPoll discovery failed");
 
     // Verify service discovered
     let _service = discovery::verify_home_assistant_discovered(&client)
         .await
-        .expect("Failed to find Home Assistant (ServerPoll)");
+        .expect("Failed to find Home Assistant after ServerPoll discovery");
 
     println!("\n✅ ServerPoll integration flow completed!");
 
-    // Clear discovery data before other tests
-    clear_discovery_data().expect("Failed to clear discovery data");
-
     // =========================================================================
-    // Phase 2: CRUD Endpoint Tests
+    // Phase 6: CRUD Endpoint Tests
     // =========================================================================
     println!("\n============================================================");
-    println!("Phase 2: CRUD Endpoint Tests");
+    println!("Phase 6: CRUD Endpoint Tests");
     println!("============================================================");
 
     let db_pool = create_test_db_pool()
@@ -147,10 +175,10 @@ async fn integration_tests() {
     crud::run_crud_tests(&ctx).await.expect("CRUD tests failed");
 
     // =========================================================================
-    // Phase 3: Billing Middleware Tests
+    // Phase 7: Billing Middleware Tests
     // =========================================================================
     println!("\n============================================================");
-    println!("Phase 3: Billing Middleware Tests");
+    println!("Phase 7: Billing Middleware Tests");
     println!("============================================================");
 
     billing::run_billing_tests(&ctx)
@@ -158,10 +186,10 @@ async fn integration_tests() {
         .expect("Billing tests failed");
 
     // =========================================================================
-    // Phase 4: Handler Validation Tests
+    // Phase 8: Handler Validation Tests
     // =========================================================================
     println!("\n============================================================");
-    println!("Phase 4: Handler Validation Tests");
+    println!("Phase 8: Handler Validation Tests");
     println!("============================================================");
 
     validations::run_validation_tests(&ctx)
@@ -169,10 +197,10 @@ async fn integration_tests() {
         .expect("Validation tests failed");
 
     // =========================================================================
-    // Phase 5: Permission & Access Control Tests
+    // Phase 9: Permission & Access Control Tests
     // =========================================================================
     println!("\n============================================================");
-    println!("Phase 5: Permission & Access Control Tests");
+    println!("Phase 9: Permission & Access Control Tests");
     println!("============================================================");
 
     permissions::run_permission_tests(&ctx)
@@ -180,33 +208,16 @@ async fn integration_tests() {
         .expect("Permission tests failed");
 
     // =========================================================================
-    // Phase 6: Generate Fixtures (optional)
+    // Phase 10: Generate Fixtures (optional)
     // =========================================================================
     #[cfg(feature = "generate-fixtures")]
     {
         println!("\n============================================================");
-        println!("Phase 6: Generating Fixtures");
+        println!("Phase 10: Generating Fixtures");
         println!("============================================================");
 
         fixtures::generate_fixtures().await;
     }
-
-    // =========================================================================
-    // Phase 7: API Compatibility Tests
-    // =========================================================================
-    println!("\n============================================================");
-    println!("Phase 7: API Compatibility Tests");
-    println!("============================================================");
-
-    compat::run_compat_tests(
-        daemon.id,
-        network.id,
-        organization.id,
-        user.id,
-        &serverpoll_api_key,
-    )
-    .await
-    .expect("Compatibility tests failed");
 
     // =========================================================================
     // Summary
@@ -214,8 +225,8 @@ async fn integration_tests() {
     println!("\n============================================================");
     println!("ALL INTEGRATION TESTS PASSED!");
     println!("============================================================");
-    println!("   - DaemonPoll integration flow");
-    println!("   - ServerPoll integration flow");
+    println!("   - DaemonPoll integration flow (discovery)");
+    println!("   - ServerPoll integration flow (discovery)");
     println!("   - CRUD endpoint tests");
     println!("   - Billing middleware tests");
     println!("   - Handler validation tests");

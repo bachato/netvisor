@@ -128,29 +128,56 @@ impl DaemonState {
     }
 
     /// Get current discovery session progress, if any.
+    ///
+    /// Returns progress in this priority:
+    /// 1. If there's an active session, return current progress (Scanning phase)
+    /// 2. If session ended, return terminal payload (Complete/Failed/Cancelled phase)
+    /// 3. If neither, return None
+    ///
+    /// The terminal payload is critical for ServerPoll mode: the server polls periodically
+    /// and needs to receive the terminal state to update session_last_updated and avoid
+    /// marking the session as stalled. The terminal payload persists until a new session starts.
     pub async fn get_progress(&self) -> Option<DiscoveryUpdatePayload> {
-        // Get the current session from the discovery service
+        // First check for active session
         let session = self.discovery_service.current_session.read().await;
 
-        session.as_ref().map(|s| {
+        if let Some(s) = session.as_ref() {
             let progress = s.last_progress.load(std::sync::atomic::Ordering::Relaxed);
 
-            DiscoveryUpdatePayload {
+            tracing::trace!(
+                session_id = %s.info.session_id,
+                progress = progress,
+                "get_progress: returning active session progress"
+            );
+
+            return Some(DiscoveryUpdatePayload {
                 session_id: s.info.session_id,
                 daemon_id: s.info.daemon_id,
                 network_id: s.info.network_id,
-                // Note: We report the last known progress percentage.
-                // The actual phase might have changed since last report.
-                // For polling, this is acceptable as the server will get
-                // the terminal state in the next poll.
                 phase: crate::daemon::discovery::types::base::DiscoveryPhase::Scanning,
                 discovery_type: s.info.discovery_type.clone(),
                 progress,
                 error: None,
                 started_at: s.info.started_at,
                 finished_at: None,
-            }
-        })
+            });
+        }
+        drop(session);
+
+        // No active session - check for terminal payload from finished session
+        // This allows the server to poll and receive the terminal state
+        let terminal = self.discovery_service.terminal_payload.read().await;
+        if let Some(ref tp) = *terminal {
+            tracing::debug!(
+                session_id = %tp.session_id,
+                phase = %tp.phase,
+                progress = tp.progress,
+                "get_progress: returning terminal payload"
+            );
+        } else {
+            tracing::trace!("get_progress: no active session and no terminal payload");
+        }
+        terminal.clone()
     }
 
     /// Get pending buffered entities for sending to server.

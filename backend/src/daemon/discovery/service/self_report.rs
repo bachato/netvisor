@@ -55,7 +55,10 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<SelfReportDiscovery> {
         Ok(Vec::new())
     }
 
-    async fn discover_create_subnets(&self) -> Result<Vec<Subnet>, Error> {
+    async fn discover_create_subnets(
+        &self,
+        cancel: &CancellationToken,
+    ) -> Result<Vec<Subnet>, Error> {
         let daemon_id = self.as_ref().config_store.get_id().await?;
         let network_id = self
             .as_ref()
@@ -158,7 +161,7 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<SelfReportDiscovery> {
         // This prevents one subnet failure from blocking all interfaces
         let subnet_futures = subnets_to_create.iter().map(|subnet| async move {
             let cidr = subnet.base.cidr;
-            match self.create_subnet(subnet).await {
+            match self.create_subnet(subnet, cancel).await {
                 Ok(created) => {
                     tracing::debug!(
                         cidr = %cidr,
@@ -207,7 +210,7 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
         cancel: CancellationToken,
     ) -> Result<(), Error> {
         // Create subnets first (before session initialization, like Network discovery)
-        let created_subnets = self.discover_create_subnets().await?;
+        let created_subnets = self.discover_create_subnets(&cancel).await?;
 
         // Initialize session and report Started phase
         self.start_discovery(request).await?;
@@ -229,8 +232,13 @@ impl DiscoveryRunner<SelfReportDiscovery> {
     async fn run_self_report_discovery(
         &self,
         created_subnets: &[Subnet],
-        _cancel: CancellationToken,
+        cancel: CancellationToken,
     ) -> Result<(), Error> {
+        // Check cancellation early
+        if cancel.is_cancelled() {
+            return Err(anyhow::anyhow!("Discovery cancelled"));
+        }
+
         let daemon_id = self.as_ref().config_store.get_id().await?;
         let network_id = self
             .as_ref()
@@ -281,6 +289,11 @@ impl DiscoveryRunner<SelfReportDiscovery> {
 
         self.update_capabilities(has_docker_socket, interfaced_subnet_ids)
             .await?;
+
+        // Check cancellation after capabilities update
+        if cancel.is_cancelled() {
+            return Err(anyhow::anyhow!("Discovery cancelled"));
+        }
 
         // Filter interfaces to only those with matching created subnets
         // Update subnet_id references since created subnets may differ from discovered
@@ -398,9 +411,14 @@ impl DiscoveryRunner<SelfReportDiscovery> {
             host.base.hostname
         );
 
+        // Check cancellation before creating host
+        if cancel.is_cancelled() {
+            return Err(anyhow::anyhow!("Discovery cancelled"));
+        }
+
         // Pass interfaces and ports separately - server will create them with the correct host_id
         tracing::debug!("Creating host with interfaces, ports, and services");
-        self.create_host(host, interfaces.clone(), ports, services, vec![])
+        self.create_host(host, interfaces.clone(), ports, services, vec![], &cancel)
             .await?;
 
         Ok(())
