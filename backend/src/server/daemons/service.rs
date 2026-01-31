@@ -30,7 +30,7 @@ use crate::server::daemons::r#impl::api::{
     DaemonCapabilities, DaemonDiscoveryRequest, DaemonRegistrationRequest,
     DaemonRegistrationResponse, DiscoveryUpdatePayload, FirstContactRequest, ServerCapabilities,
 };
-use crate::server::daemons::r#impl::base::{Daemon, DaemonBase, DaemonMode};
+use crate::server::daemons::r#impl::base::{Daemon, DaemonBase};
 use crate::server::daemons::r#impl::version::DaemonVersionPolicy;
 use crate::server::discovery::r#impl::base::{Discovery, DiscoveryBase};
 use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback, RunType};
@@ -1042,16 +1042,11 @@ impl DaemonService {
 
     /// Get all daemons in ServerPoll mode that are reachable
     async fn get_server_poll_daemons(&self) -> Result<Vec<Daemon>> {
-        let filter = StorableFilter::<Daemon>::default();
+        let filter = StorableFilter::<Daemon>::new_for_daemon_poller_system_job();
 
-        let all_daemons = self.get_all(filter).await?;
+        let reachable_server_poll_daemons = self.get_all(filter).await?;
 
-        let server_poll_daemons: Vec<Daemon> = all_daemons
-            .into_iter()
-            .filter(|d| d.base.mode == DaemonMode::ServerPoll && !d.base.is_unreachable)
-            .collect();
-
-        Ok(server_poll_daemons)
+        Ok(reachable_server_poll_daemons)
     }
 
     /// Mark a daemon as unreachable in the database

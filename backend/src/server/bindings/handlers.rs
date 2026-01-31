@@ -44,12 +44,12 @@ async fn validate_no_binding_type_conflict(
 ) -> Result<(), ApiError> {
     let service_id = binding.service_id();
 
+    let filter = StorableFilter::<Binding>::new_from_network_ids(&[binding.base.network_id]).service_id(&service_id);
+    let existing = state.services.binding_service.get_all(filter).await?;
+
     match binding.base.binding_type {
         BindingType::Interface { interface_id } => {
             // Check for conflicting port bindings: same interface OR all-interfaces
-            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
-            let existing = state.services.binding_service.get_all(filter).await?;
-
             for existing_binding in existing {
                 if exclude_id == Some(existing_binding.id) {
                     continue;
@@ -74,9 +74,6 @@ async fn validate_no_binding_type_conflict(
             ..
         } => {
             // Check for conflicting interface binding on same interface
-            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
-            let existing = state.services.binding_service.get_all(filter).await?;
-
             for existing_binding in existing {
                 if exclude_id == Some(existing_binding.id) {
                     continue;
@@ -97,9 +94,6 @@ async fn validate_no_binding_type_conflict(
             interface_id: None, ..
         } => {
             // Port binding on all interfaces: conflicts with ANY interface binding
-            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
-            let existing = state.services.binding_service.get_all(filter).await?;
-
             for existing_binding in existing {
                 if exclude_id == Some(existing_binding.id) {
                     continue;
@@ -166,7 +160,7 @@ async fn create_binding(
     } = &binding.base.binding_type
     {
         let service_id = binding.service_id();
-        let filter = StorableFilter::<Binding>::new().service_id(&service_id);
+        let filter = StorableFilter::<Binding>::new_from_network_ids(&[binding.network_id()]).service_id(&service_id);
         let existing = state.services.binding_service.get_all(filter).await?;
 
         for existing_binding in existing {

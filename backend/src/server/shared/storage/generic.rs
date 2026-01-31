@@ -293,7 +293,7 @@ where
     }
 
     async fn get_by_id(&self, id: &Uuid) -> Result<Option<T>, anyhow::Error> {
-        let id_filter = StorableFilter::<T>::new().entity_id(id);
+        let id_filter = StorableFilter::<T>::new_from_entity_id(id);
         self.get_one(id_filter).await
     }
 
