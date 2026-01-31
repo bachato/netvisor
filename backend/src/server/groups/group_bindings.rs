@@ -186,7 +186,7 @@ impl GroupBindingStorage {
 
     /// Get all binding IDs for a single group, ordered by position
     pub async fn get_for_group(&self, group_id: &Uuid) -> Result<Vec<Uuid>> {
-        let filter = StorableFilter::<GroupBinding>::new().group_id(group_id);
+        let filter = StorableFilter::<GroupBinding>::new_from_group_ids(&[*group_id]);
         let group_bindings = self.storage.get_all_ordered(filter, "position ASC").await?;
         Ok(group_bindings.iter().map(|gb| gb.binding_id()).collect())
     }
@@ -197,7 +197,7 @@ impl GroupBindingStorage {
             return Ok(HashMap::new());
         }
 
-        let filter = StorableFilter::<GroupBinding>::new().group_ids(group_ids);
+        let filter = StorableFilter::<GroupBinding>::new_from_group_ids(group_ids);
         let group_bindings = self
             .storage
             .get_all_ordered(filter, "group_id ASC, position ASC")
@@ -220,7 +220,7 @@ impl GroupBindingStorage {
         let mut tx = self.storage.begin_transaction().await?;
 
         // Delete existing bindings for this group
-        let filter = StorableFilter::<GroupBinding>::new().group_id(group_id);
+        let filter = StorableFilter::<GroupBinding>::new_from_group_ids(&[*group_id]);
         tx.delete_by_filter(filter).await?;
 
         // Insert new bindings with position
@@ -239,14 +239,14 @@ impl GroupBindingStorage {
 
     /// Delete all binding associations for a group
     pub async fn delete_for_group(&self, group_id: &Uuid) -> Result<()> {
-        let filter = StorableFilter::<GroupBinding>::new().group_id(group_id);
+        let filter = StorableFilter::<GroupBinding>::new_from_group_ids(&[*group_id]);
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }
 
     /// Remove a specific binding from all groups
     pub async fn remove_binding(&self, binding_id: &Uuid) -> Result<()> {
-        let filter = StorableFilter::<GroupBinding>::new().binding_id(binding_id);
+        let filter = StorableFilter::<GroupBinding>::new_from_binding_id(binding_id);
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }

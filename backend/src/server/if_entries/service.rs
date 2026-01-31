@@ -62,7 +62,7 @@ impl IfEntryService {
 
     /// Get all if entries for a specific host, ordered by ifIndex
     pub async fn get_for_host(&self, host_id: &Uuid) -> Result<Vec<IfEntry>> {
-        let filter = StorableFilter::<IfEntry>::new().host_id(host_id);
+        let filter = StorableFilter::<IfEntry>::new_from_host_ids(&[*host_id]);
         self.storage.get_all_ordered(filter, "if_index ASC").await
     }
 
@@ -72,7 +72,7 @@ impl IfEntryService {
             return Ok(HashMap::new());
         }
 
-        let filter = StorableFilter::<IfEntry>::new().host_ids(host_ids);
+        let filter = StorableFilter::<IfEntry>::new_from_host_ids(host_ids);
         let entries = self
             .storage
             .get_all_ordered(filter, "host_id ASC, if_index ASC")

@@ -135,12 +135,12 @@ where
     let user_id = auth.user_id();
 
     let base_filter = if T::is_network_keyed() {
-        StorableFilter::<T>::new().network_ids(&network_ids)
+        StorableFilter::<T>::new_from_network_ids(&network_ids)
     } else if T::table_name() == "networks" {
         // Networks are org-scoped but should be filtered to only those the user has access to
-        StorableFilter::<T>::new().entity_ids(&network_ids)
+        StorableFilter::<T>::new_from_entity_ids(&network_ids)
     } else {
-        StorableFilter::<T>::new().organization_id(&organization_id)
+        StorableFilter::<T>::new_from_org_id(&organization_id)
     };
 
     // Apply entity-specific filters
@@ -393,7 +393,7 @@ where
     let service = T::get_service(&state);
 
     // Fetch all entities by the requested IDs
-    let entity_filter = StorableFilter::<T>::new().entity_ids(&ids);
+    let entity_filter = StorableFilter::<T>::new_from_entity_ids(&ids);
     let entities = service.get_all(entity_filter).await?;
 
     // Verify we found all requested entities

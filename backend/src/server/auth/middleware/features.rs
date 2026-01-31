@@ -157,7 +157,7 @@ impl FeatureCheck for CreateNetworkFeature {
         if let Some(max_networks) = ctx.plan.config().included_networks
             && ctx.plan.config().network_cents.is_none()
         {
-            let org_filter = StorableFilter::<Network>::new().organization_id(&ctx.organization.id);
+            let org_filter = StorableFilter::<Network>::new_from_org_id(&ctx.organization.id);
 
             let current_networks = ctx
                 .app_state

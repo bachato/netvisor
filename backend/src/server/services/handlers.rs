@@ -192,7 +192,7 @@ async fn get_all_services(
         .organization_id()
         .ok_or_else(ApiError::organization_required)?;
 
-    let base_filter = StorableFilter::<Service>::new().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Service>::new_from_network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
 
     // Apply tag filter if specified

@@ -215,38 +215,42 @@ impl TopologyService {
         // Fetch all data - each service needs its own properly typed filter
         let hosts = self
             .host_service
-            .get_all(
-                StorableFilter::<Host>::new()
-                    .network_ids(&[network_id])
-                    .hidden_is(false),
-            )
+            .get_all(StorableFilter::<Host>::new_from_network_ids(&[network_id]).hidden_is(false))
             .await?;
 
         let interfaces = self
             .interface_service
-            .get_all(StorableFilter::<Interface>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Interface>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?;
         let subnets = self
             .subnet_service
-            .get_all(StorableFilter::<Subnet>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Subnet>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?;
         let groups = self
             .group_service
-            .get_all(StorableFilter::<Group>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Group>::new_from_network_ids(&[network_id]))
             .await?;
 
         let ports = self
             .port_service
-            .get_all(StorableFilter::<Port>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Port>::new_from_network_ids(&[network_id]))
             .await?;
         let bindings = self
             .binding_service
-            .get_all(StorableFilter::<Binding>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Binding>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?;
 
         let if_entries = self
             .if_entry_service
-            .get_all(StorableFilter::<IfEntry>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<IfEntry>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?;
 
         Ok((
@@ -261,7 +265,9 @@ impl TopologyService {
     ) -> Result<Vec<Service>, Error> {
         Ok(self
             .service_service
-            .get_all(StorableFilter::<Service>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Service>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?
             .iter()
             .filter(|s| {

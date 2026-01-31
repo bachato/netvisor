@@ -190,7 +190,7 @@ async fn get_all(
         .ok_or_else(ApiError::organization_required)?;
 
     // Apply network filter and pagination
-    let base_filter = StorableFilter::<Daemon>::new().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Daemon>::new_from_network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
     let pagination = query.pagination();
     let filter = pagination.apply_to_filter(filter);

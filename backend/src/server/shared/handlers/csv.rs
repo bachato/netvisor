@@ -46,12 +46,12 @@ where
 
     // Build base filter based on entity scoping (same as get_all_handler)
     let base_filter = if T::is_network_keyed() {
-        StorableFilter::<T>::new().network_ids(&network_ids)
+        StorableFilter::<T>::new_from_network_ids(&network_ids)
     } else if T::table_name() == "networks" {
         // Networks are org-scoped but should be filtered to only those the user has access to
-        StorableFilter::<T>::new().entity_ids(&network_ids)
+        StorableFilter::<T>::new_from_entity_ids(&network_ids)
     } else {
-        StorableFilter::<T>::new().organization_id(&organization_id)
+        StorableFilter::<T>::new_from_org_id(&organization_id)
     };
 
     // Apply entity-specific filters (but NOT pagination - we want all records)

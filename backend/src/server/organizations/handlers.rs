@@ -322,7 +322,7 @@ async fn reset_organization_data(
     organization_id: &Uuid,
     auth: AuthenticatedEntity,
 ) -> Result<(), ApiError> {
-    let org_filter = StorableFilter::<Network>::new().organization_id(organization_id);
+    let org_filter = StorableFilter::<Network>::new_from_org_id(organization_id);
     let network_ids: Vec<Uuid> = state
         .services
         .network_service
@@ -391,7 +391,7 @@ async fn reset_organization_data(
         .await?;
 
     // Delete non-owner users
-    let user_filter = StorableFilter::<User>::new().organization_id(organization_id);
+    let user_filter = StorableFilter::<User>::new_from_org_id(organization_id);
     let non_owner_user_ids: Vec<Uuid> = state
         .services
         .user_service

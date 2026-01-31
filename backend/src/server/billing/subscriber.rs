@@ -54,9 +54,8 @@ impl EventSubscriber for BillingService {
             {
                 match e.entity_type {
                     Entity::Network(_) | Entity::User(_) => {
-                        let network_filter =
-                            StorableFilter::<Network>::new().organization_id(&org_id);
-                        let user_filter = StorableFilter::<User>::new().organization_id(&org_id);
+                        let network_filter = StorableFilter::<Network>::new_from_org_id(&org_id);
+                        let user_filter = StorableFilter::<User>::new_from_org_id(&org_id);
 
                         let network_count =
                             self.network_service.get_all(network_filter).await?.len();

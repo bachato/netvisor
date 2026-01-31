@@ -58,7 +58,7 @@ impl CrudService<Subnet> for SubnetService {
         subnet: Subnet,
         authentication: AuthenticatedEntity,
     ) -> Result<Subnet, anyhow::Error> {
-        let filter = StorableFilter::<Subnet>::new().network_ids(&[subnet.base.network_id]);
+        let filter = StorableFilter::<Subnet>::new_from_network_ids(&[subnet.base.network_id]);
         let all_subnets = self.storage.get_all(filter).await?;
 
         let subnet = if subnet.id == Uuid::nil() {

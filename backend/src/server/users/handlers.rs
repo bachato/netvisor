@@ -114,7 +114,7 @@ pub async fn get_all_users(
         _ => return Err(ApiError::user_required()),
     };
 
-    let org_filter = StorableFilter::<User>::new().organization_id(&organization_id);
+    let org_filter = StorableFilter::<User>::new_from_org_id(&organization_id);
 
     let service = User::get_service(&state);
     // Fetch all users first (permission filtering happens in-memory)
@@ -413,7 +413,7 @@ pub async fn bulk_delete_users(
         _ => return Err(ApiError::user_required()),
     };
 
-    let user_filter = StorableFilter::<User>::new().entity_ids(&ids);
+    let user_filter = StorableFilter::<User>::new_from_entity_ids(&ids);
     let users = state.services.user_service.get_all(user_filter).await?;
 
     if users.iter().any(|u| u.base.permissions > permissions) {

@@ -110,7 +110,7 @@ async fn get_all_topologies(
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
     // Apply network filter and pagination
-    let base_filter = StorableFilter::<Topology>::new().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Topology>::new_from_network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
     let pagination = query.pagination();
     let filter = pagination.apply_to_filter(filter);

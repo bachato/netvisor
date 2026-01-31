@@ -87,10 +87,10 @@ impl SnmpCredentialService {
             .host_service
             .get()
             .ok_or_else(|| anyhow::anyhow!("HostService not initialized"))?;
-        let host_filter = StorableFilter::<Host>::new().network_ids(&[network_id]);
+        let host_filter = StorableFilter::<Host>::new_from_network_ids(&[network_id]);
         let hosts = host_service.get_all(host_filter).await?;
 
-        let interface_filter = StorableFilter::<Interface>::new().network_ids(&[network_id]);
+        let interface_filter = StorableFilter::<Interface>::new_from_network_ids(&[network_id]);
         let interfaces = self.interface_service.get_all(interface_filter).await?;
 
         let network_credential: Option<SnmpQueryCredential> = if let Some(network) =

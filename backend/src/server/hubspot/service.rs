@@ -1,19 +1,31 @@
 use crate::server::{
     auth::middleware::auth::AuthenticatedEntity,
+    hosts::service::HostService,
     hubspot::{
         client::HubSpotClient,
         types::{CompanyProperties, ContactProperties},
     },
-    shared::events::types::{AuthOperation, Event, TelemetryEvent, TelemetryOperation},
+    networks::service::NetworkService,
+    shared::{
+        events::types::{AuthOperation, Event, TelemetryEvent, TelemetryOperation},
+        services::traits::CrudService,
+        storage::filter::StorableFilter,
+    },
+    users::service::UserService,
 };
 use anyhow::Result;
 use chrono::Utc;
 use std::sync::Arc;
+use tokio::sync::OnceCell;
 use uuid::Uuid;
 
 /// Service for syncing data to HubSpot CRM
 pub struct HubSpotService {
     pub client: Arc<HubSpotClient>,
+    // Entity services for metrics sync (set after construction due to circular deps)
+    network_service: OnceCell<Arc<NetworkService>>,
+    host_service: OnceCell<Arc<HostService>>,
+    user_service: OnceCell<Arc<UserService>>,
 }
 
 impl HubSpotService {
@@ -21,7 +33,22 @@ impl HubSpotService {
     pub fn new(api_key: String) -> Self {
         Self {
             client: Arc::new(HubSpotClient::new(api_key)),
+            network_service: OnceCell::new(),
+            host_service: OnceCell::new(),
+            user_service: OnceCell::new(),
         }
+    }
+
+    /// Set entity services for metrics sync (called after all services are created)
+    pub fn set_entity_services(
+        &self,
+        network_service: Arc<NetworkService>,
+        host_service: Arc<HostService>,
+        user_service: Arc<UserService>,
+    ) {
+        let _ = self.network_service.set(network_service);
+        let _ = self.host_service.set(host_service);
+        let _ = self.user_service.set(user_service);
     }
 
     /// Handle events and sync to HubSpot
@@ -221,6 +248,23 @@ impl HubSpotService {
             .with_checkout_completed_date(event.timestamp);
 
         self.client.upsert_company(company_props).await?;
+
+        // Sync plan limits to HubSpot
+        let network_limit = event
+            .metadata
+            .get("included_networks")
+            .and_then(|v| v.as_u64())
+            .map(|n| n as i64);
+        let seat_limit = event
+            .metadata
+            .get("included_seats")
+            .and_then(|v| v.as_u64())
+            .map(|n| n as i64);
+
+        if network_limit.is_some() || seat_limit.is_some() {
+            self.sync_plan_limits(event.organization_id, network_limit, seat_limit)
+                .await?;
+        }
 
         tracing::info!(
             organization_id = %event.organization_id,
@@ -455,5 +499,73 @@ impl HubSpotService {
         );
 
         Ok(())
+    }
+
+    /// Sync entity counts for an organization to HubSpot
+    /// Called when networks, hosts, or users are created/deleted
+    pub async fn sync_org_entity_metrics(&self, org_id: Uuid) -> Result<()> {
+        // Check if entity services are available
+        let network_service = match self.network_service.get() {
+            Some(s) => s,
+            None => {
+                tracing::debug!("HubSpot entity services not set, skipping metrics sync");
+                return Ok(());
+            }
+        };
+        let host_service = match self.host_service.get() {
+            Some(s) => s,
+            None => return Ok(()),
+        };
+        let user_service = match self.user_service.get() {
+            Some(s) => s,
+            None => return Ok(()),
+        };
+
+        // First check if the company exists in HubSpot - don't create if it doesn't.
+        // The company should be created by the OrgCreated telemetry event handler
+        // with proper name and contact association. Due to HubSpot's eventual consistency,
+        // the company may not be searchable immediately after creation, so we skip
+        // the sync rather than creating a duplicate.
+        let existing = self
+            .client
+            .find_company_by_org_id(&org_id.to_string())
+            .await?;
+
+        if existing.is_none() {
+            tracing::debug!(
+                organization_id = %org_id,
+                "Skipping HubSpot metrics sync - company not found (may not be indexed yet)"
+            );
+            return Ok(());
+        }
+
+        // Count entities using service layer
+        let network_filter = StorableFilter::new_from_org_id(&org_id);
+        let networks = network_service.get_all(network_filter).await?;
+        let network_count = networks.len() as i64;
+
+        let host_filter = StorableFilter::new_from_org_id(&org_id);
+        let hosts = host_service.get_all(host_filter).await?;
+        let host_count = hosts.len() as i64;
+
+        let user_filter = StorableFilter::new_from_org_id(&org_id);
+        let users = user_service.get_all(user_filter).await?;
+        let user_count = users.len() as i64;
+
+        // Sync to HubSpot
+        self.sync_organization_metrics(org_id, network_count, host_count, user_count)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Get org_id from a network_id by looking up the network
+    pub async fn get_org_id_from_network(&self, network_id: &Uuid) -> Option<Uuid> {
+        let network_service = self.network_service.get()?;
+        if let Ok(Some(network)) = network_service.get_by_id(network_id).await {
+            Some(network.base.organization_id)
+        } else {
+            None
+        }
     }
 }

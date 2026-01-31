@@ -243,7 +243,7 @@ async fn bulk_delete_interfaces(
     let service = &state.services.interface_service;
 
     // Fetch all entities by the requested IDs
-    let entity_filter = StorableFilter::<Interface>::new().entity_ids(&ids);
+    let entity_filter = StorableFilter::<Interface>::new_from_entity_ids(&ids);
     let entities = service.get_all(entity_filter).await?;
 
     // Collect affected host IDs for renumbering

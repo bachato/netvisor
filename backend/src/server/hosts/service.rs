@@ -99,7 +99,7 @@ impl CrudService<Host> for HostService {
 
         tracing::trace!("Creating host {:?}", host);
 
-        let filter = StorableFilter::<Host>::new().network_ids(&[host.base.network_id]);
+        let filter = StorableFilter::<Host>::new_from_network_ids(&[host.base.network_id]);
         let all_hosts = self.get_all(filter).await?;
 
         // Find existing host by ID (Host::eq only compares IDs)
@@ -369,7 +369,7 @@ impl HostService {
         let services = self
             .service_service
             .get_all_ordered(
-                StorableFilter::<Service>::new().host_id(host_id),
+                StorableFilter::<Service>::new_from_host_ids(&[*host_id]),
                 "position ASC",
             )
             .await?;
@@ -395,7 +395,7 @@ impl HostService {
         let services = self
             .service_service
             .get_all_ordered(
-                StorableFilter::<Service>::new().host_ids(host_ids),
+                StorableFilter::<Service>::new_from_host_ids(host_ids),
                 "position ASC",
             )
             .await?;
@@ -616,9 +616,9 @@ impl HostService {
                 }
 
                 // Check by unique constraint (host_id, subnet_id, ip_address)
-                let filter = StorableFilter::<Interface>::new()
-                    .host_id(&interface.base.host_id)
-                    .subnet_id(&interface.base.subnet_id);
+                let filter =
+                    StorableFilter::<Interface>::new_from_host_ids(&[interface.base.host_id])
+                        .subnet_id(&interface.base.subnet_id);
                 let existing_by_key: Vec<Interface> =
                     self.interface_service.get_all(filter).await?;
                 if let Some(existing_iface) = existing_by_key
@@ -632,9 +632,9 @@ impl HostService {
                 // MAC fallback: find by (host_id, mac_address) when subnet differs
                 // This handles cases where subnet_id changed between discovery runs
                 if let Some(mac) = &interface.base.mac_address {
-                    let mac_filter = StorableFilter::<Interface>::new()
-                        .host_id(&interface.base.host_id)
-                        .mac_address(mac);
+                    let mac_filter =
+                        StorableFilter::<Interface>::new_from_host_ids(&[interface.base.host_id])
+                            .mac_address(mac);
                     let existing_by_mac: Vec<Interface> =
                         self.interface_service.get_all(mac_filter).await?;
                     if let Some(existing_iface) = existing_by_mac.into_iter().next() {
@@ -1283,7 +1283,7 @@ impl HostService {
             return Ok(None);
         }
 
-        let filter = StorableFilter::<Host>::new().network_ids(&[*network_id]);
+        let filter = StorableFilter::<Host>::new_from_network_ids(&[*network_id]);
         let all_hosts = self.get_all(filter).await?;
 
         if all_hosts.is_empty() {
@@ -1419,7 +1419,7 @@ impl HostService {
             return Err(ValidationError::new("Can't consolidate a host with itself").into());
         }
 
-        let daemon_filter = StorableFilter::<Daemon>::new().host_id(&other_host.id);
+        let daemon_filter = StorableFilter::<Daemon>::new_from_host_ids(&[other_host.id]);
 
         if self.daemon_service.get_one(daemon_filter).await?.is_some() {
             return Err(ValidationError::new(
@@ -1539,12 +1539,16 @@ impl HostService {
         // Get services for both hosts
         let destination_services = self
             .service_service
-            .get_all(StorableFilter::<Service>::new().host_id(&destination_host.id))
+            .get_all(StorableFilter::<Service>::new_from_host_ids(&[
+                destination_host.id,
+            ]))
             .await?;
 
         let other_services = self
             .service_service
-            .get_all(StorableFilter::<Service>::new().host_id(&other_host.id))
+            .get_all(StorableFilter::<Service>::new_from_host_ids(&[
+                other_host.id
+            ]))
             .await?;
 
         // Transfer services, updating binding IDs using the maps
@@ -1679,7 +1683,7 @@ impl HostService {
         );
 
         // Get all if_entries with unresolved LLDP/CDP neighbors in this network
-        let filter = StorableFilter::<IfEntry>::new().unresolved_lldp_in_network(network_id);
+        let filter = StorableFilter::<IfEntry>::new_for_unresolved_lldp_in_network(network_id);
         let unresolved = self.if_entry_service.get_all(filter).await?;
 
         let mut stats = LldpResolutionStats::default();
@@ -1748,7 +1752,7 @@ impl HostService {
         // Can't delete host with daemon
         if self
             .daemon_service
-            .get_one(StorableFilter::<Daemon>::new().host_id(id))
+            .get_one(StorableFilter::<Daemon>::new_from_host_ids(&[*id]))
             .await?
             .is_some()
         {

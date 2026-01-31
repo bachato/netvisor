@@ -80,36 +80,31 @@ impl LldpResolver for LldpResolverImpl {
         let mac_addr: mac_address::MacAddress = mac.parse().ok()?;
 
         // Find interface with this MAC in the network
-        let filter = StorableFilter::<Interface>::new()
-            .network_ids(&[network_id])
-            .mac_address(&mac_addr);
+        let filter =
+            StorableFilter::<Interface>::new_from_network_ids(&[network_id]).mac_address(&mac_addr);
         let interface = self.interface_service.get_one(filter).await.ok()??;
 
         Some(interface.base.host_id)
     }
 
     async fn find_host_by_ip(&self, ip: &IpAddr, network_id: Uuid) -> Option<Uuid> {
-        let filter = StorableFilter::<Interface>::new()
-            .network_ids(&[network_id])
-            .ip_address(*ip);
+        let filter =
+            StorableFilter::<Interface>::new_from_network_ids(&[network_id]).ip_address(*ip);
         let interface = self.interface_service.get_one(filter).await.ok()??;
 
         Some(interface.base.host_id)
     }
 
     async fn find_host_by_if_name(&self, name: &str, network_id: Uuid) -> Option<Uuid> {
-        let filter = StorableFilter::<IfEntry>::new()
-            .network_ids(&[network_id])
-            .if_descr(name);
+        let filter = StorableFilter::<IfEntry>::new_from_network_ids(&[network_id]).if_descr(name);
         let entry = self.if_entry_service.get_one(filter).await.ok()??;
 
         Some(entry.base.host_id)
     }
 
     async fn find_host_by_chassis_id(&self, chassis_id: &str, network_id: Uuid) -> Option<Uuid> {
-        let filter = StorableFilter::<Host>::new()
-            .network_ids(&[network_id])
-            .chassis_id(chassis_id);
+        let filter =
+            StorableFilter::<Host>::new_from_network_ids(&[network_id]).chassis_id(chassis_id);
         let host = self.host_storage.get_one(filter).await.ok()??;
 
         Some(host.id)
@@ -120,18 +115,15 @@ impl LldpResolver for LldpResolverImpl {
         let mac_addr: mac_address::MacAddress = mac.parse().ok()?;
 
         // Find if_entry with this MAC on the specified host
-        let filter = StorableFilter::<IfEntry>::new()
-            .host_id(&host_id)
-            .mac_address(&mac_addr);
+        let filter =
+            StorableFilter::<IfEntry>::new_from_host_ids(&[host_id]).mac_address(&mac_addr);
         let entry = self.if_entry_service.get_one(filter).await.ok()??;
 
         Some(entry.id)
     }
 
     async fn find_if_entry_by_name(&self, name: &str, host_id: Uuid) -> Option<Uuid> {
-        let filter = StorableFilter::<IfEntry>::new()
-            .host_id(&host_id)
-            .if_descr(name);
+        let filter = StorableFilter::<IfEntry>::new_from_host_ids(&[host_id]).if_descr(name);
         let entry = self.if_entry_service.get_one(filter).await.ok()??;
 
         Some(entry.id)
@@ -139,13 +131,11 @@ impl LldpResolver for LldpResolverImpl {
 
     async fn find_if_entry_by_ip(&self, ip: &IpAddr, host_id: Uuid) -> Option<Uuid> {
         // Find interface with this IP on the target host
-        let filter = StorableFilter::<Interface>::new()
-            .host_id(&host_id)
-            .ip_address(*ip);
+        let filter = StorableFilter::<Interface>::new_from_host_ids(&[host_id]).ip_address(*ip);
         let interface = self.interface_service.get_one(filter).await.ok()??;
 
         // Find IfEntry linked to this interface via interface_id FK
-        let filter = StorableFilter::<IfEntry>::new().interface_id(interface.id);
+        let filter = StorableFilter::<IfEntry>::new_from_interface_id(&interface.id);
         let entry = self.if_entry_service.get_one(filter).await.ok()??;
 
         Some(entry.id)

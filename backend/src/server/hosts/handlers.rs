@@ -197,7 +197,7 @@ async fn get_all_hosts(
         .organization_id()
         .ok_or_else(ApiError::organization_required)?;
 
-    let base_filter = StorableFilter::<Host>::new().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Host>::new_from_network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
 
     // Apply tag filter if specified
@@ -649,7 +649,7 @@ pub async fn delete_host(
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
     // Pre-validation: Can't delete a host with an associated daemon
-    let daemon_filter = StorableFilter::<Daemon>::new().host_id(&id);
+    let daemon_filter = StorableFilter::<Daemon>::new_from_host_ids(&[id]);
     if state
         .services
         .daemon_service
@@ -688,7 +688,7 @@ pub async fn bulk_delete_hosts(
 ) -> ApiResult<Json<ApiResponse<BulkDeleteResponse>>> {
     let daemon_service = &state.services.daemon_service;
 
-    let daemon_filter = StorableFilter::<Daemon>::new().host_ids(&ids);
+    let daemon_filter = StorableFilter::<Daemon>::new_from_host_ids(&ids);
 
     if !daemon_service.get_all(daemon_filter).await?.is_empty() {
         return Err(ApiError::conflict(
@@ -726,7 +726,7 @@ async fn export_hosts_zip(
         .ok_or_else(ApiError::organization_required)?;
 
     // Build host filter (same as CSV export)
-    let base_filter = StorableFilter::<Host>::new().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Host>::new_from_network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
 
     // Apply tag filter if specified
@@ -746,40 +746,26 @@ async fn export_hosts_zip(
         .services
         .interface_service
         .get_all(
-            StorableFilter::<Interface>::new()
-                .host_ids(&host_ids)
-                .network_ids(&network_ids),
+            StorableFilter::<Interface>::new_from_host_ids(&host_ids).network_ids(&network_ids),
         )
         .await?;
 
     let ports = state
         .services
         .port_service
-        .get_all(
-            StorableFilter::<Port>::new()
-                .host_ids(&host_ids)
-                .network_ids(&network_ids),
-        )
+        .get_all(StorableFilter::<Port>::new_from_host_ids(&host_ids).network_ids(&network_ids))
         .await?;
 
     let services = state
         .services
         .service_service
-        .get_all(
-            StorableFilter::<Service>::new()
-                .host_ids(&host_ids)
-                .network_ids(&network_ids),
-        )
+        .get_all(StorableFilter::<Service>::new_from_host_ids(&host_ids).network_ids(&network_ids))
         .await?;
 
     let if_entries = state
         .services
         .if_entry_service
-        .get_all(
-            StorableFilter::<IfEntry>::new()
-                .host_ids(&host_ids)
-                .network_ids(&network_ids),
-        )
+        .get_all(StorableFilter::<IfEntry>::new_from_host_ids(&host_ids).network_ids(&network_ids))
         .await?;
 
     // Build CSVs

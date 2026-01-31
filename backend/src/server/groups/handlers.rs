@@ -156,7 +156,7 @@ async fn get_all_groups(
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
-    let base_filter = StorableFilter::<Group>::new().network_ids(&network_ids);
+    let base_filter = StorableFilter::<Group>::new_from_network_ids(&network_ids);
     let filter = query.apply_to_filter(base_filter, &network_ids, organization_id);
 
     // Apply pagination
@@ -203,7 +203,7 @@ async fn create_group(
 ) -> ApiResult<Json<ApiResponse<Group>>> {
     // Custom validation: Check for service bindings on different networks
     for binding_id in &group.base.binding_ids {
-        let binding_id_filter = StorableFilter::<Binding>::new().entity_id(binding_id);
+        let binding_id_filter = StorableFilter::<Binding>::new_from_entity_id(binding_id);
 
         if let Some(binding) = state
             .services
@@ -245,7 +245,7 @@ async fn update_group(
 ) -> ApiResult<Json<ApiResponse<Group>>> {
     // Custom validation: Check for service bindings on different networks
     for binding_id in &group.base.binding_ids {
-        let binding_id_filter = StorableFilter::<Binding>::new().entity_id(binding_id);
+        let binding_id_filter = StorableFilter::<Binding>::new_from_entity_id(binding_id);
 
         if let Some(binding) = state
             .services

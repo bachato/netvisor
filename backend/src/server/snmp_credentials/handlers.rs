@@ -1,5 +1,6 @@
 use crate::server::auth::middleware::features::{BlockedInDemoMode, RequireFeature};
 use crate::server::auth::middleware::permissions::{Admin, Authorized, Viewer};
+use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
 use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
@@ -8,7 +9,7 @@ use crate::server::shared::handlers::traits::{
     BulkDeleteResponse, CrudHandlers, bulk_delete_handler, create_handler, delete_handler,
     update_handler,
 };
-use crate::server::shared::services::traits::CrudService;
+use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::traits::{Entity, Storable, Storage};
 use crate::server::shared::types::api::{
@@ -21,6 +22,7 @@ use crate::server::{
     shared::types::api::{ApiResponse, ApiResult},
 };
 use axum::{extract::State, response::Json};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::IntoParams;
@@ -243,7 +245,7 @@ async fn get_all_snmp_credentials(
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
-    let base_filter = StorableFilter::<SnmpCredential>::new().organization_id(&organization_id);
+    let base_filter = StorableFilter::<SnmpCredential>::new_from_org_id(&organization_id);
 
     let pagination = query.pagination();
     let filter = pagination.apply_to_filter(base_filter);
@@ -290,7 +292,7 @@ async fn get_all_snmp_credentials(
     security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn create_snmp_credential(
-    state: State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     auth: Authorized<Admin>,
     _demo_check: RequireFeature<BlockedInDemoMode>,
     Json(credential): Json<SnmpCredential>,
@@ -298,10 +300,10 @@ pub async fn create_snmp_credential(
     let organization_id = auth
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
+    let entity = auth.entity.clone();
 
     // Check for duplicate name
-    let name_filter = StorableFilter::<SnmpCredential>::new()
-        .organization_id(&organization_id)
+    let name_filter = StorableFilter::<SnmpCredential>::new_from_org_id(&organization_id)
         .name(credential.base.name.clone());
 
     if let Some(existing) = state
@@ -316,10 +318,39 @@ pub async fn create_snmp_credential(
         )));
     }
 
-    create_handler::<SnmpCredential>(
-        state,
+    let response = create_handler::<SnmpCredential>(
+        State(state.clone()),
         auth.into_permission::<crate::server::auth::middleware::permissions::Member>(),
         Json(credential),
     )
-    .await
+    .await?;
+
+    // Emit FirstSnmpCredentialCreated telemetry event if this is the first SNMP credential
+    if response.data.is_some() {
+        let organization = state
+            .services
+            .organization_service
+            .get_by_id(&organization_id)
+            .await?;
+
+        if let Some(organization) = organization
+            && organization.not_onboarded(&TelemetryOperation::FirstSnmpCredentialCreated)
+        {
+            state
+                .services
+                .snmp_credential_service
+                .event_bus()
+                .publish_telemetry(TelemetryEvent {
+                    id: Uuid::new_v4(),
+                    organization_id,
+                    operation: TelemetryOperation::FirstSnmpCredentialCreated,
+                    timestamp: Utc::now(),
+                    metadata: serde_json::json!({}),
+                    authentication: entity,
+                })
+                .await?;
+        }
+    }
+
+    Ok(response)
 }

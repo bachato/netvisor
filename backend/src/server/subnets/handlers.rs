@@ -166,7 +166,7 @@ async fn get_all_subnets(
         AuthenticatedEntity::Daemon { network_id, .. } => {
             // Daemons can only access subnets in their network
             // Return all results (no pagination applied)
-            let filter = StorableFilter::<Subnet>::new().network_ids(&[network_id]);
+            let filter = StorableFilter::<Subnet>::new_from_network_ids(&[network_id]);
             let service = Subnet::get_service(&state);
             let result = service.get_all(filter).await.map_err(|e| {
                 tracing::error!(
@@ -187,7 +187,7 @@ async fn get_all_subnets(
         _ => {
             // Users/API keys - use standard filter with query params
             let org_id = organization_id.ok_or_else(ApiError::organization_required)?;
-            let base_filter = StorableFilter::<Subnet>::new().network_ids(&network_ids);
+            let base_filter = StorableFilter::<Subnet>::new_from_network_ids(&network_ids);
             let filter = query.apply_to_filter(base_filter, &network_ids, org_id);
 
             // Apply pagination
@@ -326,7 +326,7 @@ async fn update_subnet(
 
     if current.base.cidr != subnet.base.cidr {
         // CIDR is changing - validate that all existing interfaces are within the new CIDR
-        let filter = StorableFilter::<Interface>::new().subnet_id(&id);
+        let filter = StorableFilter::<Interface>::new_from_subnet_id(&id);
         let interfaces = state
             .services
             .interface_service

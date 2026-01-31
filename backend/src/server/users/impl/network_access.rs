@@ -135,7 +135,7 @@ impl UserNetworkAccessStorage {
 
     /// Get all network IDs for a single user
     pub async fn get_for_user(&self, user_id: &Uuid) -> Result<Vec<Uuid>> {
-        let filter = StorableFilter::<UserNetworkAccess>::new().user_id(user_id);
+        let filter = StorableFilter::<UserNetworkAccess>::new_from_user_id(user_id);
         let access_records = self.storage.get_all(filter).await?;
         Ok(access_records.iter().map(|a| a.network_id()).collect())
     }
@@ -146,7 +146,7 @@ impl UserNetworkAccessStorage {
             return Ok(HashMap::new());
         }
 
-        let filter = StorableFilter::<UserNetworkAccess>::new().uuid_columns("user_id", user_ids);
+        let filter = StorableFilter::<UserNetworkAccess>::new_from_user_ids(user_ids);
         let access_records = self.storage.get_all(filter).await?;
 
         let mut result: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
@@ -166,7 +166,7 @@ impl UserNetworkAccessStorage {
         let mut tx = self.storage.begin_transaction().await?;
 
         // Delete existing access for this user
-        let filter = StorableFilter::<UserNetworkAccess>::new().user_id(user_id);
+        let filter = StorableFilter::<UserNetworkAccess>::new_from_user_id(user_id);
         tx.delete_by_filter(filter).await?;
 
         // Insert new access records
@@ -181,7 +181,7 @@ impl UserNetworkAccessStorage {
 
     /// Delete all network access for a user
     pub async fn delete_for_user(&self, user_id: &Uuid) -> Result<()> {
-        let filter = StorableFilter::<UserNetworkAccess>::new().user_id(user_id);
+        let filter = StorableFilter::<UserNetworkAccess>::new_from_user_id(user_id);
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }
@@ -196,8 +196,7 @@ impl UserNetworkAccessStorage {
 
     /// Remove a single network from a user's access
     pub async fn remove_network(&self, user_id: &Uuid, network_id: &Uuid) -> Result<()> {
-        let filter = StorableFilter::<UserNetworkAccess>::new()
-            .user_id(user_id)
+        let filter = StorableFilter::<UserNetworkAccess>::new_from_user_id(user_id)
             .uuid_column("network_id", network_id);
         self.storage.delete_by_filter(filter).await?;
         Ok(())

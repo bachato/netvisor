@@ -374,7 +374,7 @@ impl DiscoveryService {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Scheduler not initialized"))?;
 
-        let filter = StorableFilter::<Discovery>::new().scheduled_discovery();
+        let filter = StorableFilter::<Discovery>::new_for_scheduled_discoveries();
 
         let discoveries = self.discovery_storage.get_all(filter).await?;
         let count = discoveries.len();
