@@ -74,13 +74,13 @@
 	);
 	const advancedFieldDefs = fieldDefs.filter((d) => d.section);
 
-	// Get unique section names in order of appearance
-	const sectionNames = [...new Set(advancedFieldDefs.map((d) => d.section!))];
+	// Get unique section names in order of appearance (compare by return value, not function reference)
+	const sectionNames = [...new Set(advancedFieldDefs.map((d) => d.section!()))];
 
-	// Group advanced fields by section
+	// Group advanced fields by section (compare by return value)
 	const advancedSections = sectionNames.map((name) => ({
-		name,
-		fields: advancedFieldDefs.filter((d) => d.section === name)
+		name: () => name,
+		fields: advancedFieldDefs.filter((d) => d.section!() === name)
 	}));
 
 	// Track which sections are expanded
@@ -185,8 +185,24 @@
 			cmd += ` --user-id ${userId}`;
 		}
 
+		const mode = values['mode'] as string;
+
 		for (const def of fieldDefs) {
 			const value = values[def.id];
+
+			if (def.docsOnly) {
+				continue;
+			}
+
+			// Skip daemonUrl - only used for provisioning, not in daemon config
+			if (def.id === 'daemonUrl') {
+				continue;
+			}
+
+			// Skip daemonPort for DaemonPoll mode (server never connects to daemon)
+			if (def.id === 'daemonPort' && mode === 'daemon_poll') {
+				continue;
+			}
 
 			if (value === '' || value === null || value === undefined) {
 				continue;
@@ -232,8 +248,24 @@
 			envVars.push(`SCANOPY_USER_ID=${userId}`);
 		}
 
+		const mode = values['mode'] as string;
+
 		for (const def of fieldDefs) {
 			const value = values[def.id];
+
+			if (def.docsOnly) {
+				continue;
+			}
+
+			// Skip daemonUrl - only used for provisioning, not in daemon config
+			if (def.id === 'daemonUrl') {
+				continue;
+			}
+
+			// Skip daemonPort for DaemonPoll mode (server never connects to daemon)
+			if (def.id === 'daemonPort' && mode === 'daemon_poll') {
+				continue;
+			}
 
 			if (value === '' || value === null || value === undefined) {
 				continue;
@@ -306,6 +338,12 @@
 		return form;
 	}
 
+	// Export the daemon port value for parent components
+	export function getDaemonPort(): number {
+		const port = form.state.values['daemonPort'];
+		return typeof port === 'number' ? port : 60073;
+	}
+
 	// Check if form has validation errors (after fields have been validated)
 	let hasErrors = $derived.by(() => {
 		const fieldMeta = form.state.fieldMeta;
@@ -323,13 +361,31 @@
 	<!-- Basic Fields -->
 	{#each basicFieldDefs as def (def.id)}
 		{#if !def.showWhen || def.showWhen(formValues)}
-			{#if def.type === 'string'}
+			{#if def.docsOnly}
+				<div></div>
+			{:else if def.type === 'string'}
 				<form.Field name={def.id} validators={getValidators(def.id)}>
 					{#snippet children(field)}
 						<TextInput
 							label={def.label()}
 							{field}
 							id={def.id}
+							placeholder={String(
+								typeof def.placeholder === 'function' ? def.placeholder() : (def.placeholder ?? '')
+							)}
+							required={def.required ?? false}
+							helpText={def.helpText()}
+						/>
+					{/snippet}
+				</form.Field>
+			{:else if def.type === 'number'}
+				<form.Field name={def.id} validators={getValidators(def.id)}>
+					{#snippet children(field)}
+						<TextInput
+							label={def.label()}
+							{field}
+							id={def.id}
+							type="number"
 							placeholder={String(
 								typeof def.placeholder === 'function' ? def.placeholder() : (def.placeholder ?? '')
 							)}
@@ -378,65 +434,69 @@
 							<div class="text-secondary text-m mb-3 font-medium">{section.name()}</div>
 							<div class="grid grid-cols-2 gap-4">
 								{#each section.fields as def (def.id)}
-									{#if def.type === 'string'}
-										<form.Field name={def.id} validators={getValidators(def.id)}>
-											{#snippet children(field)}
-												<TextInput
-													label={def.label()}
-													{field}
-													id={def.id}
-													placeholder={String(
-														typeof def.placeholder === 'function'
-															? def.placeholder()
-															: (def.placeholder ?? '')
-													)}
-													helpText={def.helpText()}
-												/>
-											{/snippet}
-										</form.Field>
-									{:else if def.type === 'number'}
-										<form.Field name={def.id} validators={getValidators(def.id)}>
-											{#snippet children(field)}
-												<TextInput
-													label={def.label()}
-													{field}
-													id={def.id}
-													type="number"
-													placeholder={String(
-														typeof def.placeholder === 'function'
-															? def.placeholder()
-															: (def.placeholder ?? '')
-													)}
-													helpText={def.helpText()}
-												/>
-											{/snippet}
-										</form.Field>
-									{:else if def.type === 'select'}
-										<form.Field name={def.id}>
-											{#snippet children(field)}
-												<SelectInput
-													label={def.label()}
-													{field}
-													id={def.id}
-													options={(def.options ?? []).map((opt) => ({
-														value: opt.value,
-														label: opt.label()
-													}))}
-													helpText={def.helpText()}
-												/>
-											{/snippet}
-										</form.Field>
-									{:else if def.type === 'boolean'}
-										<form.Field name={def.id}>
-											{#snippet children(field)}
-												<Checkbox
-													label={def.label()}
-													{field}
-													id={def.id}
-													helpText={def.helpText()}
-												/>
-											{/snippet}
-										</form.Field>
+									{#if !def.showWhen || def.showWhen(formValues)}
+										{#if def.docsOnly}
+											<div></div>
+										{:else if def.type === 'string'}
+											<form.Field name={def.id} validators={getValidators(def.id)}>
+												{#snippet children(field)}
+													<TextInput
+														label={def.label()}
+														{field}
+														id={def.id}
+														placeholder={String(
+															typeof def.placeholder === 'function'
+																? def.placeholder()
+																: (def.placeholder ?? '')
+														)}
+														helpText={def.helpText()}
+													/>
+												{/snippet}
+											</form.Field>
+										{:else if def.type === 'number'}
+											<form.Field name={def.id} validators={getValidators(def.id)}>
+												{#snippet children(field)}
+													<TextInput
+														label={def.label()}
+														{field}
+														id={def.id}
+														type="number"
+														placeholder={String(
+															typeof def.placeholder === 'function'
+																? def.placeholder()
+																: (def.placeholder ?? '')
+														)}
+														helpText={def.helpText()}
+													/>
+												{/snippet}
+											</form.Field>
+										{:else if def.type === 'select'}
+											<form.Field name={def.id}>
+												{#snippet children(field)}
+													<SelectInput
+														label={def.label()}
+														{field}
+														id={def.id}
+														options={(def.options ?? []).map((opt) => ({
+															value: opt.value,
+															label: opt.label()
+														}))}
+														helpText={def.helpText()}
+													/>
+												{/snippet}
+											</form.Field>
+										{:else if def.type === 'boolean'}
+											<form.Field name={def.id}>
+												{#snippet children(field)}
+													<Checkbox
+														label={def.label()}
+														{field}
+														id={def.id}
+														helpText={def.helpText()}
+													/>
+												{/snippet}
+											</form.Field>
+										{/if}
 									{/if}
 								{/each}
 							</div>

@@ -33,7 +33,6 @@ use axum::Router;
 use chrono::Utc;
 use cidr::IpCidr;
 use cidr::Ipv4Cidr;
-use mac_address::MacAddress;
 use sqlx::PgPool;
 use std::net::IpAddr;
 use std::net::Ipv4Addr;
@@ -41,7 +40,6 @@ use std::sync::Arc;
 use testcontainers::{ContainerAsync, GenericImage, ImageExt, core::WaitFor, runners::AsyncRunner};
 use uuid::Uuid;
 
-pub mod compat;
 pub mod dependencies;
 
 pub const DAEMON_CONFIG_FIXTURE: &str = "src/tests/daemon_config.json";
@@ -99,16 +97,16 @@ pub fn host(network_id: &Uuid) -> Host {
         virtualization: None,
         hidden: false,
         tags: Vec::new(),
+        ..Default::default()
     })
 }
 
 pub fn interface(network_id: &Uuid, subnet_id: &Uuid) -> Interface {
-    let random_mac: [u8; 6] = std::array::from_fn(|_| fastrand::u8(1..=255));
     Interface::new(InterfaceBase {
         network_id: *network_id,
         subnet_id: *subnet_id,
         ip_address: IpAddr::V4(Ipv4Addr::new(192, 168, 1, 100)),
-        mac_address: Some(MacAddress::new(random_mac)),
+        mac_address: None, // MAC populated during ARP discovery
         position: 0,
         name: Some("eth0".to_string()),
         host_id: Uuid::nil(), // Placeholder - tests will set correct host_id
@@ -173,14 +171,16 @@ pub fn daemon(network_id: &Uuid, host_id: &Uuid) -> Daemon {
         tags: Vec::new(),
         name: "daemon".to_string(),
         url: "http://192.168.1.50:60073".to_string(),
-        last_seen: Utc::now(),
-        mode: DaemonMode::Push,
+        last_seen: Some(Utc::now()),
+        mode: DaemonMode::ServerPoll,
         capabilities: DaemonCapabilities {
             has_docker_socket: false,
             interfaced_subnet_ids: Vec::new(),
         },
         version: None,
         user_id: Uuid::nil(),
+        api_key_id: None,
+        is_unreachable: false,
     })
 }
 

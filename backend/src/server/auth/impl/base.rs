@@ -31,6 +31,15 @@ pub struct ProvisionUserParams {
 pub struct PendingNetworkSetup {
     pub name: String,
     pub network_id: Uuid,
+    /// Whether SNMP is enabled for this network
+    #[serde(default)]
+    pub snmp_enabled: bool,
+    /// SNMP version ("V2c" or "V3")
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snmp_version: Option<String>,
+    /// SNMP community string (for V2c)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snmp_community: Option<String>,
 }
 
 /// Setup data collected before registration (org name, networks, seed preference)
@@ -38,6 +47,15 @@ pub struct PendingNetworkSetup {
 pub struct PendingSetup {
     pub org_name: String,
     pub networks: Vec<PendingNetworkSetup>,
+    /// Use case selection (homelab, company, msp)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub use_case: Option<String>,
+    /// Company size selection
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub company_size: Option<String>,
+    /// Job title
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub job_title: Option<String>,
 }
 
 /// Daemon setup data collected before registration

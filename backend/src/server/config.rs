@@ -100,6 +100,9 @@ pub struct ServerCli {
 
     #[arg(long)]
     pub metrics_token: Option<String>,
+
+    #[arg(long)]
+    pub hubspot_api_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -135,6 +138,9 @@ pub struct ServerConfig {
 
     // Metrics
     pub metrics_token: Option<String>,
+
+    // HubSpot CRM integration
+    pub hubspot_api_key: Option<String>,
 
     // External service IP restrictions
     // Maps service name (lowercase) to list of allowed IPs/CIDRs
@@ -193,6 +199,7 @@ impl Default for ServerConfig {
             posthog_key: None,
             enforce_billing_for_testing: false,
             metrics_token: None,
+            hubspot_api_key: None,
             external_service_allowed_ips: HashMap::new(),
         }
     }
@@ -277,6 +284,9 @@ impl ServerConfig {
         }
         if let Some(metrics_token) = cli_args.metrics_token {
             figment = figment.merge(("metrics_token", metrics_token));
+        }
+        if let Some(hubspot_api_key) = cli_args.hubspot_api_key {
+            figment = figment.merge(("hubspot_api_key", hubspot_api_key));
         }
 
         let mut config: ServerConfig = figment

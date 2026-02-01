@@ -154,53 +154,60 @@
 	}
 </script>
 
-<ListConfigEditor bind:items={formData.ports}>
-	<svelte:fragment slot="list" let:items let:onEdit let:highlightedIndex>
-		<ListManager
-			label={common_ports()}
-			helpText={hosts_ports_helpText()}
-			placeholder={hosts_ports_placeholder()}
-			emptyMessage={hosts_ports_emptyMessage()}
-			allowReorder={false}
-			allowCreateNew={true}
-			itemClickAction="edit"
-			createNewLabel={hosts_ports_customPort()}
-			allowDuplicates={false}
-			options={selectablePorts}
-			{items}
-			optionDisplayComponent={PortTypeDisplay}
-			itemDisplayComponent={PortDisplay}
-			getItemContext={() => ({ currentServices, interfaces: formData.interfaces })}
-			onCreateNew={handleCreateNewPort}
-			onAdd={handleAddPort}
-			onRemove={handleRemovePort}
-			{onEdit}
-			{highlightedIndex}
-		/>
-	</svelte:fragment>
-
-	<svelte:fragment slot="config" let:selectedItem let:selectedIndex>
-		{#if selectedItem && selectedItem.type == 'Custom'}
-			{#key selectedItem.id}
-				<PortConfigPanel
-					port={selectedItem}
-					index={selectedIndex}
-					{form}
-					onChange={(updatedPort) => handlePortChange(updatedPort, selectedIndex)}
+<div class="flex min-h-0 flex-1 flex-col">
+	<div class="min-h-0 flex-1">
+		<ListConfigEditor bind:items={formData.ports}>
+			<svelte:fragment slot="list" let:items let:onEdit let:highlightedIndex>
+				<ListManager
+					label={common_ports()}
+					helpText={hosts_ports_helpText()}
+					placeholder={hosts_ports_placeholder()}
+					emptyMessage={hosts_ports_emptyMessage()}
+					allowReorder={false}
+					allowCreateNew={true}
+					itemClickAction="edit"
+					createNewLabel={hosts_ports_customPort()}
+					allowDuplicates={false}
+					options={selectablePorts}
+					{items}
+					optionDisplayComponent={PortTypeDisplay}
+					itemDisplayComponent={PortDisplay}
+					getItemContext={() => ({ currentServices, interfaces: formData.interfaces })}
+					onCreateNew={handleCreateNewPort}
+					onAdd={handleAddPort}
+					onRemove={handleRemovePort}
+					{onEdit}
+					{highlightedIndex}
 				/>
-			{/key}
-		{:else if selectedItem && selectedItem.type != 'Custom'}
-			<EntityConfigEmpty
-				title={hosts_ports_wellKnownTitle()}
-				subtitle={hosts_ports_wellKnownSubtitle()}
-			/>
-		{:else}
-			<EntityConfigEmpty title={hosts_ports_noSelected()} subtitle={hosts_ports_selectToConfig()} />
-		{/if}
-	</svelte:fragment>
-</ListConfigEditor>
+			</svelte:fragment>
 
-<EntityMetadataSection entities={formData.ports} showSummary={false} />
+			<svelte:fragment slot="config" let:selectedItem let:selectedIndex>
+				{#if selectedItem && selectedItem.type == 'Custom'}
+					{#key selectedItem.id}
+						<PortConfigPanel
+							port={selectedItem}
+							index={selectedIndex}
+							{form}
+							onChange={(updatedPort) => handlePortChange(updatedPort, selectedIndex)}
+						/>
+					{/key}
+				{:else if selectedItem && selectedItem.type != 'Custom'}
+					<EntityConfigEmpty
+						title={hosts_ports_wellKnownTitle()}
+						subtitle={hosts_ports_wellKnownSubtitle()}
+					/>
+				{:else}
+					<EntityConfigEmpty
+						title={hosts_ports_noSelected()}
+						subtitle={hosts_ports_selectToConfig()}
+					/>
+				{/if}
+			</svelte:fragment>
+		</ListConfigEditor>
+	</div>
+
+	<EntityMetadataSection entities={formData.ports} />
+</div>
 
 <ConfirmationDialog
 	isOpen={showDeleteConfirmation}
@@ -212,4 +219,5 @@
 	variant="warning"
 	onConfirm={confirmDelete}
 	onCancel={cancelDelete}
+	onClose={() => (showDeleteConfirmation = false)}
 />

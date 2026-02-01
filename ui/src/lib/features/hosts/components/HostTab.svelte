@@ -5,12 +5,12 @@
 		CreateHostWithServicesRequest,
 		UpdateHostWithServicesRequest
 	} from '../types/base';
-	import { toHostPrimitive } from '../queries';
 	import TabHeader from '$lib/shared/components/layout/TabHeader.svelte';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
 	import HostEditor from './HostEditModal/HostEditor.svelte';
 	import HostConsolidationModal from './HostConsolidationModal.svelte';
+	import HostExportModal from './HostExportModal.svelte';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import { defineFields } from '$lib/shared/components/data/types';
 	import { Plus } from 'lucide-svelte';
@@ -131,6 +131,14 @@
 		// Reset to page 1 is handled by DataControls
 	}
 
+	// Export modal state
+	let showExportModal = $state(false);
+	let exportParams = $derived({
+		tag_ids: tagIds.length > 0 ? tagIds : undefined,
+		order_by: orderBy,
+		order_direction: orderDirection
+	});
+
 	let showHostEditor = $state(false);
 	let editingHost = $state<Host | null>(null);
 
@@ -226,17 +234,6 @@
 		}
 	}
 
-	async function handleHostCreateAndContinue(data: CreateHostWithServicesRequest) {
-		try {
-			const result = await createHostMutation.mutateAsync(data);
-			// Keep modal open and switch to edit mode with the created host
-			// Extract Host primitive from HostResponse
-			editingHost = toHostPrimitive(result);
-		} catch {
-			// Error handled by mutation
-		}
-	}
-
 	async function handleHostUpdate(data: UpdateHostWithServicesRequest) {
 		try {
 			await updateHostMutation.mutateAsync(data);
@@ -323,6 +320,9 @@
 			onPageChange={handlePageChange}
 			onOrderChange={handleOrderChange}
 			onTagFilterChange={handleTagFilterChange}
+			onExportClick={() => {
+				showExportModal = true;
+			}}
 		>
 			{#snippet children(
 				item: Host,
@@ -349,7 +349,7 @@
 	isOpen={showHostEditor}
 	host={editingHost}
 	onCreate={handleHostCreate}
-	onCreateAndContinue={handleHostCreateAndContinue}
+	onDelete={handleDeleteHost}
 	onUpdate={handleHostUpdate}
 	onClose={handleCloseHostEditor}
 />
@@ -359,4 +359,10 @@
 	{otherHost}
 	onConsolidate={handleConsolidateHosts}
 	onClose={() => (showHostConsolidationModal = false)}
+/>
+
+<HostExportModal
+	isOpen={showExportModal}
+	onClose={() => (showExportModal = false)}
+	{exportParams}
 />

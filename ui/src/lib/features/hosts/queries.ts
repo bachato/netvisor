@@ -27,7 +27,8 @@ import type {
 	PortInput,
 	ServiceInput,
 	BindingInput,
-	AllInterfaces
+	AllInterfaces,
+	IfEntry
 } from './types/base';
 import type { Service } from '$lib/features/services/types/base';
 import type { components } from '$lib/api/schema';
@@ -36,41 +37,32 @@ import type { components } from '$lib/api/schema';
 export type { Host, HostResponse, HostFormData, Interface, Port };
 
 /**
- * Extract Host primitive from HostResponse (removes embedded children)
+ * Extract Host primitive from HostResponse (excludes children).
+ * Uses rest spread to automatically include all Host fields.
+ * If HostResponse adds new child arrays, TypeScript will error
+ * because Host type won't have those fields.
  */
 export function toHostPrimitive(response: HostResponse): Host {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const { interfaces, ports, services, if_entries, ...hostFields } = response;
+
+	// Normalize optional fields from HostResponse to required nullable fields in Host
 	return {
-		id: response.id,
-		created_at: response.created_at,
-		updated_at: response.updated_at,
-		name: response.name,
-		network_id: response.network_id,
-		hostname: response.hostname ?? null,
-		description: response.description ?? null,
-		source: response.source,
-		virtualization: response.virtualization ?? null,
-		hidden: response.hidden,
-		tags: response.tags
+		...hostFields,
+		description: hostFields.description ?? null,
+		hostname: hostFields.hostname ?? null,
+		virtualization: hostFields.virtualization ?? null
 	};
 }
 
 /**
- * Extract Host primitive from HostFormData (removes embedded children)
+ * Extract Host primitive from HostFormData (excludes children).
+ * Uses rest spread to automatically include all Host fields.
  */
 export function formDataToHostPrimitive(formData: HostFormData): Host {
-	return {
-		id: formData.id,
-		created_at: formData.created_at,
-		updated_at: formData.updated_at,
-		name: formData.name,
-		network_id: formData.network_id,
-		hostname: formData.hostname,
-		description: formData.description,
-		source: formData.source,
-		virtualization: formData.virtualization,
-		hidden: formData.hidden,
-		tags: formData.tags
-	};
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const { interfaces, ports, services, if_entries, ...hostFields } = formData;
+	return hostFields;
 }
 
 /**
@@ -207,14 +199,39 @@ export function useHostsQuery(optionsOrGetter: HostQueryOptions | (() => HostQue
 
 				const responses = data.data;
 
-				// Extract and populate child caches
+				// Extract child data from current response
 				const allInterfaces = responses.flatMap((r) => r.interfaces);
 				const allPorts = responses.flatMap((r) => r.ports);
 				const allServices = responses.flatMap((r) => r.services);
+				const allIfEntries = responses.flatMap((r) => r.if_entries);
 
-				queryClient.setQueryData(queryKeys.interfaces.all, allInterfaces);
-				queryClient.setQueryData(queryKeys.ports.all, allPorts);
-				queryClient.setQueryData(queryKeys.services.all, allServices);
+				// Get host IDs from current response to merge correctly
+				const currentHostIds = new Set(responses.map((r) => r.id));
+
+				// Merge: keep data from other hosts, update current hosts
+				queryClient.setQueryData<Interface[]>(queryKeys.interfaces.all, (old) => {
+					if (!old) return allInterfaces;
+					const others = old.filter((i) => !currentHostIds.has(i.host_id));
+					return [...others, ...allInterfaces];
+				});
+
+				queryClient.setQueryData<Port[]>(queryKeys.ports.all, (old) => {
+					if (!old) return allPorts;
+					const others = old.filter((p) => !currentHostIds.has(p.host_id));
+					return [...others, ...allPorts];
+				});
+
+				queryClient.setQueryData<Service[]>(queryKeys.services.all, (old) => {
+					if (!old) return allServices;
+					const others = old.filter((s) => !currentHostIds.has(s.host_id));
+					return [...others, ...allServices];
+				});
+
+				queryClient.setQueryData<IfEntry[]>(queryKeys.ifEntries.all, (old) => {
+					if (!old) return allIfEntries;
+					const others = old.filter((e) => !currentHostIds.has(e.host_id));
+					return [...others, ...allIfEntries];
+				});
 
 				// Return host primitives with pagination metadata
 				return {
@@ -290,6 +307,9 @@ export function useCreateHostMutation() {
 			);
 			queryClient.setQueryData<Service[]>(queryKeys.services.all, (old) =>
 				old ? [...old, ...response.services] : response.services
+			);
+			queryClient.setQueryData<IfEntry[]>(queryKeys.ifEntries.all, (old) =>
+				old ? [...old, ...response.if_entries] : response.if_entries
 			);
 		}
 	}));
@@ -384,6 +404,12 @@ export function useUpdateHostMutation() {
 				const others = old?.filter((s) => s.host_id !== hostId) ?? [];
 				return [...others, ...response.services];
 			});
+
+			// Replace ifEntries for this host
+			queryClient.setQueryData<IfEntry[]>(queryKeys.ifEntries.all, (old) => {
+				const others = old?.filter((e) => e.host_id !== hostId) ?? [];
+				return [...others, ...response.if_entries];
+			});
 		}
 	}));
 }
@@ -421,6 +447,10 @@ export function useDeleteHostMutation() {
 				queryKeys.services.all,
 				(old) => old?.filter((s) => s.host_id !== id) ?? []
 			);
+			queryClient.setQueryData<IfEntry[]>(
+				queryKeys.ifEntries.all,
+				(old) => old?.filter((e) => e.host_id !== id) ?? []
+			);
 		}
 	}));
 }
@@ -457,6 +487,10 @@ export function useBulkDeleteHostsMutation() {
 			queryClient.setQueryData<Service[]>(
 				queryKeys.services.all,
 				(old) => old?.filter((s) => !idSet.has(s.host_id)) ?? []
+			);
+			queryClient.setQueryData<IfEntry[]>(
+				queryKeys.ifEntries.all,
+				(old) => old?.filter((e) => !idSet.has(e.host_id)) ?? []
 			);
 		}
 	}));
@@ -509,6 +543,11 @@ export function useConsolidateHostsMutation() {
 					old?.filter((s) => s.host_id !== otherHostId && s.host_id !== response.id) ?? [];
 				return [...others, ...response.services];
 			});
+			queryClient.setQueryData<IfEntry[]>(queryKeys.ifEntries.all, (old) => {
+				const others =
+					old?.filter((e) => e.host_id !== otherHostId && e.host_id !== response.id) ?? [];
+				return [...others, ...response.if_entries];
+			});
 
 			if (otherHostName) {
 				pushSuccess(`Consolidated host "${otherHostName}" into host "${response.name}"`);
@@ -541,12 +580,22 @@ export function hydrateHostToFormData(
 	const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
 	const allPorts = queryClient.getQueryData<Port[]>(queryKeys.ports.all) ?? [];
 	const allServices = queryClient.getQueryData<Service[]>(queryKeys.services.all) ?? [];
+	const allIfEntries = queryClient.getQueryData<IfEntry[]>(queryKeys.ifEntries.all) ?? [];
 
 	return {
 		...host,
 		interfaces: allInterfaces.filter((i) => i.host_id === host.id),
 		ports: allPorts.filter((p) => p.host_id === host.id),
-		services: allServices.filter((s) => s.host_id === host.id)
+		services: allServices.filter((s) => s.host_id === host.id),
+		if_entries: allIfEntries.filter((e) => e.host_id === host.id),
+		// SNMP fields from host
+		sys_descr: host.sys_descr ?? null,
+		sys_object_id: host.sys_object_id ?? null,
+		sys_location: host.sys_location ?? null,
+		sys_contact: host.sys_contact ?? null,
+		management_url: host.management_url ?? null,
+		chassis_id: host.chassis_id ?? null,
+		snmp_credential_id: host.snmp_credential_id ?? null
 	};
 }
 
@@ -577,7 +626,16 @@ export function createEmptyHostFormData(defaultNetworkId?: string): HostFormData
 		},
 		virtualization: null,
 		network_id: defaultNetworkId ?? '',
-		hidden: false
+		hidden: false,
+		// SNMP fields (populated by discovery)
+		sys_descr: null,
+		sys_object_id: null,
+		sys_location: null,
+		sys_contact: null,
+		management_url: null,
+		chassis_id: null,
+		snmp_credential_id: null,
+		if_entries: []
 	};
 }
 

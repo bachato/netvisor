@@ -22,6 +22,7 @@ impl EventSubscriber for MetricsService {
                 Event::Entity(e) => e.entity_type.discriminant().to_string(),
                 Event::Auth(_) => "auth".to_string(),
                 Event::Telemetry(_) => "telemetry".to_string(),
+                Event::Discovery(_) => "discovery".to_string(),
             };
 
             metrics::counter!(

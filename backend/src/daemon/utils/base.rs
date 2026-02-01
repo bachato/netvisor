@@ -23,32 +23,16 @@ use uuid::Uuid;
 
 pub const SCAN_TIMEOUT: Duration = Duration::from_millis(800);
 
-/// Describes concurrent operations in the discovery pipeline that consume file descriptors.
-/// Used to calculate optimal deep scan concurrency.
-#[derive(Debug, Clone, Default)]
-pub struct ConcurrentPipelineOps {
-    /// Number of ARP datalink channels open (2 FDs each: tx + rx)
-    pub arp_subnet_count: usize,
-    /// Number of concurrent hosts in non-interfaced discovery port scan
-    pub non_interfaced_scan_concurrency: usize,
-    /// Number of discovery ports being scanned per non-interfaced host
-    pub discovery_ports_count: usize,
-    /// Batch size for non-interfaced port scanning
-    pub port_scan_batch_size: usize,
-}
-
-impl ConcurrentPipelineOps {
-    /// Calculate total FDs consumed by concurrent pipeline operations
-    pub fn estimated_fd_usage(&self) -> usize {
-        // ARP channels: 2 FDs per subnet (tx + rx)
-        let arp_fds = self.arp_subnet_count * 2;
-
-        // Non-interfaced discovery scan: concurrent hosts * min(batch_size, discovery_ports)
-        let ports_per_host = self.port_scan_batch_size.min(self.discovery_ports_count);
-        let non_interfaced_fds = self.non_interfaced_scan_concurrency * ports_per_host;
-
-        arp_fds + non_interfaced_fds
-    }
+/// Parameters for scan concurrency, including both concurrent hosts and port batch size.
+/// These values must be calculated together to ensure total FD usage stays within limits.
+/// Previously, batch size was calculated independently which caused FD exhaustion when
+/// concurrent_scans * port_batch_size exceeded available file descriptors.
+#[derive(Debug, Clone)]
+pub struct ScanConcurrencyParams {
+    /// Number of hosts to scan concurrently
+    pub concurrent_scans: usize,
+    /// Port batch size per host (number of ports scanned in parallel per host)
+    pub port_batch_size: usize,
 }
 
 /// Cross-platform system utilities trait
@@ -368,111 +352,66 @@ pub trait DaemonUtils {
     ///
     /// # Arguments
     /// * `port_batch_size` - Number of ports scanned concurrently per host in deep scan
-    /// * `concurrent_ops` - Description of other concurrent operations consuming FDs
+    /// * `arp_subnet_count` - Number of ARP datalink channels currently open (2 FDs each)
     fn get_optimal_deep_scan_concurrency(
         &self,
         port_batch_size: usize,
-        concurrent_ops: ConcurrentPipelineOps,
+        arp_subnet_count: usize,
     ) -> Result<usize, Error>;
 
-    async fn get_optimal_port_batch_size(&self) -> Result<usize, Error> {
-        let fd_limit = Self::get_fd_limit()?;
-
-        // Reserve file descriptors for:
-        // - stdin, stdout, stderr (3)
-        // - HTTP client connections for endpoints (50)
-        // - Docker socket and other daemon operations (50)
-        // - Buffer for safety (100)
-        let reserved = 203;
-
-        let available = fd_limit.saturating_sub(reserved);
-
-        // Calculate optimal batch size
-        let optimal = if available < 50 {
-            // Very constrained system (like macOS default of 256)
-            tracing::warn!(
-                "Low file descriptor limit detected ({}). Using minimal batch size of 20. \
-                Consider increasing limit for better performance.",
-                fd_limit
-            );
-            20
-        } else if available < 500 {
-            // Moderate system
-            available / 2 // Use half of available to be conservative
-        } else {
-            // High-limit system (Linux default ~8000+)
-            // Cap at 1000 for reasonable performance without overwhelming target
-            std::cmp::min(available, 1000)
-        };
-
-        tracing::trace!(
-            "File descriptor limit: {}, reserved: {}, available: {}, port batch size: {}",
-            fd_limit,
-            reserved,
-            available,
-            optimal
-        );
-
-        Ok(optimal)
-    }
-
-    /// Get optimal number of concurrent host scans
-    /// Host-prioritized: maximize concurrent hosts, then optimize port batch
+    /// Get optimal number of concurrent host scans and port batch size.
+    /// Batch-prioritized: use configured batch size, then calculate concurrent hosts.
+    /// Returns both values since they must be calculated together to stay within FD limits.
     async fn get_optimal_concurrent_scans(
         &self,
         concurrency_config_value: usize,
-    ) -> Result<usize, Error> {
+        port_batch_config_value: usize,
+    ) -> Result<ScanConcurrencyParams, Error> {
         let fd_limit = Self::get_fd_limit()?;
 
         // Reserve FDs for daemon operations
         let reserved = 203;
         let available = fd_limit.saturating_sub(reserved);
 
-        // Target concurrent host scans (prefer more hosts)
-        let target_concurrent_hosts = if available < 500 {
-            5 // Very constrained
-        } else if available < 2000 {
-            15 // Moderate
-        } else if available < 5000 {
-            30 // Good
-        } else {
-            50 // Excellent
-        };
-
-        // Calculate FD usage per host
+        // FD usage per host (besides port batch)
         let endpoint_fds_per_host = 25;
         let overhead_per_host = 20;
+        let fixed_fds_per_host = endpoint_fds_per_host + overhead_per_host;
 
-        // Calculate what port batch size we can afford with target concurrent hosts
-        let available_per_host = available / target_concurrent_hosts;
-        let port_batch_per_host =
-            available_per_host.saturating_sub(endpoint_fds_per_host + overhead_per_host);
+        // Use configured batch size, clamped to reasonable bounds
+        let port_batch_size = port_batch_config_value.clamp(16, 1000);
 
-        // Ensure port batch is reasonable (min 10, max 200)
-        let port_batch_bounded = port_batch_per_host.clamp(10, 200);
-
-        // Recalculate actual concurrent hosts we can support with this port batch
-        let fds_per_host = port_batch_bounded + endpoint_fds_per_host + overhead_per_host;
-        let actual_concurrent = available / fds_per_host;
+        // Calculate how many concurrent hosts we can afford with this batch size
+        let fds_per_host = port_batch_size + fixed_fds_per_host;
+        let calculated_concurrent = available / fds_per_host;
 
         // Bound concurrent hosts (min 1, max 50)
-        let optimal_concurrent = actual_concurrent.clamp(1, 50);
+        let optimal_concurrent = calculated_concurrent.clamp(1, 50);
 
-        let result = if concurrency_config_value != 15 {
-            // User override - respect it
+        let concurrent_scans = if concurrency_config_value != 15 {
+            // User override - respect it but warn if it exceeds budget
+            let max_safe = available / fds_per_host;
+            if concurrency_config_value > max_safe {
+                tracing::warn!(
+                    configured = %concurrency_config_value,
+                    max_safe = %max_safe,
+                    fd_limit = %fd_limit,
+                    "Configured concurrent_scans exceeds FD budget, may cause EMFILE errors"
+                );
+            }
             tracing::info!(
                 "Using configured concurrent_scans={} (automatic would be {}, \
                  with port_batch={})",
                 concurrency_config_value,
                 optimal_concurrent,
-                port_batch_bounded
+                port_batch_size
             );
             concurrency_config_value
         } else {
             // Use automatic
             tracing::info!(
                 concurrent_scans = %optimal_concurrent,
-                port_batch = %port_batch_bounded,
+                port_batch = %port_batch_size,
                 fd_limit = %fd_limit,
                 fd_available = %available,
                 fds_per_host = %fds_per_host,
@@ -481,14 +420,19 @@ pub trait DaemonUtils {
             optimal_concurrent
         };
 
-        if result < 5 {
+        if concurrent_scans < 5 {
             tracing::warn!(
                 fd_limit = %fd_limit,
-                "Very low concurrency. Consider increasing for better performance.",
+                concurrent_scans = %concurrent_scans,
+                port_batch = %port_batch_size,
+                "Low concurrency due to FD limits. Consider increasing ulimit or reducing port_scan_batch_size.",
             );
         }
 
-        Ok(result)
+        Ok(ScanConcurrencyParams {
+            concurrent_scans,
+            port_batch_size,
+        })
     }
 }
 

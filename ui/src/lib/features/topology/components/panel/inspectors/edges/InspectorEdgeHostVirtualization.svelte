@@ -7,15 +7,12 @@
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import { useServicesQuery } from '$lib/features/services/queries';
 
 	let { edge, vmServiceId }: { edge: Edge; vmServiceId: string } = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
 	const topologiesQuery = useTopologiesQuery();
-	const servicesQuery = useServicesQuery();
-	let servicesData = $derived(servicesQuery.data?.items ?? []);
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let topology = $derived(
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
@@ -42,9 +39,10 @@
 		<div class="card">
 			<EntityDisplayWrapper
 				context={{
-					services: servicesData.filter((s) =>
-						hypervisorHost ? s.host_id == hypervisorHost.id : false
-					)
+					services:
+						topology?.services.filter((s) =>
+							hypervisorHost ? s.host_id == hypervisorHost.id : false
+						) ?? []
 				}}
 				item={hypervisorHost}
 				displayComponent={HostDisplay}

@@ -5,6 +5,7 @@ use reqwest::StatusCode;
 use scanopy::server::auth::r#impl::api::{
     LoginRequest, NetworkSetup, RegisterRequest, SetupRequest, SetupResponse,
 };
+use scanopy::server::daemons::r#impl::api::ProvisionDaemonResponse;
 use scanopy::server::daemons::r#impl::base::Daemon;
 use scanopy::server::networks::r#impl::Network;
 use scanopy::server::organizations::r#impl::base::Organization;
@@ -20,11 +21,15 @@ use std::fmt::Display;
 use std::process::{Child, Command};
 use uuid::Uuid;
 
-/// Database URL for test database (exposed on port 5435 by docker-compose.dev.yml)
+/// Database URL for test database (exposed on port 5435 by docker-compose.test.yml)
 const TEST_DATABASE_URL: &str = "postgres://postgres:password@localhost:5435/scanopy";
 
 pub const BASE_URL: &str = "http://localhost:60072";
 pub const TEST_PASSWORD: &str = "TestPassword123!";
+/// ServerPoll daemon URL for test client (localhost - accessible from host)
+pub const SERVERPOLL_DAEMON_URL: &str = "http://localhost:60074";
+/// ServerPoll daemon URL for server (Docker internal network)
+const SERVERPOLL_DAEMON_URL_INTERNAL: &str = "http://daemon-serverpoll:60074";
 
 // =============================================================================
 // Container Management
@@ -44,11 +49,27 @@ impl ContainerManager {
     pub fn start(&mut self) -> Result<(), String> {
         println!("Starting containers with docker compose...");
 
+        // First, bring down any existing containers and remove volumes
+        // This ensures a clean database for each test run
+        // Clean up old containers but preserve volumes (cargo-cache, rust-target, etc.)
+        // This makes subsequent test runs much faster since dependencies are already compiled
+        println!("  Cleaning up old containers...");
+        let _ = Command::new("docker")
+            .args([
+                "compose",
+                "-f",
+                "docker-compose.test.yml",
+                "down",
+                "--remove-orphans",
+            ])
+            .current_dir("..")
+            .output();
+
         let status = Command::new("docker")
             .args([
                 "compose",
                 "-f",
-                "docker-compose.dev.yml",
+                "docker-compose.test.yml",
                 "up",
                 "--build",
                 "--force-recreate",
@@ -83,7 +104,7 @@ impl ContainerManager {
             .args([
                 "compose",
                 "-f",
-                "docker-compose.dev.yml",
+                "docker-compose.test.yml",
                 "down",
                 "-v",
                 "--rmi",
@@ -203,6 +224,19 @@ impl TestClient {
             .map_err(|e| format!("PUT {} failed: {}", path, e))?;
 
         self.parse_response(response, &format!("PUT {}", path))
+            .await
+    }
+
+    /// POST request with no body
+    pub async fn post_empty<T: DeserializeOwned>(&self, path: &str) -> Result<T, String> {
+        let response = self
+            .client
+            .post(format!("{}{}", BASE_URL, path))
+            .send()
+            .await
+            .map_err(|e| format!("POST {} failed: {}", path, e))?;
+
+        self.parse_response(response, &format!("POST {}", path))
             .await
     }
 
@@ -415,6 +449,9 @@ pub async fn setup_authenticated_user(client: &TestClient) -> Result<User, Strin
         organization_name: "My Organization".to_string(),
         networks: vec![NetworkSetup {
             name: "My Network".to_string(),
+            snmp_enabled: false,
+            snmp_version: None,
+            snmp_community: None,
         }],
     };
 
@@ -470,13 +507,71 @@ pub async fn wait_for_daemon(client: &TestClient) -> Result<Daemon, String> {
             return Err("No daemons registered yet".to_string());
         }
 
-        if daemons.len() != 1 {
-            return Err(format!("Expected 1 daemon, found {}", daemons.len()));
-        }
-
-        Ok(daemons.into_iter().next().unwrap())
+        // Find the DaemonPoll daemon (the one that self-registered)
+        daemons
+            .into_iter()
+            .find(|d| d.base.name == "scanopy-daemon")
+            .ok_or_else(|| "DaemonPoll daemon not found".to_string())
     })
     .await
+}
+
+/// Provision and initialize the ServerPoll daemon.
+///
+/// This follows the proper ServerPoll provisioning flow:
+/// 1. Call POST /api/v1/daemons/provision on the server to create daemon record + get API key
+/// 2. Call POST /api/initialize on the daemon to configure it with the API key
+///
+/// Returns the provisioned daemon response (includes daemon record and API key).
+pub async fn provision_serverpoll_daemon(
+    client: &TestClient,
+    network_id: Uuid,
+) -> Result<ProvisionDaemonResponse, String> {
+    println!("\n=== Provisioning ServerPoll Daemon ===");
+
+    // Step 1: Provision daemon on server (creates record + generates API key)
+    // Use internal URL so server can reach daemon via Docker network
+    let provision_response: ProvisionDaemonResponse = client
+        .post(
+            "/api/v1/daemons/provision",
+            &serde_json::json!({
+                "name": "scanopy-daemon-serverpoll",
+                "network_id": network_id,
+                "url": SERVERPOLL_DAEMON_URL_INTERNAL
+            }),
+        )
+        .await?;
+
+    println!(
+        "✅ Daemon provisioned on server (id: {})",
+        provision_response.daemon.id
+    );
+
+    // Step 2: Initialize daemon with network_id and API key
+    println!("  Initializing ServerPoll daemon with credentials...");
+
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| format!("Failed to create client: {}", e))?;
+
+    let response = http_client
+        .post(format!("{}/api/initialize", SERVERPOLL_DAEMON_URL))
+        .json(&serde_json::json!({
+            "network_id": network_id,
+            "api_key": provision_response.daemon_api_key
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("Failed to initialize daemon: {}", e))?;
+
+    if !response.status().is_success() {
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("Daemon initialization failed: {}", body));
+    }
+
+    println!("✅ ServerPoll daemon initialized");
+    Ok(provision_response)
 }
 
 // =============================================================================
@@ -529,5 +624,28 @@ pub fn reset_plan_to_default() -> Result<(), String> {
     let plan_json = r#"{"type": "Community", "rate": "Month", "base_cents": 0, "trial_days": 0}"#;
     let sql = format!("UPDATE organizations SET plan = '{}';", plan_json);
     exec_sql(&sql)?;
+    Ok(())
+}
+
+/// Clear all discovery data to provide a clean slate between test runs.
+///
+/// This is useful for:
+/// - Running discovery with multiple daemon modes without data pollution
+/// - Preparing for compat tests that need to replay fixtures with specific IDs
+///
+/// Deletion order respects FK constraints:
+/// bindings → services → ports → interfaces → hosts → subnets
+pub fn clear_discovery_data() -> Result<(), String> {
+    println!("  Clearing discovery data...");
+
+    // Delete in FK order
+    exec_sql("DELETE FROM bindings")?;
+    exec_sql("DELETE FROM services")?;
+    exec_sql("DELETE FROM ports")?;
+    exec_sql("DELETE FROM interfaces")?;
+    exec_sql("DELETE FROM hosts")?;
+    exec_sql("DELETE FROM subnets")?;
+
+    println!("  ✅ Discovery data cleared");
     Ok(())
 }

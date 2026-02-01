@@ -5,6 +5,7 @@ import {
 	ipAddressFormat,
 	min,
 	url,
+	urlWithoutPort,
 	type Validator
 } from '$lib/shared/components/forms/validators';
 import * as m from '$lib/paraglide/messages';
@@ -28,7 +29,6 @@ interface FieldDef {
 }
 
 export const fieldDefs: FieldDef[] = [
-	// Docs-only fields (not shown in UI form, but needed for documentation)
 	{
 		id: 'serverUrl',
 		label: () => m.daemons_config_serverUrl(),
@@ -74,13 +74,13 @@ export const fieldDefs: FieldDef[] = [
 		id: 'mode',
 		label: () => m.daemons_config_mode(),
 		type: 'select',
-		defaultValue: 'Push',
+		defaultValue: 'daemon_poll',
 		cliFlag: '--mode',
 		envVar: 'SCANOPY_MODE',
 		helpText: () => m.daemons_config_modeHelp(),
 		options: [
-			{ label: () => m.common_push(), value: 'Push' },
-			{ label: () => m.common_pull(), value: 'Pull' }
+			{ label: () => m.daemons_mode_daemonPoll(), value: 'daemon_poll' },
+			{ label: () => m.daemons_mode_serverPoll(), value: 'server_poll' }
 		],
 		disabled: (isNew) => !isNew
 	},
@@ -91,12 +91,12 @@ export const fieldDefs: FieldDef[] = [
 		defaultValue: '',
 		cliFlag: '--daemon-url',
 		envVar: 'SCANOPY_DAEMON_URL',
-		helpText: () => m.daemons_config_daemonUrlHelp(),
-		placeholder: () => m.common_placeholderDaemonUrl(),
-		validators: [url],
-		showWhen: (values) => values.mode === 'Push'
+		helpText: () => m.daemons_config_daemonUrlHelpNoPort(),
+		placeholder: () => m.common_placeholderDaemonUrlNoPort(),
+		validators: [required, urlWithoutPort],
+		required: true,
+		showWhen: (values) => values.mode === 'server_poll'
 	},
-	// Network section
 	{
 		id: 'daemonPort',
 		label: () => m.common_port(),
@@ -104,10 +104,11 @@ export const fieldDefs: FieldDef[] = [
 		placeholder: 60073,
 		cliFlag: '--daemon-port',
 		envVar: 'SCANOPY_DAEMON_PORT',
-		helpText: () => m.daemons_config_portHelp(),
-		section: () => m.daemons_config_sectionServerConnection(),
-		validators: [portRangeValidation]
+		helpText: () => m.daemons_config_portHelpServerPoll(),
+		validators: [portRangeValidation],
+		showWhen: (values) => values.mode === 'server_poll'
 	},
+	// Network section
 	{
 		id: 'bindAddress',
 		label: () => m.daemons_config_bindAddress(),
@@ -118,7 +119,8 @@ export const fieldDefs: FieldDef[] = [
 		helpText: () => m.daemons_config_bindAddressHelp(),
 		placeholder: '0.0.0.0',
 		section: () => m.daemons_config_sectionServerConnection(),
-		validators: [ipAddressFormat]
+		validators: [ipAddressFormat],
+		showWhen: (values) => values.mode === 'server_poll'
 	},
 	{
 		id: 'allowSelfSignedCerts',
@@ -128,7 +130,8 @@ export const fieldDefs: FieldDef[] = [
 		cliFlag: '--allow-self-signed-certs',
 		envVar: 'SCANOPY_ALLOW_SELF_SIGNED_CERTS',
 		helpText: () => m.daemons_config_allowSelfSignedCertsHelp(),
-		section: () => m.daemons_config_sectionServerConnection()
+		section: () => m.daemons_config_sectionServerConnection(),
+		showWhen: (values) => values.mode === 'daemon_poll'
 	},
 	// Performance section
 	{
@@ -159,6 +162,7 @@ export const fieldDefs: FieldDef[] = [
 		section: () => m.common_performance(),
 		validators: [min(0), max(300)]
 	},
+	// Docker Discovery
 	{
 		id: 'dockerProxy',
 		label: () => m.daemons_config_dockerProxy(),
@@ -225,13 +229,36 @@ export const fieldDefs: FieldDef[] = [
 		type: 'number',
 		cliFlag: '--arp-retries',
 		envVar: 'SCANOPY_ARP_RETRIES',
+		placeholder: 2,
 		helpText: () => m.daemons_config_arpRetriesHelp(),
 		section: () => m.daemons_config_sectionNetworkDiscovery()
+	},
+	{
+		id: 'scan_rate_pps',
+		label: () => m.daemons_config_portScanPacketsPerSecond(),
+		type: 'number',
+		cliFlag: '--scan-rate-pps',
+		envVar: 'SCANOPY_SCAN_RATE_PPS',
+		placeholder: 500,
+		helpText: () => m.daemons_config_portScanPacketsPerSecondHelp(),
+		section: () => m.daemons_config_sectionNetworkDiscovery()
+	},
+	{
+		id: 'port_scan_batch_size',
+		label: () => m.daemons_config_portScanBatchSize(),
+		type: 'number',
+		cliFlag: '--port-scan-batch-size',
+		envVar: 'SCANOPY_PORT_SCAN_BATCH_SIZE',
+		placeholder: 200,
+		helpText: () => m.daemons_config_portScanBatchSizeHelp(),
+		section: () => m.daemons_config_sectionNetworkDiscovery(),
+		validators: [min(16), max(1000)]
 	},
 	{
 		id: 'arp_rate_pps',
 		label: () => m.daemons_config_arpPacketsPerSecond(),
 		type: 'number',
+		placeholder: 50,
 		cliFlag: '--arp-rate-pps',
 		envVar: 'SCANOPY_ARP_RATE_PPS',
 		helpText: () => m.daemons_config_arpPacketsPerSecondHelp(),

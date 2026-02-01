@@ -13,7 +13,7 @@
 	import { isContainerSubnet } from '$lib/features/subnets/queries';
 	import {
 		useTopologiesQuery,
-		useUpdateTopologyMutation,
+		useUpdateNodeResizeMutation,
 		selectedTopologyId,
 		topologyOptions,
 		selectedNode as globalSelectedNode,
@@ -42,7 +42,7 @@
 	// Try to get topology from context (for share/embed pages), fallback to TanStack query
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
 	const topologiesQuery = useTopologiesQuery();
-	const updateTopologyMutation = useUpdateTopologyMutation();
+	const updateNodeResizeMutation = useUpdateNodeResizeMutation();
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let topology = $derived(
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
@@ -111,12 +111,20 @@
 			let roundedX = Math.round(params.x / 25) * 25;
 			let roundedY = Math.round(params.y / 25) * 25;
 
+			// Update local state for immediate feedback
 			node.size.x = roundedWidth;
 			node.size.y = roundedHeight;
 			node.position.x = roundedX;
 			node.position.y = roundedY;
 
-			await updateTopologyMutation.mutateAsync(topology);
+			// Send lightweight update to server (fixes HTTP 413 for large topologies)
+			await updateNodeResizeMutation.mutateAsync({
+				topologyId: topology.id,
+				networkId: topology.network_id,
+				nodeId: node.id,
+				size: { x: roundedWidth, y: roundedHeight },
+				position: { x: roundedX, y: roundedY }
+			});
 		}
 	}
 </script>

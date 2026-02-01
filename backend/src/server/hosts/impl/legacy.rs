@@ -331,6 +331,13 @@ impl LegacyHostWithServicesRequest {
                 virtualization: None,
                 hidden: host.hidden,
                 tags: host.tags,
+                sys_descr: None,
+                sys_object_id: None,
+                sys_location: None,
+                sys_contact: None,
+                management_url: None,
+                chassis_id: None,
+                snmp_credential_id: None,
             },
         };
 
@@ -339,6 +346,7 @@ impl LegacyHostWithServicesRequest {
             interfaces,
             ports,
             services,
+            if_entries: vec![], // Legacy requests don't include SNMP data
         }
     }
 }
@@ -458,6 +466,7 @@ impl<'de> Deserialize<'de> for HostCreateRequestBody {
 /// Response type that serializes as the appropriate format based on request type.
 #[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
+#[allow(clippy::large_enum_variant)] // Temporary backwards-compat module, will be removed
 pub enum HostCreateResponse {
     /// New format response
     New(HostResponse),

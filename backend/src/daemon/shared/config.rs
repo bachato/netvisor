@@ -11,7 +11,7 @@ use std::{path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::server::daemons::r#impl::base::DaemonMode;
+use crate::server::daemons::r#impl::{api::DaemonCapabilities, base::DaemonMode};
 
 #[derive(Parser)]
 #[command(name = "scanopy-daemon")]
@@ -25,7 +25,7 @@ pub struct DaemonCli {
     #[arg(long)]
     network_id: Option<String>,
 
-    /// Port for daemon to listen on
+    /// Port the daemon listens on. Combined with daemon URL for server to connect.
     #[arg(short, long)]
     daemon_port: Option<u16>,
 
@@ -69,7 +69,7 @@ pub struct DaemonCli {
     #[arg(long)]
     docker_proxy_ssl_chain: Option<String>,
 
-    /// Select whether the daemon will Pull work from the server or have work Pushed to it. If set to Push, you will need to ensure that network you are deploying the daemon on can be reached by the server by opening/forwarding the port to the daemon, and provide the Daemon URL where the server should try to reach the daemon. If set to Pull, no port opening/forwarding is needed
+    /// DaemonPoll: Daemon connects to server; works behind NAT/firewall without opening ports. ServerPoll: Server connects to daemon, for deployments where daemon cannot make outbound connections - requires providing Daemon URL
     #[arg(long)]
     mode: Option<DaemonMode>,
 
@@ -77,7 +77,7 @@ pub struct DaemonCli {
     #[arg(long)]
     allow_self_signed_certs: Option<bool>,
 
-    /// Public URL where server can reach daemon in Push mode. Defaults to auto-detected IP + Daemon Port if not set
+    /// Base URL where server can reach daemon (without port). Port is specified separately.
     #[arg(long)]
     daemon_url: Option<String>,
 
@@ -96,6 +96,14 @@ pub struct DaemonCli {
     /// Maximum ARP packets per second (default: 50, go more conservative for networks with enterprise switches)
     #[arg(long)]
     arp_rate_pps: Option<u32>,
+
+    /// Maximum port scan probes per second (default: 500, controls rate of TCP/UDP connection attempts to avoid overwhelming target hosts)
+    #[arg(long)]
+    scan_rate_pps: Option<u32>,
+
+    /// Number of ports scanned concurrently per host. Higher values scan faster but may overwhelm some hosts
+    #[arg(long)]
+    port_scan_batch_size: Option<usize>,
 
     /// Restrict daemon to specific network interface(s). Comma-separated for multiple (e.g., eth0,eth1). Leave empty for all interfaces. Only applies to network discovery
     #[arg(long, value_delimiter = ',')]
@@ -151,9 +159,17 @@ pub struct AppConfig {
     pub arp_retries: u32,
     #[serde(default = "default_arp_rate_pps")]
     pub arp_rate_pps: u32,
+    #[serde(default = "default_scan_rate_pps")]
+    pub scan_rate_pps: u32,
+    #[serde(default = "default_port_scan_batch_size")]
+    pub port_scan_batch_size: usize,
     /// Network interfaces to restrict scanning to. Empty means all interfaces.
     #[serde(default)]
-    pub interface_filter: Vec<String>,
+    pub interfaces: Vec<String>,
+    /// Daemon capabilities (docker socket availability, interfaced subnets)
+    /// Updated after SelfReport discovery completes
+    #[serde(default)]
+    pub capabilities: DaemonCapabilities,
 }
 
 fn default_arp_retries() -> u32 {
@@ -162,6 +178,14 @@ fn default_arp_retries() -> u32 {
 
 fn default_arp_rate_pps() -> u32 {
     50 // Default: 50 pps, safe for most enterprise switches
+}
+
+fn default_scan_rate_pps() -> u32 {
+    500 // Default: 500 pps (2ms between probes), safe for most devices
+}
+
+fn default_port_scan_batch_size() -> usize {
+    200 // Default: 200 ports concurrently per host
 }
 
 impl Default for AppConfig {
@@ -181,7 +205,7 @@ impl Default for AppConfig {
             user_id: None,
             concurrent_scans: 15,
             docker_proxy: None,
-            mode: DaemonMode::Push,
+            mode: DaemonMode::ServerPoll,
             server_port: None,
             server_target: None,
             allow_self_signed_certs: false,
@@ -192,7 +216,10 @@ impl Default for AppConfig {
             use_npcap_arp: false,
             arp_retries: default_arp_retries(),
             arp_rate_pps: default_arp_rate_pps(),
-            interface_filter: Vec::new(),
+            interfaces: Vec::new(),
+            scan_rate_pps: default_scan_rate_pps(),
+            port_scan_batch_size: default_port_scan_batch_size(),
+            capabilities: DaemonCapabilities::default(),
         }
     }
 }
@@ -232,10 +259,20 @@ impl AppConfig {
             figment = figment.merge(Json::file(&config_path));
         }
 
-        // Add environment variables
+        // Handle SCANOPY_INTERFACES specially - Figment doesn't auto-split comma-separated values
+        if let Ok(interfaces_str) = std::env::var("SCANOPY_INTERFACES") {
+            let interfaces: Vec<String> = interfaces_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+            figment = figment.merge(("interfaces", interfaces));
+        }
+
+        // Add environment variables (interfaces handled above to support comma-separated values)
         figment = figment
-            .merge(Env::prefixed("NETVISOR_"))
-            .merge(Env::prefixed("SCANOPY_"));
+            .merge(Env::prefixed("NETVISOR_").ignore(&["INTERFACES"]))
+            .merge(Env::prefixed("SCANOPY_").ignore(&["INTERFACES"]));
 
         for (key, _) in std::env::vars() {
             if key.starts_with("NETVISOR_") {
@@ -306,8 +343,14 @@ impl AppConfig {
         if let Some(arp_rate_pps) = cli_args.arp_rate_pps {
             figment = figment.merge(("arp_rate_pps", arp_rate_pps));
         }
+        if let Some(scan_rate_pps) = cli_args.scan_rate_pps {
+            figment = figment.merge(("scan_rate_pps", scan_rate_pps));
+        }
+        if let Some(port_scan_batch_size) = cli_args.port_scan_batch_size {
+            figment = figment.merge(("port_scan_batch_size", port_scan_batch_size));
+        }
         if let Some(interface) = cli_args.interfaces {
-            figment = figment.merge(("interface_filter", interface));
+            figment = figment.merge(("interfaces", interface));
         }
 
         let config: AppConfig = figment
@@ -533,9 +576,30 @@ impl ConfigStore {
         Ok(config.arp_rate_pps)
     }
 
-    pub async fn get_interface_filter(&self) -> Result<Vec<String>> {
+    pub async fn get_scan_rate_pps(&self) -> Result<u32> {
         let config = self.config.read().await;
-        Ok(config.interface_filter.clone())
+        Ok(config.scan_rate_pps)
+    }
+
+    pub async fn get_port_scan_batch_size(&self) -> Result<usize> {
+        let config = self.config.read().await;
+        Ok(config.port_scan_batch_size)
+    }
+
+    pub async fn get_interfaces(&self) -> Result<Vec<String>> {
+        let config = self.config.read().await;
+        Ok(config.interfaces.clone())
+    }
+
+    pub async fn get_capabilities(&self) -> Result<DaemonCapabilities> {
+        let config = self.config.read().await;
+        Ok(config.capabilities.clone())
+    }
+
+    pub async fn set_capabilities(&self, capabilities: DaemonCapabilities) -> Result<()> {
+        let mut config = self.config.write().await;
+        config.capabilities = capabilities;
+        self.save(&config.clone()).await
     }
 }
 
@@ -547,7 +611,7 @@ mod tests {
 
     use crate::daemon::shared::config::DaemonCli;
     use crate::{daemon::shared::config::AppConfig, tests::DAEMON_CONFIG_FIXTURE};
-    use clap::CommandFactory;
+    use clap::{CommandFactory, Parser};
     use std::collections::HashMap;
 
     #[test]
@@ -698,5 +762,38 @@ mod tests {
 
     fn normalize_text(s: &str) -> String {
         s.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
+    /// Regression test for https://github.com/scanopy/scanopy/issues/463
+    /// Verifies that SCANOPY_INTERFACES env var correctly populates the interfaces config field.
+    /// The bug was that CLI field name (interfaces) didn't match config struct field name (interface_filter),
+    /// so Figment looked for SCANOPY_INTERFACE_FILTER instead of SCANOPY_INTERFACES.
+    #[test]
+    #[serial]
+    fn test_scanopy_interfaces_env_var() {
+        // Save and clear any existing value
+        let original = std::env::var("SCANOPY_INTERFACES").ok();
+        // SAFETY: This test runs serially and restores the original value after
+        unsafe { std::env::set_var("SCANOPY_INTERFACES", "eth0,enp6s18") };
+
+        // Load config with empty CLI args (env var should take effect)
+        let cli = DaemonCli::parse_from::<[&str; 0], &str>([]);
+        let config = AppConfig::load(cli).expect("Failed to load config");
+
+        // Restore original value
+        // SAFETY: This test runs serially
+        unsafe {
+            if let Some(val) = original {
+                std::env::set_var("SCANOPY_INTERFACES", val);
+            } else {
+                std::env::remove_var("SCANOPY_INTERFACES");
+            }
+        }
+
+        assert_eq!(
+            config.interfaces,
+            vec!["eth0", "enp6s18"],
+            "SCANOPY_INTERFACES env var should populate interfaces field"
+        );
     }
 }

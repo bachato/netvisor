@@ -9,7 +9,7 @@ use crate::server::organizations::r#impl::base::Organization;
 use crate::server::shared::handlers::traits::{CrudHandlers, update_handler};
 use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::StorableFilter;
-use crate::server::shared::storage::traits::Storable;
+use crate::server::shared::storage::traits::{Entity, Storable};
 use crate::server::shared::types::api::ApiResponse;
 use crate::server::shared::types::api::ApiResult;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, EmptyApiResponse};
@@ -37,7 +37,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 #[utoipa::path(
     get,
     path = "",
-    tag = "organizations",
+    tag = Organization::ENTITY_NAME_PLURAL,
     responses(
         (status = 200, description = "Organization details", body = ApiResponse<Organization>),
         (status = 404, description = "Organization not found", body = ApiErrorResponse),
@@ -63,7 +63,7 @@ pub async fn get_organization(
 #[utoipa::path(
     put,
     path = "/{id}",
-    tag = "organizations",
+    tag = Organization::ENTITY_NAME_PLURAL,
     params(("id" = Uuid, Path, description = "Organization ID")),
     request_body = String,
     responses(
@@ -102,7 +102,7 @@ pub async fn update_org_name(
 #[utoipa::path(
     post,
     path = "/{id}/reset",
-    tags = ["organizations", "internal"],
+    tags = [Organization::ENTITY_NAME_PLURAL, "internal"],
     params(("id" = Uuid, Path, description = "Organization ID")),
     responses(
         (status = 200, description = "Organization reset", body = EmptyApiResponse),
@@ -143,7 +143,7 @@ pub async fn reset(
 #[utoipa::path(
     post,
     path = "/{id}/populate-demo",
-    tags = ["organizations", "internal"],
+    tags = [Organization::ENTITY_NAME_PLURAL, "internal"],
     params(("id" = Uuid, Path, description = "Organization ID")),
     responses(
         (status = 200, description = "Demo data populated", body = EmptyApiResponse),
@@ -223,9 +223,26 @@ pub async fn populate_demo_data(
             .await?;
     }
 
+    // 3.5 SNMP Credentials (depends on organization)
+    for credential in demo_data.snmp_credentials {
+        state
+            .services
+            .snmp_credential_service
+            .create(credential, entity.clone())
+            .await?;
+    }
+
     // 4. Hosts with Services - collect created services for group generation
     let mut all_created_services: Vec<Service> = Vec::new();
     for host_with_services in demo_data.hosts_with_services {
+        // Match if_entries for this host by host_id
+        let host_if_entries: Vec<crate::server::if_entries::r#impl::base::IfEntry> = demo_data
+            .if_entries
+            .iter()
+            .filter(|e| e.base.host_id == host_with_services.host.id)
+            .cloned()
+            .collect();
+
         let host_response = state
             .services
             .host_service
@@ -234,6 +251,7 @@ pub async fn populate_demo_data(
                 host_with_services.interfaces,
                 host_with_services.ports,
                 host_with_services.services,
+                host_if_entries,
                 entity.clone(),
             )
             .await?;
@@ -304,7 +322,7 @@ async fn reset_organization_data(
     organization_id: &Uuid,
     auth: AuthenticatedEntity,
 ) -> Result<(), ApiError> {
-    let org_filter = StorableFilter::<Network>::new().organization_id(organization_id);
+    let org_filter = StorableFilter::<Network>::new_from_org_id(organization_id);
     let network_ids: Vec<Uuid> = state
         .services
         .network_service
@@ -373,7 +391,7 @@ async fn reset_organization_data(
         .await?;
 
     // Delete non-owner users
-    let user_filter = StorableFilter::<User>::new().organization_id(organization_id);
+    let user_filter = StorableFilter::<User>::new_from_org_id(organization_id);
     let non_owner_user_ids: Vec<Uuid> = state
         .services
         .user_service

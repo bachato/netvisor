@@ -2,6 +2,7 @@
 	"errors_auth_api_key_required": "API key required",
 	"errors_auth_daemon_key_not_created": "Daemon is trying to register with an API key that has not yet been created",
 	"errors_auth_daemon_required": "Daemon context required",
+	"errors_auth_demo_mode": "This action is disabled in demo mode",
 	"errors_auth_invalid_credentials": "Invalid email or password",
 	"errors_auth_not_authenticated": "Not authenticated",
 	"errors_auth_oidc_not_configured": "OIDC not configured for this organization",

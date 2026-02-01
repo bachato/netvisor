@@ -323,9 +323,9 @@ where
         authentication: AuthenticatedEntity,
     ) -> Result<usize, anyhow::Error> {
         let filter = if T::is_network_keyed() {
-            StorableFilter::<T>::new().network_ids(network_ids)
+            StorableFilter::<T>::new_from_network_ids(network_ids)
         } else {
-            StorableFilter::<T>::new().organization_id(organization_id)
+            StorableFilter::<T>::new_from_org_id(organization_id)
         };
 
         // Get entities for event publishing before deletion
@@ -379,7 +379,7 @@ where
 {
     /// Get all entities for a single parent
     async fn get_for_parent(&self, parent_id: &Uuid) -> Result<Vec<T>, anyhow::Error> {
-        let filter = StorableFilter::<T>::new().uuid_column(T::parent_column(), parent_id);
+        let filter = StorableFilter::<T>::new_from_uuid_column(T::parent_column(), parent_id);
         self.get_all(filter).await
     }
 
@@ -392,7 +392,7 @@ where
             return Ok(HashMap::new());
         }
 
-        let filter = StorableFilter::<T>::new().uuid_columns(T::parent_column(), parent_ids);
+        let filter = StorableFilter::<T>::new_from_uuids_column(T::parent_column(), parent_ids);
         let entities = self.get_all(filter).await?;
         // Note: get_all already hydrates tags, no need to call bulk_hydrate_tags again
 
@@ -473,7 +473,7 @@ where
         parent_id: &Uuid,
         authentication: AuthenticatedEntity,
     ) -> Result<usize, anyhow::Error> {
-        let filter = StorableFilter::<T>::new().uuid_column(T::parent_column(), parent_id);
+        let filter = StorableFilter::<T>::new_from_uuid_column(T::parent_column(), parent_id);
 
         let entities = self.storage().get_all(filter.clone()).await?;
 

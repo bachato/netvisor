@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -10,10 +11,25 @@ use crate::server::{
     },
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
         types::entities::EntitySource,
     },
 };
+
+/// CSV row representation for Host export
+#[derive(Serialize)]
+pub struct HostCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub hostname: Option<String>,
+    pub description: Option<String>,
+    pub network_id: Uuid,
+    pub source: String,
+    pub hidden: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Host {
     type BaseData = HostBase;
@@ -68,6 +84,13 @@ impl Storable for Host {
                     source,
                     virtualization,
                     tags: _, // Stored in entity_tags junction table
+                    sys_descr,
+                    sys_object_id,
+                    sys_location,
+                    sys_contact,
+                    management_url,
+                    chassis_id,
+                    snmp_credential_id,
                 },
         } = self.clone();
 
@@ -83,6 +106,13 @@ impl Storable for Host {
                 "hostname",
                 "hidden",
                 "virtualization",
+                "sys_descr",
+                "sys_object_id",
+                "sys_location",
+                "sys_contact",
+                "management_url",
+                "chassis_id",
+                "snmp_credential_id",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -95,6 +125,13 @@ impl Storable for Host {
                 SqlValue::OptionalString(hostname),
                 SqlValue::Bool(hidden),
                 SqlValue::OptionalHostVirtualization(virtualization),
+                SqlValue::OptionalString(sys_descr),
+                SqlValue::OptionalString(sys_object_id),
+                SqlValue::OptionalString(sys_location),
+                SqlValue::OptionalString(sys_contact),
+                SqlValue::OptionalString(management_url),
+                SqlValue::OptionalString(chassis_id),
+                SqlValue::OptionalUuid(snmp_credential_id),
             ],
         ))
     }
@@ -121,22 +158,46 @@ impl Storable for Host {
                 hidden: row.get("hidden"),
                 virtualization,
                 tags: Vec::new(), // Hydrated from entity_tags junction table
+                sys_descr: row.get("sys_descr"),
+                sys_object_id: row.get("sys_object_id"),
+                sys_location: row.get("sys_location"),
+                sys_contact: row.get("sys_contact"),
+                management_url: row.get("management_url"),
+                chassis_id: row.get("chassis_id"),
+                snmp_credential_id: row.get("snmp_credential_id"),
             },
         })
     }
 }
 
 impl Entity for Host {
+    type CsvRow = HostCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        HostCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            hostname: self.base.hostname.clone(),
+            description: self.base.description.clone(),
+            network_id: self.base.network_id,
+            source: format!("{:?}", self.base.source),
+            hidden: self.base.hidden,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Host
     }
 
-    fn entity_name_singular() -> &'static str {
-        "host"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Host";
+    const ENTITY_NAME_PLURAL: &'static str = "Hosts";
+    const ENTITY_DESCRIPTION: &'static str =
+        "Network hosts (devices). Manage discovered or manually created hosts on your network.";
 
-    fn entity_name_plural() -> &'static str {
-        "hosts"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::NetworkInfrastructure
     }
 
     fn network_id(&self) -> Option<Uuid> {

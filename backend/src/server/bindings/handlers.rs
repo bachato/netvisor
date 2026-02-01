@@ -12,6 +12,7 @@ use crate::server::shared::handlers::query::BindingQuery;
 use crate::server::shared::handlers::traits::{CrudHandlers, create_handler, update_handler};
 use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::StorableFilter;
+use crate::server::shared::storage::traits::Entity;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, ApiResponse, ApiResult};
 impl CrudHandlers for Binding {
     type Service = BindingService;
@@ -24,10 +25,11 @@ impl CrudHandlers for Binding {
 
 mod generated {
     use super::*;
-    crate::crud_get_all_handler!(Binding, "bindings", "binding");
-    crate::crud_get_by_id_handler!(Binding, "bindings", "binding");
-    crate::crud_delete_handler!(Binding, "bindings", "binding");
-    crate::crud_bulk_delete_handler!(Binding, "bindings");
+    crate::crud_get_all_handler!(Binding);
+    crate::crud_get_by_id_handler!(Binding);
+    crate::crud_delete_handler!(Binding);
+    crate::crud_bulk_delete_handler!(Binding);
+    crate::crud_export_csv_handler!(Binding);
 }
 
 /// Validates that a binding doesn't conflict with existing bindings.
@@ -42,12 +44,13 @@ async fn validate_no_binding_type_conflict(
 ) -> Result<(), ApiError> {
     let service_id = binding.service_id();
 
+    let filter = StorableFilter::<Binding>::new_from_network_ids(&[binding.base.network_id])
+        .service_id(&service_id);
+    let existing = state.services.binding_service.get_all(filter).await?;
+
     match binding.base.binding_type {
         BindingType::Interface { interface_id } => {
             // Check for conflicting port bindings: same interface OR all-interfaces
-            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
-            let existing = state.services.binding_service.get_all(filter).await?;
-
             for existing_binding in existing {
                 if exclude_id == Some(existing_binding.id) {
                     continue;
@@ -72,9 +75,6 @@ async fn validate_no_binding_type_conflict(
             ..
         } => {
             // Check for conflicting interface binding on same interface
-            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
-            let existing = state.services.binding_service.get_all(filter).await?;
-
             for existing_binding in existing {
                 if exclude_id == Some(existing_binding.id) {
                     continue;
@@ -95,9 +95,6 @@ async fn validate_no_binding_type_conflict(
             interface_id: None, ..
         } => {
             // Port binding on all interfaces: conflicts with ANY interface binding
-            let filter = StorableFilter::<Binding>::new().service_id(&service_id);
-            let existing = state.services.binding_service.get_all(filter).await?;
-
             for existing_binding in existing {
                 if exclude_id == Some(existing_binding.id) {
                     continue;
@@ -118,7 +115,7 @@ async fn validate_no_binding_type_conflict(
     Ok(())
 }
 
-/// Create a new binding
+/// Create a new Binding
 ///
 /// Creates a binding that associates a service with a port or interface.
 ///
@@ -140,7 +137,7 @@ async fn validate_no_binding_type_conflict(
 #[utoipa::path(
     post,
     path = "",
-    tag = "bindings",
+    tag = Binding::ENTITY_NAME_PLURAL,
     request_body = Binding,
     responses(
         (status = 200, description = "Binding created (superseded bindings may be removed)", body = ApiResponse<Binding>),
@@ -164,7 +161,8 @@ async fn create_binding(
     } = &binding.base.binding_type
     {
         let service_id = binding.service_id();
-        let filter = StorableFilter::<Binding>::new().service_id(&service_id);
+        let filter = StorableFilter::<Binding>::new_from_network_ids(&[binding.network_id()])
+            .service_id(&service_id);
         let existing = state.services.binding_service.get_all(filter).await?;
 
         for existing_binding in existing {
@@ -192,7 +190,7 @@ async fn create_binding(
     create_handler::<Binding>(State(state), auth, Json(binding)).await
 }
 
-/// Update a binding
+/// Update a Binding
 ///
 /// Updates an existing binding. The same conflict detection rules from binding creation apply.
 ///
@@ -203,7 +201,7 @@ async fn create_binding(
 #[utoipa::path(
     put,
     path = "/{id}",
-    tag = "bindings",
+    tag = Binding::ENTITY_NAME_PLURAL,
     params(("id" = Uuid, Path, description = "Binding ID")),
     request_body = Binding,
     responses(
@@ -232,4 +230,5 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
 }

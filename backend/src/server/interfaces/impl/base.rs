@@ -21,8 +21,8 @@ pub struct InterfaceBase {
     pub subnet_id: Uuid,
     #[schema(value_type = String)]
     pub ip_address: IpAddr,
+    /// MAC address discovered from ARP, SNMP, or Docker - immutable once set
     #[schema(value_type = Option<String>)]
-    #[schema(required)]
     pub mac_address: Option<MacAddress>,
     #[schema(required)]
     pub name: Option<String>,

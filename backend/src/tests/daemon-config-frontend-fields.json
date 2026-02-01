@@ -9,19 +9,19 @@
     "id": "mode",
     "cliFlag": "--mode",
     "envVar": "SCANOPY_MODE",
-    "helpText": "Select whether the daemon will Pull work from the server or have work Pushed to it. If set to Push, you will need to ensure that network you are deploying the daemon on can be reached by the server by opening/forwarding the port to the daemon, and provide the Daemon URL where the server should try to reach the daemon. If set to Pull, no port opening/forwarding is needed"
+    "helpText": "DaemonPoll: Daemon connects to server; works behind NAT/firewall without opening ports. ServerPoll: Server connects to daemon, for deployments where daemon cannot make outbound connections - requires providing Daemon URL"
   },
   {
     "id": "daemon_url",
     "cliFlag": "--daemon-url",
     "envVar": "SCANOPY_DAEMON_URL",
-    "helpText": "Public URL where server can reach daemon in Push mode. Defaults to auto-detected IP + Daemon Port if not set"
+    "helpText": "Base URL where server can reach daemon (without port). Port is specified separately"
   },
   {
     "id": "daemon_port",
     "cliFlag": "--daemon-port",
     "envVar": "SCANOPY_DAEMON_PORT",
-    "helpText": "Port for daemon to listen on"
+    "helpText": "Port the daemon listens on. Combined with daemon URL for server to connect"
   },
   {
     "id": "bind_address",
@@ -82,6 +82,18 @@
     "cliFlag": "--arp-retries",
     "envVar": "SCANOPY_ARP_RETRIES",
     "helpText": "Number of ARP retry rounds for non-responding hosts (default: 2, meaning 3 total attempts)"
+  },
+  {
+    "id": "scan_rate_pps",
+    "cliFlag": "--scan-rate-pps",
+    "envVar": "SCANOPY_SCAN_RATE_PPS",
+    "helpText": "Maximum port scan probes per second (default: 500, controls rate of TCP/UDP connection attempts to avoid overwhelming target hosts)"
+  },
+  {
+    "id": "port_scan_batch_size",
+    "cliFlag": "--port-scan-batch-size",
+    "envVar": "SCANOPY_PORT_SCAN_BATCH_SIZE",
+    "helpText": "Number of ports scanned concurrently per host. Higher values scan faster but may overwhelm some hosts"
   },
   {
     "id": "arp_rate_pps",

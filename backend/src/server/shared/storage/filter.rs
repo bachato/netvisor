@@ -6,6 +6,7 @@ use mac_address::MacAddress;
 use uuid::Uuid;
 
 use crate::server::{
+    daemons::r#impl::base::DaemonMode,
     shared::{entities::EntityDiscriminants, storage::traits::SqlValue},
     users::r#impl::permissions::UserOrgPermissions,
 };
@@ -24,14 +25,8 @@ pub struct StorableFilter<T: Storable> {
     joins: Vec<String>,
 }
 
-impl<T: Storable> Default for StorableFilter<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<T: Storable> StorableFilter<T> {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             _marker: PhantomData,
             conditions: Vec::new(),
@@ -40,6 +35,104 @@ impl<T: Storable> StorableFilter<T> {
             offset_value: None,
             joins: Vec::new(),
         }
+    }
+
+    pub fn new_from_org_id(org_id: &Uuid) -> Self {
+        Self::new().organization_id(org_id)
+    }
+
+    pub fn new_from_network_ids(network_ids: &[Uuid]) -> Self {
+        Self::new().network_ids(network_ids)
+    }
+
+    pub fn new_from_entity_id(entity_id: &Uuid) -> Self {
+        Self::new().entity_id(entity_id)
+    }
+
+    pub fn new_from_entity_ids(entity_ids: &[Uuid]) -> Self {
+        Self::new().entity_ids(entity_ids)
+    }
+
+    pub fn new_from_api_key(api_key: String) -> Self {
+        Self::new().api_key(api_key)
+    }
+
+    pub fn new_from_email(email: &EmailAddress) -> Self {
+        Self::new().email(email)
+    }
+
+    pub fn new_from_oidc_subject(oidc_subject: String) -> Self {
+        Self::new().oidc_subject(oidc_subject)
+    }
+
+    pub fn new_from_password_reset_token(token: &str) -> Self {
+        Self::new().password_reset_token(token)
+    }
+
+    pub fn new_from_email_verification_token(token: &str) -> Self {
+        Self::new().email_verification_token(token)
+    }
+
+    pub fn new_from_host_ids(host_ids: &[Uuid]) -> Self {
+        Self::new().host_ids(host_ids)
+    }
+
+    pub fn new_from_service_id(service_id: &Uuid) -> Self {
+        Self::new().service_id(service_id)
+    }
+
+    pub fn new_from_subnet_id(subnet_id: &Uuid) -> Self {
+        Self::new().subnet_id(subnet_id)
+    }
+
+    pub fn new_from_binding_id(binding_id: &Uuid) -> Self {
+        Self::new().binding_id(binding_id)
+    }
+
+    pub fn new_from_user_id(user_id: &Uuid) -> Self {
+        Self::new().user_id(user_id)
+    }
+
+    pub fn new_from_user_ids(user_ids: &[Uuid]) -> Self {
+        Self::new().user_ids(user_ids)
+    }
+
+    pub fn new_from_interface_id(interface_id: &Uuid) -> Self {
+        Self::new().interface_id(interface_id)
+    }
+
+    pub fn new_from_group_ids(group_ids: &[Uuid]) -> Self {
+        Self::new().group_ids(group_ids)
+    }
+
+    pub fn new_from_uuid_column(column: &str, id: &Uuid) -> Self {
+        Self::new().uuid_column(column, id)
+    }
+
+    pub fn new_from_uuids_column(column: &str, ids: &[Uuid]) -> Self {
+        Self::new().uuids_column(column, ids)
+    }
+
+    pub fn new_for_scheduled_discoveries() -> Self {
+        Self::new().scheduled_discovery()
+    }
+
+    pub fn new_for_unresolved_lldp_in_network(network_id: Uuid) -> Self {
+        Self::new().unresolved_lldp_in_network(network_id)
+    }
+
+    pub fn new_without_hubspot_company_id() -> Self {
+        Self::new().without_hubspot_company_id()
+    }
+
+    pub fn new_with_expiry_before(timestamp: DateTime<Utc>) -> Self {
+        Self::new().expires_before(timestamp)
+    }
+
+    pub fn new_for_daemon_poller_system_job() -> Self {
+        Self::new()
+            .daemon_mode(DaemonMode::ServerPoll)
+            .is_unreachable(false)
     }
 
     /// Qualify a column name with the table name.
@@ -180,6 +273,30 @@ impl<T: Storable> StorableFilter<T> {
         self
     }
 
+    pub fn user_ids(mut self, ids: &[Uuid]) -> Self {
+        if ids.is_empty() {
+            // Empty IN clause should match nothing
+            self.conditions.push("FALSE".to_string());
+            return self;
+        }
+
+        let col = self.qualify_column("user_id");
+        let placeholders: Vec<String> = ids
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("${}", self.values.len() + i + 1))
+            .collect();
+
+        self.conditions
+            .push(format!("{} IN ({})", col, placeholders.join(", ")));
+
+        for id in ids {
+            self.values.push(SqlValue::Uuid(*id));
+        }
+
+        self
+    }
+
     pub fn hidden_is(mut self, hidden: bool) -> Self {
         let col = self.qualify_column("hidden");
         self.conditions
@@ -209,6 +326,22 @@ impl<T: Storable> StorableFilter<T> {
         self.conditions
             .push(format!("{} = ${}", col, self.values.len() + 1));
         self.values.push(SqlValue::MacAddress(*mac));
+        self
+    }
+
+    pub fn password_reset_token(mut self, token: &str) -> Self {
+        let col = self.qualify_column("password_reset_token");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::String(token.to_string()));
+        self
+    }
+
+    pub fn email_verification_token(mut self, token: &str) -> Self {
+        let col = self.qualify_column("email_verification_token");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::String(token.to_string()));
         self
     }
 
@@ -362,7 +495,7 @@ impl<T: Storable> StorableFilter<T> {
 
     /// Generic UUID IN filter for any column name.
     /// Used by generic child entity services to filter by parent_column dynamically.
-    pub fn uuid_columns(mut self, column: &str, ids: &[Uuid]) -> Self {
+    pub fn uuids_column(mut self, column: &str, ids: &[Uuid]) -> Self {
         if ids.is_empty() {
             self.conditions.push("FALSE".to_string());
             return self;
@@ -391,6 +524,24 @@ impl<T: Storable> StorableFilter<T> {
         self.conditions
             .push(format!("{} = ${}", col, self.values.len() + 1));
         self.values.push(SqlValue::Uuid(*id));
+        self
+    }
+
+    /// Filter by mode (for daemons)
+    pub fn daemon_mode(mut self, mode: DaemonMode) -> Self {
+        let col = self.qualify_column("mode");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::DaemonMode(mode));
+        self
+    }
+
+    /// Filter by mode (for daemons)
+    pub fn is_unreachable(mut self, is_unreachable: bool) -> Self {
+        let col = self.qualify_column("is_unreachable");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::Bool(is_unreachable));
         self
     }
 
@@ -455,5 +606,123 @@ impl<T: Storable> StorableFilter<T> {
 
     pub fn values(&self) -> &[SqlValue] {
         &self.values
+    }
+
+    // =========================================================================
+    // LLDP resolution filters
+    // =========================================================================
+
+    /// Filter by IP address (for interfaces table)
+    pub fn ip_address(mut self, ip: std::net::IpAddr) -> Self {
+        let col = self.qualify_column("ip_address");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::IpAddr(ip));
+        self
+    }
+
+    /// Filter by if_descr (for if_entries table)
+    pub fn if_descr(mut self, descr: &str) -> Self {
+        let col = self.qualify_column("if_descr");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::String(descr.to_string()));
+        self
+    }
+
+    /// Filter by chassis_id (for hosts table)
+    pub fn chassis_id(mut self, chassis_id: &str) -> Self {
+        let col = self.qualify_column("chassis_id");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::String(chassis_id.to_string()));
+        self
+    }
+
+    /// Filter by interface_id FK (for if_entries table)
+    pub fn interface_id(mut self, interface_id: &Uuid) -> Self {
+        let col = self.qualify_column("interface_id");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::Uuid(*interface_id));
+        self
+    }
+
+    /// Filter if_entries with unresolved LLDP/CDP neighbors in a network.
+    /// Matches entries that have LLDP or CDP data but no neighbor (neither if_entry nor host).
+    pub fn unresolved_lldp_in_network(mut self, network_id: Uuid) -> Self {
+        let network_col = self.qualify_column("network_id");
+        let lldp_chassis_col = self.qualify_column("lldp_chassis_id");
+        let cdp_device_col = self.qualify_column("cdp_device_id");
+        let cdp_addr_col = self.qualify_column("cdp_address");
+        let neighbor_if_entry_col = self.qualify_column("neighbor_if_entry_id");
+        let neighbor_host_col = self.qualify_column("neighbor_host_id");
+
+        self.conditions
+            .push(format!("{} = ${}", network_col, self.values.len() + 1));
+        self.values.push(SqlValue::Uuid(network_id));
+
+        // Has LLDP or CDP data but not yet resolved (no neighbor of either type)
+        self.conditions.push(format!(
+            "({} IS NOT NULL OR {} IS NOT NULL OR {} IS NOT NULL)",
+            lldp_chassis_col, cdp_device_col, cdp_addr_col
+        ));
+        self.conditions
+            .push(format!("{} IS NULL", neighbor_if_entry_col));
+        self.conditions
+            .push(format!("{} IS NULL", neighbor_host_col));
+
+        self
+    }
+
+    /// Filter if_entries that have any resolved neighbor (full or partial resolution)
+    pub fn has_neighbor(mut self) -> Self {
+        let neighbor_if_entry_col = self.qualify_column("neighbor_if_entry_id");
+        let neighbor_host_col = self.qualify_column("neighbor_host_id");
+
+        self.conditions.push(format!(
+            "({} IS NOT NULL OR {} IS NOT NULL)",
+            neighbor_if_entry_col, neighbor_host_col
+        ));
+
+        self
+    }
+
+    /// Filter if_entries with full neighbor resolution (specific remote port known)
+    pub fn has_neighbor_if_entry(mut self) -> Self {
+        let col = self.qualify_column("neighbor_if_entry_id");
+        self.conditions.push(format!("{} IS NOT NULL", col));
+        self
+    }
+
+    /// Filter if_entries connected to a specific host (either resolution type)
+    pub fn neighbor_host(mut self, host_id: Uuid) -> Self {
+        let neighbor_if_entry_col = self.qualify_column("neighbor_if_entry_id");
+        let neighbor_host_col = self.qualify_column("neighbor_host_id");
+
+        // Either directly connected to host (partial resolution)
+        // Or connected to an if_entry on that host (full resolution)
+        // For full resolution, we need a subquery
+        self.conditions.push(format!(
+            "({} = ${} OR {} IN (SELECT id FROM if_entries WHERE host_id = ${}))",
+            neighbor_host_col,
+            self.values.len() + 1,
+            neighbor_if_entry_col,
+            self.values.len() + 1
+        ));
+        self.values.push(SqlValue::Uuid(host_id));
+
+        self
+    }
+
+    // =========================================================================
+    // Organization filters
+    // =========================================================================
+
+    /// Filter for organizations that haven't been synced to HubSpot yet
+    pub fn without_hubspot_company_id(mut self) -> Self {
+        let col = self.qualify_column("hubspot_company_id");
+        self.conditions.push(format!("{} IS NULL", col));
+        self
     }
 }

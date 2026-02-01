@@ -3,7 +3,6 @@ use std::{collections::HashMap, sync::Arc};
 use uuid::Uuid;
 
 use crate::server::{
-    auth::middleware::auth::AuthenticatedEntity,
     ports::r#impl::base::Port,
     shared::{
         events::bus::EventBus,
@@ -57,14 +56,5 @@ impl PortService {
     /// Get ports for multiple hosts (alias for get_for_parents)
     pub async fn get_for_hosts(&self, host_ids: &[Uuid]) -> Result<HashMap<Uuid, Vec<Port>>> {
         self.get_for_parents(host_ids).await
-    }
-
-    /// Delete all ports for a host (alias for delete_for_parent)
-    pub async fn delete_for_host(
-        &self,
-        host_id: &Uuid,
-        authentication: AuthenticatedEntity,
-    ) -> Result<usize> {
-        self.delete_for_parent(host_id, authentication).await
     }
 }

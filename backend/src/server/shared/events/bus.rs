@@ -9,12 +9,12 @@ use tokio::sync::broadcast;
 use uuid::Uuid;
 
 use crate::{
-    daemon::runtime::service::LOG_TARGET,
+    daemon::{discovery::types::base::DiscoveryPhase, runtime::service::LOG_TARGET},
     server::shared::{
         entities::EntityDiscriminants,
         events::types::{
-            AuthEvent, AuthOperation, EntityEvent, EntityOperation, Event, TelemetryEvent,
-            TelemetryOperation,
+            AuthEvent, AuthOperation, DiscoverySessionEvent, EntityEvent, EntityOperation, Event,
+            TelemetryEvent, TelemetryOperation,
         },
     },
 };
@@ -45,6 +45,7 @@ pub struct EventFilter {
     pub entity_operations: Option<HashMap<EntityDiscriminants, Option<Vec<EntityOperation>>>>,
     pub auth_operations: Option<Vec<AuthOperation>>,
     pub telemetry_operations: Option<Vec<TelemetryOperation>>,
+    pub discovery_phases: Option<Vec<DiscoveryPhase>>,
     pub network_ids: Option<Vec<Uuid>>,
 }
 
@@ -54,6 +55,7 @@ impl EventFilter {
             entity_operations: None,
             auth_operations: None,
             telemetry_operations: None,
+            discovery_phases: None,
             network_ids: None,
         }
     }
@@ -65,6 +67,7 @@ impl EventFilter {
             entity_operations: Some(entity_operations),
             auth_operations: Some(vec![]),
             telemetry_operations: Some(vec![]),
+            discovery_phases: Some(vec![]),
             network_ids: None,
         }
     }
@@ -74,6 +77,7 @@ impl EventFilter {
             entity_operations: Some(HashMap::new()),
             telemetry_operations: Some(vec![]),
             auth_operations,
+            discovery_phases: Some(vec![]),
             network_ids: Some(vec![]),
         }
     }
@@ -83,6 +87,17 @@ impl EventFilter {
             entity_operations: Some(HashMap::new()),
             telemetry_operations,
             auth_operations: Some(vec![]),
+            discovery_phases: Some(vec![]),
+            network_ids: Some(vec![]),
+        }
+    }
+
+    pub fn discovery_only(discovery_phases: Option<Vec<DiscoveryPhase>>) -> Self {
+        Self {
+            entity_operations: Some(HashMap::new()),
+            telemetry_operations: Some(vec![]),
+            auth_operations: Some(vec![]),
+            discovery_phases,
             network_ids: Some(vec![]),
         }
     }
@@ -92,6 +107,7 @@ impl EventFilter {
             Event::Entity(entity_event) => self.matches_entity(entity_event),
             Event::Auth(auth_event) => self.matches_auth(auth_event),
             Event::Telemetry(telemetry_event) => self.matches_telemetry(telemetry_event),
+            Event::Discovery(discovery_event) => self.matches_discovery(discovery_event),
         }
     }
 
@@ -134,6 +150,14 @@ impl EventFilter {
         // Check auth operation filter
         if let Some(telemetry_operations) = &self.telemetry_operations {
             return telemetry_operations.contains(&event.operation);
+        }
+
+        true
+    }
+
+    fn matches_discovery(&self, event: &DiscoverySessionEvent) -> bool {
+        if let Some(discovery_phases) = &self.discovery_phases {
+            return discovery_phases.contains(&event.phase);
         }
 
         true
@@ -201,7 +225,7 @@ impl SubscriberState {
         }
 
         let batch_start = std::time::Instant::now();
-        let result = subscriber.handle_events(events.clone()).await;
+        let result = subscriber.handle_events(events).await;
         let batch_duration = batch_start.elapsed();
 
         // =============================================================================
@@ -230,7 +254,7 @@ impl SubscriberState {
             "Event batch processed"
         );
 
-        if let Err(e) = subscriber.handle_events(events).await {
+        if let Err(e) = result {
             tracing::error!(
                 subscriber = %subscriber.name(),
                 error = %e,
@@ -307,6 +331,10 @@ impl EventBus {
     /// Publish an auth event
     pub async fn publish_telemetry(&self, event: TelemetryEvent) -> Result<()> {
         self.publish(Event::Telemetry(event)).await
+    }
+
+    pub async fn publish_discovery(&self, event: DiscoverySessionEvent) -> Result<()> {
+        self.publish(Event::Discovery(event)).await
     }
 
     /// Publish an event to all subscribers

@@ -1,4 +1,6 @@
 use chrono::{DateTime, Utc};
+use secrecy::SecretString;
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -7,9 +9,23 @@ use crate::server::{
     daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase},
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for DaemonApiKey export (excludes sensitive key field)
+#[derive(Serialize)]
+pub struct DaemonApiKeyCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub network_id: Uuid,
+    pub is_enabled: bool,
+    pub last_used: Option<DateTime<Utc>>,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for DaemonApiKey {
     type BaseData = DaemonApiKeyBase;
@@ -50,6 +66,8 @@ impl Storable for DaemonApiKey {
     }
 
     fn to_params(&self) -> Result<(Vec<&'static str>, Vec<SqlValue>), anyhow::Error> {
+        use secrecy::ExposeSecret;
+
         let Self {
             id,
             created_at,
@@ -63,8 +81,12 @@ impl Storable for DaemonApiKey {
                     network_id,
                     is_enabled,
                     tags: _, // Stored in entity_tags junction table
+                    plaintext,
                 },
         } = self.clone();
+
+        // Extract plaintext secret for storage (only for ServerPoll keys)
+        let plaintext_value = plaintext.map(|s| s.expose_secret().to_string());
 
         Ok((
             vec![
@@ -77,6 +99,7 @@ impl Storable for DaemonApiKey {
                 "name",
                 "is_enabled",
                 "key",
+                "plaintext",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -88,11 +111,17 @@ impl Storable for DaemonApiKey {
                 SqlValue::String(name),
                 SqlValue::Bool(is_enabled),
                 SqlValue::String(key),
+                SqlValue::OptionalString(plaintext_value),
             ],
         ))
     }
 
     fn from_row(row: &PgRow) -> Result<Self, anyhow::Error> {
+        // Wrap plaintext in SecretString for in-memory protection
+        let plaintext: Option<SecretString> = row
+            .get::<Option<String>, _>("plaintext")
+            .map(SecretString::from);
+
         Ok(DaemonApiKey {
             id: row.get("id"),
             created_at: row.get("created_at"),
@@ -105,22 +134,38 @@ impl Storable for DaemonApiKey {
                 is_enabled: row.get("is_enabled"),
                 network_id: row.get("network_id"),
                 tags: Vec::new(), // Hydrated from entity_tags junction table
+                plaintext,
             },
         })
     }
 }
 
 impl Entity for DaemonApiKey {
+    type CsvRow = DaemonApiKeyCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        DaemonApiKeyCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            network_id: self.base.network_id,
+            is_enabled: self.base.is_enabled,
+            last_used: self.base.last_used,
+            expires_at: self.base.expires_at,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::DaemonApiKey
     }
 
-    fn entity_name_singular() -> &'static str {
-        "daemon API key"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Daemon API Key";
+    const ENTITY_NAME_PLURAL: &'static str = "Daemon API Keys";
+    const ENTITY_DESCRIPTION: &'static str = "API keys for daemon authentication. Create and manage keys that allow daemons to communicate with the server.";
 
-    fn entity_name_plural() -> &'static str {
-        "daemon-api-keys"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::DiscoveryAndDaemons
     }
 
     fn network_id(&self) -> Option<Uuid> {

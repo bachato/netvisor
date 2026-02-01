@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -11,6 +12,7 @@ use crate::server::{
     },
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::{
             child::ChildStorableEntity,
             traits::{Entity, SqlValue, Storable},
@@ -18,6 +20,20 @@ use crate::server::{
         types::entities::EntitySource,
     },
 };
+
+/// CSV row representation for Service export (excludes nested bindings)
+#[derive(Serialize)]
+pub struct ServiceCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub service_definition: String,
+    pub host_id: Uuid,
+    pub network_id: Uuid,
+    pub source: String,
+    pub position: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Service {
     type BaseData = ServiceBase;
@@ -135,16 +151,32 @@ impl Storable for Service {
 }
 
 impl Entity for Service {
+    type CsvRow = ServiceCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        ServiceCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            service_definition: self.base.service_definition.id().to_string(),
+            host_id: self.base.host_id,
+            network_id: self.base.network_id,
+            source: format!("{:?}", self.base.source),
+            position: self.base.position,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Service
     }
 
-    fn entity_name_singular() -> &'static str {
-        "service"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Service";
+    const ENTITY_NAME_PLURAL: &'static str = "Services";
+    const ENTITY_DESCRIPTION: &'static str = "Services running on hosts. Detected or manually added services like databases, web servers, etc.";
 
-    fn entity_name_plural() -> &'static str {
-        "services"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::NetworkInfrastructure
     }
 
     fn network_id(&self) -> Option<Uuid> {

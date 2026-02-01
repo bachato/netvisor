@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::{Row, postgres::PgRow};
 use uuid::Uuid;
 
@@ -6,9 +7,23 @@ use crate::server::{
     bindings::r#impl::base::{Binding, BindingBase, BindingType},
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for Binding export
+#[derive(Serialize)]
+pub struct BindingCsvRow {
+    pub id: Uuid,
+    pub service_id: Uuid,
+    pub binding_type: String,
+    pub interface_id: Option<Uuid>,
+    pub port_id: Option<Uuid>,
+    pub network_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Binding {
     type BaseData = BindingBase;
@@ -120,16 +135,38 @@ impl Storable for Binding {
 }
 
 impl Entity for Binding {
+    type CsvRow = BindingCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        let (binding_type, interface_id, port_id) = match self.base.binding_type {
+            BindingType::Interface { interface_id } => ("Interface", Some(interface_id), None),
+            BindingType::Port {
+                port_id,
+                interface_id,
+            } => ("Port", interface_id, Some(port_id)),
+        };
+        BindingCsvRow {
+            id: self.id,
+            service_id: self.base.service_id,
+            binding_type: binding_type.to_string(),
+            interface_id,
+            port_id,
+            network_id: self.base.network_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Binding
     }
 
-    fn entity_name_singular() -> &'static str {
-        "binding"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Binding";
+    const ENTITY_NAME_PLURAL: &'static str = "Bindings";
+    const ENTITY_DESCRIPTION: &'static str = "Service bindings linking services to interfaces and/or ports. Defines where a service is accessible.";
 
-    fn entity_name_plural() -> &'static str {
-        "bindings"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::NetworkInfrastructure
     }
 
     fn network_id(&self) -> Option<Uuid> {

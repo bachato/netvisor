@@ -600,7 +600,12 @@ async fn test_service_definition_logo_urls_resolve() {
         .build()
         .expect("Failed to create HTTP client");
 
-    const ALLOWED_DOMAINS: &[&str] = &["cdn.jsdelivr.net", "simpleicons.org", "vectorlogo.zone"];
+    const ALLOWED_DOMAINS: &[&str] = &[
+        "cdn.jsdelivr.net",
+        "simpleicons.org",
+        "vectorlogo.zone",
+        "cdn.prod.website-files.com",
+    ];
 
     for service in registry {
         let logo_url = service.logo_url();
@@ -798,8 +803,20 @@ fn test_all_service_definition_files_have_mod_declaration() {
 #[test]
 fn test_service_definition_ids_are_stable() {
     use std::collections::HashMap;
+    use std::collections::HashSet;
     use std::path::PathBuf;
     use std::process::Command;
+
+    // Service ID renames that have been intentionally migrated.
+    // Format: (old_id, new_id) - these are allowed to differ from origin/main.
+    // Once merged to main, these entries become no-ops and can be removed.
+    let allowed_migrations: HashSet<(&str, &str)> = [
+        ("Dhcp Server", "DHCP Server"),
+        ("Dns Server", "DNS Server"),
+        ("Hp Printer", "HP Printer"),
+    ]
+    .into_iter()
+    .collect();
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let definitions_dir = manifest_dir.join("src/server/services/definitions");
@@ -911,10 +928,15 @@ fn test_service_definition_ids_are_stable() {
                 if let Some(content) = current_file_content {
                     if let Some(new_id) = extract_service_name(&content) {
                         if new_id != *committed_id {
-                            changed_ids.push(format!(
-                                "  - File '{}.rs': ID changed from '{}' to '{}'",
-                                filename, committed_id, new_id
-                            ));
+                            // Check if this is an allowed migration
+                            let is_allowed = allowed_migrations
+                                .contains(&(committed_id.as_str(), new_id.as_str()));
+                            if !is_allowed {
+                                changed_ids.push(format!(
+                                    "  - File '{}.rs': ID changed from '{}' to '{}'",
+                                    filename, committed_id, new_id
+                                ));
+                            }
                         }
                     }
                 }

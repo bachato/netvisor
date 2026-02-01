@@ -154,8 +154,7 @@ impl EntityTagStorage {
         entity_id: &Uuid,
         entity_type: &EntityDiscriminants,
     ) -> Result<Vec<Uuid>> {
-        let filter = StorableFilter::<EntityTag>::new()
-            .uuid_column("entity_id", entity_id)
+        let filter = StorableFilter::<EntityTag>::new_from_uuid_column("entity_id", entity_id)
             .entity_type(entity_type);
         let records = self.storage.get_all(filter).await?;
         Ok(records.iter().map(|r| r.base.tag_id).collect())
@@ -172,8 +171,7 @@ impl EntityTagStorage {
             return Ok(HashMap::new());
         }
 
-        let filter = StorableFilter::<EntityTag>::new()
-            .uuid_columns("entity_id", entity_ids)
+        let filter = StorableFilter::<EntityTag>::new_from_uuids_column("entity_id", entity_ids)
             .entity_type(entity_type);
         let records = self.storage.get_all(filter).await?;
 
@@ -219,8 +217,7 @@ impl EntityTagStorage {
         entity_type: EntityDiscriminants,
         tag_id: Uuid,
     ) -> Result<bool> {
-        let filter = StorableFilter::<EntityTag>::new()
-            .uuid_column("entity_id", &entity_id)
+        let filter = StorableFilter::<EntityTag>::new_from_uuid_column("entity_id", &entity_id)
             .entity_type(&entity_type)
             .tag_id(&tag_id);
 
@@ -239,8 +236,7 @@ impl EntityTagStorage {
         let mut tx = self.storage.begin_transaction().await?;
 
         // Delete existing tags
-        let filter = StorableFilter::<EntityTag>::new()
-            .uuid_column("entity_id", &entity_id)
+        let filter = StorableFilter::<EntityTag>::new_from_uuid_column("entity_id", &entity_id)
             .entity_type(&entity_type);
         tx.delete_by_filter(filter).await?;
 
@@ -260,8 +256,7 @@ impl EntityTagStorage {
         entity_id: Uuid,
         entity_type: EntityDiscriminants,
     ) -> Result<()> {
-        let filter = StorableFilter::<EntityTag>::new()
-            .uuid_column("entity_id", &entity_id)
+        let filter = StorableFilter::<EntityTag>::new_from_uuid_column("entity_id", &entity_id)
             .entity_type(&entity_type);
 
         self.storage.delete_by_filter(filter).await?;
@@ -301,8 +296,7 @@ impl EntityTagStorage {
             return Ok(0);
         }
 
-        let filter = StorableFilter::<EntityTag>::new()
-            .uuid_columns("entity_id", entity_ids)
+        let filter = StorableFilter::<EntityTag>::new_from_uuids_column("entity_id", entity_ids)
             .entity_type(&entity_type)
             .tag_id(&tag_id);
 

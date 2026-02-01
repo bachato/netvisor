@@ -14,10 +14,24 @@ use validator::Validate;
 use crate::server::{
     shared::{
         entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants},
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
     },
     users::r#impl::permissions::UserOrgPermissions,
 };
+
+/// CSV row representation for Invite export (excludes sensitive url field)
+#[derive(Serialize)]
+pub struct InviteCsvRow {
+    pub id: Uuid,
+    pub organization_id: Uuid,
+    pub permissions: String,
+    pub created_by: Uuid,
+    pub send_to: Option<String>,
+    pub expires_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 #[derive(
     Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default, ToSchema, Validate,
@@ -193,16 +207,32 @@ impl Storable for Invite {
 }
 
 impl Entity for Invite {
+    type CsvRow = InviteCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        InviteCsvRow {
+            id: self.id,
+            organization_id: self.base.organization_id,
+            permissions: format!("{:?}", self.base.permissions),
+            created_by: self.base.created_by,
+            send_to: self.base.send_to.as_ref().map(|e| e.to_string()),
+            expires_at: self.base.expires_at,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Invite
     }
 
-    fn entity_name_singular() -> &'static str {
-        "invite"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Invite";
+    const ENTITY_NAME_PLURAL: &'static str = "Invites";
+    const ENTITY_DESCRIPTION: &'static str =
+        "Organization invitations. Invite users to join your organization.";
 
-    fn entity_name_plural() -> &'static str {
-        "invites"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::OrganizationsAndUsers
     }
 
     fn network_id(&self) -> Option<Uuid> {

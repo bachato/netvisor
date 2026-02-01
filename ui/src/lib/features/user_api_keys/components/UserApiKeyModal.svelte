@@ -197,7 +197,7 @@
 		}}
 		class="flex min-h-0 flex-1 flex-col"
 	>
-		<div class="flex-1 overflow-auto p-6">
+		<div class="min-h-0 flex-1 overflow-auto p-6">
 			<div class="space-y-6">
 				<InlineSuccess
 					dismissableKey="share-integration"
@@ -292,13 +292,12 @@
 					onGenerate={handleGenerateKey}
 					onRotate={handleRotateKey}
 				/>
-
-				<!-- Metadata section for existing keys -->
-				{#if isEditing && apiKey}
-					<EntityMetadataSection entities={[apiKey]} />
-				{/if}
 			</div>
 		</div>
+
+		{#if isEditing && apiKey}
+			<EntityMetadataSection entities={[apiKey]} />
+		{/if}
 
 		<!-- Footer -->
 		<div class="modal-footer">

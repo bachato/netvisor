@@ -42,9 +42,18 @@ async fn test_service_network_validation(ctx: &TestContext) -> Result<(), String
         virtualization: None,
         hidden: false,
         tags: Vec::new(),
+        // SNMP fields
+        sys_descr: None,
+        sys_object_id: None,
+        sys_location: None,
+        sys_contact: None,
+        management_url: None,
+        chassis_id: None,
+        snmp_credential_id: None,
         interfaces: vec![],
         ports: vec![],
         services: vec![],
+        if_entries: vec![],
     };
     let created_host: HostResponse = ctx.client.post("/api/v1/hosts", &host_request).await?;
 

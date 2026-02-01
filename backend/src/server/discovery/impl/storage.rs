@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -10,9 +11,23 @@ use crate::server::{
     },
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for Discovery export
+#[derive(Serialize)]
+pub struct DiscoveryCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub discovery_type: String,
+    pub run_type: String,
+    pub daemon_id: Uuid,
+    pub network_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Discovery {
     type BaseData = DiscoveryBase;
@@ -117,16 +132,31 @@ impl Storable for Discovery {
 }
 
 impl Entity for Discovery {
+    type CsvRow = DiscoveryCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        DiscoveryCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            discovery_type: format!("{:?}", self.base.discovery_type),
+            run_type: format!("{:?}", self.base.run_type),
+            daemon_id: self.base.daemon_id,
+            network_id: self.base.network_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Discovery
     }
 
-    fn entity_name_singular() -> &'static str {
-        "discovery"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Discovery";
+    const ENTITY_NAME_PLURAL: &'static str = "Discoveries";
+    const ENTITY_DESCRIPTION: &'static str = "Network discovery operations. Trigger and monitor scans that detect hosts, services, and network topology.";
 
-    fn entity_name_plural() -> &'static str {
-        "discoveries"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::DiscoveryAndDaemons
     }
 
     fn network_id(&self) -> Option<Uuid> {

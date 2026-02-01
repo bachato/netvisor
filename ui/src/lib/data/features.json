@@ -178,7 +178,7 @@
   {
     "id": "unlimited_hosts",
     "name": "Unlimited Hosts",
-    "description": "Monitor as many hosts as your network has",
+    "description": "Visualize as many hosts as your network has",
     "category": "Core",
     "icon": "sparkle",
     "color": "Gray",

@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -10,11 +11,26 @@ use crate::server::{
     },
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
         types::entities::EntitySource,
     },
     topology::types::edges::EdgeStyle,
 };
+
+/// CSV row representation for Group export (excludes nested binding_ids)
+#[derive(Serialize)]
+pub struct GroupCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub group_type: String,
+    pub color: String,
+    pub network_id: Uuid,
+    pub source: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Group {
     type BaseData = GroupBase;
@@ -140,16 +156,33 @@ impl Storable for Group {
 }
 
 impl Entity for Group {
+    type CsvRow = GroupCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        let group_type_str: &'static str = self.base.group_type.into();
+        GroupCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            description: self.base.description.clone(),
+            group_type: group_type_str.to_string(),
+            color: self.base.color.to_string(),
+            network_id: self.base.network_id,
+            source: format!("{:?}", self.base.source),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Group
     }
 
-    fn entity_name_singular() -> &'static str {
-        "group"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Group";
+    const ENTITY_NAME_PLURAL: &'static str = "Groups";
+    const ENTITY_DESCRIPTION: &'static str = "Logical groupings of hosts. Organize hosts into groups for easier management and visualization.";
 
-    fn entity_name_plural() -> &'static str {
-        "groups"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::Visualization
     }
 
     fn network_id(&self) -> Option<Uuid> {

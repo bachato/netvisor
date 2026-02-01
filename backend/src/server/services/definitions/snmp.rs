@@ -15,7 +15,7 @@ impl ServiceDefinition for Snmp {
         "Simple Network Management Protocol"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkCore
+        ServiceCategory::SNMP
     }
     fn discovery_pattern(&self) -> Pattern<'_> {
         Pattern::Port(PortType::Snmp)

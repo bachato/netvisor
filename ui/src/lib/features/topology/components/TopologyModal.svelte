@@ -8,7 +8,7 @@
 		createEmptyTopologyFormData,
 		useCreateTopologyMutation,
 		useTopologiesQuery,
-		useUpdateTopologyMutation,
+		useUpdateMetadataMutation,
 		selectedTopologyId,
 		topologyOptions
 	} from '../queries';
@@ -39,7 +39,7 @@
 	const networksQuery = useNetworksQuery();
 	const topologiesQuery = useTopologiesQuery();
 	const createTopologyMutation = useCreateTopologyMutation();
-	const updateTopologyMutation = useUpdateTopologyMutation();
+	const updateMetadataMutation = useUpdateMetadataMutation();
 
 	let networksData = $derived(networksQuery.data ?? []);
 	let topologiesData = $derived(topologiesQuery.data ?? []);
@@ -101,7 +101,13 @@
 			loading = true;
 			try {
 				if (isEditing) {
-					await updateTopologyMutation.mutateAsync(topologyData);
+					// Use lightweight metadata update (fixes HTTP 413 for large topologies)
+					await updateMetadataMutation.mutateAsync({
+						topologyId: topologyData.id,
+						networkId: topologyData.network_id,
+						name: topologyData.name,
+						parentId: topologyData.parent_id ?? null
+					});
 				} else {
 					const created = await createTopologyMutation.mutateAsync(topologyData);
 					// Select the newly created topology

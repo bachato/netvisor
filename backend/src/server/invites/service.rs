@@ -107,7 +107,7 @@ impl InviteService {
     /// Clean up expired invites from the database
     pub async fn cleanup_expired(&self) {
         let now = Utc::now();
-        let filter = StorableFilter::<Invite>::new().expires_before(now);
+        let filter = StorableFilter::<Invite>::new_with_expiry_before(now);
 
         match self.storage.get_all(filter).await {
             Ok(expired_invites) => {
@@ -133,7 +133,7 @@ impl InviteService {
 
     /// Revoke all invites for an organization
     pub async fn revoke_org_invites(&self, organization_id: &Uuid) -> Result<(), anyhow::Error> {
-        let filter = StorableFilter::<Invite>::new().organization_id(organization_id);
+        let filter = StorableFilter::<Invite>::new_from_org_id(organization_id);
         let org_invites = self.storage.get_all(filter).await?;
 
         if !org_invites.is_empty() {
@@ -149,13 +149,13 @@ impl InviteService {
         &self,
         organization_id: &Uuid,
     ) -> Result<Vec<Invite>, anyhow::Error> {
-        let filter = StorableFilter::<Invite>::new().organization_id(organization_id);
+        let filter = StorableFilter::<Invite>::new_from_org_id(organization_id);
         self.storage.get_all(filter).await
     }
 
     /// List all active (non-expired) invites for an organization
     pub async fn list_active_invites(&self, organization_id: &Uuid) -> Vec<Invite> {
-        let filter = StorableFilter::<Invite>::new().organization_id(organization_id);
+        let filter = StorableFilter::<Invite>::new_from_org_id(organization_id);
 
         match self.storage.get_all(filter).await {
             Ok(invites) => invites

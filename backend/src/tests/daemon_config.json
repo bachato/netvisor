@@ -1,6 +1,6 @@
 {
   "server_url": "http://server:60072",
-  "network_id": "33d982e1-784f-494d-a8f5-a770be7933e8",
+  "network_id": "82606870-9d3d-4c88-9586-8029c4311900",
   "server_target": null,
   "server_port": null,
   "daemon_port": 60073,
@@ -9,13 +9,13 @@
   "heartbeat_interval": 30,
   "bind_address": "0.0.0.0",
   "concurrent_scans": 15,
-  "id": "bf2616c0-0bd9-43b0-b4b5-23a740853324",
-  "last_heartbeat": "2026-01-15T23:46:12.375350382Z",
+  "id": "051e03d5-56bf-4363-b44c-abeb9e7fec8c",
+  "last_heartbeat": null,
   "host_id": null,
-  "daemon_api_key": "scp_d_INwA0z72tdfadj6o6AoT7ZqlithzXCxR",
+  "daemon_api_key": "scp_d_7gqbnT9Fz3vfpZaEU4SaDkVQHVRCVWBo",
   "user_id": null,
   "docker_proxy": null,
-  "mode": "Push",
+  "mode": "daemon_poll",
   "allow_self_signed_certs": false,
   "daemon_url": null,
   "docker_proxy_ssl_cert": null,
@@ -24,5 +24,13 @@
   "use_npcap_arp": false,
   "arp_retries": 2,
   "arp_rate_pps": 50,
-  "interface_filter": []
+  "scan_rate_pps": 500,
+  "port_scan_batch_size": 200,
+  "interfaces": [],
+  "capabilities": {
+    "has_docker_socket": false,
+    "interfaced_subnet_ids": [
+      "94b21cfc-8ecd-40c0-9f4e-be72aa4872f7"
+    ]
+  }
 }

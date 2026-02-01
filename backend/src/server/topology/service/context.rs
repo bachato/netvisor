@@ -4,6 +4,7 @@ use crate::server::{
     bindings::r#impl::base::Binding,
     groups::r#impl::base::Group,
     hosts::r#impl::{base::Host, virtualization::HostVirtualization},
+    if_entries::r#impl::base::IfEntry,
     interfaces::r#impl::base::Interface,
     ports::r#impl::base::Port,
     services::r#impl::{
@@ -27,6 +28,7 @@ pub struct TopologyContext<'a> {
     pub groups: &'a [Group],
     pub ports: &'a [Port],
     pub bindings: &'a [Binding],
+    pub if_entries: &'a [IfEntry],
     pub options: &'a TopologyOptions,
 }
 
@@ -40,6 +42,7 @@ impl<'a> TopologyContext<'a> {
         groups: &'a [Group],
         ports: &'a [Port],
         bindings: &'a [Binding],
+        if_entries: &'a [IfEntry],
         options: &'a TopologyOptions,
     ) -> Self {
         Self {
@@ -50,6 +53,7 @@ impl<'a> TopologyContext<'a> {
             groups,
             ports,
             bindings,
+            if_entries,
             options,
         }
     }
@@ -124,6 +128,30 @@ impl<'a> TopologyContext<'a> {
     pub fn get_host_from_interface_id(&self, interface_id: Uuid) -> Option<&'a Host> {
         let interface = self.interfaces.iter().find(|i| i.id == interface_id)?;
         self.hosts.iter().find(|h| h.id == interface.base.host_id)
+    }
+
+    // ============================================================================
+    // IfEntry (SNMP Interface Table) Methods
+    // ============================================================================
+
+    pub fn get_if_entry_by_id(&self, id: Uuid) -> Option<&'a IfEntry> {
+        self.if_entries.iter().find(|e| e.id == id)
+    }
+
+    pub fn get_if_entries_for_host(&self, host_id: Uuid) -> Vec<&'a IfEntry> {
+        self.if_entries
+            .iter()
+            .filter(|e| e.base.host_id == host_id)
+            .collect()
+    }
+
+    /// Get all if_entries that have a resolved neighbor (full resolution only)
+    pub fn get_if_entries_with_neighbor(&self) -> Vec<&'a IfEntry> {
+        use crate::server::if_entries::r#impl::base::Neighbor;
+        self.if_entries
+            .iter()
+            .filter(|e| matches!(e.base.neighbor, Some(Neighbor::IfEntry(_))))
+            .collect()
     }
 
     // ============================================================================

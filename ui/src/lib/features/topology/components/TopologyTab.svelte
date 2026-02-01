@@ -6,6 +6,7 @@
 	import ExportButton from './ExportButton.svelte';
 	import ShareModal from '$lib/features/shares/components/ShareModal.svelte';
 	import { SvelteFlowProvider } from '@xyflow/svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		useTopologiesQuery,
 		useDeleteTopologyMutation,
@@ -28,7 +29,6 @@
 	import { TopologyDisplay } from '$lib/shared/components/forms/selection/display/TopologyDisplay.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
-	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { useUsersQuery } from '$lib/features/users/queries';
@@ -67,8 +67,6 @@
 	);
 
 	// Queries - TanStack Query handles deduplication
-	// Use limit: 0 to get all hosts for topology visualization
-	const hostsQuery = useHostsQuery({ limit: 0 });
 	const subnetsQuery = useSubnetsQuery();
 	const groupsQuery = useGroupsQuery();
 	const usersQuery = useUsersQuery({ enabled: () => canViewUsers });
@@ -84,10 +82,7 @@
 	let usersData = $derived(usersQuery.data ?? []);
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let isLoading = $derived(
-		hostsQuery.isPending ||
-			subnetsQuery.isPending ||
-			groupsQuery.isPending ||
-			topologiesQuery.isPending
+		subnetsQuery.isPending || groupsQuery.isPending || topologiesQuery.isPending
 	);
 
 	// Selected topology (derived from ID + query data)
@@ -119,6 +114,34 @@
 	let isShareModalOpen = $state(false);
 
 	let topologyViewer: TopologyViewer | null = $state(null);
+
+	// Track which topologies have had their initial auto-rebuild check
+	let initialRebuildChecked = new SvelteSet<string>();
+
+	// Auto-rebuild on initial load when autoRebuild is enabled
+	$effect(() => {
+		// Guard: need a selected, non-locked topology with autoRebuild enabled
+		if (!currentTopology || currentTopology.is_locked || !$autoRebuild) {
+			return;
+		}
+
+		// Guard: already checked this topology
+		if (initialRebuildChecked.has(currentTopology.id)) {
+			return;
+		}
+
+		// Mark as checked BEFORE triggering rebuild to prevent race conditions
+		initialRebuildChecked.add(currentTopology.id);
+
+		// Determine if rebuild is needed: stale or empty
+		const needsRebuild = currentTopology.is_stale || currentTopology.nodes.length === 0;
+
+		if (needsRebuild) {
+			void rebuildTopologyMutation.mutateAsync(currentTopology).then(() => {
+				topologyViewer?.triggerFitView();
+			});
+		}
+	});
 
 	function handleCreateTopology() {
 		isCreateEditOpen = true;

@@ -12,6 +12,7 @@ use crate::server::{
     bindings::{r#impl::base::Binding, service::BindingService},
     groups::{r#impl::base::Group, service::GroupService},
     hosts::{r#impl::base::Host, service::HostService},
+    if_entries::{r#impl::base::IfEntry, service::IfEntryService},
     interfaces::{r#impl::base::Interface, service::InterfaceService},
     ports::{r#impl::base::Port, service::PortService},
     services::{r#impl::base::Service, service::ServiceService},
@@ -52,6 +53,7 @@ pub struct TopologyService {
     service_service: Arc<ServiceService>,
     port_service: Arc<PortService>,
     binding_service: Arc<BindingService>,
+    if_entry_service: Arc<IfEntryService>,
     event_bus: Arc<EventBus>,
     pub staleness_tx: broadcast::Sender<Topology>,
 }
@@ -91,7 +93,7 @@ impl CrudService<Topology> for TopologyService {
             entity
         };
 
-        let (hosts, interfaces, subnets, groups, ports, bindings) =
+        let (hosts, interfaces, subnets, groups, ports, bindings, if_entries) =
             self.get_entity_data(topology.base.network_id).await?;
 
         let services = self
@@ -106,6 +108,7 @@ impl CrudService<Topology> for TopologyService {
             groups: &groups,
             ports: &ports,
             bindings: &bindings,
+            if_entries: &if_entries,
             old_edges: &[],
             old_nodes: &[],
             options: &topology.base.options,
@@ -120,6 +123,7 @@ impl CrudService<Topology> for TopologyService {
         topology.base.services = services;
         topology.base.subnets = subnets;
         topology.base.groups = groups;
+        topology.base.if_entries = if_entries;
         topology.clear_stale();
 
         let created = self.storage().create(&topology).await?;
@@ -154,6 +158,7 @@ pub struct BuildGraphParams<'a> {
     pub groups: &'a [Group],
     pub ports: &'a [Port],
     pub bindings: &'a [Binding],
+    pub if_entries: &'a [IfEntry],
     pub old_nodes: &'a [Node],
     pub old_edges: &'a [Edge],
 }
@@ -168,6 +173,7 @@ impl TopologyService {
         service_service: Arc<ServiceService>,
         port_service: Arc<PortService>,
         binding_service: Arc<BindingService>,
+        if_entry_service: Arc<IfEntryService>,
         storage: Arc<GenericPostgresStorage<Topology>>,
         event_bus: Arc<EventBus>,
     ) -> Self {
@@ -181,6 +187,7 @@ impl TopologyService {
             storage,
             port_service,
             binding_service,
+            if_entry_service,
             event_bus,
             staleness_tx,
         }
@@ -201,42 +208,54 @@ impl TopologyService {
             Vec<Group>,
             Vec<Port>,
             Vec<Binding>,
+            Vec<IfEntry>,
         ),
         Error,
     > {
         // Fetch all data - each service needs its own properly typed filter
         let hosts = self
             .host_service
-            .get_all(
-                StorableFilter::<Host>::new()
-                    .network_ids(&[network_id])
-                    .hidden_is(false),
-            )
+            .get_all(StorableFilter::<Host>::new_from_network_ids(&[network_id]).hidden_is(false))
             .await?;
 
         let interfaces = self
             .interface_service
-            .get_all(StorableFilter::<Interface>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Interface>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?;
         let subnets = self
             .subnet_service
-            .get_all(StorableFilter::<Subnet>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Subnet>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?;
         let groups = self
             .group_service
-            .get_all(StorableFilter::<Group>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Group>::new_from_network_ids(&[network_id]))
             .await?;
 
         let ports = self
             .port_service
-            .get_all(StorableFilter::<Port>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Port>::new_from_network_ids(&[network_id]))
             .await?;
         let bindings = self
             .binding_service
-            .get_all(StorableFilter::<Binding>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Binding>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?;
 
-        Ok((hosts, interfaces, subnets, groups, ports, bindings))
+        let if_entries = self
+            .if_entry_service
+            .get_all(StorableFilter::<IfEntry>::new_from_network_ids(&[
+                network_id,
+            ]))
+            .await?;
+
+        Ok((
+            hosts, interfaces, subnets, groups, ports, bindings, if_entries,
+        ))
     }
 
     pub async fn get_service_data(
@@ -246,7 +265,9 @@ impl TopologyService {
     ) -> Result<Vec<Service>, Error> {
         Ok(self
             .service_service
-            .get_all(StorableFilter::<Service>::new().network_ids(&[network_id]))
+            .get_all(StorableFilter::<Service>::new_from_network_ids(&[
+                network_id,
+            ]))
             .await?
             .iter()
             .filter(|s| {
@@ -268,6 +289,7 @@ impl TopologyService {
             groups,
             ports,
             bindings,
+            if_entries,
             old_edges,
             old_nodes,
             options,
@@ -275,7 +297,7 @@ impl TopologyService {
 
         // Create context to avoid parameter passing
         let ctx = TopologyContext::new(
-            hosts, interfaces, subnets, services, groups, ports, bindings, options,
+            hosts, interfaces, subnets, services, groups, ports, bindings, if_entries, options,
         );
 
         // Create all edges (needed for anchor analysis)
@@ -292,6 +314,9 @@ impl TopologyService {
             );
 
         all_edges.extend(container_edges);
+
+        // Create physical link edges from LLDP/CDP neighbor discovery
+        all_edges.extend(EdgeBuilder::create_physical_link_edges(&ctx));
 
         // Create nodes with layout
         let mut layout_planner = SubnetLayoutPlanner::new();

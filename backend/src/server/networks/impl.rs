@@ -16,7 +16,18 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+use crate::server::shared::entity_metadata::EntityCategory;
 use crate::server::shared::storage::traits::{Entity, SqlValue, Storable};
+
+/// CSV row representation for Network export
+#[derive(Serialize)]
+pub struct NetworkCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub organization_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 #[derive(
     Debug, Clone, Serialize, Deserialize, Validate, PartialEq, Eq, Hash, Default, ToSchema,
@@ -28,6 +39,10 @@ pub struct NetworkBase {
     #[serde(default)]
     #[schema(required)]
     pub tags: Vec<Uuid>,
+    /// Default SNMP credential for this network (hosts can override).
+    /// When set, SNMP discovery is enabled for this network.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snmp_credential_id: Option<Uuid>,
 }
 
 impl NetworkBase {
@@ -36,6 +51,7 @@ impl NetworkBase {
             name: "My Network".to_string(),
             organization_id,
             tags: Vec::new(),
+            snmp_credential_id: None,
         }
     }
 }
@@ -127,17 +143,26 @@ impl Storable for Network {
                     name,
                     organization_id,
                     tags: _, // Stored in entity_tags junction table
+                    snmp_credential_id,
                 },
         } = self.clone();
 
         Ok((
-            vec!["id", "created_at", "updated_at", "name", "organization_id"],
+            vec![
+                "id",
+                "created_at",
+                "updated_at",
+                "name",
+                "organization_id",
+                "snmp_credential_id",
+            ],
             vec![
                 SqlValue::Uuid(id),
                 SqlValue::Timestamp(created_at),
                 SqlValue::Timestamp(updated_at),
                 SqlValue::String(name),
                 SqlValue::Uuid(organization_id),
+                SqlValue::OptionalUuid(snmp_credential_id),
             ],
         ))
     }
@@ -151,22 +176,35 @@ impl Storable for Network {
                 name: row.get("name"),
                 organization_id: row.get("organization_id"),
                 tags: Vec::new(), // Hydrated from entity_tags junction table
+                snmp_credential_id: row.get("snmp_credential_id"),
             },
         })
     }
 }
 
 impl Entity for Network {
+    type CsvRow = NetworkCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        NetworkCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            organization_id: self.base.organization_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Network
     }
 
-    fn entity_name_singular() -> &'static str {
-        "network"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Network";
+    const ENTITY_NAME_PLURAL: &'static str = "Networks";
+    const ENTITY_DESCRIPTION: &'static str = "Network containers. Top-level organizational unit that contains subnets, hosts, and other entities.";
 
-    fn entity_name_plural() -> &'static str {
-        "networks"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::NetworkInfrastructure
     }
 
     fn network_id(&self) -> Option<Uuid> {

@@ -16,6 +16,7 @@ use crate::server::{
         types::GroupType,
     },
     hosts::r#impl::base::{Host, HostBase},
+    if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus},
     interfaces::r#impl::base::{Interface, InterfaceBase},
     networks::r#impl::{Network, NetworkBase},
     ports::r#impl::base::{Port, PortType},
@@ -24,6 +25,7 @@ use crate::server::{
         r#impl::base::{Service, ServiceBase},
     },
     shared::types::{Color, entities::EntitySource},
+    snmp_credentials::r#impl::base::{SnmpCredential, SnmpCredentialBase, SnmpVersion},
     subnets::r#impl::{
         base::{Subnet, SubnetBase},
         types::SubnetType,
@@ -36,6 +38,7 @@ use crate::server::{
 };
 use chrono::{DateTime, Utc};
 use cidr::{IpCidr, Ipv4Cidr};
+use secrecy::SecretString;
 use semver::Version;
 use std::net::{IpAddr, Ipv4Addr};
 use uuid::Uuid;
@@ -55,9 +58,11 @@ pub struct HostWithServices {
 /// Container for all demo data entities
 pub struct DemoData {
     pub tags: Vec<Tag>,
+    pub snmp_credentials: Vec<SnmpCredential>,
     pub networks: Vec<Network>,
     pub subnets: Vec<Subnet>,
     pub hosts_with_services: Vec<HostWithServices>,
+    pub if_entries: Vec<IfEntry>,
     pub daemons: Vec<Daemon>,
     pub api_keys: Vec<DaemonApiKey>,
     pub groups: Vec<Group>,
@@ -73,13 +78,19 @@ impl DemoData {
 
         // Generate all entities in dependency order
         let tags = generate_tags(organization_id, now);
+        let snmp_credentials = generate_snmp_credentials(organization_id, now);
         let networks = generate_networks(organization_id, &tags, now);
         let subnets = generate_subnets(&networks, &tags, now);
         let hosts_with_services = generate_hosts_and_services(&networks, &subnets, &tags, now);
 
-        // Collect hosts for daemon generation
+        // Collect hosts for daemon generation and if_entry generation
         let hosts: Vec<&Host> = hosts_with_services.iter().map(|h| &h.host).collect();
+        let interfaces: Vec<&Interface> = hosts_with_services
+            .iter()
+            .flat_map(|h| h.interfaces.iter())
+            .collect();
 
+        let if_entries = generate_if_entries(&networks, &hosts, &interfaces, now);
         let daemons = generate_daemons(&networks, &hosts, &subnets, now, user_id);
         let api_keys = generate_api_keys(&networks, now);
         let topologies = generate_topologies(&networks, now);
@@ -90,9 +101,11 @@ impl DemoData {
 
         Self {
             tags,
+            snmp_credentials,
             networks,
             subnets,
             hosts_with_services,
+            if_entries,
             daemons,
             api_keys,
             groups,
@@ -152,6 +165,39 @@ fn generate_tags(organization_id: Uuid, now: DateTime<Utc>) -> Vec<Tag> {
 }
 
 // ============================================================================
+// SNMP Credentials
+// ============================================================================
+
+fn generate_snmp_credentials(organization_id: Uuid, now: DateTime<Utc>) -> Vec<SnmpCredential> {
+    vec![
+        SnmpCredential {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: SnmpCredentialBase {
+                organization_id,
+                name: "Default SNMPv2c".to_string(),
+                version: SnmpVersion::V2c,
+                community: SecretString::from("public".to_string()),
+                tags: Vec::new(),
+            },
+        },
+        SnmpCredential {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: SnmpCredentialBase {
+                organization_id,
+                name: "Network Devices".to_string(),
+                version: SnmpVersion::V2c,
+                community: SecretString::from("acme-network".to_string()),
+                tags: Vec::new(),
+            },
+        },
+    ]
+}
+
+// ============================================================================
 // Networks
 // ============================================================================
 
@@ -174,6 +220,7 @@ fn generate_networks(organization_id: Uuid, tags: &[Tag], now: DateTime<Utc>) ->
                 name: "Headquarters".to_string(),
                 organization_id,
                 tags: production_tag.into_iter().collect(),
+                snmp_credential_id: None,
             },
         },
         Network {
@@ -184,6 +231,7 @@ fn generate_networks(organization_id: Uuid, tags: &[Tag], now: DateTime<Utc>) ->
                 name: "Cloud Infrastructure".to_string(),
                 organization_id,
                 tags: production_tag.into_iter().collect(),
+                snmp_credential_id: None,
             },
         },
         Network {
@@ -194,6 +242,7 @@ fn generate_networks(organization_id: Uuid, tags: &[Tag], now: DateTime<Utc>) ->
                 name: "Remote Office - Denver".to_string(),
                 organization_id,
                 tags: vec![],
+                snmp_credential_id: None,
             },
         },
         Network {
@@ -204,6 +253,7 @@ fn generate_networks(organization_id: Uuid, tags: &[Tag], now: DateTime<Utc>) ->
                 name: "Client: Riverside Medical".to_string(),
                 organization_id,
                 tags: managed_client_tag.into_iter().collect(),
+                snmp_credential_id: None,
             },
         },
     ]
@@ -458,6 +508,13 @@ fn create_host(
             virtualization: None,
             hidden: false,
             tags,
+            sys_descr: None,
+            sys_object_id: None,
+            sys_location: None,
+            sys_contact: None,
+            management_url: None,
+            chassis_id: None,
+            snmp_credential_id: None,
         },
     };
     (host, interface)
@@ -1352,6 +1409,243 @@ fn generate_hosts_and_services(
 }
 
 // ============================================================================
+// IfEntries (SNMP Interface Data)
+// ============================================================================
+
+fn generate_if_entries(
+    networks: &[Network],
+    hosts: &[&Host],
+    interfaces: &[&Interface],
+    now: DateTime<Utc>,
+) -> Vec<IfEntry> {
+    let mut if_entries = Vec::new();
+
+    // Find network devices that would have SNMP data
+    let find_host = |name: &str| hosts.iter().find(|h| h.base.name == name).copied();
+    let find_interface = |host_id: Uuid| {
+        interfaces
+            .iter()
+            .find(|i| i.base.host_id == host_id)
+            .copied()
+    };
+
+    // pfSense firewall - multiple interfaces
+    if let Some(host) = find_host("pfsense-fw01") {
+        let network = networks
+            .iter()
+            .find(|n| n.id == host.base.network_id)
+            .unwrap();
+        let interface = find_interface(host.id);
+
+        // WAN interface
+        if_entries.push(IfEntry {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 1,
+                if_descr: "igb0".to_string(),
+                if_alias: Some("WAN".to_string()),
+                if_type: 6, // ethernet
+                speed_bps: Some(1_000_000_000),
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: None,
+                neighbor: None,
+                lldp_chassis_id: None,
+                lldp_port_id: None,
+                lldp_sys_name: None,
+                lldp_port_desc: None,
+                lldp_mgmt_addr: None,
+                lldp_sys_desc: None,
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+
+        // LAN interface
+        if_entries.push(IfEntry {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 2,
+                if_descr: "igb1".to_string(),
+                if_alias: Some("LAN".to_string()),
+                if_type: 6,
+                speed_bps: Some(1_000_000_000),
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: interface.map(|i| i.id),
+                neighbor: None,
+                lldp_chassis_id: None,
+                lldp_port_id: None,
+                lldp_sys_name: None,
+                lldp_port_desc: None,
+                lldp_mgmt_addr: None,
+                lldp_sys_desc: None,
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+
+        // OPT1 interface (disabled)
+        if_entries.push(IfEntry {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 3,
+                if_descr: "igb2".to_string(),
+                if_alias: Some("OPT1".to_string()),
+                if_type: 6,
+                speed_bps: Some(1_000_000_000),
+                admin_status: IfAdminStatus::Down,
+                oper_status: IfOperStatus::Down,
+                mac_address: None,
+                interface_id: None,
+                neighbor: None,
+                lldp_chassis_id: None,
+                lldp_port_id: None,
+                lldp_sys_name: None,
+                lldp_port_desc: None,
+                lldp_mgmt_addr: None,
+                lldp_sys_desc: None,
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+    }
+
+    // TrueNAS - bonded interfaces
+    if let Some(host) = find_host("truenas-primary") {
+        let network = networks
+            .iter()
+            .find(|n| n.id == host.base.network_id)
+            .unwrap();
+        let interface = find_interface(host.id);
+
+        // Bond interface
+        if_entries.push(IfEntry {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 1,
+                if_descr: "lagg0".to_string(),
+                if_alias: Some("LACP Bond".to_string()),
+                if_type: 161,                    // IEEE8023AD_LAG
+                speed_bps: Some(10_000_000_000), // 10 Gbps bonded
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: interface.map(|i| i.id),
+                neighbor: None,
+                lldp_chassis_id: None,
+                lldp_port_id: None,
+                lldp_sys_name: None,
+                lldp_port_desc: None,
+                lldp_mgmt_addr: None,
+                lldp_sys_desc: None,
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+    }
+
+    // Proxmox - with loopback
+    if let Some(host) = find_host("proxmox-hv01") {
+        let network = networks
+            .iter()
+            .find(|n| n.id == host.base.network_id)
+            .unwrap();
+        let interface = find_interface(host.id);
+
+        // Primary interface
+        if_entries.push(IfEntry {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 1,
+                if_descr: "eno1".to_string(),
+                if_alias: Some("Primary NIC".to_string()),
+                if_type: 6,
+                speed_bps: Some(10_000_000_000),
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: interface.map(|i| i.id),
+                neighbor: None,
+                lldp_chassis_id: None,
+                lldp_port_id: None,
+                lldp_sys_name: None,
+                lldp_port_desc: None,
+                lldp_mgmt_addr: None,
+                lldp_sys_desc: None,
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+
+        // Loopback
+        if_entries.push(IfEntry {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 2,
+                if_descr: "lo".to_string(),
+                if_alias: None,
+                if_type: 24, // SOFTWARE_LOOPBACK
+                speed_bps: None,
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: None,
+                neighbor: None,
+                lldp_chassis_id: None,
+                lldp_port_id: None,
+                lldp_sys_name: None,
+                lldp_port_desc: None,
+                lldp_mgmt_addr: None,
+                lldp_sys_desc: None,
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+    }
+
+    if_entries
+}
+
+// ============================================================================
 // Daemons
 // ============================================================================
 
@@ -1384,18 +1678,20 @@ fn generate_daemons(
                 host_id: host.id,
                 network_id: network.id,
                 url: "https://docker-prod01.acme.local:8443".to_string(),
-                last_seen: now,
+                last_seen: Some(now),
                 capabilities: DaemonCapabilities {
                     has_docker_socket: true,
                     interfaced_subnet_ids: vec![subnet.id],
                 },
-                mode: DaemonMode::Push,
+                mode: DaemonMode::ServerPoll,
                 name: "HQ Daemon".to_string(),
                 tags: vec![],
                 version: Version::parse(env!("CARGO_PKG_VERSION"))
                     .map(Some)
                     .unwrap_or_default(),
                 user_id,
+                api_key_id: None,
+                is_unreachable: false,
             },
         });
     }
@@ -1413,18 +1709,20 @@ fn generate_daemons(
                 host_id: host.id,
                 network_id: network.id,
                 url: "https://app-01.cloud.acme.io:8443".to_string(),
-                last_seen: now,
+                last_seen: Some(now),
                 capabilities: DaemonCapabilities {
                     has_docker_socket: true,
                     interfaced_subnet_ids: vec![subnet.id],
                 },
-                mode: DaemonMode::Push,
+                mode: DaemonMode::ServerPoll,
                 name: "Cloud Daemon".to_string(),
                 tags: vec![],
                 version: Version::parse(env!("CARGO_PKG_VERSION"))
                     .map(Some)
                     .unwrap_or_default(),
                 user_id,
+                api_key_id: None,
+                is_unreachable: false,
             },
         });
     }
@@ -1441,18 +1739,20 @@ fn generate_daemons(
                 host_id: host.id,
                 network_id: network.id,
                 url: "https://nas.denver.acme.local:8443".to_string(),
-                last_seen: now,
+                last_seen: Some(now),
                 capabilities: DaemonCapabilities {
                     has_docker_socket: false,
                     interfaced_subnet_ids: vec![subnet.id],
                 },
-                mode: DaemonMode::Push,
+                mode: DaemonMode::ServerPoll,
                 name: "Denver Daemon".to_string(),
                 tags: vec![],
                 version: Version::parse(env!("CARGO_PKG_VERSION"))
                     .map(Some)
                     .unwrap_or_default(),
                 user_id,
+                api_key_id: None,
+                is_unreachable: false,
             },
         });
     }
@@ -1468,16 +1768,18 @@ fn generate_daemons(
                 host_id: host.id,
                 network_id: network.id,
                 url: "https://dc01.riverside-medical.local:8443".to_string(),
-                last_seen: now,
+                last_seen: Some(now),
                 capabilities: DaemonCapabilities {
                     has_docker_socket: false,
                     interfaced_subnet_ids: vec![subnet.id],
                 },
-                mode: DaemonMode::Push,
+                mode: DaemonMode::ServerPoll,
                 name: "Riverside Daemon".to_string(),
                 tags: vec![],
                 version: None,
                 user_id,
+                api_key_id: None,
+                is_unreachable: false,
             },
         });
     }
@@ -1510,6 +1812,7 @@ fn generate_api_keys(networks: &[Network], now: DateTime<Utc>) -> Vec<DaemonApiK
                 network_id: find_network("Headquarters").id,
                 is_enabled: true,
                 tags: vec![],
+                plaintext: None,
             },
         },
         DaemonApiKey {
@@ -1524,6 +1827,7 @@ fn generate_api_keys(networks: &[Network], now: DateTime<Utc>) -> Vec<DaemonApiK
                 network_id: find_network("Cloud").id,
                 is_enabled: true,
                 tags: vec![],
+                plaintext: None,
             },
         },
         DaemonApiKey {
@@ -1538,6 +1842,7 @@ fn generate_api_keys(networks: &[Network], now: DateTime<Utc>) -> Vec<DaemonApiK
                 network_id: find_network("Denver").id,
                 is_enabled: true,
                 tags: vec![],
+                plaintext: None,
             },
         },
         DaemonApiKey {
@@ -1552,6 +1857,7 @@ fn generate_api_keys(networks: &[Network], now: DateTime<Utc>) -> Vec<DaemonApiK
                 network_id: find_network("Riverside").id,
                 is_enabled: true,
                 tags: vec![],
+                plaintext: None,
             },
         },
     ]

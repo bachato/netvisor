@@ -22,9 +22,11 @@ pub struct DaemonBase {
     #[serde(default)]
     #[schema(read_only, required)]
     pub url: String,
-    #[serde(default)]
-    #[schema(read_only, required)]
-    pub last_seen: DateTime<Utc>,
+    /// Timestamp of last successful contact with daemon.
+    /// NULL for provisioned ServerPoll daemons that haven't been contacted yet.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schema(read_only)]
+    pub last_seen: Option<DateTime<Utc>>,
     #[serde(default)]
     #[schema(read_only, required)]
     pub capabilities: DaemonCapabilities,
@@ -39,6 +41,14 @@ pub struct DaemonBase {
     pub version: Option<Version>,
     /// User responsible for maintaining this daemon
     pub user_id: Uuid,
+    /// Foreign key to API key used for ServerPoll authentication.
+    /// NULL for DaemonPoll daemons or those not yet linked to a key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key_id: Option<Uuid>,
+    /// Whether the daemon is unreachable (for ServerPoll circuit breaker).
+    /// Set to true after repeated polling failures, reset via retry-connection endpoint.
+    #[serde(default)]
+    pub is_unreachable: bool,
 }
 
 #[derive(
@@ -75,6 +85,14 @@ impl Display for Daemon {
     }
 }
 
+/// Daemon operating mode that determines the communication pattern.
+///
+/// - **DaemonPoll** (formerly "Pull"): Daemon makes outbound connections to the server.
+///   The daemon registers itself and polls for work. Best for daemons behind NAT/firewall.
+///
+/// - **ServerPoll** (formerly "Push"): Server makes connections to the daemon.
+///   Server polls daemon for status and discovery results. Best for DMZ deployments
+///   where daemon cannot make outbound connections.
 #[derive(
     Debug,
     Display,
@@ -89,10 +107,16 @@ impl Display for Daemon {
     Hash,
     ToSchema,
 )]
+#[serde(rename_all = "snake_case")]
+#[value(rename_all = "snake_case")]
 pub enum DaemonMode {
+    /// Server polls daemon (daemon cannot make outbound connections)
+    #[serde(alias = "push", alias = "Push")]
+    ServerPoll,
+    /// Daemon polls server (default, firewall-friendly)
     #[default]
-    Push,
-    Pull,
+    #[serde(alias = "pull", alias = "Pull")]
+    DaemonPoll,
 }
 
 impl ChangeTriggersTopologyStaleness<Daemon> for Daemon {

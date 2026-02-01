@@ -7,6 +7,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::server::shared::entities::EntityDiscriminants;
+use crate::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
 use crate::server::{
     daemons::r#impl::api::DiscoveryUpdatePayload,
     shared::types::{
@@ -42,6 +43,10 @@ pub enum DiscoveryType {
         #[serde(default)]
         #[schema(required)]
         host_naming_fallback: HostNamingFallback,
+        /// SNMP credentials for querying devices during discovery
+        /// Server builds this mapping before initiating discovery
+        #[serde(default)]
+        snmp_credentials: SnmpCredentialMapping,
     },
     #[schema(title = "Docker")]
     Docker {
@@ -57,6 +62,25 @@ impl Default for DiscoveryType {
     fn default() -> Self {
         Self::SelfReport {
             host_id: Uuid::nil(),
+        }
+    }
+}
+
+impl DiscoveryType {
+    /// Create a sanitized copy with sensitive data (SNMP credentials) redacted.
+    /// Used when storing EntitySource to prevent credential leakage in API responses.
+    pub fn sanitized(&self) -> Self {
+        match self {
+            DiscoveryType::Network {
+                subnet_ids,
+                host_naming_fallback,
+                snmp_credentials,
+            } => DiscoveryType::Network {
+                subnet_ids: subnet_ids.clone(),
+                host_naming_fallback: *host_naming_fallback,
+                snmp_credentials: snmp_credentials.sanitized(),
+            },
+            other => other.clone(),
         }
     }
 }

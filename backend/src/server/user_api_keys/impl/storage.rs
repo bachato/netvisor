@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -6,11 +7,27 @@ use uuid::Uuid;
 use crate::server::{
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
     },
     user_api_keys::r#impl::base::{UserApiKey, UserApiKeyBase},
     users::r#impl::permissions::UserOrgPermissions,
 };
+
+/// CSV row representation for UserApiKey export (excludes sensitive key field)
+#[derive(Serialize)]
+pub struct UserApiKeyCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub user_id: Uuid,
+    pub organization_id: Uuid,
+    pub permissions: String,
+    pub is_enabled: bool,
+    pub last_used: Option<DateTime<Utc>>,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for UserApiKey {
     type BaseData = UserApiKeyBase;
@@ -127,16 +144,33 @@ impl Storable for UserApiKey {
 }
 
 impl Entity for UserApiKey {
+    type CsvRow = UserApiKeyCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        UserApiKeyCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            user_id: self.base.user_id,
+            organization_id: self.base.organization_id,
+            permissions: format!("{:?}", self.base.permissions),
+            is_enabled: self.base.is_enabled,
+            last_used: self.base.last_used,
+            expires_at: self.base.expires_at,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::UserApiKey
     }
 
-    fn entity_name_singular() -> &'static str {
-        "user API key"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "User API Key";
+    const ENTITY_NAME_PLURAL: &'static str = "User API Keys";
+    const ENTITY_DESCRIPTION: &'static str = "User API keys for programmatic access. Create and manage personal API keys with scoped permissions.";
 
-    fn entity_name_plural() -> &'static str {
-        "user-api-keys"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::OrganizationsAndUsers
     }
 
     fn network_id(&self) -> Option<Uuid> {

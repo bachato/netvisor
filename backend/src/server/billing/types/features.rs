@@ -158,7 +158,7 @@ impl TypeMetadataProvider for Feature {
             Feature::LiveChatSupport => "Access to the Scanopy team via live chat",
             Feature::CommunitySupport => "Community support via GitHub issues and discussions",
             Feature::UnlimitedScans => "No limits on network discovery scans",
-            Feature::UnlimitedHosts => "Monitor as many hosts as your network has",
+            Feature::UnlimitedHosts => "Visualize as many hosts as your network has",
             Feature::ServiceDefinitions => {
                 "Auto-detect databases, containers, web servers, and more"
             }

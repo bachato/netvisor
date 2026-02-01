@@ -81,7 +81,7 @@ pub fn create_remote_host(
     let binding = Binding::new_port_serviceless(dynamic_port.id, Some(interface.id));
 
     let base = HostBase {
-        name: "Mobile Device".to_string(), // Device type in name, not service
+        name: "Mobile Device".to_string(),
         hostname: None,
         network_id,
         tags: Vec::new(),
@@ -89,6 +89,7 @@ pub fn create_remote_host(
         source: EntitySource::System,
         virtualization: None,
         hidden: false,
+        ..Default::default()
     };
 
     let host = Host::new(base);
@@ -128,6 +129,7 @@ pub fn create_internet_connectivity_host(
         source: EntitySource::System,
         virtualization: None,
         hidden: false,
+        ..Default::default()
     };
 
     let host = Host::new(base);
@@ -167,6 +169,7 @@ pub fn create_public_dns_host(
         source: EntitySource::System,
         virtualization: None,
         hidden: false,
+        ..Default::default()
     };
 
     let host = Host::new(base);

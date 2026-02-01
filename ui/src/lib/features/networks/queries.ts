@@ -143,6 +143,7 @@ export function createEmptyNetworkFormData(): Network {
 		created_at: utcTimeZoneSentinel,
 		updated_at: utcTimeZoneSentinel,
 		organization_id: uuidv4Sentinel,
-		tags: []
+		tags: [],
+		snmp_credential_id: null
 	};
 }

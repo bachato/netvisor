@@ -131,9 +131,18 @@ async fn test_cannot_create_host_on_other_network(
         virtualization: None,
         hidden: false,
         tags: Vec::new(),
+        // SNMP fields
+        sys_descr: None,
+        sys_object_id: None,
+        sys_location: None,
+        sys_contact: None,
+        management_url: None,
+        chassis_id: None,
+        snmp_credential_id: None,
         interfaces: vec![],
         ports: vec![],
         services: vec![],
+        if_entries: vec![],
     };
 
     // Should get 401 Unauthorized (or 403 Forbidden)

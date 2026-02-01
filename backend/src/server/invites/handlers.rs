@@ -6,8 +6,10 @@ use crate::server::auth::middleware::permissions::{Admin, Authorized};
 use crate::server::config::AppState;
 use crate::server::invites::r#impl::base::Invite;
 use crate::server::organizations::r#impl::api::CreateInviteRequest;
-use crate::server::shared::services::traits::CrudService;
+use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
+use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
+use crate::server::shared::storage::traits::Entity;
 use crate::server::shared::types::api::ApiResponse;
 use crate::server::shared::types::api::ApiResult;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, EmptyApiResponse};
@@ -19,6 +21,7 @@ use axum::extract::Path;
 use axum::extract::State;
 use axum::response::Redirect;
 use axum::routing::get;
+use chrono::Utc;
 use std::sync::Arc;
 use tower_sessions::Session;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -36,7 +39,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 #[utoipa::path(
     post,
     path = "",
-    tag = "invites",
+    tag = Invite::ENTITY_NAME_PLURAL,
     request_body = CreateInviteRequest,
     responses(
         (status = 200, description = "Invite created", body = ApiResponse<Invite>),
@@ -83,7 +86,7 @@ async fn create_invite(
     if let Some(max_seats) = plan.config().included_seats
         && plan.config().seat_cents.is_none()
     {
-        let user_filter = StorableFilter::<User>::new().organization_id(&organization_id);
+        let user_filter = StorableFilter::<User>::new_from_org_id(&organization_id);
 
         let current_members = state
             .services
@@ -116,11 +119,11 @@ async fn create_invite(
         let all_users = state
             .services
             .user_service
-            .get_all(StorableFilter::<User>::new())
+            .get_all(StorableFilter::<User>::new_from_email(send_to))
             .await
             .unwrap_or_default();
 
-        if all_users.iter().any(|u| &u.base.email == send_to) {
+        if !all_users.is_empty() {
             return Err(ApiError::bad_request(
                 "A user with this email already has an account. They must delete their account before joining a new organization.",
             ));
@@ -129,6 +132,7 @@ async fn create_invite(
 
     let send_to = request.send_to.clone();
     let expiration_hours = request.expiration_hours.unwrap_or(168); // Default 7 days
+    let entity = auth.entity.clone();
 
     let invite = Invite::with_expiration(
         organization_id,
@@ -143,9 +147,34 @@ async fn create_invite(
     let invite = state
         .services
         .invite_service
-        .create(invite, auth.entity.clone())
+        .create(invite, entity.clone())
         .await
         .map_err(|e| ApiError::internal_error(&e.to_string()))?;
+
+    // Emit InviteSent telemetry event if this is the first invite
+    let organization = state
+        .services
+        .organization_service
+        .get_by_id(&organization_id)
+        .await?;
+
+    if let Some(organization) = organization
+        && organization.not_onboarded(&TelemetryOperation::InviteSent)
+    {
+        state
+            .services
+            .invite_service
+            .event_bus()
+            .publish_telemetry(TelemetryEvent {
+                id: Uuid::new_v4(),
+                organization_id,
+                operation: TelemetryOperation::InviteSent,
+                timestamp: Utc::now(),
+                metadata: serde_json::json!({}),
+                authentication: entity,
+            })
+            .await?;
+    }
 
     if let Some(send_to) = send_to
         && let Some(email_service) = &state.services.email_service
@@ -166,7 +195,7 @@ async fn create_invite(
 #[utoipa::path(
     get,
     path = "/{id}",
-    tag = "invites",
+    tag = Invite::ENTITY_NAME_PLURAL,
     params(("id" = Uuid, Path, description = "Invite ID")),
     responses(
         (status = 200, description = "Invite details", body = ApiResponse<Invite>),
@@ -203,7 +232,7 @@ async fn get_invite(
 #[utoipa::path(
     get,
     path = "",
-    tag = "invites",
+    tag = Invite::ENTITY_NAME_PLURAL,
     responses(
         (status = 200, description = "List of active invites", body = ApiResponse<Vec<Invite>>),
     ),
@@ -246,7 +275,7 @@ async fn get_invites(
 #[utoipa::path(
     delete,
     path = "/{id}/revoke",
-    tag = "invites",
+    tag = Invite::ENTITY_NAME_PLURAL,
     params(("id" = Uuid, Path, description = "Invite ID")),
     responses(
         (status = 200, description = "Invite revoked", body = EmptyApiResponse),
@@ -495,6 +524,34 @@ pub async fn process_pending_invite(
     // Mark invite as used
     if let Err(e) = state.services.invite_service.use_invite(invite_id).await {
         tracing::error!("Failed to mark invite as used: {}", e);
+    }
+
+    // Emit InviteAccepted telemetry event if this is the first accepted invite
+    let organization = state
+        .services
+        .organization_service
+        .get_by_id(&pending_org_id)
+        .await
+        .ok()
+        .flatten();
+
+    if let Some(organization) = organization
+        && organization.not_onboarded(&TelemetryOperation::InviteAccepted)
+        && let Err(e) = state
+            .services
+            .invite_service
+            .event_bus()
+            .publish_telemetry(TelemetryEvent {
+                id: Uuid::new_v4(),
+                organization_id: pending_org_id,
+                operation: TelemetryOperation::InviteAccepted,
+                timestamp: Utc::now(),
+                metadata: serde_json::json!({}),
+                authentication: AuthenticatedEntity::System,
+            })
+            .await
+    {
+        tracing::warn!("Failed to emit InviteAccepted telemetry event: {}", e);
     }
 
     // Clear session data

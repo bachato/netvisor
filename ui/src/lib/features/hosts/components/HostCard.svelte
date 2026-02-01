@@ -4,7 +4,7 @@
 	import type { Host } from '../types/base';
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import { concepts, entities, serviceDefinitions } from '$lib/shared/stores/metadata';
-	import { useServicesQuery } from '$lib/features/services/queries';
+	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
@@ -16,6 +16,7 @@
 		common_description,
 		common_edit,
 		common_hide,
+		common_ifEntries,
 		common_interfaces,
 		common_services,
 		common_tags,
@@ -25,16 +26,19 @@
 		hosts_unknownService,
 		hosts_vmManagedBy
 	} from '$lib/paraglide/messages';
+	import { useIfEntriesQuery } from '$lib/features/ifEntries/queries';
 
 	// Queries
-	const servicesQuery = useServicesQuery();
+	const servicesQuery = useServicesCacheQuery();
 	const interfacesQuery = useInterfacesQuery();
+	const ifEntriesQuery = useIfEntriesQuery();
 	const daemonsQuery = useDaemonsQuery();
 	const subnetsQuery = useSubnetsQuery();
 
 	// Derived data
-	let servicesData = $derived(servicesQuery.data?.items ?? []);
+	let servicesData = $derived(servicesQuery.data ?? []);
 	let interfacesData = $derived(interfacesQuery.data ?? []);
+	let ifEntriesData = $derived(ifEntriesQuery.data ?? []);
 	let daemonsData = $derived(daemonsQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 
@@ -73,6 +77,7 @@
 			.sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
 	);
 	let hostInterfaces = $derived(interfacesData.filter((i) => i.host_id === host.id));
+	let hostIfEntries = $derived(ifEntriesData.filter((i) => i.host_id === host.id));
 	let virtualizationService = $derived(
 		host.virtualization
 			? servicesData.find((s) => s.id === host.virtualization?.details.service_id)
@@ -154,6 +159,16 @@
 						};
 					}),
 					emptyText: hosts_noInterfaces()
+				},
+				{
+					label: common_ifEntries(),
+					value: hostIfEntries.map((i) => {
+						return {
+							id: i.id,
+							label: i.if_descr && i.if_descr.length > 0 ? i.if_descr : 'Unnamed ifEntry',
+							color: entities.getColorHelper('IfEntry').color
+						};
+					})
 				},
 				{ label: common_tags(), snippet: tagsSnippet }
 			],

@@ -3,7 +3,7 @@
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import type { Group } from '../types/base';
 	import { entities, groupTypes } from '$lib/shared/stores/metadata';
-	import { useServicesQuery } from '$lib/features/services/queries';
+	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import { toColor } from '$lib/shared/utils/styling';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
@@ -17,16 +17,14 @@
 		common_tags,
 		groups_edgeStyleLabel,
 		groups_groupType,
-		groups_loadingServices,
 		groups_noServicesInGroup
 	} from '$lib/paraglide/messages';
 
 	// Queries
-	const servicesQuery = useServicesQuery();
+	const servicesQuery = useServicesCacheQuery();
 
 	// Derived data
-	let servicesData = $derived(servicesQuery.data?.items ?? []);
-	let isServicesLoading = $derived(servicesQuery.isLoading);
+	let servicesData = $derived(servicesQuery.data ?? []);
 
 	let {
 		group,
@@ -123,7 +121,7 @@
 						color: entities.getColorString('Service')
 					};
 				}),
-				emptyText: isServicesLoading ? groups_loadingServices() : groups_noServicesInGroup()
+				emptyText: groups_noServicesInGroup()
 			},
 			{ label: common_tags(), snippet: tagsSnippet }
 		],

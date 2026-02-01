@@ -232,6 +232,7 @@ pub enum PortType {
     AMQPTls,
     Wireguard,
     OpenVPN,
+    BACnet,
     Custom(PortConfig),
 }
 
@@ -568,6 +569,10 @@ impl PortType {
                 number: 1194,
                 protocol: TransportProtocol::Udp,
             },
+            PortType::BACnet => PortConfig {
+                number: 47808,
+                protocol: TransportProtocol::Udp,
+            },
         }
     }
 }
@@ -643,6 +648,7 @@ impl TypeMetadataProvider for PortType {
             PortType::AMQPTls => "AMQP TLS",
             PortType::Wireguard => "Wireguard",
             PortType::OpenVPN => "OpenVPN",
+            PortType::BACnet => "BACnet",
         }
     }
 
@@ -701,6 +707,7 @@ impl TypeMetadataProvider for PortType {
             PortType::AMQPTls => "Advanced Message Queuing Protocol using TLS",
             PortType::Wireguard => "Wireguard VPN",
             PortType::OpenVPN => "OpenVPN",
+            PortType::BACnet => "Building Automation and Control Network",
         }
     }
 

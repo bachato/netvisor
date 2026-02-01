@@ -104,10 +104,10 @@ impl AuthService {
         // Check if email already taken
         let all_users = self
             .user_service
-            .get_all(StorableFilter::<User>::new())
+            .get_all(StorableFilter::<User>::new_from_email(&request.email))
             .await?;
 
-        if all_users.iter().any(|u| u.base.email == request.email) {
+        if !all_users.is_empty() {
             return Err(anyhow!("Email address already taken"));
         }
 
@@ -230,6 +230,7 @@ impl AuthService {
                         plan,
                         plan_status: None,
                         onboarding,
+                        hubspot_company_id: None,
                     }),
                     AuthenticatedEntity::System,
                 )
@@ -282,14 +283,36 @@ impl AuthService {
 
         if is_new_org {
             let authentication: AuthenticatedEntity = user.clone().into();
+
+            // Include org_name and onboarding data in metadata for HubSpot sync
+            let org_name = pending_setup
+                .as_ref()
+                .map(|s| s.org_name.clone())
+                .unwrap_or_else(|| "My Organization".to_string());
+            let use_case = pending_setup.as_ref().and_then(|s| s.use_case.clone());
+            let company_size = pending_setup.as_ref().and_then(|s| s.company_size.clone());
+            let job_title = pending_setup.as_ref().and_then(|s| s.job_title.clone());
+
+            let mut metadata = serde_json::json!({
+                "org_name": org_name
+            });
+            if let Some(use_case) = use_case {
+                metadata["use_case"] = serde_json::json!(use_case);
+            }
+            if let Some(company_size) = company_size {
+                metadata["company_size"] = serde_json::json!(company_size);
+            }
+            if let Some(job_title) = job_title {
+                metadata["job_title"] = serde_json::json!(job_title);
+            }
+
             self.event_bus
                 .publish_telemetry(TelemetryEvent {
                     id: Uuid::new_v4(),
                     organization_id: user.base.organization_id,
                     operation: TelemetryOperation::OrgCreated,
                     timestamp: Utc::now(),
-                    metadata: serde_json::json!({}),
-
+                    metadata,
                     authentication,
                 })
                 .await?;
@@ -393,14 +416,10 @@ impl AuthService {
     /// Attempt login without rate limiting
     async fn try_login(&self, request: &LoginRequest) -> Result<User> {
         // Get user by email
-        let all_users = self
+        let user = self
             .user_service
-            .get_all(StorableFilter::<User>::new())
-            .await?;
-
-        let user = all_users
-            .iter()
-            .find(|u| u.base.email == request.email)
+            .get_one(StorableFilter::<User>::new_from_email(&request.email))
+            .await?
             .ok_or_else(|| anyhow!("Invalid email or password"))?;
 
         // Check if user has a password set
@@ -476,13 +495,11 @@ impl AuthService {
             .ok_or_else(|| anyhow!("Email service not configured"))?
             .clone();
 
-        let all_users = self
+        let mut user = match self
             .user_service
-            .get_all(StorableFilter::<User>::new())
-            .await?;
-
-        // Find user but don't expose if they exist or not
-        let mut user = match all_users.into_iter().find(|u| &u.base.email == email) {
+            .get_one(StorableFilter::<User>::new_from_email(email))
+            .await?
+        {
             Some(user) => user,
             None => {
                 // User doesn't exist - but we still return Ok to prevent enumeration
@@ -530,14 +547,10 @@ impl AuthService {
         user_agent: Option<String>,
     ) -> Result<User> {
         // Find user by password reset token
-        let all_users = self
+        let mut user = self
             .user_service
-            .get_all(StorableFilter::<User>::new())
-            .await?;
-
-        let mut user = all_users
-            .into_iter()
-            .find(|u| u.base.password_reset_token.as_deref() == Some(token))
+            .get_one(StorableFilter::<User>::new_from_password_reset_token(token))
+            .await?
             .ok_or_else(|| anyhow!("Invalid or expired password reset token"))?;
 
         // Check if token is expired
@@ -644,14 +657,12 @@ impl AuthService {
         user_agent: Option<String>,
     ) -> Result<User> {
         // Find user by verification token
-        let all_users = self
+        let mut user = self
             .user_service
-            .get_all(StorableFilter::<User>::new())
-            .await?;
-
-        let mut user = all_users
-            .into_iter()
-            .find(|u| u.base.email_verification_token.as_deref() == Some(token))
+            .get_one(StorableFilter::<User>::new_from_email_verification_token(
+                token,
+            ))
+            .await?
             .ok_or_else(|| anyhow!("Invalid verification token"))?;
 
         // Check if token is expired
@@ -708,14 +719,10 @@ impl AuthService {
         }
 
         // Find user
-        let all_users = self
+        let mut user = self
             .user_service
-            .get_all(StorableFilter::<User>::new())
-            .await?;
-
-        let mut user = all_users
-            .into_iter()
-            .find(|u| &u.base.email == email)
+            .get_one(StorableFilter::<User>::new_from_email(email))
+            .await?
             .ok_or_else(|| anyhow!("User not found"))?;
 
         // Check if already verified

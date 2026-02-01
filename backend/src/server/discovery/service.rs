@@ -1,7 +1,9 @@
+use crate::daemon::discovery::types::base::DiscoveryPhase;
 use crate::daemon::runtime::service::LOG_TARGET;
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
-use crate::server::daemons::r#impl::base::DaemonMode;
-use crate::server::discovery::r#impl::types::RunType;
+use crate::server::daemons::r#impl::api::DiscoveryUpdatePayload;
+use crate::server::discovery::r#impl::base::Discovery;
+use crate::server::discovery::r#impl::types::{DiscoveryType, RunType};
 use crate::server::shared::entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants};
 use crate::server::shared::events::bus::EventBus;
 use crate::server::shared::events::types::{EntityEvent, EntityOperation};
@@ -9,6 +11,7 @@ use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::generic::GenericPostgresStorage;
 use crate::server::shared::storage::traits::{Storable, Storage};
+use crate::server::snmp_credentials::service::SnmpCredentialService;
 use crate::server::tags::entity_tags::EntityTagService;
 use anyhow::anyhow;
 use anyhow::{Error, Result};
@@ -19,19 +22,9 @@ use tokio::sync::{RwLock, broadcast};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use uuid::Uuid;
 
-use crate::server::discovery::r#impl::base::Discovery;
-use crate::{
-    daemon::discovery::types::base::DiscoveryPhase,
-    server::daemons::{
-        r#impl::api::{DaemonDiscoveryRequest, DiscoveryUpdatePayload},
-        service::DaemonService,
-    },
-};
-
 /// Server-side session management for discovery
 pub struct DiscoveryService {
     discovery_storage: Arc<GenericPostgresStorage<Discovery>>,
-    daemon_service: Arc<DaemonService>,
     sessions: RwLock<HashMap<Uuid, DiscoveryUpdatePayload>>, // session_id -> session state mapping
     daemon_sessions: RwLock<HashMap<Uuid, Vec<Uuid>>>,       // daemon_id -> session_id mapping
     daemon_pull_cancellations: RwLock<HashMap<Uuid, (bool, Uuid)>>, // daemon_id -> (boolean, session_id) mapping for pull mode cancellations of current session on daemon
@@ -40,6 +33,7 @@ pub struct DiscoveryService {
     scheduler: Option<Arc<RwLock<JobScheduler>>>,
     event_bus: Arc<EventBus>,
     entity_tag_service: Arc<EntityTagService>,
+    snmp_credential_service: Arc<SnmpCredentialService>,
 }
 
 impl EventBusService<Discovery> for DiscoveryService {
@@ -69,16 +63,15 @@ impl CrudService<Discovery> for DiscoveryService {
 impl DiscoveryService {
     pub async fn new(
         discovery_storage: Arc<GenericPostgresStorage<Discovery>>,
-        daemon_service: Arc<DaemonService>,
         event_bus: Arc<EventBus>,
         entity_tag_service: Arc<EntityTagService>,
+        snmp_credential_service: Arc<SnmpCredentialService>,
     ) -> Result<Arc<Self>> {
         let (tx, _rx) = broadcast::channel(100); // Buffer 100 messages
         let scheduler = JobScheduler::new().await?;
 
         Ok(Arc::new(Self {
             discovery_storage,
-            daemon_service,
             sessions: RwLock::new(HashMap::new()),
             daemon_sessions: RwLock::new(HashMap::new()),
             daemon_pull_cancellations: RwLock::new(HashMap::new()),
@@ -87,6 +80,7 @@ impl DiscoveryService {
             scheduler: Some(Arc::new(RwLock::new(scheduler))),
             event_bus,
             entity_tag_service,
+            snmp_credential_service,
         }))
     }
 
@@ -119,11 +113,47 @@ impl DiscoveryService {
 
         let all_sessions = self.sessions.read().await;
 
-        all_sessions
+        // Preserve order from daemon_sessions Vec (not HashMap iteration order)
+        // Only return Pending sessions - once dispatched, they transition to Starting
+        session_ids
             .iter()
-            .filter(|(session_id, _)| session_ids.contains(session_id))
-            .map(|(_, session)| session.clone())
+            .filter_map(|session_id| all_sessions.get(session_id).cloned())
+            .filter(|session| session.phase == DiscoveryPhase::Pending)
             .collect()
+    }
+
+    /// Check if daemon has an active (non-terminal, non-pending) discovery session.
+    /// This is used to prevent dispatching new work while a session is in progress.
+    pub async fn has_active_session_for_daemon(&self, daemon_id: &Uuid) -> bool {
+        let daemon_session_ids = self.daemon_sessions.read().await;
+        let session_ids = daemon_session_ids
+            .get(daemon_id)
+            .cloned()
+            .unwrap_or_default();
+
+        let all_sessions = self.sessions.read().await;
+
+        session_ids.iter().any(|session_id| {
+            all_sessions
+                .get(session_id)
+                .map(|s| !s.phase.is_terminal() && s.phase != DiscoveryPhase::Pending)
+                .unwrap_or(false)
+        })
+    }
+
+    /// Transition a session from Pending to Starting phase.
+    /// Called when the session is dispatched to the daemon.
+    pub async fn transition_session_to_starting(&self, session_id: Uuid) {
+        let mut sessions = self.sessions.write().await;
+        if let Some(session) = sessions.get_mut(&session_id)
+            && session.phase == DiscoveryPhase::Pending
+        {
+            session.phase = DiscoveryPhase::Starting;
+            tracing::debug!(
+                session_id = %session_id,
+                "Transitioned session to Starting phase"
+            );
+        }
     }
 
     pub async fn pull_cancellation_for_daemon(&self, daemon_id: &Uuid) -> (bool, Uuid) {
@@ -344,7 +374,7 @@ impl DiscoveryService {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Scheduler not initialized"))?;
 
-        let filter = StorableFilter::<Discovery>::new().scheduled_discovery();
+        let filter = StorableFilter::<Discovery>::new_for_scheduled_discoveries();
 
         let discoveries = self.discovery_storage.get_all(filter).await?;
         let count = discoveries.len();
@@ -467,11 +497,30 @@ impl DiscoveryService {
     ) -> Result<DiscoveryUpdatePayload, anyhow::Error> {
         let session_id = Uuid::new_v4();
 
+        // Hydrate SNMP credentials
+        let discovery_type = if let DiscoveryType::Network {
+            host_naming_fallback,
+            subnet_ids,
+            ..
+        } = discovery.base.discovery_type
+        {
+            DiscoveryType::Network {
+                subnet_ids,
+                host_naming_fallback,
+                snmp_credentials: self
+                    .snmp_credential_service
+                    .build_credentials_for_discovery(discovery.base.network_id)
+                    .await?,
+            }
+        } else {
+            discovery.base.discovery_type
+        };
+
         let session_payload = DiscoveryUpdatePayload::new(
             session_id,
             discovery.base.daemon_id,
             discovery.base.network_id,
-            discovery.base.discovery_type.clone(),
+            discovery_type,
         );
 
         // Add to session map
@@ -500,24 +549,11 @@ impl DiscoveryService {
             .or_default()
             .push(session_id);
 
-        let daemon_is_push = self
-            .daemon_service
-            .get_by_id(&discovery.base.daemon_id)
-            .await?
-            .map(|d| d.base.mode == DaemonMode::Push)
-            .unwrap_or(false);
-
-        // Initiate session on daemon if none are running and daemon is push
-        if !daemon_is_running_discovery && daemon_is_push {
-            self.daemon_service
-                .send_discovery_request(
-                    &discovery.base.daemon_id,
-                    DaemonDiscoveryRequest {
-                        discovery_type: discovery.base.discovery_type,
-                        session_id,
-                    },
-                    authentication,
-                )
+        // Publish Started event if no other sessions are running for daemon
+        // DaemonService subscribes to this event and sends the request to the daemon.
+        if !daemon_is_running_discovery {
+            self.event_bus()
+                .publish_discovery(session_payload.into_discovery_event_with_auth(authentication))
                 .await?;
         }
 
@@ -562,6 +598,8 @@ impl DiscoveryService {
         let session = sessions.get_mut(&update.session_id).unwrap();
 
         let daemon_id = session.daemon_id;
+        let network_id = session.network_id;
+
         tracing::debug!(
             session_id = %update.session_id,
             phase = %update.phase,
@@ -573,12 +611,14 @@ impl DiscoveryService {
 
         *session = update.clone();
 
-        let is_terminal = matches!(
-            session.phase,
-            DiscoveryPhase::Cancelled | DiscoveryPhase::Complete | DiscoveryPhase::Failed
-        );
+        if session.phase.is_terminal() {
+            self.event_bus()
+                .publish_discovery(session.into_discovery_event())
+                .await?;
 
-        if is_terminal {
+            // If user cancelled session, but it finished before we could send cancellation, remove key so it doesn't cancel upcoming sessions
+            self.pull_cancellation_for_daemon(&session.daemon_id).await;
+
             // Create historical discovery record
             let historical_discovery = Discovery {
                 id: Uuid::new_v4(),
@@ -595,9 +635,6 @@ impl DiscoveryService {
                     },
                 },
             };
-
-            // User cancelled session, but it finished before we could send cancellation so remove key so it doesn't cancel upcoming sessions
-            self.pull_cancellation_for_daemon(&session.daemon_id).await;
 
             // Save to database
             if let Err(e) = self.discovery_storage.create(&historical_discovery).await {
@@ -616,9 +653,7 @@ impl DiscoveryService {
                         entity_type: historical_discovery.into(),
                         operation: EntityOperation::Created,
                         timestamp: Utc::now(),
-                        metadata: serde_json::json!({
-                            "type": "historical"
-                        }),
+                        metadata: serde_json::json!({}),
                         authentication: AuthenticatedEntity::System,
                     })
                     .await?;
@@ -651,29 +686,14 @@ impl DiscoveryService {
             // Drop the sessions lock before sending the request
             drop(sessions);
 
-            // If any in queue and daemon is running push mode, initiate next session
-            // If daemon is pull mode, it will request next session on its next pull
-            let daemon_is_push = self
-                .daemon_service
-                .get_by_id(&daemon_id)
-                .await?
-                .map(|d| d.base.mode == DaemonMode::Push)
-                .unwrap_or(false);
+            // Publish event which will trigger notifying any daemons in ServerPoll to start session
+            // If daemon is daemon_poll mode, it will request next session on its next poll
+            if let Some((discovery_type, session_id)) = next_session_info {
+                let started_payload =
+                    DiscoveryUpdatePayload::new(session_id, daemon_id, network_id, discovery_type);
 
-            if let Some((discovery_type, session_id)) = next_session_info
-                && daemon_is_push
-            {
-                tracing::debug!("Starting next session");
-
-                self.daemon_service
-                    .send_discovery_request(
-                        &daemon_id,
-                        DaemonDiscoveryRequest {
-                            discovery_type,
-                            session_id,
-                        },
-                        AuthenticatedEntity::System,
-                    )
+                self.event_bus()
+                    .publish_discovery(started_payload.into_discovery_event())
                     .await?;
             }
         }
@@ -698,6 +718,18 @@ impl DiscoveryService {
         let daemon_id = session.daemon_id;
         let phase = session.phase;
 
+        let cancelled_update = DiscoveryUpdatePayload {
+            session_id,
+            network_id,
+            daemon_id,
+            phase: DiscoveryPhase::Cancelled,
+            progress: 0,
+            error: None,
+            started_at: session.started_at,
+            finished_at: Some(Utc::now()),
+            discovery_type: session.discovery_type,
+        };
+
         // Handle based on current phase
         match phase {
             // Pending sessions: just remove from queue
@@ -717,17 +749,6 @@ impl DiscoveryService {
                 drop(daemon_sessions);
 
                 // Broadcast cancellation update so frontend knows
-                let cancelled_update = DiscoveryUpdatePayload {
-                    session_id,
-                    network_id,
-                    daemon_id,
-                    phase: DiscoveryPhase::Cancelled,
-                    progress: 0,
-                    error: None,
-                    started_at: session.started_at,
-                    finished_at: Some(Utc::now()),
-                    discovery_type: session.discovery_type,
-                };
                 let _ = self.update_tx.send(cancelled_update);
 
                 tracing::info!("Cancelled pending session {} from queue", session_id);
@@ -740,110 +761,29 @@ impl DiscoveryService {
             )),
 
             // Active phases: send cancellation to daemon
+            // We do BOTH actions to support both daemon modes:
+            // 1. Publish DiscoveryCancelled event - DaemonService subscriber handles ServerPoll mode
+            // 2. Set cancellation flag - DaemonPoll mode checks on next poll via request_work
             DiscoveryPhase::Started | DiscoveryPhase::Scanning => {
-                if let Some(daemon) = self.daemon_service.get_by_id(&daemon_id).await? {
-                    match daemon.base.mode {
-                        DaemonMode::Push => {
-                            match self
-                                .daemon_service
-                                .send_discovery_cancellation(daemon, session_id, authentication)
-                                .await
-                            {
-                                Ok(_) => {
-                                    tracing::info!(
-                                        daemon_id = %daemon_id,
-                                        session_id = %session_id,
-                                        "Cancellation request sent",
-                                    );
-                                }
-                                Err(e) => {
-                                    tracing::warn!(
-                                        daemon_id = %daemon_id,
-                                        session_id = %session_id,
-                                        error = %e,
-                                        "Failed to reach daemon for cancellation (daemon may be down). Marking session as cancelled anyway."
-                                    );
+                self.event_bus()
+                    .publish_discovery(
+                        cancelled_update.into_discovery_event_with_auth(authentication),
+                    )
+                    .await?;
 
-                                    // Daemon is unreachable, immediately fail the session
-                                    let mut sessions = self.sessions.write().await;
-                                    let mut daemon_sessions = self.daemon_sessions.write().await;
+                // Set cancellation flag for DaemonPoll mode (checked on next poll)
+                self.daemon_pull_cancellations
+                    .write()
+                    .await
+                    .insert(daemon_id, (true, session_id));
 
-                                    if let Some(session) = sessions.remove(&session_id) {
-                                        // Remove from daemon queue
-                                        if let Some(queue) = daemon_sessions.get_mut(&daemon_id) {
-                                            queue.retain(|id| *id != session_id);
-                                        }
+                tracing::info!(
+                    daemon_id = %daemon_id,
+                    session_id = %session_id,
+                    "Discovery cancellation requested",
+                );
 
-                                        // Broadcast failed/cancelled update
-                                        let cancelled_update = DiscoveryUpdatePayload {
-                                            session_id,
-                                            network_id,
-                                            daemon_id,
-                                            phase: DiscoveryPhase::Failed,
-                                            progress: session.progress,
-                                            error: Some("Daemon unreachable during cancellation. Session was removed from server.".to_string()),
-                                            started_at: session.started_at,
-                                            finished_at: Some(Utc::now()),
-                                            discovery_type: session.discovery_type.clone(),
-                                        };
-                                        let _ = self.update_tx.send(cancelled_update.clone());
-
-                                        // Create historical discovery record for the stalled session
-                                        let historical_discovery = Discovery {
-                                            id: Uuid::new_v4(),
-                                            created_at: session.started_at.unwrap_or(Utc::now()),
-                                            updated_at: Utc::now(),
-                                            base: crate::server::discovery::r#impl::base::DiscoveryBase {
-                                                daemon_id: session.daemon_id,
-                                                network_id: session.network_id,
-                                                tags: Vec::new(),
-                                                name: "Discovery Run (Cancellation Failed)".to_string(),
-                                                discovery_type: session.discovery_type.clone(),
-                                                run_type: RunType::Historical {
-                                                    results: cancelled_update,
-                                                },
-                                            },
-                                        };
-
-                                        if let Err(e) = self
-                                            .discovery_storage
-                                            .create(&historical_discovery)
-                                            .await
-                                        {
-                                            tracing::error!(
-                                                "Failed to create historical discovery record for stalled session {}: {}",
-                                                session_id,
-                                                e
-                                            );
-                                        }
-                                    }
-                                }
-                            }
-                            Ok(())
-                        }
-                        DaemonMode::Pull => {
-                            // Add to pull cancellations
-                            self.daemon_pull_cancellations
-                                .write()
-                                .await
-                                .entry(daemon_id)
-                                .insert_entry((true, session_id));
-
-                            tracing::info!(
-                                "Marked session {} for cancellation on next pull by daemon {}",
-                                session_id,
-                                daemon_id
-                            );
-                            Ok(())
-                        }
-                    }
-                } else {
-                    Err(anyhow!(
-                        "Daemon {} not found when trying to cancel discovery session {}",
-                        daemon_id,
-                        session_id
-                    ))
-                }
+                Ok(())
             }
 
             // Terminal phases: already done
@@ -892,7 +832,7 @@ impl DiscoveryService {
         let stall_threshold = chrono::Duration::minutes(5);
 
         // First pass: identify stalled sessions (read locks only)
-        let stalled_sessions: Vec<(Uuid, Uuid)> = {
+        let stalled_sessions: Vec<DiscoveryUpdatePayload> = {
             let sessions = self.sessions.read().await;
             let last_updated = self.session_last_updated.read().await;
 
@@ -914,7 +854,7 @@ impl DiscoveryService {
                     };
 
                     if is_stalled {
-                        Some((*session_id, session.daemon_id))
+                        Some(session.clone())
                     } else {
                         None
                     }
@@ -926,76 +866,56 @@ impl DiscoveryService {
             return;
         }
 
-        // Second pass: send cancellation requests to daemons (no locks held)
-        for (session_id, daemon_id) in &stalled_sessions {
+        // Second pass: request cancellation for stalled sessions (no locks held)
+        // We do BOTH actions to support both daemon modes:
+        // 1. Publish DiscoveryCancelled event - DaemonService subscriber handles ServerPoll mode
+        // 2. Set cancellation flag - DaemonPoll mode checks on next poll via request_work
+        for session in &stalled_sessions {
+            let daemon_id = session.daemon_id;
+            let session_id = session.session_id;
+
             tracing::warn!(
                 session_id = %session_id,
                 daemon_id = %daemon_id,
-                "Sending cancellation to daemon for stalled session"
+                "Requesting cancellation for stalled session"
             );
 
-            // Try to get daemon info and send cancellation
-            match self.daemon_service.get_by_id(daemon_id).await {
-                Ok(Some(daemon)) => {
-                    match daemon.base.mode {
-                        DaemonMode::Push => {
-                            // Send HTTP cancellation request (best effort)
-                            let url = format!("{}/api/discovery/cancel", daemon.base.url);
-                            let client = reqwest::Client::new();
-                            match client.post(&url).json(session_id).send().await {
-                                Ok(response) if response.status().is_success() => {
-                                    tracing::info!(
-                                        daemon_id = %daemon_id,
-                                        session_id = %session_id,
-                                        "Sent cancellation request to daemon for stalled session"
-                                    );
-                                }
-                                Ok(response) => {
-                                    tracing::warn!(
-                                        daemon_id = %daemon_id,
-                                        session_id = %session_id,
-                                        status = %response.status(),
-                                        "Failed to cancel stalled session on daemon"
-                                    );
-                                }
-                                Err(e) => {
-                                    tracing::warn!(
-                                        daemon_id = %daemon_id,
-                                        session_id = %session_id,
-                                        error = %e,
-                                        "Failed to send cancellation request to daemon"
-                                    );
-                                }
-                            }
-                        }
-                        DaemonMode::Pull => {
-                            // Set cancellation flag for pull mode
-                            self.daemon_pull_cancellations
-                                .write()
-                                .await
-                                .insert(*daemon_id, (true, *session_id));
-                            tracing::info!(
-                                daemon_id = %daemon_id,
-                                session_id = %session_id,
-                                "Set cancellation flag for pull-mode daemon"
-                            );
-                        }
-                    }
-                }
-                Ok(None) => {
-                    tracing::warn!(
-                        daemon_id = %daemon_id,
-                        "Daemon not found when trying to cancel stalled session"
-                    );
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        daemon_id = %daemon_id,
-                        error = %e,
-                        "Failed to get daemon for cancellation"
-                    );
-                }
+            let cancelled_update = DiscoveryUpdatePayload {
+                session_id,
+                network_id: session.network_id,
+                daemon_id,
+                phase: DiscoveryPhase::Cancelled,
+                progress: session.progress,
+                error: None,
+                started_at: session.started_at,
+                finished_at: Some(Utc::now()),
+                discovery_type: session.discovery_type.clone(),
+            };
+
+            if let Err(e) = self
+                .event_bus()
+                .publish_discovery(cancelled_update.into_discovery_event())
+                .await
+            {
+                tracing::warn!(
+                    daemon_id = %session.daemon_id,
+                    session_id = %session.session_id,
+                    error = %e,
+                    "Failed to publish cancellation event for stalled session"
+                );
             }
+
+            // Set cancellation flag for DaemonPoll mode (checked on next poll)
+            self.daemon_pull_cancellations
+                .write()
+                .await
+                .insert(daemon_id, (true, session_id));
+
+            tracing::info!(
+                daemon_id = %daemon_id,
+                session_id = %session_id,
+                "Cancellation requested for stalled session"
+            );
         }
 
         // Third pass: cleanup session state (write locks)
@@ -1006,9 +926,10 @@ impl DiscoveryService {
 
         let mut stalled_count = 0;
 
-        for (session_id, _daemon_id) in stalled_sessions {
-            if let Some(mut session) = sessions.remove(&session_id) {
+        for session in stalled_sessions {
+            if let Some(mut session) = sessions.remove(&session.session_id) {
                 let daemon_id = session.daemon_id;
+                let session_id = session.session_id;
 
                 tracing::warn!(
                     session_id = %session_id,

@@ -26,6 +26,7 @@ impl DaemonAppState {
         utils: PlatformDaemonUtils,
     ) -> anyhow::Result<Arc<Self>> {
         config.initialize().await?;
+
         let services = Arc::new(DaemonServiceFactory::new(config.clone()).await?);
         Ok(Arc::new(Self {
             config,

@@ -98,7 +98,7 @@
 </script>
 
 {#if appInitialized}
-	<div class="flex min-h-screen">
+	<div class="flex h-screen">
 		<!-- Sidebar -->
 		<div class="flex-shrink-0">
 			<Sidebar bind:activeTab bind:collapsed={sidebarCollapsed} bind:allTabs />
@@ -110,7 +110,7 @@
 			class:ml-16={sidebarCollapsed}
 			class:ml-64={!sidebarCollapsed}
 		>
-			<div class="p-8">
+			<div class="p-8 [&_.sticky]:sticky [&_.sticky]:top-0">
 				<!-- Programmatically render all tabs based on sidebar config -->
 				{#each allTabs as tab (tab.id)}
 					<div class:hidden={activeTab !== tab.id}>

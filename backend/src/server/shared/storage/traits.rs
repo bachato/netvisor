@@ -4,6 +4,7 @@ use crate::server::bindings::r#impl::base::Binding;
 use crate::server::groups::r#impl::base::Group;
 use crate::server::services::r#impl::base::Service;
 use crate::server::shared::entities::EntityDiscriminants;
+use crate::server::shared::entity_metadata::EntityCategory;
 use crate::server::shared::events::types::TelemetryOperation;
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::{
@@ -11,6 +12,7 @@ use crate::server::{
     daemons::r#impl::{api::DaemonCapabilities, base::DaemonMode},
     discovery::r#impl::types::{DiscoveryType, RunType},
     hosts::r#impl::{base::Host, virtualization::HostVirtualization},
+    if_entries::r#impl::base::IfEntry,
     interfaces::r#impl::base::Interface,
     ports::r#impl::base::Port,
     services::r#impl::{definitions::ServiceDefinition, virtualization::ServiceVirtualization},
@@ -95,11 +97,37 @@ pub trait Entity: Storable {
     /// Entity type discriminant for the entity enum
     fn entity_type() -> EntityDiscriminants;
 
+    /// CSV row type for export. Must be Serialize.
+    /// The csv crate derives headers automatically from field names.
+    type CsvRow: serde::Serialize;
+
+    /// Converts this entity to a CSV row struct.
+    fn to_csv_row(&self) -> Self::CsvRow;
+
     /// Singular name for error messages (e.g., "host")
-    fn entity_name_singular() -> &'static str;
+    /// Use the constant in const contexts, use the method at runtime.
+    const ENTITY_NAME_SINGULAR: &'static str;
 
     /// Plural name for API paths and collections (e.g., "hosts")
-    fn entity_name_plural() -> &'static str;
+    /// Use the constant in const contexts, use the method at runtime.
+    const ENTITY_NAME_PLURAL: &'static str;
+
+    /// Description for API documentation and database schema docs.
+    /// Should be 1-3 sentences explaining the entity's purpose.
+    const ENTITY_DESCRIPTION: &'static str;
+
+    /// Category for documentation grouping.
+    fn entity_category() -> EntityCategory;
+
+    /// Singular name for error messages (e.g., "host")
+    fn entity_name_singular() -> &'static str {
+        Self::ENTITY_NAME_SINGULAR
+    }
+
+    /// Plural name for API paths and collections (e.g., "hosts")
+    fn entity_name_plural() -> &'static str {
+        Self::ENTITY_NAME_PLURAL
+    }
 
     /// Tenant scoping - network context
     fn network_id(&self) -> Option<Uuid>;
@@ -168,6 +196,7 @@ pub enum SqlValue {
     UuidArray(Vec<Uuid>),
     IpCidr(IpCidr),
     IpAddr(IpAddr),
+    OptionalIpAddr(Option<IpAddr>),
     EntitySource(EntitySource),
     EntityDiscriminant(EntityDiscriminants),
     ServiceDefinition(Box<dyn ServiceDefinition>),
@@ -197,4 +226,5 @@ pub enum SqlValue {
     JsonValue(serde_json::Value),
     MacAddress(MacAddress),
     OptionalMacAddress(Option<MacAddress>),
+    IfEntries(Vec<IfEntry>),
 }

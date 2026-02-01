@@ -3,6 +3,7 @@ use std::net::IpAddr;
 use chrono::{DateTime, Utc};
 use ipnetwork::IpNetwork;
 use mac_address::MacAddress;
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -11,12 +12,28 @@ use crate::server::{
     interfaces::r#impl::base::{Interface, InterfaceBase},
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::{
             child::ChildStorableEntity,
             traits::{Entity, SqlValue, Storable},
         },
     },
 };
+
+/// CSV row representation for Interface export
+#[derive(Serialize)]
+pub struct InterfaceCsvRow {
+    pub id: Uuid,
+    pub ip_address: String,
+    pub mac_address: Option<String>,
+    pub name: Option<String>,
+    pub host_id: Uuid,
+    pub subnet_id: Uuid,
+    pub network_id: Uuid,
+    pub position: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Interface {
     type BaseData = InterfaceBase;
@@ -108,10 +125,10 @@ impl Storable for Interface {
             .map_err(|e| anyhow::anyhow!("Failed to read ip_address: {}", e))?;
         let ip_address: IpAddr = ip_network.ip();
 
-        // Read mac_address from MACADDR column - sqlx returns [u8; 6] for mac_address feature
-        let mac_address: Option<MacAddress> =
-            row.try_get::<Option<MacAddress>, _>("mac_address")
-                .map_err(|e| anyhow::anyhow!("Failed to read mac_address: {}", e))?;
+        // Read mac_address from MACADDR column
+        let mac_address: Option<MacAddress> = row
+            .try_get("mac_address")
+            .map_err(|e| anyhow::anyhow!("Failed to read mac_address: {}", e))?;
 
         Ok(Interface {
             id: row.get("id"),
@@ -131,16 +148,33 @@ impl Storable for Interface {
 }
 
 impl Entity for Interface {
+    type CsvRow = InterfaceCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        InterfaceCsvRow {
+            id: self.id,
+            ip_address: self.base.ip_address.to_string(),
+            mac_address: self.base.mac_address.map(|m| m.to_string()),
+            name: self.base.name.clone(),
+            host_id: self.base.host_id,
+            subnet_id: self.base.subnet_id,
+            network_id: self.base.network_id,
+            position: self.base.position,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Interface
     }
 
-    fn entity_name_singular() -> &'static str {
-        "interface"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Interface";
+    const ENTITY_NAME_PLURAL: &'static str = "Interfaces";
+    const ENTITY_DESCRIPTION: &'static str = "Network interfaces on hosts. Each host can have multiple interfaces with different IP addresses.";
 
-    fn entity_name_plural() -> &'static str {
-        "interfaces"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::NetworkInfrastructure
     }
 
     fn network_id(&self) -> Option<Uuid> {
@@ -161,6 +195,10 @@ impl Entity for Interface {
 
     fn preserve_immutable_fields(&mut self, existing: &Self) {
         self.created_at = existing.created_at;
+        // MAC address is immutable once set
+        if existing.base.mac_address.is_some() {
+            self.base.mac_address = existing.base.mac_address;
+        }
     }
 }
 

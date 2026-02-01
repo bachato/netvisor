@@ -1,18 +1,19 @@
 use itertools::Itertools;
 use petgraph::{Graph, graph::NodeIndex};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use strum::IntoDiscriminant;
 use uuid::Uuid;
 
 use crate::server::{
     groups::r#impl::{base::Group, types::GroupType},
     hosts::r#impl::virtualization::HostVirtualization,
+    if_entries::r#impl::base::Neighbor,
     services::r#impl::virtualization::ServiceVirtualization,
     subnets::r#impl::types::{SubnetType, SubnetTypeDiscriminants},
     topology::{
         service::context::TopologyContext,
         types::{
-            edges::{Edge, EdgeHandle, EdgeType},
+            edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType},
             nodes::Node,
         },
     },
@@ -374,6 +375,80 @@ impl EdgeBuilder {
                 } else {
                     Vec::new()
                 }
+            })
+            .collect()
+    }
+
+    /// Create physical link edges from LLDP/CDP neighbor discovery
+    /// Only creates edges when both endpoints have associated interfaces (nodes)
+    pub fn create_physical_link_edges(ctx: &TopologyContext) -> Vec<Edge> {
+        // Track processed pairs to avoid duplicate edges (A→B and B→A)
+        let mut processed_pairs: HashSet<(Uuid, Uuid)> = HashSet::new();
+
+        ctx.get_if_entries_with_neighbor()
+            .into_iter()
+            .filter_map(|source_entry| {
+                // Get the target IfEntry ID from resolved neighbor
+                let target_if_entry_id = match &source_entry.base.neighbor {
+                    Some(Neighbor::IfEntry(id)) => *id,
+                    _ => return None, // Already filtered by get_if_entries_with_neighbor
+                };
+
+                // Skip if we've already processed this pair (in either direction)
+                let pair_key = if source_entry.id < target_if_entry_id {
+                    (source_entry.id, target_if_entry_id)
+                } else {
+                    (target_if_entry_id, source_entry.id)
+                };
+
+                if processed_pairs.contains(&pair_key) {
+                    return None;
+                }
+                processed_pairs.insert(pair_key);
+
+                // Both IfEntries must have interface_id to create a visible edge
+                let source_interface_id = source_entry.base.interface_id?;
+                let target_entry = ctx.get_if_entry_by_id(target_if_entry_id)?;
+                let target_interface_id = target_entry.base.interface_id?;
+
+                // Check that both interfaces will have nodes
+                if !ctx.interface_will_have_node(&source_interface_id)
+                    || !ctx.interface_will_have_node(&target_interface_id)
+                {
+                    return None;
+                }
+
+                let is_multi_hop =
+                    ctx.edge_is_multi_hop(&source_interface_id, &target_interface_id);
+
+                let (source_handle, target_handle) = EdgeBuilder::determine_interface_handles(
+                    ctx,
+                    &source_interface_id,
+                    &target_interface_id,
+                    is_multi_hop,
+                )?;
+
+                // Build label from port descriptions: "Gi0/1 ↔ Gi0/2"
+                let label = Some(format!(
+                    "{} ↔ {}",
+                    source_entry.display_name(),
+                    target_entry.display_name()
+                ));
+
+                Some(Edge {
+                    id: Uuid::new_v4(),
+                    source: source_interface_id,
+                    target: target_interface_id,
+                    edge_type: EdgeType::PhysicalLink {
+                        source_if_entry_id: source_entry.id,
+                        target_if_entry_id: target_entry.id,
+                        protocol: DiscoveryProtocol::LLDP, // TODO: Support CDP when implemented
+                    },
+                    label,
+                    source_handle,
+                    target_handle,
+                    is_multi_hop,
+                })
             })
             .collect()
     }

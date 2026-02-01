@@ -84,6 +84,15 @@ pub struct ResetPasswordRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct NetworkSetup {
     pub name: String,
+    /// Whether SNMP is enabled for this network
+    #[serde(default)]
+    pub snmp_enabled: bool,
+    /// SNMP version ("V2c" or "V3")
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snmp_version: Option<String>,
+    /// SNMP community string (for V2c)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snmp_community: Option<String>,
 }
 
 /// Setup request for pre-registration org/network configuration
@@ -125,4 +134,61 @@ pub struct VerifyEmailRequest {
 pub struct ResendVerificationRequest {
     #[schema(value_type = String, format = "email")]
     pub email: EmailAddress,
+}
+
+/// Request to save onboarding step
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct OnboardingStepRequest {
+    pub step: String,
+    /// Use case selection (homelab, company, msp)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub use_case: Option<String>,
+}
+
+/// Network data in onboarding state response
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct OnboardingNetworkState {
+    /// Network ID (if created)
+    pub id: Option<Uuid>,
+    /// Network name
+    pub name: String,
+    /// Whether SNMP is enabled
+    #[serde(default)]
+    pub snmp_enabled: bool,
+    /// SNMP version
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snmp_version: Option<String>,
+    /// SNMP community string
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snmp_community: Option<String>,
+}
+
+/// Daemon setup data in onboarding state response
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct OnboardingDaemonSetupState {
+    /// Network ID this daemon is for
+    pub network_id: Uuid,
+    /// Daemon name
+    pub daemon_name: String,
+    /// API key (only returned if user chose to install now)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+}
+
+/// Response from onboarding state endpoint
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct OnboardingStateResponse {
+    /// Current onboarding step (if any)
+    pub step: Option<String>,
+    /// Use case selection (homelab, company, msp)
+    pub use_case: Option<String>,
+    /// Organization name from pending setup
+    pub org_name: Option<String>,
+    /// Networks from pending setup (with names and IDs)
+    pub networks: Vec<OnboardingNetworkState>,
+    /// Network IDs from pending setup (if any) - kept for backwards compatibility
+    pub network_ids: Vec<Uuid>,
+    /// Daemon setups (if any)
+    #[serde(default)]
+    pub daemon_setups: Vec<OnboardingDaemonSetupState>,
 }

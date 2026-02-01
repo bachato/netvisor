@@ -5,6 +5,7 @@
 	import InspectorEdgeInterface from './edges/InspectorEdgeInterface.svelte';
 	import InspectorEdgeHostVirtualization from './edges/InspectorEdgeHostVirtualization.svelte';
 	import InspectorEdgeServiceVirtualization from './edges/InspectorEdgeServiceVirtualization.svelte';
+	import InspectorEdgePhysicalLink from './edges/InspectorEdgePhysicalLink.svelte';
 
 	let { edge }: { edge: Edge } = $props();
 
@@ -30,6 +31,12 @@
 		<InspectorEdgeServiceVirtualization
 			{edge}
 			containerizingServiceId={edgeData.containerizing_service_id}
+		/>
+	{:else if edgeData.edge_type === 'PhysicalLink'}
+		<InspectorEdgePhysicalLink
+			sourceIfEntryId={edgeData.source_if_entry_id}
+			targetIfEntryId={edgeData.target_if_entry_id}
+			protocol={edgeData.protocol}
 		/>
 	{:else}
 		<div class="space-y-3">

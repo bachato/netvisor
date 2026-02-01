@@ -61,57 +61,61 @@
 		<img src="/logos/scanopy-logo.png" alt={auth_scanopyLogo()} class="h-8 w-8" />
 	{/snippet}
 
-	<div class="space-y-1 p-6">
-		<p class="text-secondary mb-3 text-center text-sm">{onboarding_letUsHelp()}</p>
+	<div class="flex min-h-0 flex-1 flex-col">
+		<div class="flex-1 overflow-y-auto p-6">
+			<div class="space-y-1">
+				<p class="text-secondary mb-3 text-center text-sm">{onboarding_letUsHelp()}</p>
 
-		{#each blockerOptions as blockerId (blockerId)}
-			{@const blocker = BLOCKERS[blockerId]}
-			{@const isExpanded = expandedBlocker === blockerId}
+				{#each blockerOptions as blockerId (blockerId)}
+					{@const blocker = BLOCKERS[blockerId]}
+					{@const isExpanded = expandedBlocker === blockerId}
 
-			<div class="card overflow-hidden p-1">
-				<button
-					type="button"
-					class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-gray-800"
-					on:click={() => toggleBlocker(blockerId)}
-				>
-					<div class="flex items-center gap-3">
-						<svelte:component this={blocker.Icon} class="text-tertiary h-4 w-4 flex-shrink-0" />
-						<span class="text-secondary text-sm">{blocker.label}</span>
-					</div>
-					{#if isExpanded}
-						<ChevronDown class="text-tertiary h-4 w-4 flex-shrink-0" />
-					{:else}
-						<ChevronRight class="text-tertiary h-4 w-4 flex-shrink-0" />
-					{/if}
-				</button>
+					<div class="card overflow-hidden p-1">
+						<button
+							type="button"
+							class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-gray-800"
+							on:click={() => toggleBlocker(blockerId)}
+						>
+							<div class="flex items-center gap-3">
+								<svelte:component this={blocker.Icon} class="text-tertiary h-4 w-4 flex-shrink-0" />
+								<span class="text-secondary text-sm">{blocker.label}</span>
+							</div>
+							{#if isExpanded}
+								<ChevronDown class="text-tertiary h-4 w-4 flex-shrink-0" />
+							{:else}
+								<ChevronRight class="text-tertiary h-4 w-4 flex-shrink-0" />
+							{/if}
+						</button>
 
-				{#if isExpanded}
-					<div class="px-3 py-2">
-						{#if blockerId === 'compatibility'}
-							<CompatibilityChecker {useCase} />
-						{:else if blockerId === 'something_else'}
-							<FeedbackForm blocker="something_else" />
-						{:else}
-							<div class="space-y-2">
-								<InlineInfo title="" body={blocker.description} />
-								{#if blocker.linkUrl}
-									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-									<a
-										href={blocker.linkUrl}
-										target="_blank"
-										rel="external noopener noreferrer"
-										class="text-primary flex items-center gap-1 text-sm hover:underline"
-									>
-										{blocker.linkText}
-										<ExternalLink class="h-3 w-3" />
-									</a>
+						{#if isExpanded}
+							<div class="px-3 py-2">
+								{#if blockerId === 'compatibility'}
+									<CompatibilityChecker {useCase} />
+								{:else if blockerId === 'something_else'}
+									<FeedbackForm blocker="something_else" />
+								{:else}
+									<div class="space-y-2">
+										<InlineInfo title="" body={blocker.description} />
+										{#if blocker.linkUrl}
+											<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+											<a
+												href={blocker.linkUrl}
+												target="_blank"
+												rel="external noopener noreferrer"
+												class="text-primary flex items-center gap-1 text-sm hover:underline"
+											>
+												{blocker.linkText}
+												<ExternalLink class="h-3 w-3" />
+											</a>
+										{/if}
+									</div>
 								{/if}
 							</div>
 						{/if}
 					</div>
-				{/if}
+				{/each}
 			</div>
-		{/each}
+		</div>
 	</div>
 
 	{#snippet footer()}

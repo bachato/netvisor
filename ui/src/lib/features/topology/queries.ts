@@ -236,6 +236,122 @@ export function useUnlockTopologyMutation() {
 }
 
 /**
+ * Mutation hook for updating a single node's position
+ * Lightweight endpoint - only sends node ID and position instead of full topology
+ * Fixes HTTP 413 errors on drag operations for large topologies
+ */
+export function useUpdateNodePositionMutation() {
+	return createMutation(() => ({
+		mutationFn: async (params: {
+			topologyId: string;
+			networkId: string;
+			nodeId: string;
+			position: { x: number; y: number };
+		}) => {
+			const { data } = await apiClient.POST('/api/v1/topology/{id}/node-position', {
+				params: { path: { id: params.topologyId } },
+				body: {
+					network_id: params.networkId,
+					node_id: params.nodeId,
+					position: params.position
+				}
+			});
+			if (!data?.success) {
+				throw new Error(data?.error || 'Failed to update node position');
+			}
+		}
+	}));
+}
+
+/**
+ * Mutation hook for updating a node's size and position (resize)
+ * Lightweight endpoint - only sends node ID, size, and position instead of full topology
+ * Fixes HTTP 413 errors on resize operations for large topologies
+ */
+export function useUpdateNodeResizeMutation() {
+	return createMutation(() => ({
+		mutationFn: async (params: {
+			topologyId: string;
+			networkId: string;
+			nodeId: string;
+			size: { x: number; y: number };
+			position: { x: number; y: number };
+		}) => {
+			const { data } = await apiClient.POST('/api/v1/topology/{id}/node-resize', {
+				params: { path: { id: params.topologyId } },
+				body: {
+					network_id: params.networkId,
+					node_id: params.nodeId,
+					size: params.size,
+					position: params.position
+				}
+			});
+			if (!data?.success) {
+				throw new Error(data?.error || 'Failed to resize node');
+			}
+		}
+	}));
+}
+
+/**
+ * Mutation hook for updating an edge's handles
+ * Lightweight endpoint - only sends edge ID and handles instead of full topology
+ * Fixes HTTP 413 errors on edge reconnect operations for large topologies
+ */
+export function useUpdateEdgeHandlesMutation() {
+	return createMutation(() => ({
+		mutationFn: async (params: {
+			topologyId: string;
+			networkId: string;
+			edgeId: string;
+			sourceHandle: 'Top' | 'Bottom' | 'Left' | 'Right';
+			targetHandle: 'Top' | 'Bottom' | 'Left' | 'Right';
+		}) => {
+			const { data } = await apiClient.POST('/api/v1/topology/{id}/edge-handles', {
+				params: { path: { id: params.topologyId } },
+				body: {
+					network_id: params.networkId,
+					edge_id: params.edgeId,
+					source_handle: params.sourceHandle,
+					target_handle: params.targetHandle
+				}
+			});
+			if (!data?.success) {
+				throw new Error(data?.error || 'Failed to update edge handles');
+			}
+		}
+	}));
+}
+
+/**
+ * Mutation hook for updating topology metadata (name, parent)
+ * Lightweight endpoint - only sends metadata fields instead of full topology
+ * Fixes HTTP 413 errors on metadata edit operations for large topologies
+ */
+export function useUpdateMetadataMutation() {
+	return createMutation(() => ({
+		mutationFn: async (params: {
+			topologyId: string;
+			networkId: string;
+			name: string;
+			parentId: string | null;
+		}) => {
+			const { data } = await apiClient.POST('/api/v1/topology/{id}/metadata', {
+				params: { path: { id: params.topologyId } },
+				body: {
+					network_id: params.networkId,
+					name: params.name,
+					parent_id: params.parentId
+				}
+			});
+			if (!data?.success) {
+				throw new Error(data?.error || 'Failed to update topology metadata');
+			}
+		}
+	}));
+}
+
+/**
  * Helper to update topologies in the query cache (for SSE updates)
  */
 export function updateTopologyInCache(
@@ -278,6 +394,8 @@ export function createEmptyTopologyFormData(networkId: string): Topology {
 		removed_subnets: [],
 		removed_bindings: [],
 		removed_ports: [],
+		if_entries: [],
+		removed_if_entries: [],
 		locked_at: null,
 		locked_by: null,
 		parent_id: null,

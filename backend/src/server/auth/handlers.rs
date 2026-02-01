@@ -3,9 +3,10 @@ use crate::server::{
         r#impl::{
             api::{
                 DaemonSetupRequest, DaemonSetupResponse, ForgotPasswordRequest, LoginRequest,
-                OidcAuthorizeParams, OidcCallbackParams, RegisterRequest,
-                ResendVerificationRequest, ResetPasswordRequest, SetupRequest, SetupResponse,
-                UpdateEmailPasswordRequest, VerifyEmailRequest,
+                OidcAuthorizeParams, OidcCallbackParams, OnboardingDaemonSetupState,
+                OnboardingNetworkState, OnboardingStateResponse, OnboardingStepRequest,
+                RegisterRequest, ResendVerificationRequest, ResetPasswordRequest, SetupRequest,
+                SetupResponse, UpdateEmailPasswordRequest, VerifyEmailRequest,
             },
             base::{LoginRegisterParams, PendingDaemonSetup, PendingNetworkSetup, PendingSetup},
             oidc::{OidcFlow, OidcPendingAuth, OidcProviderMetadata, OidcRegisterParams},
@@ -28,6 +29,7 @@ use crate::server::{
         storage::traits::Storable,
         types::api::{ApiError, ApiErrorResponse, ApiResponse, ApiResult, EmptyApiResponse},
     },
+    snmp_credentials::r#impl::base::{SnmpCredential, SnmpCredentialBase, SnmpVersion},
     topology::types::base::{Topology, TopologyBase},
     users::r#impl::base::User,
 };
@@ -40,6 +42,7 @@ use axum_client_ip::ClientIp;
 use axum_extra::{TypedHeader, extract::Host, headers::UserAgent};
 use bad_email::is_email_unwanted;
 use chrono::{DateTime, Utc};
+use secrecy::SecretString;
 use std::{net::IpAddr, sync::Arc};
 use tower_sessions::Session;
 use url::Url;
@@ -58,6 +61,8 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(update_password_auth))
         .routes(routes!(setup))
         .routes(routes!(daemon_setup))
+        .routes(routes!(onboarding_step))
+        .routes(routes!(onboarding_state))
         .route("/oidc/providers", get(list_oidc_providers))
         .route("/oidc/{slug}/authorize", get(oidc_authorize))
         .route("/oidc/{slug}/callback", get(oidc_callback))
@@ -222,9 +227,29 @@ async fn setup(
                 "Network name must be 100 characters or less",
             ));
         }
+
+        // Validate SNMP configuration
+        if network.snmp_enabled {
+            if network.snmp_community.as_ref().is_none_or(|c| c.is_empty()) {
+                return Err(ApiError::bad_request(
+                    "SNMP community string is required when SNMP is enabled",
+                ));
+            }
+            if let Some(ref community) = network.snmp_community
+                && community.len() > 256
+            {
+                return Err(ApiError::bad_request(
+                    "SNMP community string must be 256 characters or less",
+                ));
+            }
+        }
+
         networks.push(PendingNetworkSetup {
             name: name.to_string(),
             network_id: Uuid::new_v4(),
+            snmp_enabled: network.snmp_enabled,
+            snmp_version: network.snmp_version.clone(),
+            snmp_community: network.snmp_community.clone(),
         });
     }
 
@@ -234,6 +259,9 @@ async fn setup(
     let pending_setup = PendingSetup {
         org_name: request.organization_name.trim().to_string(),
         networks,
+        use_case: None,     // Will be merged from onboarding step
+        company_size: None, // Not yet collected in setup flow
+        job_title: None,    // Not yet collected in setup flow
     };
 
     session
@@ -273,30 +301,16 @@ async fn daemon_setup(
         Some(raw_key)
     };
 
-    // Create new daemon setup entry
+    // Create new daemon setup entry (replaces any previous setup - only one at a time)
     let new_daemon_setup = PendingDaemonSetup {
         daemon_name: request.daemon_name.trim().to_string(),
         network_id: request.network_id,
         api_key_raw: api_key_raw.clone(),
     };
 
-    // Get existing daemon setups from session or start with empty vec
-    let mut daemon_setups: Vec<PendingDaemonSetup> = session
-        .get("pending_daemon_setups")
-        .await
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-
-    // Remove any existing setup for the same network (allow overwriting)
-    daemon_setups.retain(|d| d.network_id != request.network_id);
-
-    // Add the new daemon setup
-    daemon_setups.push(new_daemon_setup);
-
-    // Store updated list in session
+    // Store as the only daemon setup (clearing any previous)
     session
-        .insert("pending_daemon_setups", daemon_setups)
+        .insert("pending_daemon_setups", vec![new_daemon_setup])
         .await
         .map_err(|e| {
             ApiError::internal_error(&format!("Failed to save daemon setup data: {}", e))
@@ -308,8 +322,18 @@ async fn daemon_setup(
 }
 
 /// Extract pending setup data from session
+/// Also merges in use_case from the onboarding step if present
 pub async fn extract_pending_setup(session: &Session) -> Option<PendingSetup> {
-    session.get("pending_setup").await.ok().flatten()
+    let mut setup: PendingSetup = session.get("pending_setup").await.ok().flatten()?;
+
+    // Merge in use_case from onboarding step if not already set
+    if setup.use_case.is_none()
+        && let Ok(Some(use_case)) = session.get::<String>("onboarding_use_case").await
+    {
+        setup.use_case = Some(use_case);
+    }
+
+    Some(setup)
 }
 
 /// Extract pending daemon setup data from session (supports multiple daemons)
@@ -328,6 +352,103 @@ pub async fn clear_pending_setup(session: &Session) {
     let _ = session
         .remove::<Vec<PendingDaemonSetup>>("pending_daemon_setups")
         .await;
+    let _ = session.remove::<String>("onboarding_step").await;
+    let _ = session.remove::<String>("onboarding_use_case").await;
+}
+
+/// Store onboarding step in session
+#[utoipa::path(
+    post,
+    path = "/onboarding-step",
+    tags = ["auth", "internal"],
+    request_body = OnboardingStepRequest,
+    responses(
+        (status = 200, description = "Step saved", body = EmptyApiResponse),
+    )
+)]
+async fn onboarding_step(
+    session: Session,
+    Json(request): Json<OnboardingStepRequest>,
+) -> ApiResult<Json<ApiResponse<()>>> {
+    session
+        .insert("onboarding_step", request.step)
+        .await
+        .map_err(|e| ApiError::internal_error(&format!("Failed to save onboarding step: {}", e)))?;
+
+    // Also save use_case if provided
+    if let Some(use_case) = request.use_case {
+        session
+            .insert("onboarding_use_case", use_case)
+            .await
+            .map_err(|e| {
+                ApiError::internal_error(&format!("Failed to save onboarding use_case: {}", e))
+            })?;
+    }
+
+    Ok(Json(ApiResponse::success(())))
+}
+
+/// Get current onboarding state from session
+#[utoipa::path(
+    get,
+    path = "/onboarding-state",
+    tags = ["auth", "internal"],
+    responses(
+        (status = 200, description = "Onboarding state", body = ApiResponse<OnboardingStateResponse>),
+    )
+)]
+async fn onboarding_state(
+    session: Session,
+) -> ApiResult<Json<ApiResponse<OnboardingStateResponse>>> {
+    let step: Option<String> = session.get("onboarding_step").await.ok().flatten();
+    let use_case: Option<String> = session.get("onboarding_use_case").await.ok().flatten();
+
+    let (org_name, networks, network_ids) = if let Some(pending_setup) = session
+        .get::<PendingSetup>("pending_setup")
+        .await
+        .ok()
+        .flatten()
+    {
+        let networks: Vec<OnboardingNetworkState> = pending_setup
+            .networks
+            .iter()
+            .map(|n| OnboardingNetworkState {
+                id: Some(n.network_id),
+                name: n.name.clone(),
+                snmp_enabled: n.snmp_enabled,
+                snmp_version: n.snmp_version.clone(),
+                snmp_community: n.snmp_community.clone(),
+            })
+            .collect();
+        let network_ids: Vec<Uuid> = pending_setup
+            .networks
+            .iter()
+            .map(|n| n.network_id)
+            .collect();
+        (Some(pending_setup.org_name), networks, network_ids)
+    } else {
+        (None, vec![], vec![])
+    };
+
+    // Get daemon setups from session
+    let daemon_setups = extract_pending_daemon_setups(&session)
+        .await
+        .into_iter()
+        .map(|d| OnboardingDaemonSetupState {
+            network_id: d.network_id,
+            daemon_name: d.daemon_name,
+            api_key: d.api_key_raw,
+        })
+        .collect();
+
+    Ok(Json(ApiResponse::success(OnboardingStateResponse {
+        step,
+        use_case,
+        org_name,
+        networks,
+        network_ids,
+        daemon_setups,
+    })))
 }
 
 /// Apply pending setup after user registration: create networks, topologies, seed data, and daemons
@@ -378,6 +499,50 @@ async fn apply_pending_setup(
             .await
             .map_err(|e| ApiError::internal_error(&format!("Failed to create topology: {}", e)))?;
 
+        // Create SNMP credential if enabled for this network
+        if pending_network.snmp_enabled
+            && let Some(ref community) = pending_network.snmp_community
+        {
+            let version = pending_network
+                .snmp_version
+                .as_ref()
+                .and_then(|v| v.parse::<SnmpVersion>().ok())
+                .unwrap_or(SnmpVersion::V2c);
+
+            let credential_name = format!("{} SNMP Credential", pending_network.name);
+            let credential = SnmpCredential::new(SnmpCredentialBase {
+                organization_id,
+                name: credential_name,
+                version,
+                community: SecretString::new(community.clone().into()),
+                tags: Vec::new(),
+            });
+
+            let created_credential = state
+                .services
+                .snmp_credential_service
+                .create(credential, auth_entity.clone())
+                .await
+                .map_err(|e| {
+                    ApiError::internal_error(&format!("Failed to create SNMP credential: {}", e))
+                })?;
+
+            // Update network with the SNMP credential ID
+            let mut updated_network = network.clone();
+            updated_network.base.snmp_credential_id = Some(created_credential.id);
+            state
+                .services
+                .network_service
+                .update(&mut updated_network, auth_entity.clone())
+                .await
+                .map_err(|e| {
+                    ApiError::internal_error(&format!(
+                        "Failed to update network with SNMP credential: {}",
+                        e
+                    ))
+                })?;
+        }
+
         // Handle daemon setup for this network if present
         if let Some(daemon) = daemon_setups.iter().find(|d| d.network_id == network.id) {
             // Only create API key if user chose "Install Now" (api_key_raw is Some)
@@ -398,6 +563,7 @@ async fn apply_pending_setup(
                             network_id: network.id,
                             is_enabled: true,
                             tags: Vec::new(),
+                            plaintext: None,
                         }),
                         AuthenticatedEntity::System,
                     )
@@ -427,6 +593,7 @@ async fn apply_pending_setup(
                     network_id,
                     is_enabled: true,
                     tags: Vec::new(),
+                    plaintext: None,
                 }),
                 AuthenticatedEntity::System,
             )

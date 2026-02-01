@@ -50,7 +50,8 @@ export const queryClient = createQueryClient();
 export const queryKeys = {
 	auth: {
 		all: ['auth'] as const,
-		currentUser: () => [...queryKeys.auth.all, 'currentUser'] as const
+		currentUser: () => [...queryKeys.auth.all, 'currentUser'] as const,
+		onboardingState: () => [...queryKeys.auth.all, 'onboardingState'] as const
 	},
 	invites: {
 		all: ['invites'] as const,
@@ -125,6 +126,14 @@ export const queryKeys = {
 	tags: {
 		all: ['tags'] as const,
 		detail: (id: string) => [...queryKeys.tags.all, 'detail', id] as const
+	},
+	snmpCredentials: {
+		all: ['snmpCredentials'] as const,
+		detail: (id: string) => [...queryKeys.snmpCredentials.all, 'detail', id] as const
+	},
+	ifEntries: {
+		all: ['ifEntries'] as const,
+		byHost: (hostId: string) => [...queryKeys.ifEntries.all, 'host', hostId] as const
 	},
 	topology: {
 		all: ['topology'] as const,

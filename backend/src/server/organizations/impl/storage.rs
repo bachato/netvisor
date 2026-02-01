@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -8,10 +9,21 @@ use crate::server::{
     organizations::r#impl::base::{Organization, OrganizationBase},
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         events::types::TelemetryOperation,
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
+
+/// CSV row representation for Organization export (excludes sensitive billing data)
+#[derive(Serialize)]
+pub struct OrganizationCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub plan_status: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Organization {
     type BaseData = OrganizationBase;
@@ -63,6 +75,7 @@ impl Storable for Organization {
                     plan,
                     plan_status,
                     onboarding,
+                    hubspot_company_id,
                 },
         } = self.clone();
 
@@ -76,6 +89,7 @@ impl Storable for Organization {
                 "plan",
                 "plan_status",
                 "onboarding",
+                "hubspot_company_id",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -86,6 +100,7 @@ impl Storable for Organization {
                 SqlValue::OptionBillingPlan(plan),
                 SqlValue::OptionalString(plan_status),
                 SqlValue::TelemetryOperation(onboarding),
+                SqlValue::OptionalString(hubspot_company_id),
             ],
         ))
     }
@@ -110,22 +125,35 @@ impl Storable for Organization {
                 plan,
                 plan_status: row.get("plan_status"),
                 onboarding,
+                hubspot_company_id: row.get("hubspot_company_id"),
             },
         })
     }
 }
 
 impl Entity for Organization {
+    type CsvRow = OrganizationCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        OrganizationCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            plan_status: self.base.plan_status.clone(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Organization
     }
 
-    fn entity_name_singular() -> &'static str {
-        "organization"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Organization";
+    const ENTITY_NAME_PLURAL: &'static str = "Organizations";
+    const ENTITY_DESCRIPTION: &'static str = "Manage organization settings.";
 
-    fn entity_name_plural() -> &'static str {
-        "organizations"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::OrganizationsAndUsers
     }
 
     fn network_id(&self) -> Option<Uuid> {
@@ -151,5 +179,7 @@ impl Entity for Organization {
         self.base.plan_status = existing.base.plan_status.clone();
         // Onboarding state is server-managed
         self.base.onboarding = existing.base.onboarding.clone();
+        // HubSpot company ID is server-managed
+        self.base.hubspot_company_id = existing.base.hubspot_company_id.clone();
     }
 }

@@ -5,6 +5,7 @@ use crate::server::{
     discovery::r#impl::base::Discovery,
     groups::{group_bindings::GroupBinding, r#impl::base::Group},
     hosts::r#impl::base::Host,
+    if_entries::r#impl::base::IfEntry,
     interfaces::r#impl::base::Interface,
     invites::r#impl::base::Invite,
     networks::r#impl::Network,
@@ -13,6 +14,7 @@ use crate::server::{
     services::r#impl::base::Service,
     shared::storage::traits::Storable,
     shares::r#impl::base::Share,
+    snmp_credentials::r#impl::base::SnmpCredential,
     subnets::r#impl::base::Subnet,
     tags::entity_tags::EntityTag,
     tags::r#impl::base::Tag,
@@ -191,6 +193,22 @@ fn get_entity_deserializers() -> HashMap<&'static str, DeserializeFn> {
         EntityTag::table_name(),
         Box::new(|row| {
             EntityTag::from_row(row)?;
+            Ok(())
+        }),
+    );
+
+    map.insert(
+        SnmpCredential::table_name(),
+        Box::new(|row| {
+            SnmpCredential::from_row(row)?;
+            Ok(())
+        }),
+    );
+
+    map.insert(
+        IfEntry::table_name(),
+        Box::new(|row| {
+            IfEntry::from_row(row)?;
             Ok(())
         }),
     );

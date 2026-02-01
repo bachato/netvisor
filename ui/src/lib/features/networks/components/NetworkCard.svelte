@@ -13,9 +13,13 @@
 		common_delete,
 		common_edit,
 		common_groupsLabel,
+		common_snmpCredential,
 		common_subnets,
 		common_tags
 	} from '$lib/paraglide/messages';
+	import { useSnmpCredentialsQuery } from '$lib/features/snmp/queries';
+	import { uuidv4Sentinel } from '$lib/shared/utils/formatting';
+	import { toColor } from '$lib/shared/utils/styling';
 
 	interface Props {
 		network: Network;
@@ -52,6 +56,15 @@
 	let networkSubnets = $derived(subnetsData.filter((s) => s.network_id == network.id));
 	let networkGroups = $derived(groupsData.filter((g) => g.network_id == network.id));
 
+	// Use the list query and find by ID (queries inside $derived don't work correctly)
+	const snmpCredentialsQuery = useSnmpCredentialsQuery();
+	let snmpCredentialsData = $derived(snmpCredentialsQuery.data ?? []);
+	let snmpCredential = $derived(
+		network.snmp_credential_id
+			? (snmpCredentialsData.find((c) => c.id === network.snmp_credential_id) ?? null)
+			: null
+	);
+
 	let canManageNetworks = $derived(
 		(currentUser && permissions.getMetadata(currentUser.permissions).manage_org_entities) || false
 	);
@@ -71,6 +84,24 @@
 						color: entities.getColorHelper('Daemon').color
 					};
 				})
+			},
+			{
+				label: common_snmpCredential(),
+				value: snmpCredential
+					? [
+							{
+								id: snmpCredential.id,
+								label: snmpCredential.name,
+								color: entities.getColorHelper('SnmpCredential').color
+							}
+						]
+					: [
+							{
+								id: uuidv4Sentinel,
+								label: 'None',
+								color: toColor('Gray')
+							}
+						]
 			},
 			{
 				label: common_subnets(),

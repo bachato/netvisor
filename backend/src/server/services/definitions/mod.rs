@@ -70,7 +70,9 @@ pub mod fios_extender;
 pub mod fios_gateway;
 pub mod google_nest_repeater;
 pub mod google_nest_router;
+pub mod mikrotik;
 pub mod tp_link_eap;
+pub mod ubiquiti_discovery;
 pub mod unifi_access_point;
 pub mod unifi_controller;
 
@@ -162,6 +164,7 @@ pub mod zwave_js;
 pub mod docker_container;
 pub mod docker_daemon;
 pub mod docker_swarm;
+pub mod dockge;
 pub mod kubernetes;
 pub mod nomad;
 pub mod openshift;
@@ -206,6 +209,7 @@ pub mod rocket_chat;
 
 // Development
 pub mod ansible_awx;
+pub mod appwrite;
 pub mod argocd;
 pub mod bamboo;
 pub mod bitbucket_server;
@@ -246,6 +250,7 @@ pub mod proxmox_datacenter_manager;
 
 // Monitoring
 pub mod apc;
+pub mod beszel_agent;
 pub mod cadvisor;
 pub mod coolercontrol;
 pub mod elastic_apm;
@@ -257,8 +262,12 @@ pub mod icinga;
 pub mod jaeger;
 pub mod loki;
 pub mod nagios;
+pub mod ncpa_agent;
 pub mod netdata;
+pub mod nvidia_gpu_exporter;
+pub mod openspeedtest;
 pub mod prometheus;
+pub mod prometheus_node_exporter;
 pub mod promtail;
 pub mod pulse;
 pub mod sensu;
@@ -267,6 +276,7 @@ pub mod splunk;
 pub mod uptime_kuma;
 pub mod wazuh;
 pub mod zabbix;
+pub mod zabbix_agent;
 pub mod zipkin;
 
 // Communication
@@ -287,6 +297,7 @@ pub mod client;
 
 // IoT
 pub mod amazon_echo;
+pub mod bacnet;
 pub mod camera;
 pub mod chromecast;
 pub mod frigate;
@@ -295,6 +306,7 @@ pub mod iot;
 pub mod nest_protect;
 pub mod nest_thermostat;
 pub mod ring_doorbell;
+pub mod roborock_vacuum;
 pub mod roku;
 pub mod sonos_speaker;
 pub mod tasmota;

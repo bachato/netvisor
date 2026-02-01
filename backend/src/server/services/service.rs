@@ -161,7 +161,7 @@ impl CrudService<Service> for ServiceService {
         let lock = self.get_service_lock(&service.id).await;
         let _guard = lock.lock().await;
 
-        let filter = StorableFilter::<Service>::new().host_id(&service.base.host_id);
+        let filter = StorableFilter::<Service>::new_from_host_ids(&[service.base.host_id]);
         let existing_services = self.get_all(filter).await?;
 
         // Auto-assign position for new services (next available position on host)
@@ -726,7 +726,7 @@ impl ServiceService {
         }
 
         // Get existing claimed bindings from database
-        let filter = StorableFilter::<Service>::new().host_id(host_id);
+        let filter = StorableFilter::<Service>::new_from_host_ids(&[*host_id]);
         let db_claimed: Vec<(Uuid, Option<Uuid>)> = self
             .get_all(filter)
             .await?
@@ -807,7 +807,7 @@ impl ServiceService {
             return Ok(());
         }
 
-        let filter = StorableFilter::<Service>::new().host_id(host_id);
+        let filter = StorableFilter::<Service>::new_from_host_ids(&[*host_id]);
         let other_services: Vec<_> = self
             .get_all(filter)
             .await?
@@ -1071,7 +1071,8 @@ impl ServiceService {
         updates: Option<&Service>,
         authenticated: AuthenticatedEntity,
     ) -> Result<(), Error> {
-        let filter = StorableFilter::<Group>::new().network_ids(&[current_service.base.network_id]);
+        let filter =
+            StorableFilter::<Group>::new_from_network_ids(&[current_service.base.network_id]);
         let groups = self.group_service.get_all(filter).await?;
 
         let _guard = self.group_update_lock.lock().await;

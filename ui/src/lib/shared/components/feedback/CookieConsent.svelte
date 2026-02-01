@@ -1,3 +1,37 @@
+<script lang="ts" module>
+	export const COOKIE_NAME = 'scanopy_gdpr';
+
+	export interface CookiePreferences {
+		necessary: boolean;
+		analytics: boolean;
+		marketing: boolean;
+	}
+
+	export function getCookie(name: string): string | null {
+		if (typeof document === 'undefined') return null;
+		const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+		return match ? decodeURIComponent(match[2]) : null;
+	}
+
+	export function getGdprPreferences(): CookiePreferences | null {
+		const saved = getCookie(COOKIE_NAME);
+		if (!saved) return null;
+		try {
+			return JSON.parse(saved) as CookiePreferences;
+		} catch {
+			return null;
+		}
+	}
+
+	export function hasAnalyticsConsent(): boolean {
+		return getGdprPreferences()?.analytics ?? false;
+	}
+
+	export function hasMarketingConsent(): boolean {
+		return getGdprPreferences()?.marketing ?? false;
+	}
+</script>
+
 <script lang="ts">
 	import posthog from 'posthog-js';
 	import { dev } from '$app/environment';
@@ -6,10 +40,12 @@
 		common_analytics,
 		common_close,
 		common_customize,
+		common_marketing,
 		common_necessary,
 		cookies_acceptAll,
 		cookies_alwaysOn,
 		cookies_analyticsDesc,
+		cookies_marketingDesc,
 		cookies_necessaryDesc,
 		cookies_preferences,
 		cookies_preferencesDesc,
@@ -19,18 +55,13 @@
 		cookies_settingsDesc
 	} from '$lib/paraglide/messages';
 
-	const COOKIE_NAME = 'scanopy_gdpr';
 	const COOKIE_DOMAIN = dev ? '' : '.scanopy.net';
 	const COOKIE_DAYS = 365;
 
-	interface CookiePreferences {
-		necessary: boolean;
-		analytics: boolean;
-	}
-
 	let preferences: CookiePreferences = $state({
 		necessary: true,
-		analytics: false
+		analytics: false,
+		marketing: false
 	});
 
 	let showBanner = $state(false);
@@ -40,25 +71,15 @@
 
 	onMount(() => {
 		mounted = true;
-		const saved = getCookie(COOKIE_NAME);
+		const saved = getGdprPreferences();
 		if (saved) {
-			try {
-				const parsed = JSON.parse(saved) as CookiePreferences;
-				preferences = { ...preferences, ...parsed };
-				hasConsented = true;
-				applyPreferences();
-			} catch {
-				showBanner = true;
-			}
+			preferences = { ...preferences, ...saved };
+			hasConsented = true;
+			applyPreferences();
 		} else {
 			showBanner = true;
 		}
 	});
-
-	function getCookie(name: string): string | null {
-		const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-		return match ? decodeURIComponent(match[2]) : null;
-	}
 
 	function setCookie(name: string, value: string, days: number) {
 		const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -85,12 +106,12 @@
 	}
 
 	function acceptAll() {
-		preferences = { necessary: true, analytics: true };
+		preferences = { necessary: true, analytics: true, marketing: true };
 		savePreferences();
 	}
 
 	function rejectAll() {
-		preferences = { necessary: true, analytics: false };
+		preferences = { necessary: true, analytics: false, marketing: false };
 		savePreferences();
 	}
 
@@ -165,6 +186,19 @@
 							</div>
 							<p class="option-description">
 								{cookies_analyticsDesc()}
+							</p>
+						</div>
+
+						<div class="cookie-option">
+							<div class="option-header">
+								<label class="option-label">
+									<input type="checkbox" bind:checked={preferences.marketing} />
+									<span class="checkbox"></span>
+									<span class="option-title">{common_marketing()}</span>
+								</label>
+							</div>
+							<p class="option-description">
+								{cookies_marketingDesc()}
 							</p>
 						</div>
 					</div>

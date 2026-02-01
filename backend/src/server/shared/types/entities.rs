@@ -1,6 +1,7 @@
 use crate::server::discovery::r#impl::types::DiscoveryType;
 use crate::server::discovery::r#impl::types::HostNamingFallback;
 use crate::server::services::r#impl::patterns::MatchDetails;
+use crate::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
 use chrono::DateTime;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -51,7 +52,8 @@ pub struct DiscoveryMetadata {
 impl DiscoveryMetadata {
     pub fn new(discovery_type: DiscoveryType, daemon_id: Uuid) -> Self {
         Self {
-            discovery_type,
+            // Sanitize to redact sensitive data (SNMP credentials) before storage
+            discovery_type: discovery_type.sanitized(),
             daemon_id,
             date: Utc::now(),
         }
@@ -64,6 +66,7 @@ impl Default for DiscoveryMetadata {
             discovery_type: DiscoveryType::Network {
                 subnet_ids: None,
                 host_naming_fallback: HostNamingFallback::BestService,
+                snmp_credentials: SnmpCredentialMapping::default(),
             },
             daemon_id: Uuid::new_v4(),
             date: Utc::now(),

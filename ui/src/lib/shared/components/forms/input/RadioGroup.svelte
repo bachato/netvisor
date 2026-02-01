@@ -47,11 +47,6 @@
 </div>
 
 <style>
-	input[type='radio']:checked {
-		background-color: rgb(37, 99, 235);
-		border-color: rgb(37, 99, 235);
-	}
-
 	.disabled {
 		opacity: 0.5;
 		cursor: not-allowed;

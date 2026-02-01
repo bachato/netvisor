@@ -14,7 +14,7 @@ Scanopy scans your network, identifies hosts and services, and generates an inte
 ![Daemon image size](https://img.shields.io/docker/image-size/mayanayza/scanopy-daemon?style=for-the-badge&label=Daemon%20image%20size) ![Server image size](https://img.shields.io/docker/image-size/mayanayza/scanopy-server?style=for-the-badge&label=Server%20image%20size
 )<br>
 ![Daemon](https://img.shields.io/github/actions/workflow/status/scanopy/scanopy/daemon-ci.yml?label=daemon-ci&style=for-the-badge)  ![Server](https://img.shields.io/github/actions/workflow/status/scanopy/scanopy/server-ci.yml?label=server-ci&style=for-the-badge)  ![UI](https://img.shields.io/github/actions/workflow/status/scanopy/scanopy/ui-ci.yml?label=ui-ci&style=for-the-badge)<br>
-[![Discord](https://img.shields.io/discord/1432872786828726392?logo=discord&label=discord&labelColor=white&color=7289da&style=for-the-badge)](https://discord.gg/b7ffQr8AcZ)
+[![Discord](https://img.shields.io/discord/1432872786828726392?logo=discord&label=discord&labelColor=white&color=7289da&style=for-the-badge)](https://discord.gg/b7ffQr8AcZ) [![Translations](https://img.shields.io/weblate/progress/scanopy?style=for-the-badge&logo=weblate)](https://hosted.weblate.org/engage/scanopy/)
 
 > 💡 **Prefer not to self-host?** [Get a free trial](https://scanopy.net) of Scanopy Cloud
 
@@ -82,7 +82,9 @@ For detailed setup options and configuration, see the [Installation Guide](https
 
 We welcome contributions! See our [contributing guide](contributing.md) for details.
 
-Great first contribution: [adding service definitions](contributing.md#adding-service-definitions)
+Great first contributions:
+- [Adding service definitions](contributing.md#adding-service-definitions)
+- [Translating Scanopy](https://hosted.weblate.org/engage/scanopy/) into your language
 
 ## 💬 Community & Support
 

@@ -1,9 +1,6 @@
 use crate::{
-    daemon::discovery::{
-        service::base::{
-            CreatesDiscoveredEntities, DiscoveryRunner, DiscoverySession, RunsDiscovery,
-        },
-        types::base::{DiscoveryPhase, DiscoverySessionInfo, DiscoverySessionUpdate},
+    daemon::discovery::service::base::{
+        CreatesDiscoveredEntities, DiscoversNetworkedEntities, DiscoveryRunner, RunsDiscovery,
     },
     server::{
         bindings::r#impl::base::Binding,
@@ -31,7 +28,6 @@ use crate::{
 };
 use anyhow::{Error, Result};
 use async_trait::async_trait;
-use chrono::Utc;
 use cidr::IpCidr;
 use futures::future::join_all;
 use std::net::{IpAddr, Ipv4Addr};
@@ -53,42 +49,17 @@ impl SelfReportDiscovery {
 impl CreatesDiscoveredEntities for DiscoveryRunner<SelfReportDiscovery> {}
 
 #[async_trait]
-impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
-    fn discovery_type(&self) -> DiscoveryType {
-        DiscoveryType::SelfReport {
-            host_id: self.domain.host_id,
-        }
+impl DiscoversNetworkedEntities for DiscoveryRunner<SelfReportDiscovery> {
+    async fn get_gateway_ips(&self) -> Result<Vec<IpAddr>, Error> {
+        // SelfReport doesn't need gateway IPs for service matching
+        Ok(Vec::new())
     }
 
-    async fn discover(
+    async fn discover_create_subnets(
         &self,
-        request: DaemonDiscoveryRequest,
-        _cancel: CancellationToken,
-    ) -> Result<(), Error> {
+        cancel: &CancellationToken,
+    ) -> Result<Vec<Subnet>, Error> {
         let daemon_id = self.as_ref().config_store.get_id().await?;
-        let network_id = self
-            .as_ref()
-            .config_store
-            .get_network_id()
-            .await?
-            .ok_or_else(|| anyhow::anyhow!("Network ID not set, aborting discovery session"))?;
-
-        let session_info = DiscoverySessionInfo {
-            session_id: request.session_id,
-            network_id,
-            daemon_id,
-            started_at: Some(Utc::now()),
-        };
-
-        let session = DiscoverySession::new(session_info, Vec::new());
-        let mut current_session = self.as_ref().current_session.write().await;
-        *current_session = Some(session);
-        drop(current_session);
-
-        let utils = &self.as_ref().utils;
-
-        let host_id = self.domain.host_id;
-
         let network_id = self
             .as_ref()
             .config_store
@@ -96,12 +67,11 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
             .await?
             .ok_or_else(|| anyhow::anyhow!("Network ID not set"))?;
 
-        let binding_address = self.as_ref().config_store.get_bind_address().await?;
-        let binding_ip = IpAddr::V4(binding_address.parse::<Ipv4Addr>()?);
+        let utils = &self.as_ref().utils;
 
         let interface_start = std::time::Instant::now();
-        let interface_filter = self.as_ref().config_store.get_interface_filter().await?;
-        let (interfaces, subnets, _) = utils
+        let interface_filter = self.as_ref().config_store.get_interfaces().await?;
+        let (_, subnets, _) = utils
             .get_own_interfaces(
                 self.discovery_type(),
                 daemon_id,
@@ -111,12 +81,11 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
             .await?;
         tracing::debug!(
             elapsed_ms = interface_start.elapsed().as_millis(),
-            interface_count = interfaces.len(),
             subnet_count = subnets.len(),
-            "Network interfaces gathered"
+            "Network subnets gathered for self-report"
         );
 
-        // Get docker subnets to double verify that subnet interface string matching filtered them correctly
+        // Get docker subnets to verify that subnet interface string matching filtered them correctly
         let docker_proxy = self.as_ref().config_store.get_docker_proxy().await;
         let docker_proxy_ssl_info = self.as_ref().config_store.get_docker_proxy_ssl_info().await;
 
@@ -126,7 +95,7 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
             .new_local_docker_client(docker_proxy, docker_proxy_ssl_info)
             .await;
 
-        let (docker_cidrs, has_docker_socket) = if let Ok(docker_client) = docker_client {
+        let docker_cidrs = if let Ok(docker_client) = docker_client {
             tracing::debug!("Docker client available, fetching Docker networks");
             match self
                 .as_ref()
@@ -147,19 +116,19 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
                         cidrs = ?docker_cidrs.iter().map(|c| c.to_string()).collect::<Vec<_>>(),
                         "Docker subnets detected (will be excluded from self-report)"
                     );
-                    (docker_cidrs, true)
+                    docker_cidrs
                 }
                 Err(e) => {
                     tracing::warn!(
                         error = %e,
                         "Failed to get Docker networks - proceeding without Docker subnet filtering"
                     );
-                    (Vec::new(), true) // Still has Docker socket, just couldn't list networks
+                    Vec::new()
                 }
             }
         } else {
             tracing::debug!("Docker socket not available - skipping Docker subnet detection");
-            (Vec::new(), false)
+            Vec::new()
         };
 
         // Filter out docker bridge subnets, those are handled in docker discovery
@@ -192,7 +161,7 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
         // This prevents one subnet failure from blocking all interfaces
         let subnet_futures = subnets_to_create.iter().map(|subnet| async move {
             let cidr = subnet.base.cidr;
-            match self.create_subnet(subnet).await {
+            match self.create_subnet(subnet, cancel).await {
                 Ok(created) => {
                     tracing::debug!(
                         cidr = %cidr,
@@ -223,6 +192,92 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
             "Subnet creation complete"
         );
 
+        Ok(created_subnets)
+    }
+}
+
+#[async_trait]
+impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
+    fn discovery_type(&self) -> DiscoveryType {
+        DiscoveryType::SelfReport {
+            host_id: self.domain.host_id,
+        }
+    }
+
+    async fn discover(
+        &self,
+        request: DaemonDiscoveryRequest,
+        cancel: CancellationToken,
+    ) -> Result<(), Error> {
+        // Create subnets first (before session initialization, like Network discovery)
+        let created_subnets = self.discover_create_subnets(&cancel).await?;
+
+        // Initialize session and report Started phase
+        self.start_discovery(request).await?;
+
+        // Run the actual discovery work, capturing any errors
+        let discovery_result = self
+            .run_self_report_discovery(&created_subnets, cancel.clone())
+            .await;
+
+        // Report completion/failure and clear session
+        self.finish_discovery(discovery_result, cancel).await?;
+
+        Ok(())
+    }
+}
+
+impl DiscoveryRunner<SelfReportDiscovery> {
+    /// Core self-report discovery logic, separated for proper error handling with finish_discovery
+    async fn run_self_report_discovery(
+        &self,
+        created_subnets: &[Subnet],
+        cancel: CancellationToken,
+    ) -> Result<(), Error> {
+        // Check cancellation early
+        if cancel.is_cancelled() {
+            return Err(anyhow::anyhow!("Discovery cancelled"));
+        }
+
+        let daemon_id = self.as_ref().config_store.get_id().await?;
+        let network_id = self
+            .as_ref()
+            .config_store
+            .get_network_id()
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Network ID not set"))?;
+
+        let utils = &self.as_ref().utils;
+        let host_id = self.domain.host_id;
+
+        let binding_address = self.as_ref().config_store.get_bind_address().await?;
+        let binding_ip = IpAddr::V4(binding_address.parse::<Ipv4Addr>()?);
+
+        // Re-fetch interfaces (subnets were already created in discover_create_subnets)
+        let interface_filter = self.as_ref().config_store.get_interfaces().await?;
+        let (interfaces, _, _) = utils
+            .get_own_interfaces(
+                self.discovery_type(),
+                daemon_id,
+                network_id,
+                &interface_filter,
+            )
+            .await?;
+        tracing::debug!(
+            interface_count = interfaces.len(),
+            "Network interfaces gathered for host creation"
+        );
+
+        // Check if docker socket is available (for capabilities)
+        let docker_proxy = self.as_ref().config_store.get_docker_proxy().await;
+        let docker_proxy_ssl_info = self.as_ref().config_store.get_docker_proxy_ssl_info().await;
+        let has_docker_socket = self
+            .as_ref()
+            .utils
+            .new_local_docker_client(docker_proxy, docker_proxy_ssl_info)
+            .await
+            .is_ok();
+
         // Update capabilities
         let interfaced_subnet_ids: Vec<Uuid> = created_subnets.iter().map(|s| s.id).collect();
 
@@ -235,8 +290,13 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
         self.update_capabilities(has_docker_socket, interfaced_subnet_ids)
             .await?;
 
-        // Created subnets may differ from discovered if there are existing subnets with the same CIDR, so we need to update interface subnet_id references
-        // Also filter out interfaces where subnet creation didn't happen for any reason
+        // Check cancellation after capabilities update
+        if cancel.is_cancelled() {
+            return Err(anyhow::anyhow!("Discovery cancelled"));
+        }
+
+        // Filter interfaces to only those with matching created subnets
+        // Update subnet_id references since created subnets may differ from discovered
         let original_interface_count = interfaces.len();
         let interfaces: Vec<Interface> = interfaces
             .into_iter()
@@ -301,13 +361,20 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
             },
             hidden: false,
             virtualization: None,
+            // SNMP fields - not applicable to self-report
+            sys_descr: None,
+            sys_object_id: None,
+            sys_location: None,
+            sys_contact: None,
+            management_url: None,
+            chassis_id: None,
+            snmp_credential_id: None,
         };
 
         // Ports to create with the host
         let ports = vec![own_port];
 
         let mut host = Host::new(host_base);
-
         host.id = host_id;
 
         let mut services = Vec::new();
@@ -344,24 +411,19 @@ impl RunsDiscovery for DiscoveryRunner<SelfReportDiscovery> {
             host.base.hostname
         );
 
+        // Check cancellation before creating host
+        if cancel.is_cancelled() {
+            return Err(anyhow::anyhow!("Discovery cancelled"));
+        }
+
         // Pass interfaces and ports separately - server will create them with the correct host_id
         tracing::debug!("Creating host with interfaces, ports, and services");
-        self.create_host(host, interfaces.clone(), ports, services)
+        self.create_host(host, interfaces.clone(), ports, services, vec![], &cancel)
             .await?;
-
-        self.report_discovery_update(DiscoverySessionUpdate {
-            phase: DiscoveryPhase::Complete,
-            progress: 100,
-            error: None,
-            finished_at: Some(Utc::now()),
-        })
-        .await?;
 
         Ok(())
     }
-}
 
-impl DiscoveryRunner<SelfReportDiscovery> {
     async fn update_capabilities(
         &self,
         has_docker_socket: bool,
@@ -378,6 +440,12 @@ impl DiscoveryRunner<SelfReportDiscovery> {
             has_docker_socket,
             interfaced_subnet_ids: interfaced_subnet_ids.clone(),
         };
+
+        // Store capabilities locally for ServerPoll mode status responses
+        self.as_ref()
+            .config_store
+            .set_capabilities(capabilities.clone())
+            .await?;
 
         let daemon_id = self.as_ref().api_client.config().get_id().await?;
         let path = format!("/api/daemons/{}/update-capabilities", daemon_id);

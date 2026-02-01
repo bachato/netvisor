@@ -12,6 +12,7 @@ use crate::server::{
         base::{Host, HostBase},
         virtualization::HostVirtualization,
     },
+    if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus},
     interfaces::r#impl::base::{Interface, InterfaceBase},
     ports::r#impl::base::{Port, PortBase, PortConfig, PortType, TransportProtocol},
     services::r#impl::{
@@ -52,6 +53,9 @@ pub struct DiscoveryHostRequest {
     pub interfaces: Vec<Interface>,
     pub ports: Vec<Port>,
     pub services: Vec<Service>,
+    /// SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub if_entries: Vec<crate::server::if_entries::r#impl::base::IfEntry>,
 }
 
 // =============================================================================
@@ -286,6 +290,80 @@ impl BindingInput {
 }
 
 // =============================================================================
+// EXTERNAL API - IF ENTRY INPUT
+// =============================================================================
+
+/// Input for creating an SNMP interface entry (ifTable data).
+/// Used in CreateHostRequest. Server assigns UUIDs since nothing references
+/// IfEntry IDs at creation time (neighbor resolution is done server-side).
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct IfEntryInput {
+    /// SNMP ifIndex - stable identifier within device
+    pub if_index: i32,
+    /// SNMP ifDescr - interface description (e.g., GigabitEthernet0/1)
+    pub if_descr: String,
+    /// SNMP ifAlias - user-configured description
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub if_alias: Option<String>,
+    /// SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)
+    #[serde(default)]
+    pub if_type: Option<i32>,
+    /// Interface speed in bits per second
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speed_bps: Option<i64>,
+    /// SNMP ifAdminStatus
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub admin_status: Option<IfAdminStatus>,
+    /// SNMP ifOperStatus
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub oper_status: Option<IfOperStatus>,
+    /// MAC address from SNMP ifPhysAddress
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Option<String>)]
+    pub mac_address: Option<MacAddress>,
+    /// Optional FK to Interface - links this SNMP port to its IP assignment
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interface_id: Option<Uuid>,
+}
+
+impl IfEntryInput {
+    /// Convert to IfEntry entity with the given host_id and network_id.
+    pub fn into_if_entry(self, host_id: Uuid, network_id: Uuid) -> IfEntry {
+        let now = chrono::Utc::now();
+        IfEntry {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id,
+                network_id,
+                if_index: self.if_index,
+                if_descr: self.if_descr,
+                if_alias: self.if_alias,
+                if_type: self.if_type.unwrap_or(1), // 1 = other
+                speed_bps: self.speed_bps,
+                admin_status: self.admin_status.unwrap_or_default(),
+                oper_status: self.oper_status.unwrap_or_default(),
+                mac_address: self.mac_address,
+                interface_id: self.interface_id,
+                // Neighbor resolution fields - not set from API, resolved server-side
+                neighbor: None,
+                lldp_chassis_id: None,
+                lldp_port_id: None,
+                lldp_sys_name: None,
+                lldp_port_desc: None,
+                lldp_mgmt_addr: None,
+                lldp_sys_desc: None,
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        }
+    }
+}
+
+// =============================================================================
 // EXTERNAL API - CREATE REQUEST
 // =============================================================================
 
@@ -310,6 +388,22 @@ pub struct CreateHostRequest {
     #[schema(required)]
     pub tags: Vec<Uuid>,
 
+    // SNMP System MIB fields
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_descr: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_object_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_contact: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub management_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chassis_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snmp_credential_id: Option<Uuid>,
+
     /// Interfaces to create with this host (client provides UUIDs)
     #[serde(default)]
     pub interfaces: Vec<InterfaceInput>,
@@ -319,6 +413,9 @@ pub struct CreateHostRequest {
     /// Services to create with this host (can reference interfaces/ports by their UUIDs)
     #[serde(default)]
     pub services: Vec<ServiceInput>,
+    /// SNMP interface entries (ifTable data) - server assigns UUIDs
+    #[serde(default)]
+    pub if_entries: Vec<IfEntryInput>,
 }
 
 // =============================================================================
@@ -369,7 +466,7 @@ pub struct UpdateHostRequest {
 // =============================================================================
 
 /// Response type for host endpoints.
-/// Includes hydrated children (interfaces, ports, services).
+/// Includes children (interfaces, ports, services, if_entries).
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[schema(example = crate::server::shared::types::examples::host_response)]
 pub struct HostResponse {
@@ -388,10 +485,28 @@ pub struct HostResponse {
     pub hidden: bool,
     pub tags: Vec<Uuid>,
 
-    // Hydrated children (fetched by service layer)
+    // SNMP System MIB fields
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_descr: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_object_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_contact: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub management_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chassis_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snmp_credential_id: Option<Uuid>,
+
+    // Children (fetched by service layer)
     pub interfaces: Vec<Interface>,
     pub ports: Vec<Port>,
     pub services: Vec<Service>,
+    /// SNMP ifTable entries
+    pub if_entries: Vec<IfEntry>,
 }
 
 impl HostResponse {
@@ -411,9 +526,17 @@ impl HostResponse {
             virtualization,
             hidden,
             tags,
+            sys_descr,
+            sys_object_id,
+            sys_location,
+            sys_contact,
+            management_url,
+            chassis_id,
+            snmp_credential_id,
             interfaces: _,
             ports: _,
             services: _,
+            if_entries: _,
         } = self;
 
         Host {
@@ -429,17 +552,25 @@ impl HostResponse {
                 virtualization: virtualization.clone(),
                 hidden: *hidden,
                 tags: tags.clone(),
+                sys_descr: sys_descr.clone(),
+                sys_object_id: sys_object_id.clone(),
+                sys_location: sys_location.clone(),
+                sys_contact: sys_contact.clone(),
+                management_url: management_url.clone(),
+                chassis_id: chassis_id.clone(),
+                snmp_credential_id: *snmp_credential_id,
             },
         }
     }
 
-    /// Build HostResponse from a Host and its hydrated children.
+    /// Build HostResponse from a Host and its children.
     /// Uses exhaustive destructuring to ensure compile error if Host/HostBase changes.
     pub fn from_host_with_children(
         host: Host,
         interfaces: Vec<Interface>,
         ports: Vec<Port>,
         services: Vec<Service>,
+        if_entries: Vec<IfEntry>,
     ) -> Self {
         // Exhaustive destructuring of Host
         let Host {
@@ -460,6 +591,13 @@ impl HostResponse {
             virtualization,
             hidden,
             tags,
+            sys_descr,
+            sys_object_id,
+            sys_location,
+            sys_contact,
+            management_url,
+            chassis_id,
+            snmp_credential_id,
         } = base;
 
         Self {
@@ -474,9 +612,17 @@ impl HostResponse {
             virtualization,
             hidden,
             tags,
+            sys_descr,
+            sys_object_id,
+            sys_location,
+            sys_contact,
+            management_url,
+            chassis_id,
+            snmp_credential_id,
             interfaces,
             ports,
             services,
+            if_entries,
         }
     }
 }

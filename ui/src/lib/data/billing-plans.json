@@ -49,7 +49,7 @@
     "icon": "zap",
     "color": "Yellow",
     "metadata": {
-      "base_cents": 5999,
+      "base_cents": 2999,
       "custom_price": null,
       "features": {
         "api_access": true,
@@ -74,8 +74,8 @@
         "whitelabeling": false
       },
       "hosting": "Cloud",
-      "included_networks": 5,
-      "included_seats": 3,
+      "included_networks": 3,
+      "included_seats": 1,
       "is_commercial": false,
       "network_cents": null,
       "rate": "Month",
@@ -91,7 +91,7 @@
     "icon": "users",
     "color": "Orange",
     "metadata": {
-      "base_cents": 14999,
+      "base_cents": 8999,
       "custom_price": null,
       "features": {
         "api_access": true,
@@ -133,7 +133,7 @@
     "icon": "briefcase",
     "color": "Indigo",
     "metadata": {
-      "base_cents": 39999,
+      "base_cents": 14999,
       "custom_price": null,
       "features": {
         "api_access": true,
@@ -217,7 +217,7 @@
     "icon": "zap",
     "color": "Yellow",
     "metadata": {
-      "base_cents": 57600,
+      "base_cents": 28800,
       "custom_price": null,
       "features": {
         "api_access": true,
@@ -242,8 +242,8 @@
         "whitelabeling": false
       },
       "hosting": "Cloud",
-      "included_networks": 5,
-      "included_seats": 3,
+      "included_networks": 3,
+      "included_seats": 1,
       "is_commercial": false,
       "network_cents": null,
       "rate": "Year",
@@ -259,7 +259,7 @@
     "icon": "users",
     "color": "Orange",
     "metadata": {
-      "base_cents": 144000,
+      "base_cents": 86400,
       "custom_price": null,
       "features": {
         "api_access": true,
@@ -301,7 +301,7 @@
     "icon": "briefcase",
     "color": "Indigo",
     "metadata": {
-      "base_cents": 384000,
+      "base_cents": 144000,
       "custom_price": null,
       "features": {
         "api_access": true,

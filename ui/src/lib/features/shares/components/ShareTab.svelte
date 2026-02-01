@@ -11,6 +11,7 @@
 	import { useSharesQuery, useDeleteShareMutation, useBulkDeleteSharesMutation } from '../queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import type { TabProps } from '$lib/shared/types';
+	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import {
 		common_confirmDeleteName,
 		common_created,
@@ -115,6 +116,11 @@
 		showEditor = false;
 		editingShare = null;
 	}
+
+	// CSV export handler
+	async function handleCsvExport() {
+		await downloadCsv('Share', {});
+	}
 </script>
 
 <div class="space-y-6">
@@ -134,6 +140,7 @@
 			storageKey="scanopy-shares-table-state"
 			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
 			getItemId={(item) => item.id}
+			onCsvExport={handleCsvExport}
 		>
 			{#snippet children(
 				item: Share,

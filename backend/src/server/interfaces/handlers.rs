@@ -2,9 +2,14 @@ use crate::server::auth::middleware::permissions::{Authorized, Member};
 use crate::server::config::AppState;
 use crate::server::hosts::r#impl::base::Host;
 use crate::server::interfaces::r#impl::base::Interface;
-use crate::server::shared::handlers::traits::{BulkDeleteResponse, create_handler, update_handler};
+use crate::server::interfaces::service::InterfaceService;
+use crate::server::shared::handlers::query::InterfaceQuery;
+use crate::server::shared::handlers::traits::{
+    BulkDeleteResponse, CrudHandlers, create_handler, update_handler,
+};
 use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::StorableFilter;
+use crate::server::shared::storage::traits::Entity;
 use crate::server::shared::types::api::{
     ApiError, ApiErrorResponse, ApiResponse, ApiResult, EmptyApiResponse,
 };
@@ -17,11 +22,20 @@ use std::sync::Arc;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
-// Generated handlers for read operations only
+impl CrudHandlers for Interface {
+    type Service = InterfaceService;
+    type FilterQuery = InterfaceQuery;
+
+    fn get_service(state: &AppState) -> &Self::Service {
+        &state.services.interface_service
+    }
+}
+
 mod generated {
     use super::*;
-    crate::crud_get_by_id_handler!(Interface, "interfaces", "interface");
-    crate::crud_get_all_handler!(Interface, "interfaces", "interface");
+    crate::crud_get_all_handler!(Interface);
+    crate::crud_export_csv_handler!(Interface);
+    crate::crud_get_by_id_handler!(Interface);
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -33,6 +47,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             delete_interface
         ))
         .routes(routes!(bulk_delete_interfaces))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Validate that interface's host and subnet are on the same network as the interface,
@@ -80,7 +95,7 @@ async fn validate_interface_consistency(
 #[utoipa::path(
     post,
     path = "",
-    tag = "interfaces",
+    tag = Interface::ENTITY_NAME_PLURAL,
     request_body = Interface,
     responses(
         (status = 200, description = "Interface created successfully", body = ApiResponse<Interface>),
@@ -112,7 +127,7 @@ async fn create_interface(
 #[utoipa::path(
     put,
     path = "/{id}",
-    tag = "interfaces",
+    tag = Interface::ENTITY_NAME_PLURAL,
     params(("id" = Uuid, Path, description = "Interface ID")),
     request_body = Interface,
     responses(
@@ -145,7 +160,7 @@ async fn update_interface(
 #[utoipa::path(
     delete,
     path = "/{id}",
-    tag = "interfaces",
+    tag = Interface::ENTITY_NAME_PLURAL,
     params(("id" = Uuid, Path, description = "Interface ID")),
     responses(
         (status = 200, description = "Interface deleted successfully", body = EmptyApiResponse),
@@ -153,7 +168,7 @@ async fn update_interface(
     ),
      security(("user_api_key" = []), ("session" = []))
 )]
-async fn delete_interface(
+pub async fn delete_interface(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Member>,
     Path(id): Path<Uuid>,
@@ -202,7 +217,7 @@ async fn delete_interface(
 #[utoipa::path(
     post,
     path = "/bulk-delete",
-    tag = "interfaces",
+    tag = Interface::ENTITY_NAME_PLURAL,
     request_body = Vec<Uuid>,
     responses(
         (status = 200, description = "Interfaces deleted successfully", body = ApiResponse<BulkDeleteResponse>),
@@ -228,7 +243,7 @@ async fn bulk_delete_interfaces(
     let service = &state.services.interface_service;
 
     // Fetch all entities by the requested IDs
-    let entity_filter = StorableFilter::<Interface>::new().entity_ids(&ids);
+    let entity_filter = StorableFilter::<Interface>::new_from_entity_ids(&ids);
     let entities = service.get_all(entity_filter).await?;
 
     // Collect affected host IDs for renumbering

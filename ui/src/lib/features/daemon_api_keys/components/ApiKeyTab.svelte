@@ -18,6 +18,7 @@
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { TabProps } from '$lib/shared/types';
+	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import {
 		common_create,
 		common_name,
@@ -90,6 +91,11 @@
 		return apiKey.tags;
 	}
 
+	// CSV export handler
+	async function handleCsvExport() {
+		await downloadCsv('DaemonApiKey', {});
+	}
+
 	const apiKeyFields: FieldConfig<ApiKey>[] = [
 		{
 			key: 'name',
@@ -153,6 +159,7 @@
 			getItemTags={getApiKeyTags}
 			storageKey="scanopy-api-keys-table-state"
 			getItemId={(item) => item.id}
+			onCsvExport={handleCsvExport}
 		>
 			{#snippet children(
 				item: ApiKey,

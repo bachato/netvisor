@@ -25,7 +25,6 @@ use std::sync::OnceLock;
 use stripe::Client;
 use stripe_billing::billing_portal_session::CreateBillingPortalSession;
 use stripe_billing::subscription::ListSubscription;
-use stripe_billing::subscription::ListSubscriptionStatus;
 use stripe_billing::subscription::UpdateSubscription;
 use stripe_billing::subscription::UpdateSubscriptionItems;
 use stripe_billing::subscription::UpdateSubscriptionProrationBehavior;
@@ -469,16 +468,23 @@ impl BillingService {
             0
         };
 
+        // Query all subscriptions and filter for Active or Trialing status
+        // This ensures trial subscriptions are included when syncing addon quantities
         let org_subscriptions = ListSubscription::new()
             .customer(customer_id)
-            .status(ListSubscriptionStatus::Active)
             .send(&self.stripe)
             .await?;
 
         let subscription = org_subscriptions
             .data
-            .first()
-            .ok_or_else(|| anyhow!("No active subscription found"))?;
+            .iter()
+            .find(|s| {
+                matches!(
+                    s.status,
+                    SubscriptionStatus::Active | SubscriptionStatus::Trialing
+                )
+            })
+            .ok_or_else(|| anyhow!("No active or trialing subscription found"))?;
 
         // Build items array - need to update quantities on existing items
         let mut items_to_update = vec![];
@@ -750,6 +756,7 @@ impl BillingService {
 
             // Checkout completed (first subscription creation)
             if organization.base.plan.is_none() {
+                let plan_config = plan.config();
                 self.event_bus
                     .publish_telemetry(TelemetryEvent::new(
                         Uuid::new_v4(),
@@ -763,6 +770,8 @@ impl BillingService {
                             "is_commercial": plan.is_commercial(),
                             "has_trial": is_trialing,
                             "org_id": organization.id.to_string(),
+                            "included_networks": plan_config.included_networks,
+                            "included_seats": plan_config.included_seats,
                         }),
                     ))
                     .await?;
@@ -812,7 +821,7 @@ impl BillingService {
             }
         }
 
-        let org_filter = StorableFilter::<Network>::new().organization_id(&org_id);
+        let org_filter = StorableFilter::<Network>::new_from_org_id(&org_id);
 
         // If they can't pay for networks, remove them
         if let Some(included_networks) = plan.config().included_networks

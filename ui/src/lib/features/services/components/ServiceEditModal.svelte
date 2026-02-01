@@ -10,16 +10,16 @@
 	import type { Host, HostFormData } from '$lib/features/hosts/types/base';
 	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
-	import { useServicesQuery } from '$lib/features/services/queries';
+	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import { common_cancel, common_updating, services_updateService } from '$lib/paraglide/messages';
 
 	// TanStack Query hooks to get child entities for hydrating host form data
 	const interfacesQuery = useInterfacesQuery();
 	const portsQuery = usePortsQuery();
-	const servicesQuery = useServicesQuery();
+	const servicesQuery = useServicesCacheQuery();
 	let interfacesData = $derived(interfacesQuery.data ?? []);
 	let portsData = $derived(portsQuery.data ?? []);
-	let servicesData = $derived(servicesQuery.data?.items ?? []);
+	let servicesData = $derived(servicesQuery.data ?? []);
 
 	// Hydrate host to form data for ServiceConfigPanel
 	function hydrateHostToFormData(host: Host): HostFormData {
@@ -31,7 +31,16 @@
 			...host,
 			interfaces: hostInterfaces,
 			ports: hostPorts,
-			services: hostServices
+			services: hostServices,
+			// SNMP fields - spread from host, default to null if not present
+			sys_descr: host.sys_descr ?? null,
+			sys_object_id: host.sys_object_id ?? null,
+			sys_location: host.sys_location ?? null,
+			sys_contact: host.sys_contact ?? null,
+			management_url: host.management_url ?? null,
+			chassis_id: host.chassis_id ?? null,
+			snmp_credential_id: host.snmp_credential_id ?? null,
+			if_entries: [] // IfEntries not available in this context
 		};
 	}
 
@@ -103,7 +112,7 @@
 
 	<!-- Content -->
 	<div class="flex h-full flex-col overflow-hidden">
-		<div class="flex-1 overflow-y-auto">
+		<div class="min-h-0 flex-1 overflow-y-auto">
 			<div class="space-y-8 p-6">
 				<ServiceConfigPanel
 					host={hostFormData}
@@ -112,10 +121,9 @@
 					index={0}
 					onChange={handleServiceUpdate}
 				/>
-
-				<EntityMetadataSection entities={[service]} />
 			</div>
 		</div>
+		<EntityMetadataSection entities={[service]} />
 	</div>
 
 	{#snippet footer()}

@@ -10,7 +10,7 @@ use crate::server::shared::handlers::query::{
 use crate::server::shared::handlers::traits::{CrudHandlers, update_handler};
 use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::StorableFilter;
-use crate::server::shared::storage::traits::Storable;
+use crate::server::shared::storage::traits::{Entity, Storable};
 use crate::server::shared::types::api::{
     ApiError, ApiErrorResponse, ApiJson, ApiResponse, ApiResult, PaginatedApiResponse,
 };
@@ -117,9 +117,10 @@ impl FilterQueryExtractor for SubnetFilterQuery {
 // Generated handlers for most CRUD operations
 mod generated {
     use super::*;
-    crate::crud_get_by_id_handler!(Subnet, "subnets", "subnet");
-    crate::crud_delete_handler!(Subnet, "subnets", "subnet");
-    crate::crud_bulk_delete_handler!(Subnet, "subnets");
+    crate::crud_get_by_id_handler!(Subnet);
+    crate::crud_delete_handler!(Subnet);
+    crate::crud_bulk_delete_handler!(Subnet);
+    crate::crud_export_csv_handler!(Subnet);
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -131,6 +132,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Get all subnets
@@ -142,7 +144,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 #[utoipa::path(
     get,
     path = "",
-    tag = "subnets",
+    tag = Subnet::ENTITY_NAME_PLURAL,
     operation_id = "list_subnets",
     summary = "List all subnets",
     params(SubnetFilterQuery),
@@ -164,7 +166,7 @@ async fn get_all_subnets(
         AuthenticatedEntity::Daemon { network_id, .. } => {
             // Daemons can only access subnets in their network
             // Return all results (no pagination applied)
-            let filter = StorableFilter::<Subnet>::new().network_ids(&[network_id]);
+            let filter = StorableFilter::<Subnet>::new_from_network_ids(&[network_id]);
             let service = Subnet::get_service(&state);
             let result = service.get_all(filter).await.map_err(|e| {
                 tracing::error!(
@@ -185,7 +187,7 @@ async fn get_all_subnets(
         _ => {
             // Users/API keys - use standard filter with query params
             let org_id = organization_id.ok_or_else(ApiError::organization_required)?;
-            let base_filter = StorableFilter::<Subnet>::new().network_ids(&network_ids);
+            let base_filter = StorableFilter::<Subnet>::new_from_network_ids(&network_ids);
             let filter = query.apply_to_filter(base_filter, &network_ids, org_id);
 
             // Apply pagination
@@ -217,7 +219,7 @@ async fn get_all_subnets(
 #[utoipa::path(
     post,
     path = "",
-    tag = "subnets",
+    tag = Subnet::ENTITY_NAME_PLURAL,
     request_body = Subnet,
     responses(
         (status = 200, description = "Subnet created successfully", body = ApiResponse<Subnet>),
@@ -237,7 +239,7 @@ async fn create_subnet(
         subnet_name = %request.base.name,
         subnet_cidr = %request.base.cidr,
         network_id = %request.base.network_id,
-        entity_id = %entity.entity_id(),
+        entity_id = %entity.entity_id().unwrap_or_default(),
         "Subnet create request received"
     );
 
@@ -245,7 +247,7 @@ async fn create_subnet(
         tracing::warn!(
             subnet_name = %request.base.name,
             subnet_cidr = %request.base.cidr,
-            entity_id = %entity.entity_id(),
+            entity_id = %entity.entity_id().unwrap_or_default(),
             error = %err,
             "Subnet validation failed"
         );
@@ -297,7 +299,7 @@ async fn create_subnet(
 #[utoipa::path(
     put,
     path = "/{id}",
-    tag = "subnets",
+    tag = Subnet::ENTITY_NAME_PLURAL,
     params(("id" = Uuid, Path, description = "Subnet ID")),
     request_body = Subnet,
     responses(
@@ -324,7 +326,7 @@ async fn update_subnet(
 
     if current.base.cidr != subnet.base.cidr {
         // CIDR is changing - validate that all existing interfaces are within the new CIDR
-        let filter = StorableFilter::<Interface>::new().subnet_id(&id);
+        let filter = StorableFilter::<Interface>::new_from_subnet_id(&id);
         let interfaces = state
             .services
             .interface_service

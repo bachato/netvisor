@@ -28,6 +28,21 @@ impl DaemonDiscoverySessionManager {
         }
     }
 
+    /// Try to initiate a discovery session. Returns false if already busy.
+    pub async fn try_initiate_session(self: &Arc<Self>, request: DaemonDiscoveryRequest) -> bool {
+        if self.is_discovery_running().await {
+            tracing::warn!(
+                session_id = %request.session_id,
+                discovery_type = %request.discovery_type,
+                "Rejecting discovery request - another session is already running"
+            );
+            return false;
+        }
+
+        self.initiate_session(request).await;
+        true
+    }
+
     pub async fn initiate_session(self: &Arc<Self>, request: DaemonDiscoveryRequest) {
         tracing::info!(
             discovery_type = %request.discovery_type,
@@ -62,11 +77,16 @@ impl DaemonDiscoverySessionManager {
             DiscoveryType::Network {
                 subnet_ids,
                 host_naming_fallback,
+                snmp_credentials,
             } => self.clone().spawn_discovery(
                 DiscoveryRunner::new(
                     self.discovery_service.clone(),
                     self.clone(),
-                    NetworkScanDiscovery::new(subnet_ids.clone(), *host_naming_fallback),
+                    NetworkScanDiscovery::new(
+                        subnet_ids.clone(),
+                        *host_naming_fallback,
+                        snmp_credentials.clone(),
+                    ),
                 ),
                 request.clone(),
                 cancel_token,

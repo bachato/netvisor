@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
@@ -6,10 +7,23 @@ use uuid::Uuid;
 use crate::server::{
     shared::{
         entities::EntityDiscriminants,
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
     },
     tags::r#impl::base::{Tag, TagBase},
 };
+
+/// CSV row representation for Tag export
+#[derive(Serialize)]
+pub struct TagCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub color: String,
+    pub organization_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 impl Storable for Tag {
     type BaseData = TagBase;
@@ -101,16 +115,31 @@ impl Storable for Tag {
 }
 
 impl Entity for Tag {
+    type CsvRow = TagCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        TagCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            description: self.base.description.clone(),
+            color: self.base.color.to_string(),
+            organization_id: self.base.organization_id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Tag
     }
 
-    fn entity_name_singular() -> &'static str {
-        "tag"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Tag";
+    const ENTITY_NAME_PLURAL: &'static str = "Tags";
+    const ENTITY_DESCRIPTION: &'static str =
+        "Custom tags for categorization. Apply labels to entities for filtering and organization.";
 
-    fn entity_name_plural() -> &'static str {
-        "tags"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::Metadata
     }
 
     fn network_id(&self) -> Option<Uuid> {

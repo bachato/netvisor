@@ -13,12 +13,13 @@
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import {
 		common_ipAddress,
+		common_macAddress,
 		common_name,
 		common_placeholderInterface,
 		common_placeholderIpAddress,
 		hosts_interfaces_ipMustBeWithin,
-		hosts_interfaces_macAddress,
 		hosts_interfaces_macFormat,
+		hosts_interfaces_macReadOnly,
 		hosts_interfaces_subnetInterface
 	} from '$lib/paraglide/messages';
 
@@ -29,9 +30,10 @@
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		form: { Field: any };
 		onChange?: (iface: Interface) => void;
+		isEditing?: boolean;
 	}
 
-	let { iface, subnet, index, form, onChange = () => {} }: Props = $props();
+	let { iface, subnet, index, form, onChange = () => {}, isEditing = false }: Props = $props();
 
 	// Field names for this interface in the form array
 	let ipFieldName = $derived(`interfaces[${index}].ip_address`);
@@ -114,10 +116,11 @@
 			>
 				{#snippet children(field: AnyFieldApi)}
 					<TextInput
-						label={hosts_interfaces_macAddress()}
+						label={common_macAddress()}
 						id="interface_mac_{iface.id}"
 						placeholder="00:1B:44:11:3A:B7"
-						helpText={hosts_interfaces_macFormat()}
+						helpText={isEditing ? hosts_interfaces_macReadOnly() : hosts_interfaces_macFormat()}
+						disabled={isEditing}
 						{field}
 					/>
 				{/snippet}

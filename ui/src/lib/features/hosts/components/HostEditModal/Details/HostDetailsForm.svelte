@@ -1,10 +1,9 @@
 <script lang="ts">
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
-	import type { Host, HostFormData } from '$lib/features/hosts/types/base';
+	import type { HostFormData } from '$lib/features/hosts/types/base';
 	import { hostnameFormat, max, required } from '$lib/shared/components/forms/validators';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TextArea from '$lib/shared/components/forms/input/TextArea.svelte';
-	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
 	import {
@@ -17,14 +16,12 @@
 	} from '$lib/paraglide/messages';
 
 	interface Props {
-		host?: Host | null;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		form: { Field: any };
 		formData: HostFormData;
-		isEditing: boolean;
 	}
 
-	let { host = null, form, formData = $bindable(), isEditing }: Props = $props();
+	let { form, formData = $bindable() }: Props = $props();
 
 	// Track network_id separately (not a form field, so needs manual sync)
 	let selectedNetworkId = $state(formData.network_id);
@@ -88,8 +85,4 @@
 	</form.Field>
 
 	<TagPicker bind:selectedTagIds={formData.tags} />
-
-	{#if isEditing}
-		<EntityMetadataSection entities={[host]} />
-	{/if}
 </div>

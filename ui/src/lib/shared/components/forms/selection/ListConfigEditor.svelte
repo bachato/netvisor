@@ -84,9 +84,9 @@
 		<Loading />
 	</div>
 {:else}
-	<div class="flex h-full gap-6">
-		<!-- Left Panel - List Manager (Full Height) -->
-		<div class="{listPanelWidth} relative flex flex-col">
+	<div class="flex h-full min-h-0 gap-6">
+		<!-- Left Panel - List Manager -->
+		<div class="{listPanelWidth} min-h-0 overflow-y-auto">
 			<div class="p-6">
 				<slot
 					name="list"
@@ -103,13 +103,10 @@
 					<div class="text-danger">No list component provided</div>
 				</slot>
 			</div>
-
-			<!-- Spacer to make left panel take full height -->
-			<div class="flex-1"></div>
 		</div>
 
 		<!-- Right Panel - Configuration -->
-		<div class="{configPanelWidth} overflow-y-auto border-l border-gray-600 p-6">
+		<div class="{configPanelWidth} min-h-0 overflow-y-auto border-l border-gray-600 p-6">
 			<slot name="config" {selectedItem} {selectedIndex} onChange={handleItemChange}>
 				<div class="text-tertiary flex h-32 items-center justify-center">
 					<p>Select an item to configure</p>

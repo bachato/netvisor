@@ -15,34 +15,91 @@ export interface OnboardingState {
 	daemonSetups: Map<string, DaemonSetupState>; // keyed by network id
 	populateSeedData: boolean;
 	currentBlocker: BlockerType | null;
+	// HubSpot qualification data (company/msp only, not persisted to DB)
+	jobTitle: string | null;
+	companySize: string | null;
 }
 
+const STORAGE_KEY = 'scanopy_onboarding';
+
+// Fields to persist to localStorage (for billing page autofill)
+interface PersistedState {
+	useCase: UseCase | null;
+	companySize: string | null;
+}
+
+function loadPersistedState(): PersistedState {
+	if (typeof window === 'undefined') {
+		return { useCase: null, companySize: null };
+	}
+	try {
+		const stored = localStorage.getItem(STORAGE_KEY);
+		if (stored) {
+			const parsed = JSON.parse(stored);
+			return {
+				useCase: parsed.useCase ?? null,
+				companySize: parsed.companySize ?? null
+			};
+		}
+	} catch {
+		// Ignore localStorage errors
+	}
+	return { useCase: null, companySize: null };
+}
+
+function savePersistedState(state: PersistedState): void {
+	if (typeof window === 'undefined') return;
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+	} catch {
+		// Ignore localStorage errors
+	}
+}
+
+const persisted = loadPersistedState();
+
 const initialState: OnboardingState = {
-	useCase: null,
+	useCase: persisted.useCase,
 	readyToScan: null,
 	organizationName: '',
 	networks: [{ name: '' }],
 	daemonSetups: new Map(),
 	populateSeedData: true,
-	currentBlocker: null
+	currentBlocker: null,
+	jobTitle: null,
+	companySize: persisted.companySize
 };
 
 function createOnboardingStore() {
 	const { subscribe, update } = writable<OnboardingState>({ ...initialState });
 
+	// Helper to update and persist
+	function updateAndPersist(updater: (state: OnboardingState) => OnboardingState): void {
+		update((state) => {
+			const newState = updater(state);
+			savePersistedState({
+				useCase: newState.useCase,
+				companySize: newState.companySize
+			});
+			return newState;
+		});
+	}
+
 	return {
 		subscribe,
-		// Reset clears most state but preserves useCase for billing page
+		// Reset clears most state but preserves useCase and companySize for billing page
 		reset: () =>
-			update((state) => ({
+			updateAndPersist((state) => ({
 				...initialState,
 				networks: [{ name: '' }],
 				daemonSetups: new Map(),
-				useCase: state.useCase // Preserve for billing page
+				useCase: state.useCase, // Preserve for billing page
+				companySize: state.companySize, // Preserve for billing page
+				jobTitle: null
 			})),
 
 		setUseCase: (useCase: UseCase) =>
-			update((state) => ({
+			updateAndPersist((state) => ({
 				...state,
 				useCase
 			})),
@@ -122,6 +179,18 @@ function createOnboardingStore() {
 			update((state) => ({
 				...state,
 				currentBlocker: blocker
+			})),
+
+		setJobTitle: (jobTitle: string | null) =>
+			update((state) => ({
+				...state,
+				jobTitle
+			})),
+
+		setCompanySize: (companySize: string | null) =>
+			updateAndPersist((state) => ({
+				...state,
+				companySize
 			})),
 
 		// Get the current state synchronously

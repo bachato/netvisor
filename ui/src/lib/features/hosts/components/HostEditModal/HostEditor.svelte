@@ -5,6 +5,7 @@
 	import type {
 		Host,
 		HostFormData,
+		IfEntry,
 		CreateHostWithServicesRequest,
 		UpdateHostWithServicesRequest
 	} from '$lib/features/hosts/types/base';
@@ -13,7 +14,8 @@
 		hydrateHostToFormData,
 		createEmptyHostFormData
 	} from '$lib/features/hosts/queries';
-	import { useQueryClient } from '@tanstack/svelte-query';
+	import { createQuery, useQueryClient } from '@tanstack/svelte-query';
+	import { queryKeys } from '$lib/api/query-client';
 	import DetailsForm from './Details/HostDetailsForm.svelte';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import InterfacesForm from './Interfaces/InterfacesForm.svelte';
@@ -24,6 +26,9 @@
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import PortsForm from './Ports/PortsForm.svelte';
 	import VirtualizationForm from './Virtualization/VirtualizationForm.svelte';
+	import SnmpForm from './Snmp/SnmpForm.svelte';
+	import IfEntriesForm from './IfEntries/IfEntriesForm.svelte';
+	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import {
@@ -33,6 +38,7 @@
 		common_deleting,
 		common_details,
 		common_editName,
+		common_ifEntries,
 		common_interfaces,
 		common_next,
 		common_ports,
@@ -43,27 +49,27 @@
 		hosts_createHost,
 		hosts_editor_basicInfo,
 		hosts_editor_interfacesDesc,
+		hosts_editor_snmpTab,
+		hosts_editor_snmpTabDesc,
 		hosts_editor_updateHost,
 		hosts_editor_virtualizationDesc,
-		hosts_failedToDelete,
-		hosts_failedToSave
+		hosts_failedToSave,
+		hosts_ifEntries_subtitle
 	} from '$lib/paraglide/messages';
 
 	interface Props {
 		host?: Host | null;
 		isOpen?: boolean;
 		onCreate: (data: CreateHostWithServicesRequest) => Promise<void> | void;
-		onCreateAndContinue: (data: CreateHostWithServicesRequest) => Promise<void> | void;
 		onUpdate: (data: UpdateHostWithServicesRequest) => Promise<void> | void;
 		onClose: () => void;
-		onDelete?: ((id: string) => Promise<void> | void) | null;
+		onDelete?: ((host: Host) => Promise<void> | void) | null;
 	}
 
 	let {
 		host = null,
 		isOpen = false,
 		onCreate,
-		onCreateAndContinue,
 		onUpdate,
 		onClose,
 		onDelete = null
@@ -74,6 +80,24 @@
 	const networksQuery = useNetworksQuery();
 	let networksData = $derived(networksQuery.data ?? []);
 	let defaultNetworkId = $derived(networksData[0]?.id ?? '');
+
+	// Subscribe to ifEntries cache for this host - reactive to cache updates
+	// Since ifEntries are read-only (populated by SNMP discovery), we bypass formData
+	// and read directly from the cache for both tab visibility and form data
+	const ifEntriesQuery = createQuery(() => ({
+		queryKey: [...queryKeys.ifEntries.all, 'forHost', host?.id ?? 'none'],
+		queryFn: () => {
+			const allIfEntries = queryClient.getQueryData<IfEntry[]>(queryKeys.ifEntries.all) ?? [];
+			return allIfEntries.filter((e) => e.host_id === host?.id);
+		},
+		enabled: !!host && isOpen,
+		// Check cache frequently since we're reading from another query's cache
+		staleTime: 1000,
+		refetchInterval: 2000 // Poll while modal is open
+	}));
+
+	let hostIfEntries = $derived(ifEntriesQuery.data ?? []);
+	let hasIfEntries = $derived(hostIfEntries.length > 0);
 
 	let loading = $state(false);
 	let deleting = $state(false);
@@ -86,10 +110,6 @@
 	// formData holds structural data (ids, network_id, tags, etc.)
 	// Form fields (name, hostname, description, interface IPs, port numbers) are synced at submission
 	let formData = $state<HostFormData>(createEmptyHostFormData());
-
-	// Track which submission action to take
-	type SubmissionMode = 'create' | 'createAndContinue' | 'update';
-	let submissionMode = $state<SubmissionMode>('create');
 
 	// Sync form field values to formData structure
 	function syncFormValuesToFormData(values: typeof form.state.values) {
@@ -131,7 +151,7 @@
 
 		loading = true;
 		try {
-			if (submissionMode === 'update' && host) {
+			if (isEditing) {
 				// Update existing host
 				const hostPrimitive = formDataToHostPrimitive(formData);
 				const promises = [
@@ -157,9 +177,6 @@
 
 				await Promise.all(promises);
 				handleClose();
-			} else if (submissionMode === 'createAndContinue') {
-				// Create and keep modal open for adding services
-				await onCreateAndContinue({ host: formData, services: [] });
 			} else {
 				// Create and close
 				await onCreate({ host: formData, services: formData.services });
@@ -184,7 +201,10 @@
 			description: formData.description || '',
 			interfaces: formData.interfaces || [],
 			ports: formData.ports || [],
-			services: formData.services || []
+			services: formData.services || [],
+			credential_mode: (formData.snmp_credential_id ? 'override' : 'default') as
+				| 'default'
+				| 'override'
 		},
 		onSubmit: async ({ value }) => {
 			await performSubmission(value);
@@ -199,8 +219,18 @@
 		resetForm();
 	}
 
+	async function handleDelete() {
+		if (onDelete && host) {
+			deleting = true;
+			try {
+				await onDelete(host);
+			} finally {
+				deleting = false;
+			}
+		}
+	}
+
 	// Track host ID to detect when host changes WHILE modal is already open
-	// (e.g., after createAndContinue creates a new host).
 	// Initial open is handled by handleOpen(), so we check modalInitialized.
 	let lastHostId = $state<string | null>(null);
 	$effect(() => {
@@ -244,6 +274,9 @@
 
 	// Tab management
 	let activeTab = $state('details');
+	// Get network for passing to SNMP form
+	let currentNetwork = $derived(networksData.find((n) => n.id === formData.network_id) ?? null);
+
 	let tabs = $derived([
 		{
 			id: 'details',
@@ -251,6 +284,24 @@
 			icon: Info,
 			description: hosts_editor_basicInfo()
 		},
+		// SNMP tab - always shown (users can set credential before discovery)
+		{
+			id: 'snmp',
+			label: hosts_editor_snmpTab(),
+			icon: concepts.getIconComponent('SNMP'),
+			description: hosts_editor_snmpTabDesc()
+		},
+		// IfEntries tab - only show when data exists (populated by discovery)
+		...(hasIfEntries
+			? [
+					{
+						id: 'if-entries',
+						label: common_ifEntries(),
+						icon: entities.getIconComponent('IfEntry'),
+						description: hosts_ifEntries_subtitle()
+					}
+				]
+			: []),
 		{
 			id: 'interfaces',
 			label: common_interfaces(),
@@ -313,36 +364,17 @@
 			description: formData.description || '',
 			interfaces: formData.interfaces || [],
 			ports: formData.ports || [],
-			services: formData.services || []
+			services: formData.services || [],
+			credential_mode: formData.snmp_credential_id ? 'override' : 'default'
 		});
 
 		activeTab = 'details'; // Reset to first tab
 	}
 
-	// Submit the form with appropriate mode
-	async function handleSubmit() {
-		submissionMode = isEditing ? 'update' : 'create';
-		await submitForm(form);
-	}
-
-	async function handleDelete() {
-		if (onDelete && host) {
-			deleting = true;
-			try {
-				await onDelete(host.id);
-				handleClose();
-			} catch (error) {
-				pushError(error instanceof Error ? error.message : hosts_failedToDelete());
-			} finally {
-				deleting = false;
-			}
-		}
-	}
-
 	// Handle form-based submission for create flow with steps
 	async function handleFormSubmit() {
 		if (isEditing || currentTabIndex === tabs.length - 1) {
-			handleSubmit();
+			await submitForm(form);
 		} else {
 			// Validate all fields before advancing to next tab
 			const isValid = await validateForm(form);
@@ -404,63 +436,73 @@
 		class="flex min-h-0 flex-1 flex-col"
 	>
 		<!-- Content -->
-		<div class="flex-1 overflow-auto">
+		<div class="min-h-0 flex-1 overflow-hidden">
 			<!-- Details Tab -->
 			{#if activeTab === 'details'}
-				<div class="h-full">
-					<div class="relative flex-1">
-						<DetailsForm {form} {isEditing} {host} bind:formData />
+				<div class="flex h-full flex-col">
+					<div class="min-h-0 flex-1 overflow-y-auto">
+						<DetailsForm {form} bind:formData />
 					</div>
+					{#if isEditing && host}
+						<EntityMetadataSection entities={[host]} />
+					{/if}
 				</div>
 			{/if}
 
 			<!-- Interfaces Tab -->
 			{#if activeTab === 'interfaces'}
-				<div class="h-full">
-					<div class="relative flex-1">
-						<InterfacesForm
-							bind:formData
-							{form}
-							currentServices={formData.services}
-							onServicesChange={(services) => (formData.services = services)}
-						/>
-					</div>
+				<div class="flex h-full flex-col">
+					<InterfacesForm
+						bind:formData
+						{form}
+						{isEditing}
+						currentServices={formData.services}
+						onServicesChange={(services) => (formData.services = services)}
+					/>
 				</div>
 			{/if}
 
 			<!-- Ports Tab -->
 			{#if activeTab === 'ports'}
-				<div class="h-full">
-					<div class="relative flex-1">
-						<PortsForm
-							bind:formData
-							{form}
-							currentServices={formData.services}
-							onServicesChange={(services) => (formData.services = services)}
-						/>
-					</div>
+				<div class="flex h-full flex-col">
+					<PortsForm
+						bind:formData
+						{form}
+						currentServices={formData.services}
+						onServicesChange={(services) => (formData.services = services)}
+					/>
 				</div>
 			{/if}
 
 			<!-- Services Tab -->
 			{#if activeTab === 'services'}
-				<div class="h-full">
-					<div class="relative flex-1">
-						<ServicesForm bind:formData {form} />
-					</div>
+				<div class="flex h-full flex-col">
+					<ServicesForm bind:formData {form} />
 				</div>
 			{/if}
 
 			<!-- Virtualization Tab -->
 			{#if activeTab === 'virtualization'}
-				<div class="h-full">
-					<div class="relative flex-1">
-						<VirtualizationForm
-							virtualizationManagerServices={vmManagerServices}
-							onServiceChange={handleVirtualizationServiceChange}
-							onVirtualizedHostChange={handleVirtualizationHostChange}
-						/>
-					</div>
+				<div class="flex h-full flex-col">
+					<VirtualizationForm
+						virtualizationManagerServices={vmManagerServices}
+						onServiceChange={handleVirtualizationServiceChange}
+						onVirtualizedHostChange={handleVirtualizationHostChange}
+					/>
+				</div>
+			{/if}
+
+			<!-- SNMP Tab -->
+			{#if activeTab === 'snmp'}
+				<div class="h-full overflow-y-auto">
+					<SnmpForm bind:formData {form} {isEditing} network={currentNetwork} />
+				</div>
+			{/if}
+
+			<!-- IfEntries Tab -->
+			{#if activeTab === 'if-entries'}
+				<div class="flex h-full flex-col">
+					<IfEntriesForm ifEntries={hostIfEntries} />
 				</div>
 			{/if}
 		</div>

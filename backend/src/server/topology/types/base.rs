@@ -1,14 +1,15 @@
 use crate::server::bindings::r#impl::base::Binding;
 use crate::server::groups::r#impl::base::Group;
 use crate::server::hosts::r#impl::base::Host;
+use crate::server::if_entries::r#impl::base::IfEntry;
 use crate::server::interfaces::r#impl::base::Interface;
 use crate::server::ports::r#impl::base::Port;
 use crate::server::services::r#impl::base::Service;
 use crate::server::services::r#impl::categories::ServiceCategory;
 use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 use crate::server::subnets::r#impl::base::Subnet;
-use crate::server::topology::types::edges::Edge;
-use crate::server::topology::types::edges::EdgeTypeDiscriminants;
+use crate::server::topology::types::edges::{Edge, EdgeHandle, EdgeTypeDiscriminants};
+use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -25,6 +26,7 @@ pub struct SetEntitiesParams {
     pub ports: Vec<Port>,
     pub bindings: Vec<Binding>,
     pub interfaces: Vec<Interface>,
+    pub if_entries: Vec<IfEntry>,
 }
 
 #[derive(
@@ -66,6 +68,7 @@ impl Topology {
         self.base.removed_subnets = vec![];
         self.base.removed_bindings = vec![];
         self.base.removed_ports = vec![];
+        self.base.removed_if_entries = vec![];
         self.base.is_stale = false;
         self.base.last_refreshed = Utc::now()
     }
@@ -78,6 +81,7 @@ impl Topology {
         self.base.ports = params.ports;
         self.base.bindings = params.bindings;
         self.base.interfaces = params.interfaces;
+        self.base.if_entries = params.if_entries;
     }
 
     pub fn set_graph(&mut self, nodes: Vec<Node>, edges: Vec<Edge>) {
@@ -111,6 +115,7 @@ pub struct TopologyBase {
     pub subnets: Vec<Subnet>,
     pub services: Vec<Service>,
     pub groups: Vec<Group>,
+    pub if_entries: Vec<IfEntry>,
 
     // Build state
     pub is_stale: bool,
@@ -126,6 +131,7 @@ pub struct TopologyBase {
     pub removed_groups: Vec<Uuid>,
     pub removed_ports: Vec<Uuid>,
     pub removed_bindings: Vec<Uuid>,
+    pub removed_if_entries: Vec<Uuid>,
 }
 
 impl TopologyBase {
@@ -143,6 +149,7 @@ impl TopologyBase {
             bindings: vec![],
             services: vec![],
             groups: vec![],
+            if_entries: vec![],
             is_stale: true,
             last_refreshed: Utc::now(),
             is_locked: false,
@@ -155,6 +162,7 @@ impl TopologyBase {
             removed_groups: vec![],
             removed_bindings: vec![],
             removed_ports: vec![],
+            removed_if_entries: vec![],
             parent_id: None,
             tags: vec![],
         }
@@ -247,4 +255,68 @@ pub struct TopologyRebuildRequest {
     /// Existing edges for reference during rebuild
     #[serde(default)]
     pub edges: Vec<Edge>,
+}
+
+/// Lightweight request type for updating a single node's position.
+///
+/// Used for drag operations - instead of sending the entire topology (which can be
+/// several megabytes for large networks), only sends the node ID and new position.
+/// Fixes HTTP 413 errors on drag operations.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TopologyNodePositionUpdate {
+    /// Network ID for authorization
+    pub network_id: Uuid,
+    /// ID of the node to update
+    pub node_id: Uuid,
+    /// New position for the node
+    pub position: Ixy,
+}
+
+/// Lightweight request type for updating an edge's handles.
+///
+/// Used for edge reconnect operations - instead of sending the entire topology,
+/// only sends the edge ID and new handle positions.
+/// Fixes HTTP 413 errors on edge reconnect operations.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TopologyEdgeHandleUpdate {
+    /// Network ID for authorization
+    pub network_id: Uuid,
+    /// ID of the edge to update
+    pub edge_id: Uuid,
+    /// New source handle position
+    pub source_handle: EdgeHandle,
+    /// New target handle position
+    pub target_handle: EdgeHandle,
+}
+
+/// Lightweight request type for updating a node's size and position.
+///
+/// Used for subnet resize operations - instead of sending the entire topology,
+/// only sends the node ID, new size, and new position.
+/// Fixes HTTP 413 errors on resize operations.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TopologyNodeResizeUpdate {
+    /// Network ID for authorization
+    pub network_id: Uuid,
+    /// ID of the node to update
+    pub node_id: Uuid,
+    /// New size for the node
+    pub size: Uxy,
+    /// New position for the node
+    pub position: Ixy,
+}
+
+/// Lightweight request type for updating topology metadata.
+///
+/// Used for editing topology name/parent - instead of sending the entire topology
+/// (which includes all hosts, interfaces, services, etc.), only sends the metadata fields.
+/// Fixes HTTP 413 errors on metadata edit operations.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TopologyMetadataUpdate {
+    /// Network ID for authorization
+    pub network_id: Uuid,
+    /// New name for the topology
+    pub name: String,
+    /// New parent topology ID (optional)
+    pub parent_id: Option<Uuid>,
 }

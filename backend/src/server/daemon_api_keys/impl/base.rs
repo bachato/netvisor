@@ -4,14 +4,13 @@ use crate::server::shared::api_key_common::{ApiKeyCommon, ApiKeyType};
 use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 use crate::server::shared::types::api::serialize_sensitive_info;
 use chrono::{DateTime, Utc};
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(
-    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default, ToSchema, Validate,
-)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema, Validate)]
 pub struct DaemonApiKeyBase {
     #[serde(default)]
     #[serde(serialize_with = "serialize_sensitive_info")]
@@ -28,6 +27,40 @@ pub struct DaemonApiKeyBase {
     #[serde(default)]
     #[schema(required)]
     pub tags: Vec<Uuid>,
+    /// Plaintext API key for ServerPoll mode daemons only.
+    /// Never serialized or logged - wrapped in SecretString for protection.
+    /// NULL for DaemonPoll daemons (server doesn't need to send key).
+    #[serde(skip)]
+    #[validate(skip)]
+    pub plaintext: Option<SecretString>,
+}
+
+// PartialEq ignores plaintext - we never compare secrets
+impl PartialEq for DaemonApiKeyBase {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+            && self.name == other.name
+            && self.last_used == other.last_used
+            && self.expires_at == other.expires_at
+            && self.network_id == other.network_id
+            && self.is_enabled == other.is_enabled
+            && self.tags == other.tags
+    }
+}
+
+impl Eq for DaemonApiKeyBase {}
+
+impl std::hash::Hash for DaemonApiKeyBase {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.key.hash(state);
+        self.name.hash(state);
+        self.last_used.hash(state);
+        self.expires_at.hash(state);
+        self.network_id.hash(state);
+        self.is_enabled.hash(state);
+        self.tags.hash(state);
+        // plaintext intentionally excluded from hash
+    }
 }
 
 #[derive(

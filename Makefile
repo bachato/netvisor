@@ -1,4 +1,4 @@
-.PHONY: help build test clean format generate-schema set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise
+.PHONY: help build test clean format generate-schema generate-messages generate-fixtures seed-dev set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise
 
 help:
 	@echo "Scanopy Development Commands"
@@ -7,12 +7,13 @@ help:
 	@echo "  make setup-db       - Set up database"
 	@echo "  make clean-db       - Clean up database"
 	@echo "  make migrate-db     - Run any database migrations"
+	@echo "  make seed-dev       - Create dev user after migrate-db (dev@localhost / password123)"
 	@echo "  make clean-daemon   - Remove daemon config file"
 	@echo "  make dump-db        - Dump database to /scanopy"
 	@echo "  make dev-server     - Start server dev environment"
 	@echo "  make dev-ui         - Start ui"
 	@echo "  make dev-daemon     - Start daemon dev environment"
-	@echo "  make dev-container  - Start containerized development environment using docker-compose.dev.yml (server + ui + daemon)"
+	@echo "  make dev-container  - Start containerized development environment using docker-compose.test.yml (server + ui + daemon)"
 	@echo "  make dev-container-rebuild  - Rebuild and start containerized dev environment"
 	@echo "  make dev-container-rebuild-clean  - Rebuild, clean, and start containerized dev environment"
 	@echo "  make dev-down       - Stop development containers"
@@ -21,6 +22,8 @@ help:
 	@echo "  make lint           - Run all linters"
 	@echo "  make format         - Format all code"
 	@echo "  make generate-types  - Generate TypeScript types from Rust"
+	@echo "  make generate-messages - Generate i18n message functions from messages/*.json"
+	@echo "  make generate-fixtures - Regenerate billing-plans.json and features.json from backend"
 	@echo "  make generate-schema - Generate database schema diagram (requires tbls)"
 	@echo "  make clean          - Clean build artifacts and containers"
 	@echo "  make install-dev-mac    - Install development dependencies on macOS"
@@ -57,6 +60,14 @@ clean-db:
 migrate-db:
 	cd backend && sqlx migrate run --database-url postgresql://postgres:password@localhost:5432/scanopy
 
+seed-dev:
+	@echo "Seeding dev database with test user..."
+	@docker exec -i scanopy-postgres psql -U postgres -d scanopy < backend/scripts/seed-dev.sql && \
+		echo "" && \
+		echo "Dev user created! Login with:" && \
+		echo "  Email: dev@localhost.com" && \
+		echo "  Password: password123"
+
 clean-daemon:
 	rm -rf ~/Library/Application\ Support/com.scanopy.daemon
 
@@ -74,17 +85,17 @@ dev-ui:
 	cd ui && npm run dev
 
 dev-container:
-	docker compose -f docker-compose.dev.yml up
+	docker compose -f docker-compose.test.yml up
 
 dev-container-rebuild:
-	docker compose -f docker-compose.dev.yml up --build --force-recreate
+	docker compose -f docker-compose.test.yml up --build --force-recreate
 
 dev-container-rebuild-clean:
-	docker compose -f docker-compose.dev.yml build --no-cache
-	docker compose -f docker-compose.dev.yml up
+	docker compose -f docker-compose.test.yml build --no-cache
+	docker compose -f docker-compose.test.yml up
 
 dev-down:
-	docker compose -f docker-compose.dev.yml down --volumes --rmi local
+	docker compose -f docker-compose.test.yml down --volumes --rmi local
 
 test:
 	cd ui && npx vite-node scripts/export-daemon-field-defs.ts 2>/dev/null | grep -v 'paraglide-js' > ../backend/src/tests/daemon-config-frontend-fields.json
@@ -137,6 +148,18 @@ generate-schema:
 	awk '/^```mermaid$$/,/^```$$/{if(!/^```/)print}' /tmp/tbls-schema/README.md > ui/static/schema.mermaid && \
 	rm -rf /tmp/tbls-schema
 	@echo "✅ Generated ui/static/schema.mermaid"
+
+generate-messages:
+	@echo "Generating i18n messages..."
+	cd ui && npx paraglide-js compile --outdir ./src/lib/paraglide --silent
+	@echo "Messages generated successfully"
+
+generate-fixtures:
+	@echo "Generating billing and feature fixtures from backend..."
+	cd backend && cargo test generate_billing_fixtures -- --nocapture
+	mv ui/src/lib/data/billing-plans-next.json ui/src/lib/data/billing-plans.json
+	mv ui/src/lib/data/features-next.json ui/src/lib/data/features.json
+	@echo "✅ Generated ui/src/lib/data/billing-plans.json and features.json"
 
 stripe-webhook:
 	stripe listen --forward-to http://localhost:60072/api/billing/webhooks

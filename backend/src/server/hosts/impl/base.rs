@@ -32,6 +32,28 @@ pub struct HostBase {
     #[serde(default)]
     #[schema(required)]
     pub tags: Vec<Uuid>,
+    // SNMP System MIB fields
+    /// SNMP sysDescr.0 - full system description
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_descr: Option<String>,
+    /// SNMP sysObjectID.0 - vendor OID for device identification
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_object_id: Option<String>,
+    /// SNMP sysLocation.0 - physical location
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_location: Option<String>,
+    /// SNMP sysContact.0 - admin contact info
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sys_contact: Option<String>,
+    /// URL for device management interface (manual or discovered)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub management_url: Option<String>,
+    /// LLDP lldpLocChassisId - globally unique device identifier for deduplication
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chassis_id: Option<String>,
+    /// Per-host SNMP credential override (null = use network default)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snmp_credential_id: Option<Uuid>,
 }
 
 impl Default for HostBase {
@@ -45,6 +67,13 @@ impl Default for HostBase {
             virtualization: None,
             hidden: false,
             tags: Vec::new(),
+            sys_descr: None,
+            sys_object_id: None,
+            sys_location: None,
+            sys_contact: None,
+            management_url: None,
+            chassis_id: None,
+            snmp_credential_id: None,
         }
     }
 }

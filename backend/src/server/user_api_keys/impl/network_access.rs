@@ -136,8 +136,10 @@ impl UserApiKeyNetworkAccessStorage {
 
     /// Get all network IDs for a single API key
     pub async fn get_for_key(&self, api_key_id: &Uuid) -> Result<Vec<Uuid>> {
-        let filter =
-            StorableFilter::<UserApiKeyNetworkAccess>::new().uuid_column("api_key_id", api_key_id);
+        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new_from_uuid_column(
+            "api_key_id",
+            api_key_id,
+        );
         let access_records = self.storage.get_all(filter).await?;
         Ok(access_records.iter().map(|a| a.network_id()).collect())
     }
@@ -148,8 +150,10 @@ impl UserApiKeyNetworkAccessStorage {
             return Ok(HashMap::new());
         }
 
-        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new()
-            .uuid_columns("api_key_id", api_key_ids);
+        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new_from_uuids_column(
+            "api_key_id",
+            api_key_ids,
+        );
         let access_records = self.storage.get_all(filter).await?;
 
         let mut result: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
@@ -169,8 +173,10 @@ impl UserApiKeyNetworkAccessStorage {
         let mut tx = self.storage.begin_transaction().await?;
 
         // Delete existing access for this key
-        let filter =
-            StorableFilter::<UserApiKeyNetworkAccess>::new().uuid_column("api_key_id", api_key_id);
+        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new_from_uuid_column(
+            "api_key_id",
+            api_key_id,
+        );
         tx.delete_by_filter(filter).await?;
 
         // Insert new access records
@@ -188,8 +194,10 @@ impl UserApiKeyNetworkAccessStorage {
 
     /// Delete all network access for an API key
     pub async fn delete_for_key(&self, api_key_id: &Uuid) -> Result<()> {
-        let filter =
-            StorableFilter::<UserApiKeyNetworkAccess>::new().uuid_column("api_key_id", api_key_id);
+        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new_from_uuid_column(
+            "api_key_id",
+            api_key_id,
+        );
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }
@@ -207,9 +215,11 @@ impl UserApiKeyNetworkAccessStorage {
 
     /// Remove a single network from an API key's access
     pub async fn remove_network(&self, api_key_id: &Uuid, network_id: &Uuid) -> Result<()> {
-        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new()
-            .uuid_column("api_key_id", api_key_id)
-            .uuid_column("network_id", network_id);
+        let filter = StorableFilter::<UserApiKeyNetworkAccess>::new_from_uuid_column(
+            "api_key_id",
+            api_key_id,
+        )
+        .uuid_column("network_id", network_id);
         self.storage.delete_by_filter(filter).await?;
         Ok(())
     }

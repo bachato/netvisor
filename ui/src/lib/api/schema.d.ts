@@ -99,6 +99,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/onboarding-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current onboarding state from session */
+        get: operations["onboarding_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/onboarding-step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Store onboarding step in session */
+        post: operations["onboarding_step"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -213,6 +247,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/billing/inquiry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit enterprise plan inquiry
+         * @description Dual submission: Form API (for notifications) + CRM API (for Company properties).
+         *     Requires authentication to link the inquiry to an organization.
+         */
+        post: operations["submit_enterprise_inquiry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/billing/plans": {
         parameters: {
             query?: never;
@@ -297,32 +352,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Register a new daemon
+         * Register a new Daemon
          * @description Internal endpoint for daemon self-registration. Creates a host entry
          *     and sets up default discovery jobs for the daemon.
          */
         post: operations["register_daemon"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/daemons/{id}/heartbeat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Receive daemon heartbeat
-         * @description Internal endpoint for daemons to send periodic heartbeats.
-         *     Updates the daemon's last_seen timestamp and current status.
-         */
-        post: operations["receive_heartbeat"];
         delete?: never;
         options?: never;
         head?: never;
@@ -382,7 +416,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Update daemon capabilities
+         * Update Daemon capabilities
          * @description Internal endpoint for daemons to report their current capabilities.
          */
         post: operations["update_capabilities"];
@@ -439,10 +473,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all daemon_api_keys */
-        get: operations["list_daemon_api_keys"];
+        /** List all Daemon API Keys */
+        get: operations["list_Daemon API Keys"];
         put?: never;
-        /** Create daemon API key */
+        /** Create Daemon API Key */
         post: operations["create_daemon_api_key"];
         delete?: never;
         options?: never;
@@ -459,8 +493,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete daemon_api_keys */
-        post: operations["bulk_delete_daemon_api_keys"];
+        /** Bulk delete Daemon API Keys */
+        post: operations["bulk_delete_Daemon API Keys"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/daemon/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Daemon API Keys to CSV
+         * @description Export all Daemon API Keys matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Daemon API Keys_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -474,13 +528,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get daemon_api_key by ID */
-        get: operations["get_daemon_api_key_by_id"];
-        /** Update a daemon API key */
+        /** Get Daemon API Key by ID */
+        get: operations["get_Daemon API Key_by_id"];
+        /** Update a Daemon API Key */
         put: operations["update_daemon_api_key"];
         post?: never;
-        /** Delete daemon_api_key */
-        delete: operations["delete_daemon_api_key"];
+        /** Delete Daemon API Key */
+        delete: operations["delete_Daemon API Key"];
         options?: never;
         head?: never;
         patch?: never;
@@ -495,7 +549,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rotate a daemon API key */
+        /** Rotate a Daemon API Key */
         post: operations["rotate_key_handler"];
         delete?: never;
         options?: never;
@@ -532,6 +586,26 @@ export interface paths {
         put?: never;
         /** Bulk delete user API keys */
         post: operations["bulk_delete_user_api_keys"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/keys/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export User API Keys to CSV
+         * @description Export all User API Keys matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_User API Keys_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -581,11 +655,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all bindings */
-        get: operations["list_bindings"];
+        /** List all Bindings */
+        get: operations["list_Bindings"];
         put?: never;
         /**
-         * Create a new binding
+         * Create a new Binding
          * @description Creates a binding that associates a service with a port or interface.
          *
          *     ### Binding Types
@@ -620,8 +694,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete bindings */
-        post: operations["bulk_delete_bindings"];
+        /** Bulk delete Bindings */
+        post: operations["bulk_delete_Bindings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bindings/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Bindings to CSV
+         * @description Export all Bindings matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Bindings_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -635,10 +729,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get binding by ID */
-        get: operations["get_binding_by_id"];
+        /** Get Binding by ID */
+        get: operations["get_Binding_by_id"];
         /**
-         * Update a binding
+         * Update a Binding
          * @description Updates an existing binding. The same conflict detection rules from binding creation apply.
          *
          *     ## Validation Rules
@@ -648,8 +742,8 @@ export interface paths {
          */
         put: operations["update_binding"];
         post?: never;
-        /** Delete binding */
-        delete: operations["delete_binding"];
+        /** Delete Binding */
+        delete: operations["delete_Binding"];
         options?: never;
         head?: never;
         patch?: never;
@@ -686,8 +780,52 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete daemons */
-        post: operations["bulk_delete_daemons"];
+        /** Bulk delete Daemons */
+        post: operations["bulk_delete_Daemons"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/daemons/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Daemons to CSV
+         * @description Export all Daemons matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Daemons_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/daemons/provision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pre-provision a ServerPoll mode daemon
+         * @description Creates a daemon record on the server before the daemon is installed.
+         *     This is only for ServerPoll mode where the server initiates connections to the daemon.
+         *     For DaemonPoll mode, daemons self-register on startup.
+         *
+         *     Returns the daemon record and an API key that must be configured on the daemon.
+         */
+        post: operations["provision_daemon"];
         delete?: never;
         options?: never;
         head?: never;
@@ -708,8 +846,30 @@ export interface paths {
         get: operations["get_daemon_by_id"];
         put?: never;
         post?: never;
-        /** Delete daemon */
-        delete: operations["delete_daemon"];
+        /** Delete Daemon */
+        delete: operations["delete_Daemon"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/daemons/{id}/retry-connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry connection to unreachable daemon
+         * @description Resets the is_unreachable flag for a daemon that was marked unreachable
+         *     due to repeated polling failures. The poller will attempt to contact
+         *     the daemon again on the next cycle.
+         */
+        post: operations["retry_daemon_connection"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -722,10 +882,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all discoveries */
-        get: operations["list_discoveries"];
+        /** List all Discoveries */
+        get: operations["list_Discoveries"];
         put?: never;
-        /** Create new discovery */
+        /** Create new Discovery */
         post: operations["create_discovery"];
         delete?: never;
         options?: never;
@@ -740,7 +900,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get active discovery sessions */
+        /** Get active Discovery Sessions */
         get: operations["get_active_sessions"];
         put?: never;
         post?: never;
@@ -759,8 +919,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete discoveries */
-        post: operations["bulk_delete_discoveries"];
+        /** Bulk delete Discoveries */
+        post: operations["bulk_delete_Discoveries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discovery/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Discoveries to CSV
+         * @description Export all Discoveries matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Discoveries_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -776,7 +956,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start a discovery session */
+        /** Start a Discovery Session */
         post: operations["start_session"];
         delete?: never;
         options?: never;
@@ -791,13 +971,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get discovery by ID */
-        get: operations["get_discovery_by_id"];
-        /** Update discovery */
+        /** Get Discovery by ID */
+        get: operations["get_Discovery_by_id"];
+        /** Update Discovery */
         put: operations["update_discovery"];
         post?: never;
-        /** Delete discovery */
-        delete: operations["delete_discovery"];
+        /** Delete Discovery */
+        delete: operations["delete_Discovery"];
         options?: never;
         head?: never;
         patch?: never;
@@ -812,7 +992,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancel a discovery session */
+        /** Cancel a Discovery Session */
         post: operations["cancel_discovery"];
         delete?: never;
         options?: never;
@@ -848,14 +1028,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List all groups
+         * List all Groups
          * @description Returns all groups the authenticated user has access to.
          *     Supports pagination via `limit` and `offset` query parameters,
          *     and ordering via `group_by`, `order_by`, and `order_direction`.
          */
         get: operations["get_all_groups"];
         put?: never;
-        /** Create a new group */
+        /** Create a new Group */
         post: operations["create_group"];
         delete?: never;
         options?: never;
@@ -872,8 +1052,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete groups */
-        post: operations["bulk_delete_groups"];
+        /** Bulk delete Groups */
+        post: operations["bulk_delete_Groups"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Groups to CSV
+         * @description Export all Groups matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Groups_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -887,13 +1087,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get group by ID */
-        get: operations["get_group_by_id"];
-        /** Update a group */
+        /** Get Group by ID */
+        get: operations["get_Group_by_id"];
+        /** Update a Group */
         put: operations["update_group"];
         post?: never;
-        /** Delete group */
-        delete: operations["delete_group"];
+        /** Delete Group */
+        delete: operations["delete_Group"];
         options?: never;
         head?: never;
         patch?: never;
@@ -978,6 +1178,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/hosts/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Hosts to CSV
+         * @description Export all Hosts matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Hosts_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hosts/export/zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export hosts with children to ZIP
+         * @description Exports all hosts matching the filter criteria along with their children
+         *     (interfaces, ports, services, if_entries) as a ZIP archive containing
+         *     separate CSV files for each entity type.
+         */
+        get: operations["export_hosts_zip"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hosts/{destination_host}/consolidate/{other_host}": {
         parameters: {
             query?: never;
@@ -1049,6 +1291,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/if-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all ifTable Entries */
+        get: operations["list_ifTable Entries"];
+        put?: never;
+        /**
+         * Create a new IfEntry
+         * @description Creates an SNMP ifTable entry for a host. These are typically created by
+         *     SNMP discovery, but can also be created manually.
+         */
+        post: operations["create_if_entry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/if-entries/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk delete ifTable Entries */
+        post: operations["bulk_delete_ifTable Entries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/if-entries/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export ifTable Entries to CSV
+         * @description Export all ifTable Entries matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_ifTable Entries_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/if-entries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get ifTable Entry by ID */
+        get: operations["get_ifTable Entry_by_id"];
+        /** Update an IfEntry */
+        put: operations["update_if_entry"];
+        post?: never;
+        /** Delete ifTable Entry */
+        delete: operations["delete_ifTable Entry"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/interfaces": {
         parameters: {
             query?: never;
@@ -1056,8 +1376,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all interfaces */
-        get: operations["list_interfaces"];
+        /** List all Interfaces */
+        get: operations["list_Interfaces"];
         put?: never;
         /**
          * Create a new interface
@@ -1090,6 +1410,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/interfaces/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Interfaces to CSV
+         * @description Export all Interfaces matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Interfaces_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/interfaces/{id}": {
         parameters: {
             query?: never;
@@ -1097,8 +1437,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get interface by ID */
-        get: operations["get_interface_by_id"];
+        /** Get Interface by ID */
+        get: operations["get_Interface_by_id"];
         /**
          * Update an interface
          *     Position must be within valid range and not conflict with other interfaces.
@@ -1174,8 +1514,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all networks */
-        get: operations["list_networks"];
+        /** List all Networks */
+        get: operations["list_Networks"];
         put?: never;
         /** Create a new network */
         post: operations["create_network"];
@@ -1202,6 +1542,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/networks/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Networks to CSV
+         * @description Export all Networks matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Networks_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/networks/{id}": {
         parameters: {
             query?: never;
@@ -1209,8 +1569,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get network by ID */
-        get: operations["get_network_by_id"];
+        /** Get Network by ID */
+        get: operations["get_Network_by_id"];
         /** Update a network */
         put: operations["update_network"];
         post?: never;
@@ -1296,8 +1656,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all ports */
-        get: operations["list_ports"];
+        /** List all Ports */
+        get: operations["list_Ports"];
         put?: never;
         /** Create a new port */
         post: operations["create_port"];
@@ -1316,8 +1676,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete ports */
-        post: operations["bulk_delete_ports"];
+        /** Bulk delete Ports */
+        post: operations["bulk_delete_Ports"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ports/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Ports to CSV
+         * @description Export all Ports matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Ports_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1331,13 +1711,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get port by ID */
-        get: operations["get_port_by_id"];
+        /** Get Port by ID */
+        get: operations["get_Port_by_id"];
         /** Update a port */
         put: operations["update_port"];
         post?: never;
-        /** Delete port */
-        delete: operations["delete_port"];
+        /** Delete Port */
+        delete: operations["delete_Port"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1390,8 +1770,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete services */
-        post: operations["bulk_delete_services"];
+        /** Bulk delete Services */
+        post: operations["bulk_delete_Services"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/services/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Services to CSV
+         * @description Export all Services matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Services_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1405,8 +1805,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get service by ID */
-        get: operations["get_service_by_id"];
+        /** Get Service by ID */
+        get: operations["get_Service_by_id"];
         /**
          * Update a service
          * @description Updates an existing service. All binding validation rules from service creation apply here as well.
@@ -1422,8 +1822,8 @@ export interface paths {
          */
         put: operations["update_service"];
         post?: never;
-        /** Delete service */
-        delete: operations["delete_service"];
+        /** Delete Service */
+        delete: operations["delete_Service"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1436,8 +1836,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all shares */
-        get: operations["list_shares"];
+        /** List all Shares */
+        get: operations["list_Shares"];
         put?: never;
         /** Create a new share */
         post: operations["create_share"];
@@ -1456,8 +1856,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete shares */
-        post: operations["bulk_delete_shares"];
+        /** Bulk delete Shares */
+        post: operations["bulk_delete_Shares"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shares/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Shares to CSV
+         * @description Export all Shares matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Shares_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1508,13 +1928,100 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get share by ID */
-        get: operations["get_share_by_id"];
+        /** Get Share by ID */
+        get: operations["get_Share_by_id"];
         /** Update a share */
         put: operations["update_share"];
         post?: never;
-        /** Delete share */
-        delete: operations["delete_share"];
+        /** Delete Share */
+        delete: operations["delete_Share"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snmp-credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all SNMP Credentials
+         * @description Returns all SNMP Credentials in the authenticated user's organization.
+         */
+        get: operations["get_all_snmp_credentials"];
+        put?: never;
+        /**
+         * Create a new SNMP Credential
+         * @description Creates an SNMP credential scoped to your organization. Credential names must
+         *     be unique within the organization.
+         *
+         *     ### Validation
+         *
+         *     - Name must be 1-100 characters
+         *     - Name must be unique within your organization
+         *     - Community string is required
+         */
+        post: operations["create_snmp_credential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snmp-credentials/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk delete SNMP Credential */
+        post: operations["bulk_delete_snmp_credentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snmp-credentials/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export SNMP Credentials to CSV
+         * @description Export all SNMP Credentials matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_SNMP Credentials_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snmp-credentials/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get SNMP Credential by ID */
+        get: operations["get_SNMP Credential_by_id"];
+        /** Update SNMP Credential */
+        put: operations["update_snmp_credential"];
+        post?: never;
+        /** Delete SNMP credential */
+        delete: operations["delete_snmp_credential"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1553,8 +2060,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete subnets */
-        post: operations["bulk_delete_subnets"];
+        /** Bulk delete Subnets */
+        post: operations["bulk_delete_Subnets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subnets/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Subnets to CSV
+         * @description Export all Subnets matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Subnets_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1568,8 +2095,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get subnet by ID */
-        get: operations["get_subnet_by_id"];
+        /** Get Subnet by ID */
+        get: operations["get_Subnet_by_id"];
         /**
          * Update a subnet
          * @description Updates subnet properties. If the CIDR is being changed, validates that
@@ -1577,8 +2104,8 @@ export interface paths {
          */
         put: operations["update_subnet"];
         post?: never;
-        /** Delete subnet */
-        delete: operations["delete_subnet"];
+        /** Delete Subnet */
+        delete: operations["delete_Subnet"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1700,8 +2227,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete tags */
-        post: operations["bulk_delete_tags"];
+        /** Bulk delete Tags */
+        post: operations["bulk_delete_Tags"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Tags to CSV
+         * @description Export all Tags matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Tags_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1715,13 +2262,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get tag by ID */
-        get: operations["get_tag_by_id"];
-        /** Update tag */
-        put: operations["update_tag"];
+        /** Get Tag by ID */
+        get: operations["get_Tag_by_id"];
+        /** Update Tag */
+        put: operations["update_Tag"];
         post?: never;
-        /** Delete tag */
-        delete: operations["delete_tag"];
+        /** Delete Tag */
+        delete: operations["delete_Tag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1745,6 +2292,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/topology/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Topologies to CSV
+         * @description Export all Topologies matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Topologies_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/topology/{id}": {
         parameters: {
             query?: never;
@@ -1752,12 +2319,34 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get topology by ID */
-        get: operations["get_topology_by_id"];
+        /** Get Topology by ID */
+        get: operations["get_Topology_by_id"];
         put: operations["update_topology"];
         post?: never;
-        /** Delete topology */
-        delete: operations["delete_topology"];
+        /** Delete Topology */
+        delete: operations["delete_Topology"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topology/{id}/edge-handles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update an edge's handles
+         * @description Lightweight endpoint for edge reconnect operations. Instead of sending the entire
+         *     topology, only sends the edge ID and new handle positions.
+         *     Fixes HTTP 413 errors on edge reconnect operations for large topologies.
+         */
+        post: operations["update_edge_handles"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1774,6 +2363,73 @@ export interface paths {
         put?: never;
         /** Lock a topology */
         post: operations["lock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topology/{id}/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update topology metadata
+         * @description Lightweight endpoint for editing topology name and parent. Instead of sending
+         *     the entire topology (which includes all hosts, interfaces, services, etc.),
+         *     only sends the metadata fields.
+         *     Fixes HTTP 413 errors on metadata edit operations for large topologies.
+         */
+        post: operations["update_metadata"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topology/{id}/node-position": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update a single node's position
+         * @description Lightweight endpoint for drag operations. Instead of sending the entire topology
+         *     (which can be several megabytes), only sends the node ID and new position.
+         *     Fixes HTTP 413 errors on drag operations for large topologies.
+         */
+        post: operations["update_node_position"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topology/{id}/node-resize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update a node's size and position
+         * @description Lightweight endpoint for subnet resize operations. Instead of sending the entire
+         *     topology, only sends the node ID, new size, and new position.
+         *     Fixes HTTP 413 errors on resize operations for large topologies.
+         */
+        post: operations["update_node_resize"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1865,6 +2521,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Users to CSV
+         * @description Export all Users matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_Users_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/{id}": {
         parameters: {
             query?: never;
@@ -1939,7 +2615,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.13.5"
+         *       "server_version": "0.13.6"
          *     }
          */
         ApiMeta: {
@@ -1950,7 +2626,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.13.5
+             * @example 0.13.6
              */
             server_version: string;
         };
@@ -1964,14 +2640,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-01-13T22:33:31.255874Z",
-             *       "id": "0af52bdb-4f50-4c41-a558-3f62c024af16",
+             *       "created_at": "2026-02-01T14:46:58.963068Z",
+             *       "id": "f5f1f4e5-6b7e-4edf-81d0-cd33ae146e06",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-01-13T22:33:31.255874Z"
+             *       "updated_at": "2026-02-01T14:46:58.963068Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2134,20 +2810,49 @@ export interface components {
         ApiResponse_HostResponse: {
             /**
              * @description Response type for host endpoints.
-             *     Includes hydrated children (interfaces, ports, services).
+             *     Includes children (interfaces, ports, services, if_entries).
              * @example {
              *       "created_at": "2026-01-15T10:30:00Z",
              *       "description": "Primary web server",
              *       "hidden": false,
              *       "hostname": "web-server-01.local",
              *       "id": "550e8400-e29b-41d4-a716-446655440003",
+             *       "if_entries": [
+             *         {
+             *           "admin_status": "Up",
+             *           "cdp_address": null,
+             *           "cdp_device_id": null,
+             *           "cdp_platform": null,
+             *           "cdp_port_id": null,
+             *           "created_at": "2026-01-15T10:30:00Z",
+             *           "host_id": "550e8400-e29b-41d4-a716-446655440003",
+             *           "id": "550e8400-e29b-41d4-a716-44665544000f",
+             *           "if_alias": "Uplink to Core Switch",
+             *           "if_descr": "GigabitEthernet0/1",
+             *           "if_index": 1,
+             *           "if_type": 6,
+             *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+             *           "lldp_chassis_id": null,
+             *           "lldp_mgmt_addr": null,
+             *           "lldp_port_desc": null,
+             *           "lldp_port_id": null,
+             *           "lldp_sys_desc": null,
+             *           "lldp_sys_name": null,
+             *           "mac_address": "DE:AD:BE:EF:CA:FE",
+             *           "neighbor": null,
+             *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
+             *           "oper_status": "Up",
+             *           "speed_bps": 1000000000,
+             *           "updated_at": "2026-01-15T10:30:00Z"
+             *         }
+             *       ],
              *       "interfaces": [
              *         {
              *           "created_at": "2026-01-15T10:30:00Z",
              *           "host_id": "550e8400-e29b-41d4-a716-446655440003",
              *           "id": "550e8400-e29b-41d4-a716-446655440005",
              *           "ip_address": "192.168.1.100",
-             *           "mac_address": "DE:AD:BE:EF:12:34",
+             *           "mac_address": "DE:AD:BE:EF:CA:FE",
              *           "name": "eth0",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
@@ -2169,7 +2874,35 @@ export interface components {
              *           "updated_at": "2026-01-15T10:30:00Z"
              *         }
              *       ],
-             *       "services": [],
+             *       "services": [
+             *         {
+             *           "bindings": [
+             *             {
+             *               "created_at": "2026-02-01T14:46:58.950507Z",
+             *               "id": "2add4480-e5e6-4695-8513-1eede16485b2",
+             *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+             *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
+             *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
+             *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
+             *               "type": "Port",
+             *               "updated_at": "2026-02-01T14:46:58.950507Z"
+             *             }
+             *           ],
+             *           "created_at": "2026-01-15T10:30:00Z",
+             *           "host_id": "550e8400-e29b-41d4-a716-446655440003",
+             *           "id": "550e8400-e29b-41d4-a716-446655440007",
+             *           "name": "nginx",
+             *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
+             *           "position": 0,
+             *           "service_definition": "Jellyfin",
+             *           "source": {
+             *             "type": "Manual"
+             *           },
+             *           "tags": [],
+             *           "updated_at": "2026-01-15T10:30:00Z",
+             *           "virtualization": null
+             *         }
+             *       ],
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -2179,6 +2912,7 @@ export interface components {
              *     }
              */
             data?: {
+                chassis_id?: string | null;
                 /** Format: date-time */
                 created_at: string;
                 description?: string | null;
@@ -2186,17 +2920,39 @@ export interface components {
                 hostname?: string | null;
                 /** Format: uuid */
                 id: string;
+                /** @description SNMP ifTable entries */
+                if_entries: components["schemas"]["IfEntry"][];
                 interfaces: components["schemas"]["Interface"][];
+                management_url?: string | null;
                 name: string;
                 /** Format: uuid */
                 network_id: string;
                 ports: components["schemas"]["Port"][];
                 services: components["schemas"]["Service"][];
+                /** Format: uuid */
+                snmp_credential_id?: string | null;
                 source: components["schemas"]["EntitySource"];
+                sys_contact?: string | null;
+                sys_descr?: string | null;
+                sys_location?: string | null;
+                sys_object_id?: string | null;
                 tags: string[];
                 /** Format: date-time */
                 updated_at: string;
                 virtualization?: null | components["schemas"]["HostVirtualization"];
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
+        ApiResponse_IfEntry: {
+            data?: components["schemas"]["IfEntryBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
             };
             error?: string | null;
             meta: components["schemas"]["ApiMeta"];
@@ -2209,7 +2965,7 @@ export interface components {
              *       "host_id": "550e8400-e29b-41d4-a716-446655440003",
              *       "id": "550e8400-e29b-41d4-a716-446655440005",
              *       "ip_address": "192.168.1.100",
-             *       "mac_address": "DE:AD:BE:EF:12:34",
+             *       "mac_address": "DE:AD:BE:EF:CA:FE",
              *       "name": "eth0",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
@@ -2283,6 +3039,26 @@ export interface components {
             meta: components["schemas"]["ApiMeta"];
             success: boolean;
         };
+        ApiResponse_OnboardingStateResponse: {
+            /** @description Response from onboarding state endpoint */
+            data?: {
+                /** @description Daemon setups (if any) */
+                daemon_setups?: components["schemas"]["OnboardingDaemonSetupState"][];
+                /** @description Network IDs from pending setup (if any) - kept for backwards compatibility */
+                network_ids: string[];
+                /** @description Networks from pending setup (with names and IDs) */
+                networks: components["schemas"]["OnboardingNetworkState"][];
+                /** @description Organization name from pending setup */
+                org_name?: string | null;
+                /** @description Current onboarding step (if any) */
+                step?: string | null;
+                /** @description Use case selection (homelab, company, msp) */
+                use_case?: string | null;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
         ApiResponse_Organization: {
             data?: components["schemas"]["OrganizationBase"] & {
                 /** Format: date-time */
@@ -2317,6 +3093,24 @@ export interface components {
                 readonly id: string;
                 /** Format: date-time */
                 readonly updated_at: string;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
+        ApiResponse_ProvisionDaemonResponse: {
+            /**
+             * @description Response from provisioning a daemon.
+             *     Contains the daemon record and the API key (shown only once).
+             */
+            data?: {
+                /** @description The created daemon record (with version status). */
+                daemon: components["schemas"]["DaemonResponse"];
+                /**
+                 * @description The API key (plaintext) for daemon authentication.
+                 *     This is shown only once - store it securely.
+                 */
+                daemon_api_key: string;
             };
             error?: string | null;
             meta: components["schemas"]["ApiMeta"];
@@ -2374,14 +3168,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-01-13T22:33:31.251337Z",
-             *           "id": "2adaa4fc-d1a9-4b4b-ae39-c59e23107fab",
+             *           "created_at": "2026-02-01T14:46:58.959322Z",
+             *           "id": "8ea536b6-ee1c-4715-9134-241e3787cf3b",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-01-13T22:33:31.251337Z"
+             *           "updated_at": "2026-02-01T14:46:58.959322Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -2390,7 +3184,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Veeam",
+             *       "service_definition": "Jellyfin",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -2422,6 +3216,19 @@ export interface components {
         };
         ApiResponse_Share: {
             data?: components["schemas"]["ShareBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
+        ApiResponse_SnmpCredential: {
+            data?: components["schemas"]["SnmpCredentialBase"] & {
                 /** Format: date-time */
                 readonly created_at: string;
                 /** Format: uuid */
@@ -2673,14 +3480,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-01-13T22:33:31.241489Z",
-         *       "id": "e95ed47c-ed9d-4252-a7a3-e47f27d1c8fc",
+         *       "created_at": "2026-02-01T14:46:58.950717Z",
+         *       "id": "a3a303c2-ecc7-4c80-915a-59098174569d",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-01-13T22:33:31.241489Z"
+         *       "updated_at": "2026-02-01T14:46:58.950717Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -2812,6 +3619,7 @@ export interface components {
          *       "description": "Primary web server",
          *       "hidden": false,
          *       "hostname": "web-server-01.local",
+         *       "if_entries": [],
          *       "interfaces": [
          *         {
          *           "id": "550e8400-e29b-41d4-a716-446655440005",
@@ -2844,7 +3652,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Veeam",
+         *           "service_definition": "Jellyfin",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -2854,11 +3662,15 @@ export interface components {
          *     }
          */
         CreateHostRequest: {
+            chassis_id?: string | null;
             description?: string | null;
             hidden?: boolean;
             hostname?: string | null;
+            /** @description SNMP interface entries (ifTable data) - server assigns UUIDs */
+            if_entries?: components["schemas"]["IfEntryInput"][];
             /** @description Interfaces to create with this host (client provides UUIDs) */
             interfaces?: components["schemas"]["InterfaceInput"][];
+            management_url?: string | null;
             name: string;
             /** Format: uuid */
             network_id: string;
@@ -2866,6 +3678,12 @@ export interface components {
             ports?: components["schemas"]["PortInput"][];
             /** @description Services to create with this host (can reference interfaces/ports by their UUIDs) */
             services?: components["schemas"]["ServiceInput"][];
+            /** Format: uuid */
+            snmp_credential_id?: string | null;
+            sys_contact?: string | null;
+            sys_descr?: string | null;
+            sys_location?: string | null;
+            sys_object_id?: string | null;
             tags: string[];
             virtualization?: null | components["schemas"]["HostVirtualization"];
         };
@@ -2933,11 +3751,26 @@ export interface components {
             key: string;
         };
         DaemonBase: {
+            /**
+             * Format: uuid
+             * @description Foreign key to API key used for ServerPoll authentication.
+             *     NULL for DaemonPoll daemons or those not yet linked to a key.
+             */
+            api_key_id?: string | null;
             capabilities: components["schemas"]["DaemonCapabilities"];
             /** Format: uuid */
             host_id: string;
-            /** Format: date-time */
-            readonly last_seen: string;
+            /**
+             * @description Whether the daemon is unreachable (for ServerPoll circuit breaker).
+             *     Set to true after repeated polling failures, reset via retry-connection endpoint.
+             */
+            is_unreachable?: boolean;
+            /**
+             * Format: date-time
+             * @description Timestamp of last successful contact with daemon.
+             *     NULL for provisioned ServerPoll daemons that haven't been contacted yet.
+             */
+            readonly last_seen?: string | null;
             mode: components["schemas"]["DaemonMode"];
             name: string;
             /** Format: uuid */
@@ -2957,13 +3790,18 @@ export interface components {
             has_docker_socket?: boolean;
             interfaced_subnet_ids: string[];
         };
-        DaemonHeartbeatPayload: {
-            mode: components["schemas"]["DaemonMode"];
-            name: string;
-            url: string;
-        };
-        /** @enum {string} */
-        DaemonMode: "Push" | "Pull";
+        /**
+         * @description Daemon operating mode that determines the communication pattern.
+         *
+         *     - **DaemonPoll** (formerly "Pull"): Daemon makes outbound connections to the server.
+         *       The daemon registers itself and polls for work. Best for daemons behind NAT/firewall.
+         *
+         *     - **ServerPoll** (formerly "Push"): Server makes connections to the daemon.
+         *       Server polls daemon for status and discovery results. Best for DMZ deployments
+         *       where daemon cannot make outbound connections.
+         * @enum {string}
+         */
+        DaemonMode: "server_poll" | "daemon_poll";
         /**
          * @description Fields that daemons can be ordered/grouped by.
          * @enum {string}
@@ -2978,7 +3816,11 @@ export interface components {
             name: string;
             /** Format: uuid */
             network_id: string;
-            url: string;
+            /**
+             * @description URL is ignored by server - kept for backwards compat with old daemons.
+             *     URL is only set via admin provisioning for ServerPoll daemons.
+             */
+            url?: string | null;
             /**
              * Format: uuid
              * @description User responsible for maintaining this daemon (from frontend install command)
@@ -3021,6 +3863,19 @@ export interface components {
         DaemonStartupRequest: {
             /** @description Daemon software version (semver format) */
             daemon_version: string;
+        };
+        /**
+         * @description Daemon status payload sent when polling for work or in heartbeats.
+         *     Used by DaemonPoll mode to send status alongside work requests,
+         *     and by ServerPoll mode when processing daemon status.
+         */
+        DaemonStatusPayload: {
+            mode: components["schemas"]["DaemonMode"];
+            name: string;
+            /** @description URL is ignored by server - kept for backwards compat with old daemons. */
+            url?: string | null;
+            /** @description Daemon software version (optional for backwards compat) */
+            version?: string | null;
         };
         /** @description Daemon version status including health and any warnings */
         DaemonVersionStatus: {
@@ -3066,6 +3921,8 @@ export interface components {
          */
         DiscoveryHostRequest: {
             host: components["schemas"]["Host"];
+            /** @description SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled */
+            if_entries?: components["schemas"]["IfEntry"][];
             interfaces: components["schemas"]["Interface"][];
             ports: components["schemas"]["Port"][];
             services: components["schemas"]["Service"][];
@@ -3078,6 +3935,11 @@ export interface components {
         };
         /** @enum {string} */
         DiscoveryPhase: "Pending" | "Starting" | "Started" | "Scanning" | "Complete" | "Failed" | "Cancelled";
+        /**
+         * @description Protocol that discovered the physical link between network devices
+         * @enum {string}
+         */
+        DiscoveryProtocol: "LLDP" | "CDP";
         DiscoveryType: {
             /** Format: uuid */
             host_id: string;
@@ -3085,6 +3947,11 @@ export interface components {
             type: "SelfReport";
         } | {
             host_naming_fallback: components["schemas"]["HostNamingFallback"];
+            /**
+             * @description SNMP credentials for querying devices during discovery
+             *     Server builds this mapping before initiating discovery
+             */
+            snmp_credentials?: components["schemas"]["SnmpCredentialMapping"];
             subnet_ids: string[] | null;
             /** @enum {string} */
             type: "Network";
@@ -3170,11 +4037,43 @@ export interface components {
             source_binding_id: string;
             /** Format: uuid */
             target_binding_id: string;
+        } | {
+            /** @enum {string} */
+            edge_type: "PhysicalLink";
+            protocol: components["schemas"]["DiscoveryProtocol"];
+            /** Format: uuid */
+            source_if_entry_id: string;
+            /** Format: uuid */
+            target_if_entry_id: string;
         };
         /** @enum {string} */
-        EdgeTypeDiscriminants: "Interface" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke";
+        EdgeTypeDiscriminants: "Interface" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke" | "PhysicalLink";
+        /** @description Enterprise plan inquiry request */
+        EnterpriseInquiryRequest: {
+            /** @description Company name */
+            company: string;
+            /** @description Contact email */
+            email: string;
+            /** @description HubSpot tracking cookie (hutk) for linking form submission to visitor */
+            hutk?: string | null;
+            /** @description Message/use case description (maps to HubSpot "message" field) */
+            message: string;
+            /** @description Contact name */
+            name: string;
+            /**
+             * Format: int64
+             * @description Number of networks/sites
+             */
+            network_count?: number | null;
+            /** @description Plan type being inquired about */
+            plan_type?: string | null;
+            /** @description Team/company size: 1-10, 11-25, 26-50, 51-100, 101-250, 251-500, 501-1000, 1001+ */
+            team_size: string;
+            /** @description Urgency: immediately, 1-3 months, 3-6 months, exploring */
+            urgency?: string | null;
+        };
         /** @enum {string} */
-        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "Subnet" | "Group" | "Topology" | "Unknown";
+        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "IfEntry" | "SnmpCredential" | "Subnet" | "Group" | "Topology" | "Unknown";
         EntityMetadata: {
             color: components["schemas"]["Color"];
             icon: string;
@@ -3281,13 +4180,30 @@ export interface components {
          *     and queried by `host_id`. They are NOT stored on the host.
          */
         HostBase: {
+            /** @description LLDP lldpLocChassisId - globally unique device identifier for deduplication */
+            chassis_id?: string | null;
             description: string | null;
             hidden: boolean;
             hostname: string | null;
+            /** @description URL for device management interface (manual or discovered) */
+            management_url?: string | null;
             name: string;
             /** Format: uuid */
             network_id: string;
+            /**
+             * Format: uuid
+             * @description Per-host SNMP credential override (null = use network default)
+             */
+            snmp_credential_id?: string | null;
             source: components["schemas"]["EntitySource"];
+            /** @description SNMP sysContact.0 - admin contact info */
+            sys_contact?: string | null;
+            /** @description SNMP sysDescr.0 - full system description */
+            sys_descr?: string | null;
+            /** @description SNMP sysLocation.0 - physical location */
+            sys_location?: string | null;
+            /** @description SNMP sysObjectID.0 - vendor OID for device identification */
+            sys_object_id?: string | null;
             tags: string[];
             virtualization: null | components["schemas"]["HostVirtualization"];
         };
@@ -3300,20 +4216,49 @@ export interface components {
         HostOrderField: "created_at" | "name" | "hostname" | "updated_at" | "virtualized_by" | "network_id";
         /**
          * @description Response type for host endpoints.
-         *     Includes hydrated children (interfaces, ports, services).
+         *     Includes children (interfaces, ports, services, if_entries).
          * @example {
          *       "created_at": "2026-01-15T10:30:00Z",
          *       "description": "Primary web server",
          *       "hidden": false,
          *       "hostname": "web-server-01.local",
          *       "id": "550e8400-e29b-41d4-a716-446655440003",
+         *       "if_entries": [
+         *         {
+         *           "admin_status": "Up",
+         *           "cdp_address": null,
+         *           "cdp_device_id": null,
+         *           "cdp_platform": null,
+         *           "cdp_port_id": null,
+         *           "created_at": "2026-01-15T10:30:00Z",
+         *           "host_id": "550e8400-e29b-41d4-a716-446655440003",
+         *           "id": "550e8400-e29b-41d4-a716-44665544000f",
+         *           "if_alias": "Uplink to Core Switch",
+         *           "if_descr": "GigabitEthernet0/1",
+         *           "if_index": 1,
+         *           "if_type": 6,
+         *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+         *           "lldp_chassis_id": null,
+         *           "lldp_mgmt_addr": null,
+         *           "lldp_port_desc": null,
+         *           "lldp_port_id": null,
+         *           "lldp_sys_desc": null,
+         *           "lldp_sys_name": null,
+         *           "mac_address": "DE:AD:BE:EF:CA:FE",
+         *           "neighbor": null,
+         *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
+         *           "oper_status": "Up",
+         *           "speed_bps": 1000000000,
+         *           "updated_at": "2026-01-15T10:30:00Z"
+         *         }
+         *       ],
          *       "interfaces": [
          *         {
          *           "created_at": "2026-01-15T10:30:00Z",
          *           "host_id": "550e8400-e29b-41d4-a716-446655440003",
          *           "id": "550e8400-e29b-41d4-a716-446655440005",
          *           "ip_address": "192.168.1.100",
-         *           "mac_address": "DE:AD:BE:EF:12:34",
+         *           "mac_address": "DE:AD:BE:EF:CA:FE",
          *           "name": "eth0",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
@@ -3335,7 +4280,35 @@ export interface components {
          *           "updated_at": "2026-01-15T10:30:00Z"
          *         }
          *       ],
-         *       "services": [],
+         *       "services": [
+         *         {
+         *           "bindings": [
+         *             {
+         *               "created_at": "2026-02-01T14:46:58.950232Z",
+         *               "id": "eefe0fd5-65f3-4c5e-8e62-025be1d35d87",
+         *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+         *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
+         *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
+         *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
+         *               "type": "Port",
+         *               "updated_at": "2026-02-01T14:46:58.950232Z"
+         *             }
+         *           ],
+         *           "created_at": "2026-01-15T10:30:00Z",
+         *           "host_id": "550e8400-e29b-41d4-a716-446655440003",
+         *           "id": "550e8400-e29b-41d4-a716-446655440007",
+         *           "name": "nginx",
+         *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
+         *           "position": 0,
+         *           "service_definition": "Jellyfin",
+         *           "source": {
+         *             "type": "Manual"
+         *           },
+         *           "tags": [],
+         *           "updated_at": "2026-01-15T10:30:00Z",
+         *           "virtualization": null
+         *         }
+         *       ],
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -3345,6 +4318,7 @@ export interface components {
          *     }
          */
         HostResponse: {
+            chassis_id?: string | null;
             /** Format: date-time */
             created_at: string;
             description?: string | null;
@@ -3352,13 +4326,22 @@ export interface components {
             hostname?: string | null;
             /** Format: uuid */
             id: string;
+            /** @description SNMP ifTable entries */
+            if_entries: components["schemas"]["IfEntry"][];
             interfaces: components["schemas"]["Interface"][];
+            management_url?: string | null;
             name: string;
             /** Format: uuid */
             network_id: string;
             ports: components["schemas"]["Port"][];
             services: components["schemas"]["Service"][];
+            /** Format: uuid */
+            snmp_credential_id?: string | null;
             source: components["schemas"]["EntitySource"];
+            sys_contact?: string | null;
+            sys_descr?: string | null;
+            sys_location?: string | null;
+            sys_object_id?: string | null;
             tags: string[];
             /** Format: date-time */
             updated_at: string;
@@ -3371,12 +4354,120 @@ export interface components {
             type: "Proxmox";
         };
         /**
+         * @description SNMP ifAdminStatus values per IF-MIB RFC 2863
+         * @enum {string}
+         */
+        IfAdminStatus: "Up" | "Down" | "Testing";
+        IfEntry: components["schemas"]["IfEntryBase"] & {
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        IfEntryBase: {
+            /** @description SNMP ifAdminStatus: 1=up, 2=down, 3=testing */
+            admin_status: components["schemas"]["IfAdminStatus"];
+            /** @description Remote management IP from CDP (cdpCacheAddress) */
+            cdp_address?: string | null;
+            /** @description Remote device ID from CDP (typically hostname, locally unique) */
+            cdp_device_id?: string | null;
+            /** @description Remote platform from CDP (e.g., "Cisco IOS") */
+            cdp_platform?: string | null;
+            /** @description Remote port ID from CDP */
+            cdp_port_id?: string | null;
+            /** Format: uuid */
+            host_id: string;
+            /** @description SNMP ifAlias - user-configured description */
+            if_alias?: string | null;
+            /** @description SNMP ifDescr - interface description (e.g., GigabitEthernet0/1) */
+            if_descr: string;
+            /**
+             * Format: int32
+             * @description SNMP ifIndex - stable identifier within device
+             */
+            if_index: number;
+            /**
+             * Format: int32
+             * @description SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)
+             */
+            if_type: number;
+            /**
+             * Format: uuid
+             * @description FK to Interface entity - this port's IP assignment (must be on same host)
+             */
+            interface_id?: string | null;
+            lldp_chassis_id?: null | components["schemas"]["LldpChassisId"];
+            /** @description Remote management IP from LLDP neighbor (lldpRemManAddr) */
+            lldp_mgmt_addr?: string | null;
+            /** @description Remote port description from LLDP neighbor (lldpRemPortDesc) */
+            lldp_port_desc?: string | null;
+            lldp_port_id?: null | components["schemas"]["LldpPortId"];
+            /** @description Remote system description from LLDP neighbor (lldpRemSysDesc) - platform info */
+            lldp_sys_desc?: string | null;
+            /** @description Remote system name from LLDP neighbor (lldpRemSysName) */
+            lldp_sys_name?: string | null;
+            /** @description MAC address from SNMP ifPhysAddress - immutable once set */
+            mac_address?: string | null;
+            neighbor?: null | components["schemas"]["Neighbor"];
+            /** Format: uuid */
+            network_id: string;
+            /** @description SNMP ifOperStatus: 1=up, 2=down, 3=testing, 4=unknown, 5=dormant, 6=notPresent, 7=lowerLayerDown */
+            oper_status: components["schemas"]["IfOperStatus"];
+            /**
+             * Format: int64
+             * @description Interface speed from ifSpeed/ifHighSpeed in bits per second
+             */
+            speed_bps?: number | null;
+        };
+        /**
+         * @description Input for creating an SNMP interface entry (ifTable data).
+         *     Used in CreateHostRequest. Server assigns UUIDs since nothing references
+         *     IfEntry IDs at creation time (neighbor resolution is done server-side).
+         */
+        IfEntryInput: {
+            admin_status?: null | components["schemas"]["IfAdminStatus"];
+            /** @description SNMP ifAlias - user-configured description */
+            if_alias?: string | null;
+            /** @description SNMP ifDescr - interface description (e.g., GigabitEthernet0/1) */
+            if_descr: string;
+            /**
+             * Format: int32
+             * @description SNMP ifIndex - stable identifier within device
+             */
+            if_index: number;
+            /**
+             * Format: int32
+             * @description SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)
+             */
+            if_type?: number | null;
+            /**
+             * Format: uuid
+             * @description Optional FK to Interface - links this SNMP port to its IP assignment
+             */
+            interface_id?: string | null;
+            /** @description MAC address from SNMP ifPhysAddress */
+            mac_address?: string | null;
+            oper_status?: null | components["schemas"]["IfOperStatus"];
+            /**
+             * Format: int64
+             * @description Interface speed in bits per second
+             */
+            speed_bps?: number | null;
+        };
+        /**
+         * @description SNMP ifOperStatus values per IF-MIB RFC 2863
+         * @enum {string}
+         */
+        IfOperStatus: "Up" | "Down" | "Testing" | "Unknown" | "Dormant" | "NotPresent" | "LowerLayerDown";
+        /**
          * @example {
          *       "created_at": "2026-01-15T10:30:00Z",
          *       "host_id": "550e8400-e29b-41d4-a716-446655440003",
          *       "id": "550e8400-e29b-41d4-a716-446655440005",
          *       "ip_address": "192.168.1.100",
-         *       "mac_address": "DE:AD:BE:EF:12:34",
+         *       "mac_address": "DE:AD:BE:EF:CA:FE",
          *       "name": "eth0",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
@@ -3396,7 +4487,8 @@ export interface components {
             /** Format: uuid */
             host_id: string;
             ip_address: string;
-            mac_address: string | null;
+            /** @description MAC address discovered from ARP, SNMP, or Docker - immutable once set */
+            mac_address?: string | null;
             name: string | null;
             /** Format: uuid */
             network_id: string;
@@ -3458,6 +4550,89 @@ export interface components {
             x: number;
             y: number;
         };
+        /**
+         * @description LLDP Chassis ID subtypes per IEEE 802.1AB.
+         *
+         *     The chassis ID identifies the remote device. Different network equipment
+         *     may use different subtypes depending on configuration and capabilities.
+         */
+        LldpChassisId: {
+            /** @enum {string} */
+            subtype: "ChassisComponent";
+            /** @description Subtype 1: Chassis component (e.g., backplane serial number) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "InterfaceAlias";
+            /** @description Subtype 2: Interface alias (ifAlias from IF-MIB) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "PortComponent";
+            /** @description Subtype 3: Port component (e.g., backplane port number) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "MacAddress";
+            /** @description Subtype 4: MAC address (most common) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "NetworkAddress";
+            /** @description Subtype 5: Network address (IP address stored as string) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "InterfaceName";
+            /** @description Subtype 6: Interface name (ifName from IF-MIB) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "LocallyAssigned";
+            /** @description Subtype 7: Locally assigned (device-specific identifier) */
+            value: string;
+        };
+        /**
+         * @description LLDP Port ID subtypes per IEEE 802.1AB.
+         *
+         *     The port ID identifies the specific port on the remote device.
+         */
+        LldpPortId: {
+            /** @enum {string} */
+            subtype: "InterfaceAlias";
+            /** @description Subtype 1: Interface alias (ifAlias from IF-MIB) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "PortComponent";
+            /** @description Subtype 2: Port component (e.g., backplane port number) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "MacAddress";
+            /** @description Subtype 3: MAC address */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "NetworkAddress";
+            /** @description Subtype 4: Network address (IP address stored as string) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "InterfaceName";
+            /** @description Subtype 5: Interface name (ifName from IF-MIB) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "AgentCircuitId";
+            /** @description Subtype 6: Agent circuit ID (used by some providers) */
+            value: string;
+        } | {
+            /** @enum {string} */
+            subtype: "LocallyAssigned";
+            /** @description Subtype 7: Locally assigned (device-specific identifier) */
+            value: string;
+        };
         /** @description Login request from client */
         LoginRequest: {
             /** Format: email */
@@ -3495,6 +4670,29 @@ export interface components {
             subnet_types: components["schemas"]["TypeMetadata"][];
         };
         /**
+         * @description Resolved LLDP/CDP neighbor connection.
+         *
+         *     Represents the remote endpoint this port connects to, discovered via LLDP or CDP.
+         *     The two variants are mutually exclusive and represent different resolution states.
+         */
+        Neighbor: {
+            /**
+             * Format: uuid
+             * @description Full resolution - the specific remote port was identified
+             */
+            id: string;
+            /** @enum {string} */
+            type: "IfEntry";
+        } | {
+            /**
+             * Format: uuid
+             * @description Partial resolution - the remote device was identified but not the specific port
+             */
+            id: string;
+            /** @enum {string} */
+            type: "Host";
+        };
+        /**
          * @example {
          *       "created_at": "2026-01-15T10:30:00Z",
          *       "id": "550e8400-e29b-41d4-a716-446655440002",
@@ -3516,11 +4714,23 @@ export interface components {
             name: string;
             /** Format: uuid */
             organization_id: string;
+            /**
+             * Format: uuid
+             * @description Default SNMP credential for this network (hosts can override).
+             *     When set, SNMP discovery is enabled for this network.
+             */
+            snmp_credential_id?: string | null;
             tags: string[];
         };
         /** @description Network configuration for setup */
         NetworkSetup: {
             name: string;
+            /** @description SNMP community string (for V2c) */
+            snmp_community?: string | null;
+            /** @description Whether SNMP is enabled for this network */
+            snmp_enabled?: boolean;
+            /** @description SNMP version ("V2c" or "V3") */
+            snmp_version?: string | null;
         };
         Node: components["schemas"]["NodeType"] & {
             header?: string | null;
@@ -3549,6 +4759,55 @@ export interface components {
             name: string;
             slug: string;
         };
+        /** @description Daemon setup data in onboarding state response */
+        OnboardingDaemonSetupState: {
+            /** @description API key (only returned if user chose to install now) */
+            api_key?: string | null;
+            /** @description Daemon name */
+            daemon_name: string;
+            /**
+             * Format: uuid
+             * @description Network ID this daemon is for
+             */
+            network_id: string;
+        };
+        /** @description Network data in onboarding state response */
+        OnboardingNetworkState: {
+            /**
+             * Format: uuid
+             * @description Network ID (if created)
+             */
+            id?: string | null;
+            /** @description Network name */
+            name: string;
+            /** @description SNMP community string */
+            snmp_community?: string | null;
+            /** @description Whether SNMP is enabled */
+            snmp_enabled?: boolean;
+            /** @description SNMP version */
+            snmp_version?: string | null;
+        };
+        /** @description Response from onboarding state endpoint */
+        OnboardingStateResponse: {
+            /** @description Daemon setups (if any) */
+            daemon_setups?: components["schemas"]["OnboardingDaemonSetupState"][];
+            /** @description Network IDs from pending setup (if any) - kept for backwards compatibility */
+            network_ids: string[];
+            /** @description Networks from pending setup (with names and IDs) */
+            networks: components["schemas"]["OnboardingNetworkState"][];
+            /** @description Organization name from pending setup */
+            org_name?: string | null;
+            /** @description Current onboarding step (if any) */
+            step?: string | null;
+            /** @description Use case selection (homelab, company, msp) */
+            use_case?: string | null;
+        };
+        /** @description Request to save onboarding step */
+        OnboardingStepRequest: {
+            step: string;
+            /** @description Use case selection (homelab, company, msp) */
+            use_case?: string | null;
+        };
         /**
          * @description Direction for ORDER BY clauses.
          * @enum {string}
@@ -3567,7 +4826,6 @@ export interface components {
             onboarding: components["schemas"]["TelemetryOperation"][];
             plan: null | components["schemas"]["BillingPlan"];
             readonly plan_status: string | null;
-            readonly stripe_customer_id: string | null;
         };
         /**
          * @description API metadata for paginated list responses (pagination is always present)
@@ -3579,7 +4837,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.13.5"
+         *       "server_version": "0.13.6"
          *     }
          */
         PaginatedApiMeta: {
@@ -3592,7 +4850,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.13.5
+             * @example 0.13.6
              */
             server_version: string;
         };
@@ -3629,6 +4887,7 @@ export interface components {
         /** @description Response type for paginated list endpoints (pagination is always present in meta) */
         PaginatedApiResponse_HostResponse: {
             data: {
+                chassis_id?: string | null;
                 /** Format: date-time */
                 created_at: string;
                 description?: string | null;
@@ -3636,13 +4895,22 @@ export interface components {
                 hostname?: string | null;
                 /** Format: uuid */
                 id: string;
+                /** @description SNMP ifTable entries */
+                if_entries: components["schemas"]["IfEntry"][];
                 interfaces: components["schemas"]["Interface"][];
+                management_url?: string | null;
                 name: string;
                 /** Format: uuid */
                 network_id: string;
                 ports: components["schemas"]["Port"][];
                 services: components["schemas"]["Service"][];
+                /** Format: uuid */
+                snmp_credential_id?: string | null;
                 source: components["schemas"]["EntitySource"];
+                sys_contact?: string | null;
+                sys_descr?: string | null;
+                sys_location?: string | null;
+                sys_object_id?: string | null;
                 tags: string[];
                 /** Format: date-time */
                 updated_at: string;
@@ -3655,6 +4923,20 @@ export interface components {
         /** @description Response type for paginated list endpoints (pagination is always present in meta) */
         PaginatedApiResponse_Service: {
             data: (components["schemas"]["ServiceBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
+            })[];
+            error?: string | null;
+            meta: components["schemas"]["PaginatedApiMeta"];
+            success: boolean;
+        };
+        /** @description Response type for paginated list endpoints (pagination is always present in meta) */
+        PaginatedApiResponse_SnmpCredential: {
+            data: (components["schemas"]["SnmpCredentialBase"] & {
                 /** Format: date-time */
                 readonly created_at: string;
                 /** Format: uuid */
@@ -3855,6 +5137,34 @@ export interface components {
             /** @description Auto-derived from number+protocol; optional on create */
             type?: string;
         };
+        /**
+         * @description Request to pre-provision a ServerPoll mode daemon.
+         *     This creates the daemon record on the server before the daemon is installed.
+         */
+        ProvisionDaemonRequest: {
+            /** @description Human-readable name for the daemon. */
+            name: string;
+            /**
+             * Format: uuid
+             * @description Network this daemon will be associated with.
+             */
+            network_id: string;
+            /** @description URL where the server can reach the daemon (required for ServerPoll mode). */
+            url: string;
+        };
+        /**
+         * @description Response from provisioning a daemon.
+         *     Contains the daemon record and the API key (shown only once).
+         */
+        ProvisionDaemonResponse: {
+            /** @description The created daemon record (with version status). */
+            daemon: components["schemas"]["DaemonResponse"];
+            /**
+             * @description The API key (plaintext) for daemon authentication.
+             *     This is shown only once - store it securely.
+             */
+            daemon_api_key: string;
+        };
         ProxmoxVirtualization: {
             /** Format: uuid */
             service_id: string;
@@ -3930,14 +5240,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-01-13T22:33:31.241392Z",
-         *           "id": "276d1c1c-f8e2-452f-80b6-30703f2a043e",
+         *           "created_at": "2026-02-01T14:46:58.950648Z",
+         *           "id": "3982e278-ebb7-4a23-86e2-af3657dc6cf4",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-01-13T22:33:31.241392Z"
+         *           "updated_at": "2026-02-01T14:46:58.950648Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -3946,7 +5256,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Veeam",
+         *       "service_definition": "Jellyfin",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -3982,7 +5292,7 @@ export interface components {
             virtualization?: null | components["schemas"]["ServiceVirtualization"];
         };
         /** @enum {string} */
-        ServiceCategory: "NetworkCore" | "NetworkAccess" | "NetworkSecurity" | "Storage" | "Backup" | "Media" | "HomeAutomation" | "Virtualization" | "DNS" | "VPN" | "Monitoring" | "AdBlock" | "ReverseProxy" | "Workstation" | "Mobile" | "IoT" | "Printer" | "Database" | "Development" | "Dashboard" | "MessageQueue" | "IdentityAndAccess" | "Office" | "ProjectManagement" | "Messaging" | "Conferencing" | "Telephony" | "Email" | "Publishing" | "Unknown" | "Custom" | "Scanopy" | "OpenPorts";
+        ServiceCategory: "NetworkCore" | "NetworkAccess" | "NetworkSecurity" | "Storage" | "Backup" | "Media" | "HomeAutomation" | "Virtualization" | "DNS" | "VPN" | "SNMP" | "Monitoring" | "AdBlock" | "ReverseProxy" | "Workstation" | "Mobile" | "IoT" | "Printer" | "Database" | "Development" | "Dashboard" | "MessageQueue" | "IdentityAndAccess" | "Office" | "ProjectManagement" | "Messaging" | "Conferencing" | "Telephony" | "Email" | "Publishing" | "Unknown" | "Custom" | "Scanopy" | "OpenPorts";
         /**
          * @description Input for creating or updating a service.
          *     Used in both CreateHostRequest and UpdateHostRequest.
@@ -4072,6 +5382,61 @@ export interface components {
             show_inspect_panel: boolean;
             show_zoom_controls: boolean;
         };
+        SnmpCredential: components["schemas"]["SnmpCredentialBase"] & {
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        SnmpCredentialBase: {
+            /**
+             * @description SNMPv2c community string (stored encrypted)
+             *     For V3, this would be extended with auth/priv credentials
+             *     Redacted in API responses for security
+             */
+            community: string;
+            name: string;
+            /** Format: uuid */
+            organization_id: string;
+            tags: string[];
+            /** @description SNMP version (V2c or V3) */
+            version?: components["schemas"]["SnmpVersion"];
+        };
+        /**
+         * @description SNMP credential mapping for network discovery
+         *     Server builds this before initiating discovery; daemon uses it during scan
+         */
+        SnmpCredentialMapping: {
+            default_credential?: null | components["schemas"]["SnmpQueryCredential"];
+            /** @description Per-IP overrides (from host.snmp_credential_id where host has known IPs) */
+            ip_overrides?: components["schemas"]["SnmpIpOverride"][];
+        };
+        /** @enum {string} */
+        SnmpCredentialOrderField: "created_at" | "name" | "version" | "updated_at";
+        /** @description IP-specific SNMP credential override */
+        SnmpIpOverride: {
+            /** @description Credential to use for this IP */
+            credential: components["schemas"]["SnmpQueryCredential"];
+            /** @description IP address for this override */
+            ip: string;
+        };
+        /**
+         * @description Minimal SNMP credential for daemon queries (version + community only)
+         *     Does not include organization_id, name, timestamps - just what's needed for SNMP queries
+         */
+        SnmpQueryCredential: {
+            /** @description SNMPv2c community string */
+            community: string;
+            /** @description SNMP version (V2c or V3) */
+            version?: components["schemas"]["SnmpVersion"];
+        };
+        /**
+         * @description SNMP protocol version
+         * @enum {string}
+         */
+        SnmpVersion: "V2c" | "V3";
         /**
          * @example {
          *       "cidr": "192.168.1.0/24",
@@ -4146,7 +5511,7 @@ export interface components {
          */
         TagOrderField: "created_at" | "name" | "color" | "updated_at";
         /** @enum {string} */
-        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "SubscriptionCancelled";
+        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "SubscriptionCancelled" | "FirstNetworkCreated" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted";
         Topology: components["schemas"]["TopologyBase"] & {
             /** Format: date-time */
             readonly created_at: string;
@@ -4160,6 +5525,7 @@ export interface components {
             edges: components["schemas"]["Edge"][];
             groups: components["schemas"]["Group"][];
             hosts: components["schemas"]["Host"][];
+            if_entries: components["schemas"]["IfEntry"][];
             interfaces: components["schemas"]["Interface"][];
             is_locked: boolean;
             is_stale: boolean;
@@ -4180,6 +5546,7 @@ export interface components {
             removed_bindings: string[];
             removed_groups: string[];
             removed_hosts: string[];
+            removed_if_entries: string[];
             removed_interfaces: string[];
             removed_ports: string[];
             removed_services: string[];
@@ -4188,11 +5555,99 @@ export interface components {
             subnets: components["schemas"]["Subnet"][];
             tags: string[];
         };
+        /**
+         * @description Lightweight request type for updating an edge's handles.
+         *
+         *     Used for edge reconnect operations - instead of sending the entire topology,
+         *     only sends the edge ID and new handle positions.
+         *     Fixes HTTP 413 errors on edge reconnect operations.
+         */
+        TopologyEdgeHandleUpdate: {
+            /**
+             * Format: uuid
+             * @description ID of the edge to update
+             */
+            edge_id: string;
+            /**
+             * Format: uuid
+             * @description Network ID for authorization
+             */
+            network_id: string;
+            /** @description New source handle position */
+            source_handle: components["schemas"]["EdgeHandle"];
+            /** @description New target handle position */
+            target_handle: components["schemas"]["EdgeHandle"];
+        };
         TopologyLocalOptions: {
             hide_edge_types: components["schemas"]["EdgeTypeDiscriminants"][];
             hide_resize_handles: boolean;
             left_zone_title: string;
             no_fade_edges: boolean;
+        };
+        /**
+         * @description Lightweight request type for updating topology metadata.
+         *
+         *     Used for editing topology name/parent - instead of sending the entire topology
+         *     (which includes all hosts, interfaces, services, etc.), only sends the metadata fields.
+         *     Fixes HTTP 413 errors on metadata edit operations.
+         */
+        TopologyMetadataUpdate: {
+            /** @description New name for the topology */
+            name: string;
+            /**
+             * Format: uuid
+             * @description Network ID for authorization
+             */
+            network_id: string;
+            /**
+             * Format: uuid
+             * @description New parent topology ID (optional)
+             */
+            parent_id?: string | null;
+        };
+        /**
+         * @description Lightweight request type for updating a single node's position.
+         *
+         *     Used for drag operations - instead of sending the entire topology (which can be
+         *     several megabytes for large networks), only sends the node ID and new position.
+         *     Fixes HTTP 413 errors on drag operations.
+         */
+        TopologyNodePositionUpdate: {
+            /**
+             * Format: uuid
+             * @description Network ID for authorization
+             */
+            network_id: string;
+            /**
+             * Format: uuid
+             * @description ID of the node to update
+             */
+            node_id: string;
+            /** @description New position for the node */
+            position: components["schemas"]["Ixy"];
+        };
+        /**
+         * @description Lightweight request type for updating a node's size and position.
+         *
+         *     Used for subnet resize operations - instead of sending the entire topology,
+         *     only sends the node ID, new size, and new position.
+         *     Fixes HTTP 413 errors on resize operations.
+         */
+        TopologyNodeResizeUpdate: {
+            /**
+             * Format: uuid
+             * @description Network ID for authorization
+             */
+            network_id: string;
+            /**
+             * Format: uuid
+             * @description ID of the node to update
+             */
+            node_id: string;
+            /** @description New position for the node */
+            position: components["schemas"]["Ixy"];
+            /** @description New size for the node */
+            size: components["schemas"]["Uxy"];
         };
         TopologyOptions: {
             local: components["schemas"]["TopologyLocalOptions"];
@@ -4575,6 +6030,50 @@ export interface operations {
             };
         };
     };
+    onboarding_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Onboarding state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_OnboardingStateResponse"];
+                };
+            };
+        };
+    };
+    onboarding_step: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingStepRequest"];
+            };
+        };
+        responses: {
+            /** @description Step saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+        };
+    };
     register: {
         parameters: {
             query?: never;
@@ -4842,6 +6341,48 @@ export interface operations {
             };
         };
     };
+    submit_enterprise_inquiry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnterpriseInquiryRequest"];
+            };
+        };
+        responses: {
+            /** @description Inquiry submitted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Invalid request or HubSpot not configured */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     get_billing_plans: {
         parameters: {
             query?: never;
@@ -4986,42 +6527,6 @@ export interface operations {
             };
         };
     };
-    receive_heartbeat: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Daemon ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DaemonHeartbeatPayload"];
-            };
-        };
-        responses: {
-            /** @description Heartbeat received */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponse"];
-                };
-            };
-            /** @description Daemon not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
     receive_work_request: {
         parameters: {
             query?: never;
@@ -5034,7 +6539,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DaemonHeartbeatPayload"];
+                "application/json": components["schemas"]["DaemonStatusPayload"];
             };
         };
         responses: {
@@ -5168,7 +6673,7 @@ export interface operations {
             };
         };
     };
-    list_daemon_api_keys: {
+    "list_Daemon API Keys": {
         parameters: {
             query?: {
                 /** @description Filter by network ID */
@@ -5186,7 +6691,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of daemon_api_keys */
+            /** @description List of Daemon API Keys */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5253,21 +6758,21 @@ export interface operations {
             };
         };
     };
-    bulk_delete_daemon_api_keys: {
+    "bulk_delete_Daemon API Keys": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of daemon_api_keys IDs to delete */
+        /** @description Array of Daemon API Key IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
             };
         };
         responses: {
-            /** @description DaemonApiKeys deleted */
+            /** @description Daemon API Keys deleted */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5278,19 +6783,48 @@ export interface operations {
             };
         };
     };
-    get_daemon_api_key_by_id: {
+    "export_Daemon API Keys_csv": {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Daemon API Keys */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    "get_Daemon API Key_by_id": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description DaemonApiKey ID */
+                /** @description Daemon API Key ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description DaemonApiKey found */
+            /** @description Daemon API Key found */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5299,7 +6833,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiResponse_DaemonApiKey"];
                 };
             };
-            /** @description DaemonApiKey not found */
+            /** @description Daemon API Key not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5346,19 +6880,19 @@ export interface operations {
             };
         };
     };
-    delete_daemon_api_key: {
+    "delete_Daemon API Key": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description DaemonApiKey ID */
+                /** @description Daemon API Key ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description DaemonApiKey deleted */
+            /** @description Daemon API Key deleted */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5367,7 +6901,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiResponse"];
                 };
             };
-            /** @description DaemonApiKey not found */
+            /** @description Daemon API Key not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5529,6 +7063,31 @@ export interface operations {
             };
         };
     };
+    "export_User API Keys_csv": {
+        parameters: {
+            query?: {
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing User API Keys */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
     get_user_api_key_by_id: {
         parameters: {
             query?: never;
@@ -5679,7 +7238,7 @@ export interface operations {
             };
         };
     };
-    list_bindings: {
+    list_Bindings: {
         parameters: {
             query?: {
                 /** @description Filter by service ID */
@@ -5701,7 +7260,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of bindings */
+            /** @description List of Bindings */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5759,14 +7318,14 @@ export interface operations {
             };
         };
     };
-    bulk_delete_bindings: {
+    bulk_delete_Bindings: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of bindings IDs to delete */
+        /** @description Array of Binding IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
@@ -5784,7 +7343,40 @@ export interface operations {
             };
         };
     };
-    get_binding_by_id: {
+    export_Bindings_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by service ID */
+                service_id?: string | null;
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by port ID */
+                port_id?: string | null;
+                /** @description Filter by interface ID */
+                interface_id?: string | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Bindings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Binding_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -5861,7 +7453,7 @@ export interface operations {
             };
         };
     };
-    delete_binding: {
+    delete_Binding: {
         parameters: {
             query?: never;
             header?: never;
@@ -5926,14 +7518,14 @@ export interface operations {
             };
         };
     };
-    bulk_delete_daemons: {
+    bulk_delete_Daemons: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of daemons IDs to delete */
+        /** @description Array of Daemon IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
@@ -5947,6 +7539,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_BulkDeleteResponse"];
+                };
+            };
+        };
+    };
+    export_Daemons_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["DaemonOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["DaemonOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Daemons */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    provision_daemon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProvisionDaemonRequest"];
+            };
+        };
+        responses: {
+            /** @description Daemon provisioned successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ProvisionDaemonResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -5992,7 +7659,7 @@ export interface operations {
             };
         };
     };
-    delete_daemon: {
+    delete_Daemon: {
         parameters: {
             query?: never;
             header?: never;
@@ -6024,7 +7691,48 @@ export interface operations {
             };
         };
     };
-    list_discoveries: {
+    retry_daemon_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daemon ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection retry initiated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Daemon not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_Discoveries: {
         parameters: {
             query?: {
                 /** @description Filter by network ID */
@@ -6042,7 +7750,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of discoveries */
+            /** @description List of Discoveries */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6111,27 +7819,56 @@ export interface operations {
             };
         };
     };
-    bulk_delete_discoveries: {
+    bulk_delete_Discoveries: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of discoveries IDs to delete */
+        /** @description Array of Discovery IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
             };
         };
         responses: {
-            /** @description Discoverys deleted */
+            /** @description Discoveries deleted */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_BulkDeleteResponse"];
+                };
+            };
+        };
+    };
+    export_Discoveries_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by daemon ID */
+                daemon_id?: string | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Discoveries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
                 };
             };
         };
@@ -6169,7 +7906,7 @@ export interface operations {
             };
         };
     };
-    get_discovery_by_id: {
+    get_Discovery_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -6237,7 +7974,7 @@ export interface operations {
             };
         };
     };
-    delete_discovery: {
+    delete_Discovery: {
         parameters: {
             query?: never;
             header?: never;
@@ -6385,14 +8122,14 @@ export interface operations {
             };
         };
     };
-    bulk_delete_groups: {
+    bulk_delete_Groups: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of groups IDs to delete */
+        /** @description Array of Group IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
@@ -6410,7 +8147,40 @@ export interface operations {
             };
         };
     };
-    get_group_by_id: {
+    export_Groups_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["GroupOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["GroupOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Groups */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Group_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -6487,7 +8257,7 @@ export interface operations {
             };
         };
     };
-    delete_group: {
+    delete_Group: {
         parameters: {
             query?: never;
             header?: never;
@@ -6665,6 +8435,80 @@ export interface operations {
             };
         };
     };
+    export_Hosts_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
+                /** @description Filter by tag IDs (returns hosts that have ANY of the specified tags) */
+                tag_ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["HostOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["HostOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Hosts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    export_hosts_zip: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
+                /** @description Filter by tag IDs (returns hosts that have ANY of the specified tags) */
+                tag_ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["HostOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["HostOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ZIP file containing CSVs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+        };
+    };
     consolidate_hosts: {
         parameters: {
             query?: never;
@@ -6826,7 +8670,241 @@ export interface operations {
             };
         };
     };
-    list_interfaces: {
+    "list_ifTable Entries": {
+        parameters: {
+            query?: {
+                /** @description Filter by host ID */
+                host_id?: string | null;
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of ifTable Entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IfEntry"][];
+                        error?: string | null;
+                        meta: components["schemas"]["PaginatedApiMeta"];
+                        success: boolean;
+                    };
+                };
+            };
+        };
+    };
+    create_if_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IfEntry"];
+            };
+        };
+        responses: {
+            /** @description If entry created successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_IfEntry"];
+                };
+            };
+            /** @description Network mismatch or duplicate if_index */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    "bulk_delete_ifTable Entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Array of ifTable Entry IDs to delete */
+        requestBody: {
+            content: {
+                "application/json": string[];
+            };
+        };
+        responses: {
+            /** @description ifTable Entries deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BulkDeleteResponse"];
+                };
+            };
+        };
+    };
+    "export_ifTable Entries_csv": {
+        parameters: {
+            query?: {
+                /** @description Filter by host ID */
+                host_id?: string | null;
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing ifTable Entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    "get_ifTable Entry_by_id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ifTable Entry ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ifTable Entry found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_IfEntry"];
+                };
+            };
+            /** @description ifTable Entry not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_if_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description If entry ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IfEntry"];
+            };
+        };
+        responses: {
+            /** @description If entry updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_IfEntry"];
+                };
+            };
+            /** @description Network mismatch or invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description If entry not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    "delete_ifTable Entry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ifTable Entry ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ifTable Entry deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description ifTable Entry not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_Interfaces: {
         parameters: {
             query?: {
                 /** @description Filter by host ID */
@@ -6846,7 +8924,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of interfaces */
+            /** @description List of Interfaces */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6928,7 +9006,38 @@ export interface operations {
             };
         };
     };
-    get_interface_by_id: {
+    export_Interfaces_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by host ID */
+                host_id?: string | null;
+                /** @description Filter by subnet ID */
+                subnet_id?: string | null;
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Interfaces */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Interface_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -7172,7 +9281,7 @@ export interface operations {
             };
         };
     };
-    list_networks: {
+    list_Networks: {
         parameters: {
             query?: {
                 /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
@@ -7186,7 +9295,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of networks */
+            /** @description List of Networks */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7260,7 +9369,32 @@ export interface operations {
             };
         };
     };
-    get_network_by_id: {
+    export_Networks_csv: {
+        parameters: {
+            query?: {
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Networks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Network_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -7534,7 +9668,7 @@ export interface operations {
             };
         };
     };
-    list_ports: {
+    list_Ports: {
         parameters: {
             query?: {
                 /** @description Filter by host ID */
@@ -7554,7 +9688,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of ports */
+            /** @description List of Ports */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7603,14 +9737,14 @@ export interface operations {
             };
         };
     };
-    bulk_delete_ports: {
+    bulk_delete_Ports: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of ports IDs to delete */
+        /** @description Array of Port IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
@@ -7628,7 +9762,38 @@ export interface operations {
             };
         };
     };
-    get_port_by_id: {
+    export_Ports_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by host ID */
+                host_id?: string | null;
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Ports */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Port_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -7705,7 +9870,7 @@ export interface operations {
             };
         };
     };
-    delete_port: {
+    delete_Port: {
         parameters: {
             query?: never;
             header?: never;
@@ -7809,14 +9974,14 @@ export interface operations {
             };
         };
     };
-    bulk_delete_services: {
+    bulk_delete_Services: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of services IDs to delete */
+        /** @description Array of Service IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
@@ -7834,7 +9999,46 @@ export interface operations {
             };
         };
     };
-    get_service_by_id: {
+    export_Services_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by host ID */
+                host_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
+                /** @description Filter by tag IDs (returns services that have ANY of the specified tags) */
+                tag_ids?: string[] | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["ServiceOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["ServiceOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Services */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Service_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -7911,7 +10115,7 @@ export interface operations {
             };
         };
     };
-    delete_service: {
+    delete_Service: {
         parameters: {
             query?: never;
             header?: never;
@@ -7943,7 +10147,7 @@ export interface operations {
             };
         };
     };
-    list_shares: {
+    list_Shares: {
         parameters: {
             query?: {
                 /** @description Filter by network ID */
@@ -7961,7 +10165,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of shares */
+            /** @description List of Shares */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -8010,14 +10214,14 @@ export interface operations {
             };
         };
     };
-    bulk_delete_shares: {
+    bulk_delete_Shares: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of shares IDs to delete */
+        /** @description Array of Share IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
@@ -8031,6 +10235,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_BulkDeleteResponse"];
+                };
+            };
+        };
+    };
+    export_Shares_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by topology ID */
+                topology_id?: string | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Shares */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
                 };
             };
         };
@@ -8112,7 +10345,7 @@ export interface operations {
             };
         };
     };
-    get_share_by_id: {
+    get_Share_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -8180,7 +10413,7 @@ export interface operations {
             };
         };
     };
-    delete_share: {
+    delete_Share: {
         parameters: {
             query?: never;
             header?: never;
@@ -8202,6 +10435,252 @@ export interface operations {
                 };
             };
             /** @description Share not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_all_snmp_credentials: {
+        parameters: {
+            query?: {
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["SnmpCredentialOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["SnmpCredentialOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of SNMP credentials */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedApiResponse_SnmpCredential"];
+                };
+            };
+        };
+    };
+    create_snmp_credential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SnmpCredential"];
+            };
+        };
+        responses: {
+            /** @description SNMP credential created successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SnmpCredential"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Credential name already exists in this organization */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    bulk_delete_snmp_credentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": string[];
+            };
+        };
+        responses: {
+            /** @description SNMP Credentials deleted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BulkDeleteResponse"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    "export_SNMP Credentials_csv": {
+        parameters: {
+            query?: {
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["SnmpCredentialOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["SnmpCredentialOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing SNMP Credentials */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    "get_SNMP Credential_by_id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description SNMP Credential ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description SNMP Credential found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SnmpCredential"];
+                };
+            };
+            /** @description SNMP Credential not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_snmp_credential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description snmp_credential ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SnmpCredential"];
+            };
+        };
+        responses: {
+            /** @description snmp_credential updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SnmpCredential"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description snmp_credential not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_snmp_credential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description snmp_credential ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description snmp_credential deleted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description snmp_credential not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8278,14 +10757,14 @@ export interface operations {
             };
         };
     };
-    bulk_delete_subnets: {
+    bulk_delete_Subnets: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of subnets IDs to delete */
+        /** @description Array of Subnet IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
@@ -8303,7 +10782,40 @@ export interface operations {
             };
         };
     };
-    get_subnet_by_id: {
+    export_Subnets_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["SubnetOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["SubnetOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Subnets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Subnet_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -8380,7 +10892,7 @@ export interface operations {
             };
         };
     };
-    delete_subnet: {
+    delete_Subnet: {
         parameters: {
             query?: never;
             header?: never;
@@ -8602,14 +11114,14 @@ export interface operations {
             };
         };
     };
-    bulk_delete_tags: {
+    bulk_delete_Tags: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Array of tags IDs to delete */
+        /** @description Array of Tag IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
@@ -8627,7 +11139,38 @@ export interface operations {
             };
         };
     };
-    get_tag_by_id: {
+    export_Tags_csv: {
+        parameters: {
+            query?: {
+                /** @description Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
+                group_by?: null | components["schemas"]["TagOrderField"];
+                /** @description Secondary ordering field (sorting within groups or standalone sort). */
+                order_by?: null | components["schemas"]["TagOrderField"];
+                /** @description Direction for order_by field (group_by always uses ASC). */
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Tag_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -8659,7 +11202,7 @@ export interface operations {
             };
         };
     };
-    update_tag: {
+    update_Tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -8695,7 +11238,7 @@ export interface operations {
             };
         };
     };
-    delete_tag: {
+    delete_Tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -8789,7 +11332,36 @@ export interface operations {
             };
         };
     };
-    get_topology_by_id: {
+    export_Topologies_csv: {
+        parameters: {
+            query?: {
+                /** @description Filter by network ID */
+                network_id?: string | null;
+                /** @description Filter by specific entity IDs (for selective loading) */
+                ids?: string[] | null;
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Topologies */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_Topology_by_id: {
         parameters: {
             query?: never;
             header?: never;
@@ -8857,7 +11429,7 @@ export interface operations {
             };
         };
     };
-    delete_topology: {
+    delete_Topology: {
         parameters: {
             query?: never;
             header?: never;
@@ -8879,6 +11451,51 @@ export interface operations {
                 };
             };
             /** @description Topology not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_edge_handles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Topology ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopologyEdgeHandleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Edge handles updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Topology or edge not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8920,6 +11537,141 @@ export interface operations {
                 };
             };
             /** @description Topology not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Topology ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopologyMetadataUpdate"];
+            };
+        };
+        responses: {
+            /** @description Metadata updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Topology not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_node_position: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Topology ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopologyNodePositionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Node position updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Topology or node not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_node_resize: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Topology ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopologyNodeResizeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Node resized */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Topology or node not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -9116,6 +11868,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    export_Users_csv: {
+        parameters: {
+            query?: {
+                /** @description Maximum number of results to return (1-1000, default: 50). Use 0 for no limit. */
+                limit?: number | null;
+                /** @description Number of results to skip. Default: 0. */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Users */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
                 };
             };
         };

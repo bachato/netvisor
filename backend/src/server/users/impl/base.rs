@@ -4,6 +4,7 @@ use std::str::FromStr;
 use crate::server::{
     shared::{
         entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants},
+        entity_metadata::EntityCategory,
         storage::traits::{Entity, SqlValue, Storable},
     },
     users::r#impl::permissions::UserOrgPermissions,
@@ -17,6 +18,20 @@ use sqlx::postgres::PgRow;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
+
+/// CSV row representation for User export (excludes sensitive password/token fields)
+#[derive(Serialize)]
+pub struct UserCsvRow {
+    pub id: Uuid,
+    pub email: String,
+    pub permissions: String,
+    pub organization_id: Uuid,
+    pub email_verified: bool,
+    pub oidc_provider: Option<String>,
+    pub terms_accepted_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, PartialEq, Eq, Hash, ToSchema)]
 pub struct UserBase {
@@ -309,16 +324,33 @@ impl Storable for User {
 }
 
 impl Entity for User {
+    type CsvRow = UserCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        UserCsvRow {
+            id: self.id,
+            email: self.base.email.to_string(),
+            permissions: format!("{:?}", self.base.permissions),
+            organization_id: self.base.organization_id,
+            email_verified: self.base.email_verified,
+            oidc_provider: self.base.oidc_provider.clone(),
+            terms_accepted_at: self.base.terms_accepted_at,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::User
     }
 
-    fn entity_name_singular() -> &'static str {
-        "user"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "User";
+    const ENTITY_NAME_PLURAL: &'static str = "Users";
+    const ENTITY_DESCRIPTION: &'static str =
+        "User account management. Manage user profiles and permissions within organizations.";
 
-    fn entity_name_plural() -> &'static str {
-        "users"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::OrganizationsAndUsers
     }
 
     fn network_id(&self) -> Option<Uuid> {

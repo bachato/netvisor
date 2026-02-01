@@ -1,13 +1,14 @@
 use crate::server::auth::middleware::permissions::{Admin, Authorized, Member, Viewer};
 use crate::server::shared::entities::{EntityDiscriminants, is_entity_taggable};
+use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
 use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
 };
 use crate::server::shared::handlers::traits::create_handler;
-use crate::server::shared::services::traits::CrudService;
+use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
-use crate::server::shared::storage::traits::{Storable, Storage};
+use crate::server::shared::storage::traits::{Entity, Storable, Storage};
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, PaginatedApiResponse};
 use crate::server::tags::r#impl::base::Tag;
 use crate::server::{
@@ -15,6 +16,7 @@ use crate::server::{
     shared::types::api::{ApiResponse, ApiResult, EmptyApiResponse},
 };
 use axum::{extract::State, response::Json};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::{IntoParams, ToSchema};
@@ -102,10 +104,11 @@ impl FilterQueryExtractor for TagFilterQuery {
 // Generated handlers for most CRUD operations
 mod generated {
     use super::*;
-    crate::crud_get_by_id_handler!(Tag, "tags", "tag");
-    crate::crud_update_handler!(Tag, "tags", "tag");
-    crate::crud_delete_handler!(Tag, "tags", "tag");
-    crate::crud_bulk_delete_handler!(Tag, "tags");
+    crate::crud_get_by_id_handler!(Tag);
+    crate::crud_update_handler!(Tag);
+    crate::crud_delete_handler!(Tag);
+    crate::crud_bulk_delete_handler!(Tag);
+    crate::crud_export_csv_handler!(Tag);
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -117,6 +120,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
         // Entity tag assignment routes
         .routes(routes!(bulk_add_tag))
         .routes(routes!(bulk_remove_tag))
@@ -131,7 +135,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 #[utoipa::path(
     get,
     path = "",
-    tag = "tags",
+    tag = Tag::ENTITY_NAME_PLURAL,
     params(TagFilterQuery),
     responses(
         (status = 200, description = "List of tags", body = PaginatedApiResponse<Tag>),
@@ -149,7 +153,7 @@ async fn get_all_tags(
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
-    let base_filter = StorableFilter::<Tag>::new().organization_id(&organization_id);
+    let base_filter = StorableFilter::<Tag>::new_from_org_id(&organization_id);
 
     // Apply pagination
     let pagination = query.pagination();
@@ -188,7 +192,7 @@ async fn get_all_tags(
 #[utoipa::path(
     post,
     path = "",
-    tag = "tags",
+    tag = Tag::ENTITY_NAME_PLURAL,
     request_body = Tag,
     responses(
         (status = 200, description = "Tag created successfully", body = ApiResponse<Tag>),
@@ -198,16 +202,17 @@ async fn get_all_tags(
      security(("user_api_key" = []), ("session" = []))
 )]
 pub async fn create_tag(
-    state: State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     auth: Authorized<Admin>,
     Json(tag): Json<Tag>,
 ) -> ApiResult<Json<ApiResponse<Tag>>> {
     let organization_id = auth
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
-    let name_filter = StorableFilter::<Tag>::new()
-        .organization_id(&organization_id)
-        .name(tag.base.name.clone());
+    let entity = auth.entity.clone();
+
+    let name_filter =
+        StorableFilter::<Tag>::new_from_org_id(&organization_id).name(tag.base.name.clone());
 
     if let Some(existing_with_name) = state.services.tag_service.get_one(name_filter).await? {
         return Err(ApiError::conflict(&format!(
@@ -216,11 +221,45 @@ pub async fn create_tag(
         )));
     }
 
-    create_handler::<Tag>(state, auth.into_permission::<Member>(), Json(tag)).await
+    let response = create_handler::<Tag>(
+        State(state.clone()),
+        auth.into_permission::<Member>(),
+        Json(tag),
+    )
+    .await?;
+
+    // Emit FirstTagCreated telemetry event if this is the first tag
+    if response.data.is_some() {
+        let organization = state
+            .services
+            .organization_service
+            .get_by_id(&organization_id)
+            .await?;
+
+        if let Some(organization) = organization
+            && organization.not_onboarded(&TelemetryOperation::FirstTagCreated)
+        {
+            state
+                .services
+                .tag_service
+                .event_bus()
+                .publish_telemetry(TelemetryEvent {
+                    id: Uuid::new_v4(),
+                    organization_id,
+                    operation: TelemetryOperation::FirstTagCreated,
+                    timestamp: Utc::now(),
+                    metadata: serde_json::json!({}),
+                    authentication: entity,
+                })
+                .await?;
+        }
+    }
+
+    Ok(response)
 }
 
 /// Request body for bulk tag operations
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct BulkTagRequest {
     /// The entity type (e.g., Host, Service, Subnet)
     pub entity_type: EntityDiscriminants,
@@ -260,7 +299,7 @@ pub struct SetTagsRequest {
 #[utoipa::path(
     post,
     path = "/assign/bulk-add",
-    tag = "tags",
+    tag = Tag::ENTITY_NAME_PLURAL,
     request_body = BulkTagRequest,
     responses(
         (status = 200, description = "Tag added successfully", body = ApiResponse<BulkTagResponse>),
@@ -313,7 +352,7 @@ pub async fn bulk_add_tag(
 #[utoipa::path(
     post,
     path = "/assign/bulk-remove",
-    tag = "tags",
+    tag = Tag::ENTITY_NAME_PLURAL,
     request_body = BulkTagRequest,
     responses(
         (status = 200, description = "Tag removed successfully", body = ApiResponse<BulkTagResponse>),
@@ -356,7 +395,7 @@ pub async fn bulk_remove_tag(
 #[utoipa::path(
     put,
     path = "/assign",
-    tag = "tags",
+    tag = Tag::ENTITY_NAME_PLURAL,
     request_body = SetTagsRequest,
     responses(
         (status = 200, description = "Tags set successfully", body = EmptyApiResponse),

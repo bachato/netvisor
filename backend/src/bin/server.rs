@@ -126,6 +126,12 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    // Start daemon polling loop for ServerPoll mode daemons
+    let daemon_service = state.services.daemon_service.clone();
+    tokio::spawn(async move {
+        daemon_service.start_polling_loop().await;
+    });
+
     tracing::info!(target: LOG_TARGET, "  Background tasks started");
 
     let (base_router, _openapi) = create_router(state.clone());
@@ -269,6 +275,15 @@ async fn main() -> anyhow::Result<()> {
             .initialize_products(get_purchasable_plans())
             .await?;
         tracing::info!(target: LOG_TARGET, "  Billing service initialized");
+    }
+
+    // Sync existing organizations to HubSpot if configured
+    if let Some(hubspot_service) = state.services.hubspot_service.clone() {
+        tokio::spawn(async move {
+            if let Err(e) = hubspot_service.sync_existing_organizations().await {
+                tracing::error!(target: LOG_TARGET, error = %e, "Failed to sync existing organizations to HubSpot");
+            }
+        });
     }
 
     // Configuration summary

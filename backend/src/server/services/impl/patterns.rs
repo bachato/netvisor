@@ -215,6 +215,7 @@ impl Vendor {
     pub const SONOS: &'static str = "Sonos, Inc.";
     pub const ECOBEE: &'static str = "ecobee inc";
     pub const ROKU: &'static str = "Roku, Inc";
+    pub const ROBOROCK: &'static str = "Beijing Roborock Technology Co., Ltd.";
 }
 
 impl PartialEq for Pattern<'_> {
@@ -548,14 +549,14 @@ impl Pattern<'_> {
             }
 
             Pattern::MacVendor(vendor_string) => {
-                if let Some(mac) = interface.base.mac_address {
+                if let Some(mac_address) = interface.base.mac_address {
                     let Ok(oui_db) = Oui::default() else {
                         return Err(anyhow!("Could not load Oui database"));
                     };
-                    let Ok(Some(entry)) = Oui::lookup_by_mac(&oui_db, &mac.to_string()) else {
+                    let mac_str = mac_address.to_string();
+                    let Ok(Some(entry)) = Oui::lookup_by_mac(&oui_db, &mac_str) else {
                         return Err(anyhow!(
-                            "Could find vendor for mac address {} in Oui database",
-                            mac
+                            "Could not find vendor for mac address in Oui database"
                         ));
                     };
 
@@ -905,6 +906,7 @@ mod tests {
     use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback};
     use crate::server::services::r#impl::base::Service;
     use crate::server::services::r#impl::virtualization::ServiceVirtualization;
+    use crate::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
     use crate::tests::{network, organization};
     use uuid::Uuid;
 
@@ -969,6 +971,7 @@ mod tests {
                 discovery_type: DiscoveryType::Network {
                     subnet_ids: None,
                     host_naming_fallback: HostNamingFallback::BestService,
+                    snmp_credentials: SnmpCredentialMapping::default(),
                 },
                 gateway_ips: vec![],
                 endpoint_responses,

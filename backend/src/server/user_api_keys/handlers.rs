@@ -1,3 +1,4 @@
+use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
 use crate::server::shared::extractors::Query;
 use crate::server::shared::storage::traits::Entity;
 use crate::server::{
@@ -12,7 +13,7 @@ use crate::server::{
             query::{FilterQueryExtractor, NoFilterQuery},
             traits::{BulkDeleteResponse, bulk_delete_handler, delete_handler, get_by_id_handler},
         },
-        services::traits::CrudService,
+        services::traits::{CrudService, EventBusService},
         types::api::{
             ApiError, ApiErrorResponse, ApiResponse, ApiResult, EmptyApiResponse,
             PaginatedApiResponse,
@@ -29,9 +30,16 @@ use axum::{
 };
 use axum_client_ip::ClientIp;
 use axum_extra::{TypedHeader, headers::UserAgent};
+use chrono::Utc;
 use std::sync::Arc;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
+
+// Generated handlers for CSV export
+mod generated {
+    use super::*;
+    crate::crud_export_csv_handler!(UserApiKey);
+}
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
@@ -40,13 +48,14 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(update_user_api_key))
         .routes(routes!(rotate_key_handler))
         .routes(routes!(bulk_delete))
+        .routes(routes!(generated::export_csv))
 }
 
 /// Get all user API keys for the current user
 #[utoipa::path(
     get,
     path = "",
-    tag = "user_api_keys",
+    tag = UserApiKey::ENTITY_NAME_PLURAL,
     operation_id = "get_all_user_api_keys",
     params(NoFilterQuery),
     responses(
@@ -100,7 +109,7 @@ pub async fn get_all(
 #[utoipa::path(
     post,
     path = "",
-    tag = "user_api_keys",
+    tag = UserApiKey::ENTITY_NAME_PLURAL,
     operation_id = "create_user_api_key",
     responses(
         (status = 200, description = "API key created", body = ApiResponse<UserApiKeyResponse>),
@@ -121,6 +130,7 @@ pub async fn create_user_api_key(
     let organization_id = auth.require_organization_id()?;
     let user_permissions = auth.require_permissions()?;
     let user_network_ids = auth.network_ids();
+    let entity = auth.entity.clone();
 
     tracing::debug!(
         api_key_name = %api_key.base.name,
@@ -148,7 +158,7 @@ pub async fn create_user_api_key(
 
     let service = &state.services.user_api_key_service;
     let api_key = service
-        .create_with_networks(api_key, network_ids, auth.entity.clone())
+        .create_with_networks(api_key, network_ids, entity.clone())
         .await
         .map_err(|e| {
             tracing::error!(
@@ -158,6 +168,29 @@ pub async fn create_user_api_key(
             );
             ApiError::internal_error(&e.to_string())
         })?;
+
+    // Emit FirstUserApiKeyCreated telemetry event if this is the first user API key
+    let organization = state
+        .services
+        .organization_service
+        .get_by_id(&organization_id)
+        .await?;
+
+    if let Some(organization) = organization
+        && organization.not_onboarded(&TelemetryOperation::FirstUserApiKeyCreated)
+    {
+        service
+            .event_bus()
+            .publish_telemetry(TelemetryEvent {
+                id: Uuid::new_v4(),
+                organization_id,
+                operation: TelemetryOperation::FirstUserApiKeyCreated,
+                timestamp: Utc::now(),
+                metadata: serde_json::json!({}),
+                authentication: entity,
+            })
+            .await?;
+    }
 
     Ok(Json(ApiResponse::success(UserApiKeyResponse {
         key: plaintext,
@@ -169,7 +202,7 @@ pub async fn create_user_api_key(
 #[utoipa::path(
     put,
     path = "/{id}",
-    tag = "user_api_keys",
+    tag = UserApiKey::ENTITY_NAME_PLURAL,
     operation_id = "update_user_api_key",
     params(("id" = Uuid, Path, description = "API key ID")),
     responses(
@@ -236,7 +269,7 @@ pub async fn update_user_api_key(
 #[utoipa::path(
     post,
     path = "/{id}/rotate",
-    tag = "user_api_keys",
+    tag = UserApiKey::ENTITY_NAME_PLURAL,
     operation_id = "rotate_user_api_key",
     params(("id" = Uuid, Path, description = "API key ID")),
     responses(
@@ -279,7 +312,7 @@ pub async fn rotate_key_handler(
 #[utoipa::path(
     get,
     path = "/{id}",
-    tag = "user_api_keys",
+    tag = UserApiKey::ENTITY_NAME_PLURAL,
     operation_id = "get_user_api_key_by_id",
     params(("id" = Uuid, Path, description = "API key ID")),
     responses(
@@ -313,7 +346,7 @@ pub async fn get_by_id(
 #[utoipa::path(
     delete,
     path = "/{id}",
-    tag = "user_api_keys",
+    tag = UserApiKey::ENTITY_NAME_PLURAL,
     operation_id = "delete_user_api_key",
     params(("id" = Uuid, Path, description = "API key ID")),
     responses(
@@ -348,7 +381,7 @@ pub async fn delete(
 #[utoipa::path(
     post,
     path = "/bulk-delete",
-    tag = "user_api_keys",
+    tag = UserApiKey::ENTITY_NAME_PLURAL,
     operation_id = "bulk_delete_user_api_keys",
     request_body(content = Vec<Uuid>, description = "Array of API key IDs to delete"),
     responses(

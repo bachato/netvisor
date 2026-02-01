@@ -13,7 +13,7 @@ pub fn create_router() -> Router<Arc<DaemonAppState>> {
         .route("/cancel", post(handle_cancel_request))
 }
 
-async fn handle_discovery_request(
+pub async fn handle_discovery_request(
     State(state): State<Arc<DaemonAppState>>,
     Json(request): Json<DaemonDiscoveryRequest>,
 ) -> ApiResult<Json<ApiResponse<DaemonDiscoveryResponse>>> {
@@ -24,18 +24,18 @@ async fn handle_discovery_request(
         request.session_id
     );
 
-    state
-        .services
-        .discovery_manager
-        .initiate_session(request)
-        .await;
+    let manager = &state.services.discovery_manager;
+
+    if !manager.try_initiate_session(request).await {
+        return Err(ApiError::conflict("Discovery session already in progress"));
+    }
 
     Ok(Json(ApiResponse::success(DaemonDiscoveryResponse {
         session_id,
     })))
 }
 
-async fn handle_cancel_request(
+pub async fn handle_cancel_request(
     State(state): State<Arc<DaemonAppState>>,
     Json(session_id): Json<Uuid>,
 ) -> ApiResult<Json<ApiResponse<Uuid>>> {

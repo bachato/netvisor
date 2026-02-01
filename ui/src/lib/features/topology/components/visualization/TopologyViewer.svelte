@@ -6,14 +6,16 @@
 		selectedNode,
 		selectedTopologyId,
 		useTopologiesQuery,
-		useUpdateTopologyMutation
+		useUpdateNodePositionMutation,
+		useUpdateEdgeHandlesMutation
 	} from '../../queries';
 	import { type EdgeHandle, type TopologyEdge } from '../../types/base';
 	import BaseTopologyViewer from './BaseTopologyViewer.svelte';
 
 	// TanStack Query hooks
 	const topologiesQuery = useTopologiesQuery();
-	const updateTopologyMutation = useUpdateTopologyMutation();
+	const updateNodePositionMutation = useUpdateNodePositionMutation();
+	const updateEdgeHandlesMutation = useUpdateEdgeHandlesMutation();
 
 	// Derived topology from query data
 	let topologiesData = $derived(topologiesQuery.data ?? []);
@@ -33,9 +35,16 @@
 		if (!topology) return;
 		let movedNode = topology.nodes.find((node) => node.id == targetNode?.id);
 		if (movedNode && targetNode && targetNode.position) {
+			// Update local state for immediate feedback
 			movedNode.position.x = targetNode.position.x;
 			movedNode.position.y = targetNode.position.y;
-			await updateTopologyMutation.mutateAsync(topology);
+			// Send lightweight update to server (fixes HTTP 413 for large topologies)
+			await updateNodePositionMutation.mutateAsync({
+				topologyId: topology.id,
+				networkId: topology.network_id,
+				nodeId: movedNode.id,
+				position: { x: targetNode.position.x, y: targetNode.position.y }
+			});
 		}
 	}
 
@@ -52,13 +61,17 @@
 				newConnection.sourceHandle &&
 				newConnection.targetHandle
 			) {
+				// Update local state for immediate feedback
 				topologyEdge.source_handle = newConnection.sourceHandle as EdgeHandle;
 				topologyEdge.target_handle = newConnection.targetHandle as EdgeHandle;
-				const updatedTopology = {
-					...topology,
-					edges: [...topology.edges]
-				};
-				await updateTopologyMutation.mutateAsync(updatedTopology);
+				// Send lightweight update to server (fixes HTTP 413 for large topologies)
+				await updateEdgeHandlesMutation.mutateAsync({
+					topologyId: topology.id,
+					networkId: topology.network_id,
+					edgeId: topologyEdge.id,
+					sourceHandle: newConnection.sourceHandle as 'Top' | 'Bottom' | 'Left' | 'Right',
+					targetHandle: newConnection.targetHandle as 'Top' | 'Bottom' | 'Left' | 'Right'
+				});
 			}
 		}
 	}

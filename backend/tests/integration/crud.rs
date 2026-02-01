@@ -3,6 +3,8 @@ use cidr::{IpCidr, Ipv4Cidr};
 use reqwest::StatusCode;
 use scanopy::server::daemon_api_keys::r#impl::api::DaemonApiKeyResponse;
 use scanopy::server::daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase};
+use scanopy::server::discovery::r#impl::base::{Discovery, DiscoveryBase};
+use scanopy::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback, RunType};
 use scanopy::server::groups::r#impl::base::{Group, GroupBase};
 use scanopy::server::groups::r#impl::types::GroupType;
 use scanopy::server::hosts::r#impl::api::{CreateHostRequest, HostResponse, UpdateHostRequest};
@@ -11,6 +13,10 @@ use scanopy::server::services::r#impl::base::{Service, ServiceBase};
 use scanopy::server::shared::storage::traits::Storable;
 use scanopy::server::shared::types::Color;
 use scanopy::server::shared::types::entities::EntitySource;
+use scanopy::server::snmp_credentials::r#impl::base::{
+    SnmpCredential, SnmpCredentialBase, SnmpVersion,
+};
+use scanopy::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
 use scanopy::server::subnets::r#impl::base::{Subnet, SubnetBase};
 use scanopy::server::subnets::r#impl::types::SubnetType;
 use scanopy::server::tags::r#impl::base::{Tag, TagBase};
@@ -19,6 +25,7 @@ use scanopy::server::user_api_keys::r#impl::api::UserApiKeyResponse;
 use scanopy::server::user_api_keys::r#impl::base::{UserApiKey, UserApiKeyBase};
 use scanopy::server::users::r#impl::base::{User, UserBase};
 use scanopy::server::users::r#impl::permissions::UserOrgPermissions;
+use secrecy::SecretString;
 use std::net::Ipv4Addr;
 use uuid::Uuid;
 
@@ -30,6 +37,8 @@ pub async fn run_crud_tests(ctx: &TestContext) -> Result<(), String> {
     test_service_crud(ctx).await?;
     test_group_crud(ctx).await?;
     test_tag_crud(ctx).await?;
+    test_snmp_credential_crud(ctx).await?;
+    test_discovery_crud(ctx).await?;
     test_api_key_crud(ctx).await?;
     test_user_api_key_crud(ctx).await?;
     test_user_api_key_authentication(ctx).await?;
@@ -111,9 +120,18 @@ async fn test_host_crud(ctx: &TestContext) -> Result<(), String> {
         virtualization: None,
         hidden: false,
         tags: Vec::new(),
+        // SNMP fields
+        sys_descr: None,
+        sys_object_id: None,
+        sys_location: None,
+        sys_contact: None,
+        management_url: None,
+        chassis_id: None,
+        snmp_credential_id: None,
         interfaces: vec![],
         ports: vec![],
         services: vec![],
+        if_entries: vec![],
     };
 
     let created: HostResponse = ctx.client.post("/api/v1/hosts", &request).await?;
@@ -172,9 +190,18 @@ async fn test_service_crud(ctx: &TestContext) -> Result<(), String> {
         virtualization: None,
         hidden: false,
         tags: Vec::new(),
+        // SNMP fields
+        sys_descr: None,
+        sys_object_id: None,
+        sys_location: None,
+        sys_contact: None,
+        management_url: None,
+        chassis_id: None,
+        snmp_credential_id: None,
         interfaces: vec![],
         ports: vec![],
         services: vec![],
+        if_entries: vec![],
     };
     let created_host: HostResponse = ctx.client.post("/api/v1/hosts", &host_request).await?;
 
@@ -321,6 +348,143 @@ async fn test_tag_crud(ctx: &TestContext) -> Result<(), String> {
     Ok(())
 }
 
+async fn test_snmp_credential_crud(ctx: &TestContext) -> Result<(), String> {
+    println!("Testing SNMP Credential CRUD...");
+
+    let credential = SnmpCredential::new(SnmpCredentialBase {
+        organization_id: ctx.organization_id,
+        name: "Test SNMP Credential".to_string(),
+        version: SnmpVersion::V2c,
+        community: SecretString::from("test-community"),
+        tags: Vec::new(),
+    });
+
+    let created: SnmpCredential = ctx
+        .client
+        .post("/api/v1/snmp-credentials", &credential)
+        .await?;
+    assert!(!created.id.is_nil());
+    assert_eq!(created.base.name, "Test SNMP Credential");
+    assert_eq!(created.base.version, SnmpVersion::V2c);
+    println!("  ✓ Create SNMP credential");
+
+    let fetched: SnmpCredential = ctx
+        .client
+        .get(&format!("/api/v1/snmp-credentials/{}", created.id))
+        .await?;
+    assert_eq!(fetched.id, created.id);
+    println!("  ✓ Read SNMP credential");
+
+    let mut updated = fetched.clone();
+    updated.base.name = "Updated SNMP Credential".to_string();
+    let updated: SnmpCredential = ctx
+        .client
+        .put(
+            &format!("/api/v1/snmp-credentials/{}", updated.id),
+            &updated,
+        )
+        .await?;
+    assert_eq!(updated.base.name, "Updated SNMP Credential");
+    println!("  ✓ Update SNMP credential");
+
+    let credentials: Vec<SnmpCredential> = ctx.client.get("/api/v1/snmp-credentials").await?;
+    assert!(credentials.iter().any(|c| c.id == created.id));
+    println!("  ✓ List SNMP credentials");
+
+    ctx.client
+        .delete_no_content(&format!("/api/v1/snmp-credentials/{}", created.id))
+        .await?;
+    println!("  ✓ Delete SNMP credential");
+
+    let result = ctx
+        .client
+        .get_expect_status(
+            &format!("/api/v1/snmp-credentials/{}", created.id),
+            StatusCode::NOT_FOUND,
+        )
+        .await;
+    assert!(result.is_ok(), "Deleted SNMP credential should return 404");
+    println!("  ✓ Verify deletion");
+
+    println!("✅ SNMP Credential CRUD passed");
+    Ok(())
+}
+
+async fn test_discovery_crud(ctx: &TestContext) -> Result<(), String> {
+    println!("Testing Discovery CRUD...");
+
+    // First, we need a daemon to associate with the discovery
+    // Use the DaemonPoll daemon that already exists from the integration test setup
+    let daemons: Vec<serde_json::Value> = ctx.client.get("/api/v1/daemons").await?;
+    let daemon_id = daemons
+        .first()
+        .and_then(|d| d.get("id"))
+        .and_then(|id| id.as_str())
+        .and_then(|s| Uuid::parse_str(s).ok())
+        .ok_or("No daemon found for discovery test")?;
+
+    let discovery = Discovery {
+        id: Uuid::nil(), // Server assigns ID
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+        base: DiscoveryBase {
+            discovery_type: DiscoveryType::Network {
+                subnet_ids: None,
+                host_naming_fallback: HostNamingFallback::BestService,
+                snmp_credentials: SnmpCredentialMapping::default(),
+            },
+            run_type: RunType::AdHoc { last_run: None },
+            name: "CRUD Test Discovery".to_string(),
+            daemon_id,
+            network_id: ctx.network_id,
+            tags: vec![],
+        },
+    };
+
+    let created: Discovery = ctx.client.post("/api/v1/discovery", &discovery).await?;
+    assert!(!created.id.is_nil());
+    assert_eq!(created.base.name, "CRUD Test Discovery");
+    println!("  ✓ Create discovery");
+
+    let fetched: Discovery = ctx
+        .client
+        .get(&format!("/api/v1/discovery/{}", created.id))
+        .await?;
+    assert_eq!(fetched.id, created.id);
+    println!("  ✓ Read discovery");
+
+    let mut updated = fetched.clone();
+    updated.base.name = "Updated Discovery".to_string();
+    let updated: Discovery = ctx
+        .client
+        .put(&format!("/api/v1/discovery/{}", updated.id), &updated)
+        .await?;
+    assert_eq!(updated.base.name, "Updated Discovery");
+    println!("  ✓ Update discovery");
+
+    let discoveries: Vec<Discovery> = ctx.client.get("/api/v1/discovery").await?;
+    assert!(discoveries.iter().any(|d| d.id == created.id));
+    println!("  ✓ List discoveries");
+
+    ctx.client
+        .delete_no_content(&format!("/api/v1/discovery/{}", created.id))
+        .await?;
+    println!("  ✓ Delete discovery");
+
+    let result = ctx
+        .client
+        .get_expect_status(
+            &format!("/api/v1/discovery/{}", created.id),
+            StatusCode::NOT_FOUND,
+        )
+        .await;
+    assert!(result.is_ok(), "Deleted discovery should return 404");
+    println!("  ✓ Verify deletion");
+
+    println!("✅ Discovery CRUD passed");
+    Ok(())
+}
+
 async fn test_api_key_crud(ctx: &TestContext) -> Result<(), String> {
     println!("Testing Daemon API Key CRUD...");
 
@@ -332,6 +496,7 @@ async fn test_api_key_crud(ctx: &TestContext) -> Result<(), String> {
         network_id: ctx.network_id,
         is_enabled: true,
         tags: Vec::new(),
+        plaintext: None,
     });
 
     // Daemon API keys are now at /api/v1/auth/daemon

@@ -18,6 +18,7 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
+	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import {
 		common_duration,
 		common_unknown,
@@ -80,6 +81,11 @@
 		}
 	}
 
+	// CSV export handler
+	async function handleCsvExport() {
+		await downloadCsv('Discovery', {});
+	}
+
 	let fields: FieldConfig<Discovery>[] = $derived([
 		...discoveryFields(daemonsData),
 		{
@@ -138,6 +144,7 @@
 			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
 			storageKey="scanopy-discovery-historical-table-state"
 			getItemId={(item) => item.id}
+			onCsvExport={handleCsvExport}
 		>
 			{#snippet children(
 				item: Discovery,

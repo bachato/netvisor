@@ -19,14 +19,11 @@ export type { Port };
 export function usePortsQuery() {
 	return createQuery(() => ({
 		queryKey: queryKeys.ports.all,
-		queryFn: async () => {
-			// Ports are populated by hosts query, return empty if not yet populated
-			return [] as Port[];
-		},
-		// Don't refetch - data comes from hosts query
+		initialData: [] as Port[],
 		staleTime: Infinity,
 		refetchOnMount: false,
-		refetchOnWindowFocus: false
+		refetchOnWindowFocus: false,
+		enabled: false
 	}));
 }
 

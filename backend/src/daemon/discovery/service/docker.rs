@@ -9,6 +9,7 @@ use bollard::{
 use cidr::IpCidr;
 use futures::future::try_join_all;
 use futures::stream::{self, StreamExt};
+use mac_address::MacAddress;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -47,7 +48,6 @@ use crate::{
         ports::r#impl::base::PortType,
     },
 };
-use mac_address::MacAddress;
 use uuid::Uuid;
 
 type IpPortHashMap = HashMap<IpAddr, Vec<PortType>>;
@@ -106,10 +106,10 @@ impl RunsDiscovery for DiscoveryRunner<DockerScanDiscovery> {
         self.start_discovery(request).await?;
 
         // Get and create docker and host subnets
-        let subnets = self.discover_create_subnets().await?;
+        let subnets = self.discover_create_subnets(&cancel).await?;
 
         // Get host interfaces (needed for docker daemon service host matching)
-        let interface_filter = self.as_ref().config_store.get_interface_filter().await?;
+        let interface_filter = self.as_ref().config_store.get_interfaces().await?;
         let (mut host_interfaces, _, _) = self
             .as_ref()
             .utils
@@ -132,7 +132,9 @@ impl RunsDiscovery for DiscoveryRunner<DockerScanDiscovery> {
         }
 
         // Create service for docker daemon (pass interfaces for proper host matching)
-        let (_, services) = self.create_docker_daemon_service(&host_interfaces).await?;
+        let (_, services) = self
+            .create_docker_daemon_service(&host_interfaces, &cancel)
+            .await?;
 
         let docker_daemon_service = services
             .first()
@@ -220,7 +222,10 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
         Ok(gateway_ips)
     }
 
-    async fn discover_create_subnets(&self) -> Result<Vec<Subnet>, Error> {
+    async fn discover_create_subnets(
+        &self,
+        cancel: &CancellationToken,
+    ) -> Result<Vec<Subnet>, Error> {
         let daemon_id = self.as_ref().config_store.get_id().await?;
 
         let network_id = self
@@ -230,7 +235,7 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
             .await?
             .ok_or_else(|| anyhow::anyhow!("Network ID not set"))?;
 
-        let interface_filter = self.as_ref().config_store.get_interface_filter().await?;
+        let interface_filter = self.as_ref().config_store.get_interfaces().await?;
         let (_, host_subnets, _) = self
             .as_ref()
             .utils
@@ -267,7 +272,9 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
 
         let subnets: Vec<Subnet> = [host_subnets, filtered_docker_subnets].concat();
 
-        let subnet_futures = subnets.iter().map(|subnet| self.create_subnet(subnet));
+        let subnet_futures = subnets
+            .iter()
+            .map(|subnet| self.create_subnet(subnet, cancel));
         let subnets = try_join_all(subnet_futures).await?;
 
         Ok(subnets)
@@ -280,6 +287,7 @@ impl DiscoveryRunner<DockerScanDiscovery> {
     pub async fn create_docker_daemon_service(
         &self,
         host_interfaces: &[Interface],
+        cancel: &CancellationToken,
     ) -> Result<(Host, Vec<Service>), Error> {
         let daemon_id = self.as_ref().config_store.get_id().await?;
         let network_id = self
@@ -322,6 +330,14 @@ impl DiscoveryRunner<DockerScanDiscovery> {
             virtualization: None,
             hidden: false,
             tags: Vec::new(),
+            // SNMP fields - not applicable to docker discovery
+            sys_descr: None,
+            sys_object_id: None,
+            sys_location: None,
+            sys_contact: None,
+            management_url: None,
+            chassis_id: None,
+            snmp_credential_id: None,
         });
         temp_docker_daemon_host.id = self.domain.host_id;
 
@@ -332,6 +348,8 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                 host_interfaces.to_vec(),
                 vec![], // No ports for docker daemon host
                 vec![docker_service],
+                vec![], // No SNMP if_entries for docker discovery
+                cancel,
             )
             .await?;
 
@@ -481,7 +499,18 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                 .filter_map(|v| PortType::from_str(v).ok())
                 .collect();
 
-            let port_scan_batch_size = self.as_ref().utils.get_optimal_port_batch_size().await?;
+            // Get FD-safe batch size for single container scanning
+            let port_batch_config = self
+                .as_ref()
+                .config_store
+                .get_port_scan_batch_size()
+                .await?;
+            let scan_params = self
+                .as_ref()
+                .utils
+                .get_optimal_concurrent_scans(1, port_batch_config)
+                .await?;
+            let port_scan_batch_size = scan_params.port_batch_size;
 
             // Scan ports and any endpoints that match open ports
             let endpoint_responses = tokio::spawn(scan_endpoints(
@@ -523,8 +552,9 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                 {
                     host.id = self.domain.host_id;
 
-                    if let Ok(host_response) =
-                        self.create_host(host, interfaces, ports, services).await
+                    if let Ok(host_response) = self
+                        .create_host(host, interfaces, ports, services, vec![], cancel)
+                        .await
                     {
                         return Ok::<Option<(Host, Vec<Service>)>, Error>(Some((
                             host_response.to_host(),
@@ -780,7 +810,7 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                 });
 
                 if let Ok(host_response) = self
-                    .create_host(host, interfaces, ports, services.clone())
+                    .create_host(host, interfaces, ports, services.clone(), vec![], cancel)
                     .await
                 {
                     return Ok::<Option<(Host, Vec<Service>)>, Error>(Some((
@@ -1186,13 +1216,11 @@ impl DiscoveryRunner<DockerScanDiscovery> {
                                             .iter()
                                             .find(|s| s.base.cidr.contains(&ip_address))
                                     {
-                                        // Parse MAC address
-                                        let mac_address =
-                                            if let Some(mac_string) = &endpoint.mac_address {
-                                                mac_string.parse::<MacAddress>().ok()
-                                            } else {
-                                                None
-                                            };
+                                        // Parse MAC address from Docker network endpoint
+                                        let mac_address = endpoint
+                                            .mac_address
+                                            .as_ref()
+                                            .and_then(|mac_str| mac_str.parse::<MacAddress>().ok());
 
                                         return Some((
                                             Interface::new(InterfaceBase {

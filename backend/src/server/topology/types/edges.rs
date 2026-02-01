@@ -16,6 +16,16 @@ use strum_macros::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+/// Protocol that discovered the physical link between network devices
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Hash, Default, ToSchema)]
+pub enum DiscoveryProtocol {
+    /// Link Layer Discovery Protocol (IEEE 802.1AB)
+    #[default]
+    LLDP,
+    /// Cisco Discovery Protocol (Cisco proprietary)
+    CDP,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, ToSchema)]
 pub struct Edge {
     pub id: Uuid,
@@ -282,6 +292,12 @@ pub enum EdgeType {
         source_binding_id: Uuid,
         target_binding_id: Uuid,
     },
+    /// Physical link discovered via LLDP/CDP neighbor discovery
+    PhysicalLink {
+        source_if_entry_id: Uuid,
+        target_if_entry_id: Uuid,
+        protocol: DiscoveryProtocol,
+    },
 }
 
 impl HasId for EdgeType {
@@ -298,6 +314,7 @@ impl EntityMetadataProvider for EdgeType {
             EdgeType::Interface { .. } => EntityDiscriminants::Host.color(),
             EdgeType::HostVirtualization { .. } => Concept::Virtualization.color(),
             EdgeType::ServiceVirtualization { .. } => Concept::Virtualization.color(),
+            EdgeType::PhysicalLink { .. } => EntityDiscriminants::IfEntry.color(),
         }
     }
 
@@ -308,6 +325,7 @@ impl EntityMetadataProvider for EdgeType {
             EdgeType::Interface { .. } => EntityDiscriminants::Host.icon(),
             EdgeType::HostVirtualization { .. } => Concept::Virtualization.icon(),
             EdgeType::ServiceVirtualization { .. } => Concept::Virtualization.icon(),
+            EdgeType::PhysicalLink { .. } => EntityDiscriminants::IfEntry.icon(),
         }
     }
 }
@@ -320,6 +338,7 @@ impl TypeMetadataProvider for EdgeType {
             EdgeType::Interface { .. } => "Host Interface",
             EdgeType::HostVirtualization { .. } => "Virtualized Host",
             EdgeType::ServiceVirtualization { .. } => "Virtualized Service",
+            EdgeType::PhysicalLink { .. } => "Physical Link",
         }
     }
 
@@ -330,6 +349,7 @@ impl TypeMetadataProvider for EdgeType {
             EdgeType::Interface { .. } => EdgeStyle::SmoothStep.into(),
             EdgeType::HostVirtualization { .. } => EdgeStyle::Straight.into(),
             EdgeType::ServiceVirtualization { .. } => EdgeStyle::SmoothStep.into(),
+            EdgeType::PhysicalLink { .. } => EdgeStyle::SmoothStep.into(),
         };
 
         let is_dashed = match &self {
@@ -338,6 +358,7 @@ impl TypeMetadataProvider for EdgeType {
             EdgeType::Interface { .. } => true,
             EdgeType::HostVirtualization { .. } => true,
             EdgeType::ServiceVirtualization { .. } => true,
+            EdgeType::PhysicalLink { .. } => false, // Solid line for physical links
         };
 
         let has_start_marker = false;
@@ -348,6 +369,7 @@ impl TypeMetadataProvider for EdgeType {
             EdgeType::Interface { .. } => false,
             EdgeType::HostVirtualization { .. } => false,
             EdgeType::ServiceVirtualization { .. } => false,
+            EdgeType::PhysicalLink { .. } => false, // No markers - bidirectional link
         };
 
         let is_host_edge = matches!(
@@ -358,6 +380,7 @@ impl TypeMetadataProvider for EdgeType {
             self,
             EdgeType::RequestPath { .. } | EdgeType::HubAndSpoke { .. }
         );
+        let is_physical_edge = matches!(self, EdgeType::PhysicalLink { .. });
 
         serde_json::json!({
             "is_dashed": is_dashed,
@@ -365,7 +388,8 @@ impl TypeMetadataProvider for EdgeType {
             "has_end_marker": has_end_marker,
             "edge_style": edge_style,
             "is_host_edge": is_host_edge,
-            "is_group_edge": is_group_edge
+            "is_group_edge": is_group_edge,
+            "is_physical_edge": is_physical_edge
         })
     }
 }

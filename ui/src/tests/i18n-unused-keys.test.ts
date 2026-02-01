@@ -13,7 +13,38 @@ const DYNAMIC_KEY_PREFIXES = [
 // Keys that are allowed to have duplicate values (intentionally same or context-specific)
 const ALLOWED_DUPLICATE_KEYS = new Set([
 	// errors_ keys are accessed dynamically, so duplicates with other keys are acceptable
-	'errors_auth_password_invalid'
+	'errors_auth_password_invalid',
+	// SNMP status labels - "Testing" appears in both admin and oper status contexts
+	// These may need different translations in some languages
+	'snmp_adminStatusTesting',
+	'snmp_operStatusTesting',
+	// System Description - used in both LLDP neighbor info and SNMP system info contexts
+	// These may need different translations in some languages
+	'hosts_ifEntries_lldpSysDescr',
+	'hosts_snmp_sysDescr',
+	// Chassis ID - used in both ifEntry LLDP info and SNMP system info contexts
+	// These may need different translations in some languages
+	'hosts_ifEntries_chassisId',
+	'hosts_snmp_chassisId'
+]);
+
+// Keys that are allowed to be single-word without common_ prefix (context-specific technical terms)
+const ALLOWED_SINGLE_WORD_KEYS = new Set([
+	// SNMP protocol versions - technical terms specific to SNMP
+	'snmp_versionV2c',
+	'snmp_versionV2cShort',
+	// SNMP status labels - context-specific status values that may need different translations than generic terms
+	'snmp_adminStatusTesting',
+	'snmp_operStatusUp',
+	'snmp_operStatusDown',
+	'snmp_operStatusTesting',
+	'snmp_operStatusDormant',
+	// SNMP placeholders - context-specific defaults
+	'snmp_communityStringPlaceholder',
+	// Tab names - context-specific to their feature
+	'hosts_editor_snmpTab',
+	// LLDP/CDP neighbor context - specific to network discovery protocol terminology
+	'hosts_ifEntries_neighbor'
 ]);
 
 function findFilesRecursively(dir: string, extensions: string[]): string[] {
@@ -144,6 +175,7 @@ describe('i18n', () => {
 			if (typeof value !== 'string') continue;
 			if (key.startsWith('common_')) continue;
 			if (isDynamicKey(key)) continue;
+			if (ALLOWED_SINGLE_WORD_KEYS.has(key)) continue;
 
 			// Single-word: no spaces and no parameter placeholders
 			const isSingleWord = !value.includes(' ') && !value.includes('{');

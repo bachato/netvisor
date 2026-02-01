@@ -21,6 +21,11 @@ export type PortInput = components['schemas']['PortInput'];
 export type ServiceInput = components['schemas']['ServiceInput'];
 export type BindingInput = components['schemas']['BindingInput'];
 
+// SNMP types
+export type IfEntry = components['schemas']['IfEntry'];
+export type IfAdminStatus = components['schemas']['IfAdminStatus'];
+export type IfOperStatus = components['schemas']['IfOperStatus'];
+
 // Form state type for creating/editing hosts
 // Includes children arrays for form editing - distinct from HostResponse (API response type)
 export interface HostFormData {
@@ -36,10 +41,25 @@ export interface HostFormData {
 	virtualization: HostVirtualization | null;
 	hidden: boolean;
 	tags: string[];
+
+	// SNMP fields (populated by discovery, read-only in UI)
+	sys_descr: string | null;
+	sys_object_id: string | null;
+	sys_location: string | null;
+	sys_contact: string | null;
+	management_url: string | null;
+	chassis_id: string | null;
+
+	// SNMP credential override (user-editable)
+	snmp_credential_id: string | null;
+
 	// Children for form editing (managed separately from host in stores)
 	interfaces: Interface[];
 	ports: Port[];
 	services: Service[];
+
+	// IfEntry list (populated by discovery, read-only)
+	if_entries: IfEntry[];
 }
 
 // Request type for creating a host (needs form data with children)

@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::server::shared::{
     entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants},
+    entity_metadata::EntityCategory,
     storage::traits::{Entity, SqlValue, Storable},
 };
 use chrono::{DateTime, Utc};
@@ -11,6 +12,21 @@ use sqlx::postgres::PgRow;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
+
+/// CSV row representation for Share export (excludes password_hash)
+#[derive(Serialize)]
+pub struct ShareCsvRow {
+    pub id: Uuid,
+    pub name: String,
+    pub topology_id: Uuid,
+    pub network_id: Uuid,
+    pub created_by: Uuid,
+    pub is_enabled: bool,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub has_password: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 /// Share display options
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ToSchema)]
@@ -204,16 +220,34 @@ impl Storable for Share {
 }
 
 impl Entity for Share {
+    type CsvRow = ShareCsvRow;
+
+    fn to_csv_row(&self) -> Self::CsvRow {
+        ShareCsvRow {
+            id: self.id,
+            name: self.base.name.clone(),
+            topology_id: self.base.topology_id,
+            network_id: self.base.network_id,
+            created_by: self.base.created_by,
+            is_enabled: self.base.is_enabled,
+            expires_at: self.base.expires_at,
+            has_password: self.requires_password(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
     fn entity_type() -> EntityDiscriminants {
         EntityDiscriminants::Share
     }
 
-    fn entity_name_singular() -> &'static str {
-        "share"
-    }
+    const ENTITY_NAME_SINGULAR: &'static str = "Share";
+    const ENTITY_NAME_PLURAL: &'static str = "Shares";
+    const ENTITY_DESCRIPTION: &'static str =
+        "Shared network views. Create read-only shareable links to your network topology.";
 
-    fn entity_name_plural() -> &'static str {
-        "shares"
+    fn entity_category() -> EntityCategory {
+        EntityCategory::Visualization
     }
 
     fn network_id(&self) -> Option<Uuid> {

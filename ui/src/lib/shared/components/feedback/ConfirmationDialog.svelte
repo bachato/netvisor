@@ -17,6 +17,8 @@
 	export let variant: 'danger' | 'warning' | 'info' = 'warning';
 	export let onConfirm: () => void;
 	export let onCancel: () => void;
+	/** Called when modal is dismissed via X or backdrop click. Required - should close the modal without side effects. */
+	export let onClose: () => void;
 
 	$: resolvedTitle = title ?? common_confirmAction();
 	$: resolvedMessage = message ?? common_areYouSure();
@@ -42,10 +44,12 @@
 	};
 </script>
 
-<GenericModal {isOpen} title={resolvedTitle} onClose={onCancel} size="sm">
-	<div class="space-y-4">
+<GenericModal {isOpen} title={resolvedTitle} {onClose} size="sm">
+	{#snippet headerIcon()}
+		<AlertTriangle class="h-5 w-5 flex-shrink-0 {iconColors[variant]}" />
+	{/snippet}
+	<div class="space-y-4 p-6">
 		<div class="flex items-start gap-3">
-			<AlertTriangle class="h-5 w-5 flex-shrink-0 {iconColors[variant]}" />
 			<p class="text-secondary text-sm">{resolvedMessage}</p>
 		</div>
 

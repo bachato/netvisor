@@ -4,16 +4,19 @@ use std::{
         Arc,
         atomic::{AtomicU8, AtomicU64, Ordering},
     },
+    time::Duration,
 };
 
 use crate::{
     daemon::{
-        discovery::{manager::DaemonDiscoverySessionManager, types::base::DiscoveryCriticalError},
+        discovery::{
+            buffer::EntityBuffer, manager::DaemonDiscoverySessionManager,
+            types::base::DiscoveryCriticalError,
+        },
         shared::api_client::DaemonApiClient,
     },
     server::{
         discovery::r#impl::types::{DiscoveryType, HostNamingFallback},
-        groups::r#impl::base::Group,
         services::{
             definitions::{docker_container::DockerContainer, open_ports::OpenPorts},
             r#impl::{
@@ -30,6 +33,7 @@ use crate::{
 };
 use anyhow::{Error, anyhow};
 use async_trait::async_trait;
+use backon::{ExponentialBuilder, Retryable};
 use chrono::Utc;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
@@ -43,11 +47,15 @@ use crate::{
         utils::base::{PlatformDaemonUtils, create_system_utils},
     },
     server::{
-        daemons::r#impl::api::{DaemonDiscoveryRequest, DiscoveryUpdatePayload},
+        daemons::r#impl::{
+            api::{DaemonDiscoveryRequest, DiscoveryUpdatePayload},
+            base::DaemonMode,
+        },
         hosts::r#impl::{
             api::{DiscoveryHostRequest, HostResponse},
             base::{Host, HostBase},
         },
+        if_entries::r#impl::base::IfEntry,
         interfaces::r#impl::base::Interface,
         ports::r#impl::base::{Port, PortType},
         services::{
@@ -112,15 +120,23 @@ pub struct DaemonDiscoveryService {
     pub api_client: Arc<DaemonApiClient>,
     pub utils: PlatformDaemonUtils,
     pub current_session: Arc<RwLock<Option<DiscoverySession>>>,
+    pub entity_buffer: Arc<EntityBuffer>,
+    /// Stores the terminal state (Complete/Failed/Cancelled) for ServerPoll mode.
+    /// In ServerPoll mode, the server polls for progress updates. If the session ends
+    /// between polls, we need to retain the terminal state so the server can receive it.
+    /// This is cleared when a new session starts.
+    pub terminal_payload: Arc<RwLock<Option<DiscoveryUpdatePayload>>>,
 }
 
 impl DaemonDiscoveryService {
-    pub fn new(config_store: Arc<ConfigStore>) -> Self {
+    pub fn new(config_store: Arc<ConfigStore>, entity_buffer: Arc<EntityBuffer>) -> Self {
         Self {
             api_client: Arc::new(DaemonApiClient::new(config_store.clone())),
             config_store,
             utils: create_system_utils(),
             current_session: Arc::new(RwLock::new(None)),
+            entity_buffer,
+            terminal_payload: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -231,7 +247,10 @@ pub trait DiscoversNetworkedEntities:
 {
     async fn get_gateway_ips(&self) -> Result<Vec<IpAddr>, Error>;
 
-    async fn discover_create_subnets(&self) -> Result<Vec<Subnet>, Error>;
+    async fn discover_create_subnets(
+        &self,
+        cancel: &CancellationToken,
+    ) -> Result<Vec<Subnet>, Error>;
 
     async fn initialize_discovery_session(
         &self,
@@ -256,9 +275,15 @@ pub trait DiscoversNetworkedEntities:
             network_id,
             daemon_id,
             started_at: Some(Utc::now()),
+            discovery_type: request.discovery_type.clone(),
         };
 
         let session = DiscoverySession::new(session_info, gateway_ips);
+
+        // Clear terminal payload from previous session (if any) when starting new session
+        let mut terminal_payload = self.as_ref().terminal_payload.write().await;
+        *terminal_payload = None;
+        drop(terminal_payload);
 
         let mut current_session = self.as_ref().current_session.write().await;
         *current_session = Some(session);
@@ -309,20 +334,20 @@ pub trait DiscoversNetworkedEntities:
             .last_progress
             .load(std::sync::atomic::Ordering::Relaxed);
 
-        match &discovery_result {
+        // Build the terminal update based on result
+        let terminal_update = match &discovery_result {
             Ok(_) => {
                 tracing::info!(
                     session_id = %session_id,
                     progress = 100,
                     "Discovery session completed successfully"
                 );
-                self.report_discovery_update(DiscoverySessionUpdate {
+                DiscoverySessionUpdate {
                     phase: DiscoveryPhase::Complete,
                     progress: 100,
                     error: None,
                     finished_at: Some(Utc::now()),
-                })
-                .await?;
+                }
             }
             Err(_) if cancel.is_cancelled() => {
                 tracing::warn!(
@@ -330,13 +355,12 @@ pub trait DiscoversNetworkedEntities:
                     progress = %final_progress,
                     "Discovery session cancelled"
                 );
-                self.report_discovery_update(DiscoverySessionUpdate {
+                DiscoverySessionUpdate {
                     phase: DiscoveryPhase::Cancelled,
                     progress: final_progress,
                     error: None,
                     finished_at: Some(Utc::now()),
-                })
-                .await?;
+                }
             }
             Err(e) => {
                 tracing::error!(
@@ -350,16 +374,35 @@ pub trait DiscoversNetworkedEntities:
                     .map(|e| e.to_string())
                     .unwrap_or(format!("Critical error: {}", e));
 
-                self.report_discovery_update(DiscoverySessionUpdate {
+                cancel.cancel();
+                DiscoverySessionUpdate {
                     phase: DiscoveryPhase::Failed,
                     progress: final_progress,
                     error: Some(error),
                     finished_at: Some(Utc::now()),
-                })
-                .await?;
-                cancel.cancel();
+                }
             }
-        }
+        };
+
+        // Report the terminal update (in DaemonPoll mode, this POSTs to server)
+        self.report_discovery_update(terminal_update.clone())
+            .await?;
+
+        // Store terminal payload for ServerPoll mode - the server polls for progress
+        // and needs to receive the terminal state even after current_session is cleared.
+        // This payload persists until a new session starts.
+        let terminal_payload = DiscoveryUpdatePayload::from_state_and_update(
+            self.discovery_type(),
+            session.info.clone(),
+            terminal_update,
+        );
+        let mut stored_terminal = self.as_ref().terminal_payload.write().await;
+        *stored_terminal = Some(terminal_payload);
+        drop(stored_terminal);
+
+        // Clear entity buffer - all await_*() calls have completed by now
+        // (either successfully found Created entries or timed out)
+        self.as_ref().entity_buffer.clear_all().await;
 
         let mut current_session = self.as_ref().current_session.write().await;
         if let Some(session) = current_session.as_ref()
@@ -407,6 +450,14 @@ pub trait DiscoversNetworkedEntities:
             },
             virtualization: None,
             hidden: false,
+            // SNMP fields - populated by snmp.rs when SNMP is enabled
+            sys_descr: None,
+            sys_object_id: None,
+            sys_location: None,
+            sys_contact: None,
+            management_url: None,
+            chassis_id: None,
+            snmp_credential_id: None,
         });
 
         // Store interfaces separately to pass to server
@@ -557,69 +608,154 @@ pub trait DiscoversNetworkedEntities:
 
 /// Default number of retries for entity creation during discovery.
 /// This handles transient failures during server switchovers (blue-green deployments).
-const ENTITY_CREATION_MAX_RETRIES: u32 = 5;
+const ENTITY_CREATION_MAX_RETRIES: usize = 5;
+
+/// Timeout for waiting for server confirmation in ServerPoll mode.
+/// Must be > 2x poll interval (30s) to handle worst-case timing.
+const SERVER_POLL_CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(120);
 
 #[async_trait]
 pub trait CreatesDiscoveredEntities:
     AsRef<DaemonDiscoveryService> + Send + Sync + RunsDiscovery
 {
+    /// Create a host with its children (interfaces, ports, services).
+    /// Pass an empty `if_entries` vec if SNMP data is not available (e.g., Docker discovery).
+    /// In DaemonPoll mode: Immediately sends to server and returns the response.
+    /// In ServerPoll mode: Buffers the host for server to poll, waits for confirmation.
     async fn create_host(
         &self,
         host: Host,
         interfaces: Vec<Interface>,
         ports: Vec<Port>,
         services: Vec<Service>,
+        if_entries: Vec<IfEntry>,
+        cancel: &CancellationToken,
     ) -> Result<HostResponse, Error> {
+        let service = self.as_ref();
+        let mode = service.config_store.get_mode().await?;
+        let pending_id = host.id;
+
         let request = DiscoveryHostRequest {
             host,
             interfaces,
             ports,
             services,
+            if_entries,
         };
-        self.as_ref()
-            .api_client
-            .post_with_retry(
-                "/api/v1/hosts/discovery",
-                &request,
-                "Failed to create host",
-                ENTITY_CREATION_MAX_RETRIES,
-            )
-            .await
+
+        // Always buffer first (for both modes)
+        service.entity_buffer.push_host(request.clone()).await;
+
+        match mode {
+            DaemonMode::DaemonPoll => {
+                // Immediately send to server, get response (with retry on transient failures)
+                let api_client = &service.api_client;
+                let response: HostResponse = (|| async {
+                    api_client
+                        .post("/api/v1/hosts/discovery", &request, "Failed to create host")
+                        .await
+                })
+                .retry(
+                    ExponentialBuilder::default()
+                        .with_min_delay(Duration::from_millis(500))
+                        .with_max_delay(Duration::from_secs(30))
+                        .with_max_times(ENTITY_CREATION_MAX_RETRIES),
+                )
+                .notify(|e, dur| tracing::warn!("Retrying host creation after {:?}: {}", dur, e))
+                .await?;
+
+                // Mark as created in buffer with actual server data
+                service
+                    .entity_buffer
+                    .mark_host_created(pending_id, response.clone())
+                    .await;
+
+                Ok(response)
+            }
+            DaemonMode::ServerPoll => {
+                // Wait for server to poll and confirm creation
+                let actual_host = service
+                    .entity_buffer
+                    .await_host(&pending_id, SERVER_POLL_CONFIRMATION_TIMEOUT, cancel)
+                    .await
+                    .ok_or_else(|| {
+                        if cancel.is_cancelled() {
+                            anyhow!("Discovery cancelled while waiting for host creation")
+                        } else {
+                            anyhow!("Timeout waiting for host creation confirmation from server")
+                        }
+                    })?;
+
+                // Build a HostResponse from the confirmed host
+                // Note: In ServerPoll mode, we don't have hydrated children back
+                // but the Host ID is what matters for subsequent operations
+                Ok(HostResponse::from_host_with_children(
+                    actual_host,
+                    request.interfaces,
+                    request.ports,
+                    request.services,
+                    request.if_entries,
+                ))
+            }
+        }
     }
 
-    async fn create_subnet(&self, subnet: &Subnet) -> Result<Subnet, Error> {
-        self.as_ref()
-            .api_client
-            .post_with_retry(
-                "/api/v1/subnets",
-                subnet,
-                "Failed to create subnet",
-                ENTITY_CREATION_MAX_RETRIES,
-            )
-            .await
-    }
+    /// Create a subnet.
+    ///
+    /// In DaemonPoll mode: Immediately sends to server and returns the response.
+    /// In ServerPoll mode: Buffers the subnet for server to poll, waits for confirmation.
+    async fn create_subnet(
+        &self,
+        subnet: &Subnet,
+        cancel: &CancellationToken,
+    ) -> Result<Subnet, Error> {
+        let service = self.as_ref();
+        let mode = service.config_store.get_mode().await?;
+        let pending_id = subnet.id;
 
-    async fn create_service(&self, service: &Service) -> Result<Service, Error> {
-        self.as_ref()
-            .api_client
-            .post_with_retry(
-                "/api/v1/services",
-                service,
-                "Failed to create service",
-                ENTITY_CREATION_MAX_RETRIES,
-            )
-            .await
-    }
+        // Always buffer first (for both modes)
+        service.entity_buffer.push_subnet(subnet.clone()).await;
 
-    async fn create_group(&self, group: &Group) -> Result<Group, Error> {
-        self.as_ref()
-            .api_client
-            .post_with_retry(
-                "/api/v1/groups",
-                group,
-                "Failed to create group",
-                ENTITY_CREATION_MAX_RETRIES,
-            )
-            .await
+        match mode {
+            DaemonMode::DaemonPoll => {
+                // Immediately send to server, get response (with retry on transient failures)
+                let api_client = &service.api_client;
+                let actual: Subnet = (|| async {
+                    api_client
+                        .post("/api/v1/subnets", subnet, "Failed to create subnet")
+                        .await
+                })
+                .retry(
+                    ExponentialBuilder::default()
+                        .with_min_delay(Duration::from_millis(500))
+                        .with_max_delay(Duration::from_secs(30))
+                        .with_max_times(ENTITY_CREATION_MAX_RETRIES),
+                )
+                .notify(|e, dur| tracing::warn!("Retrying subnet creation after {:?}: {}", dur, e))
+                .await?;
+
+                // Mark as created in buffer with actual server data
+                service
+                    .entity_buffer
+                    .mark_subnet_created(pending_id, actual.clone())
+                    .await;
+
+                Ok(actual)
+            }
+            DaemonMode::ServerPoll => {
+                // Wait for server to poll and confirm creation
+                service
+                    .entity_buffer
+                    .await_subnet(&pending_id, SERVER_POLL_CONFIRMATION_TIMEOUT, cancel)
+                    .await
+                    .ok_or_else(|| {
+                        if cancel.is_cancelled() {
+                            anyhow!("Discovery cancelled while waiting for subnet creation")
+                        } else {
+                            anyhow!("Timeout waiting for subnet creation confirmation from server")
+                        }
+                    })
+            }
+        }
     }
 }
