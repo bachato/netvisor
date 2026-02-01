@@ -2640,14 +2640,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-01-31T21:56:43.502727Z",
-             *       "id": "e2b15556-6f1e-4967-8a2b-52613a8c0870",
+             *       "created_at": "2026-02-01T14:46:58.963068Z",
+             *       "id": "f5f1f4e5-6b7e-4edf-81d0-cd33ae146e06",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-01-31T21:56:43.502727Z"
+             *       "updated_at": "2026-02-01T14:46:58.963068Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2878,14 +2878,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-01-31T21:56:43.491269Z",
-             *               "id": "f21dd429-dba1-4b37-9769-af1acf894382",
+             *               "created_at": "2026-02-01T14:46:58.950507Z",
+             *               "id": "2add4480-e5e6-4695-8513-1eede16485b2",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-01-31T21:56:43.491269Z"
+             *               "updated_at": "2026-02-01T14:46:58.950507Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -2894,7 +2894,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Kafka",
+             *           "service_definition": "Jellyfin",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3168,14 +3168,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-01-31T21:56:43.499444Z",
-             *           "id": "f251b4e3-4d93-4083-bfcd-f31cab097db1",
+             *           "created_at": "2026-02-01T14:46:58.959322Z",
+             *           "id": "8ea536b6-ee1c-4715-9134-241e3787cf3b",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-01-31T21:56:43.499444Z"
+             *           "updated_at": "2026-02-01T14:46:58.959322Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3184,7 +3184,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Kafka",
+             *       "service_definition": "Jellyfin",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3480,14 +3480,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-01-31T21:56:43.491876Z",
-         *       "id": "419d7e31-25a8-465e-ba47-0dfc2be7f434",
+         *       "created_at": "2026-02-01T14:46:58.950717Z",
+         *       "id": "a3a303c2-ecc7-4c80-915a-59098174569d",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-01-31T21:56:43.491876Z"
+         *       "updated_at": "2026-02-01T14:46:58.950717Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3652,7 +3652,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Kafka",
+         *           "service_definition": "Jellyfin",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4284,14 +4284,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-01-31T21:56:43.490905Z",
-         *               "id": "ee4377be-6fd1-4c42-8810-5060479130cc",
+         *               "created_at": "2026-02-01T14:46:58.950232Z",
+         *               "id": "eefe0fd5-65f3-4c5e-8e62-025be1d35d87",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-01-31T21:56:43.490905Z"
+         *               "updated_at": "2026-02-01T14:46:58.950232Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4300,7 +4300,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Kafka",
+         *           "service_definition": "Jellyfin",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4826,7 +4826,6 @@ export interface components {
             onboarding: components["schemas"]["TelemetryOperation"][];
             plan: null | components["schemas"]["BillingPlan"];
             readonly plan_status: string | null;
-            readonly stripe_customer_id: string | null;
         };
         /**
          * @description API metadata for paginated list responses (pagination is always present)
@@ -5241,14 +5240,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-01-31T21:56:43.491722Z",
-         *           "id": "81fbbbe3-eb76-4d7b-90bb-87612d1f2999",
+         *           "created_at": "2026-02-01T14:46:58.950648Z",
+         *           "id": "3982e278-ebb7-4a23-86e2-af3657dc6cf4",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-01-31T21:56:43.491722Z"
+         *           "updated_at": "2026-02-01T14:46:58.950648Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5257,7 +5256,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Kafka",
+         *       "service_definition": "Jellyfin",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -5293,7 +5292,7 @@ export interface components {
             virtualization?: null | components["schemas"]["ServiceVirtualization"];
         };
         /** @enum {string} */
-        ServiceCategory: "NetworkCore" | "NetworkAccess" | "NetworkSecurity" | "Storage" | "Backup" | "Media" | "HomeAutomation" | "Virtualization" | "DNS" | "VPN" | "Monitoring" | "AdBlock" | "ReverseProxy" | "Workstation" | "Mobile" | "IoT" | "Printer" | "Database" | "Development" | "Dashboard" | "MessageQueue" | "IdentityAndAccess" | "Office" | "ProjectManagement" | "Messaging" | "Conferencing" | "Telephony" | "Email" | "Publishing" | "Unknown" | "Custom" | "Scanopy" | "OpenPorts";
+        ServiceCategory: "NetworkCore" | "NetworkAccess" | "NetworkSecurity" | "Storage" | "Backup" | "Media" | "HomeAutomation" | "Virtualization" | "DNS" | "VPN" | "SNMP" | "Monitoring" | "AdBlock" | "ReverseProxy" | "Workstation" | "Mobile" | "IoT" | "Printer" | "Database" | "Development" | "Dashboard" | "MessageQueue" | "IdentityAndAccess" | "Office" | "ProjectManagement" | "Messaging" | "Conferencing" | "Telephony" | "Email" | "Publishing" | "Unknown" | "Custom" | "Scanopy" | "OpenPorts";
         /**
          * @description Input for creating or updating a service.
          *     Used in both CreateHostRequest and UpdateHostRequest.
@@ -5401,6 +5400,7 @@ export interface components {
             name: string;
             /** Format: uuid */
             organization_id: string;
+            tags: string[];
             /** @description SNMP version (V2c or V3) */
             version?: components["schemas"]["SnmpVersion"];
         };

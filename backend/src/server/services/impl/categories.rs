@@ -40,8 +40,9 @@ pub enum ServiceCategory {
     Virtualization, // Proxmox, ESXi
 
     // Network Services
-    DNS,        // All DNS services
-    VPN,        // All VPN services
+    DNS, // All DNS services
+    VPN, // All VPN services
+    SNMP,
     Monitoring, // SNMP, monitoring tools
     AdBlock,
     ReverseProxy,
@@ -103,6 +104,7 @@ impl EntityMetadataProvider for ServiceCategory {
             // Network Services
             ServiceCategory::DNS => Concept::Dns.icon(),
             ServiceCategory::VPN => Concept::Vpn.icon(),
+            ServiceCategory::SNMP => Concept::SNMP.icon(),
             ServiceCategory::Monitoring => Icon::Activity,
             ServiceCategory::AdBlock => Icon::ShieldCheck,
             ServiceCategory::ReverseProxy => Concept::ReverseProxy.icon(),
@@ -158,6 +160,7 @@ impl EntityMetadataProvider for ServiceCategory {
             // Network Services
             ServiceCategory::DNS => Concept::Dns.color(),
             ServiceCategory::VPN => Concept::Vpn.color(),
+            ServiceCategory::SNMP => Concept::SNMP.color(),
             ServiceCategory::Monitoring => Color::Orange,
             ServiceCategory::AdBlock => Concept::Dns.color(),
             ServiceCategory::ReverseProxy => Concept::ReverseProxy.color(),

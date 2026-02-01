@@ -7,6 +7,10 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+fn default_tags() -> Vec<Uuid> {
+    Vec::new()
+}
+
 /// Serializer that redacts the secret value
 fn redact_secret<S>(_secret: &SecretString, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -65,6 +69,9 @@ pub struct SnmpCredentialBase {
     #[serde(serialize_with = "redact_secret")]
     #[schema(value_type = String)]
     pub community: SecretString,
+    #[serde(default = "default_tags")]
+    #[schema(required)]
+    pub tags: Vec<Uuid>,
 }
 
 impl Default for SnmpCredentialBase {
@@ -74,6 +81,7 @@ impl Default for SnmpCredentialBase {
             name: "New SNMP Credential".to_string(),
             version: SnmpVersion::V2c,
             community: SecretString::from(String::new()),
+            tags: Vec::new(),
         }
     }
 }
@@ -84,6 +92,7 @@ impl PartialEq for SnmpCredentialBase {
             && self.name == other.name
             && self.version == other.version
             && self.community.expose_secret() == other.community.expose_secret()
+            && self.tags == other.tags
     }
 }
 

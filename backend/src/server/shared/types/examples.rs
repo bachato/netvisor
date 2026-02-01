@@ -405,6 +405,7 @@ pub fn snmp_credential() -> SnmpCredential {
             name: "Default SNMPv2c".to_string(),
             version: SnmpVersion::V2c,
             community: SecretString::from("public".to_string()),
+            tags: Vec::new(),
         },
     }
 }

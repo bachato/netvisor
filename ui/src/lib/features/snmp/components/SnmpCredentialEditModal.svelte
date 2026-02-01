@@ -10,12 +10,11 @@
 	import { createDefaultSnmpCredential } from '../types/base';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { Key } from 'lucide-svelte';
-	import BetaTag from '$lib/shared/components/data/BetaTag.svelte';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
+	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
 	import {
-		common_betaSnmpExplainer,
 		common_cancel,
 		common_couldNotLoadOrganization,
 		common_create,
@@ -132,14 +131,13 @@
 		}}
 		class="flex min-h-0 flex-1 flex-col"
 	>
-		<div class="flex-1 overflow-auto p-6">
+		<div class="min-h-0 flex-1 overflow-auto p-6">
 			<div class="space-y-8">
 				<!-- Credential Details Section -->
 				<div class="space-y-4">
 					<p class="text-secondary">{m.snmp_modalCreateHelpText()}</p>
 					<h3 class="text-primary flex items-center gap-2 text-lg font-medium">
 						{common_details()}
-						<BetaTag tooltip={common_betaSnmpExplainer()} />
 					</h3>
 
 					<form.Field
@@ -168,13 +166,22 @@
 							</form.Field>
 						{/snippet}
 					</form.Field>
-				</div>
 
-				{#if isEditing && credential}
-					<EntityMetadataSection entities={[credential]} />
-				{/if}
+					<form.Field name="tags">
+						{#snippet children(field)}
+							<TagPicker
+								selectedTagIds={field.state.value || []}
+								onChange={(tags) => field.handleChange(tags)}
+							/>
+						{/snippet}
+					</form.Field>
+				</div>
 			</div>
 		</div>
+
+		{#if isEditing && credential}
+			<EntityMetadataSection entities={[credential]} />
+		{/if}
 
 		<!-- Footer -->
 		<div class="modal-footer">

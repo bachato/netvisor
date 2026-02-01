@@ -1348,6 +1348,35 @@ impl HostService {
             existing_host.base.hostname = new_host_data.base.hostname;
         }
 
+        // Update SNMP fields if not set
+        if existing_host.base.sys_descr.is_none() && new_host_data.base.sys_descr.is_some() {
+            has_updates = true;
+            existing_host.base.sys_descr = new_host_data.base.sys_descr;
+        }
+        if existing_host.base.sys_object_id.is_none() && new_host_data.base.sys_object_id.is_some()
+        {
+            has_updates = true;
+            existing_host.base.sys_object_id = new_host_data.base.sys_object_id;
+        }
+        if existing_host.base.sys_location.is_none() && new_host_data.base.sys_location.is_some() {
+            has_updates = true;
+            existing_host.base.sys_location = new_host_data.base.sys_location;
+        }
+        if existing_host.base.sys_contact.is_none() && new_host_data.base.sys_contact.is_some() {
+            has_updates = true;
+            existing_host.base.sys_contact = new_host_data.base.sys_contact;
+        }
+        if existing_host.base.management_url.is_none()
+            && new_host_data.base.management_url.is_some()
+        {
+            has_updates = true;
+            existing_host.base.management_url = new_host_data.base.management_url;
+        }
+        if existing_host.base.chassis_id.is_none() && new_host_data.base.chassis_id.is_some() {
+            has_updates = true;
+            existing_host.base.chassis_id = new_host_data.base.chassis_id;
+        }
+
         // Merge entity source metadata
         existing_host.base.source = match (existing_host.base.source, new_host_data.base.source) {
             (

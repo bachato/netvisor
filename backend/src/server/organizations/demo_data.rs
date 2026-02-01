@@ -179,6 +179,7 @@ fn generate_snmp_credentials(organization_id: Uuid, now: DateTime<Utc>) -> Vec<S
                 name: "Default SNMPv2c".to_string(),
                 version: SnmpVersion::V2c,
                 community: SecretString::from("public".to_string()),
+                tags: Vec::new(),
             },
         },
         SnmpCredential {
@@ -190,6 +191,7 @@ fn generate_snmp_credentials(organization_id: Uuid, now: DateTime<Utc>) -> Vec<S
                 name: "Network Devices".to_string(),
                 version: SnmpVersion::V2c,
                 community: SecretString::from("acme-network".to_string()),
+                tags: Vec::new(),
             },
         },
     ]

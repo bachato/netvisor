@@ -3,7 +3,7 @@ import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isS
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_topology_locktipbody2 = /** @type {(inputs: {}) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`If you want to preserve this network state as a historical record, click 'Lock' to freeze this topology without refreshing.`)
+	return /** @type {LocalizedString} */ (`If you want to preserve this network state as a historical record, click 'Lock' to freeze this topology instead of rebuilding.`)
 };
 
 /**

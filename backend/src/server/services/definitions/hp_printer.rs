@@ -9,7 +9,7 @@ pub struct HpPrinter;
 
 impl ServiceDefinition for HpPrinter {
     fn name(&self) -> &'static str {
-        "Hp Printer"
+        "HP Printer"
     }
     fn description(&self) -> &'static str {
         "An HP Printer"

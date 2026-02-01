@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { pushSuccess, pushWarning } from '$lib/shared/stores/feedback';
-	import { ChevronDown, ChevronRight } from 'lucide-svelte';
+	import { Braces, X } from 'lucide-svelte';
 	import Prism from '@magidoc/plugin-svelte-prismjs';
 	import 'prismjs/components/prism-yaml';
 	import 'prismjs/components/prism-json';
@@ -12,7 +12,6 @@
 	export let expandable: boolean = true;
 	export let expanded: boolean = true;
 	export let language: string = 'json';
-	export let expandLabel: string = 'Expand';
 
 	// Copy JSON to clipboard
 	async function copyJson() {
@@ -34,20 +33,32 @@
 	}
 </script>
 
-<div>
+<div class={expanded ? 'border-t border-gray-700 pt-1' : ''}>
 	{#if expandable}
-		<button type="button" class="btn-icon" on:click={toggleJson}>
+		<div class={`flex items-center justify-between  ${expanded ? 'mb-1' : ''}`}>
+			<button
+				type="button"
+				class="text-tertiary hover:text-secondary flex items-center gap-1 p-1 text-xs transition-colors"
+				on:click={toggleJson}
+			>
+				<Braces class="h-3 w-3" />
+				<span>JSON</span>
+			</button>
 			{#if expanded}
-				<ChevronDown class="h-4 w-4" />
-			{:else}
-				<ChevronRight class="h-4 w-4" />
+				<button
+					type="button"
+					class="text-tertiary hover:text-secondary p-1 transition-colors"
+					on:click={toggleJson}
+					title="Collapse"
+				>
+					<X class="h-4 w-4" />
+				</button>
 			{/if}
-			<span class="ml-1">{expandLabel}</span>
-		</button>
+		</div>
 	{/if}
 
 	{#if expanded}
-		<div class="relative">
+		<div class="relative max-h-80 overflow-y-auto">
 			{#if isSecureContext}
 				<div class="absolute right-2 top-2 z-10">
 					<button type="button" class="btn-icon" title={common_copy()} on:click={copyJson}>

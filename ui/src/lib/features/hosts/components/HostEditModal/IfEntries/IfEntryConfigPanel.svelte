@@ -1,6 +1,14 @@
 <script lang="ts">
-	import type { IfEntry } from '$lib/features/hosts/types/base';
+	import { useQueryClient } from '@tanstack/svelte-query';
+	import { queryKeys } from '$lib/api/query-client';
+	import type { IfEntry, Interface } from '$lib/features/hosts/types/base';
+	import { getHostByIdFromCache } from '$lib/features/hosts/queries';
 	import { getAdminStatusLabels, getOperStatusLabels } from '$lib/features/snmp/types/base';
+	import ConfigHeader from '$lib/shared/components/forms/config/ConfigHeader.svelte';
+	import InfoCard from '$lib/shared/components/data/InfoCard.svelte';
+	import InfoRow from '$lib/shared/components/data/InfoRow.svelte';
+	import Tag from '$lib/shared/components/data/Tag.svelte';
+	import type { Color } from '$lib/shared/utils/styling';
 	import {
 		common_macAddress,
 		common_speed,
@@ -9,12 +17,16 @@
 		hosts_ifEntries_adminStatus,
 		hosts_ifEntries_aliasDescription,
 		hosts_ifEntries_cdpNeighbor,
+		hosts_ifEntries_chassisId,
 		hosts_ifEntries_details,
 		hosts_ifEntries_index,
+		hosts_ifEntries_interfaceId,
 		hosts_ifEntries_lldpNeighbor,
 		hosts_ifEntries_lldpSysDescr,
 		hosts_ifEntries_managementAddress,
+		hosts_ifEntries_neighbor,
 		hosts_ifEntries_operStatus,
+		hosts_ifEntries_portId,
 		hosts_ifEntries_remoteAddress,
 		hosts_ifEntries_remoteDevice,
 		hosts_ifEntries_remotePlatform,
@@ -29,6 +41,8 @@
 
 	let { ifEntry }: Props = $props();
 
+	const queryClient = useQueryClient();
+
 	function formatSpeed(speed: number | null | undefined): string {
 		if (!speed) return common_unknown();
 		if (speed >= 1_000_000_000) return `${(speed / 1_000_000_000).toFixed(1)} Gbps`;
@@ -38,172 +52,95 @@
 	}
 
 	let adminStatusLabel = $derived(getAdminStatusLabels()[ifEntry.admin_status] ?? common_unknown());
-
 	let operStatusLabel = $derived(getOperStatusLabels()[ifEntry.oper_status] ?? common_unknown());
 
-	let operStatusColor = $derived(() => {
+	let operStatusColor: Color = $derived.by(() => {
 		switch (ifEntry.oper_status) {
 			case 'Up':
-				return 'text-green-400 bg-green-400/10';
+				return 'Green';
 			case 'Down':
-				return 'text-red-400 bg-red-400/10';
+				return 'Red';
 			case 'Dormant':
-				return 'text-yellow-400 bg-yellow-400/10';
+				return 'Yellow';
 			default:
-				return 'text-gray-400 bg-gray-400/10';
+				return 'Gray';
+		}
+	});
+
+	// Linked Interface display (interface_id → Interface name/IP)
+	let linkedInterfaceDisplay = $derived.by(() => {
+		if (!ifEntry.interface_id) return '-';
+		const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
+		const iface = allInterfaces.find((i) => i.id === ifEntry.interface_id);
+		if (iface) {
+			return iface.name ? `${iface.name}: ${iface.ip_address}` : iface.ip_address;
+		}
+		return '-';
+	});
+
+	// Neighbor display (neighbor object → Host/IfEntry name)
+	let neighborDisplay = $derived.by(() => {
+		if (!ifEntry.neighbor) return '-';
+
+		if (ifEntry.neighbor.type === 'Host') {
+			const host = getHostByIdFromCache(queryClient, ifEntry.neighbor.id);
+			return host?.name ?? 'Unknown host';
+		} else {
+			// IfEntry type - look up the ifEntry
+			const allIfEntries = queryClient.getQueryData<IfEntry[]>(queryKeys.ifEntries.all) ?? [];
+			const remoteEntry = allIfEntries.find((e) => e.id === ifEntry.neighbor!.id);
+			if (remoteEntry) {
+				const host = getHostByIdFromCache(queryClient, remoteEntry.host_id);
+				const hostName = host?.name ?? 'Unknown';
+				const portName = remoteEntry.if_descr || `Index ${remoteEntry.if_index}`;
+				return `${hostName} → ${portName}`;
+			}
+			return 'Unknown interface';
 		}
 	});
 </script>
 
-<div class="space-y-6 p-6">
-	<!-- Header -->
-	<div class="border-b border-gray-700 pb-4">
-		<h3 class="text-primary text-lg font-medium">
-			{ifEntry.if_descr || `Interface ${ifEntry.if_index}`}
-		</h3>
-		<p class="text-muted mt-1 text-sm">{hosts_ifEntries_index({ index: ifEntry.if_index })}</p>
-	</div>
+<div class="space-y-6">
+	<ConfigHeader
+		title={ifEntry.if_descr || `Interface ${ifEntry.if_index}`}
+		subtitle={hosts_ifEntries_index({ index: ifEntry.if_index })}
+	/>
 
 	<!-- Status Section -->
-	<div class="space-y-4">
-		<h4 class="text-secondary text-sm font-medium uppercase tracking-wide">{common_status()}</h4>
-		<div class="grid grid-cols-2 gap-4">
-			<div class="bg-tertiary/30 rounded-lg p-4">
-				<span class="text-secondary block text-xs font-medium">{hosts_ifEntries_adminStatus()}</span
-				>
-				<p class="text-primary mt-1 text-sm font-medium">{adminStatusLabel}</p>
-			</div>
-			<div class="bg-tertiary/30 rounded-lg p-4">
-				<span class="text-secondary block text-xs font-medium">{hosts_ifEntries_operStatus()}</span>
-				<span
-					class="mt-1 inline-flex items-center rounded px-2 py-0.5 text-sm font-medium {operStatusColor()}"
-				>
-					{operStatusLabel}
-				</span>
-			</div>
-		</div>
-	</div>
+	<InfoCard title={common_status()}>
+		<InfoRow label={hosts_ifEntries_adminStatus()}>{adminStatusLabel}</InfoRow>
+		<InfoRow label={hosts_ifEntries_operStatus()}>
+			<Tag label={operStatusLabel} color={operStatusColor} />
+		</InfoRow>
+	</InfoCard>
 
 	<!-- Interface Details Section -->
-	<div class="space-y-4">
-		<h4 class="text-secondary text-sm font-medium uppercase tracking-wide">
-			{hosts_ifEntries_details()}
-		</h4>
-		<div class="grid grid-cols-2 gap-4">
-			<div class="bg-tertiary/30 rounded-lg p-4">
-				<span class="text-secondary block text-xs font-medium">{hosts_ifEntries_type()}</span>
-				<p class="text-primary mt-1 text-sm">{ifEntry.if_type}</p>
-			</div>
-
-			{#if ifEntry.mac_address}
-				<div class="bg-tertiary/30 rounded-lg p-4">
-					<span class="text-secondary block text-xs font-medium">{common_macAddress()}</span>
-					<p class="text-primary mt-1 font-mono text-sm">{ifEntry.mac_address}</p>
-				</div>
-			{/if}
-
-			<div class="bg-tertiary/30 rounded-lg p-4">
-				<span class="text-secondary block text-xs font-medium">{common_speed()}</span>
-				<p class="text-primary mt-1 text-sm">{formatSpeed(ifEntry.speed_bps)}</p>
-			</div>
-		</div>
-	</div>
-
-	<!-- Alias Section -->
-	{#if ifEntry.if_alias}
-		<div class="space-y-4">
-			<h4 class="text-secondary text-sm font-medium uppercase tracking-wide">
-				{hosts_ifEntries_aliasDescription()}
-			</h4>
-			<div class="bg-tertiary/30 rounded-lg p-4">
-				<p class="text-primary text-sm">{ifEntry.if_alias}</p>
-			</div>
-		</div>
-	{/if}
+	<InfoCard title={hosts_ifEntries_details()}>
+		<InfoRow label={hosts_ifEntries_type()}>{ifEntry.if_type || '-'}</InfoRow>
+		<InfoRow label={common_macAddress()} mono>{ifEntry.mac_address || '-'}</InfoRow>
+		<InfoRow label={common_speed()}>{formatSpeed(ifEntry.speed_bps)}</InfoRow>
+		<InfoRow label={hosts_ifEntries_aliasDescription()}>{ifEntry.if_alias || '-'}</InfoRow>
+		<InfoRow label={hosts_ifEntries_interfaceId()}>{linkedInterfaceDisplay}</InfoRow>
+		<InfoRow label={hosts_ifEntries_neighbor()}>{neighborDisplay}</InfoRow>
+	</InfoCard>
 
 	<!-- CDP Neighbor Info Section -->
-	{#if ifEntry.cdp_device_id || ifEntry.cdp_port_id || ifEntry.cdp_address}
-		<div class="space-y-4">
-			<h4 class="text-secondary text-sm font-medium uppercase tracking-wide">
-				{hosts_ifEntries_cdpNeighbor()}
-			</h4>
-			<div class="grid grid-cols-2 gap-4">
-				{#if ifEntry.cdp_device_id}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium"
-							>{hosts_ifEntries_remoteDevice()}</span
-						>
-						<p class="text-primary mt-1 text-sm">{ifEntry.cdp_device_id}</p>
-					</div>
-				{/if}
-				{#if ifEntry.cdp_port_id}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium"
-							>{hosts_ifEntries_remotePort()}</span
-						>
-						<p class="text-primary mt-1 text-sm">{ifEntry.cdp_port_id}</p>
-					</div>
-				{/if}
-				{#if ifEntry.cdp_address}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium"
-							>{hosts_ifEntries_remoteAddress()}</span
-						>
-						<p class="text-primary mt-1 font-mono text-sm">{ifEntry.cdp_address}</p>
-					</div>
-				{/if}
-				{#if ifEntry.cdp_platform}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium"
-							>{hosts_ifEntries_remotePlatform()}</span
-						>
-						<p class="text-primary mt-1 text-sm">{ifEntry.cdp_platform}</p>
-					</div>
-				{/if}
-			</div>
-		</div>
-	{/if}
+	<InfoCard title={hosts_ifEntries_cdpNeighbor()}>
+		<InfoRow label={hosts_ifEntries_remoteDevice()}>{ifEntry.cdp_device_id || '-'}</InfoRow>
+		<InfoRow label={hosts_ifEntries_remotePort()}>{ifEntry.cdp_port_id || '-'}</InfoRow>
+		<InfoRow label={hosts_ifEntries_remoteAddress()} mono>{ifEntry.cdp_address || '-'}</InfoRow>
+		<InfoRow label={hosts_ifEntries_remotePlatform()}>{ifEntry.cdp_platform || '-'}</InfoRow>
+	</InfoCard>
 
 	<!-- LLDP Neighbor Info Section -->
-	{#if ifEntry.lldp_sys_name || ifEntry.lldp_port_desc || ifEntry.lldp_mgmt_addr}
-		<div class="space-y-4">
-			<h4 class="text-secondary text-sm font-medium uppercase tracking-wide">
-				{hosts_ifEntries_lldpNeighbor()}
-			</h4>
-			<div class="grid grid-cols-2 gap-4">
-				{#if ifEntry.lldp_sys_name}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium"
-							>{hosts_ifEntries_remoteSystemName()}</span
-						>
-						<p class="text-primary mt-1 text-sm">{ifEntry.lldp_sys_name}</p>
-					</div>
-				{/if}
-				{#if ifEntry.lldp_port_desc}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium"
-							>{hosts_ifEntries_remotePort()}</span
-						>
-						<p class="text-primary mt-1 text-sm">{ifEntry.lldp_port_desc}</p>
-					</div>
-				{/if}
-				{#if ifEntry.lldp_mgmt_addr}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium"
-							>{hosts_ifEntries_managementAddress()}</span
-						>
-						<p class="text-primary mt-1 font-mono text-sm">{ifEntry.lldp_mgmt_addr}</p>
-					</div>
-				{/if}
-				{#if ifEntry.lldp_sys_desc}
-					<div class="bg-tertiary/30 col-span-2 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium"
-							>{hosts_ifEntries_lldpSysDescr()}</span
-						>
-						<p class="text-primary mt-1 text-sm">{ifEntry.lldp_sys_desc}</p>
-					</div>
-				{/if}
-			</div>
-		</div>
-	{/if}
+	<InfoCard title={hosts_ifEntries_lldpNeighbor()}>
+		<InfoRow label={hosts_ifEntries_chassisId()} mono>{ifEntry.lldp_chassis_id || '-'}</InfoRow>
+		<InfoRow label={hosts_ifEntries_portId()} mono>{ifEntry.lldp_port_id || '-'}</InfoRow>
+		<InfoRow label={hosts_ifEntries_remoteSystemName()}>{ifEntry.lldp_sys_name || '-'}</InfoRow>
+		<InfoRow label={hosts_ifEntries_remotePort()}>{ifEntry.lldp_port_desc || '-'}</InfoRow>
+		<InfoRow label={hosts_ifEntries_managementAddress()} mono
+			>{ifEntry.lldp_mgmt_addr || '-'}</InfoRow
+		>
+		<InfoRow label={hosts_ifEntries_lldpSysDescr()}>{ifEntry.lldp_sys_desc || '-'}</InfoRow>
+	</InfoCard>
 </div>

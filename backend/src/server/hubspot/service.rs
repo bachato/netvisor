@@ -618,7 +618,7 @@ impl HubSpotService {
 
         // Build properties
         let contact_props = ContactProperties::new()
-            .with_email(&owner.base.email.to_string())
+            .with_email(owner.base.email.to_string())
             .with_user_id(owner.id)
             .with_org_id(org.id)
             .with_role("owner");

@@ -8,11 +8,9 @@
 	import { required, max, min } from '$lib/shared/components/forms/validators';
 	import { onboardingStore } from '../../stores/onboarding';
 	import { Plus, Trash2 } from 'lucide-svelte';
-	import BetaTag from '$lib/shared/components/data/BetaTag.svelte';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import {
 		auth_scanopyLogo,
-		common_betaSnmpExplainer,
 		common_continue,
 		common_settingUp,
 		common_version,
@@ -283,7 +281,6 @@
 												class="text-secondary flex items-center gap-2 text-sm"
 											>
 												{snmp_enableForNetwork()}
-												<BetaTag tooltip={common_betaSnmpExplainer()} />
 											</label>
 										</div>
 									{/snippet}

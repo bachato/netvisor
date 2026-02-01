@@ -9,10 +9,10 @@ pub struct DhcpServer;
 
 impl ServiceDefinition for DhcpServer {
     fn name(&self) -> &'static str {
-        "Dhcp Server"
+        "DHCP Server"
     }
     fn description(&self) -> &'static str {
-        "A generic Dhcp server"
+        "A generic DHCP server"
     }
     fn category(&self) -> ServiceCategory {
         ServiceCategory::NetworkCore

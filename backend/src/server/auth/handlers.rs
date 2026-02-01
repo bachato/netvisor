@@ -515,6 +515,7 @@ async fn apply_pending_setup(
                 name: credential_name,
                 version,
                 community: SecretString::new(community.clone().into()),
+                tags: Vec::new(),
             });
 
             let created_credential = state

@@ -11,7 +11,7 @@ use crate::server::shared::handlers::traits::{
 };
 use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
-use crate::server::shared::storage::traits::{Entity, Storable, Storage};
+use crate::server::shared::storage::traits::{Entity, Storable};
 use crate::server::shared::types::api::{
     ApiError, ApiErrorResponse, EmptyApiResponse, PaginatedApiResponse,
 };
@@ -254,8 +254,7 @@ async fn get_all_snmp_credentials(
     let result = state
         .services
         .snmp_credential_service
-        .storage()
-        .get_paginated(filter, &order_by)
+        .get_paginated_ordered(filter, &order_by)
         .await?;
 
     let limit = pagination.effective_limit().unwrap_or(0);

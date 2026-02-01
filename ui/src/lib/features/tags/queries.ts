@@ -149,6 +149,7 @@ const entityTypeToQueryKeyName: Record<EntityDiscriminants, keyof typeof queryKe
 	Daemon: 'daemons',
 	DaemonApiKey: 'apiKeys',
 	UserApiKey: 'userApiKeys',
+	SnmpCredential: 'snmpCredentials',
 	// Non-taggable entities (null = no cache invalidation needed)
 	Organization: null,
 	Invite: null,
@@ -159,7 +160,6 @@ const entityTypeToQueryKeyName: Record<EntityDiscriminants, keyof typeof queryKe
 	Binding: null,
 	Interface: null,
 	IfEntry: null,
-	SnmpCredential: null,
 	Topology: null,
 	Unknown: null
 };

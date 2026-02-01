@@ -66,6 +66,25 @@ impl Default for DiscoveryType {
     }
 }
 
+impl DiscoveryType {
+    /// Create a sanitized copy with sensitive data (SNMP credentials) redacted.
+    /// Used when storing EntitySource to prevent credential leakage in API responses.
+    pub fn sanitized(&self) -> Self {
+        match self {
+            DiscoveryType::Network {
+                subnet_ids,
+                host_naming_fallback,
+                snmp_credentials,
+            } => DiscoveryType::Network {
+                subnet_ids: subnet_ids.clone(),
+                host_naming_fallback: *host_naming_fallback,
+                snmp_credentials: snmp_credentials.sanitized(),
+            },
+            other => other.clone(),
+        }
+    }
+}
+
 impl Display for DiscoveryType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

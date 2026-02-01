@@ -9282,14 +9282,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-01-31T21:56:43.502382Z",
-              "id": "bc09a8b9-cc7b-4f55-aa20-db33b783c5df",
+              "created_at": "2026-02-01T14:46:58.963069Z",
+              "id": "e1f050ef-69f9-40a5-ad57-ae35f9366af5",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-31T21:56:43.502382Z"
+              "updated_at": "2026-02-01T14:46:58.963069Z"
             }
           },
           "error": {
@@ -10021,14 +10021,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-01-31T21:56:43.490922Z",
-                      "id": "912aa9f9-a8e5-450d-8cc6-224004ac9704",
+                      "created_at": "2026-02-01T14:46:58.950493Z",
+                      "id": "48daf799-014b-43c1-bb94-c91b34e4aa58",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-01-31T21:56:43.490922Z"
+                      "updated_at": "2026-02-01T14:46:58.950493Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10037,7 +10037,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Kafka",
+                  "service_definition": "Jellyfin",
                   "source": {
                     "type": "Manual"
                   },
@@ -10853,14 +10853,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-01-31T21:56:43.498745Z",
-                  "id": "b1ceb403-74de-4b85-8e09-f6e62a4ca8f8",
+                  "created_at": "2026-02-01T14:46:58.959322Z",
+                  "id": "f6b33896-fdc6-45c3-9d2c-5bfaea4e151c",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-31T21:56:43.498745Z"
+                  "updated_at": "2026-02-01T14:46:58.959322Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -10869,7 +10869,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kafka",
+              "service_definition": "Jellyfin",
               "source": {
                 "type": "Manual"
               },
@@ -12029,14 +12029,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-01-31T21:56:43.491107Z",
-          "id": "5e079b56-509a-4a90-9f31-7c9d0c77938e",
+          "created_at": "2026-02-01T14:46:58.950703Z",
+          "id": "d54df73b-8f4f-484f-a857-2ec9fad6d618",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-01-31T21:56:43.491107Z"
+          "updated_at": "2026-02-01T14:46:58.950703Z"
         }
       },
       "BindingBase": {
@@ -12490,7 +12490,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Kafka",
+              "service_definition": "Jellyfin",
               "tags": [],
               "virtualization": null
             }
@@ -14356,14 +14356,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-01-31T21:56:43.490659Z",
-                  "id": "e2145279-500e-47d7-9922-aae0267b370e",
+                  "created_at": "2026-02-01T14:46:58.950223Z",
+                  "id": "c0e1ce49-09f5-482a-9722-5afe018f5742",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-31T21:56:43.490659Z"
+                  "updated_at": "2026-02-01T14:46:58.950223Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14372,7 +14372,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kafka",
+              "service_definition": "Jellyfin",
               "source": {
                 "type": "Manual"
               },
@@ -15834,7 +15834,6 @@
       "OrganizationBase": {
         "type": "object",
         "required": [
-          "stripe_customer_id",
           "name",
           "plan",
           "plan_status",
@@ -15861,13 +15860,6 @@
             ]
           },
           "plan_status": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "readOnly": true
-          },
-          "stripe_customer_id": {
             "type": [
               "string",
               "null"
@@ -16266,14 +16258,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-01-31T21:56:43.484816Z",
-                        "id": "58f58c68-ab30-4aab-ac4b-07d6cbae109c",
+                        "created_at": "2026-02-01T14:46:58.943468Z",
+                        "id": "86f4ba14-a611-4f70-b34c-b29fbd631a65",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-01-31T21:56:43.484816Z"
+                        "updated_at": "2026-02-01T14:46:58.943468Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16282,7 +16274,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Kafka",
+                    "service_definition": "Jellyfin",
                     "source": {
                       "type": "Manual"
                     },
@@ -16359,14 +16351,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-01-31T21:56:43.497722Z",
-                    "id": "cb1b2b01-e30e-452f-b37f-897a32cde57b",
+                    "created_at": "2026-02-01T14:46:58.958369Z",
+                    "id": "38310b52-9acd-47a7-85d3-45f82ea0d2a6",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-01-31T21:56:43.497722Z"
+                    "updated_at": "2026-02-01T14:46:58.958369Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16375,7 +16367,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Kafka",
+                "service_definition": "Jellyfin",
                 "source": {
                   "type": "Manual"
                 },
@@ -17345,14 +17337,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-01-31T21:56:43.491042Z",
-              "id": "277edab4-5994-431c-8488-499913ce5a37",
+              "created_at": "2026-02-01T14:46:58.950632Z",
+              "id": "bab8cb4e-44ac-4ec9-a1be-50f9de1d0d75",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-31T21:56:43.491042Z"
+              "updated_at": "2026-02-01T14:46:58.950632Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17361,7 +17353,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Kafka",
+          "service_definition": "Jellyfin",
           "source": {
             "type": "Manual"
           },
@@ -17444,6 +17436,7 @@
           "Virtualization",
           "DNS",
           "VPN",
+          "SNMP",
           "Monitoring",
           "AdBlock",
           "ReverseProxy",
@@ -17767,7 +17760,8 @@
         "required": [
           "organization_id",
           "name",
-          "community"
+          "community",
+          "tags"
         ],
         "properties": {
           "community": {
@@ -17780,6 +17774,13 @@
           "organization_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
           "version": {
             "$ref": "#/components/schemas/SnmpVersion",

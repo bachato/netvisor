@@ -122,10 +122,7 @@
 				// Track billing completion for funnel analytics
 				trackEvent('billing_completed', {
 					plan: orgData.plan?.type ?? 'unknown',
-					amount: orgData.plan?.base_cents ?? 0,
-					stripe_customer_id: orgData.stripe_customer_id ?? undefined
-					// Note: stripe_charge_id not available client-side
-					// Would need backend to include in org response or separate endpoint
+					amount: orgData.plan?.base_cents ?? 0
 				});
 
 				pushSuccess(billing_subscriptionActivated());
