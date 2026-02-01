@@ -1,0 +1,182 @@
+[
+  {
+    "id": "organization",
+    "name_singular": "Organization",
+    "name_plural": "Organizations",
+    "description": "Manage organization settings.",
+    "category": "organizations_and_users",
+    "category_display": "Organizations & Users",
+    "table_name": "organizations"
+  },
+  {
+    "id": "user",
+    "name_singular": "User",
+    "name_plural": "Users",
+    "description": "User account management. Manage user profiles and permissions within organizations.",
+    "category": "organizations_and_users",
+    "category_display": "Organizations & Users",
+    "table_name": "users"
+  },
+  {
+    "id": "invite",
+    "name_singular": "Invite",
+    "name_plural": "Invites",
+    "description": "Organization invitations. Invite users to join your organization.",
+    "category": "organizations_and_users",
+    "category_display": "Organizations & Users",
+    "table_name": "invites"
+  },
+  {
+    "id": "user_api_key",
+    "name_singular": "User API Key",
+    "name_plural": "User API Keys",
+    "description": "User API keys for programmatic access. Create and manage personal API keys with scoped permissions.",
+    "category": "organizations_and_users",
+    "category_display": "Organizations & Users",
+    "table_name": "user_api_keys"
+  },
+  {
+    "id": "network",
+    "name_singular": "Network",
+    "name_plural": "Networks",
+    "description": "Network containers. Top-level organizational unit that contains subnets, hosts, and other entities.",
+    "category": "network_infrastructure",
+    "category_display": "Network Infrastructure",
+    "table_name": "networks"
+  },
+  {
+    "id": "host",
+    "name_singular": "Host",
+    "name_plural": "Hosts",
+    "description": "Network hosts (devices). Manage discovered or manually created hosts on your network.",
+    "category": "network_infrastructure",
+    "category_display": "Network Infrastructure",
+    "table_name": "hosts"
+  },
+  {
+    "id": "subnet",
+    "name_singular": "Subnet",
+    "name_plural": "Subnets",
+    "description": "IP subnets within networks. Define address ranges and organize hosts by subnet.",
+    "category": "network_infrastructure",
+    "category_display": "Network Infrastructure",
+    "table_name": "subnets"
+  },
+  {
+    "id": "interface",
+    "name_singular": "Interface",
+    "name_plural": "Interfaces",
+    "description": "Network interfaces on hosts. Each host can have multiple interfaces with different IP addresses.",
+    "category": "network_infrastructure",
+    "category_display": "Network Infrastructure",
+    "table_name": "interfaces"
+  },
+  {
+    "id": "port",
+    "name_singular": "Port",
+    "name_plural": "Ports",
+    "description": "Ports that have been scanned and found open on a host.",
+    "category": "network_infrastructure",
+    "category_display": "Network Infrastructure",
+    "table_name": "ports"
+  },
+  {
+    "id": "service",
+    "name_singular": "Service",
+    "name_plural": "Services",
+    "description": "Services running on hosts. Detected or manually added services like databases, web servers, etc.",
+    "category": "network_infrastructure",
+    "category_display": "Network Infrastructure",
+    "table_name": "services"
+  },
+  {
+    "id": "binding",
+    "name_singular": "Binding",
+    "name_plural": "Bindings",
+    "description": "Service bindings linking services to interfaces and/or ports. Defines where a service is accessible.",
+    "category": "network_infrastructure",
+    "category_display": "Network Infrastructure",
+    "table_name": "bindings"
+  },
+  {
+    "id": "if_entry",
+    "name_singular": "ifTable Entry",
+    "name_plural": "ifTable Entries",
+    "description": "SNMP interface entries (ifTable). Physical and logical interfaces discovered via SNMP on hosts.",
+    "category": "network_infrastructure",
+    "category_display": "Network Infrastructure",
+    "table_name": "if_entries"
+  },
+  {
+    "id": "daemon",
+    "name_singular": "Daemon",
+    "name_plural": "Daemons",
+    "description": "Daemons are scanning agents that connect to the server to perform network discovery.",
+    "category": "discovery_and_daemons",
+    "category_display": "Discovery & Daemons",
+    "table_name": "daemons"
+  },
+  {
+    "id": "daemon_api_key",
+    "name_singular": "Daemon API Key",
+    "name_plural": "Daemon API Keys",
+    "description": "API keys for daemon authentication. Create and manage keys that allow daemons to communicate with the server.",
+    "category": "discovery_and_daemons",
+    "category_display": "Discovery & Daemons",
+    "table_name": "api_keys"
+  },
+  {
+    "id": "discovery",
+    "name_singular": "Discovery",
+    "name_plural": "Discoveries",
+    "description": "Network discovery operations. Trigger and monitor scans that detect hosts, services, and network topology.",
+    "category": "discovery_and_daemons",
+    "category_display": "Discovery & Daemons",
+    "table_name": "discovery"
+  },
+  {
+    "id": "snmp_credential",
+    "name_singular": "SNMP Credential",
+    "name_plural": "SNMP Credentials",
+    "description": "SNMP credentials for network device discovery. Manage credentials used to query SNMP-enabled devices.",
+    "category": "discovery_and_daemons",
+    "category_display": "Discovery & Daemons",
+    "table_name": "snmp_credentials"
+  },
+  {
+    "id": "group",
+    "name_singular": "Group",
+    "name_plural": "Groups",
+    "description": "Logical groupings of hosts. Organize hosts into groups for easier management and visualization.",
+    "category": "visualization",
+    "category_display": "Visualization",
+    "table_name": "groups"
+  },
+  {
+    "id": "topology",
+    "name_singular": "Topology",
+    "name_plural": "Topologies",
+    "description": "Network topology maps showing host relationships and connections.",
+    "category": "visualization",
+    "category_display": "Visualization",
+    "table_name": "topologies"
+  },
+  {
+    "id": "share",
+    "name_singular": "Share",
+    "name_plural": "Shares",
+    "description": "Shared network views. Create read-only shareable links to your network topology.",
+    "category": "visualization",
+    "category_display": "Visualization",
+    "table_name": "shares"
+  },
+  {
+    "id": "tag",
+    "name_singular": "Tag",
+    "name_plural": "Tags",
+    "description": "Custom tags for categorization. Apply labels to entities for filtering and organization.",
+    "category": "metadata",
+    "category_display": "Metadata",
+    "table_name": "tags"
+  }
+]

@@ -1,5 +1,14 @@
 [
   {
+    "category": "Virtualization",
+    "color": "Indigo",
+    "description": "Docker",
+    "discovery_pattern": "No match pattern provided",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
+    "name": "Docker"
+  },
+  {
     "category": "Media",
     "color": "Blue",
     "description": "User invitation and management system for Jellyfin, Plex, Emby etc",
@@ -57,7 +66,7 @@
     "category": "Monitoring",
     "color": "Orange",
     "description": "A tiny dashboard for Network UPS Tools",
-    "discovery_pattern": "Endpoint response body from <ip>:3000/api/v1/info contains \"peanut\"",
+    "discovery_pattern": "Endpoint response body from <ip>:8080/api/v1/info contains \"peanut\"",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/peanut.svg",
     "name": "PeaNUT"
@@ -249,7 +258,7 @@
     "discovery_pattern": "All of: (Any of: (Endpoint response body from <ip>:80 contains \"LaserJet\", Endpoint response body from <ip>:80 contains \"DeskJet\", Endpoint response body from <ip>:80 contains \"OfficeJet\", Endpoint response body from <ip>:8080 contains \"LaserJet\", Endpoint response body from <ip>:8080 contains \"DeskJet\", Endpoint response body from <ip>:8080 contains \"OfficeJet\"), Any of: (631/tcp is open, 515/tcp is open, 515/udp is open))",
     "logo_needs_white_background": true,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/hp.svg",
-    "name": "Hp Printer"
+    "name": "HP Printer"
   },
   {
     "category": "Printer",
@@ -286,6 +295,15 @@
     "logo_needs_white_background": true,
     "logo_url": "https://simpleicons.org/icons/roku.svg",
     "name": "Roku Media Player"
+  },
+  {
+    "category": "IoT",
+    "color": "Yellow",
+    "description": "Roborock robot vacuum cleaner",
+    "discovery_pattern": "All of: (MAC Address belongs to Beijing Roborock Technology Co., Ltd., 58867/tcp is open)",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.prod.website-files.com/6720fa7290112f642d0a83ac/674de5c03f0d05e27b16b2cf_roborock_logo.webp",
+    "name": "Roborock Vacuum"
   },
   {
     "category": "IoT",
@@ -358,6 +376,15 @@
     "logo_needs_white_background": false,
     "logo_url": "",
     "name": "RTSP Camera"
+  },
+  {
+    "category": "IoT",
+    "color": "Yellow",
+    "description": "Building automation and control network protocol",
+    "discovery_pattern": "47808/udp is open",
+    "logo_needs_white_background": false,
+    "logo_url": "",
+    "name": "BACnet"
   },
   {
     "category": "IoT",
@@ -452,6 +479,15 @@
   {
     "category": "Monitoring",
     "color": "Orange",
+    "description": "Monitoring agent for Zabbix server",
+    "discovery_pattern": "10050/tcp is open",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/zabbix.svg",
+    "name": "Zabbix Agent"
+  },
+  {
+    "category": "Monitoring",
+    "color": "Orange",
     "description": "Enterprise monitoring solution",
     "discovery_pattern": "Endpoint response body from <ip>:80/zabbix contains \"zabbix\"",
     "logo_needs_white_background": false,
@@ -524,6 +560,15 @@
   {
     "category": "Monitoring",
     "color": "Orange",
+    "description": "Prometheus exporter for hardware and OS metrics",
+    "discovery_pattern": "Endpoint response body from <ip>:9100/metrics contains \"node_exporter\"",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/prometheus.svg",
+    "name": "Prometheus Node Exporter"
+  },
+  {
+    "category": "Monitoring",
+    "color": "Orange",
     "description": "Time-series monitoring and alerting system",
     "discovery_pattern": "Any of: (Endpoint response body from <ip>:80/metrics contains \"Prometheus\", Endpoint response body from <ip>:80/graph contains \"Prometheus\")",
     "logo_needs_white_background": false,
@@ -533,11 +578,38 @@
   {
     "category": "Monitoring",
     "color": "Orange",
+    "description": "Self-hosted network speed test application",
+    "discovery_pattern": "Any of: (Endpoint response body from <ip>:3000/ contains \"OpenSpeedTest-Server\", Endpoint response body from <ip>:3001/ contains \"OpenSpeedTest-Server\")",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/openspeedtest.svg",
+    "name": "OpenSpeedTest"
+  },
+  {
+    "category": "Monitoring",
+    "color": "Orange",
+    "description": "Prometheus exporter for Nvidia GPU metrics",
+    "discovery_pattern": "Endpoint response body from <ip>:9835/metrics contains \"nvidia_gpu_exporter\"",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nvidia.svg",
+    "name": "Nvidia GPU Exporter"
+  },
+  {
+    "category": "Monitoring",
+    "color": "Orange",
     "description": "Real-time performance monitoring",
     "discovery_pattern": "Endpoint response body from <ip>:19999/api/v1/info contains \"netdata\"",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/netdata.svg",
     "name": "Netdata"
+  },
+  {
+    "category": "Monitoring",
+    "color": "Orange",
+    "description": "Nagios Cross-Platform Agent for monitoring",
+    "discovery_pattern": "Endpoint response body from <ip>:5693/ contains \"NCPA\"",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nagios.svg",
+    "name": "NCPA Agent"
   },
   {
     "category": "Monitoring",
@@ -637,6 +709,15 @@
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/cadvisor.png",
     "name": "cAdvisor"
+  },
+  {
+    "category": "Monitoring",
+    "color": "Orange",
+    "description": "Lightweight server monitoring agent",
+    "discovery_pattern": "45876/tcp is open",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/beszel.svg",
+    "name": "Beszel Agent"
   },
   {
     "category": "Monitoring",
@@ -929,6 +1010,15 @@
   {
     "category": "Development",
     "color": "Red",
+    "description": "Open-source backend-as-a-service platform",
+    "discovery_pattern": "Any of: (Endpoint response body from <ip>:80/ contains \"appwrite.io\", Endpoint response body from <ip>:443/ contains \"appwrite.io\")",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/appwrite.svg",
+    "name": "Appwrite"
+  },
+  {
+    "category": "Development",
+    "color": "Red",
     "description": "Ansible automation platform",
     "discovery_pattern": "Endpoint response status is between 200 and 300, and response body from <ip>:80/api/v2/ contains \"awx\"",
     "logo_needs_white_background": false,
@@ -1217,20 +1307,20 @@
   {
     "category": "Virtualization",
     "color": "Indigo",
+    "description": "Docker compose stack management UI",
+    "discovery_pattern": "Endpoint response body from <ip>:5001/ contains \"Dockge\"",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/dockge.svg",
+    "name": "Dockge"
+  },
+  {
+    "category": "Virtualization",
+    "color": "Indigo",
     "description": "Docker native clustering and orchestration",
     "discovery_pattern": "All of: (2377/tcp is open, 7946/tcp is open)",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
     "name": "Docker Swarm"
-  },
-  {
-    "category": "Virtualization",
-    "color": "Indigo",
-    "description": "Docker",
-    "discovery_pattern": "No match pattern provided",
-    "logo_needs_white_background": false,
-    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
-    "name": "Docker"
   },
   {
     "category": "Virtualization",
@@ -1730,11 +1820,11 @@
   {
     "category": "DNS",
     "color": "Emerald",
-    "description": "A generic Dns server",
+    "description": "A generic DNS server",
     "discovery_pattern": "Any of: (53/tcp is open, 53/udp is open)",
     "logo_needs_white_background": false,
     "logo_url": "",
-    "name": "Dns Server"
+    "name": "DNS Server"
   },
   {
     "category": "DNS",
@@ -1820,11 +1910,29 @@
   {
     "category": "NetworkAccess",
     "color": "Green",
+    "description": "Ubiquiti device discovery service",
+    "discovery_pattern": "All of: (MAC Address belongs to Ubiquiti Networks Inc, 10001/udp is open)",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ubiquiti.svg",
+    "name": "Ubiquiti Discovery"
+  },
+  {
+    "category": "NetworkAccess",
+    "color": "Green",
     "description": "TP-Link EAP wireless access point",
     "discovery_pattern": "All of: (MAC Address belongs to TP-LINK TECHNOLOGIES CO.,LTD, Endpoint response body from <ip>:80/ contains \"tp-link\")",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tp-link.svg",
     "name": "TP-Link EAP"
+  },
+  {
+    "category": "NetworkCore",
+    "color": "Yellow",
+    "description": "MikroTik RouterOS network device",
+    "discovery_pattern": "Endpoint response body from <ip>:80/ contains \"MikroTik RouterOS\"",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/mikrotik.svg",
+    "name": "MikroTik"
   },
   {
     "category": "NetworkAccess",
@@ -1917,8 +2025,8 @@
     "name": "SSH"
   },
   {
-    "category": "NetworkCore",
-    "color": "Yellow",
+    "category": "SNMP",
+    "color": "Pink",
     "description": "Simple Network Management Protocol",
     "discovery_pattern": "161/udp is open",
     "logo_needs_white_background": false,
@@ -1955,10 +2063,10 @@
   {
     "category": "NetworkCore",
     "color": "Yellow",
-    "description": "A generic Dhcp server",
+    "description": "A generic DHCP server",
     "discovery_pattern": "67/udp is open",
     "logo_needs_white_background": false,
     "logo_url": "",
-    "name": "Dhcp Server"
+    "name": "DHCP Server"
   }
 ]
