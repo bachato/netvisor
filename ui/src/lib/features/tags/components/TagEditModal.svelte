@@ -131,7 +131,7 @@
 		}}
 		class="flex min-h-0 flex-1 flex-col"
 	>
-		<div class="flex-1 overflow-auto p-6">
+		<div class="min-h-0 flex-1 overflow-auto p-6">
 			<div class="space-y-8">
 				<!-- Tag Details Section -->
 				<div class="space-y-4">
@@ -195,12 +195,12 @@
 						{/snippet}
 					</form.Field>
 				</div>
-
-				{#if isEditing && tag}
-					<EntityMetadataSection entities={[tag]} />
-				{/if}
 			</div>
 		</div>
+
+		{#if isEditing && tag}
+			<EntityMetadataSection entities={[tag]} />
+		{/if}
 
 		<!-- Footer -->
 		<div class="modal-footer">

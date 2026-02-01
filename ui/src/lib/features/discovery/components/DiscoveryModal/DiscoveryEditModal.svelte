@@ -200,7 +200,7 @@
 		}}
 		class="flex min-h-0 flex-1 flex-col"
 	>
-		<div class="flex-1 overflow-y-auto">
+		<div class="min-h-0 flex-1 overflow-y-auto">
 			<div class="space-y-8 p-6">
 				<DiscoveryDetailsForm {form} {daemons} bind:formData {readOnly} />
 
@@ -211,12 +211,12 @@
 				{:else}
 					<InlineWarning body={discovery_noDaemonSelected()} />
 				{/if}
-
-				{#if isEditing}
-					<EntityMetadataSection entities={[discovery]} />
-				{/if}
 			</div>
 		</div>
+
+		{#if isEditing}
+			<EntityMetadataSection entities={[discovery]} />
+		{/if}
 
 		<div class="modal-footer">
 			<div class="flex items-center justify-between">

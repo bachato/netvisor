@@ -62,4 +62,29 @@ impl SnmpCredentialMapping {
     pub fn is_enabled(&self) -> bool {
         self.default_credential.is_some() || !self.ip_overrides.is_empty()
     }
+
+    /// Create a sanitized copy with community strings redacted.
+    /// Used when storing EntitySource to prevent credential leakage in API responses.
+    pub fn sanitized(&self) -> Self {
+        Self {
+            default_credential: self
+                .default_credential
+                .as_ref()
+                .map(|c| SnmpQueryCredential {
+                    version: c.version,
+                    community: "********".to_string(),
+                }),
+            ip_overrides: self
+                .ip_overrides
+                .iter()
+                .map(|o| SnmpIpOverride {
+                    ip: o.ip,
+                    credential: SnmpQueryCredential {
+                        version: o.credential.version,
+                        community: "********".to_string(),
+                    },
+                })
+                .collect(),
+        }
+    }
 }

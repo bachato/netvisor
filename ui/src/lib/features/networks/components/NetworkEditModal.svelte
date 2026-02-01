@@ -17,10 +17,8 @@
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
 	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
 	import { useSnmpCredentialsQuery } from '$lib/features/snmp/queries';
-	import BetaTag from '$lib/shared/components/data/BetaTag.svelte';
 	import { SnmpCredentialDisplay } from '$lib/shared/components/forms/selection/display/SnmpCredentialDisplay.svelte';
 	import {
-		common_betaSnmpExplainer,
 		common_cancel,
 		common_couldNotLoadUser,
 		common_create,
@@ -30,6 +28,7 @@
 		common_editName,
 		common_name,
 		common_saving,
+		common_snmpCredential,
 		common_update,
 		networks_createNetwork,
 		networks_networkNamePlaceholder
@@ -220,7 +219,7 @@
 		}}
 		class="flex min-h-0 flex-1 flex-col"
 	>
-		<div class="flex-1 overflow-auto p-6">
+		<div class="min-h-0 flex-1 overflow-auto p-6">
 			<div class="space-y-8">
 				<!-- Network Details Section -->
 				<div class="space-y-4">
@@ -254,14 +253,10 @@
 
 					{#key formKey}
 						<div class="space-y-2">
-							<label class="text-primary flex items-center gap-2 text-sm font-medium">
-								Default SNMP Credential
-								<BetaTag tooltip={common_betaSnmpExplainer()} />
-							</label>
 							<form.Field name="snmp_mode">
 								{#snippet children(field)}
 									<RadioGroup
-										label=""
+										label={common_snmpCredential()}
 										id="snmp_mode"
 										{field}
 										options={snmpModeOptions}
@@ -296,12 +291,12 @@
 						{/if}
 					</p>
 				</div>
-
-				{#if isEditing && network}
-					<EntityMetadataSection entities={[network]} />
-				{/if}
 			</div>
 		</div>
+
+		{#if isEditing && network}
+			<EntityMetadataSection entities={[network]} />
+		{/if}
 
 		<!-- Footer -->
 		<div class="modal-footer">

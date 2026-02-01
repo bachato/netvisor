@@ -9,10 +9,10 @@ pub struct DnsServer;
 
 impl ServiceDefinition for DnsServer {
     fn name(&self) -> &'static str {
-        "Dns Server"
+        "DNS Server"
     }
     fn description(&self) -> &'static str {
-        "A generic Dns server"
+        "A generic DNS server"
     }
     fn category(&self) -> ServiceCategory {
         ServiceCategory::DNS

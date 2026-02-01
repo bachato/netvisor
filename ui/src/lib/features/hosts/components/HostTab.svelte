@@ -5,7 +5,6 @@
 		CreateHostWithServicesRequest,
 		UpdateHostWithServicesRequest
 	} from '../types/base';
-	import { toHostPrimitive } from '../queries';
 	import TabHeader from '$lib/shared/components/layout/TabHeader.svelte';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
@@ -235,17 +234,6 @@
 		}
 	}
 
-	async function handleHostCreateAndContinue(data: CreateHostWithServicesRequest) {
-		try {
-			const result = await createHostMutation.mutateAsync(data);
-			// Keep modal open and switch to edit mode with the created host
-			// Extract Host primitive from HostResponse
-			editingHost = toHostPrimitive(result);
-		} catch {
-			// Error handled by mutation
-		}
-	}
-
 	async function handleHostUpdate(data: UpdateHostWithServicesRequest) {
 		try {
 			await updateHostMutation.mutateAsync(data);
@@ -361,7 +349,7 @@
 	isOpen={showHostEditor}
 	host={editingHost}
 	onCreate={handleHostCreate}
-	onCreateAndContinue={handleHostCreateAndContinue}
+	onDelete={handleDeleteHost}
 	onUpdate={handleHostUpdate}
 	onClose={handleCloseHostEditor}
 />

@@ -74,6 +74,7 @@ impl Storable for SnmpCredential {
                     name,
                     version,
                     community,
+                    tags: _, // Stored in entity_tags junction table
                 },
         } = self.clone();
 
@@ -113,6 +114,7 @@ impl Storable for SnmpCredential {
                 name: row.get("name"),
                 version,
                 community: SecretString::from(community_str),
+                tags: Vec::new(), // Hydrated from entity_tags junction table
             },
         })
     }
@@ -158,5 +160,13 @@ impl Entity for SnmpCredential {
 
     fn set_updated_at(&mut self, time: DateTime<Utc>) {
         self.updated_at = time;
+    }
+
+    fn get_tags(&self) -> Option<&Vec<Uuid>> {
+        Some(&self.base.tags)
+    }
+
+    fn set_tags(&mut self, tags: Vec<Uuid>) {
+        self.base.tags = tags;
     }
 }

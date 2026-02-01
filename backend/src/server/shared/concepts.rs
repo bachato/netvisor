@@ -47,7 +47,7 @@ impl EntityMetadataProvider for Concept {
             Concept::IoT => Color::Yellow,
             Concept::Storage => Color::Green,
             Concept::Virtualization => Color::Indigo,
-            Concept::SNMP => Color::Orange,
+            Concept::SNMP => Color::Pink,
         }
     }
 

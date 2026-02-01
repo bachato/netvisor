@@ -224,35 +224,37 @@ impl EventSubscriber for TopologyService {
                         topology.base.is_stale = false;
                     }
 
-                    if changes.updated_hosts {
+                    // Only refresh entity arrays if there are no pending removals for that type.
+                    // This preserves deleted entity data so the conflict modal can display names.
+                    if changes.updated_hosts && changes.removed_hosts.is_empty() {
                         topology.base.hosts = hosts.clone()
                     }
 
-                    if changes.updated_interfaces {
+                    if changes.updated_interfaces && changes.removed_interfaces.is_empty() {
                         topology.base.interfaces = interfaces.clone()
                     }
 
-                    if changes.updated_services {
+                    if changes.updated_services && changes.removed_services.is_empty() {
                         topology.base.services = services
                     }
 
-                    if changes.updated_subnets {
+                    if changes.updated_subnets && changes.removed_subnets.is_empty() {
                         topology.base.subnets = subnets.clone()
                     }
 
-                    if changes.updated_groups {
+                    if changes.updated_groups && changes.removed_groups.is_empty() {
                         topology.base.groups = groups.clone();
                     }
 
-                    if changes.updated_ports {
+                    if changes.updated_ports && changes.removed_ports.is_empty() {
                         topology.base.ports = ports.clone();
                     }
 
-                    if changes.updated_bindings {
+                    if changes.updated_bindings && changes.removed_bindings.is_empty() {
                         topology.base.bindings = bindings.clone();
                     }
 
-                    if changes.updated_if_entries {
+                    if changes.updated_if_entries && changes.removed_if_entries.is_empty() {
                         topology.base.if_entries = if_entries.clone();
                     }
 

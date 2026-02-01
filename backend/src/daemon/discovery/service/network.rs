@@ -3,7 +3,6 @@ use crate::daemon::discovery::service::base::{
 };
 use crate::daemon::discovery::types::base::{DiscoveryCriticalError, DiscoverySessionUpdate};
 use crate::daemon::utils::arp::{self, ArpScanResult};
-use crate::daemon::utils::base::ConcurrentPipelineOps;
 use crate::daemon::utils::scanner::{
     ScanConcurrencyController, can_arp_scan, scan_endpoints, scan_tcp_ports, scan_udp_ports,
 };
@@ -27,14 +26,10 @@ use crate::{
 use anyhow::Error;
 use async_trait::async_trait;
 use cidr::IpCidr;
-use futures::{
-    future::try_join_all,
-    stream::{self, StreamExt},
-};
+use futures::{StreamExt, future::try_join_all};
 use mac_address::MacAddress;
 use pnet::datalink;
 use std::collections::{HashMap, HashSet};
-use std::result::Result::Ok;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use std::{net::IpAddr, sync::Arc};
@@ -80,13 +75,17 @@ pub struct DeepScanParams<'a> {
     ip: IpAddr,
     subnet: &'a Subnet,
     mac: Option<MacAddress>,
-    phase1_ports: Vec<PortType>,
     cancel: CancellationToken,
     scan_rate_pps: u32,
     port_scan_batch_size: usize,
     gateway_ips: &'a [IpAddr],
     /// Optional counter for batch-level progress tracking
     batches_completed: Option<&'a Arc<AtomicUsize>>,
+    /// Total batches counter - for non-interfaced hosts, we add to this AFTER
+    /// the responsiveness check passes (so only responsive hosts are counted)
+    total_batches: Option<&'a Arc<AtomicUsize>>,
+    /// Number of batches expected for a full port scan of this host
+    batches_per_host: usize,
     /// SNMP credential for this host (from default or IP-specific override)
     snmp_credential: Option<SnmpQueryCredential>,
     /// Shared concurrency controller for graceful FD exhaustion handling
@@ -170,8 +169,8 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<NetworkScanDiscovery> {
                 )
                 .await?;
 
-            // Filter out docker bridge subnets, those are handled in docker discovery
-            // Filter out subnets with
+            // Filter out docker bridge subnets (handled in docker discovery) and
+            // subnets with very large CIDRs (scanning would take too long)
             let subnets: Vec<Subnet> = subnets
                 .into_iter()
                 .filter(|s| {
@@ -229,13 +228,6 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
 
         let total_ips = all_ips_with_subnets.len();
 
-        // Pre-compute values used in streams
-        let discovery_ports: Vec<u16> = Service::all_discovery_ports()
-            .iter()
-            .filter(|p| p.is_tcp())
-            .map(|p| p.number())
-            .collect();
-
         // Get ARP config
         let use_npcap = self.as_ref().config_store.get_use_npcap_arp().await?;
         let arp_retries = self.as_ref().config_store.get_arp_retries().await?;
@@ -244,19 +236,13 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         // Get port scan rate limit
         let scan_rate_pps = self.as_ref().config_store.get_scan_rate_pps().await?;
 
-        // Get scan concurrency params (concurrent_scans and port_batch_size calculated together)
-        let concurrent_scans_config = self.as_ref().config_store.get_concurrent_scans().await?;
-        let port_batch_size_config = self
+        // Get port batch size from config, clamped to reasonable bounds
+        let port_scan_batch_size = self
             .as_ref()
             .config_store
             .get_port_scan_batch_size()
-            .await?;
-        let scan_params = self
-            .as_ref()
-            .utils
-            .get_optimal_concurrent_scans(concurrent_scans_config, port_batch_size_config)
-            .await?;
-        let port_scan_batch_size = scan_params.port_batch_size;
+            .await?
+            .clamp(16, 1000);
 
         // Check ARP capability once before partitioning
         let arp_available = can_arp_scan(use_npcap);
@@ -309,44 +295,14 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             unique_cidrs.len()
         };
 
-        // Use pre-computed concurrency if non-interfaced IPs exist
-        let non_interfaced_scan_concurrency = if !non_interfaced_ips.is_empty() {
-            scan_params.concurrent_scans
-        } else {
-            0
-        };
-
         // Use the port batch size from the coordinated calculation
         let effective_batch_size = port_scan_batch_size;
 
-        // First pass: estimate deep scan concurrency without considering its own FD usage
-        // This gives us a starting point for calculating the full FD budget
-        let initial_concurrent_ops = ConcurrentPipelineOps {
-            arp_subnet_count,
-            non_interfaced_scan_concurrency,
-            discovery_ports_count: discovery_ports.len(),
-            port_scan_batch_size,
-            deep_scan_concurrency: 0,
-            deep_scan_batch_size: 0,
-        };
-        let initial_deep_scan_concurrency = self
+        // Calculate deep scan concurrency based on FDs available after ARP
+        let mut deep_scan_concurrency = self
             .as_ref()
             .utils
-            .get_optimal_deep_scan_concurrency(effective_batch_size, initial_concurrent_ops)?;
-
-        // Second pass: recalculate with deep scan FD usage included
-        let concurrent_ops = ConcurrentPipelineOps {
-            arp_subnet_count,
-            non_interfaced_scan_concurrency,
-            discovery_ports_count: discovery_ports.len(),
-            port_scan_batch_size,
-            deep_scan_concurrency: initial_deep_scan_concurrency,
-            deep_scan_batch_size: effective_batch_size,
-        };
-        let deep_scan_concurrency = self
-            .as_ref()
-            .utils
-            .get_optimal_deep_scan_concurrency(effective_batch_size, concurrent_ops)?;
+            .get_optimal_deep_scan_concurrency(effective_batch_size, arp_subnet_count)?;
 
         // Create shared concurrency controller for graceful degradation
         let scan_controller = ScanConcurrencyController::new(effective_batch_size);
@@ -361,9 +317,6 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         // Buffer size allows ARP to run ahead while deep scanning catches up
         let (host_tx, mut host_rx) =
             tokio_mpsc::channel::<(IpAddr, Subnet, Option<MacAddress>)>(256);
-
-        // Track active ARP forwarders
-        let arp_forwarders_active = Arc::new(AtomicUsize::new(0));
 
         // Start ARP scanning for interfaced subnets
         if !interfaced_ips.is_empty() {
@@ -465,8 +418,6 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         // Use spawn_blocking since std::sync::mpsc::recv_timeout is blocking
                         let host_tx = host_tx.clone();
                         let subnet = subnet.clone();
-                        let forwarders = arp_forwarders_active.clone();
-                        forwarders.fetch_add(1, Ordering::SeqCst);
 
                         // Use a background thread for the blocking recv, forward via channel
                         std::thread::spawn(move || {
@@ -497,7 +448,6 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                 forwarded,
                                 "ARP forwarder completed"
                             );
-                            forwarders.fetch_sub(1, Ordering::SeqCst);
                         });
                     }
                     Err(e) => {
@@ -511,59 +461,20 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             }
         }
 
-        // Process non-interfaced subnets with port scanning (send to same channel)
+        // Send all non-interfaced IPs directly to deep scanner (no discovery phase).
+        // Key insight: ARP filters to responsive hosts before expensive port scanning.
+        // For non-interfaced subnets where ARP isn't possible, just deep scan all IPs
+        // directly - we're going to port scan them anyway.
         if !non_interfaced_ips.is_empty() {
-            // Use pre-computed concurrency (calculated earlier for FD budget)
-            let port_concurrency = non_interfaced_scan_concurrency;
-
             tracing::info!(
                 count = non_interfaced_ips.len(),
-                concurrency = port_concurrency,
-                "Port scanning non-interfaced subnets in parallel to ARP"
+                "Queuing non-interfaced IPs for deep scan (no ARP available)"
             );
 
             let host_tx = host_tx.clone();
-            let discovery_ports = discovery_ports.clone();
-            let cancel = cancel.clone();
-            let scan_controller_clone = scan_controller.clone();
-
-            // Spawn port scanning as a parallel task
-            tokio::spawn(async move {
-                let results: Vec<_> = stream::iter(non_interfaced_ips)
-                    .map(|(ip, subnet)| {
-                        let cancel = cancel.clone();
-                        let discovery_ports = discovery_ports.clone();
-                        let controller = scan_controller_clone.clone();
-
-                        async move {
-                            let result = scan_tcp_ports(
-                                ip,
-                                cancel,
-                                port_scan_batch_size,
-                                scan_rate_pps,
-                                discovery_ports,
-                                controller,
-                            )
-                            .await;
-
-                            match result {
-                                Ok(open_ports) if !open_ports.is_empty() => {
-                                    tracing::debug!(ip = %ip, ports = open_ports.len(), "Host responsive (TCP)");
-                                    Some((ip, subnet))
-                                }
-                                _ => None,
-                            }
-                        }
-                    })
-                    .buffer_unordered(port_concurrency)
-                    .filter_map(|x| async { x })
-                    .collect()
-                    .await;
-
-                for (ip, subnet) in results {
-                    let _ = host_tx.send((ip, subnet, None)).await;
-                }
-            });
+            for (ip, subnet) in non_interfaced_ips {
+                let _ = host_tx.send((ip, subnet, None)).await;
+            }
         }
 
         // Drop our copy of the sender so the channel closes when all forwarders are done
@@ -661,7 +572,11 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                 let total_batches = total_batches.clone();
                                 let scan_controller = scan_controller.clone();
 
-                                total_batches.fetch_add(batches_per_host, Ordering::Relaxed);
+                                // Only count batches for hosts with MAC (known responsive from ARP).
+                                // Non-interfaced hosts will have batches counted AFTER responsiveness check.
+                                if mac.is_some() {
+                                    total_batches.fetch_add(batches_per_host, Ordering::Relaxed);
+                                }
                                 let snmp_credential = self.domain.snmp_credentials.get_credential_for_ip(&ip);
                                 pending_scans.push(Box::pin(async move {
                                     let result = self
@@ -669,12 +584,13 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                             ip,
                                             subnet: &subnet,
                                             mac,
-                                            phase1_ports: Vec::new(),
                                             cancel,
                                             scan_rate_pps,
                                             port_scan_batch_size: effective_batch_size,
                                             gateway_ips: &gateway_ips,
                                             batches_completed: Some(&batches_completed),
+                                            total_batches: Some(&total_batches),
+                                            batches_per_host,
                                             snmp_credential,
                                             scan_controller,
                                         })
@@ -697,14 +613,36 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                     }
                                 }));
                             } else {
-                                // Count batches upfront so progress doesn't regress when pulled from buffer
-                                total_batches.fetch_add(batches_per_host, Ordering::Relaxed);
+                                // Only count batches for hosts with MAC (known responsive from ARP).
+                                // Non-interfaced hosts will have batches counted AFTER responsiveness check.
+                                if mac.is_some() {
+                                    total_batches.fetch_add(batches_per_host, Ordering::Relaxed);
+                                }
                                 pending_hosts.push((ip, subnet, mac));
                             }
                         }
                         None => {
                             channel_closed = true;
-                            tracing::debug!("Host discovery channel closed");
+
+                            // ARP complete - recalculate concurrency without ARP FD reservation
+                            // Those FDs (2 per subnet) are now available for deep scanning
+                            if let Ok(new_concurrency) = self.as_ref().utils.get_optimal_deep_scan_concurrency(
+                                effective_batch_size,
+                                0, // No more ARP channels open
+                            ) {
+                                if new_concurrency > deep_scan_concurrency {
+                                    tracing::info!(
+                                        old = deep_scan_concurrency,
+                                        new = new_concurrency,
+                                        "ARP complete, increasing deep scan concurrency"
+                                    );
+                                    deep_scan_concurrency = new_concurrency;
+                                } else {
+                                    tracing::debug!("Host discovery channel closed");
+                                }
+                            } else {
+                                tracing::debug!("Host discovery channel closed");
+                            }
                         }
                     }
                 }
@@ -715,13 +653,16 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         results.push(host);
                     }
 
-                    // Spawn next buffered host if available (batches already counted when buffered)
+                    // Spawn next buffered host if available
+                    // Note: batches only counted for MAC hosts when buffered; non-MAC hosts
+                    // have batches counted in deep_scan_host after responsiveness check
                     if let Some((ip, subnet, mac)) = pending_hosts.pop() {
                         let cancel = cancel.clone();
                         let gateway_ips = gateway_ips.clone();
                         let hosts_scanned = hosts_scanned.clone();
                         let last_activity = last_activity.clone();
                         let batches_completed = batches_completed.clone();
+                        let total_batches = total_batches.clone();
                         let snmp_credential = self.domain.snmp_credentials.get_credential_for_ip(&ip);
                         let scan_controller = scan_controller.clone();
 
@@ -731,12 +672,13 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                     ip,
                                     subnet: &subnet,
                                     mac,
-                                    phase1_ports: Vec::new(),
                                     cancel,
                                     scan_rate_pps,
                                     port_scan_batch_size: effective_batch_size,
                                     gateway_ips: &gateway_ips,
                                     batches_completed: Some(&batches_completed),
+                                    total_batches: Some(&total_batches),
+                                    batches_per_host,
                                     snmp_credential,
                                     scan_controller,
                                 })
@@ -765,7 +707,6 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                 _ = progress_ticker.tick() => {
                     let has_pending = !pending_scans.is_empty() || !pending_hosts.is_empty();
                     let grace_elapsed = last_activity.lock().unwrap().elapsed();
-                    let pipeline_elapsed = pipeline_start.elapsed();
                     let total_batches_val = total_batches.load(Ordering::Relaxed);
                     let batches_completed_val = batches_completed.load(Ordering::Relaxed);
 
@@ -776,29 +717,6 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         grace_elapsed,
                         total_batches_val,
                         batches_completed_val,
-                    );
-
-                    let phase = if !channel_closed {
-                        "arp"
-                    } else if total_batches_val > 0 && (batches_completed_val < total_batches_val || has_pending) {
-                        "deep_scan"
-                    } else {
-                        "grace"
-                    };
-
-                    tracing::trace!(
-                        phase,
-                        progress,
-                        channel_closed,
-                        total_batches = total_batches_val,
-                        batches_completed = batches_completed_val,
-                        pending_scans_count = pending_scans.len(),
-                        pending_hosts_count = pending_hosts.len(),
-                        has_pending,
-                        pipeline_elapsed_secs = pipeline_elapsed.as_secs(),
-                        estimated_arp_secs = estimated_arp_duration.as_secs(),
-                        grace_elapsed_secs = grace_elapsed.as_secs(),
-                        "Discovery loop state"
                     );
 
                     // Report progress if it changed OR if enough time has passed (heartbeat)
@@ -866,12 +784,13 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             ip,
             subnet,
             mac,
-            phase1_ports,
             cancel,
             scan_rate_pps,
             port_scan_batch_size,
             gateway_ips,
             batches_completed,
+            total_batches,
+            batches_per_host,
             snmp_credential,
             scan_controller,
         } = params;
@@ -883,14 +802,60 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         // Use fixed batch size, limited by scan controller if FD exhaustion has occurred
         let effective_batch_size = port_scan_batch_size.min(scan_controller.batch_size());
 
-        let phase1_port_nums: HashSet<u16> = phase1_ports.iter().map(|p| p.number()).collect();
+        // For non-interfaced hosts (no MAC from ARP), check responsiveness first.
+        // This avoids full 65k port scans on hosts that aren't online.
+        let mut responsiveness_ports: HashSet<u16> = HashSet::new();
+        if mac.is_none() {
+            let discovery_ports: Vec<u16> = Service::all_discovery_ports()
+                .iter()
+                .filter(|p| p.is_tcp())
+                .map(|p| p.number())
+                .collect();
+
+            tracing::debug!(
+                ip = %ip,
+                ports = discovery_ports.len(),
+                "Checking responsiveness (non-interfaced host)"
+            );
+
+            let responsive_ports = scan_tcp_ports(
+                ip,
+                cancel.clone(),
+                effective_batch_size,
+                scan_rate_pps,
+                discovery_ports,
+                scan_controller.clone(),
+            )
+            .await?;
+
+            if responsive_ports.is_empty() {
+                tracing::debug!(ip = %ip, "Host unresponsive, skipping deep scan");
+                return Ok(None);
+            }
+
+            // Host is responsive - NOW we count its batches in total_batches
+            // This ensures only responsive hosts contribute to progress calculation
+            if let Some(total) = total_batches {
+                total.fetch_add(batches_per_host, Ordering::Relaxed);
+            }
+
+            tracing::debug!(
+                ip = %ip,
+                open_ports = responsive_ports.len(),
+                "Host responsive, proceeding with deep scan"
+            );
+
+            // Track discovered ports so we don't re-scan them
+            responsiveness_ports.extend(responsive_ports.iter().map(|(p, _)| p.number()));
+        }
+
         let remaining_tcp_ports: Vec<u16> = (1..=65535)
-            .filter(|p| !phase1_port_nums.contains(p))
+            .filter(|p| !responsiveness_ports.contains(p))
             .collect();
 
         tracing::debug!(
             ip = %ip,
-            phase1_ports = phase1_ports.len(),
+            responsiveness_ports = responsiveness_ports.len(),
             remaining_ports = remaining_tcp_ports.len(),
             snmp_enabled = snmp_credential.is_some(),
             effective_batch_size,
@@ -927,8 +892,13 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             .collect();
         let mut open_ports: Vec<PortType> = all_tcp_ports.iter().map(|(p, _)| *p).collect();
 
-        // Merge phase 1 discovered ports
-        open_ports.extend(phase1_ports);
+        // Merge responsiveness check discovered ports (for non-interfaced hosts)
+        for port_num in responsiveness_ports {
+            let port = PortType::new_tcp(port_num);
+            if !open_ports.contains(&port) {
+                open_ports.push(port);
+            }
+        }
         open_ports.sort_by_key(|p| (p.number(), p.protocol()));
         open_ports.dedup();
 
@@ -974,8 +944,12 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         }
 
         // SNMP polling - gather system info, interface table, and neighbor discovery
+        // Only attempt if UDP 161 is open (saves time on hosts without SNMP)
+        let snmp_port_open = open_ports.contains(&PortType::Snmp);
         let (snmp_system_info, snmp_if_entries, lldp_neighbors, cdp_neighbors) =
-            if let Some(credential) = &snmp_credential {
+            if let Some(credential) = &snmp_credential
+                && snmp_port_open
+            {
                 match snmp::query_system_info(ip, credential).await {
                     Ok(system_info) => {
                         tracing::debug!(

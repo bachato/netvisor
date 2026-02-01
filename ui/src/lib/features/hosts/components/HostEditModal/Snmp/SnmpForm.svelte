@@ -6,24 +6,21 @@
 	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
 	import { useSnmpCredentialsQuery } from '$lib/features/snmp/queries';
 	import { SnmpCredentialDisplay } from '$lib/shared/components/forms/selection/display/SnmpCredentialDisplay.svelte';
-	import BetaTag from '$lib/shared/components/data/BetaTag.svelte';
+	import InfoCard from '$lib/shared/components/data/InfoCard.svelte';
+	import InfoRow from '$lib/shared/components/data/InfoRow.svelte';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import {
-		common_betaSnmpExplainer,
 		common_contact,
 		common_location,
 		common_none,
-		common_snmpCredential,
 		common_unknown,
 		hosts_snmp_chassisId,
 		hosts_snmp_credentialOverride,
-		hosts_snmp_demoModeReadOnly,
 		hosts_snmp_managementUrl,
 		hosts_snmp_sysDescr,
 		hosts_snmp_sysObjectId,
 		hosts_snmp_systemInfo,
-		hosts_snmp_systemInfoHelp,
 		hosts_snmp_systemInfoPending,
 		hosts_snmp_useNetworkDefault
 	} from '$lib/paraglide/messages';
@@ -92,25 +89,11 @@
 		{ value: 'default', label: hosts_snmp_useNetworkDefault() + ` (${networkCredentialName()})` },
 		{ value: 'override', label: 'Override with specific credential' }
 	]);
-
-	// Check if we have SNMP data to display
-	let hasSnmpData = $derived(
-		formData.sys_descr ||
-			formData.sys_object_id ||
-			formData.sys_location ||
-			formData.sys_contact ||
-			formData.chassis_id ||
-			formData.management_url
-	);
 </script>
 
 <div class="space-y-6 p-6">
 	<!-- Credential Override Section -->
 	<div class="space-y-4">
-		<h3 class="text-primary flex items-center gap-2 text-lg font-medium">
-			{common_snmpCredential()}
-			<BetaTag tooltip={common_betaSnmpExplainer()} />
-		</h3>
 		<!-- Credential Mode Radio Buttons -->
 		<form.Field name="credential_mode">
 			{#snippet children(field: AnyFieldApi)}
@@ -135,84 +118,33 @@
 				disabled={isNonOwnerInDemo}
 			/>
 		{/if}
-		{#if isNonOwnerInDemo}
-			<p class="text-muted mt-1 text-xs">{hosts_snmp_demoModeReadOnly()}</p>
-		{/if}
 	</div>
 
-	<!-- SNMP System Information (read-only, only shown when editing with data) -->
-	{#if isEditing && hasSnmpData}
-		<div class="space-y-4">
-			<h3 class="text-primary text-lg font-medium">{hosts_snmp_systemInfo()}</h3>
-			<p class="text-muted text-sm">
-				{hosts_snmp_systemInfoHelp()}
-			</p>
-
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-				{#if formData.sys_descr}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium uppercase tracking-wide"
-							>{hosts_snmp_sysDescr()}</span
-						>
-						<p class="text-primary mt-1 break-words text-sm">{formData.sys_descr}</p>
-					</div>
-				{/if}
-
-				{#if formData.sys_object_id}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium uppercase tracking-wide"
-							>{hosts_snmp_sysObjectId()}</span
-						>
-						<p class="text-primary mt-1 font-mono text-sm">{formData.sys_object_id}</p>
-					</div>
-				{/if}
-
-				{#if formData.sys_location}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium uppercase tracking-wide"
-							>{common_location()}</span
-						>
-						<p class="text-primary mt-1 text-sm">{formData.sys_location}</p>
-					</div>
-				{/if}
-
-				{#if formData.sys_contact}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium uppercase tracking-wide"
-							>{common_contact()}</span
-						>
-						<p class="text-primary mt-1 text-sm">{formData.sys_contact}</p>
-					</div>
-				{/if}
-
-				{#if formData.chassis_id}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium uppercase tracking-wide"
-							>{hosts_snmp_chassisId()}</span
-						>
-						<p class="text-primary mt-1 font-mono text-sm">{formData.chassis_id}</p>
-					</div>
-				{/if}
-
+	<!-- SNMP System Information (read-only, only shown when editing) -->
+	{#if isEditing}
+		<InfoCard title={hosts_snmp_systemInfo()}>
+			<InfoRow label={hosts_snmp_sysDescr()}>{formData.sys_descr || '-'}</InfoRow>
+			<InfoRow label={hosts_snmp_sysObjectId()} mono>{formData.sys_object_id || '-'}</InfoRow>
+			<InfoRow label={common_location()}>{formData.sys_location || '-'}</InfoRow>
+			<InfoRow label={common_contact()}>{formData.sys_contact || '-'}</InfoRow>
+			<InfoRow label={hosts_snmp_chassisId()} mono>{formData.chassis_id || '-'}</InfoRow>
+			<InfoRow label={hosts_snmp_managementUrl()}>
 				{#if formData.management_url}
-					<div class="bg-tertiary/30 rounded-lg p-4">
-						<span class="text-secondary block text-xs font-medium uppercase tracking-wide"
-							>{hosts_snmp_managementUrl()}</span
-						>
-						<!-- eslint-disable svelte/no-navigation-without-resolve -->
-						<a
-							href={formData.management_url}
-							target="_blank"
-							rel="external noopener noreferrer"
-							class="mt-1 break-all text-sm text-blue-400 hover:text-blue-300"
-						>
-							{formData.management_url}
-						</a>
-						<!-- eslint-enable svelte/no-navigation-without-resolve -->
-					</div>
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
+					<a
+						href={formData.management_url}
+						target="_blank"
+						rel="external noopener noreferrer"
+						class="break-all text-blue-400 hover:text-blue-300"
+					>
+						{formData.management_url}
+					</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
+				{:else}
+					-
 				{/if}
-			</div>
-		</div>
+			</InfoRow>
+		</InfoCard>
 	{/if}
 
 	{#if !isEditing}

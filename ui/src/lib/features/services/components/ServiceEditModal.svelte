@@ -112,7 +112,7 @@
 
 	<!-- Content -->
 	<div class="flex h-full flex-col overflow-hidden">
-		<div class="flex-1 overflow-y-auto">
+		<div class="min-h-0 flex-1 overflow-y-auto">
 			<div class="space-y-8 p-6">
 				<ServiceConfigPanel
 					host={hostFormData}
@@ -121,10 +121,9 @@
 					index={0}
 					onChange={handleServiceUpdate}
 				/>
-
-				<EntityMetadataSection entities={[service]} />
 			</div>
 		</div>
+		<EntityMetadataSection entities={[service]} />
 	</div>
 
 	{#snippet footer()}

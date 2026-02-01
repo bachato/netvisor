@@ -101,7 +101,7 @@ pub struct DaemonCli {
     #[arg(long)]
     scan_rate_pps: Option<u32>,
 
-    /// Port scan batch size - number of ports scanned concurrently per host (default: 200, range: 16-1000)
+    /// Number of ports scanned concurrently per host. Higher values scan faster but may overwhelm some hosts
     #[arg(long)]
     port_scan_batch_size: Option<usize>,
 

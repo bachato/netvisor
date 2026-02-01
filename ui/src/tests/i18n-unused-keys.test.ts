@@ -21,7 +21,11 @@ const ALLOWED_DUPLICATE_KEYS = new Set([
 	// System Description - used in both LLDP neighbor info and SNMP system info contexts
 	// These may need different translations in some languages
 	'hosts_ifEntries_lldpSysDescr',
-	'hosts_snmp_sysDescr'
+	'hosts_snmp_sysDescr',
+	// Chassis ID - used in both ifEntry LLDP info and SNMP system info contexts
+	// These may need different translations in some languages
+	'hosts_ifEntries_chassisId',
+	'hosts_snmp_chassisId'
 ]);
 
 // Keys that are allowed to be single-word without common_ prefix (context-specific technical terms)
@@ -38,7 +42,9 @@ const ALLOWED_SINGLE_WORD_KEYS = new Set([
 	// SNMP placeholders - context-specific defaults
 	'snmp_communityStringPlaceholder',
 	// Tab names - context-specific to their feature
-	'hosts_editor_snmpTab'
+	'hosts_editor_snmpTab',
+	// LLDP/CDP neighbor context - specific to network discovery protocol terminology
+	'hosts_ifEntries_neighbor'
 ]);
 
 function findFilesRecursively(dir: string, extensions: string[]): string[] {

@@ -61,7 +61,7 @@ impl DaemonUtils for LinuxDaemonUtils {
     fn get_optimal_deep_scan_concurrency(
         &self,
         port_batch_size: usize,
-        concurrent_ops: crate::daemon::utils::base::ConcurrentPipelineOps,
+        arp_subnet_count: usize,
     ) -> Result<usize, Error> {
         let fd_limit = Self::get_fd_limit()?;
 
@@ -73,10 +73,10 @@ impl DaemonUtils for LinuxDaemonUtils {
         // - Safety buffer (50)
         let base_reserved = 203;
 
-        // FDs consumed by concurrent pipeline operations (calculated precisely)
-        let pipeline_fds = concurrent_ops.estimated_fd_usage();
+        // FDs consumed by ARP channels (2 FDs per subnet: tx + rx)
+        let arp_fds = arp_subnet_count * 2;
 
-        let total_reserved = base_reserved + pipeline_fds;
+        let total_reserved = base_reserved + arp_fds;
         let available = fd_limit.saturating_sub(total_reserved);
 
         // Calculate FDs consumed per deep-scanned host:
@@ -92,14 +92,13 @@ impl DaemonUtils for LinuxDaemonUtils {
         tracing::debug!(
             fd_limit,
             base_reserved,
-            pipeline_fds,
+            arp_fds,
             total_reserved,
             available,
             port_batch_size,
             fds_per_deep_host,
             concurrency,
-            arp_subnets = concurrent_ops.arp_subnet_count,
-            non_interfaced_concurrency = concurrent_ops.non_interfaced_scan_concurrency,
+            arp_subnet_count,
             "Calculated deep scan concurrency"
         );
 

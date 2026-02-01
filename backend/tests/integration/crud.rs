@@ -356,6 +356,7 @@ async fn test_snmp_credential_crud(ctx: &TestContext) -> Result<(), String> {
         name: "Test SNMP Credential".to_string(),
         version: SnmpVersion::V2c,
         community: SecretString::from("test-community"),
+        tags: Vec::new(),
     });
 
     let created: SnmpCredential = ctx

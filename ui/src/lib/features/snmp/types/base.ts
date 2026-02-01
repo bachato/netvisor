@@ -26,6 +26,7 @@ export function createDefaultSnmpCredential(organization_id: string): SnmpCreden
 		version: 'V2c',
 		community: '',
 		organization_id,
+		tags: [],
 		id: uuidv4Sentinel,
 		created_at: utcTimeZoneSentinel,
 		updated_at: utcTimeZoneSentinel

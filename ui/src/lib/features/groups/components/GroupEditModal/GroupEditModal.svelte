@@ -301,7 +301,7 @@
 		}}
 		class="flex min-h-0 flex-1 flex-col"
 	>
-		<div class="flex-1 overflow-auto">
+		<div class="min-h-0 flex-1 overflow-auto">
 			<!-- Details Tab -->
 			{#if activeTab === 'details'}
 				<div class="space-y-4 p-6">
@@ -370,10 +370,6 @@
 							/>
 						{/snippet}
 					</form.Field>
-
-					{#if isEditing && group}
-						<EntityMetadataSection entities={[group]} />
-					{/if}
 				</div>
 			{/if}
 
@@ -424,6 +420,10 @@
 				</div>
 			{/if}
 		</div>
+
+		{#if isEditing && group}
+			<EntityMetadataSection entities={[group]} />
+		{/if}
 
 		<!-- Footer -->
 		<div class="modal-footer">

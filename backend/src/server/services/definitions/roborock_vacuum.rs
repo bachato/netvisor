@@ -26,7 +26,7 @@ impl ServiceDefinition for RoborockVacuum {
     }
 
     fn logo_url(&self) -> &'static str {
-        "https://cdn.brandfetch.io/idPj895w68/w/210/h/210/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B"
+        "https://cdn.prod.website-files.com/6720fa7290112f642d0a83ac/674de5c03f0d05e27b16b2cf_roborock_logo.webp"
     }
 }
 

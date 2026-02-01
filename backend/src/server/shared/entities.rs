@@ -48,6 +48,7 @@ pub fn is_entity_taggable(entity_type: EntityDiscriminants) -> bool {
             | EntityDiscriminants::Daemon
             | EntityDiscriminants::DaemonApiKey
             | EntityDiscriminants::UserApiKey
+            | EntityDiscriminants::SnmpCredential
     )
 }
 

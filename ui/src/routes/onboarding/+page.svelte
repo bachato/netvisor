@@ -17,7 +17,7 @@
 		useOnboardingStateQuery
 	} from '$lib/features/auth/queries';
 	import { fetchOrganization } from '$lib/features/organizations/queries';
-	import { navigate, getRoute } from '$lib/shared/utils/navigation';
+	import { navigate } from '$lib/shared/utils/navigation';
 	import { useConfigQuery, isSelfHosted } from '$lib/shared/stores/config-query';
 	import { resolve } from '$app/paths';
 	import { onboardingStore } from '$lib/features/auth/stores/onboarding';
@@ -283,9 +283,8 @@
 
 	async function handleVerificationComplete() {
 		// Refresh organization data to ensure routing has fresh data
-		const org = await fetchOrganization();
+		await fetchOrganization();
 		// Navigate to correct destination (billing or main app)
-		const route = getRoute();
 		await navigate();
 	}
 
