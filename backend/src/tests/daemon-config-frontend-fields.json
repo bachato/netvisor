@@ -90,6 +90,12 @@
     "helpText": "Maximum port scan probes per second (default: 500, controls rate of TCP/UDP connection attempts to avoid overwhelming target hosts)"
   },
   {
+    "id": "port_scan_batch_size",
+    "cliFlag": "--port-scan-batch-size",
+    "envVar": "SCANOPY_PORT_SCAN_BATCH_SIZE",
+    "helpText": "Port scan batch size - number of ports scanned concurrently per host (default: 200, range: 16-1000)"
+  },
+  {
     "id": "arp_rate_pps",
     "cliFlag": "--arp-rate-pps",
     "envVar": "SCANOPY_ARP_RATE_PPS",

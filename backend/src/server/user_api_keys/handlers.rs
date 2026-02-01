@@ -1,3 +1,4 @@
+use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
 use crate::server::shared::extractors::Query;
 use crate::server::shared::storage::traits::Entity;
 use crate::server::{
@@ -12,7 +13,7 @@ use crate::server::{
             query::{FilterQueryExtractor, NoFilterQuery},
             traits::{BulkDeleteResponse, bulk_delete_handler, delete_handler, get_by_id_handler},
         },
-        services::traits::CrudService,
+        services::traits::{CrudService, EventBusService},
         types::api::{
             ApiError, ApiErrorResponse, ApiResponse, ApiResult, EmptyApiResponse,
             PaginatedApiResponse,
@@ -29,6 +30,7 @@ use axum::{
 };
 use axum_client_ip::ClientIp;
 use axum_extra::{TypedHeader, headers::UserAgent};
+use chrono::Utc;
 use std::sync::Arc;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
@@ -128,6 +130,7 @@ pub async fn create_user_api_key(
     let organization_id = auth.require_organization_id()?;
     let user_permissions = auth.require_permissions()?;
     let user_network_ids = auth.network_ids();
+    let entity = auth.entity.clone();
 
     tracing::debug!(
         api_key_name = %api_key.base.name,
@@ -155,7 +158,7 @@ pub async fn create_user_api_key(
 
     let service = &state.services.user_api_key_service;
     let api_key = service
-        .create_with_networks(api_key, network_ids, auth.entity.clone())
+        .create_with_networks(api_key, network_ids, entity.clone())
         .await
         .map_err(|e| {
             tracing::error!(
@@ -165,6 +168,29 @@ pub async fn create_user_api_key(
             );
             ApiError::internal_error(&e.to_string())
         })?;
+
+    // Emit FirstUserApiKeyCreated telemetry event if this is the first user API key
+    let organization = state
+        .services
+        .organization_service
+        .get_by_id(&organization_id)
+        .await?;
+
+    if let Some(organization) = organization
+        && organization.not_onboarded(&TelemetryOperation::FirstUserApiKeyCreated)
+    {
+        service
+            .event_bus()
+            .publish_telemetry(TelemetryEvent {
+                id: Uuid::new_v4(),
+                organization_id,
+                operation: TelemetryOperation::FirstUserApiKeyCreated,
+                timestamp: Utc::now(),
+                metadata: serde_json::json!({}),
+                authentication: entity,
+            })
+            .await?;
+    }
 
     Ok(Json(ApiResponse::success(UserApiKeyResponse {
         key: plaintext,

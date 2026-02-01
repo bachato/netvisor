@@ -18,7 +18,6 @@
 		common_version,
 		onboarding_addAnotherNetwork,
 		onboarding_mspNetworkHelp,
-		onboarding_orgHelpText,
 		onboarding_removeNetwork,
 		onboarding_visualizeCompany,
 		onboarding_visualizeHomelab,
@@ -220,7 +219,6 @@
 							label={useCaseConfig.orgLabel}
 							id="organizationName"
 							placeholder={useCaseConfig.orgPlaceholder}
-							helpText={useCase === 'homelab' ? '' : onboarding_orgHelpText()}
 							required={true}
 							{field}
 						/>
@@ -229,7 +227,7 @@
 
 				<div class="space-y-4">
 					{#each Array.from({ length: networkCount }, (_, i) => i) as index (index)}
-						<div class="border-secondary/20 rounded-lg border p-4">
+						<div class="card card-static">
 							<div class="flex items-center gap-2">
 								<div class="flex-1">
 									<form.Field

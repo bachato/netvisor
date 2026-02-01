@@ -258,8 +258,8 @@ export interface paths {
         put?: never;
         /**
          * Submit enterprise plan inquiry
-         * @description Creates a contact and company in HubSpot for sales follow-up.
-         *     This endpoint does not require authentication.
+         * @description Dual submission: Form API (for notifications) + CRM API (for Company properties).
+         *     Requires authentication to link the inquiry to an organization.
          */
         post: operations["submit_enterprise_inquiry"];
         delete?: never;
@@ -2640,14 +2640,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-01-27T01:19:41.849454Z",
-             *       "id": "9a953f47-bb40-4425-8614-674cb12e249d",
+             *       "created_at": "2026-01-31T21:56:43.502727Z",
+             *       "id": "e2b15556-6f1e-4967-8a2b-52613a8c0870",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-01-27T01:19:41.849454Z"
+             *       "updated_at": "2026-01-31T21:56:43.502727Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2878,14 +2878,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-01-27T01:19:41.832863Z",
-             *               "id": "068a8b6c-4a80-4159-a04d-77ebf7a18a01",
+             *               "created_at": "2026-01-31T21:56:43.491269Z",
+             *               "id": "f21dd429-dba1-4b37-9769-af1acf894382",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-01-27T01:19:41.832863Z"
+             *               "updated_at": "2026-01-31T21:56:43.491269Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -2894,7 +2894,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Lidarr",
+             *           "service_definition": "Kafka",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3042,10 +3042,18 @@ export interface components {
         ApiResponse_OnboardingStateResponse: {
             /** @description Response from onboarding state endpoint */
             data?: {
-                /** @description Network IDs from pending setup (if any) */
+                /** @description Daemon setups (if any) */
+                daemon_setups?: components["schemas"]["OnboardingDaemonSetupState"][];
+                /** @description Network IDs from pending setup (if any) - kept for backwards compatibility */
                 network_ids: string[];
+                /** @description Networks from pending setup (with names and IDs) */
+                networks: components["schemas"]["OnboardingNetworkState"][];
+                /** @description Organization name from pending setup */
+                org_name?: string | null;
                 /** @description Current onboarding step (if any) */
                 step?: string | null;
+                /** @description Use case selection (homelab, company, msp) */
+                use_case?: string | null;
             };
             error?: string | null;
             meta: components["schemas"]["ApiMeta"];
@@ -3160,14 +3168,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-01-27T01:19:41.843662Z",
-             *           "id": "4ce0df18-7cd8-4469-a665-ad287b1d4b46",
+             *           "created_at": "2026-01-31T21:56:43.499444Z",
+             *           "id": "f251b4e3-4d93-4083-bfcd-f31cab097db1",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-01-27T01:19:41.843662Z"
+             *           "updated_at": "2026-01-31T21:56:43.499444Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3176,7 +3184,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Lidarr",
+             *       "service_definition": "Kafka",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3472,14 +3480,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-01-27T01:19:41.833064Z",
-         *       "id": "245adb47-6ff2-4d7a-96cb-dc006829437a",
+         *       "created_at": "2026-01-31T21:56:43.491876Z",
+         *       "id": "419d7e31-25a8-465e-ba47-0dfc2be7f434",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-01-27T01:19:41.833064Z"
+         *       "updated_at": "2026-01-31T21:56:43.491876Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3644,7 +3652,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Lidarr",
+         *           "service_definition": "Kafka",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4046,18 +4054,23 @@ export interface components {
             company: string;
             /** @description Contact email */
             email: string;
+            /** @description HubSpot tracking cookie (hutk) for linking form submission to visitor */
+            hutk?: string | null;
+            /** @description Message/use case description (maps to HubSpot "message" field) */
+            message: string;
             /** @description Contact name */
             name: string;
-            /** @description Network count: 1-5, 6-20, 21-50, 50+ */
-            network_count?: string | null;
+            /**
+             * Format: int64
+             * @description Number of networks/sites
+             */
+            network_count?: number | null;
             /** @description Plan type being inquired about */
             plan_type?: string | null;
             /** @description Team/company size: 1-10, 11-25, 26-50, 51-100, 101-250, 251-500, 501-1000, 1001+ */
             team_size: string;
             /** @description Urgency: immediately, 1-3 months, 3-6 months, exploring */
             urgency?: string | null;
-            /** @description Use case description */
-            use_case: string;
         };
         /** @enum {string} */
         EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "IfEntry" | "SnmpCredential" | "Subnet" | "Group" | "Topology" | "Unknown";
@@ -4271,14 +4284,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-01-27T01:19:41.832584Z",
-         *               "id": "d140bbbb-57a8-4de2-98b5-55b9a032434b",
+         *               "created_at": "2026-01-31T21:56:43.490905Z",
+         *               "id": "ee4377be-6fd1-4c42-8810-5060479130cc",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-01-27T01:19:41.832584Z"
+         *               "updated_at": "2026-01-31T21:56:43.490905Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4287,7 +4300,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Lidarr",
+         *           "service_definition": "Kafka",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4746,16 +4759,54 @@ export interface components {
             name: string;
             slug: string;
         };
+        /** @description Daemon setup data in onboarding state response */
+        OnboardingDaemonSetupState: {
+            /** @description API key (only returned if user chose to install now) */
+            api_key?: string | null;
+            /** @description Daemon name */
+            daemon_name: string;
+            /**
+             * Format: uuid
+             * @description Network ID this daemon is for
+             */
+            network_id: string;
+        };
+        /** @description Network data in onboarding state response */
+        OnboardingNetworkState: {
+            /**
+             * Format: uuid
+             * @description Network ID (if created)
+             */
+            id?: string | null;
+            /** @description Network name */
+            name: string;
+            /** @description SNMP community string */
+            snmp_community?: string | null;
+            /** @description Whether SNMP is enabled */
+            snmp_enabled?: boolean;
+            /** @description SNMP version */
+            snmp_version?: string | null;
+        };
         /** @description Response from onboarding state endpoint */
         OnboardingStateResponse: {
-            /** @description Network IDs from pending setup (if any) */
+            /** @description Daemon setups (if any) */
+            daemon_setups?: components["schemas"]["OnboardingDaemonSetupState"][];
+            /** @description Network IDs from pending setup (if any) - kept for backwards compatibility */
             network_ids: string[];
+            /** @description Networks from pending setup (with names and IDs) */
+            networks: components["schemas"]["OnboardingNetworkState"][];
+            /** @description Organization name from pending setup */
+            org_name?: string | null;
             /** @description Current onboarding step (if any) */
             step?: string | null;
+            /** @description Use case selection (homelab, company, msp) */
+            use_case?: string | null;
         };
         /** @description Request to save onboarding step */
         OnboardingStepRequest: {
             step: string;
+            /** @description Use case selection (homelab, company, msp) */
+            use_case?: string | null;
         };
         /**
          * @description Direction for ORDER BY clauses.
@@ -5190,14 +5241,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-01-27T01:19:41.832992Z",
-         *           "id": "08617667-3faf-42e8-8806-7508ba440bd8",
+         *           "created_at": "2026-01-31T21:56:43.491722Z",
+         *           "id": "81fbbbe3-eb76-4d7b-90bb-87612d1f2999",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-01-27T01:19:41.832992Z"
+         *           "updated_at": "2026-01-31T21:56:43.491722Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5206,7 +5257,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Lidarr",
+         *       "service_definition": "Kafka",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6314,6 +6365,15 @@ export interface operations {
             };
             /** @description Invalid request or HubSpot not configured */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -131,6 +131,8 @@
 		planName={selectedPlan ? billingPlanHelpers.getName(selectedPlan.type) : ''}
 		planType={selectedPlan?.type ?? ''}
 		userEmail={currentUser?.email ?? ''}
+		orgName={organization?.name ?? ''}
+		companySize={$onboardingStore.companySize ?? ''}
 		onClose={() => (inquiryModalOpen = false)}
 	/>
 </div>

@@ -160,7 +160,7 @@ impl EventSubscriber for TopologyService {
 
         // Apply changes to all topologies in affected networks
         for network_id in network_ids {
-            let network_filter = StorageFilter::<Topology>::new().network_ids(&[network_id]);
+            let network_filter = StorageFilter::<Topology>::new_from_network_ids(&[network_id]);
             let topologies = self.get_all(network_filter).await?;
 
             let (hosts, interfaces, subnets, groups, ports, bindings, if_entries) =

@@ -262,12 +262,14 @@ export function isAuthenticated(user: User | null | undefined): boolean {
 }
 
 /**
- * Mutation hook for saving onboarding step
+ * Mutation hook for saving onboarding step (and optionally use_case)
  */
 export function useOnboardingStepMutation() {
 	return createMutation(() => ({
-		mutationFn: async (step: string) => {
-			const { data } = await apiClient.POST('/api/auth/onboarding-step', { body: { step } });
+		mutationFn: async (params: { step: string; use_case?: string }) => {
+			const { data } = await apiClient.POST('/api/auth/onboarding-step', {
+				body: { step: params.step, use_case: params.use_case }
+			});
 			if (!data?.success) {
 				throw new Error(data?.error || 'Failed to save onboarding step');
 			}
@@ -285,7 +287,7 @@ export function useOnboardingStateQuery() {
 		queryFn: async () => {
 			const { data } = await apiClient.GET('/api/auth/onboarding-state', {});
 			if (!data?.success || !data.data) {
-				return { step: null, network_ids: [] };
+				return { step: null, use_case: null, org_name: null, networks: [], network_ids: [] };
 			}
 			return data.data;
 		},

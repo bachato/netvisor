@@ -1,7 +1,8 @@
 use crate::server::hubspot::types::{
     CompanyProperties, ContactProperties, HubSpotAssociationInput, HubSpotAssociationObject,
     HubSpotAssociationRequest, HubSpotAssociationType, HubSpotFilter, HubSpotFilterGroup,
-    HubSpotFormField, HubSpotObjectResponse, HubSpotSearchRequest, HubSpotSearchResponse,
+    HubSpotFormContext, HubSpotFormField, HubSpotObjectResponse, HubSpotSearchRequest,
+    HubSpotSearchResponse,
 };
 use anyhow::{Result, anyhow};
 use backon::{ExponentialBuilder, Retryable};
@@ -387,6 +388,79 @@ impl HubSpotClient {
         }
     }
 
+    /// Get companies associated with a contact
+    ///
+    /// HubSpot may auto-create companies from email domains when contacts are created.
+    /// This method retrieves those associations so we can update the existing company
+    /// instead of creating duplicates.
+    pub async fn get_contact_associated_companies(&self, contact_id: &str) -> Result<Vec<String>> {
+        let url = format!(
+            "{}/crm/v3/objects/contacts/{}/associations/companies",
+            HUBSPOT_API_BASE, contact_id
+        );
+
+        let operation = || async {
+            self.wait_for_rate_limit().await;
+
+            let response = self
+                .client
+                .get(&url)
+                .header("Authorization", format!("Bearer {}", self.api_key))
+                .send()
+                .await
+                .map_err(|e| anyhow!("HubSpot get associations failed: {}", e))?;
+
+            let status = response.status();
+
+            if status.is_success() {
+                #[derive(serde::Deserialize)]
+                struct AssociationResult {
+                    id: String,
+                }
+                #[derive(serde::Deserialize)]
+                struct AssociationsResponse {
+                    results: Vec<AssociationResult>,
+                }
+
+                let result: AssociationsResponse = response
+                    .json()
+                    .await
+                    .map_err(|e| anyhow!("Failed to parse HubSpot associations response: {}", e))?;
+
+                return Ok(result.results.into_iter().map(|r| r.id).collect());
+            }
+
+            let error_body = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+
+            if Self::is_retryable_error(status) {
+                return Err(anyhow!(
+                    "HubSpot get associations error (retryable) {}: {}",
+                    status,
+                    error_body
+                ));
+            }
+
+            Err(anyhow!(
+                "HubSpot get associations error {}: {}",
+                status,
+                error_body
+            ))
+        };
+
+        operation
+            .retry(
+                ExponentialBuilder::default()
+                    .with_max_times(3)
+                    .with_min_delay(std::time::Duration::from_millis(500))
+                    .with_max_delay(std::time::Duration::from_secs(10)),
+            )
+            .when(|e| e.to_string().contains("retryable"))
+            .await
+    }
+
     /// Associate a contact with a company
     pub async fn associate_contact_to_company(
         &self,
@@ -464,50 +538,120 @@ impl HubSpotClient {
             .await
     }
 
-    /// Create contact, company, and associate them together
-    pub async fn upsert_contact_with_company(
+    /// Create or update contact, then ensure company exists and is associated.
+    /// Returns the HubSpot company ID to be stored on the organization record.
+    ///
+    /// This method handles HubSpot's automatic company creation feature:
+    /// when a contact is created, HubSpot may auto-create a company based on
+    /// the email domain. We retry fetching associated companies to handle
+    /// eventual consistency, then either update the auto-created company
+    /// or create a new one.
+    pub async fn sync_contact_and_company(
         &self,
         contact_properties: ContactProperties,
         company_properties: CompanyProperties,
-    ) -> Result<(HubSpotObjectResponse, HubSpotObjectResponse)> {
+    ) -> Result<(HubSpotObjectResponse, String)> {
         // Upsert contact
         let contact = self.upsert_contact(contact_properties).await?;
 
-        // Upsert company
-        let company = self.upsert_company(company_properties).await?;
+        // Check for auto-created company with retries for eventual consistency.
+        // HubSpot may not have indexed the association immediately after contact creation.
+        let contact_id = contact.id.clone();
+        let get_associated = || async {
+            let associated = self.get_contact_associated_companies(&contact_id).await?;
+            if let Some(id) = associated.first() {
+                Ok(id.clone())
+            } else {
+                // Return error to trigger retry
+                Err(anyhow!("No associated company found yet"))
+            }
+        };
 
-        // Associate contact to company
-        self.associate_contact_to_company(&contact.id, &company.id)
-            .await?;
+        let company_id: Option<String> = get_associated
+            .retry(
+                ExponentialBuilder::default()
+                    .with_max_times(3)
+                    .with_min_delay(std::time::Duration::from_millis(500))
+                    .with_max_delay(std::time::Duration::from_secs(2)),
+            )
+            .await
+            .ok(); // Convert final error to None
+
+        // Update existing or create new company
+        let final_company_id = match company_id {
+            Some(ref id) => {
+                tracing::debug!(
+                    contact_id = %contact.id,
+                    company_id = %id,
+                    "Updating auto-created HubSpot company"
+                );
+                self.update_company(id, company_properties).await?;
+                id.clone()
+            }
+            None => {
+                tracing::debug!(
+                    contact_id = %contact.id,
+                    "Creating new HubSpot company"
+                );
+                let company = self.create_company(company_properties).await?;
+                self.associate_contact_to_company(&contact.id, &company.id)
+                    .await?;
+                company.id
+            }
+        };
 
         tracing::debug!(
             contact_id = %contact.id,
-            company_id = %company.id,
+            company_id = %final_company_id,
             "Successfully synced contact and company to HubSpot"
         );
 
-        Ok((contact, company))
+        Ok((contact, final_company_id))
     }
 
     /// Submit enterprise inquiry form to HubSpot
     ///
     /// This triggers form submission workflows and email notifications,
     /// unlike the CRM API which only creates/updates records.
+    ///
+    /// The context includes:
+    /// - `hutk`: HubSpot tracking cookie (links submission to visitor)
+    /// - `ip_address`: Client IP for analytics
+    /// - Legal consent options to mark contact as marketable
     pub async fn submit_enterprise_inquiry_form(
         &self,
         fields: Vec<HubSpotFormField>,
+        form_context: HubSpotFormContext,
     ) -> Result<()> {
         let url = format!(
             "https://api.hsforms.com/submissions/v3/integration/submit/{}/{}",
             HUBSPOT_PORTAL_ID, HUBSPOT_ENTERPRISE_FORM_ID
         );
 
+        let mut context = serde_json::json!({
+            "pageUri": form_context.page_uri,
+            "pageName": form_context.page_name
+        });
+        if let Some(hutk) = &form_context.hutk {
+            context["hutk"] = serde_json::Value::String(hutk.clone());
+        }
+        if let Some(ip) = &form_context.ip_address {
+            context["ipAddress"] = serde_json::Value::String(ip.clone());
+        }
+
+        // Legal consent options - marks contact as marketable regardless of hutk
+        // This is appropriate because form submission is explicit consent to be contacted
+        let legal_consent = serde_json::json!({
+            "consent": {
+                "consentToProcess": true,
+                "text": "I agree to be contacted regarding my inquiry."
+            }
+        });
+
         let request_body = serde_json::json!({
             "fields": fields,
-            "context": {
-                "pageUri": "https://app.scanopy.io/billing",
-                "pageName": "Enterprise Inquiry"
-            }
+            "context": context,
+            "legalConsentOptions": legal_consent
         });
 
         let operation = || async {

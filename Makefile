@@ -1,4 +1,4 @@
-.PHONY: help build test clean format generate-schema generate-messages seed-dev set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise
+.PHONY: help build test clean format generate-schema generate-messages generate-fixtures seed-dev set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise
 
 help:
 	@echo "Scanopy Development Commands"
@@ -23,6 +23,7 @@ help:
 	@echo "  make format         - Format all code"
 	@echo "  make generate-types  - Generate TypeScript types from Rust"
 	@echo "  make generate-messages - Generate i18n message functions from messages/*.json"
+	@echo "  make generate-fixtures - Regenerate billing-plans.json and features.json from backend"
 	@echo "  make generate-schema - Generate database schema diagram (requires tbls)"
 	@echo "  make clean          - Clean build artifacts and containers"
 	@echo "  make install-dev-mac    - Install development dependencies on macOS"
@@ -152,6 +153,13 @@ generate-messages:
 	@echo "Generating i18n messages..."
 	cd ui && npx paraglide-js compile --outdir ./src/lib/paraglide --silent
 	@echo "Messages generated successfully"
+
+generate-fixtures:
+	@echo "Generating billing and feature fixtures from backend..."
+	cd backend && cargo test generate_billing_fixtures -- --nocapture
+	mv ui/src/lib/data/billing-plans-next.json ui/src/lib/data/billing-plans.json
+	mv ui/src/lib/data/features-next.json ui/src/lib/data/features.json
+	@echo "✅ Generated ui/src/lib/data/billing-plans.json and features.json"
 
 stripe-webhook:
 	stripe listen --forward-to http://localhost:60072/api/billing/webhooks

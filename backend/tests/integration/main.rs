@@ -10,6 +10,7 @@
 //! - Handler validation tests
 
 mod billing;
+mod billing_fixtures;
 mod compat;
 mod crud;
 mod discovery;
@@ -143,9 +144,23 @@ async fn integration_tests() {
         .expect("ServerPoll discovery failed");
 
     // Verify service discovered
-    let _service = discovery::verify_home_assistant_discovered(&client)
+    let service = discovery::verify_home_assistant_discovered(&client)
         .await
         .expect("Failed to find Home Assistant after ServerPoll discovery");
+
+    // Test creating user entities that reference discovered data
+    let tag = discovery::create_tag(&client, organization.id)
+        .await
+        .expect("Failed to create tag");
+
+    // Apply the tag to the discovered service
+    discovery::apply_tag_to_service(&client, tag.id, service.id)
+        .await
+        .expect("Failed to apply tag to discovered service");
+
+    let _group = discovery::create_group(&client, network.id)
+        .await
+        .expect("Failed to create group");
 
     println!("\n✅ ServerPoll integration flow completed!");
 

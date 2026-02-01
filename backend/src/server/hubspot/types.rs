@@ -18,6 +18,40 @@ impl HubSpotFormField {
     }
 }
 
+/// Context for HubSpot form submissions
+#[derive(Debug, Clone, Default)]
+pub struct HubSpotFormContext {
+    /// HubSpot tracking cookie (links submission to visitor)
+    pub hutk: Option<String>,
+    /// Client IP address (for analytics)
+    pub ip_address: Option<String>,
+    /// Page URI where form was submitted
+    pub page_uri: String,
+    /// Page name/title
+    pub page_name: String,
+}
+
+impl HubSpotFormContext {
+    pub fn new(page_uri: impl Into<String>, page_name: impl Into<String>) -> Self {
+        Self {
+            hutk: None,
+            ip_address: None,
+            page_uri: page_uri.into(),
+            page_name: page_name.into(),
+        }
+    }
+
+    pub fn with_hutk(mut self, hutk: Option<String>) -> Self {
+        self.hutk = hutk;
+        self
+    }
+
+    pub fn with_ip_address(mut self, ip: Option<String>) -> Self {
+        self.ip_address = ip;
+        self
+    }
+}
+
 /// HubSpot contact properties for Scanopy users
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ContactProperties {
@@ -225,6 +259,23 @@ pub struct CompanyProperties {
     /// Urgency for enterprise inquiry: immediately, 1-3 months, 3-6 months, exploring
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scanopy_urgency: Option<String>,
+
+    // === Inquiry-specific fields (separate from actual usage data) ===
+    /// Plan type being inquired about (inquiry context, not actual subscription)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scanopy_inquiry_plan_type: Option<String>,
+
+    /// Urgency from inquiry form (inquiry context)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scanopy_inquiry_urgency: Option<String>,
+
+    /// Network count from inquiry form (inquiry context, not actual count)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scanopy_inquiry_network_count: Option<i64>,
+
+    /// Date of inquiry submission (ISO 8601)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scanopy_inquiry_date: Option<String>,
 }
 
 impl CompanyProperties {
@@ -363,6 +414,29 @@ impl CompanyProperties {
 
     pub fn with_urgency(mut self, urgency: impl Into<String>) -> Self {
         self.scanopy_urgency = Some(urgency.into());
+        self
+    }
+
+    // === Inquiry-specific setters ===
+
+    pub fn with_inquiry_plan_type(mut self, plan_type: impl Into<String>) -> Self {
+        self.scanopy_inquiry_plan_type = Some(plan_type.into());
+        self
+    }
+
+    pub fn with_inquiry_urgency(mut self, urgency: impl Into<String>) -> Self {
+        self.scanopy_inquiry_urgency = Some(urgency.into());
+        self
+    }
+
+    pub fn with_inquiry_network_count(mut self, count: i64) -> Self {
+        self.scanopy_inquiry_network_count = Some(count);
+        self
+    }
+
+    pub fn with_inquiry_date(mut self, date: DateTime<Utc>) -> Self {
+        // HubSpot datetime properties use Unix timestamp in milliseconds
+        self.scanopy_inquiry_date = Some(date.timestamp_millis().to_string());
         self
     }
 }

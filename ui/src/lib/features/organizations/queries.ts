@@ -188,7 +188,7 @@ export function usePopulateDemoDataMutation() {
  * Helper to format invite URL
  */
 export function formatInviteUrl(invite: OrganizationInvite): string {
-	return `${invite.url}/api/invites/${invite.id}/accept`;
+	return `${invite.url}/api/v1/invites/${invite.id}/accept`;
 }
 
 /**

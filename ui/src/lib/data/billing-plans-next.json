@@ -91,7 +91,7 @@
 		"icon": "users",
 		"color": "Orange",
 		"metadata": {
-			"base_cents": 89999,
+			"base_cents": 8999,
 			"custom_price": null,
 			"features": {
 				"api_access": true,
@@ -133,7 +133,7 @@
 		"icon": "briefcase",
 		"color": "Indigo",
 		"metadata": {
-			"base_cents": 24999,
+			"base_cents": 14999,
 			"custom_price": null,
 			"features": {
 				"api_access": true,
@@ -259,7 +259,7 @@
 		"icon": "users",
 		"color": "Orange",
 		"metadata": {
-			"base_cents": 864000,
+			"base_cents": 86400,
 			"custom_price": null,
 			"features": {
 				"api_access": true,
@@ -301,7 +301,7 @@
 		"icon": "briefcase",
 		"color": "Indigo",
 		"metadata": {
-			"base_cents": 240000,
+			"base_cents": 144000,
 			"custom_price": null,
 			"features": {
 				"api_access": true,

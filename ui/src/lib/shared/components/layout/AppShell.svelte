@@ -16,7 +16,8 @@
 	import type { PostHog } from 'posthog-js';
 	import { browser } from '$app/environment';
 	import CookieConsent, {
-		hasAnalyticsConsent
+		hasAnalyticsConsent,
+		hasMarketingConsent
 	} from '$lib/shared/components/feedback/CookieConsent.svelte';
 	import {
 		billing_subscriptionActivated,
@@ -58,6 +59,7 @@
 
 	let posthogInstance = $state<PostHog | null>(null);
 	let posthogInitStarted = false;
+	let hubspotInitStarted = false;
 
 	$effect(() => {
 		if (!configData) return;
@@ -87,6 +89,17 @@
 					}
 				});
 			});
+		}
+
+		// Load HubSpot tracking script if marketing consent is given
+		if (browser && hasMarketingConsent() && !hubspotInitStarted) {
+			hubspotInitStarted = true;
+			const script = document.createElement('script');
+			script.id = 'hs-script-loader';
+			script.src = 'https://js.hs-scripts.com/50956550.js';
+			script.async = true;
+			script.defer = true;
+			document.body.appendChild(script);
 		}
 	});
 
@@ -212,8 +225,10 @@
 		}
 
 		// Check if current page matches where user should be
+		// Skip routing check for share pages and onboarding (which handles its own navigation)
 		const isSharePage = $page.url.pathname.startsWith('/share/');
-		if (!isSharePage) {
+		const isOnboardingPage = $page.url.pathname === '/onboarding';
+		if (!isSharePage && !isOnboardingPage) {
 			const correctRoute = getRoute();
 			if ($page.url.pathname !== correctRoute) {
 				// eslint-disable-next-line svelte/no-navigation-without-resolve

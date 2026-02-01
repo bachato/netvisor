@@ -14,8 +14,8 @@ use crate::server::{
     Debug, Clone, Serialize, Validate, Deserialize, Default, PartialEq, Eq, Hash, ToSchema,
 )]
 pub struct OrganizationBase {
-    #[serde(default)]
-    #[schema(read_only, required)]
+    /// Stripe customer ID - internal, not exposed to API
+    #[serde(default, skip_serializing)]
     pub stripe_customer_id: Option<String>,
     #[validate(length(min = 0, max = 100))]
     pub name: String,
@@ -27,6 +27,9 @@ pub struct OrganizationBase {
     pub plan_status: Option<String>,
     #[schema(read_only, required)]
     pub onboarding: Vec<TelemetryOperation>,
+    /// HubSpot company ID - internal, not exposed to API
+    #[serde(default, skip_serializing)]
+    pub hubspot_company_id: Option<String>,
 }
 
 #[derive(

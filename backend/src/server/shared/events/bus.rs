@@ -225,7 +225,7 @@ impl SubscriberState {
         }
 
         let batch_start = std::time::Instant::now();
-        let result = subscriber.handle_events(events.clone()).await;
+        let result = subscriber.handle_events(events).await;
         let batch_duration = batch_start.elapsed();
 
         // =============================================================================
@@ -254,7 +254,7 @@ impl SubscriberState {
             "Event batch processed"
         );
 
-        if let Err(e) = subscriber.handle_events(events).await {
+        if let Err(e) = result {
             tracing::error!(
                 subscriber = %subscriber.name(),
                 error = %e,

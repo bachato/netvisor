@@ -277,6 +277,15 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!(target: LOG_TARGET, "  Billing service initialized");
     }
 
+    // Sync existing organizations to HubSpot if configured
+    if let Some(hubspot_service) = state.services.hubspot_service.clone() {
+        tokio::spawn(async move {
+            if let Err(e) = hubspot_service.sync_existing_organizations().await {
+                tracing::error!(target: LOG_TARGET, error = %e, "Failed to sync existing organizations to HubSpot");
+            }
+        });
+    }
+
     // Configuration summary
     tracing::info!(target: LOG_TARGET, "Configuration:");
     tracing::info!(target: LOG_TARGET, "  Listen:          {}", listen_addr);

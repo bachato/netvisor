@@ -165,137 +165,137 @@
 		<img src="/logos/scanopy-logo.png" alt={auth_scanopyLogo()} class="h-8 w-8" />
 	{/snippet}
 
-	<div class="space-y-6 p-6">
-		<p class="text-secondary text-center text-sm">{onboarding_tailorSetup()}</p>
+	<div class="flex min-h-0 flex-1 flex-col">
+		<div class="flex-1 overflow-y-auto p-6">
+			<div class="space-y-6">
+				<p class="text-secondary text-center text-sm">{onboarding_tailorSetup()}</p>
 
-		<!-- Use Case Cards -->
-		<div class="grid gap-3">
-			{#each useCaseIds as useCaseId (useCaseId)}
-				{@const useCaseConfig = USE_CASES[useCaseId]}
-				{@const isSelected = selectedUseCase === useCaseId}
-				{@const Icon = useCaseIcons[useCaseId]}
-				<button
-					type="button"
-					class="card flex items-center gap-4 p-4 text-left transition-all {isSelected
-						? `ring-2 ${useCaseConfig.colors.ring}`
-						: 'hover:bg-gray-800'}"
-					on:click={() => selectUseCase(useCaseId)}
-				>
-					<div
-						class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg {isSelected
-							? `${useCaseConfig.colors.bg} ${useCaseConfig.colors.text}`
-							: 'bg-gray-700 text-gray-400'}"
-					>
-						<svelte:component this={Icon} class="h-5 w-5" />
+				<!-- Use Case Cards -->
+				<div class="grid gap-3">
+					{#each useCaseIds as useCaseId (useCaseId)}
+						{@const useCaseConfig = USE_CASES[useCaseId]}
+						{@const isSelected = selectedUseCase === useCaseId}
+						{@const Icon = useCaseIcons[useCaseId]}
+						<button
+							type="button"
+							class="card flex items-center gap-4 p-4 text-left transition-all {isSelected
+								? `ring-2 ${useCaseConfig.colors.ring}`
+								: 'hover:bg-gray-800'}"
+							on:click={() => selectUseCase(useCaseId)}
+						>
+							<div
+								class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg {isSelected
+									? `${useCaseConfig.colors.bg} ${useCaseConfig.colors.text}`
+									: 'bg-gray-700 text-gray-400'}"
+							>
+								<svelte:component this={Icon} class="h-5 w-5" />
+							</div>
+							<div>
+								<div class="text-primary font-medium">{useCaseConfig.label}</div>
+								<div class="text-secondary text-sm">{useCaseConfig.description}</div>
+							</div>
+						</button>
+					{/each}
+				</div>
+
+				<!-- Business Qualification Fields (Company/MSP only) -->
+				{#if showBusinessFields}
+					<div class="card card-static">
+						<p class="text-secondary text-sm">Help us tailor your experience:</p>
+
+						<div class="grid gap-4 sm:grid-cols-2">
+							<form.Field name="role">
+								{#snippet children(field)}
+									<SelectInput label="Your role" id="role" {field} options={roleOptions} />
+								{/snippet}
+							</form.Field>
+
+							<form.Field name="companySize">
+								{#snippet children(field)}
+									<SelectInput
+										label="Company size"
+										id="company-size"
+										{field}
+										options={companySizeOptions}
+									/>
+								{/snippet}
+							</form.Field>
+						</div>
 					</div>
-					<div>
-						<div class="text-primary font-medium">{useCaseConfig.label}</div>
-						<div class="text-secondary text-sm">{useCaseConfig.description}</div>
+				{/if}
+
+				<!-- License Warning (Community + Company/MSP) -->
+				{#if showLicenseWarning}
+					<div class="rounded-lg border border-yellow-600/30 bg-yellow-900/20 p-4">
+						<div class="flex items-start gap-2">
+							<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+							<div class="flex-1">
+								<p class="text-sm font-medium text-warning">{onboarding_commercialNoticeTitle()}</p>
+								<p class="mt-1 text-sm text-warning">
+									{@html onboarding_commercialNoticeBody()}
+								</p>
+								<button type="button" class="btn-primary mt-4" on:click={handleLicenseAcknowledge}>
+									{onboarding_understandContinue()}
+								</button>
+							</div>
+						</div>
 					</div>
-				</button>
-			{/each}
+				{/if}
+			</div>
 		</div>
 
-		<!-- Business Qualification Fields (Company/MSP only) -->
-		{#if showBusinessFields}
-			<div class="space-y-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-				<p class="text-secondary text-sm">Help us tailor your experience:</p>
-
-				<div class="grid gap-4 sm:grid-cols-2">
-					<form.Field name="role">
-						{#snippet children(field)}
-							<SelectInput label="Your role" id="role" {field} options={roleOptions} />
-						{/snippet}
-					</form.Field>
-
-					<form.Field name="companySize">
-						{#snippet children(field)}
-							<SelectInput
-								label="Company size"
-								id="company-size"
-								{field}
-								options={companySizeOptions}
-							/>
-						{/snippet}
-					</form.Field>
-				</div>
-			</div>
-		{/if}
-
-		<!-- License Warning (Community + Company/MSP) -->
-		{#if showLicenseWarning}
-			<div class="rounded-lg border border-yellow-600/30 bg-yellow-900/20 p-4">
-				<div class="flex items-start gap-2">
-					<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-					<div class="flex-1">
-						<p class="text-sm font-medium text-warning">{onboarding_commercialNoticeTitle()}</p>
-						<p class="mt-1 text-sm text-warning">
-							{@html onboarding_commercialNoticeBody()}
-						</p>
-						<button type="button" class="btn-primary mt-4" on:click={handleLicenseAcknowledge}>
-							{onboarding_understandContinue()}
+		<div class="modal-footer">
+			<div class="flex w-full flex-col gap-4">
+				{#if isCloudDeployment}
+					<!-- Cloud: Show ready to scan buttons (disabled until use case selected) -->
+					<p class="text-secondary text-center text-sm">
+						{onboarding_readyToScan()}
+					</p>
+					<div class="flex gap-3">
+						<button
+							type="button"
+							class="btn-secondary flex-1"
+							disabled={!canProceed}
+							on:click={handleReadyNo}
+						>
+							{onboarding_haveQuestionsFirst()}
+						</button>
+						<button
+							type="button"
+							class="btn-primary flex-1"
+							disabled={!canProceed}
+							on:click={handleReadyYes}
+						>
+							{onboarding_yesLetsGo()}
 						</button>
 					</div>
-				</div>
-			</div>
-		{/if}
+				{:else}
+					<!-- Self-hosted: Show continue button -->
+					<div class="flex justify-end">
+						<button
+							type="button"
+							class="btn-primary"
+							disabled={!canProceed}
+							on:click={handleContinue}
+						>
+							{common_continue()}
+						</button>
+					</div>
+				{/if}
 
-		{#if isCloudDeployment}
-			<!-- Cloud: Show ready to scan buttons (disabled until use case selected) -->
-			<div class="space-y-3">
-				<p class="text-secondary text-center text-sm">
-					{onboarding_readyToScan()}
-				</p>
-				<div class="flex gap-3">
-					<button
-						type="button"
-						class="btn-secondary flex-1"
-						disabled={!canProceed}
-						on:click={handleReadyNo}
-					>
-						{onboarding_haveQuestionsFirst()}
-					</button>
-					<button
-						type="button"
-						class="btn-primary flex-1"
-						disabled={!canProceed}
-						on:click={handleReadyYes}
-					>
-						{onboarding_yesLetsGo()}
-					</button>
-				</div>
+				{#if onSwitchToLogin}
+					<p class="text-secondary text-center text-sm">
+						{onboarding_alreadyHaveAccount()}
+						<button
+							type="button"
+							on:click={onSwitchToLogin}
+							class="font-medium text-blue-400 hover:text-blue-300"
+						>
+							{onboarding_logInHere()}
+						</button>
+					</p>
+				{/if}
 			</div>
-		{:else}
-			<!-- Self-hosted: Show continue button -->
-			<div class="space-y-3">
-				<div class="flex justify-end">
-					<button
-						type="button"
-						class="btn-primary"
-						disabled={!canProceed}
-						on:click={handleContinue}
-					>
-						{common_continue()}
-					</button>
-				</div>
-			</div>
-		{/if}
-	</div>
-
-	{#snippet footer()}
-		<div class="modal-footer">
-			{#if onSwitchToLogin}
-				<p class="text-secondary text-center text-sm">
-					{onboarding_alreadyHaveAccount()}
-					<button
-						type="button"
-						on:click={onSwitchToLogin}
-						class="font-medium text-blue-400 hover:text-blue-300"
-					>
-						{onboarding_logInHere()}
-					</button>
-				</p>
-			{/if}
 		</div>
-	{/snippet}
+	</div>
 </GenericModal>

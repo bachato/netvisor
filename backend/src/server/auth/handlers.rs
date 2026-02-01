@@ -3,10 +3,10 @@ use crate::server::{
         r#impl::{
             api::{
                 DaemonSetupRequest, DaemonSetupResponse, ForgotPasswordRequest, LoginRequest,
-                OidcAuthorizeParams, OidcCallbackParams, OnboardingStateResponse,
-                OnboardingStepRequest, RegisterRequest, ResendVerificationRequest,
-                ResetPasswordRequest, SetupRequest, SetupResponse, UpdateEmailPasswordRequest,
-                VerifyEmailRequest,
+                OidcAuthorizeParams, OidcCallbackParams, OnboardingDaemonSetupState,
+                OnboardingNetworkState, OnboardingStateResponse, OnboardingStepRequest,
+                RegisterRequest, ResendVerificationRequest, ResetPasswordRequest, SetupRequest,
+                SetupResponse, UpdateEmailPasswordRequest, VerifyEmailRequest,
             },
             base::{LoginRegisterParams, PendingDaemonSetup, PendingNetworkSetup, PendingSetup},
             oidc::{OidcFlow, OidcPendingAuth, OidcProviderMetadata, OidcRegisterParams},
@@ -259,6 +259,9 @@ async fn setup(
     let pending_setup = PendingSetup {
         org_name: request.organization_name.trim().to_string(),
         networks,
+        use_case: None,     // Will be merged from onboarding step
+        company_size: None, // Not yet collected in setup flow
+        job_title: None,    // Not yet collected in setup flow
     };
 
     session
@@ -298,30 +301,16 @@ async fn daemon_setup(
         Some(raw_key)
     };
 
-    // Create new daemon setup entry
+    // Create new daemon setup entry (replaces any previous setup - only one at a time)
     let new_daemon_setup = PendingDaemonSetup {
         daemon_name: request.daemon_name.trim().to_string(),
         network_id: request.network_id,
         api_key_raw: api_key_raw.clone(),
     };
 
-    // Get existing daemon setups from session or start with empty vec
-    let mut daemon_setups: Vec<PendingDaemonSetup> = session
-        .get("pending_daemon_setups")
-        .await
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-
-    // Remove any existing setup for the same network (allow overwriting)
-    daemon_setups.retain(|d| d.network_id != request.network_id);
-
-    // Add the new daemon setup
-    daemon_setups.push(new_daemon_setup);
-
-    // Store updated list in session
+    // Store as the only daemon setup (clearing any previous)
     session
-        .insert("pending_daemon_setups", daemon_setups)
+        .insert("pending_daemon_setups", vec![new_daemon_setup])
         .await
         .map_err(|e| {
             ApiError::internal_error(&format!("Failed to save daemon setup data: {}", e))
@@ -333,8 +322,18 @@ async fn daemon_setup(
 }
 
 /// Extract pending setup data from session
+/// Also merges in use_case from the onboarding step if present
 pub async fn extract_pending_setup(session: &Session) -> Option<PendingSetup> {
-    session.get("pending_setup").await.ok().flatten()
+    let mut setup: PendingSetup = session.get("pending_setup").await.ok().flatten()?;
+
+    // Merge in use_case from onboarding step if not already set
+    if setup.use_case.is_none()
+        && let Ok(Some(use_case)) = session.get::<String>("onboarding_use_case").await
+    {
+        setup.use_case = Some(use_case);
+    }
+
+    Some(setup)
 }
 
 /// Extract pending daemon setup data from session (supports multiple daemons)
@@ -354,6 +353,7 @@ pub async fn clear_pending_setup(session: &Session) {
         .remove::<Vec<PendingDaemonSetup>>("pending_daemon_setups")
         .await;
     let _ = session.remove::<String>("onboarding_step").await;
+    let _ = session.remove::<String>("onboarding_use_case").await;
 }
 
 /// Store onboarding step in session
@@ -375,6 +375,16 @@ async fn onboarding_step(
         .await
         .map_err(|e| ApiError::internal_error(&format!("Failed to save onboarding step: {}", e)))?;
 
+    // Also save use_case if provided
+    if let Some(use_case) = request.use_case {
+        session
+            .insert("onboarding_use_case", use_case)
+            .await
+            .map_err(|e| {
+                ApiError::internal_error(&format!("Failed to save onboarding use_case: {}", e))
+            })?;
+    }
+
     Ok(Json(ApiResponse::success(())))
 }
 
@@ -391,25 +401,53 @@ async fn onboarding_state(
     session: Session,
 ) -> ApiResult<Json<ApiResponse<OnboardingStateResponse>>> {
     let step: Option<String> = session.get("onboarding_step").await.ok().flatten();
+    let use_case: Option<String> = session.get("onboarding_use_case").await.ok().flatten();
 
-    let network_ids: Vec<Uuid> = if let Some(pending_setup) = session
+    let (org_name, networks, network_ids) = if let Some(pending_setup) = session
         .get::<PendingSetup>("pending_setup")
         .await
         .ok()
         .flatten()
     {
-        pending_setup
+        let networks: Vec<OnboardingNetworkState> = pending_setup
+            .networks
+            .iter()
+            .map(|n| OnboardingNetworkState {
+                id: Some(n.network_id),
+                name: n.name.clone(),
+                snmp_enabled: n.snmp_enabled,
+                snmp_version: n.snmp_version.clone(),
+                snmp_community: n.snmp_community.clone(),
+            })
+            .collect();
+        let network_ids: Vec<Uuid> = pending_setup
             .networks
             .iter()
             .map(|n| n.network_id)
-            .collect()
+            .collect();
+        (Some(pending_setup.org_name), networks, network_ids)
     } else {
-        vec![]
+        (None, vec![], vec![])
     };
+
+    // Get daemon setups from session
+    let daemon_setups = extract_pending_daemon_setups(&session)
+        .await
+        .into_iter()
+        .map(|d| OnboardingDaemonSetupState {
+            network_id: d.network_id,
+            daemon_name: d.daemon_name,
+            api_key: d.api_key_raw,
+        })
+        .collect();
 
     Ok(Json(ApiResponse::success(OnboardingStateResponse {
         step,
+        use_case,
+        org_name,
+        networks,
         network_ids,
+        daemon_setups,
     })))
 }
 

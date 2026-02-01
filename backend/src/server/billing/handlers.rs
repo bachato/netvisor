@@ -2,7 +2,8 @@ use crate::server::auth::middleware::permissions::{Authorized, Owner, Viewer};
 use crate::server::billing::types::api::CreateCheckoutRequest;
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::config::AppState;
-use crate::server::hubspot::types::HubSpotFormField;
+use crate::server::hubspot::types::{CompanyProperties, HubSpotFormContext, HubSpotFormField};
+use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::types::ErrorCode;
 use crate::server::shared::types::api::{ApiError, ApiResult};
 use crate::server::shared::types::api::{ApiErrorResponse, ApiResponse, EmptyApiResponse};
@@ -11,6 +12,8 @@ use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::header::CACHE_CONTROL;
 use axum::response::IntoResponse;
+use axum_client_ip::ClientIp;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
@@ -27,8 +30,8 @@ pub struct EnterpriseInquiryRequest {
     pub company: String,
     /// Team/company size: 1-10, 11-25, 26-50, 51-100, 101-250, 251-500, 501-1000, 1001+
     pub team_size: String,
-    /// Use case description
-    pub use_case: String,
+    /// Message/use case description (maps to HubSpot "message" field)
+    pub message: String,
     /// Urgency: immediately, 1-3 months, 3-6 months, exploring
     #[serde(default)]
     pub urgency: Option<String>,
@@ -38,6 +41,9 @@ pub struct EnterpriseInquiryRequest {
     /// Plan type being inquired about
     #[serde(default)]
     pub plan_type: Option<String>,
+    /// HubSpot tracking cookie (hutk) for linking form submission to visitor
+    #[serde(default)]
+    pub hutk: Option<String>,
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
@@ -193,7 +199,7 @@ async fn create_portal_session(
 
 /// Submit enterprise plan inquiry
 ///
-/// Creates a contact and company in HubSpot for sales follow-up.
+/// Dual submission: Form API (for notifications) + CRM API (for Company properties).
 /// Requires authentication to link the inquiry to an organization.
 #[utoipa::path(
     post,
@@ -209,6 +215,7 @@ async fn create_portal_session(
 )]
 async fn submit_enterprise_inquiry(
     State(state): State<Arc<AppState>>,
+    ClientIp(ip): ClientIp,
     auth: Authorized<Viewer>,
     Json(request): Json<EnterpriseInquiryRequest>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
@@ -231,46 +238,75 @@ async fn submit_enterprise_inquiry(
         .as_ref()
         .ok_or_else(|| ApiError::bad_request("Enterprise inquiries are not enabled"))?;
 
-    // Build form fields to match HubSpot form
+    // Build form context with tracking info
+    let form_context =
+        HubSpotFormContext::new("https://app.scanopy.net/billing", "Enterprise Inquiry")
+            .with_hutk(request.hutk.clone())
+            .with_ip_address(Some(ip.to_string()));
+
+    // 1. Submit to HubSpot Form (triggers notifications)
     // Field names must match exactly what's configured in the HubSpot form
-    let mut fields = vec![
+    let fields = vec![
         HubSpotFormField::new("email", &request.email),
         HubSpotFormField::new("firstname", &request.name),
         HubSpotFormField::new("company", &request.company),
         HubSpotFormField::new("company_size", &request.team_size),
-        HubSpotFormField::new("use_case", &request.use_case),
-        HubSpotFormField::new("scanopy_org_id", organization_id.to_string()),
+        HubSpotFormField::new("message", &request.message),
     ];
 
-    if let Some(urgency) = &request.urgency {
-        fields.push(HubSpotFormField::new("urgency", urgency));
-    }
-    if let Some(network_count) = request.network_count {
-        fields.push(HubSpotFormField::new(
-            "network_count",
-            network_count.to_string(),
-        ));
-    }
-    if let Some(plan_type) = &request.plan_type {
-        fields.push(HubSpotFormField::new("plan_type", plan_type));
-    }
-
-    // Submit to HubSpot form - this triggers workflows and email notifications
     hubspot_service
         .client
-        .submit_enterprise_inquiry_form(fields)
+        .submit_enterprise_inquiry_form(fields, form_context)
         .await
         .map_err(|e| {
             tracing::error!(error = %e, "Failed to submit inquiry to HubSpot form");
             ApiError::internal_error("Failed to submit inquiry")
         })?;
 
+    // 2. Update Company via CRM API (sets inquiry-specific properties)
+    // Use stored company ID from organization
+    let org = state
+        .services
+        .organization_service
+        .get_by_id(&organization_id)
+        .await?
+        .ok_or_else(ApiError::organization_required)?;
+
+    if let Some(company_id) = &org.base.hubspot_company_id {
+        let mut company_props = CompanyProperties::new().with_inquiry_date(Utc::now());
+
+        if let Some(urgency) = &request.urgency {
+            company_props = company_props.with_inquiry_urgency(urgency);
+        }
+        if let Some(network_count) = request.network_count {
+            company_props = company_props.with_inquiry_network_count(network_count);
+        }
+        if let Some(plan_type) = &request.plan_type {
+            company_props = company_props.with_inquiry_plan_type(plan_type);
+        }
+
+        // Best-effort CRM update - don't fail if this doesn't work
+        if let Err(e) = hubspot_service
+            .client
+            .update_company(company_id, company_props)
+            .await
+        {
+            tracing::warn!(
+                error = %e,
+                organization_id = %organization_id,
+                "Failed to update HubSpot company with inquiry properties"
+            );
+        }
+    }
+
     tracing::info!(
         email = %request.email,
         company = %request.company,
         organization_id = %organization_id,
         plan_type = ?request.plan_type,
-        "Enterprise inquiry submitted to HubSpot form"
+        hutk_present = request.hutk.is_some(),
+        client_ip = %ip,
+        "Enterprise inquiry submitted to HubSpot"
     );
 
     Ok(Json(ApiResponse::success(())))

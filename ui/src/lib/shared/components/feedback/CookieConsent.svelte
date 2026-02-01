@@ -4,6 +4,7 @@
 	export interface CookiePreferences {
 		necessary: boolean;
 		analytics: boolean;
+		marketing: boolean;
 	}
 
 	export function getCookie(name: string): string | null {
@@ -25,6 +26,10 @@
 	export function hasAnalyticsConsent(): boolean {
 		return getGdprPreferences()?.analytics ?? false;
 	}
+
+	export function hasMarketingConsent(): boolean {
+		return getGdprPreferences()?.marketing ?? false;
+	}
 </script>
 
 <script lang="ts">
@@ -35,10 +40,12 @@
 		common_analytics,
 		common_close,
 		common_customize,
+		common_marketing,
 		common_necessary,
 		cookies_acceptAll,
 		cookies_alwaysOn,
 		cookies_analyticsDesc,
+		cookies_marketingDesc,
 		cookies_necessaryDesc,
 		cookies_preferences,
 		cookies_preferencesDesc,
@@ -53,7 +60,8 @@
 
 	let preferences: CookiePreferences = $state({
 		necessary: true,
-		analytics: false
+		analytics: false,
+		marketing: false
 	});
 
 	let showBanner = $state(false);
@@ -98,12 +106,12 @@
 	}
 
 	function acceptAll() {
-		preferences = { necessary: true, analytics: true };
+		preferences = { necessary: true, analytics: true, marketing: true };
 		savePreferences();
 	}
 
 	function rejectAll() {
-		preferences = { necessary: true, analytics: false };
+		preferences = { necessary: true, analytics: false, marketing: false };
 		savePreferences();
 	}
 
@@ -178,6 +186,19 @@
 							</div>
 							<p class="option-description">
 								{cookies_analyticsDesc()}
+							</p>
+						</div>
+
+						<div class="cookie-option">
+							<div class="option-header">
+								<label class="option-label">
+									<input type="checkbox" bind:checked={preferences.marketing} />
+									<span class="checkbox"></span>
+									<span class="option-title">{common_marketing()}</span>
+								</label>
+							</div>
+							<p class="option-description">
+								{cookies_marketingDesc()}
 							</p>
 						</div>
 					</div>

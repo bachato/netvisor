@@ -44,7 +44,8 @@ async fn validate_no_binding_type_conflict(
 ) -> Result<(), ApiError> {
     let service_id = binding.service_id();
 
-    let filter = StorableFilter::<Binding>::new_from_network_ids(&[binding.base.network_id]).service_id(&service_id);
+    let filter = StorableFilter::<Binding>::new_from_network_ids(&[binding.base.network_id])
+        .service_id(&service_id);
     let existing = state.services.binding_service.get_all(filter).await?;
 
     match binding.base.binding_type {
@@ -160,7 +161,8 @@ async fn create_binding(
     } = &binding.base.binding_type
     {
         let service_id = binding.service_id();
-        let filter = StorableFilter::<Binding>::new_from_network_ids(&[binding.network_id()]).service_id(&service_id);
+        let filter = StorableFilter::<Binding>::new_from_network_ids(&[binding.network_id()])
+            .service_id(&service_id);
         let existing = state.services.binding_service.get_all(filter).await?;
 
         for existing_binding in existing {

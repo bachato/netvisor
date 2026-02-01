@@ -85,12 +85,20 @@ impl DaemonUtils for MacOsDaemonUtils {
         let total_reserved = base_reserved + pipeline_fds;
         let available = fd_limit.saturating_sub(total_reserved);
 
+        // Calculate FDs consumed per deep-scanned host:
+        // - TCP port scanning: port_batch_size concurrent connections
+        // - Endpoint HTTP: min(port_batch_size/2, 50) concurrent requests
+        // - UDP probes: ~10 concurrent (SNMP, DNS, NTP, DHCP, BACnet)
+        let endpoint_batch = (port_batch_size / 2).min(50);
+        let udp_probes = 10;
+        let fds_per_deep_host = port_batch_size + endpoint_batch + udp_probes;
+
         // On macOS with low FD limits (default 256), be very conservative
         let concurrency = if fd_limit < 512 {
             // Very constrained - allow minimal concurrency
-            std::cmp::max(1, available / port_batch_size).min(2)
+            std::cmp::max(1, available / fds_per_deep_host).min(2)
         } else {
-            std::cmp::max(1, available / port_batch_size)
+            std::cmp::max(1, available / fds_per_deep_host)
         };
 
         tracing::debug!(
@@ -100,6 +108,7 @@ impl DaemonUtils for MacOsDaemonUtils {
             total_reserved,
             available,
             port_batch_size,
+            fds_per_deep_host,
             concurrency,
             arp_subnets = concurrent_ops.arp_subnet_count,
             non_interfaced_concurrency = concurrent_ops.non_interfaced_scan_concurrency,

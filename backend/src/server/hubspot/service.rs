@@ -1,54 +1,50 @@
 use crate::server::{
     auth::middleware::auth::AuthenticatedEntity,
-    hosts::service::HostService,
+    hosts::{r#impl::base::Host, service::HostService},
     hubspot::{
         client::HubSpotClient,
         types::{CompanyProperties, ContactProperties},
     },
-    networks::service::NetworkService,
+    networks::{r#impl::Network, service::NetworkService},
+    organizations::{r#impl::base::Organization, service::OrganizationService},
     shared::{
         events::types::{AuthOperation, Event, TelemetryEvent, TelemetryOperation},
         services::traits::CrudService,
         storage::filter::StorableFilter,
     },
-    users::service::UserService,
+    users::{r#impl::base::User, r#impl::permissions::UserOrgPermissions, service::UserService},
 };
 use anyhow::Result;
 use chrono::Utc;
 use std::sync::Arc;
-use tokio::sync::OnceCell;
 use uuid::Uuid;
 
 /// Service for syncing data to HubSpot CRM
 pub struct HubSpotService {
     pub client: Arc<HubSpotClient>,
-    // Entity services for metrics sync (set after construction due to circular deps)
-    network_service: OnceCell<Arc<NetworkService>>,
-    host_service: OnceCell<Arc<HostService>>,
-    user_service: OnceCell<Arc<UserService>>,
+    // Entity services for metrics sync and org updates
+    network_service: Arc<NetworkService>,
+    host_service: Arc<HostService>,
+    user_service: Arc<UserService>,
+    organization_service: Arc<OrganizationService>,
 }
 
 impl HubSpotService {
     /// Create a new HubSpot service
-    pub fn new(api_key: String) -> Self {
-        Self {
-            client: Arc::new(HubSpotClient::new(api_key)),
-            network_service: OnceCell::new(),
-            host_service: OnceCell::new(),
-            user_service: OnceCell::new(),
-        }
-    }
-
-    /// Set entity services for metrics sync (called after all services are created)
-    pub fn set_entity_services(
-        &self,
+    pub fn new(
+        api_key: String,
         network_service: Arc<NetworkService>,
         host_service: Arc<HostService>,
         user_service: Arc<UserService>,
-    ) {
-        let _ = self.network_service.set(network_service);
-        let _ = self.host_service.set(host_service);
-        let _ = self.user_service.set(user_service);
+        organization_service: Arc<OrganizationService>,
+    ) -> Self {
+        Self {
+            client: Arc::new(HubSpotClient::new(api_key)),
+            network_service,
+            host_service,
+            user_service,
+            organization_service,
+        }
     }
 
     /// Handle events and sync to HubSpot
@@ -128,7 +124,7 @@ impl HubSpotService {
         Ok(())
     }
 
-    /// Handle org created - create contact and company
+    /// Handle org created - create contact and company, store company ID on org
     async fn handle_org_created(&self, event: &TelemetryEvent) -> Result<()> {
         let (email, user_id) = match &event.authentication {
             AuthenticatedEntity::User { email, user_id, .. } => (email.to_string(), *user_id),
@@ -173,12 +169,16 @@ impl HubSpotService {
             contact_props = contact_props.with_jobtitle(title);
         }
 
+        let org_filter = StorableFilter::<Network>::new_from_org_id(&event.organization_id);
+
+        let network_count = self.network_service.get_all(org_filter).await?.len();
+
         // Build company properties
         let mut company_props = CompanyProperties::new()
             .with_name(org_name)
             .with_org_id(event.organization_id)
             .with_created_date(event.timestamp)
-            .with_network_count(0)
+            .with_network_count(network_count as i64)
             .with_host_count(0)
             .with_user_count(1);
 
@@ -189,18 +189,55 @@ impl HubSpotService {
             company_props = company_props.with_company_size(size);
         }
 
-        // Sync to HubSpot
-        self.client
-            .upsert_contact_with_company(contact_props, company_props)
+        // Sync to HubSpot and get the company ID
+        let (_contact, company_id) = self
+            .client
+            .sync_contact_and_company(contact_props, company_props)
             .await?;
+
+        // Store the company ID on the organization
+        if let Some(mut org) = self
+            .organization_service
+            .get_by_id(&event.organization_id)
+            .await?
+        {
+            org.base.hubspot_company_id = Some(company_id.clone());
+            self.organization_service
+                .update(&mut org, event.authentication.clone())
+                .await?;
+        }
 
         tracing::info!(
             organization_id = %event.organization_id,
+            hubspot_company_id = %company_id,
             email = %email,
             "Synced new organization to HubSpot"
         );
 
         Ok(())
+    }
+
+    /// Get stored HubSpot company ID for an org, if it exists
+    async fn get_hubspot_company_id(&self, org_id: Uuid) -> Result<Option<String>> {
+        let org = self.organization_service.get_by_id(&org_id).await?;
+        Ok(org.and_then(|o| o.base.hubspot_company_id))
+    }
+
+    /// Update HubSpot company using stored ID. Skips if no ID stored.
+    async fn update_company_by_org(&self, org_id: Uuid, props: CompanyProperties) -> Result<()> {
+        match self.get_hubspot_company_id(org_id).await? {
+            Some(id) => {
+                self.client.update_company(&id, props).await?;
+                Ok(())
+            }
+            None => {
+                tracing::debug!(
+                    organization_id = %org_id,
+                    "No HubSpot company ID stored - skipping update"
+                );
+                Ok(())
+            }
+        }
     }
 
     /// Handle checkout started
@@ -212,11 +249,10 @@ impl HubSpotService {
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
 
-        let company_props = CompanyProperties::new()
-            .with_org_id(event.organization_id)
-            .with_plan_status("checkout_started");
+        let company_props = CompanyProperties::new().with_plan_status("checkout_started");
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(event.organization_id, company_props)
+            .await?;
 
         tracing::debug!(
             organization_id = %event.organization_id,
@@ -242,12 +278,12 @@ impl HubSpotService {
 
         // Update company with plan info and conversion date
         let company_props = CompanyProperties::new()
-            .with_org_id(event.organization_id)
             .with_plan_type(plan_name)
             .with_plan_status(if has_trial { "trialing" } else { "active" })
             .with_checkout_completed_date(event.timestamp);
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(event.organization_id, company_props)
+            .await?;
 
         // Sync plan limits to HubSpot
         let network_limit = event
@@ -279,11 +315,11 @@ impl HubSpotService {
     async fn handle_trial_started(&self, event: &TelemetryEvent) -> Result<()> {
         // Update company with trial start date and status
         let company_props = CompanyProperties::new()
-            .with_org_id(event.organization_id)
             .with_plan_status("trialing")
             .with_trial_started_date(event.timestamp);
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(event.organization_id, company_props)
+            .await?;
 
         tracing::debug!(
             organization_id = %event.organization_id,
@@ -301,11 +337,14 @@ impl HubSpotService {
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        let company_props = CompanyProperties::new()
-            .with_org_id(event.organization_id)
-            .with_plan_status(if converted { "active" } else { "trial_ended" });
+        let company_props = CompanyProperties::new().with_plan_status(if converted {
+            "active"
+        } else {
+            "trial_ended"
+        });
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(event.organization_id, company_props)
+            .await?;
 
         tracing::debug!(
             organization_id = %event.organization_id,
@@ -318,11 +357,10 @@ impl HubSpotService {
 
     /// Handle subscription cancelled
     async fn handle_subscription_cancelled(&self, event: &TelemetryEvent) -> Result<()> {
-        let company_props = CompanyProperties::new()
-            .with_org_id(event.organization_id)
-            .with_plan_status("cancelled");
+        let company_props = CompanyProperties::new().with_plan_status("cancelled");
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(event.organization_id, company_props)
+            .await?;
 
         tracing::debug!(
             organization_id = %event.organization_id,
@@ -334,11 +372,10 @@ impl HubSpotService {
 
     /// Handle first daemon registered
     async fn handle_first_daemon_registered(&self, event: &TelemetryEvent) -> Result<()> {
-        let company_props = CompanyProperties::new()
-            .with_org_id(event.organization_id)
-            .with_first_daemon_date(event.timestamp);
+        let company_props = CompanyProperties::new().with_first_daemon_date(event.timestamp);
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(event.organization_id, company_props)
+            .await?;
 
         tracing::debug!(
             organization_id = %event.organization_id,
@@ -350,11 +387,10 @@ impl HubSpotService {
 
     /// Handle first topology rebuild (first discovery completed)
     async fn handle_first_topology_rebuild(&self, event: &TelemetryEvent) -> Result<()> {
-        let company_props = CompanyProperties::new()
-            .with_org_id(event.organization_id)
-            .with_first_discovery_date(event.timestamp);
+        let company_props = CompanyProperties::new().with_first_discovery_date(event.timestamp);
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(event.organization_id, company_props)
+            .await?;
 
         tracing::debug!(
             organization_id = %event.organization_id,
@@ -366,7 +402,7 @@ impl HubSpotService {
 
     /// Handle engagement events (update company milestone dates)
     async fn handle_engagement_event(&self, event: &TelemetryEvent) -> Result<()> {
-        let mut company_props = CompanyProperties::new().with_org_id(event.organization_id);
+        let mut company_props = CompanyProperties::new();
 
         // Set the appropriate milestone date based on event type
         match &event.operation {
@@ -402,7 +438,8 @@ impl HubSpotService {
             _ => return Ok(()),
         }
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(event.organization_id, company_props)
+            .await?;
 
         tracing::debug!(
             organization_id = %event.organization_id,
@@ -432,11 +469,9 @@ impl HubSpotService {
 
     /// Update company's last discovery date
     async fn update_company_last_discovery(&self, org_id: Uuid) -> Result<()> {
-        let company_props = CompanyProperties::new()
-            .with_org_id(org_id)
-            .with_last_discovery_date(Utc::now());
+        let company_props = CompanyProperties::new().with_last_discovery_date(Utc::now());
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(org_id, company_props).await?;
 
         tracing::debug!(
             organization_id = %org_id,
@@ -455,12 +490,11 @@ impl HubSpotService {
         user_count: i64,
     ) -> Result<()> {
         let company_props = CompanyProperties::new()
-            .with_org_id(org_id)
             .with_network_count(network_count)
             .with_host_count(host_count)
             .with_user_count(user_count);
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(org_id, company_props).await?;
 
         tracing::debug!(
             organization_id = %org_id,
@@ -480,7 +514,7 @@ impl HubSpotService {
         network_limit: Option<i64>,
         seat_limit: Option<i64>,
     ) -> Result<()> {
-        let mut company_props = CompanyProperties::new().with_org_id(org_id);
+        let mut company_props = CompanyProperties::new();
 
         if let Some(limit) = network_limit {
             company_props = company_props.with_network_limit(limit);
@@ -489,7 +523,7 @@ impl HubSpotService {
             company_props = company_props.with_seat_limit(limit);
         }
 
-        self.client.upsert_company(company_props).await?;
+        self.update_company_by_org(org_id, company_props).await?;
 
         tracing::debug!(
             organization_id = %org_id,
@@ -504,52 +538,27 @@ impl HubSpotService {
     /// Sync entity counts for an organization to HubSpot
     /// Called when networks, hosts, or users are created/deleted
     pub async fn sync_org_entity_metrics(&self, org_id: Uuid) -> Result<()> {
-        // Check if entity services are available
-        let network_service = match self.network_service.get() {
-            Some(s) => s,
-            None => {
-                tracing::debug!("HubSpot entity services not set, skipping metrics sync");
-                return Ok(());
-            }
-        };
-        let host_service = match self.host_service.get() {
-            Some(s) => s,
-            None => return Ok(()),
-        };
-        let user_service = match self.user_service.get() {
-            Some(s) => s,
-            None => return Ok(()),
-        };
-
-        // First check if the company exists in HubSpot - don't create if it doesn't.
-        // The company should be created by the OrgCreated telemetry event handler
-        // with proper name and contact association. Due to HubSpot's eventual consistency,
-        // the company may not be searchable immediately after creation, so we skip
-        // the sync rather than creating a duplicate.
-        let existing = self
-            .client
-            .find_company_by_org_id(&org_id.to_string())
-            .await?;
-
-        if existing.is_none() {
+        // Check if we have a stored HubSpot company ID - skip if not synced yet
+        if self.get_hubspot_company_id(org_id).await?.is_none() {
             tracing::debug!(
                 organization_id = %org_id,
-                "Skipping HubSpot metrics sync - company not found (may not be indexed yet)"
+                "Skipping HubSpot metrics sync - no company ID stored"
             );
             return Ok(());
         }
 
         // Count entities using service layer
-        let network_filter = StorableFilter::new_from_org_id(&org_id);
-        let networks = network_service.get_all(network_filter).await?;
+        let network_filter = StorableFilter::<Network>::new_from_org_id(&org_id);
+        let networks = self.network_service.get_all(network_filter).await?;
+        let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
         let network_count = networks.len() as i64;
 
-        let host_filter = StorableFilter::new_from_org_id(&org_id);
-        let hosts = host_service.get_all(host_filter).await?;
+        let host_filter = StorableFilter::<Host>::new_from_network_ids(&network_ids);
+        let hosts = self.host_service.get_all(host_filter).await?;
         let host_count = hosts.len() as i64;
 
         let user_filter = StorableFilter::new_from_org_id(&org_id);
-        let users = user_service.get_all(user_filter).await?;
+        let users = self.user_service.get_all(user_filter).await?;
         let user_count = users.len() as i64;
 
         // Sync to HubSpot
@@ -561,11 +570,82 @@ impl HubSpotService {
 
     /// Get org_id from a network_id by looking up the network
     pub async fn get_org_id_from_network(&self, network_id: &Uuid) -> Option<Uuid> {
-        let network_service = self.network_service.get()?;
-        if let Ok(Some(network)) = network_service.get_by_id(network_id).await {
+        if let Ok(Some(network)) = self.network_service.get_by_id(network_id).await {
             Some(network.base.organization_id)
         } else {
             None
         }
+    }
+
+    /// Sync all organizations that don't have a HubSpot company ID.
+    /// Called on server startup.
+    pub async fn sync_existing_organizations(&self) -> Result<()> {
+        let filter = StorableFilter::<Organization>::new_without_hubspot_company_id();
+        let orgs = self.organization_service.get_all(filter).await?;
+
+        if orgs.is_empty() {
+            tracing::info!("All organizations have HubSpot company IDs");
+            return Ok(());
+        }
+
+        tracing::info!(
+            count = orgs.len(),
+            "Syncing existing organizations to HubSpot"
+        );
+
+        for org in orgs {
+            if let Err(e) = self.sync_organization(org).await {
+                tracing::error!(
+                    organization_id = %e,
+                    "Failed to sync organization to HubSpot"
+                );
+                // Continue with other orgs
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Sync a single organization to HubSpot
+    async fn sync_organization(&self, mut org: Organization) -> Result<()> {
+        // Get the owner user for this org
+        let filter = StorableFilter::<User>::new_from_org_id(&org.id)
+            .user_permissions(&UserOrgPermissions::Owner);
+        let owners = self.user_service.get_all(filter).await?;
+        let owner = owners
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("No owner found for organization {}", org.id))?;
+
+        // Build properties
+        let contact_props = ContactProperties::new()
+            .with_email(&owner.base.email.to_string())
+            .with_user_id(owner.id)
+            .with_org_id(org.id)
+            .with_role("owner");
+
+        let company_props = CompanyProperties::new()
+            .with_name(&org.base.name)
+            .with_org_id(org.id)
+            .with_created_date(org.created_at);
+
+        // Sync and get company ID
+        let (_contact, company_id) = self
+            .client
+            .sync_contact_and_company(contact_props, company_props)
+            .await?;
+
+        // Store the company ID
+        org.base.hubspot_company_id = Some(company_id.clone());
+        self.organization_service
+            .update(&mut org, AuthenticatedEntity::System)
+            .await?;
+
+        tracing::info!(
+            organization_id = %org.id,
+            hubspot_company_id = %company_id,
+            "Synced existing organization to HubSpot"
+        );
+
+        Ok(())
     }
 }

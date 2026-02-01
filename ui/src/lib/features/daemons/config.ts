@@ -229,7 +229,7 @@ export const fieldDefs: FieldDef[] = [
 		type: 'number',
 		cliFlag: '--arp-retries',
 		envVar: 'SCANOPY_ARP_RETRIES',
-		placeholder: 3,
+		placeholder: 2,
 		helpText: () => m.daemons_config_arpRetriesHelp(),
 		section: () => m.daemons_config_sectionNetworkDiscovery()
 	},
@@ -242,6 +242,17 @@ export const fieldDefs: FieldDef[] = [
 		placeholder: 500,
 		helpText: () => m.daemons_config_portScanPacketsPerSecondHelp(),
 		section: () => m.daemons_config_sectionNetworkDiscovery()
+	},
+	{
+		id: 'port_scan_batch_size',
+		label: () => m.daemons_config_portScanBatchSize(),
+		type: 'number',
+		cliFlag: '--port-scan-batch-size',
+		envVar: 'SCANOPY_PORT_SCAN_BATCH_SIZE',
+		placeholder: 200,
+		helpText: () => m.daemons_config_portScanBatchSizeHelp(),
+		section: () => m.daemons_config_sectionNetworkDiscovery(),
+		validators: [min(16), max(1000)]
 	},
 	{
 		id: 'arp_rate_pps',

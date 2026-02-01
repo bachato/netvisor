@@ -96,6 +96,12 @@
 					component: TopologyTab
 				},
 				{
+					id: 'groups',
+					label: 'Groups',
+					icon: entities.getIconComponent('Group'),
+					component: GroupTab
+				},
+				{
 					id: 'shares',
 					label: 'Sharing',
 					icon: entities.getIconComponent('Share'),
@@ -159,12 +165,6 @@
 					component: SubnetTab
 				},
 				{
-					id: 'groups',
-					label: 'Groups',
-					icon: entities.getIconComponent('Group'),
-					component: GroupTab
-				},
-				{
 					id: 'hosts',
 					label: 'Hosts',
 					icon: entities.getIconComponent('Host'),
@@ -183,6 +183,12 @@
 			label: 'Platform',
 			items: [
 				{
+					id: 'tags',
+					label: 'Tags',
+					icon: entities.getIconComponent('Tag'),
+					component: TagTab
+				},
+				{
 					id: 'users',
 					label: 'Users',
 					icon: entities.getIconComponent('User'),
@@ -195,12 +201,6 @@
 					icon: entities.getIconComponent('UserApiKey'),
 					component: UserApiKeyTab,
 					requiredPermissions: ['Member', 'Admin', 'Owner']
-				},
-				{
-					id: 'tags',
-					label: 'Tags',
-					icon: entities.getIconComponent('Tag'),
-					component: TagTab
 				},
 				{
 					id: 'snmp-credentials',

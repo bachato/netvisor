@@ -9,7 +9,7 @@
 	import BlockerFlow from '$lib/features/auth/components/onboarding/BlockerFlow.svelte';
 	import MultiDaemonSetup from '$lib/features/auth/components/onboarding/MultiDaemonSetup.svelte';
 	import DaemonVerificationStep from '$lib/features/auth/components/onboarding/DaemonVerificationStep.svelte';
-	import type { RegisterRequest, SetupRequest } from '$lib/features/auth/types/base';
+	import type { RegisterRequest, SetupRequest, UseCase } from '$lib/features/auth/types/base';
 	import {
 		useSetupMutation,
 		useRegisterMutation,
@@ -17,7 +17,7 @@
 		useOnboardingStateQuery
 	} from '$lib/features/auth/queries';
 	import { fetchOrganization } from '$lib/features/organizations/queries';
-	import { navigate } from '$lib/shared/utils/navigation';
+	import { navigate, getRoute } from '$lib/shared/utils/navigation';
 	import { useConfigQuery, isSelfHosted } from '$lib/shared/stores/config-query';
 	import { resolve } from '$app/paths';
 	import { onboardingStore } from '$lib/features/auth/stores/onboarding';
@@ -53,17 +53,61 @@
 
 	let currentStep = $state<Step>(getInitialStep());
 	let stepInitialized = $state(false);
+	let lastPersistedStep = $state<Step | null>(null);
 
-	// Restore step from session on mount
+	// Restore step and store data from session on mount
 	$effect(() => {
 		if (!stepInitialized && onboardingStateQuery.data && !isInviteFlow) {
-			const savedStep = onboardingStateQuery.data.step;
-			if (savedStep && isValidStep(savedStep)) {
-				currentStep = savedStep as Step;
+			const stateData = onboardingStateQuery.data;
+
+			// Restore step
+			if (stateData.step && isValidStep(stateData.step)) {
+				currentStep = stateData.step as Step;
+				lastPersistedStep = stateData.step as Step; // Don't re-persist this
 			}
+
+			// Restore use case
+			if (stateData.use_case && isValidUseCase(stateData.use_case)) {
+				onboardingStore.setUseCase(stateData.use_case as UseCase);
+			}
+
+			// Restore org name
+			if (stateData.org_name) {
+				onboardingStore.setOrganizationName(stateData.org_name);
+			}
+
+			// Restore networks (with IDs and names)
+			if (stateData.networks && stateData.networks.length > 0) {
+				onboardingStore.setNetworks(
+					stateData.networks.map((n) => ({
+						id: n.id ?? undefined,
+						name: n.name,
+						snmp_enabled: n.snmp_enabled ?? false,
+						snmp_version: n.snmp_version ?? undefined,
+						snmp_community: n.snmp_community ?? undefined
+					}))
+				);
+			}
+
+			// Restore daemon setups
+			if (stateData.daemon_setups && stateData.daemon_setups.length > 0) {
+				for (const ds of stateData.daemon_setups) {
+					onboardingStore.setDaemonSetup(ds.network_id, {
+						name: ds.daemon_name,
+						installNow: ds.api_key != null,
+						apiKey: ds.api_key ?? undefined
+					});
+				}
+			}
+
 			stepInitialized = true;
 		}
 	});
+
+	// Helper to validate use case
+	function isValidUseCase(useCase: string): useCase is UseCase {
+		return ['homelab', 'company', 'msp'].includes(useCase);
+	}
 
 	// Helper to validate step
 	function isValidStep(step: string): step is Step {
@@ -74,8 +118,13 @@
 
 	// Persist step to session whenever it changes
 	$effect(() => {
-		if (stepInitialized && !isInviteFlow) {
-			onboardingStepMutation.mutate(currentStep);
+		if (stepInitialized && !isInviteFlow && currentStep !== lastPersistedStep) {
+			lastPersistedStep = currentStep;
+			// Include use_case in the mutation so it's persisted with the step
+			onboardingStepMutation.mutate({
+				step: currentStep,
+				use_case: useCase ?? undefined
+			});
 		}
 	});
 
@@ -233,11 +282,16 @@
 	}
 
 	async function handleVerificationComplete() {
+		// Refresh organization data to ensure routing has fresh data
+		const org = await fetchOrganization();
 		// Navigate to correct destination (billing or main app)
+		const route = getRoute();
 		await navigate();
 	}
 
 	async function handleVerificationSkip() {
+		// Refresh organization data to ensure routing has fresh data
+		await fetchOrganization();
 		// User chose to skip verification, proceed to billing/app
 		await navigate();
 	}

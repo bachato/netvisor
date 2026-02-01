@@ -259,4 +259,5 @@
 	variant="warning"
 	onConfirm={confirmDelete}
 	onCancel={cancelDelete}
+	onClose={() => (showDeleteConfirmation = false)}
 />

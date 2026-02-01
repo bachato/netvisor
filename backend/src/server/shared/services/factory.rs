@@ -9,7 +9,7 @@ use crate::server::{
     email::{plunk::PlunkEmailProvider, smtp::SmtpEmailProvider, traits::EmailService},
     groups::{group_bindings::GroupBindingStorage, service::GroupService},
     hosts::service::HostService,
-    hubspot::{metrics_subscriber::HubSpotMetricsSubscriber, service::HubSpotService},
+    hubspot::service::HubSpotService,
     if_entries::service::IfEntryService,
     interfaces::service::InterfaceService,
     invites::service::InviteService,
@@ -295,9 +295,15 @@ impl ServiceFactory {
 
         // Create HubSpot service if API key is configured (before config is consumed)
         let hubspot_service = config.as_ref().and_then(|c| {
-            c.hubspot_api_key
-                .as_ref()
-                .map(|api_key| Arc::new(HubSpotService::new(api_key.clone())))
+            c.hubspot_api_key.as_ref().map(|api_key| {
+                Arc::new(HubSpotService::new(
+                    api_key.clone(),
+                    network_service.clone(),
+                    host_service.clone(),
+                    user_service.clone(),
+                    organization_service.clone(),
+                ))
+            })
         });
 
         let oidc_service = config.and_then(|c| {
@@ -334,19 +340,9 @@ impl ServiceFactory {
         }
 
         if let Some(hubspot_service) = hubspot_service.clone() {
-            event_bus.register_subscriber(hubspot_service.clone()).await;
-
-            // Register metrics subscriber with access to entity services
-            let metrics_subscriber = Arc::new(HubSpotMetricsSubscriber::new(
-                hubspot_service,
-                network_service.clone(),
-                host_service.clone(),
-                user_service.clone(),
-            ));
-            event_bus.register_subscriber(metrics_subscriber).await;
+            event_bus.register_subscriber(hubspot_service).await;
         }
 
-        // Register DaemonService as subscriber for discovery events
         event_bus.register_subscriber(daemon_service.clone()).await;
 
         Ok(Self {

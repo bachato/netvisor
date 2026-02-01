@@ -230,6 +230,7 @@ impl AuthService {
                         plan,
                         plan_status: None,
                         onboarding,
+                        hubspot_company_id: None,
                     }),
                     AuthenticatedEntity::System,
                 )

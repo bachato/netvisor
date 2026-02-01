@@ -10,16 +10,33 @@
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { billing_requestInfo, common_cancel, common_sending } from '$lib/paraglide/messages';
 	import { apiClient } from '$lib/api/client';
+	import { getCookie } from '$lib/shared/components/feedback/CookieConsent.svelte';
+
+	/** Get HubSpot tracking cookie (hutk) for form submission context */
+	function getHubspotCookie(): string | undefined {
+		const hutk = getCookie('hubspotutk');
+		return hutk ?? undefined;
+	}
 
 	interface Props {
 		isOpen?: boolean;
 		planName?: string;
 		planType?: string;
 		userEmail?: string;
+		orgName?: string;
+		companySize?: string;
 		onClose: () => void;
 	}
 
-	let { isOpen = false, planName = '', planType = '', userEmail = '', onClose }: Props = $props();
+	let {
+		isOpen = false,
+		planName = '',
+		planType = '',
+		userEmail = '',
+		orgName = '',
+		companySize = '',
+		onClose
+	}: Props = $props();
 
 	let loading = $state(false);
 	let status = $state<'idle' | 'success' | 'error'>('idle');
@@ -46,23 +63,15 @@
 		{ value: 'exploring', label: 'Just exploring' }
 	];
 
-	const networkCountOptions = [
-		{ value: '', label: 'Select network count', disabled: true },
-		{ value: '1-5', label: '1-5 networks' },
-		{ value: '6-20', label: '6-20 networks' },
-		{ value: '21-50', label: '21-50 networks' },
-		{ value: '50+', label: '50+ networks' }
-	];
-
 	function getDefaultValues() {
 		return {
 			email: userEmail,
 			name: '',
-			company: '',
-			teamSize: '',
-			useCase: '',
+			company: orgName,
+			teamSize: companySize,
+			message: '',
 			urgency: '',
-			networkCount: ''
+			networkCount: undefined as number | undefined
 		};
 	}
 
@@ -79,10 +88,11 @@
 						name: value.name.trim(),
 						company: value.company.trim(),
 						team_size: value.teamSize,
-						use_case: value.useCase.trim(),
+						message: value.message.trim(),
 						urgency: value.urgency || undefined,
-						network_count: value.networkCount || undefined,
-						plan_type: planType || undefined
+						network_count: value.networkCount ?? undefined,
+						plan_type: planType || undefined,
+						hutk: getHubspotCookie()
 					}
 				});
 
@@ -227,20 +237,21 @@
 
 					<form.Field name="networkCount">
 						{#snippet children(field)}
-							<SelectInput
+							<TextInput
 								label="How many networks/sites?"
 								id="inquiry-network-count"
 								{field}
-								options={networkCountOptions}
+								type="number"
+								placeholder="e.g., 10"
 							/>
 						{/snippet}
 					</form.Field>
 
-					<form.Field name="useCase">
+					<form.Field name="message">
 						{#snippet children(field)}
 							<TextArea
-								label="Use Case"
-								id="inquiry-use-case"
+								label="Message"
+								id="inquiry-message"
 								{field}
 								placeholder="Tell us about your use case..."
 								rows={3}

@@ -3,7 +3,7 @@ import { getLocale, trackMessageCall, experimentalMiddlewareLocaleSplitting, isS
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
 const en_onboarding_daemonsactivatebody2 = /** @type {(inputs: {}) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`If you install a daemon now, it'll connect and start mapping your network automatically after you register.`)
+	return /** @type {LocalizedString} */ (`Install a daemon now, and it'll connect and start mapping your network automatically after you register.`)
 };
 
 /**

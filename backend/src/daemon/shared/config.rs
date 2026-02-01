@@ -101,6 +101,10 @@ pub struct DaemonCli {
     #[arg(long)]
     scan_rate_pps: Option<u32>,
 
+    /// Port scan batch size - number of ports scanned concurrently per host (default: 200, range: 16-1000)
+    #[arg(long)]
+    port_scan_batch_size: Option<usize>,
+
     /// Restrict daemon to specific network interface(s). Comma-separated for multiple (e.g., eth0,eth1). Leave empty for all interfaces. Only applies to network discovery
     #[arg(long, value_delimiter = ',')]
     interfaces: Option<Vec<String>>,
@@ -157,6 +161,8 @@ pub struct AppConfig {
     pub arp_rate_pps: u32,
     #[serde(default = "default_scan_rate_pps")]
     pub scan_rate_pps: u32,
+    #[serde(default = "default_port_scan_batch_size")]
+    pub port_scan_batch_size: usize,
     /// Network interfaces to restrict scanning to. Empty means all interfaces.
     #[serde(default)]
     pub interfaces: Vec<String>,
@@ -176,6 +182,10 @@ fn default_arp_rate_pps() -> u32 {
 
 fn default_scan_rate_pps() -> u32 {
     500 // Default: 500 pps (2ms between probes), safe for most devices
+}
+
+fn default_port_scan_batch_size() -> usize {
+    200 // Default: 200 ports concurrently per host
 }
 
 impl Default for AppConfig {
@@ -208,6 +218,7 @@ impl Default for AppConfig {
             arp_rate_pps: default_arp_rate_pps(),
             interfaces: Vec::new(),
             scan_rate_pps: default_scan_rate_pps(),
+            port_scan_batch_size: default_port_scan_batch_size(),
             capabilities: DaemonCapabilities::default(),
         }
     }
@@ -334,6 +345,9 @@ impl AppConfig {
         }
         if let Some(scan_rate_pps) = cli_args.scan_rate_pps {
             figment = figment.merge(("scan_rate_pps", scan_rate_pps));
+        }
+        if let Some(port_scan_batch_size) = cli_args.port_scan_batch_size {
+            figment = figment.merge(("port_scan_batch_size", port_scan_batch_size));
         }
         if let Some(interface) = cli_args.interfaces {
             figment = figment.merge(("interfaces", interface));
@@ -565,6 +579,11 @@ impl ConfigStore {
     pub async fn get_scan_rate_pps(&self) -> Result<u32> {
         let config = self.config.read().await;
         Ok(config.scan_rate_pps)
+    }
+
+    pub async fn get_port_scan_batch_size(&self) -> Result<usize> {
+        let config = self.config.read().await;
+        Ok(config.port_scan_batch_size)
     }
 
     pub async fn get_interfaces(&self) -> Result<Vec<String>> {

@@ -6,7 +6,9 @@ use mac_address::MacAddress;
 use uuid::Uuid;
 
 use crate::server::{
-    daemons::r#impl::base::DaemonMode, shared::{entities::EntityDiscriminants, storage::traits::SqlValue}, users::r#impl::permissions::UserOrgPermissions
+    daemons::r#impl::base::DaemonMode,
+    shared::{entities::EntityDiscriminants, storage::traits::SqlValue},
+    users::r#impl::permissions::UserOrgPermissions,
 };
 
 use super::traits::Storable;
@@ -119,12 +121,18 @@ impl<T: Storable> StorableFilter<T> {
         Self::new().unresolved_lldp_in_network(network_id)
     }
 
+    pub fn new_without_hubspot_company_id() -> Self {
+        Self::new().without_hubspot_company_id()
+    }
+
     pub fn new_with_expiry_before(timestamp: DateTime<Utc>) -> Self {
         Self::new().expires_before(timestamp)
     }
 
     pub fn new_for_daemon_poller_system_job() -> Self {
-        Self::new().daemon_mode(DaemonMode::ServerPoll).is_unreachable(false)
+        Self::new()
+            .daemon_mode(DaemonMode::ServerPoll)
+            .is_unreachable(false)
     }
 
     /// Qualify a column name with the table name.
@@ -704,6 +712,17 @@ impl<T: Storable> StorableFilter<T> {
         ));
         self.values.push(SqlValue::Uuid(host_id));
 
+        self
+    }
+
+    // =========================================================================
+    // Organization filters
+    // =========================================================================
+
+    /// Filter for organizations that haven't been synced to HubSpot yet
+    pub fn without_hubspot_company_id(mut self) -> Self {
+        let col = self.qualify_column("hubspot_company_id");
+        self.conditions.push(format!("{} IS NULL", col));
         self
     }
 }

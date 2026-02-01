@@ -9282,14 +9282,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-01-26T18:39:03.837903Z",
-              "id": "ec6132ad-5297-4cea-8276-4f8bfd8cb3bb",
+              "created_at": "2026-01-31T21:56:43.502382Z",
+              "id": "bc09a8b9-cc7b-4f55-aa20-db33b783c5df",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-26T18:39:03.837903Z"
+              "updated_at": "2026-01-31T21:56:43.502382Z"
             }
           },
           "error": {
@@ -10021,14 +10021,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-01-26T18:39:03.828404Z",
-                      "id": "b66b667d-cf1c-4118-aa0b-96da50770668",
+                      "created_at": "2026-01-31T21:56:43.490922Z",
+                      "id": "912aa9f9-a8e5-450d-8cc6-224004ac9704",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-01-26T18:39:03.828404Z"
+                      "updated_at": "2026-01-31T21:56:43.490922Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10037,7 +10037,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "AMQP",
+                  "service_definition": "Kafka",
                   "source": {
                     "type": "Manual"
                   },
@@ -10416,16 +10416,38 @@
             "type": "object",
             "description": "Response from onboarding state endpoint",
             "required": [
+              "networks",
               "network_ids"
             ],
             "properties": {
+              "daemon_setups": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OnboardingDaemonSetupState"
+                },
+                "description": "Daemon setups (if any)"
+              },
               "network_ids": {
                 "type": "array",
                 "items": {
                   "type": "string",
                   "format": "uuid"
                 },
-                "description": "Network IDs from pending setup (if any)"
+                "description": "Network IDs from pending setup (if any) - kept for backwards compatibility"
+              },
+              "networks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OnboardingNetworkState"
+                },
+                "description": "Networks from pending setup (with names and IDs)"
+              },
+              "org_name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Organization name from pending setup"
               },
               "step": {
                 "type": [
@@ -10433,6 +10455,13 @@
                   "null"
                 ],
                 "description": "Current onboarding step (if any)"
+              },
+              "use_case": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Use case selection (homelab, company, msp)"
               }
             }
           },
@@ -10824,14 +10853,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-01-26T18:39:03.835034Z",
-                  "id": "a6b24cac-7423-4ab0-aa7e-70ff1c304c69",
+                  "created_at": "2026-01-31T21:56:43.498745Z",
+                  "id": "b1ceb403-74de-4b85-8e09-f6e62a4ca8f8",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-26T18:39:03.835034Z"
+                  "updated_at": "2026-01-31T21:56:43.498745Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -10840,7 +10869,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "AMQP",
+              "service_definition": "Kafka",
               "source": {
                 "type": "Manual"
               },
@@ -12000,14 +12029,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-01-26T18:39:03.828580Z",
-          "id": "524df272-9c8a-4404-b54a-a8173e925913",
+          "created_at": "2026-01-31T21:56:43.491107Z",
+          "id": "5e079b56-509a-4a90-9f31-7c9d0c77938e",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-01-26T18:39:03.828580Z"
+          "updated_at": "2026-01-31T21:56:43.491107Z"
         }
       },
       "BindingBase": {
@@ -12461,7 +12490,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "AMQP",
+              "service_definition": "Kafka",
               "tags": [],
               "virtualization": null
             }
@@ -13608,6 +13637,68 @@
           "PhysicalLink"
         ]
       },
+      "EnterpriseInquiryRequest": {
+        "type": "object",
+        "description": "Enterprise plan inquiry request",
+        "required": [
+          "email",
+          "name",
+          "company",
+          "team_size",
+          "message"
+        ],
+        "properties": {
+          "company": {
+            "type": "string",
+            "description": "Company name"
+          },
+          "email": {
+            "type": "string",
+            "description": "Contact email"
+          },
+          "hutk": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "HubSpot tracking cookie (hutk) for linking form submission to visitor"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message/use case description (maps to HubSpot \"message\" field)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Contact name"
+          },
+          "network_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Number of networks/sites"
+          },
+          "plan_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Plan type being inquired about"
+          },
+          "team_size": {
+            "type": "string",
+            "description": "Team/company size: 1-10, 11-25, 26-50, 51-100, 101-250, 251-500, 501-1000, 1001+"
+          },
+          "urgency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Urgency: immediately, 1-3 months, 3-6 months, exploring"
+          }
+        }
+      },
       "EntityDiscriminants": {
         "type": "string",
         "enum": [
@@ -14265,14 +14356,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-01-26T18:39:03.828162Z",
-                  "id": "4dedd578-0a3e-4eb3-8c8b-f8885ba45f09",
+                  "created_at": "2026-01-31T21:56:43.490659Z",
+                  "id": "e2145279-500e-47d7-9922-aae0267b370e",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-01-26T18:39:03.828162Z"
+                  "updated_at": "2026-01-31T21:56:43.490659Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14281,7 +14372,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "AMQP",
+              "service_definition": "Kafka",
               "source": {
                 "type": "Manual"
               },
@@ -15563,20 +15654,107 @@
           }
         }
       },
+      "OnboardingDaemonSetupState": {
+        "type": "object",
+        "description": "Daemon setup data in onboarding state response",
+        "required": [
+          "network_id",
+          "daemon_name"
+        ],
+        "properties": {
+          "api_key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "API key (only returned if user chose to install now)"
+          },
+          "daemon_name": {
+            "type": "string",
+            "description": "Daemon name"
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Network ID this daemon is for"
+          }
+        }
+      },
+      "OnboardingNetworkState": {
+        "type": "object",
+        "description": "Network data in onboarding state response",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Network ID (if created)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Network name"
+          },
+          "snmp_community": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP community string"
+          },
+          "snmp_enabled": {
+            "type": "boolean",
+            "description": "Whether SNMP is enabled"
+          },
+          "snmp_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP version"
+          }
+        }
+      },
       "OnboardingStateResponse": {
         "type": "object",
         "description": "Response from onboarding state endpoint",
         "required": [
+          "networks",
           "network_ids"
         ],
         "properties": {
+          "daemon_setups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OnboardingDaemonSetupState"
+            },
+            "description": "Daemon setups (if any)"
+          },
           "network_ids": {
             "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
             },
-            "description": "Network IDs from pending setup (if any)"
+            "description": "Network IDs from pending setup (if any) - kept for backwards compatibility"
+          },
+          "networks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OnboardingNetworkState"
+            },
+            "description": "Networks from pending setup (with names and IDs)"
+          },
+          "org_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Organization name from pending setup"
           },
           "step": {
             "type": [
@@ -15584,6 +15762,13 @@
               "null"
             ],
             "description": "Current onboarding step (if any)"
+          },
+          "use_case": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Use case selection (homelab, company, msp)"
           }
         }
       },
@@ -15596,6 +15781,13 @@
         "properties": {
           "step": {
             "type": "string"
+          },
+          "use_case": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Use case selection (homelab, company, msp)"
           }
         }
       },
@@ -16074,14 +16266,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-01-26T18:39:03.823847Z",
-                        "id": "df6cdf10-7b1a-4060-b509-ccb7a6d92ac8",
+                        "created_at": "2026-01-31T21:56:43.484816Z",
+                        "id": "58f58c68-ab30-4aab-ac4b-07d6cbae109c",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-01-26T18:39:03.823847Z"
+                        "updated_at": "2026-01-31T21:56:43.484816Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16090,7 +16282,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "AMQP",
+                    "service_definition": "Kafka",
                     "source": {
                       "type": "Manual"
                     },
@@ -16167,14 +16359,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-01-26T18:39:03.834176Z",
-                    "id": "41fca81b-9d68-4548-a105-395c848f5a1c",
+                    "created_at": "2026-01-31T21:56:43.497722Z",
+                    "id": "cb1b2b01-e30e-452f-b37f-897a32cde57b",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-01-26T18:39:03.834176Z"
+                    "updated_at": "2026-01-31T21:56:43.497722Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16183,7 +16375,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "AMQP",
+                "service_definition": "Kafka",
                 "source": {
                   "type": "Manual"
                 },
@@ -17153,14 +17345,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-01-26T18:39:03.828519Z",
-              "id": "e33c31b9-93df-4441-87d8-bb829cd1f4db",
+              "created_at": "2026-01-31T21:56:43.491042Z",
+              "id": "277edab4-5994-431c-8488-499913ce5a37",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-01-26T18:39:03.828519Z"
+              "updated_at": "2026-01-31T21:56:43.491042Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17169,7 +17361,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "AMQP",
+          "service_definition": "Kafka",
           "source": {
             "type": "Manual"
           },
@@ -17885,7 +18077,16 @@
           "CheckoutCompleted",
           "TrialStarted",
           "TrialEnded",
-          "SubscriptionCancelled"
+          "SubscriptionCancelled",
+          "FirstNetworkCreated",
+          "FirstDiscoveryCompleted",
+          "FirstHostDiscovered",
+          "SecondNetworkCreated",
+          "FirstTagCreated",
+          "FirstUserApiKeyCreated",
+          "FirstSnmpCredentialCreated",
+          "InviteSent",
+          "InviteAccepted"
         ]
       },
       "Topology": {

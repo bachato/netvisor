@@ -7,9 +7,11 @@ use scanopy::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallbac
 use scanopy::server::groups::r#impl::base::{Group, GroupBase};
 use scanopy::server::services::definitions::home_assistant::HomeAssistant;
 use scanopy::server::services::r#impl::base::Service;
+use scanopy::server::shared::entities::EntityDiscriminants;
 use scanopy::server::shared::storage::traits::Storable;
 use scanopy::server::shared::types::metadata::HasId;
 use scanopy::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
+use scanopy::server::tags::handlers::BulkTagRequest;
 use scanopy::server::tags::r#impl::base::{Tag, TagBase};
 use uuid::Uuid;
 
@@ -173,11 +175,36 @@ pub async fn create_tag(client: &TestClient, organization_id: Uuid) -> Result<Ta
 
     let mut tag = Tag::new(TagBase::default());
     tag.base.organization_id = organization_id;
+    tag.base.name = "Integration Test Tag".to_string();
 
     retry("create Tag", 10, 3, || async {
         let created_tag: Tag = client.post("/api/v1/tags", &tag).await?;
-        println!("✅ Created Tag");
+        println!("✅ Created Tag: {}", created_tag.base.name);
         Ok(created_tag)
+    })
+    .await
+}
+
+/// Apply a tag to a service using the bulk-add endpoint.
+pub async fn apply_tag_to_service(
+    client: &TestClient,
+    tag_id: Uuid,
+    service_id: Uuid,
+) -> Result<(), String> {
+    println!("\n=== Applying Tag to Discovered Service ===");
+
+    let request = BulkTagRequest {
+        entity_type: EntityDiscriminants::Service,
+        entity_ids: vec![service_id],
+        tag_id,
+    };
+
+    retry("apply tag to service", 5, 2, || async {
+        let _response: serde_json::Value = client
+            .post("/api/v1/tags/assign/bulk-add", &request)
+            .await?;
+        println!("✅ Applied tag to service");
+        Ok(())
     })
     .await
 }

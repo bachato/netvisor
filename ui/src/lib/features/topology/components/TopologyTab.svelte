@@ -6,6 +6,7 @@
 	import ExportButton from './ExportButton.svelte';
 	import ShareModal from '$lib/features/shares/components/ShareModal.svelte';
 	import { SvelteFlowProvider } from '@xyflow/svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		useTopologiesQuery,
 		useDeleteTopologyMutation,
@@ -113,6 +114,34 @@
 	let isShareModalOpen = $state(false);
 
 	let topologyViewer: TopologyViewer | null = $state(null);
+
+	// Track which topologies have had their initial auto-rebuild check
+	let initialRebuildChecked = new SvelteSet<string>();
+
+	// Auto-rebuild on initial load when autoRebuild is enabled
+	$effect(() => {
+		// Guard: need a selected, non-locked topology with autoRebuild enabled
+		if (!currentTopology || currentTopology.is_locked || !$autoRebuild) {
+			return;
+		}
+
+		// Guard: already checked this topology
+		if (initialRebuildChecked.has(currentTopology.id)) {
+			return;
+		}
+
+		// Mark as checked BEFORE triggering rebuild to prevent race conditions
+		initialRebuildChecked.add(currentTopology.id);
+
+		// Determine if rebuild is needed: stale or empty
+		const needsRebuild = currentTopology.is_stale || currentTopology.nodes.length === 0;
+
+		if (needsRebuild) {
+			void rebuildTopologyMutation.mutateAsync(currentTopology).then(() => {
+				topologyViewer?.triggerFitView();
+			});
+		}
+	});
 
 	function handleCreateTopology() {
 		isCreateEditOpen = true;
