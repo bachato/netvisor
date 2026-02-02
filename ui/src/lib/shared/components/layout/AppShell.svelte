@@ -94,6 +94,13 @@
 		// Load HubSpot tracking script if marketing consent is given
 		if (browser && hasMarketingConsent() && !hubspotInitStarted) {
 			hubspotInitStarted = true;
+
+			// Disable HubSpot's automatic form collection ("Collected Forms" feature)
+			// This prevents HubSpot from scraping login/registration forms
+			const hsq = ((window as unknown as { _hsq: unknown[] })._hsq =
+				(window as unknown as { _hsq: unknown[] })._hsq || []);
+			hsq.push(['setContentType', 'standard-page']);
+
 			const script = document.createElement('script');
 			script.id = 'hs-script-loader';
 			script.src = 'https://js.hs-scripts.com/50956550.js';

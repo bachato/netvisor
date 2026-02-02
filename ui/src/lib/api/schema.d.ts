@@ -363,6 +363,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/daemons/{id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive daemon heartbeat (DEPRECATED - for backwards compatibility with pre-v0.14.0 daemons)
+         * @description Internal endpoint for legacy daemons to send periodic heartbeats.
+         *     New daemons (v0.14.0+) use the /request-work endpoint which includes heartbeat functionality.
+         *     This endpoint is kept for backwards compatibility and will be removed in a future version.
+         */
+        post: operations["receive_heartbeat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/daemons/{id}/request-work": {
         parameters: {
             query?: never;
@@ -2615,7 +2637,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.13.6"
+         *       "server_version": "0.14.1"
          *     }
          */
         ApiMeta: {
@@ -2626,7 +2648,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.13.6
+             * @example 0.14.1
              */
             server_version: string;
         };
@@ -2640,14 +2662,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-02-01T14:46:58.963068Z",
-             *       "id": "f5f1f4e5-6b7e-4edf-81d0-cd33ae146e06",
+             *       "created_at": "2026-02-02T22:03:48.338209Z",
+             *       "id": "a4ff1f51-bbad-43e9-956c-a6198f992f16",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-02-01T14:46:58.963068Z"
+             *       "updated_at": "2026-02-02T22:03:48.338209Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2878,14 +2900,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-02-01T14:46:58.950507Z",
-             *               "id": "2add4480-e5e6-4695-8513-1eede16485b2",
+             *               "created_at": "2026-02-02T22:03:48.325766Z",
+             *               "id": "801c6702-62e7-46ae-8794-51f617ee2654",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-02-01T14:46:58.950507Z"
+             *               "updated_at": "2026-02-02T22:03:48.325766Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -2894,7 +2916,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Jellyfin",
+             *           "service_definition": "Traefik",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3168,14 +3190,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-02-01T14:46:58.959322Z",
-             *           "id": "8ea536b6-ee1c-4715-9134-241e3787cf3b",
+             *           "created_at": "2026-02-02T22:03:48.334755Z",
+             *           "id": "c39d0e0a-7055-452d-b644-b19f4806f6dc",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-02-01T14:46:58.959322Z"
+             *           "updated_at": "2026-02-02T22:03:48.334755Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3184,7 +3206,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Jellyfin",
+             *       "service_definition": "Traefik",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3480,14 +3502,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-02-01T14:46:58.950717Z",
-         *       "id": "a3a303c2-ecc7-4c80-915a-59098174569d",
+         *       "created_at": "2026-02-02T22:03:48.326010Z",
+         *       "id": "8cd0cbe0-a510-4a64-9af4-364b2c1d992a",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-02-01T14:46:58.950717Z"
+         *       "updated_at": "2026-02-02T22:03:48.326010Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3652,7 +3674,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Jellyfin",
+         *           "service_definition": "Traefik",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -3789,6 +3811,15 @@ export interface components {
         DaemonCapabilities: {
             has_docker_socket?: boolean;
             interfaced_subnet_ids: string[];
+        };
+        /**
+         * @description Legacy heartbeat payload for backwards compatibility with pre-v0.14.0 daemons.
+         *     Old daemons call POST /api/daemons/{id}/heartbeat with this payload.
+         */
+        DaemonHeartbeatPayload: {
+            mode: components["schemas"]["DaemonMode"];
+            name: string;
+            url: string;
         };
         /**
          * @description Daemon operating mode that determines the communication pattern.
@@ -4284,14 +4315,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-02-01T14:46:58.950232Z",
-         *               "id": "eefe0fd5-65f3-4c5e-8e62-025be1d35d87",
+         *               "created_at": "2026-02-02T22:03:48.325432Z",
+         *               "id": "8a775be7-1d58-4862-95bc-ca0aabd0d2a0",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-02-01T14:46:58.950232Z"
+         *               "updated_at": "2026-02-02T22:03:48.325432Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4300,7 +4331,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Jellyfin",
+         *           "service_definition": "Traefik",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4837,7 +4868,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.13.6"
+         *       "server_version": "0.14.1"
          *     }
          */
         PaginatedApiMeta: {
@@ -4850,7 +4881,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.13.6
+             * @example 0.14.1
              */
             server_version: string;
         };
@@ -5198,6 +5229,7 @@ export interface components {
         RegisterRequest: {
             /** Format: email */
             email: string;
+            marketing_opt_in?: boolean;
             password: string;
             terms_accepted: boolean;
         };
@@ -5240,14 +5272,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-02-01T14:46:58.950648Z",
-         *           "id": "3982e278-ebb7-4a23-86e2-af3657dc6cf4",
+         *           "created_at": "2026-02-02T22:03:48.325931Z",
+         *           "id": "305a811d-eb11-401d-acfe-81a9025882a3",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-02-01T14:46:58.950648Z"
+         *           "updated_at": "2026-02-02T22:03:48.325931Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5256,7 +5288,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Jellyfin",
+         *       "service_definition": "Traefik",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6518,6 +6550,42 @@ export interface operations {
             };
             /** @description Daemon registration disabled in demo mode */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    receive_heartbeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daemon ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DaemonHeartbeatPayload"];
+            };
+        };
+        responses: {
+            /** @description Heartbeat received */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Daemon not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

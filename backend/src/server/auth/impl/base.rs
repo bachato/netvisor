@@ -24,6 +24,8 @@ pub struct ProvisionUserParams {
     pub terms_accepted_at: Option<DateTime<Utc>>,
     /// Whether billing is enabled (if false, sets default billing plan for self-hosted)
     pub billing_enabled: bool,
+    /// Whether user opted in to marketing communications
+    pub marketing_opt_in: bool,
 }
 
 /// Network setup data for a single network

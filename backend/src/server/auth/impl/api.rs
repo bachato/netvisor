@@ -24,6 +24,8 @@ pub struct RegisterRequest {
     #[validate(custom(function = "validate_password_complexity"))]
     pub password: String,
     pub terms_accepted: bool,
+    #[serde(default)]
+    pub marketing_opt_in: bool,
 }
 
 /// Validate password complexity requirements
@@ -66,6 +68,7 @@ pub struct OidcAuthorizeParams {
     pub flow: Option<String>, // "login", "register", or "link"
     pub return_url: Option<String>,
     pub terms_accepted: Option<bool>,
+    pub marketing_opt_in: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

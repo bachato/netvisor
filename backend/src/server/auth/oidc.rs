@@ -107,6 +107,7 @@ impl OidcService {
             billing_enabled,
             terms_accepted_at,
             deployment_type,
+            marketing_opt_in,
         } = oidc_register_params;
 
         let provider = self
@@ -167,6 +168,7 @@ impl OidcService {
                     network_ids,
                     terms_accepted_at,
                     billing_enabled,
+                    marketing_opt_in,
                 },
                 pending_setup,
             )

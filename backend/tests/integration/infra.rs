@@ -151,6 +151,7 @@ impl TestClient {
             email: email.clone(),
             password: password.to_string(),
             terms_accepted: false,
+            marketing_opt_in: false,
         };
 
         let response = self

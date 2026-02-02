@@ -222,8 +222,11 @@
 
 	async function handleRegister(data: RegisterRequest, subscribed: boolean) {
 		try {
-			// Extract subscribed for Plunk, send rest to backend
-			const user = await registerMutation.mutateAsync(data);
+			// Include marketing_opt_in in the registration request
+			const user = await registerMutation.mutateAsync({
+				...data,
+				marketing_opt_in: subscribed
+			});
 
 			// Track org creation
 			trackEvent('org_created', {

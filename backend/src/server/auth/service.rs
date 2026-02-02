@@ -130,6 +130,7 @@ impl AuthService {
                     network_ids,
                     terms_accepted_at,
                     billing_enabled,
+                    marketing_opt_in: request.marketing_opt_in,
                 },
                 pending_setup,
             )
@@ -190,6 +191,7 @@ impl AuthService {
             network_ids,
             terms_accepted_at,
             billing_enabled,
+            marketing_opt_in,
         } = params;
 
         let mut is_new_org = false;
@@ -294,7 +296,8 @@ impl AuthService {
             let job_title = pending_setup.as_ref().and_then(|s| s.job_title.clone());
 
             let mut metadata = serde_json::json!({
-                "org_name": org_name
+                "org_name": org_name,
+                "marketing_opt_in": marketing_opt_in
             });
             if let Some(use_case) = use_case {
                 metadata["use_case"] = serde_json::json!(use_case);

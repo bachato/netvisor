@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.0\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.0\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.1\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.1\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -11735,12 +11735,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.0"
+            "example": "0.14.1"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.14.0"
+          "server_version": "0.14.1"
         }
       },
       "ApiResponse": {
@@ -11814,14 +11814,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-02T01:45:34.963719Z",
-              "id": "88081e11-1bd1-4f34-a7e9-a110ec6bc540",
+              "created_at": "2026-02-02T22:06:12.613011Z",
+              "id": "8b19305a-df53-48b8-93f9-d40d94febfd6",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-02T01:45:34.963719Z"
+              "updated_at": "2026-02-02T22:06:12.613011Z"
             }
           },
           "error": {
@@ -12553,14 +12553,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-02T01:45:34.947576Z",
-                      "id": "52998d54-8b03-4d5f-9ed4-e1d523d5b382",
+                      "created_at": "2026-02-02T22:06:12.597650Z",
+                      "id": "04188f32-312b-452d-86d2-d48f69e04581",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-02T01:45:34.947576Z"
+                      "updated_at": "2026-02-02T22:06:12.597650Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12569,7 +12569,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Docker Container",
+                  "service_definition": "Traefik",
                   "source": {
                     "type": "Manual"
                   },
@@ -13385,14 +13385,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-02T01:45:34.959840Z",
-                  "id": "24bdfdc3-474c-421c-827b-81a82df26a02",
+                  "created_at": "2026-02-02T22:06:12.608294Z",
+                  "id": "197dfb72-a349-4b7f-b851-39f18bdab7f0",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-02T01:45:34.959840Z"
+                  "updated_at": "2026-02-02T22:06:12.608294Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13401,7 +13401,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Docker Container",
+              "service_definition": "Traefik",
               "source": {
                 "type": "Manual"
               },
@@ -14561,14 +14561,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-02T01:45:34.947784Z",
-          "id": "4d0fd8a5-9596-42d0-b8e9-c5b951cf195f",
+          "created_at": "2026-02-02T22:06:12.597861Z",
+          "id": "9c21209a-f491-4b2f-93fc-368b1f8d4af2",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-02T01:45:34.947784Z"
+          "updated_at": "2026-02-02T22:06:12.597861Z"
         }
       },
       "BindingBase": {
@@ -15022,7 +15022,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Docker Container",
+              "service_definition": "Traefik",
               "tags": [],
               "virtualization": null
             }
@@ -16908,14 +16908,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-02T01:45:34.947297Z",
-                  "id": "b115d352-a529-4687-b24c-61f84aeaf255",
+                  "created_at": "2026-02-02T22:06:12.597254Z",
+                  "id": "f9fa9931-9f8a-4f3b-a37e-35e881234caa",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-02T01:45:34.947297Z"
+                  "updated_at": "2026-02-02T22:06:12.597254Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16924,7 +16924,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Docker Container",
+              "service_definition": "Traefik",
               "source": {
                 "type": "Manual"
               },
@@ -18442,7 +18442,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.0"
+            "example": "0.14.1"
           }
         },
         "example": {
@@ -18453,7 +18453,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.14.0"
+          "server_version": "0.14.1"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -18810,14 +18810,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-02T01:45:34.939579Z",
-                        "id": "b983849f-a107-4336-9052-f1773f91d671",
+                        "created_at": "2026-02-02T22:06:12.588494Z",
+                        "id": "29fe1743-8e28-44cf-b0b9-9c5967c81767",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-02T01:45:34.939579Z"
+                        "updated_at": "2026-02-02T22:06:12.588494Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18826,7 +18826,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Docker Container",
+                    "service_definition": "Traefik",
                     "source": {
                       "type": "Manual"
                     },
@@ -18903,14 +18903,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-02T01:45:34.958879Z",
-                    "id": "9a997fdf-2cab-4967-a145-f6e2bbfabbbe",
+                    "created_at": "2026-02-02T22:06:12.606825Z",
+                    "id": "0fc3e73b-d18c-4f0f-af57-5ed3064a15cd",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-02T01:45:34.958879Z"
+                    "updated_at": "2026-02-02T22:06:12.606825Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18919,7 +18919,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Docker Container",
+                "service_definition": "Traefik",
                 "source": {
                   "type": "Manual"
                 },
@@ -19716,6 +19716,9 @@
             "type": "string",
             "format": "email"
           },
+          "marketing_opt_in": {
+            "type": "boolean"
+          },
           "password": {
             "type": "string"
           },
@@ -19889,14 +19892,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-02T01:45:34.947717Z",
-              "id": "4f8bc2b7-a7ea-4706-a962-e5cc429d97ac",
+              "created_at": "2026-02-02T22:06:12.597784Z",
+              "id": "b0b36569-71ef-433d-864b-8611d5d34a66",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-02T01:45:34.947717Z"
+              "updated_at": "2026-02-02T22:06:12.597784Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19905,7 +19908,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Docker Container",
+          "service_definition": "Traefik",
           "source": {
             "type": "Manual"
           },

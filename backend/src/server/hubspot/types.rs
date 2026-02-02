@@ -98,6 +98,10 @@ pub struct ContactProperties {
     /// Last login date (ISO 8601) - updated on LoginSuccess
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scanopy_last_login_date: Option<String>,
+
+    /// Whether user opted in to marketing communications at registration
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scanopy_marketing_opt_in: Option<bool>,
 }
 
 impl ContactProperties {
@@ -147,6 +151,11 @@ impl ContactProperties {
 
     pub fn with_jobtitle(mut self, title: impl Into<String>) -> Self {
         self.jobtitle = Some(title.into());
+        self
+    }
+
+    pub fn with_marketing_opt_in(mut self, opt_in: bool) -> Self {
+        self.scanopy_marketing_opt_in = Some(opt_in);
         self
     }
 }

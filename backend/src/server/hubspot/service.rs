@@ -152,6 +152,11 @@ impl HubSpotService {
             .get("job_title")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
+        let marketing_opt_in = event
+            .metadata
+            .get("marketing_opt_in")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
         // Build contact properties
         let mut contact_props = ContactProperties::new()
@@ -160,7 +165,8 @@ impl HubSpotService {
             .with_org_id(event.organization_id)
             .with_role("owner")
             .with_signup_source("organic")
-            .with_signup_date(event.timestamp);
+            .with_signup_date(event.timestamp)
+            .with_marketing_opt_in(marketing_opt_in);
 
         if let Some(use_case) = &use_case {
             contact_props = contact_props.with_use_case(use_case);
