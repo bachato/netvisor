@@ -16,7 +16,7 @@ use crate::server::{
         types::GroupType,
     },
     hosts::r#impl::base::{Host, HostBase},
-    if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus},
+    if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus, Neighbor},
     interfaces::r#impl::base::{Interface, InterfaceBase},
     networks::r#impl::{Network, NetworkBase},
     ports::r#impl::base::{Port, PortType},
@@ -25,7 +25,10 @@ use crate::server::{
         r#impl::base::{Service, ServiceBase},
     },
     shared::types::{Color, entities::EntitySource},
-    snmp_credentials::r#impl::base::{SnmpCredential, SnmpCredentialBase, SnmpVersion},
+    snmp_credentials::{
+        r#impl::base::{SnmpCredential, SnmpCredentialBase, SnmpVersion},
+        resolution::lldp::{LldpChassisId, LldpPortId},
+    },
     subnets::r#impl::{
         base::{Subnet, SubnetBase},
         types::SubnetType,
@@ -680,6 +683,22 @@ fn generate_hosts_and_services(
             None,
             iot_tag.into_iter().collect()
         ),
+    ));
+
+    // -- UniFi Switch (core switch with LLDP neighbors) --
+    result.push(host_with_services!(
+        create_host(
+            "unifi-usw-24",
+            Some("switch.acme.local"),
+            Some("UniFi Switch 24 PoE"),
+            hq,
+            hq_mgmt,
+            Ipv4Addr::new(10, 0, 1, 3),
+            vec![],
+            now
+        ),
+        now,
+        ("SNMP", "SNMP", Some(PortType::Snmp), vec![]),
     ));
 
     // -- Proxmox Hypervisors --
@@ -1429,6 +1448,18 @@ fn generate_if_entries(
             .copied()
     };
 
+    // Pre-generate IDs for bidirectional neighbor relationships
+    let pfsense_lan_id = Uuid::new_v4();
+    let truenas_lagg0_id = Uuid::new_v4();
+    let proxmox_eno1_id = Uuid::new_v4();
+    let switch_port1_id = Uuid::new_v4(); // connects to pfSense
+    let switch_port2_id = Uuid::new_v4(); // connects to TrueNAS
+    let switch_port3_id = Uuid::new_v4(); // connects to Proxmox
+    let switch_port4_id = Uuid::new_v4(); // connects to UniFi AP (partial - Host only)
+
+    // Switch MAC address (used as chassis ID)
+    let switch_mac = "78:45:c4:ab:cd:01";
+
     // pfSense firewall - multiple interfaces
     if let Some(host) = find_host("pfsense-fw01") {
         let network = networks
@@ -1468,9 +1499,9 @@ fn generate_if_entries(
             },
         });
 
-        // LAN interface
+        // LAN interface - connected to switch port 1
         if_entries.push(IfEntry {
-            id: Uuid::new_v4(),
+            id: pfsense_lan_id,
             created_at: now,
             updated_at: now,
             base: IfEntryBase {
@@ -1485,13 +1516,13 @@ fn generate_if_entries(
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
                 interface_id: interface.map(|i| i.id),
-                neighbor: None,
-                lldp_chassis_id: None,
-                lldp_port_id: None,
-                lldp_sys_name: None,
-                lldp_port_desc: None,
-                lldp_mgmt_addr: None,
-                lldp_sys_desc: None,
+                neighbor: Some(Neighbor::IfEntry(switch_port1_id)),
+                lldp_chassis_id: Some(LldpChassisId::MacAddress(switch_mac.to_string())),
+                lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/1".to_string())),
+                lldp_sys_name: Some("unifi-usw-24".to_string()),
+                lldp_port_desc: Some("Port 1 - pfSense uplink".to_string()),
+                lldp_mgmt_addr: Some(std::net::IpAddr::V4(std::net::Ipv4Addr::new(10, 0, 1, 3))),
+                lldp_sys_desc: Some("UniFi USW-24-PoE".to_string()),
                 cdp_device_id: None,
                 cdp_port_id: None,
                 cdp_platform: None,
@@ -1531,7 +1562,7 @@ fn generate_if_entries(
         });
     }
 
-    // TrueNAS - bonded interfaces
+    // TrueNAS - bonded interfaces, connected to switch port 2
     if let Some(host) = find_host("truenas-primary") {
         let network = networks
             .iter()
@@ -1541,7 +1572,7 @@ fn generate_if_entries(
 
         // Bond interface
         if_entries.push(IfEntry {
-            id: Uuid::new_v4(),
+            id: truenas_lagg0_id,
             created_at: now,
             updated_at: now,
             base: IfEntryBase {
@@ -1556,13 +1587,13 @@ fn generate_if_entries(
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
                 interface_id: interface.map(|i| i.id),
-                neighbor: None,
-                lldp_chassis_id: None,
-                lldp_port_id: None,
-                lldp_sys_name: None,
-                lldp_port_desc: None,
-                lldp_mgmt_addr: None,
-                lldp_sys_desc: None,
+                neighbor: Some(Neighbor::IfEntry(switch_port2_id)),
+                lldp_chassis_id: Some(LldpChassisId::MacAddress(switch_mac.to_string())),
+                lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/2".to_string())),
+                lldp_sys_name: Some("unifi-usw-24".to_string()),
+                lldp_port_desc: Some("Port 2 - TrueNAS uplink".to_string()),
+                lldp_mgmt_addr: Some(std::net::IpAddr::V4(std::net::Ipv4Addr::new(10, 0, 1, 3))),
+                lldp_sys_desc: Some("UniFi USW-24-PoE".to_string()),
                 cdp_device_id: None,
                 cdp_port_id: None,
                 cdp_platform: None,
@@ -1571,7 +1602,7 @@ fn generate_if_entries(
         });
     }
 
-    // Proxmox - with loopback
+    // Proxmox - with loopback, connected to switch port 3
     if let Some(host) = find_host("proxmox-hv01") {
         let network = networks
             .iter()
@@ -1581,7 +1612,7 @@ fn generate_if_entries(
 
         // Primary interface
         if_entries.push(IfEntry {
-            id: Uuid::new_v4(),
+            id: proxmox_eno1_id,
             created_at: now,
             updated_at: now,
             base: IfEntryBase {
@@ -1596,13 +1627,13 @@ fn generate_if_entries(
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
                 interface_id: interface.map(|i| i.id),
-                neighbor: None,
-                lldp_chassis_id: None,
-                lldp_port_id: None,
-                lldp_sys_name: None,
-                lldp_port_desc: None,
-                lldp_mgmt_addr: None,
-                lldp_sys_desc: None,
+                neighbor: Some(Neighbor::IfEntry(switch_port3_id)),
+                lldp_chassis_id: Some(LldpChassisId::MacAddress(switch_mac.to_string())),
+                lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/3".to_string())),
+                lldp_sys_name: Some("unifi-usw-24".to_string()),
+                lldp_port_desc: Some("Port 3 - Proxmox uplink".to_string()),
+                lldp_mgmt_addr: Some(std::net::IpAddr::V4(std::net::Ipv4Addr::new(10, 0, 1, 3))),
+                lldp_sys_desc: Some("UniFi USW-24-PoE".to_string()),
                 cdp_device_id: None,
                 cdp_port_id: None,
                 cdp_platform: None,
@@ -1640,6 +1671,187 @@ fn generate_if_entries(
                 cdp_address: None,
             },
         });
+    }
+
+    // UniFi Switch - 24 port switch with LLDP neighbors
+    if let Some(host) = find_host("unifi-usw-24") {
+        let network = networks
+            .iter()
+            .find(|n| n.id == host.base.network_id)
+            .unwrap();
+        let interface = find_interface(host.id);
+
+        // Find hosts for neighbor references
+        let pfsense_host = find_host("pfsense-fw01");
+        let truenas_host = find_host("truenas-primary");
+        let proxmox_host = find_host("proxmox-hv01");
+        let ap_host = find_host("unifi-ap-lobby");
+
+        // Port 1 - connected to pfSense
+        if_entries.push(IfEntry {
+            id: switch_port1_id,
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 1,
+                if_descr: "Port 1/0/1".to_string(),
+                if_alias: Some("pfSense uplink".to_string()),
+                if_type: 6,
+                speed_bps: Some(1_000_000_000),
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: if interface.is_some() {
+                    interface.map(|i| i.id)
+                } else {
+                    None
+                },
+                neighbor: Some(Neighbor::IfEntry(pfsense_lan_id)),
+                lldp_chassis_id: Some(LldpChassisId::MacAddress("00:0d:b9:4a:f2:01".to_string())),
+                lldp_port_id: Some(LldpPortId::InterfaceName("igb1".to_string())),
+                lldp_sys_name: Some("pfsense-fw01".to_string()),
+                lldp_port_desc: Some("LAN".to_string()),
+                lldp_mgmt_addr: pfsense_host
+                    .map(|_| std::net::IpAddr::V4(std::net::Ipv4Addr::new(10, 0, 1, 1))),
+                lldp_sys_desc: Some("pfSense 2.7.0-RELEASE".to_string()),
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+
+        // Port 2 - connected to TrueNAS
+        if_entries.push(IfEntry {
+            id: switch_port2_id,
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 2,
+                if_descr: "Port 1/0/2".to_string(),
+                if_alias: Some("TrueNAS uplink".to_string()),
+                if_type: 6,
+                speed_bps: Some(10_000_000_000),
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: None,
+                neighbor: Some(Neighbor::IfEntry(truenas_lagg0_id)),
+                lldp_chassis_id: Some(LldpChassisId::MacAddress("3c:ec:ef:12:34:01".to_string())),
+                lldp_port_id: Some(LldpPortId::InterfaceName("lagg0".to_string())),
+                lldp_sys_name: Some("truenas-primary".to_string()),
+                lldp_port_desc: Some("LACP Bond".to_string()),
+                lldp_mgmt_addr: truenas_host
+                    .map(|_| std::net::IpAddr::V4(std::net::Ipv4Addr::new(10, 0, 20, 10))),
+                lldp_sys_desc: Some("TrueNAS SCALE".to_string()),
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+
+        // Port 3 - connected to Proxmox
+        if_entries.push(IfEntry {
+            id: switch_port3_id,
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 3,
+                if_descr: "Port 1/0/3".to_string(),
+                if_alias: Some("Proxmox uplink".to_string()),
+                if_type: 6,
+                speed_bps: Some(10_000_000_000),
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: None,
+                neighbor: Some(Neighbor::IfEntry(proxmox_eno1_id)),
+                lldp_chassis_id: Some(LldpChassisId::MacAddress("d4:be:d9:56:78:01".to_string())),
+                lldp_port_id: Some(LldpPortId::InterfaceName("eno1".to_string())),
+                lldp_sys_name: Some("proxmox-hv01".to_string()),
+                lldp_port_desc: Some("Primary NIC".to_string()),
+                lldp_mgmt_addr: proxmox_host
+                    .map(|_| std::net::IpAddr::V4(std::net::Ipv4Addr::new(10, 0, 20, 5))),
+                lldp_sys_desc: Some("Proxmox VE 8.1".to_string()),
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+
+        // Port 4 - connected to UniFi AP (partial resolution - Host only since AP has no IfEntry)
+        if_entries.push(IfEntry {
+            id: switch_port4_id,
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 4,
+                if_descr: "Port 1/0/4".to_string(),
+                if_alias: Some("UniFi AP".to_string()),
+                if_type: 6,
+                speed_bps: Some(1_000_000_000),
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: None,
+                // Partial resolution - only host known, no IfEntry for the AP
+                neighbor: ap_host.map(|h| Neighbor::Host(h.id)),
+                lldp_chassis_id: Some(LldpChassisId::MacAddress("fc:ec:da:aa:bb:01".to_string())),
+                lldp_port_id: Some(LldpPortId::InterfaceName("eth0".to_string())),
+                lldp_sys_name: Some("unifi-ap-lobby".to_string()),
+                lldp_port_desc: Some("Ethernet".to_string()),
+                lldp_mgmt_addr: ap_host
+                    .map(|_| std::net::IpAddr::V4(std::net::Ipv4Addr::new(10, 0, 30, 100))),
+                lldp_sys_desc: Some("UniFi AP U6-Pro".to_string()),
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+
+        // Ports 5-24 - empty ports (no neighbors)
+        for port_num in 5..=24 {
+            if_entries.push(IfEntry {
+                id: Uuid::new_v4(),
+                created_at: now,
+                updated_at: now,
+                base: IfEntryBase {
+                    host_id: host.id,
+                    network_id: network.id,
+                    if_index: port_num,
+                    if_descr: format!("Port 1/0/{}", port_num),
+                    if_alias: None,
+                    if_type: 6,
+                    speed_bps: Some(1_000_000_000),
+                    admin_status: IfAdminStatus::Up,
+                    oper_status: IfOperStatus::Down, // No link
+                    mac_address: None,
+                    interface_id: None,
+                    neighbor: None,
+                    lldp_chassis_id: None,
+                    lldp_port_id: None,
+                    lldp_sys_name: None,
+                    lldp_port_desc: None,
+                    lldp_mgmt_addr: None,
+                    lldp_sys_desc: None,
+                    cdp_device_id: None,
+                    cdp_port_id: None,
+                    cdp_platform: None,
+                    cdp_address: None,
+                },
+            });
+        }
     }
 
     if_entries

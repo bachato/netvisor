@@ -1,5 +1,4 @@
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
-use crate::server::auth::middleware::features::{BlockedInDemoMode, RequireFeature};
 use crate::server::auth::middleware::permissions::{Authorized, IsUser, Member, Owner};
 use crate::server::auth::service::hash_password;
 use crate::server::billing::types::base::BillingPlan;
@@ -76,7 +75,6 @@ pub async fn get_organization(
 pub async fn update_org_name(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Owner>,
-    _demo_check: RequireFeature<BlockedInDemoMode>,
     Path(id): Path<Uuid>,
     Json(name): Json<String>,
 ) -> ApiResult<Json<ApiResponse<Organization>>> {
@@ -382,6 +380,11 @@ async fn reset_organization_data(
     state
         .services
         .invite_service
+        .delete_all_for_org(organization_id, &network_ids, auth.clone())
+        .await?;
+    state
+        .services
+        .snmp_credential_service
         .delete_all_for_org(organization_id, &network_ids, auth.clone())
         .await?;
     state
