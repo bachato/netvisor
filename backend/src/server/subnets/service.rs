@@ -94,16 +94,29 @@ impl CrudService<Subnet> for SubnetService {
                             if let Some(metadata) = metadata.first() {
                                 existing_metadata.iter().any(|other_m| {
                                     match (&metadata.discovery_type, &other_m.discovery_type) {
-                                        // For Docker, only return existing if they originate from the same host
-                                        // If not from the same host, they can have the same CIDR without being considered a collision
-                                        // so create a new subnet rather than returning the existing
+                                        // For Docker bridge networks, only return existing if they originate from the same host.
+                                        // Docker defaults to the same subnet range for bridge networks, so different hosts
+                                        // can have the same CIDR without being considered a collision.
+                                        //
+                                        // However, MacVLAN and IpVLAN networks operate at L2 and appear as real hosts
+                                        // on the physical network, so they should be deduplicated by CIDR like regular
+                                        // LAN subnets regardless of which host discovered them.
                                         (
                                             DiscoveryType::Docker { host_id, .. },
                                             DiscoveryType::Docker {
                                                 host_id: other_host_id,
                                                 ..
                                             },
-                                        ) => host_id == other_host_id,
+                                        ) => {
+                                            // Always deduplicate MacVLAN/IpVLAN by CIDR
+                                            // Only deduplicate DockerBridge from same host
+                                            subnet.base.subnet_type.is_vlan_network()
+                                                || existing_subnet
+                                                    .base
+                                                    .subnet_type
+                                                    .is_vlan_network()
+                                                || host_id == other_host_id
+                                        }
                                         // Always return existing for other types
                                         _ => true,
                                     }

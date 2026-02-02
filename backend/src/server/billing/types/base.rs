@@ -490,7 +490,7 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             service_definitions,
             docker_integration,
             real_time_updates,
-            snmp_integration
+            snmp_integration,
         } = self;
 
         if share_views {
