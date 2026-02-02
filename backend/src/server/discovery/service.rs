@@ -258,18 +258,18 @@ impl DiscoveryService {
             && current_cron != new_cron
         {
             // Remove old schedule first using the actual job_id
-            if let Some(scheduler) = &self.scheduler {
-                if let Some(job_id) = self.job_ids.read().await.get(&discovery.id).copied() {
-                    if let Err(e) = scheduler.write().await.remove(&job_id).await {
-                        tracing::warn!(
-                            discovery_id = %discovery.id,
-                            job_id = %job_id,
-                            error = ?e,
-                            "Failed to remove old scheduled job"
-                        );
-                    } else {
-                        self.job_ids.write().await.remove(&discovery.id);
-                    }
+            if let Some(scheduler) = &self.scheduler
+                && let Some(job_id) = self.job_ids.read().await.get(&discovery.id).copied()
+            {
+                if let Err(e) = scheduler.write().await.remove(&job_id).await {
+                    tracing::warn!(
+                        discovery_id = %discovery.id,
+                        job_id = %job_id,
+                        error = ?e,
+                        "Failed to remove old scheduled job"
+                    );
+                } else {
+                    self.job_ids.write().await.remove(&discovery.id);
                 }
             }
 
