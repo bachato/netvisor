@@ -9282,14 +9282,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-01T14:46:58.963069Z",
-              "id": "e1f050ef-69f9-40a5-ad57-ae35f9366af5",
+              "created_at": "2026-02-01T16:54:20.104711Z",
+              "id": "4fe4e1cc-c31f-40f9-821b-4dbd00423d17",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-01T14:46:58.963069Z"
+              "updated_at": "2026-02-01T16:54:20.104711Z"
             }
           },
           "error": {
@@ -10021,14 +10021,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-01T14:46:58.950493Z",
-                      "id": "48daf799-014b-43c1-bb94-c91b34e4aa58",
+                      "created_at": "2026-02-01T16:54:20.089660Z",
+                      "id": "0c9cc276-37e4-4d3a-b949-e29538ea6003",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-01T14:46:58.950493Z"
+                      "updated_at": "2026-02-01T16:54:20.089660Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10037,7 +10037,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Jellyfin",
+                  "service_definition": "Ollama",
                   "source": {
                     "type": "Manual"
                   },
@@ -10853,14 +10853,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-01T14:46:58.959322Z",
-                  "id": "f6b33896-fdc6-45c3-9d2c-5bfaea4e151c",
+                  "created_at": "2026-02-01T16:54:20.100079Z",
+                  "id": "12e0a182-719c-4bb8-a6fe-42f99afb8553",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-01T14:46:58.959322Z"
+                  "updated_at": "2026-02-01T16:54:20.100079Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -10869,7 +10869,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Jellyfin",
+              "service_definition": "Ollama",
               "source": {
                 "type": "Manual"
               },
@@ -12029,14 +12029,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-01T14:46:58.950703Z",
-          "id": "d54df73b-8f4f-484f-a857-2ec9fad6d618",
+          "created_at": "2026-02-01T16:54:20.090007Z",
+          "id": "ea4b6fd4-8e7d-422f-bd34-50d320f682a2",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-01T14:46:58.950703Z"
+          "updated_at": "2026-02-01T16:54:20.090007Z"
         }
       },
       "BindingBase": {
@@ -12490,7 +12490,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Jellyfin",
+              "service_definition": "Ollama",
               "tags": [],
               "virtualization": null
             }
@@ -14356,14 +14356,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-01T14:46:58.950223Z",
-                  "id": "c0e1ce49-09f5-482a-9722-5afe018f5742",
+                  "created_at": "2026-02-01T16:54:20.089159Z",
+                  "id": "0ecf1480-c62f-4e2b-8c84-e64f5a7c9106",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-01T14:46:58.950223Z"
+                  "updated_at": "2026-02-01T16:54:20.089159Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14372,7 +14372,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Jellyfin",
+              "service_definition": "Ollama",
               "source": {
                 "type": "Manual"
               },
@@ -16258,14 +16258,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-01T14:46:58.943468Z",
-                        "id": "86f4ba14-a611-4f70-b34c-b29fbd631a65",
+                        "created_at": "2026-02-01T16:54:20.079825Z",
+                        "id": "40bec334-cc85-4e52-b265-2acadb43364c",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-01T14:46:58.943468Z"
+                        "updated_at": "2026-02-01T16:54:20.079825Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16274,7 +16274,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Jellyfin",
+                    "service_definition": "Ollama",
                     "source": {
                       "type": "Manual"
                     },
@@ -16351,14 +16351,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-01T14:46:58.958369Z",
-                    "id": "38310b52-9acd-47a7-85d3-45f82ea0d2a6",
+                    "created_at": "2026-02-01T16:54:20.098835Z",
+                    "id": "3739e190-9a2d-42e0-af89-9e8c3f9f72eb",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-01T14:46:58.958369Z"
+                    "updated_at": "2026-02-01T16:54:20.098835Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16367,7 +16367,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Jellyfin",
+                "service_definition": "Ollama",
                 "source": {
                   "type": "Manual"
                 },
@@ -17337,14 +17337,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-01T14:46:58.950632Z",
-              "id": "bab8cb4e-44ac-4ec9-a1be-50f9de1d0d75",
+              "created_at": "2026-02-01T16:54:20.089892Z",
+              "id": "76b2eadf-f636-4116-95b8-36516b8a986c",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-01T14:46:58.950632Z"
+              "updated_at": "2026-02-01T16:54:20.089892Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17353,7 +17353,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Jellyfin",
+          "service_definition": "Ollama",
           "source": {
             "type": "Manual"
           },
