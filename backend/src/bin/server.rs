@@ -9,7 +9,10 @@ use axum_client_ip::ClientIpSource;
 use clap::Parser;
 use reqwest::header::{self, HeaderName};
 use scanopy::server::{
-    auth::middleware::{logging::request_logging_middleware, rate_limit::rate_limit_middleware},
+    auth::middleware::{
+        demo_mode::demo_mode_middleware, logging::request_logging_middleware,
+        rate_limit::rate_limit_middleware,
+    },
     billing::plans::get_purchasable_plans,
     config::{AppState, ServerCli, ServerConfig, get_deployment_type},
     shared::handlers::{cache::AppCache, factory::create_router},
@@ -216,6 +219,10 @@ async fn main() -> anyhow::Result<()> {
             .layer(middleware::from_fn_with_state(
                 state.clone(),
                 rate_limit_middleware,
+            ))
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
+                demo_mode_middleware,
             ))
             .layer(middleware::from_fn_with_state(
                 state.clone(),

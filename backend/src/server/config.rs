@@ -210,19 +210,7 @@ impl ServerConfig {
         // Standard configuration layering: Defaults → Env → CLI (highest priority)
         let mut figment = Figment::from(Serialized::defaults(ServerConfig::default()))
             .merge(Toml::file("../oidc.toml"))
-            .merge(Env::prefixed("NETVISOR_"))
             .merge(Env::prefixed("SCANOPY_"));
-
-        for (key, _) in std::env::vars() {
-            if key.starts_with("NETVISOR_") {
-                tracing::warn!(
-                    "Env vars prefixed with NETVISOR_ Will be deprecated in v0.13.0: {} - please migrate to SCANOPY_{}",
-                    key,
-                    key.trim_start_matches("NETVISOR_")
-                );
-                break; // Only warn once
-            }
-        }
 
         // Add CLI overrides (highest priority) - only if explicitly provided
         if let Some(server_port) = cli_args.server_port {

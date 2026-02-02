@@ -1,8 +1,5 @@
 use crate::server::{
-    auth::middleware::{
-        features::{BlockedInDemoMode, RequireFeature},
-        permissions::{Authorized, Member},
-    },
+    auth::middleware::permissions::{Authorized, Member},
     config::AppState,
     daemon_api_keys::r#impl::{api::DaemonApiKeyResponse, base::DaemonApiKey},
     shared::{
@@ -61,7 +58,6 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 pub async fn create_daemon_api_key(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Member>,
-    _demo_check: RequireFeature<BlockedInDemoMode>,
     Json(mut api_key): Json<DaemonApiKey>,
 ) -> ApiResult<Json<ApiResponse<DaemonApiKeyResponse>>> {
     let network_ids = auth.network_ids();
@@ -174,7 +170,6 @@ pub async fn update_daemon_api_key(
 pub async fn rotate_key_handler(
     State(state): State<Arc<AppState>>,
     auth: Authorized<Member>,
-    _demo_check: RequireFeature<BlockedInDemoMode>,
     ClientIp(ip): ClientIp,
     user_agent: Option<TypedHeader<UserAgent>>,
     Path(api_key_id): Path<Uuid>,

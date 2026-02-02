@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.13.6\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.13.6\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.0\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.0\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -877,6 +877,67 @@
           },
           "403": {
             "description": "Daemon registration disabled in demo mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "daemon_api_key": []
+          }
+        ]
+      }
+    },
+    "/api/daemons/{id}/heartbeat": {
+      "post": {
+        "tags": [
+          "Daemons",
+          "internal",
+          "deprecated"
+        ],
+        "summary": "Receive daemon heartbeat (DEPRECATED - for backwards compatibility with pre-v0.14.0 daemons)",
+        "description": "Internal endpoint for legacy daemons to send periodic heartbeats.\nNew daemons (v0.14.0+) use the /request-work endpoint which includes heartbeat functionality.\nThis endpoint is kept for backwards compatibility and will be removed in a future version.",
+        "operationId": "receive_heartbeat",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Daemon ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaemonHeartbeatPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Heartbeat received",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Daemon not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -11674,12 +11735,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.13.6"
+            "example": "0.14.0"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.13.6"
+          "server_version": "0.14.0"
         }
       },
       "ApiResponse": {
@@ -11753,14 +11814,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-01T16:54:20.104712Z",
-              "id": "27fe801c-ca1e-4686-9aa3-f838d90828ad",
+              "created_at": "2026-02-02T01:45:34.963719Z",
+              "id": "88081e11-1bd1-4f34-a7e9-a110ec6bc540",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-01T16:54:20.104712Z"
+              "updated_at": "2026-02-02T01:45:34.963719Z"
             }
           },
           "error": {
@@ -12492,14 +12553,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-01T16:54:20.089800Z",
-                      "id": "8e351870-581a-4166-b76c-62beb1589ea9",
+                      "created_at": "2026-02-02T01:45:34.947576Z",
+                      "id": "52998d54-8b03-4d5f-9ed4-e1d523d5b382",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-01T16:54:20.089800Z"
+                      "updated_at": "2026-02-02T01:45:34.947576Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12508,7 +12569,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Ollama",
+                  "service_definition": "Docker Container",
                   "source": {
                     "type": "Manual"
                   },
@@ -13324,14 +13385,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-01T16:54:20.100410Z",
-                  "id": "d2625ad8-be67-4eea-8cfb-bee92e19dec0",
+                  "created_at": "2026-02-02T01:45:34.959840Z",
+                  "id": "24bdfdc3-474c-421c-827b-81a82df26a02",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-01T16:54:20.100410Z"
+                  "updated_at": "2026-02-02T01:45:34.959840Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13340,7 +13401,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Ollama",
+              "service_definition": "Docker Container",
               "source": {
                 "type": "Manual"
               },
@@ -14500,14 +14561,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-01T16:54:20.090145Z",
-          "id": "917d14df-29a6-411e-9663-83122ea78f58",
+          "created_at": "2026-02-02T01:45:34.947784Z",
+          "id": "4d0fd8a5-9596-42d0-b8e9-c5b951cf195f",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-01T16:54:20.090145Z"
+          "updated_at": "2026-02-02T01:45:34.947784Z"
         }
       },
       "BindingBase": {
@@ -14961,7 +15022,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Ollama",
+              "service_definition": "Docker Container",
               "tags": [],
               "virtualization": null
             }
@@ -15289,6 +15350,26 @@
               "type": "string",
               "format": "uuid"
             }
+          }
+        }
+      },
+      "DaemonHeartbeatPayload": {
+        "type": "object",
+        "description": "Legacy heartbeat payload for backwards compatibility with pre-v0.14.0 daemons.\nOld daemons call POST /api/daemons/{id}/heartbeat with this payload.",
+        "required": [
+          "url",
+          "name",
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/DaemonMode"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
           }
         }
       },
@@ -16827,14 +16908,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-01T16:54:20.089302Z",
-                  "id": "05aa3ee0-01d6-47df-b7fe-2e85ec982d28",
+                  "created_at": "2026-02-02T01:45:34.947297Z",
+                  "id": "b115d352-a529-4687-b24c-61f84aeaf255",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-01T16:54:20.089302Z"
+                  "updated_at": "2026-02-02T01:45:34.947297Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16843,7 +16924,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Ollama",
+              "service_definition": "Docker Container",
               "source": {
                 "type": "Manual"
               },
@@ -18361,7 +18442,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.13.6"
+            "example": "0.14.0"
           }
         },
         "example": {
@@ -18372,7 +18453,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.13.6"
+          "server_version": "0.14.0"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -18729,14 +18810,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-01T16:54:20.079820Z",
-                        "id": "6dc240ce-837e-4ff6-b762-9502de8d710f",
+                        "created_at": "2026-02-02T01:45:34.939579Z",
+                        "id": "b983849f-a107-4336-9052-f1773f91d671",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-01T16:54:20.079820Z"
+                        "updated_at": "2026-02-02T01:45:34.939579Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18745,7 +18826,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Ollama",
+                    "service_definition": "Docker Container",
                     "source": {
                       "type": "Manual"
                     },
@@ -18822,14 +18903,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-01T16:54:20.099164Z",
-                    "id": "4bc27e11-598d-4eae-91e5-5da68bd76db5",
+                    "created_at": "2026-02-02T01:45:34.958879Z",
+                    "id": "9a997fdf-2cab-4967-a145-f6e2bbfabbbe",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-01T16:54:20.099164Z"
+                    "updated_at": "2026-02-02T01:45:34.958879Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18838,7 +18919,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Ollama",
+                "service_definition": "Docker Container",
                 "source": {
                   "type": "Manual"
                 },
@@ -19808,14 +19889,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-01T16:54:20.090025Z",
-              "id": "4c89e2b5-6082-46e3-abc1-52e6d4561e67",
+              "created_at": "2026-02-02T01:45:34.947717Z",
+              "id": "4f8bc2b7-a7ea-4706-a962-e5cc429d97ac",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-01T16:54:20.090025Z"
+              "updated_at": "2026-02-02T01:45:34.947717Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19824,7 +19905,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Ollama",
+          "service_definition": "Docker Container",
           "source": {
             "type": "Manual"
           },

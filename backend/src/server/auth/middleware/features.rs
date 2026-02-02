@@ -179,28 +179,3 @@ impl FeatureCheck for CreateNetworkFeature {
         FeatureCheckResult::Allowed
     }
 }
-
-/// Feature check that blocks non-owner users on demo organizations.
-///
-/// Demo mode allows users to explore the UI without making destructive changes.
-/// Owners of demo organizations retain full access to all features.
-#[derive(Default)]
-pub struct BlockedInDemoMode;
-
-#[async_trait]
-impl FeatureCheck for BlockedInDemoMode {
-    async fn check(&self, ctx: &FeatureCheckContext<'_>) -> FeatureCheckResult {
-        // Allow if not demo plan
-        if !matches!(ctx.plan, BillingPlan::Demo(_)) {
-            return FeatureCheckResult::Allowed;
-        }
-
-        // Allow owners full access
-        if ctx.permissions == UserOrgPermissions::Owner {
-            return FeatureCheckResult::Allowed;
-        }
-
-        // Block non-owners on demo plan
-        FeatureCheckResult::denied_with_error(ApiError::demo_mode_blocked())
-    }
-}
