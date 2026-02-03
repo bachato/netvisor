@@ -286,11 +286,14 @@ async fn main() -> anyhow::Result<()> {
 
     // Sync existing organizations to HubSpot if configured
     if let Some(hubspot_service) = state.services.hubspot_service.clone() {
+        tracing::info!(target: LOG_TARGET, "  Spawning HubSpot organization sync task");
         tokio::spawn(async move {
             if let Err(e) = hubspot_service.sync_existing_organizations().await {
                 tracing::error!(target: LOG_TARGET, error = %e, "Failed to sync existing organizations to HubSpot");
             }
         });
+    } else {
+        tracing::info!(target: LOG_TARGET, "  HubSpot service not configured, skipping org sync");
     }
 
     // Configuration summary

@@ -586,6 +586,8 @@ impl HubSpotService {
     /// Sync all organizations that don't have a HubSpot company ID.
     /// Called on server startup.
     pub async fn sync_existing_organizations(&self) -> Result<()> {
+        tracing::info!("Starting HubSpot organization sync check");
+
         let filter = StorableFilter::<Organization>::new_without_hubspot_company_id();
         let orgs = self.organization_service.get_all(filter).await?;
 
@@ -600,14 +602,21 @@ impl HubSpotService {
         );
 
         for org in orgs {
+            tracing::info!(
+                organization_id = %org.id,
+                org_name = %org.base.name,
+                "Syncing organization to HubSpot"
+            );
             if let Err(e) = self.sync_organization(org).await {
                 tracing::error!(
-                    organization_id = %e,
+                    error = %e,
                     "Failed to sync organization to HubSpot"
                 );
                 // Continue with other orgs
             }
         }
+
+        tracing::info!("HubSpot organization sync check complete");
 
         Ok(())
     }

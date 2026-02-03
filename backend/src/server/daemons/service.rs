@@ -224,29 +224,34 @@ impl DaemonService {
         .await
     }
 
-    /// Send POST request to daemon with auth and retry.
+    /// Send POST request to daemon with optional auth and retry.
     /// Uses exponential backoff: 5 retries, 5-30s delays.
     /// Returns `Option<T>` - `Some(data)` if response contains data, `None` otherwise.
     /// For endpoints that don't return data, use `::<serde_json::Value>` and ignore result.
+    ///
+    /// If `api_key` is `None`, the request is sent without an Authorization header.
+    /// This is used for legacy daemons (< v0.14.0) that don't require authentication.
     async fn post_to_daemon<T: serde::de::DeserializeOwned>(
         &self,
         daemon: &Daemon,
-        api_key: &str,
+        api_key: Option<&str>,
         path: &str,
         body: &impl serde::Serialize,
     ) -> Result<Option<T>> {
         let url = format!("{}{}", daemon.base.url, path);
         let daemon_id = daemon.id;
         let body_json = serde_json::to_value(body)?;
+        let api_key_owned = api_key.map(|s| s.to_owned());
 
         (|| async {
-            let response = self
-                .client
-                .post(&url)
-                .header("Authorization", format!("Bearer {}", api_key))
-                .json(&body_json)
-                .send()
-                .await?;
+            let mut request = self.client.post(&url).json(&body_json);
+
+            // Only add auth header if API key provided (v0.14.0+ daemons)
+            if let Some(ref key) = api_key_owned {
+                request = request.header("Authorization", format!("Bearer {}", key));
+            }
+
+            let response = request.send().await?;
 
             if !response.status().is_success() {
                 anyhow::bail!("POST {} failed: HTTP {}", path, response.status());
@@ -317,7 +322,7 @@ impl DaemonService {
         let _: Option<serde_json::Value> = self
             .post_to_daemon(
                 daemon,
-                api_key,
+                Some(api_key),
                 "/api/discovery/entities-created",
                 &created_entities,
             )
@@ -333,11 +338,14 @@ impl DaemonService {
         Ok(())
     }
 
-    /// Send discovery request to daemon (HTTP only, no event publishing)
+    /// Send discovery request to daemon (HTTP only, no event publishing).
+    ///
+    /// If `api_key` is `None`, the request is sent without authentication.
+    /// This is used for legacy daemons (< v0.14.0) that don't require auth.
     pub async fn send_discovery_request_to_daemon(
         &self,
         daemon: &Daemon,
-        api_key: &str,
+        api_key: Option<&str>,
         request: DaemonDiscoveryRequest,
     ) -> Result<(), Error> {
         tracing::info!(
@@ -359,11 +367,14 @@ impl DaemonService {
         Ok(())
     }
 
-    /// Send discovery cancellation to daemon (HTTP only, no event publishing)
+    /// Send discovery cancellation to daemon (HTTP only, no event publishing).
+    ///
+    /// If `api_key` is `None`, the request is sent without authentication.
+    /// This is used for legacy daemons (< v0.14.0) that don't require auth.
     pub async fn send_discovery_cancellation_to_daemon(
         &self,
         daemon: &Daemon,
-        api_key: &str,
+        api_key: Option<&str>,
         session_id: Uuid,
     ) -> Result<(), Error> {
         let _: Option<serde_json::Value> = self
@@ -394,7 +405,7 @@ impl DaemonService {
             server_capabilities,
         };
 
-        self.post_to_daemon(daemon, api_key, "/api/first-contact", &request)
+        self.post_to_daemon(daemon, Some(api_key), "/api/first-contact", &request)
             .await?
             .ok_or_else(|| anyhow::anyhow!("First contact response missing daemon status"))
     }
@@ -1067,7 +1078,23 @@ impl DaemonService {
     /// Poll a single daemon for status and discovery data.
     /// Uses backon for retry with exponential backoff.
     /// Marks daemon unreachable after UNREACHABLE_THRESHOLD failures.
+    ///
+    /// Legacy daemons (< v0.14.0) are skipped entirely - they don't support
+    /// the polling endpoints (/api/status, /api/poll, /api/first-contact,
+    /// /api/discovery/entities-created). Legacy daemons stay alive via their
+    /// own heartbeat calls to the server's backward-compat endpoint.
     async fn poll_daemon(&self, daemon: &Daemon) -> Result<()> {
+        // Skip polling for legacy daemons - they don't have the new endpoints
+        if !daemon.supports_full_server_poll() {
+            tracing::debug!(
+                daemon_id = %daemon.id,
+                daemon_name = %daemon.base.name,
+                version = ?daemon.base.version,
+                "Skipping poll for legacy daemon (< v0.14.0) - polling endpoints not supported"
+            );
+            return Ok(());
+        }
+
         tracing::debug!(
             daemon_id = %daemon.id,
             daemon_name = %daemon.base.name,
@@ -1296,7 +1323,7 @@ impl DaemonService {
                 discovery_type: work.discovery_type,
             };
             if let Err(e) = self
-                .send_discovery_request_to_daemon(daemon, &api_key, request)
+                .send_discovery_request_to_daemon(daemon, Some(&api_key), request)
                 .await
             {
                 tracing::warn!(
