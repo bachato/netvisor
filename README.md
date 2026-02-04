@@ -93,5 +93,6 @@ Great first contributions:
 - **Discussions**: [GitHub Discussions](https://github.com/scanopy/scanopy/discussions)
 
 ---
+**Translations powered by Weblate**
 
 **Built with ❤️ in NYC**
