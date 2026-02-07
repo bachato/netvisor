@@ -12,6 +12,8 @@
 	// Read hash immediately during script initialization, before onMount
 	const initialHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
 	const hadInitialHash = initialHash !== '';
+	const shouldShowDaemonSetup =
+		typeof sessionStorage !== 'undefined' && sessionStorage.getItem('showDaemonSetup') === 'true';
 
 	// TanStack Query for current user
 	const currentUserQuery = useCurrentUserQuery();
@@ -22,7 +24,7 @@
 	// Only fetch when authenticated to avoid 401 errors during onboarding
 	const daemonsQuery = useDaemonsQuery({ enabled: () => isAuthenticated });
 
-	let activeTab = $state(initialHash || 'topology');
+	let activeTab = $state(shouldShowDaemonSetup ? 'daemons' : initialHash || 'topology');
 	let appInitialized = $state(false);
 	let sidebarCollapsed = $state(false);
 	let dataLoadingStarted = $state(false);

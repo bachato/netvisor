@@ -16,6 +16,7 @@ use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::traits::{Entity, Storable};
 use crate::server::shared::types::api::ApiErrorResponse;
+use crate::server::shared::types::error_codes::ErrorCode;
 use crate::server::shared::validation::validate_network_access;
 use crate::server::{
     config::AppState,
@@ -33,6 +34,7 @@ use crate::server::{
         entities::EntitySource,
     },
 };
+use axum::http::StatusCode;
 use axum::{
     extract::{Path, State},
     response::Json,
@@ -452,6 +454,14 @@ async fn receive_work_request(
         return Err(ApiError::entity_access_denied::<Daemon>(daemon_id));
     }
 
+    // Reject work requests from daemons on standby (plan doesn't support DaemonPoll)
+    if daemon.base.standby {
+        return Err(ApiError::coded(
+            StatusCode::FORBIDDEN,
+            ErrorCode::DaemonStandby,
+        ));
+    }
+
     // Use processor for shared heartbeat logic
     let status = DaemonStatus {
         url: request.url,
@@ -660,6 +670,7 @@ async fn provision_daemon(
         user_id,
         api_key_id: Some(created_api_key.id),
         is_unreachable: false,
+        standby: false,
     });
 
     let created_daemon = state

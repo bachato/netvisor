@@ -58,6 +58,17 @@
 	let showCreateDaemonModal = $state(false);
 	let daemon = $state<Daemon | null>(null);
 
+	// Auto-open modal after onboarding
+	$effect(() => {
+		if (typeof sessionStorage !== 'undefined') {
+			const shouldShow = sessionStorage.getItem('showDaemonSetup');
+			if (shouldShow === 'true') {
+				sessionStorage.removeItem('showDaemonSetup');
+				showCreateDaemonModal = true;
+			}
+		}
+	});
+
 	function handleDeleteDaemon(daemon: Daemon) {
 		if (confirm(daemons_confirmDelete({ name: daemon.name }))) {
 			deleteDaemonMutation.mutate(daemon.id);

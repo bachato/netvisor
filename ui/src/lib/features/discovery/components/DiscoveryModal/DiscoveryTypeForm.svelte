@@ -5,7 +5,9 @@
 	import type { DockerDiscovery, NetworkDiscovery, SelfReportDiscovery } from '../../types/api';
 	import type { Discovery } from '../../types/base';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
-	import { discoveryTypes, subnetTypes } from '$lib/shared/stores/metadata';
+	import { billingPlans, discoveryTypes, subnetTypes } from '$lib/shared/stores/metadata';
+	import { useOrganizationQuery } from '$lib/features/organizations/queries';
+	import UpgradeBadge from '$lib/shared/components/UpgradeBadge.svelte';
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import { generateCronSchedule } from '../../queries';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
@@ -60,6 +62,13 @@
 	let { form, formData = $bindable(), readOnly = false, daemonHostId, daemon }: Props = $props();
 
 	// Queries
+	const organizationQuery = useOrganizationQuery();
+	let org = $derived(organizationQuery.data);
+	let hasScheduledDiscovery = $derived.by(() => {
+		if (!org?.plan?.type) return true;
+		return billingPlans.getMetadata(org.plan.type).features.scheduled_discovery;
+	});
+
 	const subnetsQuery = useSubnetsQuery();
 
 	// Derived data
@@ -82,8 +91,8 @@
 	]);
 
 	let runTypeOptions = $derived([
-		{ value: 'AdHoc', label: discovery_adHoc() },
-		{ value: 'Scheduled', label: discovery_scheduled() }
+		{ value: 'AdHoc', label: discovery_adHoc(), disabled: false },
+		{ value: 'Scheduled', label: discovery_scheduled(), disabled: !hasScheduledDiscovery }
 	]);
 
 	// Handle run type changes - update formData when form field changes
@@ -240,11 +249,16 @@
 						{field}
 						disabled={readOnly}
 					/>
-					<p class="text-tertiary mt-1 text-xs">
-						{field.state.value === 'AdHoc'
-							? discovery_adHocDescription()
-							: discovery_scheduledDescription()}
-					</p>
+					<div class="mt-1 flex items-center gap-2">
+						<p class="text-tertiary text-xs">
+							{field.state.value === 'AdHoc'
+								? discovery_adHocDescription()
+								: discovery_scheduledDescription()}
+						</p>
+						{#if !hasScheduledDiscovery}
+							<UpgradeBadge feature="Scheduled Discovery" />
+						{/if}
+					</div>
 				{/snippet}
 			</form.Field>
 

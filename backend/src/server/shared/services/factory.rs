@@ -274,6 +274,9 @@ impl ServiceFactory {
                     invite_service: invite_service.clone(),
                     user_service: user_service.clone(),
                     network_service: network_service.clone(),
+                    host_service: host_service.clone(),
+                    daemon_service: daemon_service.clone(),
+                    discovery_service: discovery_service.clone(),
                     share_service: share_service.clone(),
                     event_bus: event_bus.clone(),
                 })));

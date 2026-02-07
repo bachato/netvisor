@@ -9282,14 +9282,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-04T00:49:07.097472Z",
-              "id": "6e178f92-3ece-413a-bf66-d6dfb7c164d3",
+              "created_at": "2026-02-07T04:22:55.834517Z",
+              "id": "9f869f0f-a1c7-4fd3-81c6-f9c9cb327618",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-04T00:49:07.097472Z"
+              "updated_at": "2026-02-07T04:22:55.834517Z"
             }
           },
           "error": {
@@ -9361,6 +9361,52 @@
               "affected_count": {
                 "type": "integer",
                 "description": "Number of entities affected",
+                "minimum": 0
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_ChangePlanPreview": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": [
+              "excess_hosts",
+              "excess_networks",
+              "excess_seats"
+            ],
+            "properties": {
+              "excess_hosts": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "excess_networks": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "excess_seats": {
+                "type": "integer",
+                "format": "int64",
                 "minimum": 0
               }
             }
@@ -10021,14 +10067,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-04T00:49:07.083071Z",
-                      "id": "d7596bf4-bfb5-4bf5-bdf9-4c5f8b7cb4fe",
+                      "created_at": "2026-02-07T04:22:55.817902Z",
+                      "id": "38c22a0b-0dac-42b4-be06-e1e574bf7101",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-04T00:49:07.083071Z"
+                      "updated_at": "2026-02-07T04:22:55.817902Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10037,7 +10083,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Caddy",
+                  "service_definition": "NTP Server",
                   "source": {
                     "type": "Manual"
                   },
@@ -10853,14 +10899,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-04T00:49:07.092508Z",
-                  "id": "882dcee8-ed32-4ca2-b1fc-2e40709927fc",
+                  "created_at": "2026-02-07T04:22:55.829533Z",
+                  "id": "76af7a77-19ad-49eb-89d5-b4c37a28aedb",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-04T00:49:07.092508Z"
+                  "updated_at": "2026-02-07T04:22:55.829533Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -10869,7 +10915,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Caddy",
+              "service_definition": "NTP Server",
               "source": {
                 "type": "Manual"
               },
@@ -11431,6 +11477,27 @@
                         "type": {
                           "type": "string",
                           "enum": [
+                            "Free"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanConfig"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "type"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
                             "Starter"
                           ]
                         }
@@ -11854,6 +11921,27 @@
                   "type": {
                     "type": "string",
                     "enum": [
+                      "Free"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
                       "Starter"
                     ]
                   }
@@ -12029,14 +12117,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-04T00:49:07.083301Z",
-          "id": "7852bee4-4fe3-4209-bb51-01cf8efb2aed",
+          "created_at": "2026-02-07T04:22:55.818126Z",
+          "id": "d439670e-056a-4c69-81ac-9705caf20037",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-04T00:49:07.083301Z"
+          "updated_at": "2026-02-07T04:22:55.818126Z"
         }
       },
       "BindingBase": {
@@ -12243,6 +12331,46 @@
             "type": "integer",
             "description": "Number of entities affected",
             "minimum": 0
+          }
+        }
+      },
+      "ChangePlanPreview": {
+        "type": "object",
+        "required": [
+          "excess_hosts",
+          "excess_networks",
+          "excess_seats"
+        ],
+        "properties": {
+          "excess_hosts": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "excess_networks": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "excess_seats": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "ChangePlanRequest": {
+        "type": "object",
+        "required": [
+          "plan",
+          "rate"
+        ],
+        "properties": {
+          "plan": {
+            "$ref": "#/components/schemas/BillingPlan"
+          },
+          "rate": {
+            "$ref": "#/components/schemas/BillingRate"
           }
         }
       },
@@ -12490,7 +12618,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Caddy",
+              "service_definition": "NTP Server",
               "tags": [],
               "virtualization": null
             }
@@ -12776,6 +12904,10 @@
           "network_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "standby": {
+            "type": "boolean",
+            "description": "Whether the daemon is on standby due to plan restrictions (DaemonPoll on Free plan)."
           },
           "tags": {
             "type": "array",
@@ -14376,14 +14508,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-04T00:49:07.082717Z",
-                  "id": "187fb091-69bd-4872-9aac-27a1012e90c6",
+                  "created_at": "2026-02-07T04:22:55.817600Z",
+                  "id": "2d1b5ff2-1cd2-47a1-b8fb-fb75119022d2",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-04T00:49:07.082717Z"
+                  "updated_at": "2026-02-07T04:22:55.817600Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14392,7 +14524,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Caddy",
+              "service_definition": "NTP Server",
               "source": {
                 "type": "Manual"
               },
@@ -15860,6 +15992,10 @@
           "onboarding"
         ],
         "properties": {
+          "has_payment_method": {
+            "type": "boolean",
+            "readOnly": true
+          },
           "name": {
             "type": "string"
           },
@@ -15884,6 +16020,14 @@
               "string",
               "null"
             ],
+            "readOnly": true
+          },
+          "trial_end_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
             "readOnly": true
           }
         }
@@ -16278,14 +16422,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-04T00:49:07.072807Z",
-                        "id": "09a53020-71bd-44eb-832f-f34e3d122bd0",
+                        "created_at": "2026-02-07T04:22:55.807806Z",
+                        "id": "74952390-eda4-45d9-aaca-9f68228ac9b1",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-04T00:49:07.072807Z"
+                        "updated_at": "2026-02-07T04:22:55.807806Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16294,7 +16438,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Caddy",
+                    "service_definition": "NTP Server",
                     "source": {
                       "type": "Manual"
                     },
@@ -16371,14 +16515,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-04T00:49:07.091215Z",
-                    "id": "ad3e9aba-d574-492a-9fb7-8355361a073b",
+                    "created_at": "2026-02-07T04:22:55.828596Z",
+                    "id": "f66e7c8c-569a-4855-9238-3ee2efc21bd7",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-04T00:49:07.091215Z"
+                    "updated_at": "2026-02-07T04:22:55.828596Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16387,7 +16531,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Caddy",
+                "service_definition": "NTP Server",
                 "source": {
                   "type": "Manual"
                 },
@@ -16857,6 +17001,21 @@
           "base_cents": {
             "type": "integer",
             "format": "int64"
+          },
+          "host_cents": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "included_hosts": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
           },
           "included_networks": {
             "type": [
@@ -17360,14 +17519,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-04T00:49:07.083221Z",
-              "id": "d9e1883e-0518-4047-a3ef-e15f51babe36",
+              "created_at": "2026-02-07T04:22:55.818048Z",
+              "id": "2d226081-d9bb-4c3e-b119-2e0dd2205c2a",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-04T00:49:07.083221Z"
+              "updated_at": "2026-02-07T04:22:55.818048Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17376,7 +17535,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Caddy",
+          "service_definition": "NTP Server",
           "source": {
             "type": "Manual"
           },
@@ -17604,6 +17763,17 @@
               "format": "uuid"
             },
             "description": "The new list of tag IDs"
+          }
+        }
+      },
+      "SetupPaymentMethodRequest": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
           }
         }
       },

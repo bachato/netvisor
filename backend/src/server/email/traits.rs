@@ -8,6 +8,10 @@ use serde_json::Value;
 use crate::server::{
     email::templates::{
         EMAIL_FOOTER, EMAIL_HEADER, EMAIL_VERIFICATION_BODY, INVITE_LINK_BODY, PASSWORD_RESET_BODY,
+        PAYMENT_METHOD_ADDED_BODY, PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY,
+        PLAN_CHANGED_TITLE, SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE,
+        TRIAL_ENDING_BODY, TRIAL_ENDING_TITLE, TRIAL_EXPIRED_BODY, TRIAL_EXPIRED_TITLE,
+        TRIAL_STARTED_BODY, TRIAL_STARTED_TITLE,
     },
     users::service::UserService,
 };
@@ -74,6 +78,48 @@ pub trait EmailProvider: Send + Sync {
         token: String,
     ) -> Result<(), Error>;
 
+    /// Send a billing lifecycle email (SMTP fallback for when Plunk is not configured)
+    async fn send_billing_email(
+        &self,
+        to: EmailAddress,
+        subject: String,
+        body: String,
+    ) -> Result<(), Error>;
+
+    fn build_trial_started_email(&self, plan_name: &str, trial_days: u32) -> (String, String) {
+        let body = self.build_email(
+            TRIAL_STARTED_BODY
+                .replace("{plan_name}", plan_name)
+                .replace("{trial_days}", &trial_days.to_string()),
+        );
+        (TRIAL_STARTED_TITLE.to_string(), body)
+    }
+
+    fn build_trial_ending_email(&self, plan_name: &str) -> (String, String) {
+        let body = self.build_email(TRIAL_ENDING_BODY.replace("{plan_name}", plan_name));
+        (TRIAL_ENDING_TITLE.to_string(), body)
+    }
+
+    fn build_trial_expired_email(&self, plan_name: &str) -> (String, String) {
+        let body = self.build_email(TRIAL_EXPIRED_BODY.replace("{plan_name}", plan_name));
+        (TRIAL_EXPIRED_TITLE.to_string(), body)
+    }
+
+    fn build_plan_changed_email(&self, plan_name: &str) -> (String, String) {
+        let body = self.build_email(PLAN_CHANGED_BODY.replace("{plan_name}", plan_name));
+        (PLAN_CHANGED_TITLE.to_string(), body)
+    }
+
+    fn build_subscription_cancelled_email(&self) -> (String, String) {
+        let body = self.build_email(SUBSCRIPTION_CANCELLED_BODY.to_string());
+        (SUBSCRIPTION_CANCELLED_TITLE.to_string(), body)
+    }
+
+    fn build_payment_method_added_email(&self) -> (String, String) {
+        let body = self.build_email(PAYMENT_METHOD_ADDED_BODY.to_string());
+        (PAYMENT_METHOD_ADDED_TITLE.to_string(), body)
+    }
+
     /// Track an event with optional metadata (only for providers that support it)
     async fn track_event(
         &self,
@@ -128,6 +174,16 @@ impl EmailService {
         token: String,
     ) -> Result<()> {
         self.provider.send_verification_email(to, url, token).await
+    }
+
+    /// Send billing lifecycle email
+    pub async fn send_billing_email(
+        &self,
+        to: EmailAddress,
+        subject: String,
+        body: String,
+    ) -> Result<()> {
+        self.provider.send_billing_email(to, subject, body).await
     }
 
     /// Track an event with optional metadata (delegates to provider)

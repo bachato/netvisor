@@ -251,6 +251,7 @@ pub async fn populate_demo_data(
                 host_with_services.services,
                 host_if_entries,
                 entity.clone(),
+                None, // Demo data seeding - no host limit
             )
             .await?;
         all_created_services.extend(host_response.services);

@@ -230,6 +230,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/billing/change-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change billing plan
+         * @description Upgrades or downgrades the organization's billing plan.
+         */
+        post: operations["change_plan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/change-plan/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview plan change (shows overage counts) */
+        get: operations["preview_plan_change"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/billing/checkout": {
         parameters: {
             query?: never;
@@ -296,6 +333,23 @@ export interface paths {
         put?: never;
         /** Create a billing portal session */
         post: operations["create_portal_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/setup-payment-method": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Setup payment method (collect card without charging) */
+        post: operations["setup_payment_method"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2662,14 +2716,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-02-04T00:43:18.244861Z",
-             *       "id": "d3b7aac5-4eb0-4819-b266-2d98d0bff490",
+             *       "created_at": "2026-02-06T00:13:30.486983Z",
+             *       "id": "626fcb42-0172-4143-9e1b-2880e513b3df",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-02-04T00:43:18.244861Z"
+             *       "updated_at": "2026-02-06T00:13:30.486983Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2698,6 +2752,19 @@ export interface components {
             data?: {
                 /** @description Number of entities affected */
                 affected_count: number;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
+        ApiResponse_ChangePlanPreview: {
+            data?: {
+                /** Format: int64 */
+                excess_hosts: number;
+                /** Format: int64 */
+                excess_networks: number;
+                /** Format: int64 */
+                excess_seats: number;
             };
             error?: string | null;
             meta: components["schemas"]["ApiMeta"];
@@ -2900,14 +2967,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-02-04T00:43:18.229742Z",
-             *               "id": "36a5ea72-5869-4593-bae1-27ea182774e8",
+             *               "created_at": "2026-02-06T00:13:30.472384Z",
+             *               "id": "118a678a-9ef5-44ca-95fd-4f1f023f553e",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-02-04T00:43:18.229742Z"
+             *               "updated_at": "2026-02-06T00:13:30.472384Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -2916,7 +2983,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "NextCloud",
+             *           "service_definition": "NTP Server",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3190,14 +3257,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-02-04T00:43:18.240132Z",
-             *           "id": "2b978448-db5a-4cd1-bf4c-bd507cf83e2f",
+             *           "created_at": "2026-02-06T00:13:30.482724Z",
+             *           "id": "753839fb-dbfd-45b1-8e5f-6959ea522429",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-02-04T00:43:18.240132Z"
+             *           "updated_at": "2026-02-06T00:13:30.482724Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3206,7 +3273,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "NextCloud",
+             *       "service_definition": "NTP Server",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3380,6 +3447,9 @@ export interface components {
                 type: "Community";
             }) | (components["schemas"]["PlanConfig"] & {
                 /** @enum {string} */
+                type: "Free";
+            }) | (components["schemas"]["PlanConfig"] & {
+                /** @enum {string} */
                 type: "Starter";
             }) | (components["schemas"]["PlanConfig"] & {
                 /** @enum {string} */
@@ -3477,6 +3547,9 @@ export interface components {
             type: "Community";
         }) | (components["schemas"]["PlanConfig"] & {
             /** @enum {string} */
+            type: "Free";
+        }) | (components["schemas"]["PlanConfig"] & {
+            /** @enum {string} */
             type: "Starter";
         }) | (components["schemas"]["PlanConfig"] & {
             /** @enum {string} */
@@ -3502,14 +3575,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-02-04T00:43:18.229976Z",
-         *       "id": "96ac1253-fdba-4ab5-a63c-291b118954e2",
+         *       "created_at": "2026-02-06T00:13:30.472572Z",
+         *       "id": "2328d7b9-cae7-4a3d-9e71-7e3c18371ab9",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-02-04T00:43:18.229976Z"
+         *       "updated_at": "2026-02-06T00:13:30.472572Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3609,6 +3682,18 @@ export interface components {
             /** @description Number of entities affected */
             affected_count: number;
         };
+        ChangePlanPreview: {
+            /** Format: int64 */
+            excess_hosts: number;
+            /** Format: int64 */
+            excess_networks: number;
+            /** Format: int64 */
+            excess_seats: number;
+        };
+        ChangePlanRequest: {
+            plan: components["schemas"]["BillingPlan"];
+            rate: components["schemas"]["BillingRate"];
+        };
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /**
@@ -3674,7 +3759,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "NextCloud",
+         *           "service_definition": "NTP Server",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -3797,6 +3882,8 @@ export interface components {
             name: string;
             /** Format: uuid */
             network_id: string;
+            /** @description Whether the daemon is on standby due to plan restrictions (DaemonPoll on Free plan). */
+            standby?: boolean;
             tags: string[];
             readonly url: string;
             /**
@@ -4315,14 +4402,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-02-04T00:43:18.229404Z",
-         *               "id": "dd65e20e-1d69-466f-ba69-2a5afc4e5f3f",
+         *               "created_at": "2026-02-06T00:13:30.472122Z",
+         *               "id": "9d5036ca-1e67-486a-a613-7f52f07f5e9a",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-02-04T00:43:18.229404Z"
+         *               "updated_at": "2026-02-06T00:13:30.472122Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4331,7 +4418,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "NextCloud",
+         *           "service_definition": "NTP Server",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4853,10 +4940,13 @@ export interface components {
             readonly updated_at: string;
         };
         OrganizationBase: {
+            readonly has_payment_method?: boolean;
             name: string;
             onboarding: components["schemas"]["TelemetryOperation"][];
             plan: null | components["schemas"]["BillingPlan"];
             readonly plan_status: string | null;
+            /** Format: date-time */
+            readonly trial_end_date?: string | null;
         };
         /**
          * @description API metadata for paginated list responses (pagination is always present)
@@ -5102,6 +5192,10 @@ export interface components {
             /** Format: int64 */
             base_cents: number;
             /** Format: int64 */
+            host_cents?: number | null;
+            /** Format: int64 */
+            included_hosts?: number | null;
+            /** Format: int64 */
             included_networks?: number | null;
             /** Format: int64 */
             included_seats?: number | null;
@@ -5272,14 +5366,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-02-04T00:43:18.229895Z",
-         *           "id": "18da2340-86a9-4bbf-a408-855bdc20dea9",
+         *           "created_at": "2026-02-06T00:13:30.472508Z",
+         *           "id": "0540a769-ed2f-413d-92b3-499a9847126c",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-02-04T00:43:18.229895Z"
+         *           "updated_at": "2026-02-06T00:13:30.472508Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5288,7 +5382,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "NextCloud",
+         *       "service_definition": "NTP Server",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -5376,6 +5470,9 @@ export interface components {
             entity_type: components["schemas"]["EntityDiscriminants"];
             /** @description The new list of tag IDs */
             tag_ids: string[];
+        };
+        SetupPaymentMethodRequest: {
+            url: string;
         };
         /** @description Setup request for pre-registration org/network configuration */
         SetupRequest: {
@@ -6351,6 +6448,71 @@ export interface operations {
             };
         };
     };
+    change_plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Plan change initiated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_String"];
+                };
+            };
+            /** @description Invalid plan or billing not enabled */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    preview_plan_change: {
+        parameters: {
+            query: {
+                /** @description Target plan (JSON) */
+                plan: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plan change preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChangePlanPreview"];
+                };
+            };
+            /** @description Billing not enabled */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     create_checkout_session: {
         parameters: {
             query?: never;
@@ -6469,6 +6631,39 @@ export interface operations {
         };
         responses: {
             /** @description Portal session URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_String"];
+                };
+            };
+            /** @description Billing not enabled */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    setup_payment_method: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupPaymentMethodRequest"];
+            };
+        };
+        responses: {
+            /** @description Setup session URL */
             200: {
                 headers: {
                     [name: string]: unknown;

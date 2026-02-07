@@ -7,8 +7,6 @@
 	import RegisterModal from '$lib/features/auth/components/RegisterModal.svelte';
 	import UseCaseStep from '$lib/features/auth/components/onboarding/UseCaseStep.svelte';
 	import BlockerFlow from '$lib/features/auth/components/onboarding/BlockerFlow.svelte';
-	import MultiDaemonSetup from '$lib/features/auth/components/onboarding/MultiDaemonSetup.svelte';
-	import DaemonVerificationStep from '$lib/features/auth/components/onboarding/DaemonVerificationStep.svelte';
 	import type { RegisterRequest, SetupRequest, UseCase } from '$lib/features/auth/types/base';
 	import {
 		useSetupMutation,
@@ -18,10 +16,8 @@
 	} from '$lib/features/auth/queries';
 	import { fetchOrganization } from '$lib/features/organizations/queries';
 	import { navigate } from '$lib/shared/utils/navigation';
-	import { useConfigQuery, isSelfHosted } from '$lib/shared/stores/config-query';
 	import { resolve } from '$app/paths';
 	import { onboardingStore } from '$lib/features/auth/stores/onboarding';
-	import { setPreferredNetwork } from '$lib/features/topology/queries';
 	import { trackEvent, trackPlunkEvent } from '$lib/shared/utils/analytics';
 
 	// TanStack Query mutations and queries
@@ -29,8 +25,6 @@
 	const registerMutation = useRegisterMutation();
 	const onboardingStepMutation = useOnboardingStepMutation();
 	const onboardingStateQuery = useOnboardingStateQuery();
-	const configQuery = useConfigQuery();
-	let configData = $derived(configQuery.data);
 
 	// URL params for invite flow
 	let orgName = $derived($page.url.searchParams.get('org_name'));
@@ -39,11 +33,8 @@
 	// Determine if this is an invite flow (skip to register)
 	let isInviteFlow = $derived(!!invitedBy);
 
-	// Check if server has integrated daemon (skip daemon setup step)
-	let hasIntegratedDaemon = $derived(configData?.has_integrated_daemon ?? false);
-
 	// Step tracking
-	type Step = 'use_case' | 'blocker' | 'setup' | 'daemon' | 'register' | 'daemon_verification';
+	type Step = 'use_case' | 'blocker' | 'setup' | 'register';
 
 	// Get initial step from URL params or default
 	function getInitialStep(): Step {
@@ -89,17 +80,6 @@
 				);
 			}
 
-			// Restore daemon setups
-			if (stateData.daemon_setups && stateData.daemon_setups.length > 0) {
-				for (const ds of stateData.daemon_setups) {
-					onboardingStore.setDaemonSetup(ds.network_id, {
-						name: ds.daemon_name,
-						installNow: ds.api_key != null,
-						apiKey: ds.api_key ?? undefined
-					});
-				}
-			}
-
 			stepInitialized = true;
 		}
 	});
@@ -111,9 +91,7 @@
 
 	// Helper to validate step
 	function isValidStep(step: string): step is Step {
-		return ['use_case', 'blocker', 'setup', 'daemon', 'register', 'daemon_verification'].includes(
-			step
-		);
+		return ['use_case', 'blocker', 'setup', 'register'].includes(step);
 	}
 
 	// Persist step to session whenever it changes
@@ -128,25 +106,15 @@
 		}
 	});
 
-	// Track if user installed at least one daemon
-	let daemonsInstalled = $state(0);
-
 	// Get use case from store
 	let useCase = $derived($onboardingStore.useCase);
-	let networks = $derived($onboardingStore.networks);
 
 	// Calculate total steps based on flow
-	// Cloud: use_case -> (blocker?) -> setup -> daemon -> register -> (daemon_verification?) = 4-5 steps
-	// Self-hosted with integrated daemon: use_case -> setup -> register = 3 steps
-	// Self-hosted without integrated daemon: use_case -> setup -> daemon -> register = 4 steps
+	// use_case -> (blocker?) -> setup -> register = 3 steps
 	// Invite: just register = 1 step
 	let totalSteps = $derived(() => {
 		if (isInviteFlow) return 1;
-		if (configData && isSelfHosted(configData)) {
-			return hasIntegratedDaemon ? 3 : 4;
-		}
-		// Cloud
-		return hasIntegratedDaemon ? 3 : 4;
+		return 3;
 	});
 
 	let currentStepNumber = $derived(() => {
@@ -156,9 +124,7 @@
 			use_case: 1,
 			blocker: 1, // Blocker doesn't count as a separate step in progress
 			setup: 2,
-			daemon: 3,
-			register: hasIntegratedDaemon ? 3 : 4,
-			daemon_verification: hasIntegratedDaemon ? 3 : 4 // Same as register (part of final step)
+			register: 3
 		};
 		return stepMap[currentStep];
 	});
@@ -189,15 +155,10 @@
 				network_count: formData.networks.length
 			});
 
-			// Skip daemon step if server has integrated daemon
-			currentStep = hasIntegratedDaemon ? 'register' : 'daemon';
+			currentStep = 'register';
 		} catch {
 			// Error handled by mutation
 		}
-	}
-
-	function handleDaemonComplete() {
-		currentStep = 'register';
 	}
 
 	function handleBack() {
@@ -208,14 +169,8 @@
 			case 'setup':
 				currentStep = 'use_case';
 				break;
-			case 'daemon':
-				currentStep = 'setup';
-				break;
 			case 'register':
-				currentStep = hasIntegratedDaemon ? 'setup' : 'daemon';
-				break;
-			case 'daemon_verification':
-				// Can't go back from verification
+				currentStep = 'setup';
 				break;
 		}
 	}
@@ -245,26 +200,13 @@
 				return;
 			}
 
-			// Before clearing onboarding store, get state for tracking and network preference
+			// Before clearing onboarding store, get state for tracking
 			const state = onboardingStore.getState();
 
 			// Track successful registration with context
-			daemonsInstalled = Array.from(state.daemonSetups.values()).filter((d) => d.installNow).length;
 			trackEvent('onboarding_registration_completed', {
-				use_case: state.useCase,
-				daemons_installed: daemonsInstalled
+				use_case: state.useCase
 			});
-
-			// Set preferred network for topology view
-			// This ensures the topology tab shows the network being scanned
-			const networkWithDaemon = state.networks.find((n) => {
-				if (!n.id) return false;
-				const setup = state.daemonSetups.get(n.id);
-				return setup?.installNow === true;
-			});
-			if (networkWithDaemon?.id) {
-				setPreferredNetwork(networkWithDaemon.id);
-			}
 
 			// Fetch organization data before navigating
 			await fetchOrganization();
@@ -272,30 +214,13 @@
 			// Clear onboarding store
 			onboardingStore.reset();
 
-			// If user installed a daemon, show verification step
-			if (daemonsInstalled > 0) {
-				currentStep = 'daemon_verification';
-			} else {
-				// No daemon installed, go directly to billing/app
-				await navigate();
-			}
+			// Set flag so main app opens daemon setup modal
+			sessionStorage.setItem('showDaemonSetup', 'true');
+
+			await navigate();
 		} catch {
 			// Error handled by mutation
 		}
-	}
-
-	async function handleVerificationComplete() {
-		// Refresh organization data to ensure routing has fresh data
-		await fetchOrganization();
-		// Navigate to correct destination (billing or main app)
-		await navigate();
-	}
-
-	async function handleVerificationSkip() {
-		// Refresh organization data to ensure routing has fresh data
-		await fetchOrganization();
-		// User chose to skip verification, proceed to billing/app
-		await navigate();
 	}
 
 	function handleSwitchToLogin() {
@@ -317,8 +242,8 @@
 		<div class="absolute inset-0 bg-black/60"></div>
 	</div>
 
-	<!-- Progress Indicator - fixed position above modal (hidden for invite flow and verification) -->
-	{#if !isInviteFlow && currentStep !== 'daemon_verification'}
+	<!-- Progress Indicator - fixed position above modal (hidden for invite flow) -->
+	{#if !isInviteFlow}
 		<div class="fixed left-1/2 top-6 z-[200] -translate-x-1/2">
 			<div
 				class="flex items-center gap-2 rounded-full bg-gray-800/90 px-4 py-2 shadow-lg backdrop-blur-sm"
@@ -378,14 +303,6 @@
 					onSubmit={handleSetupSubmit}
 					{useCase}
 				/>
-			{:else if currentStep === 'daemon'}
-				<!-- Multi-Network Daemon Setup -->
-				<MultiDaemonSetup
-					isOpen={true}
-					{networks}
-					onComplete={handleDaemonComplete}
-					onClose={handleClose}
-				/>
 			{:else if currentStep === 'register'}
 				<!-- Registration -->
 				<RegisterModal
@@ -394,13 +311,6 @@
 					onClose={handleClose}
 					{orgName}
 					{invitedBy}
-				/>
-			{:else if currentStep === 'daemon_verification'}
-				<!-- Daemon Verification Step -->
-				<DaemonVerificationStep
-					isOpen={true}
-					onComplete={handleVerificationComplete}
-					onSkip={handleVerificationSkip}
 				/>
 			{/if}
 		</div>

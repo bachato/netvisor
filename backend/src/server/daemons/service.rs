@@ -30,7 +30,7 @@ use crate::server::daemons::r#impl::api::{
     DaemonCapabilities, DaemonDiscoveryRequest, DaemonRegistrationRequest,
     DaemonRegistrationResponse, DiscoveryUpdatePayload, FirstContactRequest, ServerCapabilities,
 };
-use crate::server::daemons::r#impl::base::{Daemon, DaemonBase};
+use crate::server::daemons::r#impl::base::{Daemon, DaemonBase, DaemonMode};
 use crate::server::daemons::r#impl::version::DaemonVersionPolicy;
 use crate::server::discovery::r#impl::base::{Discovery, DiscoveryBase};
 use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback, RunType};
@@ -48,10 +48,12 @@ use crate::server::shared::storage::generic::GenericPostgresStorage;
 use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::api::{ApiError, ApiResponse};
 use crate::server::shared::types::entities::EntitySource;
+use crate::server::shared::types::error_codes::ErrorCode;
 use crate::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
 use crate::server::subnets::service::SubnetService;
 use crate::server::tags::entity_tags::EntityTagService;
 use crate::server::users::service::UserService;
+use axum::http::StatusCode;
 
 /// Daily midnight cron schedule for default discovery jobs
 const DAILY_MIDNIGHT_CRON: &str = "0 0 0 * * *";
@@ -538,6 +540,19 @@ impl DaemonService {
             return Err(ApiError::demo_mode_blocked());
         }
 
+        // Check DaemonPoll restriction
+        if request.mode == DaemonMode::DaemonPoll
+            && let Some(plan) = &org.base.plan
+            && !plan.features().daemon_poll
+        {
+            return Err(ApiError::coded(
+                StatusCode::FORBIDDEN,
+                ErrorCode::BillingFeatureNotAvailable {
+                    feature: "DaemonPoll".into(),
+                },
+            ));
+        }
+
         tracing::info!("{:?}", request);
 
         // Parse version early for use in server_capabilities
@@ -605,7 +620,15 @@ impl DaemonService {
         });
 
         let host_response = host_service
-            .discover_host(dummy_host, vec![], vec![], vec![], vec![], auth.clone())
+            .discover_host(
+                dummy_host,
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                auth.clone(),
+                None,
+            )
             .await?;
 
         // If user_id is nil (old daemon), fall back to org owner
@@ -635,6 +658,7 @@ impl DaemonService {
             user_id,
             api_key_id: None,
             is_unreachable: false,
+            standby: false,
         });
 
         daemon.id = request.daemon_id;
@@ -717,6 +741,7 @@ impl DaemonService {
         &self,
         entities: BufferedEntities,
         auth: AuthenticatedEntity,
+        host_limit: Option<u64>,
     ) -> Result<CreatedEntitiesPayload, ApiError> {
         let host_service = self
             .host_service
@@ -740,6 +765,7 @@ impl DaemonService {
                     host_request.services,
                     host_request.if_entries,
                     auth.clone(),
+                    host_limit,
                 )
                 .await
             {
@@ -1281,7 +1307,7 @@ impl DaemonService {
                 // Process entities if any
                 if !poll_response.entities.is_empty() {
                     match self
-                        .process_discovery_entities(poll_response.entities, auth.clone())
+                        .process_discovery_entities(poll_response.entities, auth.clone(), None)
                         .await
                     {
                         Ok(created_entities) => {

@@ -95,7 +95,10 @@ pub async fn require_billing_for_users(
 
     // Check plan type - some plans are exempt from billing checks
     match &plan {
-        BillingPlan::Community(_) | BillingPlan::CommercialSelfHosted(_) | BillingPlan::Demo(_) => {
+        BillingPlan::Community(_)
+        | BillingPlan::Free(_)
+        | BillingPlan::CommercialSelfHosted(_)
+        | BillingPlan::Demo(_) => {
             return next.run(request).await;
         }
         _ => {}

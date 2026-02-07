@@ -137,6 +137,7 @@ impl<T: Storable> StorableFilter<T> {
         Self::new()
             .daemon_mode(DaemonMode::ServerPoll)
             .is_unreachable(false)
+            .standby(false)
     }
 
     /// Qualify a column name with the table name.
@@ -546,6 +547,14 @@ impl<T: Storable> StorableFilter<T> {
         self.conditions
             .push(format!("{} = ${}", col, self.values.len() + 1));
         self.values.push(SqlValue::Bool(is_unreachable));
+        self
+    }
+
+    pub fn standby(mut self, standby: bool) -> Self {
+        let col = self.qualify_column("standby");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::Bool(standby));
         self
     }
 

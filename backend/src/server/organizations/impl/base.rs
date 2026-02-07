@@ -27,6 +27,12 @@ pub struct OrganizationBase {
     pub plan_status: Option<String>,
     #[schema(read_only, required)]
     pub onboarding: Vec<TelemetryOperation>,
+    #[serde(default)]
+    #[schema(read_only)]
+    pub has_payment_method: bool,
+    #[serde(default)]
+    #[schema(read_only)]
+    pub trial_end_date: Option<DateTime<Utc>>,
     /// HubSpot company ID - internal, not exposed to API
     #[serde(default, skip_serializing)]
     pub hubspot_company_id: Option<String>,

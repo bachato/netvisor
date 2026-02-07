@@ -28,6 +28,7 @@ use utoipa::ToSchema;
 #[serde(tag = "type")]
 pub enum BillingPlan {
     Community(PlanConfig),
+    Free(PlanConfig),
     Starter(PlanConfig),
     Pro(PlanConfig),
     Team(PlanConfig),
@@ -59,8 +60,10 @@ impl Default for BillingPlan {
                 trial_days: 0,
                 seat_cents: None,
                 network_cents: None,
+                host_cents: None,
                 included_networks: None,
                 included_seats: None,
+                included_hosts: None,
             })
         }
         #[cfg(not(feature = "commercial"))]
@@ -71,8 +74,10 @@ impl Default for BillingPlan {
                 trial_days: 0,
                 seat_cents: None,
                 network_cents: None,
+                host_cents: None,
                 included_networks: None,
                 included_seats: None,
+                included_hosts: None,
             })
         }
     }
@@ -91,6 +96,9 @@ impl BillingPlan {
             .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
         yearly_config.network_cents = yearly_config
             .network_cents
+            .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
+        yearly_config.host_cents = yearly_config
+            .host_cents
             .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
 
         let mut yearly_plan = *self;
@@ -111,10 +119,12 @@ pub struct PlanConfig {
     // None = can't pay for more
     pub seat_cents: Option<i64>,
     pub network_cents: Option<i64>,
+    pub host_cents: Option<i64>,
 
     // None = unlimited
     pub included_seats: Option<u64>,
     pub included_networks: Option<u64>,
+    pub included_hosts: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Display, Copy, PartialEq, Eq, Default, Hash)]
@@ -160,9 +170,9 @@ pub struct BillingPlanFeatures {
     pub email_support: bool,
     pub community_support: bool,
     pub priority_support: bool,
-    // Core features (included in all plans)
-    pub unlimited_scans: bool,
-    pub unlimited_hosts: bool,
+    // Core features
+    pub scheduled_discovery: bool,
+    pub daemon_poll: bool,
     pub service_definitions: bool,
     pub docker_integration: bool,
     pub real_time_updates: bool,
@@ -173,6 +183,7 @@ impl BillingPlan {
     pub fn config(&self) -> PlanConfig {
         match self {
             BillingPlan::Community(plan_config) => *plan_config,
+            BillingPlan::Free(plan_config) => *plan_config,
             BillingPlan::Starter(plan_config) => *plan_config,
             BillingPlan::Pro(plan_config) => *plan_config,
             BillingPlan::Team(plan_config) => *plan_config,
@@ -186,6 +197,7 @@ impl BillingPlan {
     pub fn set_config(&mut self, config: PlanConfig) {
         match self {
             BillingPlan::Community(plan_config) => *plan_config = config,
+            BillingPlan::Free(plan_config) => *plan_config = config,
             BillingPlan::Starter(plan_config) => *plan_config = config,
             BillingPlan::Pro(plan_config) => *plan_config = config,
             BillingPlan::Team(plan_config) => *plan_config = config,
@@ -207,8 +219,16 @@ impl BillingPlan {
         )
     }
 
+    pub fn is_free(&self) -> bool {
+        matches!(self, BillingPlan::Free(_))
+    }
+
     pub fn is_demo(&self) -> bool {
         matches!(self, BillingPlan::Demo(_))
+    }
+
+    pub fn host_limit(&self) -> Option<u64> {
+        self.config().included_hosts
     }
 
     pub fn can_invite_users(&self) -> bool {
@@ -226,14 +246,14 @@ impl BillingPlan {
             BillingPlan::Community(_) => Hosting::SelfHosted,
             BillingPlan::CommercialSelfHosted(_) => Hosting::SelfHosted,
             BillingPlan::Enterprise(_) => Hosting::Managed,
-            _ => Hosting::Cloud,
+            _ => Hosting::Cloud, // Free, Starter, Pro, Team, Business, Demo
         }
     }
 
     pub fn custom_price(&self) -> Option<&str> {
         match self {
             BillingPlan::Enterprise(_) => Some("Custom"),
-            BillingPlan::Community(_) => Some("Free"),
+            BillingPlan::Community(_) | BillingPlan::Free(_) => Some("Free"),
             BillingPlan::CommercialSelfHosted(_) => Some("Custom"),
             _ => None,
         }
@@ -292,8 +312,31 @@ impl BillingPlan {
                 email_support: false,
                 community_support: true,
                 priority_support: false,
-                unlimited_scans: true,
-                unlimited_hosts: true,
+                scheduled_discovery: true,
+                daemon_poll: true,
+                service_definitions: true,
+                docker_integration: true,
+                real_time_updates: true,
+                snmp_integration: true,
+            },
+            BillingPlan::Free { .. } => BillingPlanFeatures {
+                share_views: true,
+                onboarding_call: false,
+                commercial_license: false,
+                webhooks: false,
+                audit_logs: false,
+                remove_created_with: false,
+                custom_sso: false,
+                api_access: false,
+                managed_deployment: false,
+                whitelabeling: false,
+                live_chat_support: false,
+                embeds: false,
+                email_support: true,
+                community_support: false,
+                priority_support: false,
+                scheduled_discovery: false,
+                daemon_poll: false,
                 service_definitions: true,
                 docker_integration: true,
                 real_time_updates: true,
@@ -315,8 +358,8 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: false,
-                unlimited_scans: true,
-                unlimited_hosts: true,
+                scheduled_discovery: true,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 real_time_updates: true,
@@ -338,8 +381,8 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: false,
-                unlimited_scans: true,
-                unlimited_hosts: true,
+                scheduled_discovery: true,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 real_time_updates: true,
@@ -361,8 +404,8 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: true,
-                unlimited_scans: true,
-                unlimited_hosts: true,
+                scheduled_discovery: true,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 real_time_updates: true,
@@ -384,8 +427,8 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: true,
-                unlimited_scans: true,
-                unlimited_hosts: true,
+                scheduled_discovery: true,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 real_time_updates: true,
@@ -407,8 +450,8 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: true,
-                unlimited_scans: true,
-                unlimited_hosts: true,
+                scheduled_discovery: true,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 real_time_updates: true,
@@ -430,8 +473,8 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
-                unlimited_scans: true,
-                unlimited_hosts: true,
+                scheduled_discovery: true,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 real_time_updates: true,
@@ -453,8 +496,8 @@ impl BillingPlan {
                 email_support: true,
                 community_support: false,
                 priority_support: true,
-                unlimited_scans: true,
-                unlimited_hosts: true,
+                scheduled_discovery: true,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 real_time_updates: true,
@@ -485,8 +528,8 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             email_support,
             priority_support,
             community_support,
-            unlimited_scans,
-            unlimited_hosts,
+            scheduled_discovery,
+            daemon_poll,
             service_definitions,
             docker_integration,
             real_time_updates,
@@ -502,7 +545,7 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
         }
 
         if api_access {
-            features.push(Feature::CustomSso)
+            features.push(Feature::ApiAccess)
         }
 
         if managed_deployment {
@@ -553,12 +596,12 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             features.push(Feature::RemoveCreatedWith)
         }
 
-        if unlimited_scans {
-            features.push(Feature::UnlimitedScans)
+        if scheduled_discovery {
+            features.push(Feature::ScheduledDiscovery)
         }
 
-        if unlimited_hosts {
-            features.push(Feature::UnlimitedHosts)
+        if daemon_poll {
+            features.push(Feature::DaemonPoll)
         }
 
         if service_definitions {
@@ -591,6 +634,7 @@ impl EntityMetadataProvider for BillingPlan {
     fn icon(&self) -> Icon {
         match self {
             BillingPlan::Community { .. } => Icon::Heart,
+            BillingPlan::Free { .. } => Icon::Gift,
             BillingPlan::Starter { .. } => Icon::ThumbsUp,
             BillingPlan::Pro { .. } => Icon::Zap,
             BillingPlan::Team { .. } => Icon::Users,
@@ -604,6 +648,7 @@ impl EntityMetadataProvider for BillingPlan {
     fn color(&self) -> Color {
         match self {
             BillingPlan::Community { .. } => Color::Pink,
+            BillingPlan::Free { .. } => Color::Green,
             BillingPlan::Starter { .. } => Color::Blue,
             BillingPlan::Pro { .. } => Color::Yellow,
             BillingPlan::Team { .. } => Color::Orange,
@@ -619,6 +664,7 @@ impl TypeMetadataProvider for BillingPlan {
     fn name(&self) -> &'static str {
         match self {
             BillingPlan::Community { .. } => "Community",
+            BillingPlan::Free { .. } => "Free",
             BillingPlan::Starter { .. } => "Starter",
             BillingPlan::Pro { .. } => "Pro",
             BillingPlan::Team { .. } => "Team",
@@ -633,6 +679,9 @@ impl TypeMetadataProvider for BillingPlan {
         match self {
             BillingPlan::Community { .. } => {
                 "Community plan for individuals self-hosting Scanopy - full control over configuration and integrations"
+            }
+            BillingPlan::Free { .. } => {
+                "Get started with Scanopy — manual discovery for up to 25 hosts"
             }
             BillingPlan::Starter { .. } => {
                 "Automatically create living documentation of your network"
@@ -664,8 +713,10 @@ impl TypeMetadataProvider for BillingPlan {
             "trial_days": config.trial_days,
             "seat_cents": config.seat_cents,
             "network_cents": config.network_cents,
+            "host_cents": config.host_cents,
             "included_seats": config.included_seats,
             "included_networks": config.included_networks,
+            "included_hosts": config.included_hosts,
             // Feature flags and metadata
             "features": self.features(),
             "is_commercial": self.is_commercial(),

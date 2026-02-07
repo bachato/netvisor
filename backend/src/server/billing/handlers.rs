@@ -1,5 +1,7 @@
 use crate::server::auth::middleware::permissions::{Authorized, Owner, Viewer};
-use crate::server::billing::types::api::CreateCheckoutRequest;
+use crate::server::billing::types::api::{
+    ChangePlanPreview, ChangePlanRequest, CreateCheckoutRequest, SetupPaymentMethodRequest,
+};
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::config::AppState;
 use crate::server::hubspot::types::{CompanyProperties, HubSpotFormContext, HubSpotFormField};
@@ -50,6 +52,9 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(get_billing_plans))
         .routes(routes!(create_checkout_session))
+        .routes(routes!(setup_payment_method))
+        .routes(routes!(change_plan))
+        .routes(routes!(preview_plan_change))
         .routes(routes!(handle_webhook))
         .routes(routes!(create_portal_session))
         .routes(routes!(submit_enterprise_inquiry))
@@ -126,6 +131,121 @@ async fn create_checkout_session(
             .await?;
 
         Ok(Json(ApiResponse::success(session.url.unwrap())))
+    } else {
+        Err(ApiError::billing_setup_incomplete())
+    }
+}
+
+/// Setup payment method (collect card without charging)
+#[utoipa::path(
+    post,
+    path = "/setup-payment-method",
+    tags = ["billing", "internal"],
+    request_body = SetupPaymentMethodRequest,
+    responses(
+        (status = 200, description = "Setup session URL", body = ApiResponse<String>),
+        (status = 400, description = "Billing not enabled", body = ApiErrorResponse),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+async fn setup_payment_method(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Owner>,
+    Json(request): Json<SetupPaymentMethodRequest>,
+) -> ApiResult<Json<ApiResponse<String>>> {
+    let organization_id = auth
+        .organization_id()
+        .ok_or_else(ApiError::organization_required)?;
+
+    let success_url = format!("{}?setup_complete=true", request.url);
+    let cancel_url = request.url;
+
+    if let Some(billing_service) = state.services.billing_service.clone() {
+        let session = billing_service
+            .create_setup_payment_method_session(
+                organization_id,
+                success_url,
+                cancel_url,
+                auth.into_entity(),
+            )
+            .await?;
+
+        Ok(Json(ApiResponse::success(session.url.unwrap())))
+    } else {
+        Err(ApiError::billing_setup_incomplete())
+    }
+}
+
+/// Change billing plan
+///
+/// Upgrades or downgrades the organization's billing plan.
+#[utoipa::path(
+    post,
+    path = "/change-plan",
+    tags = ["billing", "internal"],
+    request_body = ChangePlanRequest,
+    responses(
+        (status = 200, description = "Plan change initiated", body = ApiResponse<String>),
+        (status = 400, description = "Invalid plan or billing not enabled", body = ApiErrorResponse),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+async fn change_plan(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Owner>,
+    Json(request): Json<ChangePlanRequest>,
+) -> ApiResult<Json<ApiResponse<String>>> {
+    let organization_id = auth
+        .organization_id()
+        .ok_or_else(ApiError::organization_required)?;
+
+    if let Some(billing_service) = state.services.billing_service.clone() {
+        let result = billing_service
+            .change_plan(organization_id, request.plan, auth.into_entity())
+            .await?;
+
+        Ok(Json(ApiResponse::success(result)))
+    } else {
+        Err(ApiError::billing_setup_incomplete())
+    }
+}
+
+/// Preview plan change (shows overage counts)
+#[utoipa::path(
+    get,
+    path = "/change-plan/preview",
+    tags = ["billing", "internal"],
+    params(
+        ("plan" = String, Query, description = "Target plan (JSON)"),
+    ),
+    responses(
+        (status = 200, description = "Plan change preview", body = ApiResponse<ChangePlanPreview>),
+        (status = 400, description = "Billing not enabled", body = ApiErrorResponse),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+async fn preview_plan_change(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Owner>,
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> ApiResult<Json<ApiResponse<ChangePlanPreview>>> {
+    let organization_id = auth
+        .organization_id()
+        .ok_or_else(ApiError::organization_required)?;
+
+    let plan_str = params
+        .get("plan")
+        .ok_or_else(|| ApiError::bad_request("Missing plan parameter"))?;
+
+    let plan: BillingPlan =
+        serde_json::from_str(plan_str).map_err(|_| ApiError::bad_request("Invalid plan format"))?;
+
+    if let Some(billing_service) = state.services.billing_service.clone() {
+        let preview = billing_service
+            .preview_plan_change(organization_id, plan)
+            .await?;
+
+        Ok(Json(ApiResponse::success(preview)))
     } else {
         Err(ApiError::billing_setup_incomplete())
     }

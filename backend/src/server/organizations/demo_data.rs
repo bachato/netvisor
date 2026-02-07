@@ -1987,6 +1987,7 @@ fn generate_daemons(
                 user_id,
                 api_key_id: None,
                 is_unreachable: false,
+                standby: false,
             },
         });
     }
@@ -2018,6 +2019,7 @@ fn generate_daemons(
                 user_id,
                 api_key_id: None,
                 is_unreachable: false,
+                standby: false,
             },
         });
     }
@@ -2048,6 +2050,7 @@ fn generate_daemons(
                 user_id,
                 api_key_id: None,
                 is_unreachable: false,
+                standby: false,
             },
         });
     }
@@ -2075,6 +2078,7 @@ fn generate_daemons(
                 user_id,
                 api_key_id: None,
                 is_unreachable: false,
+                standby: false,
             },
         });
     }

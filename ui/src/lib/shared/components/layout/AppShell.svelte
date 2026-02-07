@@ -136,7 +136,8 @@
 				// Track billing completion for funnel analytics
 				trackEvent('billing_completed', {
 					plan: orgData.plan?.type ?? 'unknown',
-					amount: orgData.plan?.base_cents ?? 0
+					amount: orgData.plan?.base_cents ?? 0,
+					plan_status: orgData.plan_status
 				});
 
 				pushSuccess(billing_subscriptionActivated());
@@ -233,6 +234,19 @@
 				}
 			});
 			return;
+		} else if (sessionId && isBillingPlanActive(organization)) {
+			// User returned from Stripe payment method setup while already on an active/trialing plan
+			trackEvent('payment_method_setup_completed', {
+				plan_type: organization.plan?.type,
+				plan_status: organization.plan_status
+			});
+
+			const cleanUrl = new URL($page.url);
+			cleanUrl.searchParams.delete('session_id');
+			window.history.replaceState({}, '', cleanUrl.toString());
+
+			// Refresh org data to update has_payment_method
+			queryClient.invalidateQueries({ queryKey: queryKeys.organizations.current() });
 		}
 
 		// Check if current page matches where user should be

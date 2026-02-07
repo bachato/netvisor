@@ -1,8 +1,15 @@
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::billing::plans::YEARLY_DISCOUNT;
 use crate::server::billing::plans::get_enterprise_plan;
+use crate::server::billing::plans::get_free_plan;
+use crate::server::billing::types::api::ChangePlanPreview;
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::billing::types::features::Feature;
+use crate::server::daemons::r#impl::base::DaemonMode;
+use crate::server::daemons::service::DaemonService;
+use crate::server::discovery::service::DiscoveryService;
+use crate::server::hosts::r#impl::base::Host;
+use crate::server::hosts::service::HostService;
 use crate::server::invites::service::InviteService;
 use crate::server::networks::r#impl::Network;
 use crate::server::networks::service::NetworkService;
@@ -32,6 +39,7 @@ use stripe_billing::{Subscription, SubscriptionStatus};
 use stripe_checkout::checkout_session::CreateCheckoutSessionCustomerUpdate;
 use stripe_checkout::checkout_session::CreateCheckoutSessionCustomerUpdateAddress;
 use stripe_checkout::checkout_session::CreateCheckoutSessionCustomerUpdateName;
+use stripe_checkout::checkout_session::CreateCheckoutSessionPaymentMethodCollection;
 use stripe_checkout::checkout_session::CreateCheckoutSessionSubscriptionData;
 use stripe_checkout::checkout_session::{
     CreateCheckoutSession, CreateCheckoutSessionLineItems, CreateCheckoutSessionTaxIdCollection,
@@ -56,6 +64,9 @@ pub struct BillingService {
     pub invite_service: Arc<InviteService>,
     pub user_service: Arc<UserService>,
     pub network_service: Arc<NetworkService>,
+    pub host_service: Arc<HostService>,
+    pub daemon_service: Arc<DaemonService>,
+    pub discovery_service: Arc<DiscoveryService>,
     pub share_service: Arc<ShareService>,
     pub plans: OnceLock<Vec<BillingPlan>>,
     pub event_bus: Arc<EventBus>,
@@ -73,6 +84,9 @@ pub struct BillingServiceParams {
     pub invite_service: Arc<InviteService>,
     pub user_service: Arc<UserService>,
     pub network_service: Arc<NetworkService>,
+    pub host_service: Arc<HostService>,
+    pub daemon_service: Arc<DaemonService>,
+    pub discovery_service: Arc<DiscoveryService>,
     pub share_service: Arc<ShareService>,
     pub event_bus: Arc<EventBus>,
 }
@@ -86,6 +100,9 @@ impl BillingService {
             invite_service,
             user_service,
             network_service,
+            host_service,
+            daemon_service,
+            discovery_service,
             share_service,
             event_bus,
         } = params;
@@ -96,6 +113,9 @@ impl BillingService {
             organization_service,
             invite_service,
             network_service,
+            host_service,
+            daemon_service,
+            discovery_service,
             share_service,
             user_service,
             plans: OnceLock::new(),
@@ -174,6 +194,11 @@ impl BillingService {
         };
 
         for plan in plans {
+            // Skip $0 plans (Free, Community) — they don't need Stripe products
+            if plan.config().base_cents == 0 {
+                continue;
+            }
+
             // Check if product exists, create if not
             let product_id = plan.stripe_product_id();
             let product = match RetrieveProduct::new(product_id.clone())
@@ -358,11 +383,19 @@ impl BillingService {
             Some(plan.config().trial_days)
         };
 
+        // Allow trial without requiring credit card upfront for new customers
+        let payment_method_collection = if trial_days.is_some() {
+            CreateCheckoutSessionPaymentMethodCollection::IfRequired
+        } else {
+            CreateCheckoutSessionPaymentMethodCollection::Always
+        };
+
         let create_checkout_session = CreateCheckoutSession::new()
             .customer(customer_id)
             .success_url(success_url)
             .cancel_url(cancel_url)
             .mode(CheckoutSessionMode::Subscription)
+            .payment_method_collection(payment_method_collection)
             .billing_address_collection(CheckoutSessionBillingAddressCollection::Auto)
             .customer_update(CreateCheckoutSessionCustomerUpdate {
                 name: Some(CreateCheckoutSessionCustomerUpdateName::Auto),
@@ -651,21 +684,21 @@ impl BillingService {
                     self.handle_subscription_update(sub).await?;
                 }
             }
+            EventType::CustomerSubscriptionTrialWillEnd => {
+                if let EventObject::CustomerSubscriptionTrialWillEnd(sub) = event.data.object {
+                    self.handle_trial_will_end(sub).await?;
+                }
+            }
             EventType::CustomerSubscriptionPaused | EventType::CustomerSubscriptionDeleted => {
                 if let EventObject::CustomerSubscriptionDeleted(sub) = event.data.object {
                     self.handle_subscription_deleted(sub).await?;
                 }
             }
-            // EventType::InvoicePaymentSucceeded => {
-            //     if let EventObject::Invoice(invoice) = event.data.object {
-            //         self.handle_payment_succeeded(invoice).await?;
-            //     }
-            // }
-            // EventType::InvoicePaymentFailed => {
-            //     if let EventObject::Invoice(invoice) = event.data.object {
-            //         self.handle_payment_failed(invoice).await?;
-            //     }
-            // }
+            EventType::CheckoutSessionCompleted => {
+                if let EventObject::CheckoutSessionCompleted(session) = event.data.object {
+                    self.handle_checkout_completed(session).await?;
+                }
+            }
             _ => {
                 tracing::debug!(
                     event_type = ?event.type_,
@@ -855,6 +888,11 @@ impl BillingService {
         organization.base.plan_status = Some(sub.status.to_string());
         organization.base.plan = Some(plan);
 
+        // Store trial_end_date from subscription
+        organization.base.trial_end_date = sub
+            .trial_end
+            .and_then(|ts| chrono::DateTime::from_timestamp(ts, 0));
+
         self.organization_service
             .update(&mut organization, AuthenticatedEntity::System)
             .await?;
@@ -867,6 +905,70 @@ impl BillingService {
         Ok(())
     }
 
+    /// Handle trial_will_end webhook (3 days before trial expiry)
+    async fn handle_trial_will_end(&self, sub: Subscription) -> Result<(), Error> {
+        let org_id = sub
+            .metadata
+            .get("organization_id")
+            .ok_or_else(|| anyhow!("No organization_id in subscription metadata"))?;
+        let org_id = Uuid::parse_str(org_id)?;
+
+        let organization = self
+            .organization_service
+            .get_by_id(&org_id)
+            .await?
+            .ok_or_else(|| anyhow!("Organization not found for trial_will_end"))?;
+
+        tracing::info!(
+            organization_id = %org_id,
+            has_payment_method = organization.base.has_payment_method,
+            "Trial ending soon"
+        );
+
+        // TODO: Send trial_ending email if !has_payment_method (Phase 6)
+
+        Ok(())
+    }
+
+    /// Handle checkout.session.completed — detect setup mode to mark payment method added
+    async fn handle_checkout_completed(
+        &self,
+        session: stripe_checkout::CheckoutSession,
+    ) -> Result<(), Error> {
+        // Only handle setup mode completions (payment method collection)
+        if session.mode != CheckoutSessionMode::Setup {
+            return Ok(());
+        }
+
+        let metadata = session
+            .metadata
+            .as_ref()
+            .ok_or_else(|| anyhow!("No metadata in setup session"))?;
+        let org_id = metadata
+            .get("organization_id")
+            .ok_or_else(|| anyhow!("No organization_id in setup session metadata"))?;
+        let org_id = Uuid::parse_str(org_id)?;
+
+        let mut organization = self
+            .organization_service
+            .get_by_id(&org_id)
+            .await?
+            .ok_or_else(|| anyhow!("Organization not found for checkout completed"))?;
+
+        organization.base.has_payment_method = true;
+
+        self.organization_service
+            .update(&mut organization, AuthenticatedEntity::System)
+            .await?;
+
+        tracing::info!(
+            organization_id = %org_id,
+            "Payment method added via setup checkout"
+        );
+
+        Ok(())
+    }
+
     async fn handle_subscription_deleted(&self, sub: Subscription) -> Result<(), Error> {
         let org_id = sub
             .metadata
@@ -874,7 +976,7 @@ impl BillingService {
             .ok_or_else(|| anyhow!("No organization_id in subscription metadata"))?;
         let org_id = Uuid::parse_str(org_id)?;
 
-        let mut organization = self
+        let organization = self
             .organization_service
             .get_by_id(&org_id)
             .await?
@@ -940,19 +1042,47 @@ impl BillingService {
             .revoke_org_invites(&organization.id)
             .await?;
 
-        organization.base.plan_status = Some(SubscriptionStatus::Canceled.to_string());
-        organization.base.plan = None;
-
-        self.organization_service
-            .update(&mut organization, AuthenticatedEntity::System)
+        // Downgrade to Free instead of clearing plan
+        self.downgrade_to_free(org_id, AuthenticatedEntity::System)
             .await?;
 
         tracing::info!(
             organization_id = %org_id,
             subscription_id = %sub.id,
-            "Subscription canceled, invites revoked"
+            "Subscription canceled, downgraded to Free, invites revoked"
         );
         Ok(())
+    }
+
+    /// Create a checkout session in setup mode to collect payment method
+    pub async fn create_setup_payment_method_session(
+        &self,
+        organization_id: Uuid,
+        success_url: String,
+        cancel_url: String,
+        authentication: AuthenticatedEntity,
+    ) -> Result<CheckoutSession, Error> {
+        let (_, customer_id) = self
+            .get_or_create_customer(organization_id, authentication)
+            .await?;
+
+        let session = CreateCheckoutSession::new()
+            .customer(customer_id)
+            .success_url(success_url)
+            .cancel_url(cancel_url)
+            .mode(CheckoutSessionMode::Setup)
+            .metadata([("organization_id".to_string(), organization_id.to_string())])
+            .send(&self.stripe)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+
+        tracing::info!(
+            organization_id = %organization_id,
+            session_id = %session.id,
+            "Setup payment method session created"
+        );
+
+        Ok(session)
     }
 
     pub async fn create_portal_session(
@@ -986,14 +1116,255 @@ impl BillingService {
         Ok(session.url)
     }
 
-    // async fn handle_payment_succeeded(&self, _invoice: Invoice) -> Result<(), Error> {
-    //     // Optional: log successful payments, update last_payment_at, etc.
-    //     Ok(())
-    // }
+    /// Preview what would change when switching to a different plan
+    pub async fn preview_plan_change(
+        &self,
+        organization_id: Uuid,
+        target_plan: BillingPlan,
+    ) -> Result<ChangePlanPreview, Error> {
+        let org_filter = StorableFilter::<Network>::new_from_org_id(&organization_id);
+        let networks = self.network_service.get_all(org_filter.clone()).await?;
+        let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
 
-    // async fn handle_payment_failed(&self, invoice: Invoice) -> Result<()> {
-    //     // Optional: send email notifications, update grace period, etc.
-    //     tracing::warn!("Payment failed for invoice {}", invoice.id);
-    //     Ok(())
-    // }
+        let host_filter = StorableFilter::<Host>::new_from_network_ids(&network_ids);
+        let host_count = self.host_service.get_all(host_filter).await?.len() as u64;
+
+        let user_filter =
+            StorableFilter::<crate::server::users::r#impl::base::User>::new_from_org_id(
+                &organization_id,
+            );
+        let seat_count = self.user_service.get_all(user_filter).await?.len() as u64;
+
+        let target_config = target_plan.config();
+
+        let excess_hosts = target_config
+            .included_hosts
+            .map(|limit| host_count.saturating_sub(limit))
+            .unwrap_or(0);
+
+        let excess_networks = target_config
+            .included_networks
+            .map(|limit| (networks.len() as u64).saturating_sub(limit))
+            .unwrap_or(0);
+
+        let excess_seats = target_config
+            .included_seats
+            .map(|limit| seat_count.saturating_sub(limit))
+            .unwrap_or(0);
+
+        Ok(ChangePlanPreview {
+            excess_hosts,
+            excess_networks,
+            excess_seats,
+        })
+    }
+
+    /// Change the organization's billing plan
+    pub async fn change_plan(
+        &self,
+        organization_id: Uuid,
+        target_plan: BillingPlan,
+        authentication: AuthenticatedEntity,
+    ) -> Result<String, Error> {
+        let organization = self
+            .organization_service
+            .get_by_id(&organization_id)
+            .await?
+            .ok_or_else(|| anyhow!("Organization not found"))?;
+
+        let customer_id = organization
+            .base
+            .stripe_customer_id
+            .clone()
+            .ok_or_else(|| anyhow!("No Stripe customer ID"))?;
+
+        // If target is Free, cancel Stripe subscription and downgrade
+        if target_plan.is_free() {
+            // Cancel active subscription
+            let org_subscriptions = ListSubscription::new()
+                .customer(CustomerId::from(customer_id))
+                .send(&self.stripe)
+                .await?;
+
+            if let Some(sub) = org_subscriptions.data.iter().find(|s| {
+                matches!(
+                    s.status,
+                    SubscriptionStatus::Active | SubscriptionStatus::Trialing
+                )
+            }) {
+                stripe_billing::subscription::CancelSubscription::new(&sub.id)
+                    .send(&self.stripe)
+                    .await?;
+            }
+
+            self.downgrade_to_free(organization_id, authentication)
+                .await?;
+
+            return Ok("Downgraded to Free plan".to_string());
+        }
+
+        // For paid plan changes, update Stripe subscription
+        let base_price = self
+            .get_price_from_lookup_key(target_plan.stripe_base_price_lookup_key())
+            .await?
+            .ok_or_else(|| anyhow!("Could not find price for target plan"))?;
+
+        let org_subscriptions = ListSubscription::new()
+            .customer(CustomerId::from(customer_id))
+            .send(&self.stripe)
+            .await?;
+
+        if let Some(sub) = org_subscriptions.data.iter().find(|s| {
+            matches!(
+                s.status,
+                SubscriptionStatus::Active | SubscriptionStatus::Trialing
+            )
+        }) {
+            // Find the base price item to replace
+            let base_item = sub
+                .items
+                .data
+                .first()
+                .ok_or_else(|| anyhow!("No subscription items found"))?;
+
+            UpdateSubscription::new(&sub.id)
+                .items(vec![UpdateSubscriptionItems {
+                    id: Some(base_item.id.to_string()),
+                    price: Some(base_price.id.to_string()),
+                    quantity: Some(1),
+                    ..Default::default()
+                }])
+                .metadata([
+                    ("plan".to_string(), serde_json::to_string(&target_plan)?),
+                    ("organization_id".to_string(), organization_id.to_string()),
+                ])
+                .proration_behavior(UpdateSubscriptionProrationBehavior::CreateProrations)
+                .send(&self.stripe)
+                .await?;
+
+            tracing::info!(
+                organization_id = %organization_id,
+                target_plan = %target_plan.name(),
+                "Plan changed via subscription update"
+            );
+
+            Ok(format!("Plan changed to {}", target_plan.name()))
+        } else {
+            Err(anyhow!("No active subscription found to modify"))
+        }
+    }
+
+    /// Downgrade organization to Free plan
+    ///
+    /// Called when trial expires without payment method, subscription cancelled, or explicit downgrade.
+    /// Converts scheduled discoveries to ad-hoc, sets standby on DaemonPoll daemons,
+    /// and trims hosts to the Free plan limit.
+    pub async fn downgrade_to_free(
+        &self,
+        organization_id: Uuid,
+        authentication: AuthenticatedEntity,
+    ) -> Result<(), Error> {
+        use crate::server::discovery::r#impl::types::RunType;
+
+        let free_plan = get_free_plan();
+        let host_limit = free_plan.config().included_hosts.unwrap_or(25);
+
+        let mut organization = self
+            .organization_service
+            .get_by_id(&organization_id)
+            .await?
+            .ok_or_else(|| anyhow!("Organization not found"))?;
+
+        // Get org networks
+        let org_filter = StorableFilter::<Network>::new_from_org_id(&organization_id);
+        let networks = self.network_service.get_all(org_filter).await?;
+        let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
+
+        // 1. Convert Scheduled discoveries → AdHoc
+        let discovery_filter =
+            StorableFilter::<crate::server::discovery::r#impl::base::Discovery>::new_from_network_ids(
+                &network_ids,
+            );
+        let discoveries = self.discovery_service.get_all(discovery_filter).await?;
+        for mut discovery in discoveries {
+            if let RunType::Scheduled { last_run, .. } = discovery.base.run_type {
+                discovery.base.run_type = RunType::AdHoc { last_run };
+                self.discovery_service
+                    .update(&mut discovery, authentication.clone())
+                    .await?;
+                tracing::info!(
+                    discovery_id = %discovery.id,
+                    "Converted scheduled discovery to ad-hoc on Free downgrade"
+                );
+            }
+        }
+
+        // 2. Set standby on DaemonPoll daemons
+        let daemon_filter =
+            StorableFilter::<crate::server::daemons::r#impl::base::Daemon>::new_from_network_ids(
+                &network_ids,
+            );
+        let daemons = self.daemon_service.get_all(daemon_filter).await?;
+        let daemon_host_ids: Vec<Uuid> = daemons.iter().map(|d| d.base.host_id).collect();
+        for mut daemon in daemons {
+            if daemon.base.mode == DaemonMode::DaemonPoll && !daemon.base.standby {
+                daemon.base.standby = true;
+                self.daemon_service
+                    .update(&mut daemon, authentication.clone())
+                    .await?;
+                tracing::info!(
+                    daemon_id = %daemon.id,
+                    "Set daemon to standby on Free downgrade"
+                );
+            }
+        }
+
+        // 3. Trim hosts to Free plan limit (keep most recent, preserve daemon hosts)
+        let host_filter = StorableFilter::<Host>::new_from_network_ids(&network_ids);
+        let mut hosts = self.host_service.get_all(host_filter).await?;
+        if hosts.len() as u64 > host_limit {
+            // Sort by updated_at descending (most recent first)
+            hosts.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+
+            let mut kept = 0u64;
+            let mut to_delete = Vec::new();
+            for host in &hosts {
+                let is_daemon_host = daemon_host_ids.contains(&host.id);
+                if kept < host_limit || is_daemon_host {
+                    if !is_daemon_host {
+                        kept += 1;
+                    }
+                } else {
+                    to_delete.push(host.id);
+                }
+            }
+
+            for host_id in &to_delete {
+                self.host_service
+                    .delete(host_id, authentication.clone())
+                    .await?;
+            }
+
+            tracing::info!(
+                organization_id = %organization_id,
+                deleted_hosts = to_delete.len(),
+                "Trimmed excess hosts on Free downgrade"
+            );
+        }
+
+        // 4. Update organization plan
+        organization.base.plan = Some(free_plan);
+        organization.base.plan_status = Some("active".to_string());
+
+        self.organization_service
+            .update(&mut organization, authentication)
+            .await?;
+
+        tracing::info!(
+            organization_id = %organization_id,
+            "Organization downgraded to Free plan"
+        );
+
+        Ok(())
+    }
 }

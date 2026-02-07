@@ -7,16 +7,13 @@
 	import { type UseCase, type SetupRequest, USE_CASES } from '../../types/base';
 	import { required, max, min } from '$lib/shared/components/forms/validators';
 	import { onboardingStore } from '../../stores/onboarding';
-	import { Plus, Trash2 } from 'lucide-svelte';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import {
 		auth_scanopyLogo,
 		common_continue,
 		common_settingUp,
 		common_version,
-		onboarding_addAnotherNetwork,
 		onboarding_mspNetworkHelp,
-		onboarding_removeNetwork,
 		onboarding_visualizeCompany,
 		onboarding_visualizeHomelab,
 		onboarding_visualizeMsp,
@@ -121,37 +118,6 @@
 		}
 	}));
 
-	function addNetwork() {
-		const newIndex = networkCount;
-		form.setFieldValue(`network_${newIndex}` as never, '' as never);
-		form.setFieldValue(`snmp_${newIndex}_enabled` as never, false as never);
-		form.setFieldValue(`snmp_${newIndex}_version` as never, 'V2c' as never);
-		form.setFieldValue(`snmp_${newIndex}_community` as never, '' as never);
-		snmpEnabledMap[newIndex] = false;
-		networkCount++;
-	}
-
-	function removeNetwork(index: number) {
-		// Shift all networks and their SNMP config after the removed one
-		for (let i = index; i < networkCount - 1; i++) {
-			const nextValue = form.state.values[`network_${i + 1}` as keyof typeof form.state.values];
-			const nextSnmpEnabled =
-				form.state.values[`snmp_${i + 1}_enabled` as keyof typeof form.state.values];
-			const nextSnmpVersion =
-				form.state.values[`snmp_${i + 1}_version` as keyof typeof form.state.values];
-			const nextSnmpCommunity =
-				form.state.values[`snmp_${i + 1}_community` as keyof typeof form.state.values];
-
-			form.setFieldValue(`network_${i}` as never, nextValue as never);
-			form.setFieldValue(`snmp_${i}_enabled` as never, nextSnmpEnabled as never);
-			form.setFieldValue(`snmp_${i}_version` as never, nextSnmpVersion as never);
-			form.setFieldValue(`snmp_${i}_community` as never, nextSnmpCommunity as never);
-			snmpEnabledMap[i] = snmpEnabledMap[i + 1] ?? false;
-		}
-		delete snmpEnabledMap[networkCount - 1];
-		networkCount--;
-	}
-
 	async function handleSubmit() {
 		await submitForm(form);
 	}
@@ -249,16 +215,6 @@
 										{/snippet}
 									</form.Field>
 								</div>
-								{#if index > 0}
-									<button
-										type="button"
-										class="btn-icon-danger"
-										onclick={() => removeNetwork(index)}
-										aria-label={onboarding_removeNetwork()}
-									>
-										<Trash2 class="h-4 w-4" />
-									</button>
-								{/if}
 							</div>
 
 							<!-- SNMP Configuration -->
@@ -329,17 +285,6 @@
 							</div>
 						</div>
 					{/each}
-
-					{#if useCase && useCase != 'homelab'}
-						<button
-							type="button"
-							class="text-secondary hover:text-primary flex items-center gap-1 text-sm transition-colors"
-							onclick={addNetwork}
-						>
-							<Plus class="h-4 w-4" />
-							{onboarding_addAnotherNetwork()}
-						</button>
-					{/if}
 				</div>
 			</div>
 		</div>

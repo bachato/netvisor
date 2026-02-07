@@ -113,6 +113,17 @@ impl EmailProvider for PlunkEmailProvider {
         .map(|_| ())
     }
 
+    async fn send_billing_email(
+        &self,
+        to: EmailAddress,
+        subject: String,
+        body: String,
+    ) -> Result<(), Error> {
+        self.send_transactional_email(to, subject, body)
+            .await
+            .map_err(|e| anyhow!("{}", e))
+    }
+
     async fn track_event(
         &self,
         event: String,

@@ -292,6 +292,7 @@ pub fn daemon() -> Daemon {
             user_id: ids::USER,
             api_key_id: None,
             is_unreachable: false,
+            standby: false,
         },
     }
 }
@@ -333,6 +334,8 @@ pub fn organization() -> Organization {
             plan: None,
             plan_status: None,
             onboarding: vec![],
+            has_payment_method: false,
+            trial_end_date: None,
             hubspot_company_id: None,
         },
     }

@@ -59,6 +59,15 @@
 	let showSettings = $state(false);
 	let showSupport = $state(false);
 
+	// Show notification on settings when payment method is needed
+	let showBillingNotification = $derived.by(() => {
+		if (!organization) return false;
+		const isFree = organization.plan?.type === 'Free';
+		const isTrialing = organization.plan_status === 'trialing';
+		const hasPayment = organization.has_payment_method ?? false;
+		return (isFree || isTrialing) && !hasPayment;
+	});
+
 	interface NavItem {
 		id: string;
 		label: string;
@@ -582,7 +591,13 @@
 							style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 							title={collapsed ? item.label : ''}
 						>
-							<item.icon class="h-5 w-5 flex-shrink-0" />
+							<span class="relative">
+								<item.icon class="h-5 w-5 flex-shrink-0" />
+								{#if item.id === 'settings' && showBillingNotification}
+									<span class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-500"
+									></span>
+								{/if}
+							</span>
 							{#if !collapsed}
 								<span class="ml-3 truncate">{item.label}</span>
 							{/if}

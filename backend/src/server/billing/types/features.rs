@@ -26,9 +26,9 @@ pub enum Feature {
     LiveChatSupport,
     PrioritySupport,
     Embeds,
-    // Core features (included in all plans)
-    UnlimitedScans,
-    UnlimitedHosts,
+    // Core features
+    ScheduledDiscovery,
+    DaemonPoll,
     ServiceDefinitions,
     DockerIntegration,
     SnmpIntegration,
@@ -53,8 +53,8 @@ impl HasId for Feature {
             Feature::CommunitySupport => "community_support",
             Feature::PrioritySupport => "priority_support",
             Feature::ApiAccess => "api_access",
-            Feature::UnlimitedScans => "unlimited_scans",
-            Feature::UnlimitedHosts => "unlimited_hosts",
+            Feature::ScheduledDiscovery => "scheduled_discovery",
+            Feature::DaemonPoll => "daemon_poll",
             Feature::ServiceDefinitions => "service_definitions",
             Feature::DockerIntegration => "docker_integration",
             Feature::RealTimeUpdates => "real_time_updates",
@@ -82,8 +82,8 @@ impl EntityMetadataProvider for Feature {
 impl TypeMetadataProvider for Feature {
     fn category(&self) -> &'static str {
         match self {
-            Feature::UnlimitedScans
-            | Feature::UnlimitedHosts
+            Feature::ScheduledDiscovery
+            | Feature::DaemonPoll
             | Feature::ServiceDefinitions
             | Feature::DockerIntegration
             | Feature::SnmpIntegration
@@ -125,8 +125,8 @@ impl TypeMetadataProvider for Feature {
             Feature::EmailSupport => "Email Support",
             Feature::CommunitySupport => "Community Support",
             Feature::PrioritySupport => "Priority Support",
-            Feature::UnlimitedScans => "Unlimited Scans",
-            Feature::UnlimitedHosts => "Unlimited Hosts",
+            Feature::ScheduledDiscovery => "Scheduled Discovery",
+            Feature::DaemonPoll => "DaemonPoll Mode",
             Feature::ServiceDefinitions => "200+ Service Definitions",
             Feature::DockerIntegration => "Docker Integration",
             Feature::RealTimeUpdates => "Real-time Updates",
@@ -161,8 +161,10 @@ impl TypeMetadataProvider for Feature {
             Feature::Whitelabeling => "We deploy Scanopy to a custom domain with your branding",
             Feature::LiveChatSupport => "Access to the Scanopy team via live chat",
             Feature::CommunitySupport => "Community support via GitHub issues and discussions",
-            Feature::UnlimitedScans => "No limits on network discovery scans",
-            Feature::UnlimitedHosts => "Visualize as many hosts as your network has",
+            Feature::ScheduledDiscovery => "Schedule automatic network discovery scans",
+            Feature::DaemonPoll => {
+                "Daemon-initiated polling — no open ports required on the daemon"
+            }
             Feature::ServiceDefinitions => {
                 "Auto-detect databases, containers, web servers, and more"
             }

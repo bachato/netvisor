@@ -11,6 +11,9 @@
 	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
+	import { useOrganizationQuery } from '$lib/features/organizations/queries';
+	import { billingPlans } from '$lib/shared/stores/metadata';
+	import UpgradeBadge from '$lib/shared/components/UpgradeBadge.svelte';
 	import { fieldDefs } from '../config';
 	import type { Daemon } from '../types/base';
 	import {
@@ -63,9 +66,16 @@
 
 	const configQuery = useConfigQuery();
 	const currentUserQuery = useCurrentUserQuery();
+	const organizationQuery = useOrganizationQuery();
 
 	// Get current user ID for user_id field
 	let currentUserId = $derived(currentUserQuery.data?.id ?? null);
+
+	let org = $derived(organizationQuery.data);
+	let hasDaemonPoll = $derived.by(() => {
+		if (!org?.plan?.type) return true;
+		return billingPlans.getMetadata(org.plan.type).features.daemon_poll;
+	});
 
 	// Separate field defs - conditionally exclude mode and daemonUrl if showModeSelect is false
 	// (daemonUrl depends on mode selection, so both should be hidden until Install Now)
@@ -401,10 +411,19 @@
 							label={def.label()}
 							{field}
 							id={def.id}
-							options={(def.options ?? []).map((opt) => ({ value: opt.value, label: opt.label() }))}
+							options={(def.options ?? []).map((opt) => ({
+								value: opt.value,
+								label: opt.label(),
+								disabled: def.id === 'mode' && opt.value === 'daemon_poll' && !hasDaemonPoll
+							}))}
 							helpText={def.helpText()}
 							disabled={def.disabled?.(isNewDaemon) ?? false}
 						/>
+						{#if def.id === 'mode' && !hasDaemonPoll}
+							<div class="mt-1">
+								<UpgradeBadge feature="DaemonPoll Mode" />
+							</div>
+						{/if}
 					{/snippet}
 				</form.Field>
 			{/if}

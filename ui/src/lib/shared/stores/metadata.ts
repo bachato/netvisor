@@ -36,6 +36,8 @@ export interface BillingPlanMetadata {
 		live_chat_support: boolean;
 		embeds: boolean;
 		email_support: boolean;
+		scheduled_discovery: boolean;
+		daemon_poll: boolean;
 	};
 	is_commercial: boolean;
 	hosting: string;

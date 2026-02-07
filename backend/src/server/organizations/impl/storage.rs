@@ -75,6 +75,8 @@ impl Storable for Organization {
                     plan,
                     plan_status,
                     onboarding,
+                    has_payment_method,
+                    trial_end_date,
                     hubspot_company_id,
                 },
         } = self.clone();
@@ -89,6 +91,8 @@ impl Storable for Organization {
                 "plan",
                 "plan_status",
                 "onboarding",
+                "has_payment_method",
+                "trial_end_date",
                 "hubspot_company_id",
             ],
             vec![
@@ -100,6 +104,8 @@ impl Storable for Organization {
                 SqlValue::OptionBillingPlan(plan),
                 SqlValue::OptionalString(plan_status),
                 SqlValue::TelemetryOperation(onboarding),
+                SqlValue::Bool(has_payment_method),
+                SqlValue::OptionTimestamp(trial_end_date),
                 SqlValue::OptionalString(hubspot_company_id),
             ],
         ))
@@ -125,6 +131,8 @@ impl Storable for Organization {
                 plan,
                 plan_status: row.get("plan_status"),
                 onboarding,
+                has_payment_method: row.get("has_payment_method"),
+                trial_end_date: row.get("trial_end_date"),
                 hubspot_company_id: row.get("hubspot_company_id"),
             },
         })

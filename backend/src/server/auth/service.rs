@@ -232,6 +232,8 @@ impl AuthService {
                         plan,
                         plan_status: None,
                         onboarding,
+                        has_payment_method: false,
+                        trial_end_date: None,
                         hubspot_company_id: None,
                     }),
                     AuthenticatedEntity::System,

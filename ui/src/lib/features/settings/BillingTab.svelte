@@ -1,9 +1,14 @@
 <script lang="ts">
-	import { CheckCircle, AlertCircle } from 'lucide-svelte';
+	import { CheckCircle, AlertCircle, CreditCard } from 'lucide-svelte';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
 	import { billingPlans } from '$lib/shared/stores/metadata';
-	import { useCustomerPortalMutation } from '$lib/features/billing/queries';
+	import { trackEvent } from '$lib/shared/utils/analytics';
+	import {
+		useCustomerPortalMutation,
+		useSetupPaymentMethodMutation
+	} from '$lib/features/billing/queries';
+	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import InfoCard from '$lib/shared/components/data/InfoCard.svelte';
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
@@ -48,8 +53,13 @@
 	const organizationQuery = useOrganizationQuery();
 	let org = $derived(organizationQuery.data);
 
+	// Host count query (limit 1 to get total count from pagination)
+	const hostsQuery = useHostsQuery({ limit: 1 });
+	let hostCount = $derived(hostsQuery.data?.pagination?.total_count ?? 0);
+
 	// Customer portal mutation
 	const customerPortalMutation = useCustomerPortalMutation();
+	const setupPaymentMutation = useSetupPaymentMethodMutation();
 
 	let seatCount = $derived(usersData.length);
 	let networkCount = $derived(networksData.length);
@@ -90,9 +100,45 @@
 		}
 	}
 
+	let isFree = $derived(org?.plan?.type === 'Free');
+	let hasPaymentMethod = $derived(org?.has_payment_method ?? false);
+	let trialEndDate = $derived(org?.trial_end_date ? new Date(org.trial_end_date) : null);
+	let trialDaysLeft = $derived.by(() => {
+		if (!trialEndDate) return null;
+		const now = new Date();
+		const diff = trialEndDate.getTime() - now.getTime();
+		return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+	});
+
+	// Track billing tab view
+	$effect(() => {
+		if (isOpen && org) {
+			trackEvent('billing_tab_viewed', {
+				plan_type: org.plan?.type,
+				plan_status: org.plan_status
+			});
+		}
+	});
+
 	async function handleManageSubscription() {
+		trackEvent('billing_portal_opened', { plan_type: org?.plan?.type });
 		try {
 			const url = await customerPortalMutation.mutateAsync();
+			if (url) {
+				window.location.href = url;
+			}
+		} catch {
+			// Error handling is done by the mutation's onError
+		}
+	}
+
+	async function handleSetupPayment() {
+		trackEvent('payment_method_setup_initiated', {
+			plan_status: org?.plan_status,
+			trial_days_left: trialDaysLeft
+		});
+		try {
+			const url = await setupPaymentMutation.mutateAsync();
 			if (url) {
 				window.location.href = url;
 			}
@@ -218,6 +264,39 @@
 										</div>
 									</div>
 								{/if}
+
+								<!-- Hosts Usage -->
+								{#if org.plan.included_hosts !== null}
+									<div class="border-t border-gray-700 pt-3">
+										<div class="flex items-baseline justify-between">
+											<div>
+												<p class="text-primary font-medium">Hosts</p>
+												<p class="text-secondary text-sm">
+													{hostCount} / {org.plan.included_hosts} used
+												</p>
+											</div>
+											{#if hostCount >= (org.plan.included_hosts ?? 0)}
+												<p class="text-sm text-amber-400">At limit</p>
+											{:else}
+												<p class="text-tertiary text-sm">{common_included()}</p>
+											{/if}
+										</div>
+										{#if hostCount > 0}
+											<div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
+												<div
+													class="h-full rounded-full transition-all {hostCount >=
+													(org.plan.included_hosts ?? 0)
+														? 'bg-amber-500'
+														: 'bg-blue-500'}"
+													style="width: {Math.min(
+														100,
+														(hostCount / (org.plan.included_hosts || 1)) * 100
+													)}%"
+												></div>
+											</div>
+										{/if}
+									</div>
+								{/if}
 							{/if}
 
 							{#if org.plan_status === 'trialing'}
@@ -243,11 +322,52 @@
 					</svelte:fragment>
 				</InfoCard>
 
+				<!-- Trial Countdown -->
+				{#if org.plan_status === 'trialing' && trialDaysLeft !== null}
+					<InfoCard>
+						<div class="flex items-center justify-between">
+							<div>
+								<p class="text-primary text-sm font-medium">Trial ends in {trialDaysLeft} days</p>
+								{#if !hasPaymentMethod}
+									<p class="text-secondary mt-1 text-xs">
+										Add a payment method to continue after the trial
+									</p>
+								{/if}
+							</div>
+							{#if !hasPaymentMethod}
+								<button
+									onclick={handleSetupPayment}
+									class="btn-primary flex items-center gap-1.5 text-sm"
+								>
+									<CreditCard size={14} />
+									Add Payment Method
+								</button>
+							{/if}
+						</div>
+					</InfoCard>
+				{/if}
+
+				<!-- Free Plan - Payment Method CTA -->
+				{#if isFree && !hasPaymentMethod}
+					<InfoCard>
+						<div class="flex items-center justify-between">
+							<div>
+								<p class="text-primary text-sm font-medium">Upgrade your plan</p>
+								<p class="text-secondary mt-1 text-xs">
+									Get scheduled discovery, DaemonPoll mode, and more hosts
+								</p>
+							</div>
+						</div>
+					</InfoCard>
+				{/if}
+
 				<!-- Actions -->
 				<div class="space-y-3">
-					<button onclick={handleManageSubscription} class="btn-primary w-full">
-						{settings_billing_manageSubscription()}
-					</button>
+					{#if !isFree}
+						<button onclick={handleManageSubscription} class="btn-primary w-full">
+							{settings_billing_manageSubscription()}
+						</button>
+					{/if}
 				</div>
 
 				<!-- Additional Info -->
