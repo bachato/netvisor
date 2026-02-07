@@ -75,7 +75,7 @@ impl Storable for Organization {
                     plan,
                     plan_status,
                     onboarding,
-                    hubspot_company_id,
+                    brevo_company_id,
                 },
         } = self.clone();
 
@@ -89,7 +89,7 @@ impl Storable for Organization {
                 "plan",
                 "plan_status",
                 "onboarding",
-                "hubspot_company_id",
+                "brevo_company_id",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -100,7 +100,7 @@ impl Storable for Organization {
                 SqlValue::OptionBillingPlan(plan),
                 SqlValue::OptionalString(plan_status),
                 SqlValue::TelemetryOperation(onboarding),
-                SqlValue::OptionalString(hubspot_company_id),
+                SqlValue::OptionalString(brevo_company_id),
             ],
         ))
     }
@@ -125,7 +125,7 @@ impl Storable for Organization {
                 plan,
                 plan_status: row.get("plan_status"),
                 onboarding,
-                hubspot_company_id: row.get("hubspot_company_id"),
+                brevo_company_id: row.get("brevo_company_id"),
             },
         })
     }
@@ -179,7 +179,7 @@ impl Entity for Organization {
         self.base.plan_status = existing.base.plan_status.clone();
         // Onboarding state is server-managed
         self.base.onboarding = existing.base.onboarding.clone();
-        // HubSpot company ID is server-managed
-        self.base.hubspot_company_id = existing.base.hubspot_company_id.clone();
+        // Brevo company ID is server-managed
+        self.base.brevo_company_id = existing.base.brevo_company_id.clone();
     }
 }

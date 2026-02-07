@@ -333,7 +333,7 @@ pub fn organization() -> Organization {
             plan: None,
             plan_status: None,
             onboarding: vec![],
-            hubspot_company_id: None,
+            brevo_company_id: None,
         },
     }
 }

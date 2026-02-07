@@ -27,9 +27,9 @@ pub struct OrganizationBase {
     pub plan_status: Option<String>,
     #[schema(read_only, required)]
     pub onboarding: Vec<TelemetryOperation>,
-    /// HubSpot company ID - internal, not exposed to API
+    /// Brevo company ID - internal, not exposed to API
     #[serde(default, skip_serializing)]
-    pub hubspot_company_id: Option<String>,
+    pub brevo_company_id: Option<String>,
 }
 
 #[derive(

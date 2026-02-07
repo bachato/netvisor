@@ -232,7 +232,7 @@ impl AuthService {
                         plan,
                         plan_status: None,
                         onboarding,
-                        hubspot_company_id: None,
+                        brevo_company_id: None,
                     }),
                     AuthenticatedEntity::System,
                 )
@@ -286,7 +286,7 @@ impl AuthService {
         if is_new_org {
             let authentication: AuthenticatedEntity = user.clone().into();
 
-            // Include org_name and onboarding data in metadata for HubSpot sync
+            // Include org_name and onboarding data in metadata for Brevo sync
             let org_name = pending_setup
                 .as_ref()
                 .map(|s| s.org_name.clone())

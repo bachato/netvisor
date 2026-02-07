@@ -645,7 +645,7 @@
           "internal"
         ],
         "summary": "Submit enterprise plan inquiry",
-        "description": "Dual submission: Form API (for notifications) + CRM API (for Company properties).\nRequires authentication to link the inquiry to an organization.",
+        "description": "Updates Brevo contact/company with inquiry data, creates a deal, and\ntracks an event for automation triggers. Requires authentication to\nlink the inquiry to an organization.",
         "operationId": "submit_enterprise_inquiry",
         "requestBody": {
           "content": {
@@ -669,7 +669,7 @@
             }
           },
           "400": {
-            "description": "Invalid request or HubSpot not configured",
+            "description": "Invalid request or Brevo not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -11814,14 +11814,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-04T00:49:07.097718Z",
-              "id": "2077a117-c39f-48b4-ad24-fce63e10ad13",
+              "created_at": "2026-02-07T04:11:11.156527Z",
+              "id": "d4341756-3b13-4f86-899b-b13f7d4a5f1c",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-04T00:49:07.097718Z"
+              "updated_at": "2026-02-07T04:11:11.156527Z"
             }
           },
           "error": {
@@ -12553,14 +12553,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-04T00:49:07.083101Z",
-                      "id": "88785e7e-493d-49f3-9f54-cd1ac086304b",
+                      "created_at": "2026-02-07T04:11:11.142831Z",
+                      "id": "c1239d6e-e7d7-475e-a9f7-1b0dbc75a155",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-04T00:49:07.083101Z"
+                      "updated_at": "2026-02-07T04:11:11.142831Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12569,7 +12569,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Caddy",
+                  "service_definition": "LinkStack",
                   "source": {
                     "type": "Manual"
                   },
@@ -13385,14 +13385,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-04T00:49:07.092547Z",
-                  "id": "9251f957-e077-4ffa-a13e-b4cd7dfdf9fd",
+                  "created_at": "2026-02-07T04:11:11.152407Z",
+                  "id": "55ae4684-5923-4f80-8e7a-5e10617eec93",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-04T00:49:07.092547Z"
+                  "updated_at": "2026-02-07T04:11:11.152407Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13401,7 +13401,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Caddy",
+              "service_definition": "LinkStack",
               "source": {
                 "type": "Manual"
               },
@@ -14561,14 +14561,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-04T00:49:07.083347Z",
-          "id": "942b08f5-a494-4126-b099-ef71daef46a3",
+          "created_at": "2026-02-07T04:11:11.143062Z",
+          "id": "ec7c4ad1-e20f-4aa0-bdef-0336c15a19d1",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-04T00:49:07.083347Z"
+          "updated_at": "2026-02-07T04:11:11.143062Z"
         }
       },
       "BindingBase": {
@@ -15022,7 +15022,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Caddy",
+              "service_definition": "LinkStack",
               "tags": [],
               "virtualization": null
             }
@@ -16208,16 +16208,9 @@
             "type": "string",
             "description": "Contact email"
           },
-          "hutk": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "HubSpot tracking cookie (hutk) for linking form submission to visitor"
-          },
           "message": {
             "type": "string",
-            "description": "Message/use case description (maps to HubSpot \"message\" field)"
+            "description": "Message/use case description"
           },
           "name": {
             "type": "string",
@@ -16908,14 +16901,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-04T00:49:07.082662Z",
-                  "id": "b3c6e59f-6b93-4a43-aca9-784840a9578a",
+                  "created_at": "2026-02-07T04:11:11.142518Z",
+                  "id": "221eb377-f215-44f1-a3a7-6127db3a7f14",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-04T00:49:07.082662Z"
+                  "updated_at": "2026-02-07T04:11:11.142518Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16924,7 +16917,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Caddy",
+              "service_definition": "LinkStack",
               "source": {
                 "type": "Manual"
               },
@@ -18810,14 +18803,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-04T00:49:07.072866Z",
-                        "id": "e9b9331b-68a8-4268-a134-39b58da29b32",
+                        "created_at": "2026-02-07T04:11:11.135798Z",
+                        "id": "05683850-5486-478f-b6ef-7ddc23347187",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-04T00:49:07.072866Z"
+                        "updated_at": "2026-02-07T04:11:11.135798Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18826,7 +18819,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Caddy",
+                    "service_definition": "LinkStack",
                     "source": {
                       "type": "Manual"
                     },
@@ -18903,14 +18896,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-04T00:49:07.091213Z",
-                    "id": "1dae3f4e-fac6-47b3-be31-f1e37c02953a",
+                    "created_at": "2026-02-07T04:11:11.151191Z",
+                    "id": "9203b612-ccb4-4ac6-b6cb-f3461ac4a772",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-04T00:49:07.091213Z"
+                    "updated_at": "2026-02-07T04:11:11.151191Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18919,7 +18912,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Caddy",
+                "service_definition": "LinkStack",
                 "source": {
                   "type": "Manual"
                 },
@@ -19892,14 +19885,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-04T00:49:07.083263Z",
-              "id": "36cea2fe-30ee-4e1c-8193-67e29e412764",
+              "created_at": "2026-02-07T04:11:11.142982Z",
+              "id": "6ba923a1-3c2f-4dc2-ad89-d5e97d9b3739",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-04T00:49:07.083263Z"
+              "updated_at": "2026-02-07T04:11:11.142982Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19908,7 +19901,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Caddy",
+          "service_definition": "LinkStack",
           "source": {
             "type": "Manual"
           },
