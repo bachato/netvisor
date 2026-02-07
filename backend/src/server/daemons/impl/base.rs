@@ -129,10 +129,12 @@ impl Display for Daemon {
 pub enum DaemonMode {
     /// Server polls daemon (daemon cannot make outbound connections)
     #[serde(alias = "push", alias = "Push")]
+    #[value(alias = "push")]
     ServerPoll,
     /// Daemon polls server (default, firewall-friendly)
     #[default]
     #[serde(alias = "pull", alias = "Pull")]
+    #[value(alias = "pull")]
     DaemonPoll,
 }
 
