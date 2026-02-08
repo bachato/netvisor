@@ -102,6 +102,10 @@ pub struct ContactProperties {
     /// Whether user opted in to marketing communications at registration
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scanopy_marketing_opt_in: Option<bool>,
+
+    /// How user heard about Scanopy
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scanopy_referral_source: Option<String>,
 }
 
 impl ContactProperties {
@@ -156,6 +160,11 @@ impl ContactProperties {
 
     pub fn with_marketing_opt_in(mut self, opt_in: bool) -> Self {
         self.scanopy_marketing_opt_in = Some(opt_in);
+        self
+    }
+
+    pub fn with_referral_source(mut self, source: impl Into<String>) -> Self {
+        self.scanopy_referral_source = Some(source.into());
         self
     }
 }
@@ -285,6 +294,10 @@ pub struct CompanyProperties {
     /// Date of inquiry submission (ISO 8601)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scanopy_inquiry_date: Option<String>,
+
+    /// How user heard about Scanopy
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scanopy_referral_source: Option<String>,
 
     /// Flag for non-commercial orgs that were synced before filtering was added
     /// Used to identify records that can be bulk-deleted in HubSpot
@@ -451,6 +464,11 @@ impl CompanyProperties {
     pub fn with_inquiry_date(mut self, date: DateTime<Utc>) -> Self {
         // HubSpot datetime properties use Unix timestamp in milliseconds
         self.scanopy_inquiry_date = Some(date.timestamp_millis().to_string());
+        self
+    }
+
+    pub fn with_referral_source(mut self, source: impl Into<String>) -> Self {
+        self.scanopy_referral_source = Some(source.into());
         self
     }
 

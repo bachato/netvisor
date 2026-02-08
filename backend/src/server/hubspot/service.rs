@@ -210,6 +210,29 @@ impl HubSpotService {
             .get("marketing_opt_in")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
+        let referral_source = event
+            .metadata
+            .get("referral_source")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let referral_source_other = event
+            .metadata
+            .get("referral_source_other")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        // Format referral source for HubSpot (combine "other" with free text)
+        let formatted_referral_source = referral_source.map(|source| {
+            if source == "other" {
+                if let Some(ref other_text) = referral_source_other {
+                    format!("other: {}", other_text)
+                } else {
+                    source
+                }
+            } else {
+                source
+            }
+        });
 
         // Build contact properties
         let mut contact_props = ContactProperties::new()
@@ -226,6 +249,9 @@ impl HubSpotService {
         }
         if let Some(title) = job_title {
             contact_props = contact_props.with_jobtitle(title);
+        }
+        if let Some(ref source) = formatted_referral_source {
+            contact_props = contact_props.with_referral_source(source);
         }
 
         let org_filter = StorableFilter::<Network>::new_from_org_id(&event.organization_id);
@@ -246,6 +272,9 @@ impl HubSpotService {
         }
         if let Some(size) = company_size {
             company_props = company_props.with_company_size(size);
+        }
+        if let Some(source) = formatted_referral_source {
+            company_props = company_props.with_referral_source(source);
         }
 
         // Sync to HubSpot and get the company ID

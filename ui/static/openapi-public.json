@@ -9282,14 +9282,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-07T04:22:55.834517Z",
-              "id": "9f869f0f-a1c7-4fd3-81c6-f9c9cb327618",
+              "created_at": "2026-02-07T20:28:38.260415Z",
+              "id": "5281cc43-3781-4d75-9494-7a098a2378ed",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-07T04:22:55.834517Z"
+              "updated_at": "2026-02-07T20:28:38.260415Z"
             }
           },
           "error": {
@@ -10067,14 +10067,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-07T04:22:55.817902Z",
-                      "id": "38c22a0b-0dac-42b4-be06-e1e574bf7101",
+                      "created_at": "2026-02-07T20:28:38.247854Z",
+                      "id": "6e089fe8-9bbc-4d8d-8903-1fc58e54ed57",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-07T04:22:55.817902Z"
+                      "updated_at": "2026-02-07T20:28:38.247854Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10083,7 +10083,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "NTP Server",
+                  "service_definition": "Philips Hue Bridge",
                   "source": {
                     "type": "Manual"
                   },
@@ -10899,14 +10899,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-07T04:22:55.829533Z",
-                  "id": "76af7a77-19ad-49eb-89d5-b4c37a28aedb",
+                  "created_at": "2026-02-07T20:28:38.255945Z",
+                  "id": "ca3aecbd-4bd0-48bb-8e22-72b768b210ca",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-07T04:22:55.829533Z"
+                  "updated_at": "2026-02-07T20:28:38.255945Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -10915,7 +10915,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "NTP Server",
+              "service_definition": "Philips Hue Bridge",
               "source": {
                 "type": "Manual"
               },
@@ -12117,14 +12117,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-07T04:22:55.818126Z",
-          "id": "d439670e-056a-4c69-81ac-9705caf20037",
+          "created_at": "2026-02-07T20:28:38.248060Z",
+          "id": "f6b8fa37-45ea-4f68-a12a-5e5659ade495",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-07T04:22:55.818126Z"
+          "updated_at": "2026-02-07T20:28:38.248060Z"
         }
       },
       "BindingBase": {
@@ -12618,7 +12618,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "NTP Server",
+              "service_definition": "Philips Hue Bridge",
               "tags": [],
               "virtualization": null
             }
@@ -14508,14 +14508,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-07T04:22:55.817600Z",
-                  "id": "2d1b5ff2-1cd2-47a1-b8fb-fb75119022d2",
+                  "created_at": "2026-02-07T20:28:38.247574Z",
+                  "id": "fbc5155c-7dd4-47b3-877a-d54603e23ab6",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-07T04:22:55.817600Z"
+                  "updated_at": "2026-02-07T20:28:38.247574Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14524,7 +14524,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "NTP Server",
+              "service_definition": "Philips Hue Bridge",
               "source": {
                 "type": "Manual"
               },
@@ -15931,6 +15931,34 @@
           "step"
         ],
         "properties": {
+          "company_size": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Company size"
+          },
+          "job_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Job title/role"
+          },
+          "referral_source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Referral source (how they heard about Scanopy)"
+          },
+          "referral_source_other": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Free-text referral source (when \"other\" is selected)"
+          },
           "step": {
             "type": "string"
           },
@@ -16422,14 +16450,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-07T04:22:55.807806Z",
-                        "id": "74952390-eda4-45d9-aaca-9f68228ac9b1",
+                        "created_at": "2026-02-07T20:28:38.241740Z",
+                        "id": "f38f4dd3-0f60-4f80-acfc-7d0dfc631bb2",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-07T04:22:55.807806Z"
+                        "updated_at": "2026-02-07T20:28:38.241740Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16438,7 +16466,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "NTP Server",
+                    "service_definition": "Philips Hue Bridge",
                     "source": {
                       "type": "Manual"
                     },
@@ -16515,14 +16543,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-07T04:22:55.828596Z",
-                    "id": "f66e7c8c-569a-4855-9238-3ee2efc21bd7",
+                    "created_at": "2026-02-07T20:28:38.254788Z",
+                    "id": "e604343a-2cc1-4eeb-b704-4d115494bf15",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-07T04:22:55.828596Z"
+                    "updated_at": "2026-02-07T20:28:38.254788Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16531,7 +16559,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "NTP Server",
+                "service_definition": "Philips Hue Bridge",
                 "source": {
                   "type": "Manual"
                 },
@@ -17519,14 +17547,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-07T04:22:55.818048Z",
-              "id": "2d226081-d9bb-4c3e-b119-2e0dd2205c2a",
+              "created_at": "2026-02-07T20:28:38.247986Z",
+              "id": "0be57495-0911-428f-a77f-6897b3040f50",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-07T04:22:55.818048Z"
+              "updated_at": "2026-02-07T20:28:38.247986Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17535,7 +17563,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "NTP Server",
+          "service_definition": "Philips Hue Bridge",
           "source": {
             "type": "Manual"
           },
