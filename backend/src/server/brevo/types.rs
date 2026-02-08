@@ -287,11 +287,6 @@ impl CompanyAttributes {
         self
     }
 
-    pub fn with_urgency(mut self, urgency: impl Into<String>) -> Self {
-        self.scanopy_inquiry_urgency = Some(urgency.into());
-        self
-    }
-
     pub fn with_inquiry_plan_type(mut self, plan_type: impl Into<String>) -> Self {
         self.scanopy_inquiry_plan_type = Some(plan_type.into());
         self
@@ -316,66 +311,126 @@ impl CompanyAttributes {
     pub fn to_attributes(&self) -> HashMap<String, serde_json::Value> {
         let mut attrs = HashMap::new();
 
-        macro_rules! insert_opt {
-            ($field:ident, $key:expr) => {
-                if let Some(v) = &self.$field {
-                    attrs.insert($key.to_string(), serde_json::json!(v));
-                }
-            };
+        if let Some(v) = &self.scanopy_org_id {
+            attrs.insert("scanopy_org_id".to_string(), serde_json::json!(v));
         }
-
-        macro_rules! insert_opt_num {
-            ($field:ident, $key:expr) => {
-                if let Some(v) = self.$field {
-                    attrs.insert($key.to_string(), serde_json::json!(v));
-                }
-            };
+        if let Some(v) = &self.scanopy_org_type {
+            attrs.insert("scanopy_org_type".to_string(), serde_json::json!(v));
         }
-
-        insert_opt!(scanopy_org_id, "scanopy_org_id");
-        insert_opt!(scanopy_org_type, "scanopy_org_type");
-        insert_opt!(scanopy_company_size, "scanopy_company_size");
-        insert_opt!(scanopy_plan_type, "scanopy_plan_type");
-        insert_opt!(scanopy_plan_status, "scanopy_plan_status");
-        insert_opt_num!(scanopy_mrr, "scanopy_mrr");
-        insert_opt_num!(scanopy_network_count, "scanopy_network_count");
-        insert_opt_num!(scanopy_host_count, "scanopy_host_count");
-        insert_opt_num!(scanopy_user_count, "scanopy_user_count");
-        insert_opt_num!(scanopy_network_limit, "scanopy_network_limit");
-        insert_opt_num!(scanopy_seat_limit, "scanopy_seat_limit");
-        insert_opt!(scanopy_created_date, "scanopy_created_date");
-        insert_opt!(scanopy_last_discovery_date, "scanopy_last_discovery_date");
-        insert_opt_num!(scanopy_discovery_count, "scanopy_discovery_count");
-        insert_opt!(scanopy_first_daemon_date, "scanopy_first_daemon_date");
-        insert_opt!(scanopy_first_discovery_date, "scanopy_first_discovery_date");
-        insert_opt!(scanopy_trial_started_date, "scanopy_trial_started_date");
-        insert_opt!(
-            scanopy_checkout_completed_date,
-            "scanopy_checkout_completed_date"
-        );
-        insert_opt!(scanopy_first_network_date, "scanopy_first_network_date");
-        insert_opt!(scanopy_first_tag_date, "scanopy_first_tag_date");
-        insert_opt!(scanopy_first_api_key_date, "scanopy_first_api_key_date");
-        insert_opt!(
-            scanopy_first_snmp_credential_date,
-            "scanopy_first_snmp_credential_date"
-        );
-        insert_opt!(
-            scanopy_first_invite_sent_date,
-            "scanopy_first_invite_sent_date"
-        );
-        insert_opt!(
-            scanopy_first_invite_accepted_date,
-            "scanopy_first_invite_accepted_date"
-        );
-        insert_opt!(scanopy_inquiry_urgency, "scanopy_urgency");
-        insert_opt!(scanopy_inquiry_plan_type, "scanopy_inquiry_plan_type");
-        insert_opt!(scanopy_inquiry_urgency, "scanopy_inquiry_urgency");
-        insert_opt_num!(
-            scanopy_inquiry_network_count,
-            "scanopy_inquiry_network_count"
-        );
-        insert_opt!(scanopy_inquiry_date, "scanopy_inquiry_date");
+        if let Some(v) = &self.scanopy_company_size {
+            attrs.insert("scanopy_company_size".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = &self.scanopy_plan_type {
+            attrs.insert("scanopy_plan_type".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = &self.scanopy_plan_status {
+            attrs.insert("scanopy_plan_status".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = self.scanopy_mrr {
+            attrs.insert("scanopy_mrr".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = self.scanopy_network_count {
+            attrs.insert("scanopy_network_count".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = self.scanopy_host_count {
+            attrs.insert("scanopy_host_count".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = self.scanopy_user_count {
+            attrs.insert("scanopy_user_count".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = self.scanopy_network_limit {
+            attrs.insert("scanopy_network_limit".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = self.scanopy_seat_limit {
+            attrs.insert("scanopy_seat_limit".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = &self.scanopy_created_date {
+            attrs.insert("scanopy_created_date".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = &self.scanopy_last_discovery_date {
+            attrs.insert(
+                "scanopy_last_discovery_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = self.scanopy_discovery_count {
+            attrs.insert("scanopy_discovery_count".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = &self.scanopy_first_daemon_date {
+            attrs.insert(
+                "scanopy_first_daemon_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_discovery_date {
+            attrs.insert(
+                "scanopy_first_discovery_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_trial_started_date {
+            attrs.insert(
+                "scanopy_trial_started_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_checkout_completed_date {
+            attrs.insert(
+                "scanopy_checkout_completed_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_network_date {
+            attrs.insert(
+                "scanopy_first_network_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_tag_date {
+            attrs.insert("scanopy_first_tag_date".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = &self.scanopy_first_api_key_date {
+            attrs.insert(
+                "scanopy_first_api_key_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_snmp_credential_date {
+            attrs.insert(
+                "scanopy_first_snmp_credential_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_invite_sent_date {
+            attrs.insert(
+                "scanopy_first_invite_sent_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_invite_accepted_date {
+            attrs.insert(
+                "scanopy_first_invite_accepted_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_inquiry_plan_type {
+            attrs.insert(
+                "scanopy_inquiry_plan_type".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_inquiry_urgency {
+            attrs.insert("scanopy_inquiry_urgency".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = self.scanopy_inquiry_network_count {
+            attrs.insert(
+                "scanopy_inquiry_network_count".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_inquiry_date {
+            attrs.insert("scanopy_inquiry_date".to_string(), serde_json::json!(v));
+        }
 
         attrs
     }
