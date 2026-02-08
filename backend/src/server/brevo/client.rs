@@ -45,7 +45,9 @@ impl BrevoClient {
         status == reqwest::StatusCode::TOO_MANY_REQUESTS || status.is_server_error()
     }
 
-    /// Upsert a contact (create or update by email)
+    /// Upsert a contact (create or update by email).
+    /// Brevo returns 201 with `{id}` on create, 204 (no body) on update.
+    /// On 204, we fetch the contact ID via GET /contacts/{email}.
     pub async fn upsert_contact(&self, email: &str, attributes: ContactAttributes) -> Result<i64> {
         let url = format!("{}/contacts", BREVO_API_BASE);
         let body = CreateContactRequest {
@@ -69,12 +71,18 @@ impl BrevoClient {
 
             let status = response.status();
 
-            if status.is_success() {
+            // 201: new contact created, response has {id}
+            if status == reqwest::StatusCode::CREATED {
                 let result: CreateContactResponse = response
                     .json()
                     .await
                     .map_err(|e| anyhow!("Failed to parse Brevo response: {}", e))?;
                 return Ok(result.id);
+            }
+
+            // 204: existing contact updated, no body — need to fetch ID
+            if status == reqwest::StatusCode::NO_CONTENT {
+                return Err(anyhow!("Brevo contact updated (needs ID lookup)"));
             }
 
             let error_body = response
@@ -93,15 +101,62 @@ impl BrevoClient {
             Err(anyhow!("Brevo API error {}: {}", status, error_body))
         };
 
-        operation
+        let result = operation
             .retry(
                 ExponentialBuilder::default()
                     .with_max_times(3)
                     .with_min_delay(std::time::Duration::from_millis(500))
                     .with_max_delay(std::time::Duration::from_secs(10)),
             )
-            .when(|e| e.to_string().contains("retryable"))
+            .when(|e| {
+                let msg = e.to_string();
+                msg.contains("retryable") && !msg.contains("needs ID lookup")
+            })
+            .await;
+
+        match result {
+            Ok(id) => Ok(id),
+            Err(e) if e.to_string().contains("needs ID lookup") => {
+                self.get_contact_id_by_email(email).await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Get a contact's ID by email (GET /contacts/{email})
+    async fn get_contact_id_by_email(&self, email: &str) -> Result<i64> {
+        self.wait_for_rate_limit().await;
+
+        let url = format!("{}/contacts/{}", BREVO_API_BASE, urlencoding::encode(email));
+
+        let response = self
+            .client
+            .get(&url)
+            .header("api-key", &self.api_key)
+            .send()
             .await
+            .map_err(|e| anyhow!("Brevo get contact failed: {}", e))?;
+
+        let status = response.status();
+
+        if status.is_success() {
+            let result: CreateContactResponse = response
+                .json()
+                .await
+                .map_err(|e| anyhow!("Failed to parse Brevo contact response: {}", e))?;
+            return Ok(result.id);
+        }
+
+        let error_body = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Unknown error".to_string());
+
+        Err(anyhow!(
+            "Brevo get contact error {}: {}",
+            status,
+            error_body
+        ))
     }
 
     /// Update a contact by email (PUT /contacts/{email}, returns 204)
@@ -279,7 +334,9 @@ impl BrevoClient {
             .await
     }
 
-    /// Find a company by scanopy_org_id attribute
+    /// Find a company by scanopy_org_id attribute.
+    /// Returns Ok(None) if the attribute doesn't exist in Brevo yet (400 error),
+    /// allowing callers to fall through to creating a new company.
     pub async fn find_company_by_org_id(&self, org_id: &str) -> Result<Option<String>> {
         let url = format!(
             "{}/companies?filters={}",
@@ -314,6 +371,17 @@ impl BrevoClient {
                 .text()
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
+
+            // 400 means the filter attribute doesn't exist in Brevo yet —
+            // treat as "no results" so we fall through to creating a new company
+            if status == reqwest::StatusCode::BAD_REQUEST {
+                tracing::debug!(
+                    org_id = %org_id,
+                    error = %error_body,
+                    "Brevo company search returned 400 (attribute may not exist yet), treating as no results"
+                );
+                return Ok(None);
+            }
 
             if Self::is_retryable_error(status) {
                 return Err(anyhow!(

@@ -10,9 +10,8 @@ pub struct ContactAttributes {
     pub email: Option<String>,
     pub firstname: Option<String>,
     pub lastname: Option<String>,
-    pub jobtitle: Option<String>,
+    pub job_title: Option<String>,
     pub scanopy_user_id: Option<String>,
-    pub scanopy_org_id: Option<String>,
     pub scanopy_role: Option<String>,
     pub scanopy_signup_source: Option<String>,
     pub scanopy_use_case: Option<String>,
@@ -37,11 +36,6 @@ impl ContactAttributes {
 
     pub fn with_user_id(mut self, user_id: Uuid) -> Self {
         self.scanopy_user_id = Some(user_id.to_string());
-        self
-    }
-
-    pub fn with_org_id(mut self, org_id: Uuid) -> Self {
-        self.scanopy_org_id = Some(org_id.to_string());
         self
     }
 
@@ -70,8 +64,8 @@ impl ContactAttributes {
         self
     }
 
-    pub fn with_jobtitle(mut self, title: impl Into<String>) -> Self {
-        self.jobtitle = Some(title.into());
+    pub fn with_job_title(mut self, title: impl Into<String>) -> Self {
+        self.job_title = Some(title.into());
         self
     }
 
@@ -95,14 +89,11 @@ impl ContactAttributes {
         if let Some(v) = &self.lastname {
             attrs.insert("LASTNAME".to_string(), serde_json::json!(v));
         }
-        if let Some(v) = &self.jobtitle {
-            attrs.insert("JOBTITLE".to_string(), serde_json::json!(v));
+        if let Some(v) = &self.job_title {
+            attrs.insert("JOB_TITLE".to_string(), serde_json::json!(v));
         }
         if let Some(v) = &self.scanopy_user_id {
             attrs.insert("SCANOPY_USER_ID".to_string(), serde_json::json!(v));
-        }
-        if let Some(v) = &self.scanopy_org_id {
-            attrs.insert("SCANOPY_ORG_ID".to_string(), serde_json::json!(v));
         }
         if let Some(v) = &self.scanopy_role {
             attrs.insert("SCANOPY_ROLE".to_string(), serde_json::json!(v));
@@ -415,7 +406,7 @@ pub struct UpdateContactRequest {
     pub attributes: HashMap<String, serde_json::Value>,
 }
 
-/// Response from POST /contacts
+/// Response from POST /contacts (201 on create)
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateContactResponse {
     pub id: i64,
@@ -514,7 +505,8 @@ mod tests {
             .with_email("test@example.com")
             .with_user_id(uuid::Uuid::nil())
             .with_role("owner")
-            .with_signup_source("organic");
+            .with_signup_source("organic")
+            .with_job_title("CTO");
 
         assert_eq!(attrs.email, Some("test@example.com".to_string()));
         assert_eq!(attrs.scanopy_user_id, Some(uuid::Uuid::nil().to_string()));
@@ -523,6 +515,8 @@ mod tests {
 
         let map = attrs.to_attributes();
         assert_eq!(map.get("SCANOPY_ROLE"), Some(&serde_json::json!("owner")));
+        assert_eq!(map.get("JOB_TITLE"), Some(&serde_json::json!("CTO")));
+        assert!(map.get("SCANOPY_ORG_ID").is_none());
     }
 
     #[test]

@@ -192,7 +192,6 @@ impl BrevoService {
         let mut contact_attrs = ContactAttributes::new()
             .with_email(email.to_string())
             .with_user_id(user_id)
-            .with_org_id(event.organization_id)
             .with_role("owner")
             .with_signup_source("organic")
             .with_signup_date(event.timestamp)
@@ -202,7 +201,7 @@ impl BrevoService {
             contact_attrs = contact_attrs.with_use_case(use_case);
         }
         if let Some(title) = job_title {
-            contact_attrs = contact_attrs.with_jobtitle(title);
+            contact_attrs = contact_attrs.with_job_title(title);
         }
         if let Some(ref source) = formatted_referral_source {
             contact_attrs = contact_attrs.with_referral_source(source);
@@ -700,7 +699,6 @@ impl BrevoService {
         let contact_attrs = ContactAttributes::new()
             .with_email(owner.base.email.to_string())
             .with_user_id(owner.id)
-            .with_org_id(org.id)
             .with_role("owner")
             .with_signup_date(owner.created_at);
 
