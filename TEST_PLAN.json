@@ -2,37 +2,18 @@
   "branch": "billing-overhaul",
   "tests": [
     {
-      "id": "change-plan-via-billing-modal",
+      "id": "upgrade-after-auto-downgrade",
       "category": "Billing",
-      "description": "Plan changes route correctly: payment method persists across paid-to-paid switches, no duplicate billing",
+      "description": "After subscription expires and auto-downgrades to Free, upgrading to a paid plan routes through Stripe Checkout and succeeds",
       "steps": [
         "Open Settings > Billing > View Plans and select a paid plan (e.g., Team)",
-        "Complete Stripe Checkout if redirected (Free users without payment are routed to Checkout)",
-        "Open Settings > Billing — verify the plan is active and no 'Add Payment Method' warning appears",
-        "Switch to a different paid plan (e.g., Team to Starter) via View Plans",
-        "Verify the switch is instant (no Stripe Checkout redirect)",
-        "Open Settings > Billing — verify 'Add Payment Method' warning does NOT reappear after the switch",
-        "Check Stripe dashboard — verify the upcoming invoice shows only the new plan price, not double the amount"
+        "Verify you are redirected to Stripe Checkout (not an instant switch or error)",
+        "Complete Stripe Checkout with a test card",
+        "Verify the app shows the paid plan as active with no errors",
+        "Check Stripe dashboard — verify exactly one active subscription exists"
       ],
-      "setup": "Org should be on Free plan with no payment method and no prior trial (trial_end_date is null). Verify in Stripe dashboard that the org's customer has no active subscriptions before testing.",
-      "expected": "Free user without payment → Stripe Checkout. Paid-to-paid switch → instant, payment method flag stays true, upcoming invoice shows single plan charge only.",
-      "status": null,
-      "feedback": null
-    },
-    {
-      "id": "downgrade-to-free",
-      "category": "Billing",
-      "description": "Downgrading to Free schedules end-of-cycle cancellation without 402 errors",
-      "steps": [
-        "From a paid plan (e.g., Team), open Settings > Billing > View Plans and select Free",
-        "Verify a success toast appears mentioning end-of-cycle downgrade",
-        "Navigate around the app (hosts, daemons, discovery, etc.) — verify NO 402 errors or 'plan required' messages",
-        "Open Settings > Billing — verify status shows 'Downgrading' in amber with the pending cancellation banner",
-        "Verify you still have full access to paid features (DaemonPoll, scheduled discovery, etc.)",
-        "Check Stripe dashboard — verify the subscription shows 'Cancels at period end' with no proration artifacts"
-      ],
-      "setup": "Org should be on a paid plan (e.g., Team) with an active Stripe subscription and at least one DaemonPoll daemon.",
-      "expected": "Downgrade schedules end-of-cycle cancellation. No 402 errors anywhere in the app. Status shows 'Downgrading'. User keeps full paid features until period ends. No proration line items in Stripe.",
+      "setup": "Org needs to be in the state after an end-of-cycle auto-downgrade to Free. Simulate this: have the org on a paid plan, then cancel the subscription in Stripe dashboard (or use Stripe CLI to advance the clock past the period end). Wait for the webhook to fire and confirm the org is now on Free plan with has_payment_method = false in the database.",
+      "expected": "Upgrade routes through Stripe Checkout (collects payment). No 'resource_missing' or payment method errors. Plan activates successfully.",
       "status": null,
       "feedback": null
     },
