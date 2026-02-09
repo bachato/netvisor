@@ -4,32 +4,16 @@
     {
       "id": "billing-modal-opens-no-plan",
       "category": "Billing Modal",
-      "description": "New user sees non-dismissible billing modal after onboarding",
+      "description": "New user sees non-dismissible billing modal after onboarding (no header, Free leftmost)",
       "steps": [
-        "After onboarding completes, verify the billing plan modal opens automatically",
-        "Verify the modal has title 'Choose a Plan' and is full-screen",
-        "Verify clicking outside does NOT close the modal",
-        "Verify no close (X) button is shown"
+        "After onboarding completes, verify the billing plan modal opens automatically (full-screen, no header/title bar)",
+        "Verify clicking outside does NOT close the modal and no close (X) button is shown",
+        "Verify the Free plan is the leftmost column",
+        "Toggle between Personal and Commercial — verify Free plan appears on both"
       ],
-      "expected": "Full-screen billing modal opens with plan options, cannot be dismissed",
+      "expected": "Full-screen billing modal without header, Free plan leftmost on both toggles, cannot be dismissed",
       "flow": "setup",
       "sequence": 1,
-      "status": null,
-      "feedback": null
-    },
-    {
-      "id": "billing-modal-plan-toggles",
-      "category": "Billing Modal",
-      "description": "Monthly/yearly and personal/commercial toggles work",
-      "steps": [
-        "Click the Monthly/Yearly toggle",
-        "Verify prices update to reflect the selected billing period",
-        "Click the Personal/Commercial toggle",
-        "Verify plan cards filter to show the correct category"
-      ],
-      "expected": "Toggles are responsive and filter/update plan display correctly",
-      "flow": "setup",
-      "sequence": 2,
       "status": null,
       "feedback": null
     },
@@ -38,15 +22,15 @@
       "category": "Billing Modal",
       "description": "Selecting Free plan completes $0 Stripe checkout without requiring a card",
       "steps": [
-        "Select the Free plan",
-        "Verify redirect to Stripe checkout",
+        "In the billing modal, click 'Get Started' on the Free plan",
+        "Verify redirect to Stripe checkout page",
         "Complete the $0 checkout — no credit card should be required",
         "Verify redirect back to the app",
         "Verify the billing modal is gone and the app is accessible"
       ],
       "expected": "Stripe checkout completes without payment method, user returns to app with Free plan active, modal dismissed",
       "flow": "setup",
-      "sequence": 3,
+      "sequence": 2,
       "status": null,
       "feedback": null
     },
@@ -56,11 +40,11 @@
       "description": "Trial badges shown for orgs that have never trialed a paid plan",
       "steps": [
         "Open Settings > Billing tab",
-        "Click 'View Plans'",
+        "Click 'View Plans' (should be visible for all plans, including Free)",
         "Verify paid plans show trial day badges (e.g., '7-day free trial')"
       ],
       "setup": "Org should be on the Free plan with no trial_end_date set (the default state after the setup flow).",
-      "expected": "Trial offers visible on paid plans",
+      "expected": "View Plans button visible, trial offers visible on paid plans",
       "status": null,
       "feedback": null
     },
@@ -79,29 +63,72 @@
       "feedback": null
     },
     {
-      "id": "settings-billing-free-plan-cta",
+      "id": "settings-billing-view-plans-all",
       "category": "Settings",
-      "description": "Free plan users see upgrade CTA and no subscription management in Billing tab",
+      "description": "View Plans button visible for all plans (Free and paid), with Manage Subscription for paid",
       "steps": [
         "Open Settings > Billing tab",
-        "Verify an 'Upgrade your plan' card with 'View Plans' button is shown",
+        "Verify 'View Plans' button is visible",
+        "Verify 'Manage Subscription' button is visible",
+        "Click 'View Plans' — verify the billing plan modal opens and is dismissible"
+      ],
+      "setup": "Org should be on a paid plan: UPDATE organizations SET plan = '{\"type\":\"Starter\",\"base_cents\":1500,\"rate\":\"Month\",\"trial_days\":7,\"seat_cents\":null,\"network_cents\":null,\"host_cents\":null,\"included_seats\":1,\"included_networks\":1,\"included_hosts\":100}', plan_status = 'active' WHERE id = '<org_id>'. Refresh the browser.",
+      "expected": "Both View Plans and Manage Subscription buttons visible for paid plans",
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "settings-billing-free-plan-cta",
+      "category": "Settings",
+      "description": "Free plan users see upgrade CTA with View Plans, no Manage Subscription",
+      "steps": [
+        "Open Settings > Billing tab",
+        "Verify 'Upgrade your plan' card with 'View Plans' button is shown",
         "Verify 'Manage Subscription' button is NOT present"
       ],
       "setup": "Org should be on the Free plan (default state after setup flow).",
-      "expected": "Prominent upgrade CTA shown, no subscription management for Free plan",
+      "expected": "Upgrade CTA shown with View Plans, no Manage Subscription for Free plan",
       "status": null,
       "feedback": null
     },
     {
       "id": "settings-billing-notification-dot",
       "category": "Settings",
-      "description": "Billing tab shows notification dot when trialing without payment method",
+      "description": "Billing tab shows amber notification dot when trialing without payment method",
       "steps": [
         "Open the Settings modal",
-        "Verify the Billing tab label has a notification dot"
+        "Verify the Billing tab label has an amber/yellow notification dot (matching the sidebar dot color)"
       ],
       "setup": "Set org to trialing status without a payment method: UPDATE organizations SET plan_status = 'trialing', has_payment_method = false WHERE id = '<org_id>'. Refresh the browser before testing.",
-      "expected": "Notification dot visible on Billing tab",
+      "expected": "Amber notification dot visible on Billing tab, matching sidebar dot color",
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "discovery-default-adhoc-free",
+      "category": "Discovery",
+      "description": "New discovery defaults to Ad Hoc for Free plan users",
+      "steps": [
+        "Open the discovery creation modal",
+        "Verify the Run Type defaults to 'Ad Hoc'",
+        "Verify Scheduled shows a yellow 'Upgrade' tag and is disabled"
+      ],
+      "setup": "Org should be on the Free plan. Ensure at least one daemon exists.",
+      "expected": "Ad Hoc selected by default, Scheduled disabled with Upgrade tag",
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "discovery-default-scheduled-paid",
+      "category": "Discovery",
+      "description": "New discovery defaults to Scheduled for paid plan users",
+      "steps": [
+        "Open the discovery creation modal",
+        "Verify the Run Type defaults to 'Scheduled'",
+        "Verify both Ad Hoc and Scheduled are selectable without upgrade tags"
+      ],
+      "setup": "Org should be on a paid plan: UPDATE organizations SET plan = '{\"type\":\"Starter\",\"base_cents\":1500,\"rate\":\"Month\",\"trial_days\":7,\"seat_cents\":null,\"network_cents\":null,\"host_cents\":null,\"included_seats\":1,\"included_networks\":1,\"included_hosts\":100}', plan_status = 'active' WHERE id = '<org_id>'. Ensure at least one daemon exists. Refresh browser.",
+      "expected": "Scheduled selected by default, no upgrade tags",
       "status": null,
       "feedback": null
     },
@@ -110,11 +137,10 @@
       "category": "Daemon Creation",
       "description": "Daemon mode dropdown shows Upgrade tag on DaemonPoll for Free plan",
       "steps": [
-        "Navigate to the Daemons page and open the daemon creation modal",
+        "Open the daemon creation modal",
         "Open the Mode dropdown — it should be a rich dropdown, not a native select",
         "Verify ServerPoll is selectable",
-        "Verify DaemonPoll shows a yellow 'Upgrade' tag with an arrow icon",
-        "Verify DaemonPoll is not selectable (disabled/grayed out)"
+        "Verify DaemonPoll shows a yellow 'Upgrade' tag with an arrow icon and is disabled"
       ],
       "setup": "Org should be on the Free plan. Ensure at least one network exists (POST /api/networks with a name).",
       "expected": "RichSelect dropdown with yellow Upgrade tag on DaemonPoll, option disabled",
@@ -122,33 +148,15 @@
       "feedback": null
     },
     {
-      "id": "discovery-run-type-richselect-upgrade",
-      "category": "Discovery",
-      "description": "Discovery run type dropdown shows Upgrade tag on Scheduled for Free plan",
+      "id": "api-keys-tab-free-plan",
+      "category": "Settings",
+      "description": "API Keys tab shows upgrade message instead of loading spinner on Free plan",
       "steps": [
-        "Navigate to the Discoveries page and open the discovery creation modal",
-        "Open the Run Type dropdown — it should be a rich dropdown, not a native select",
-        "Verify Ad Hoc is selectable",
-        "Verify Scheduled shows a yellow 'Upgrade' tag with an arrow icon",
-        "Verify Scheduled is not selectable (disabled)"
+        "Navigate to the API Keys tab",
+        "Verify it shows a message about API access not being available (NOT a perpetual loading spinner)"
       ],
-      "setup": "Org should be on the Free plan. Ensure at least one daemon exists (create via the Daemons page or API).",
-      "expected": "RichSelect dropdown with yellow Upgrade tag on Scheduled, option disabled",
-      "status": null,
-      "feedback": null
-    },
-    {
-      "id": "paid-plan-no-upgrade-tags",
-      "category": "Paid Plan",
-      "description": "Paid plan users see no upgrade tags in daemon/discovery dropdowns",
-      "steps": [
-        "Open daemon creation modal, open the Mode dropdown",
-        "Verify DaemonPoll has no Upgrade tag and is selectable",
-        "Open discovery creation modal, open the Run Type dropdown",
-        "Verify Scheduled has no Upgrade tag and is selectable"
-      ],
-      "setup": "Org should be on a paid plan (e.g., Starter). Set via Stripe checkout or DB: UPDATE organizations SET plan = 'Starter', plan_status = 'active' WHERE id = '<org_id>'. Ensure at least one network and one daemon exist.",
-      "expected": "No upgrade tags, all options selectable for paid plans",
+      "setup": "Org should be on the Free plan.",
+      "expected": "Empty state message about API access not available, no loading spinner",
       "status": null,
       "feedback": null
     },
