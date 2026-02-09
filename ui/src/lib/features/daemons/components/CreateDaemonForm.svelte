@@ -7,13 +7,18 @@
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
-	import { ChevronDown, ChevronRight, RotateCcwKey } from 'lucide-svelte';
+	import { ArrowUpCircle, ChevronDown, ChevronRight, RotateCcwKey } from 'lucide-svelte';
+	import type { Component } from 'svelte';
 	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
+	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
+	import {
+		SimpleOptionDisplay,
+		type SimpleOption
+	} from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
-	import UpgradeBadge from '$lib/shared/components/UpgradeBadge.svelte';
 	import { fieldDefs } from '../config';
 	import type { Daemon } from '../types/base';
 	import {
@@ -407,22 +412,46 @@
 			{:else if def.type === 'select'}
 				<form.Field name={def.id}>
 					{#snippet children(field)}
-						<SelectInput
-							label={def.label()}
-							{field}
-							id={def.id}
-							options={(def.options ?? []).map((opt) => ({
-								value: opt.value,
-								label: opt.label(),
-								disabled: def.id === 'mode' && opt.value === 'daemon_poll' && !hasDaemonPoll
-							}))}
-							helpText={def.helpText()}
-							disabled={def.disabled?.(isNewDaemon) ?? false}
-						/>
-						{#if def.id === 'mode' && !hasDaemonPoll}
-							<div class="mt-1">
-								<UpgradeBadge feature="DaemonPoll Mode" />
-							</div>
+						{#if def.id === 'mode'}
+							<RichSelect
+								label={def.label()}
+								selectedValue={String(field.state.value ?? '')}
+								options={(def.options ?? []).map((opt): SimpleOption => {
+									const needsUpgrade = opt.value === 'daemon_poll' && !hasDaemonPoll;
+									return {
+										value: opt.value,
+										label: opt.label(),
+										disabled: needsUpgrade,
+										tags: needsUpgrade
+											? [
+													{
+														label: 'Upgrade',
+														color: 'Yellow',
+														icon: ArrowUpCircle as unknown as Component
+													}
+												]
+											: []
+									};
+								})}
+								onSelect={(value) => field.handleChange(value)}
+								displayComponent={SimpleOptionDisplay}
+								disabled={def.disabled?.(isNewDaemon) ?? false}
+							/>
+							{#if def.helpText()}
+								<p class="text-tertiary mt-1 text-xs">{def.helpText()}</p>
+							{/if}
+						{:else}
+							<SelectInput
+								label={def.label()}
+								{field}
+								id={def.id}
+								options={(def.options ?? []).map((opt) => ({
+									value: opt.value,
+									label: opt.label()
+								}))}
+								helpText={def.helpText()}
+								disabled={def.disabled?.(isNewDaemon) ?? false}
+							/>
 						{/if}
 					{/snippet}
 				</form.Field>

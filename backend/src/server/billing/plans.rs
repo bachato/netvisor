@@ -110,11 +110,12 @@ fn get_commercial_self_hosted_plan() -> BillingPlan {
 }
 
 pub fn get_website_fixture_plans() -> Vec<BillingPlan> {
+    // Free is already included via get_purchasable_plans(), so exclude it from
+    // non_saas_plans to avoid duplicate entries in the generated fixture.
     let non_saas_plans = [
         get_enterprise_plan(),
         get_community_plan(),
         get_commercial_self_hosted_plan(),
-        get_free_plan(),
     ];
 
     let non_saas_yearly = non_saas_plans.iter().map(|p| p.to_yearly(YEARLY_DISCOUNT));
@@ -122,6 +123,8 @@ pub fn get_website_fixture_plans() -> Vec<BillingPlan> {
     let mut all_plans = get_purchasable_plans();
     all_plans.extend(non_saas_plans);
     all_plans.extend(non_saas_yearly);
+    // Add Free yearly variant (monthly Free is already in get_purchasable_plans)
+    all_plans.push(get_free_plan().to_yearly(YEARLY_DISCOUNT));
 
     all_plans
 }

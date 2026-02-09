@@ -8,7 +8,6 @@
 	import { Check, X, ChevronDown, Loader2 } from 'lucide-svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import ToggleGroup from './ToggleGroup.svelte';
-	import ScanProgressIndicator from '$lib/features/discovery/components/ScanProgressIndicator.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { BillingPlan } from './types';
 	import type { BillingPlanMetadata, FeatureMetadata } from '$lib/shared/stores/metadata';
@@ -68,7 +67,7 @@
 	let loadingPlanType = $state<string | null>(null);
 
 	type PlanFilter = 'all' | 'personal' | 'commercial';
-	let planFilter = $derived<PlanFilter>(initialPlanFilter);
+	let planFilter = $state<PlanFilter>(initialPlanFilter);
 
 	type BillingPeriod = 'monthly' | 'yearly';
 	let billingPeriod = $state<BillingPeriod>('monthly');
@@ -310,8 +309,6 @@
 		{#if showGithubStars}
 			<!-- <GithubStars /> -->
 		{/if}
-
-		<ScanProgressIndicator />
 
 		<ToggleGroup
 			options={planTypeOptions}

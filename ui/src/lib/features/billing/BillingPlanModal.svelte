@@ -30,22 +30,31 @@
 	const billingPlanHelpers = createStaticHelpers<BillingPlanMetadata>(billingPlansJson);
 	const featureHelpers = createStaticHelpers<FeatureMetadata>(featuresJson);
 
-	// Transform fixture data to BillingPlan[] format (exclude self-hosted plans)
-	const plansData = billingPlansJson
-		.filter((p) => p.metadata.hosting !== 'SelfHosted')
-		.map(
-			(p) =>
-				({
-					type: p.id,
-					base_cents: p.metadata.base_cents,
-					rate: p.metadata.rate,
-					trial_days: p.metadata.trial_days,
-					seat_cents: p.metadata.seat_cents,
-					network_cents: p.metadata.network_cents,
-					included_seats: p.metadata.included_seats,
-					included_networks: p.metadata.included_networks
-				}) as BillingPlan
-		);
+	// Transform fixture data to BillingPlan[] format (exclude self-hosted plans, deduplicate)
+	const plansData = (() => {
+		const seen = new Set<string>(); // eslint-disable-line svelte/prefer-svelte-reactivity
+		return billingPlansJson
+			.filter((p) => p.metadata.hosting !== 'SelfHosted')
+			.map(
+				(p) =>
+					({
+						type: p.id,
+						base_cents: p.metadata.base_cents,
+						rate: p.metadata.rate,
+						trial_days: p.metadata.trial_days,
+						seat_cents: p.metadata.seat_cents,
+						network_cents: p.metadata.network_cents,
+						included_seats: p.metadata.included_seats,
+						included_networks: p.metadata.included_networks
+					}) as BillingPlan
+			)
+			.filter((p) => {
+				const key = `${p.type}-${p.rate}`;
+				if (seen.has(key)) return false;
+				seen.add(key);
+				return true;
+			});
+	})();
 
 	// TanStack Query for current user
 	const currentUserQuery = useCurrentUserQuery();
@@ -55,8 +64,10 @@
 	const organizationQuery = useOrganizationQuery();
 	let organization = $derived(organizationQuery.data);
 
-	// Returning customers (have had a subscription) shouldn't see trial offers
-	let isReturningCustomer = $derived(!!organization?.plan_status);
+	// Only show trial offers to orgs that have never trialed a paid plan.
+	// trial_end_date is set by Stripe webhook only for subscriptions with trial periods
+	// (Free plan has trial_days=0, so it never sets trial_end_date).
+	let isReturningCustomer = $derived(!!organization?.trial_end_date);
 
 	// Mutations
 	const checkoutMutation = useCheckoutMutation();
@@ -104,8 +115,9 @@
 
 <GenericModal
 	{isOpen}
+	title="Choose a Plan"
 	onClose={dismissible ? onClose : null}
-	size="xl"
+	size="full"
 	preventCloseOnClickOutside={!dismissible}
 	showCloseButton={dismissible}
 >

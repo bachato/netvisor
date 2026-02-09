@@ -4,19 +4,18 @@
   "branch": "billing-overhaul",
   "tests": [
     {
-      "id": "cloud-qualification-fields",
-      "category": "Onboarding",
-      "description": "Cloud onboarding shows qualification fields (role, company size, referral source)",
+      "id": "billing-modal-opens-no-plan",
+      "category": "Billing Modal",
+      "description": "New user without a plan sees non-dismissible billing modal after onboarding",
       "steps": [
-        "Open Cloud deployment in incognito/private window",
-        "Start registration — reach use case selection step",
-        "Select 'Company' or 'MSP'",
-        "Look for role and company size fields",
-        "Look for 'How did you hear about Scanopy?' field",
-        "Switch to 'Homelab'",
-        "Verify role/company size fields disappear but referral source remains"
+        "Register a new account and complete onboarding",
+        "After onboarding, observe the main app loads",
+        "Verify the billing plan modal opens automatically",
+        "Verify the modal has title 'Choose a Plan'",
+        "Verify clicking outside does NOT close the modal",
+        "Verify no close (X) button is shown"
       ],
-      "expected": "Company/MSP: role + company size + referral source. Homelab: referral source only. All fields Cloud-only.",
+      "expected": "Full-screen billing modal opens with plan options, cannot be dismissed",
       "flow": "setup",
       "sequence": 1,
 =======
@@ -51,6 +50,7 @@
       "feedback": null
     },
     {
+<<<<<<< HEAD
 <<<<<<< HEAD
       "id": "brevo-server-starts-with-api-key",
       "category": "Configuration",
@@ -164,14 +164,18 @@
       "id": "referral-source-other-text",
       "category": "Onboarding",
       "description": "Selecting 'Other' referral source shows free text input",
+=======
+      "id": "billing-modal-plan-toggles",
+      "category": "Billing Modal",
+      "description": "Monthly/yearly and personal/commercial toggles work in billing modal",
+>>>>>>> billing-overhaul
       "steps": [
-        "Still on use case step, select 'Company'",
-        "In 'How did you hear about Scanopy?' dropdown, select 'Other'",
-        "Verify a text input appears with placeholder",
-        "Type a custom answer (e.g. 'Conference talk')",
-        "Switch referral source to something else — text input should disappear"
+        "In the billing plan modal, click the Monthly/Yearly toggle",
+        "Verify prices update to reflect the selected billing period",
+        "Click the Personal/Commercial toggle",
+        "Verify plan cards filter to show the correct category"
       ],
-      "expected": "Free text input appears only when 'Other' selected. Disappears when switching to another option.",
+      "expected": "Toggles are responsive and filter/update plan display correctly",
       "flow": "setup",
       "sequence": 2,
 =======
@@ -205,17 +209,22 @@
     {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       "id": "onboarding-three-steps",
       "category": "Onboarding",
       "description": "Onboarding flow has exactly 3 steps (no daemon/verification steps)",
+=======
+      "id": "free-plan-checkout",
+      "category": "Billing Modal",
+      "description": "Selecting Free plan redirects to Stripe checkout ($0, no card required)",
+>>>>>>> billing-overhaul
       "steps": [
-        "Select a use case and fill in referral source, then click 'Yes, let's go'",
-        "Verify Step 2 is Setup (org name, network details) — no daemon step",
-        "Fill in org/network details and proceed",
-        "Verify Step 3 is Register (email/password)",
-        "Verify there is no daemon setup or daemon verification step anywhere"
+        "In the billing plan modal, select the Free plan",
+        "Verify redirect to Stripe checkout",
+        "Complete the $0 checkout (no credit card should be required)",
+        "Verify redirect back to app"
       ],
-      "expected": "Onboarding is 3 steps: use_case → setup → register. No daemon or daemon_verification steps.",
+      "expected": "Stripe checkout completes without requiring payment method, user returns to app with Free plan active",
       "flow": "setup",
       "sequence": 3,
 =======
@@ -245,15 +254,21 @@
     {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       "id": "onboarding-single-network",
       "category": "Onboarding",
       "description": "Onboarding creates exactly one network, no 'add another' option",
+=======
+      "id": "billing-modal-dismissed-after-plan",
+      "category": "Billing Modal",
+      "description": "Billing modal disappears after plan is selected and Stripe checkout completes",
+>>>>>>> billing-overhaul
       "steps": [
-        "On the Setup step (org/network configuration), look at the network section",
-        "Verify there is no 'Add another network' button",
-        "Verify exactly one network name field is shown"
+        "After completing Stripe checkout (from previous test), return to app",
+        "Verify the billing plan modal is no longer shown",
+        "Verify the main app is accessible"
       ],
-      "expected": "Setup step shows single network form with no option to add more",
+      "expected": "Modal gone, app fully accessible with selected plan",
       "flow": "setup",
       "sequence": 4,
 =======
@@ -285,14 +300,20 @@
     {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       "id": "referral-source-tracked-posthog",
       "category": "Onboarding",
       "description": "Referral source is included in PostHog analytics event",
+=======
+      "id": "trial-offers-first-time",
+      "category": "Billing Modal",
+      "description": "Trial offers shown to orgs that have never trialed a paid plan",
+>>>>>>> billing-overhaul
       "steps": [
-        "Open browser DevTools Network tab before clicking 'Yes, let's go' on use case step",
-        "Note: if you already passed use case step, this can be verified retroactively in PostHog",
-        "Look for onboarding_use_case_selected event in network requests or PostHog dashboard"
+        "As a Free plan user who has never trialed, open billing modal via Settings > Billing > View Plans",
+        "Verify paid plans show trial day badges (e.g., '7-day free trial')"
       ],
+<<<<<<< HEAD
       "expected": "Event includes referral_source property with the selected value. If 'other', includes referral_source_other.",
       "flow": "setup",
       "sequence": 5,
@@ -320,20 +341,29 @@
       ],
       "expected": "Docker discovery detects Prometheus Node Exporter on port 9100. No raw socket toggle is shown in Docker discovery settings since it always probes.",
 >>>>>>> fix-ghost-printing
+=======
+      "expected": "Trial offers are visible on paid plans for orgs without trial_end_date",
+>>>>>>> billing-overhaul
       "status": null,
       "feedback": null
     },
     {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       "id": "new-user-starts-on-free",
       "category": "Onboarding",
       "description": "New users start on Free plan after completing onboarding",
+=======
+      "id": "trial-offers-returning",
+      "category": "Billing Modal",
+      "description": "Trial offers hidden for orgs that have previously trialed",
+>>>>>>> billing-overhaul
       "steps": [
-        "Complete registration (email/password) on the Register step",
-        "After landing on main app, navigate to Settings > Billing",
-        "Verify current plan shows as 'Free'"
+        "As a user who previously completed a trial (org has trial_end_date set), open billing modal",
+        "Verify paid plans do NOT show trial day badges"
       ],
+<<<<<<< HEAD
       "expected": "Newly registered user is on Free plan with active status",
       "flow": "setup",
       "sequence": 6,
@@ -359,154 +389,153 @@
       ],
       "expected": "Pre-existing discoveries deserialize correctly with probe_raw_socket_ports defaulting to false. No errors or data loss.",
 >>>>>>> fix-ghost-printing
+=======
+      "expected": "No trial offers shown to returning customers",
+>>>>>>> billing-overhaul
       "status": null,
       "feedback": null
     },
     {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
       "id": "onboarding-lands-on-daemons",
       "category": "Onboarding",
       "description": "After onboarding, user lands on daemons tab with create modal auto-opened",
+=======
+      "id": "settings-billing-view-plans",
+      "category": "Settings",
+      "description": "View Plans button in Settings > Billing opens dismissible billing modal",
+>>>>>>> billing-overhaul
       "steps": [
-        "After registration completes, observe where the app lands",
-        "Verify the Daemons tab is active/selected",
-        "Verify the Create Daemon modal opens automatically",
-        "Verify DaemonPoll option is disabled with UpgradeBadge (user is on Free)",
-        "Close the modal and navigate away, then back — modal should NOT reopen"
+        "Open Settings modal",
+        "Navigate to the Billing tab",
+        "Click 'View Plans' button",
+        "Verify billing plan modal opens",
+        "Verify modal IS dismissible (close button, click outside works)"
       ],
-      "expected": "User lands on daemons tab with auto-opened create modal. DaemonPoll disabled for Free. Flag is one-shot.",
-      "flow": "setup",
-      "sequence": 7,
+      "expected": "Modal opens in dismissible mode from settings",
       "status": null,
       "feedback": null
     },
     {
-      "id": "qualification-fields-reach-backend",
-      "category": "Onboarding",
-      "description": "Job title, company size, referral source are saved to backend session and reach HubSpot",
+      "id": "settings-billing-notification-dot",
+      "category": "Settings",
+      "description": "Billing tab shows notification dot when plan needs attention",
       "steps": [
-        "Using the account just registered (Company use case with role, company size, referral source filled)",
-        "Check backend logs or HubSpot for the contact/company record",
-        "Verify all qualification fields are present"
+        "As an org with no plan selected (new org before choosing), open Settings",
+        "Verify the Billing tab has a notification dot",
+        "Also verify notification dot for: trialing without payment method, past_due, canceled"
       ],
-      "expected": "HubSpot contact/company has scanopy_referral_source property set. Job title and company size also synced.",
-      "flow": "setup",
-      "sequence": 8,
+      "expected": "Notification dot visible on Billing tab when action is needed",
       "status": null,
       "feedback": null
     },
     {
-      "id": "selfhosted-no-qualification-fields",
-      "category": "Onboarding",
-      "description": "Self-hosted onboarding does NOT show qualification fields",
+      "id": "settings-billing-free-plan-cta",
+      "category": "Settings",
+      "description": "Free plan users see upgrade CTA in Billing tab",
       "steps": [
-        "Open self-hosted deployment registration in incognito/private window",
-        "Reach use case selection step",
-        "Select any use case (homelab, company, MSP)",
-        "Look for qualification fields (role, company size, referral source)"
+        "As a Free plan user, open Settings > Billing tab",
+        "Verify an 'Upgrade your plan' card is shown",
+        "Verify 'View Plans' button is present",
+        "Verify 'Manage Subscription' button is NOT shown (Free plan)"
       ],
-      "expected": "No qualification fields shown on self-hosted. Only use case selection and continue button.",
-      "flow": "setup",
-      "sequence": 9,
+      "expected": "Prominent upgrade CTA shown, no subscription management for Free plan",
       "status": null,
       "feedback": null
     },
     {
-      "id": "free-plan-visible-in-selection",
-      "category": "Free Tier Plan",
-      "description": "Free plan appears in plan selection UI alongside paid plans",
+      "id": "daemon-mode-richselect-upgrade",
+      "category": "Daemon Creation",
+      "description": "Daemon mode dropdown shows Upgrade tag on DaemonPoll for Free plan",
       "steps": [
-        "Log in as an owner on a Cloud deployment",
-        "Navigate to Settings > Billing tab",
-        "Click 'Change Plan' or view plan selection modal",
-        "Verify Free plan is listed with name 'Free', description mentioning 25 hosts and manual discovery",
-        "Verify Free plan shows 'Current Plan' badge if user is on Free"
+        "As a Free plan user, create a new daemon",
+        "Open the Mode dropdown (should be a rich dropdown, not native select)",
+        "Verify ServerPoll is selectable",
+        "Verify DaemonPoll shows a yellow 'Upgrade' tag with arrow icon",
+        "Verify DaemonPoll is not selectable (disabled/grayed)"
       ],
-      "expected": "Free plan is visible in the plan selection UI with correct metadata (name, description, green color, $0 price)",
+      "expected": "RichSelect dropdown with upgrade tag on DaemonPoll, option disabled",
       "status": null,
       "feedback": null
     },
     {
-      "id": "free-plan-config-values",
-      "category": "Free Tier Plan",
-      "description": "Free plan has correct configuration: 25 hosts, no scheduled discovery, no daemon poll",
+      "id": "daemon-default-server-poll",
+      "category": "Daemon Creation",
+      "description": "Daemon mode defaults to ServerPoll",
       "steps": [
-        "Open billing fixtures JSON at ui/src/lib/api/fixtures/billing-plans-next.json",
-        "Locate the Free plan entry",
-        "Verify included_hosts is 25, host_cents is null",
-        "Verify features include scheduled_discovery: false, daemon_poll: false",
-        "Verify included_seats is 1, included_networks is 1"
+        "Create a new daemon",
+        "Check the default value in the Mode dropdown"
       ],
-      "expected": "Free plan fixtures show correct limits and feature flags",
+      "expected": "ServerPoll is the default mode",
       "status": null,
       "feedback": null
     },
     {
-      "id": "removed-unlimited-features",
-      "category": "Free Tier Plan",
-      "description": "unlimited_hosts and unlimited_scans are fully removed from features",
+      "id": "discovery-run-type-richselect-upgrade",
+      "category": "Discovery",
+      "description": "Discovery run type dropdown shows Upgrade tag on Scheduled for Free plan",
       "steps": [
-        "Open features fixture at ui/src/lib/api/fixtures/features-next.json",
-        "Search for 'unlimited_hosts' and 'unlimited_scans'",
-        "Verify neither appears",
-        "Verify 'scheduled_discovery' and 'daemon_poll' features exist instead",
-        "Open billing-plans-next.json and verify no plan has unlimited_hosts or unlimited_scans in features"
+        "As a Free plan user, create a new discovery",
+        "Open the Run Type dropdown (should be a rich dropdown)",
+        "Verify Ad Hoc is selectable",
+        "Verify Scheduled shows a yellow 'Upgrade' tag with arrow icon",
+        "Verify Scheduled is not selectable (disabled)"
       ],
-      "expected": "No references to unlimited_hosts/unlimited_scans in fixtures; replaced by scheduled_discovery and daemon_poll",
+      "expected": "RichSelect dropdown with upgrade tag on Scheduled, option disabled",
       "status": null,
       "feedback": null
     },
     {
-      "id": "host-limit-manual-creation",
-      "category": "Backend Enforcement",
-      "description": "Manual host creation blocked when at 25-host limit on Free plan",
+      "id": "discovery-default-adhoc",
+      "category": "Discovery",
+      "description": "New discovery defaults to Ad Hoc run type",
       "steps": [
-        "Set up org on Free plan with 25 hosts (seed via DB or API)",
-        "Attempt to create a new host via API: POST /api/hosts with valid payload",
-        "Check the response"
+        "Create a new discovery (any plan)",
+        "Check the default run type"
       ],
-      "expected": "API returns 403 with error code 'billing_host_limit_reached' and message mentioning 25-host limit",
+      "expected": "Ad Hoc is the default run type for new discoveries",
       "status": null,
       "feedback": null
     },
     {
-      "id": "host-limit-discovery-creation",
-      "category": "Backend Enforcement",
-      "description": "Discovery host creation cancelled when hitting 25-host limit",
+      "id": "paid-plan-no-upgrade-tags",
+      "category": "Paid Plan",
+      "description": "Paid plan users see no upgrade tags in daemon/discovery dropdowns",
       "steps": [
-        "Set up org on Free plan with 24 hosts",
-        "Run an ad-hoc discovery that discovers 5+ new hosts",
-        "Wait for discovery to complete or be cancelled",
-        "Check host count — should be at most 25",
-        "Check discovery session status"
+        "As a paid plan user (e.g., Starter with trial), create a new daemon",
+        "Verify DaemonPoll has no Upgrade tag and is selectable",
+        "Create a new discovery",
+        "Verify Scheduled has no Upgrade tag and is selectable"
       ],
-      "expected": "Discovery is cancelled when host limit is reached. Host count does not exceed 25. Discovery session shows cancelled status.",
+      "expected": "No upgrade tags, all options selectable for paid plans",
       "status": null,
       "feedback": null
     },
     {
-      "id": "host-limit-upsert-allowed",
-      "category": "Backend Enforcement",
-      "description": "Upserting existing hosts is allowed even when at host limit",
+      "id": "billing-plans-no-duplicate-crash",
+      "category": "Billing Modal",
+      "description": "Billing plan modal loads without duplicate key errors",
       "steps": [
-        "Set up org on Free plan with 25 hosts",
-        "Run a discovery that re-discovers existing hosts (same IPs/MACs)",
-        "Wait for discovery to complete"
+        "Open browser developer console",
+        "Open the billing plan modal",
+        "Check console for 'each_key_duplicate' or similar errors"
       ],
-      "expected": "Discovery succeeds — existing hosts are updated without triggering host limit error. No new hosts created.",
+      "expected": "No duplicate key errors in console, all plans render correctly",
       "status": null,
       "feedback": null
     },
     {
-      "id": "scheduled-discovery-blocked-free",
-      "category": "Backend Enforcement",
-      "description": "Scheduled discovery creation blocked on Free plan",
+      "id": "stripe-cancel-returns-home",
+      "category": "Billing",
+      "description": "Canceling Stripe checkout returns to app root, not /billing",
       "steps": [
-        "Log in as owner on Free plan",
-        "Attempt to create a discovery with RunType::Scheduled via API: POST /api/discoveries with schedule fields",
-        "Check response"
+        "Start a plan checkout from the billing modal",
+        "On Stripe checkout page, click Back or cancel",
+        "Verify the return URL is the app root (/), not /billing"
       ],
+<<<<<<< HEAD
       "expected": "API returns 403 with error code 'billing_feature_not_available' mentioning 'Scheduled Discovery'",
       "status": null,
       "feedback": null
@@ -959,6 +988,9 @@
       ],
       "expected": "Prometheus Node Exporter has has_raw_socket_endpoint: true. JetDirect has has_raw_socket_endpoint: false (it uses Pattern::Port, not Pattern::Endpoint). Other services on non-raw-socket ports have has_raw_socket_endpoint: false.",
 >>>>>>> fix-ghost-printing
+=======
+      "expected": "User returns to / with billing modal still showing",
+>>>>>>> billing-overhaul
       "status": null,
       "feedback": null
     }

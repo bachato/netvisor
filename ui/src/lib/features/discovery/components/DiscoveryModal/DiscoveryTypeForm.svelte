@@ -7,8 +7,14 @@
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { billingPlans, discoveryTypes, subnetTypes } from '$lib/shared/stores/metadata';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
-	import UpgradeBadge from '$lib/shared/components/UpgradeBadge.svelte';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { ArrowUpCircle } from 'lucide-svelte';
+	import type { Component } from 'svelte';
+	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
+	import {
+		SimpleOptionDisplay,
+		type SimpleOption
+	} from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import { generateCronSchedule } from '../../queries';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
@@ -92,9 +98,16 @@
 		{ value: 'BestService', label: discovery_bestService() }
 	]);
 
-	let runTypeOptions = $derived([
-		{ value: 'AdHoc', label: discovery_adHoc(), disabled: false },
-		{ value: 'Scheduled', label: discovery_scheduled(), disabled: !hasScheduledDiscovery }
+	let runTypeOptions: SimpleOption[] = $derived([
+		{ value: 'AdHoc', label: discovery_adHoc() },
+		{
+			value: 'Scheduled',
+			label: discovery_scheduled(),
+			disabled: !hasScheduledDiscovery,
+			tags: !hasScheduledDiscovery
+				? [{ label: 'Upgrade', color: 'Yellow', icon: ArrowUpCircle as unknown as Component }]
+				: []
+		}
 	]);
 
 	// Handle run type changes - update formData when form field changes
@@ -263,23 +276,19 @@
 				}}
 			>
 				{#snippet children(field: AnyFieldApi)}
-					<SelectInput
+					<RichSelect
 						label={discovery_runType()}
-						id="run_type"
+						selectedValue={field.state.value}
 						options={runTypeOptions}
-						{field}
+						onSelect={(value) => field.handleChange(value)}
+						displayComponent={SimpleOptionDisplay}
 						disabled={readOnly}
 					/>
-					<div class="mt-1 flex items-center gap-2">
-						<p class="text-tertiary text-xs">
-							{field.state.value === 'AdHoc'
-								? discovery_adHocDescription()
-								: discovery_scheduledDescription()}
-						</p>
-						{#if !hasScheduledDiscovery}
-							<UpgradeBadge feature="Scheduled Discovery" />
-						{/if}
-					</div>
+					<p class="text-tertiary mt-1 text-xs">
+						{field.state.value === 'AdHoc'
+							? discovery_adHocDescription()
+							: discovery_scheduledDescription()}
+					</p>
 				{/snippet}
 			</form.Field>
 

@@ -14,6 +14,7 @@ export interface TagProps {
 	textColor?: string;
 	bgColor?: string;
 	color?: Color;
+	icon?: Component;
 }
 
 export interface CardAction {

@@ -35,7 +35,8 @@
 	let isOwner = $derived(currentUser?.permissions === 'Owner');
 	let isBillingEnabled = $derived(configQuery.data?.billing_enabled ?? false);
 	let billingNeedsAttention = $derived(
-		org?.plan_status === 'past_due' ||
+		!org?.plan ||
+			org?.plan_status === 'past_due' ||
 			org?.plan_status === 'canceled' ||
 			(org?.plan_status === 'trialing' && !org?.has_payment_method)
 	);
