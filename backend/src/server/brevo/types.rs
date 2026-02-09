@@ -132,7 +132,7 @@ pub struct CompanyAttributes {
     pub scanopy_first_discovery_date: Option<String>,
     pub scanopy_trial_started_date: Option<String>,
     pub scanopy_checkout_completed_date: Option<String>,
-    pub scanopy_first_network_date: Option<String>,
+    pub scanopy_second_network_date: Option<String>,
     pub scanopy_first_tag_date: Option<String>,
     pub scanopy_first_api_key_date: Option<String>,
     pub scanopy_first_snmp_credential_date: Option<String>,
@@ -240,8 +240,8 @@ impl CompanyAttributes {
         self
     }
 
-    pub fn with_first_network_date(mut self, date: DateTime<Utc>) -> Self {
-        self.scanopy_first_network_date = Some(date.to_rfc3339());
+    pub fn with_second_network_date(mut self, date: DateTime<Utc>) -> Self {
+        self.scanopy_second_network_date = Some(date.to_rfc3339());
         self
     }
 
@@ -343,9 +343,9 @@ impl CompanyAttributes {
                 serde_json::json!(v),
             );
         }
-        if let Some(v) = &self.scanopy_first_network_date {
+        if let Some(v) = &self.scanopy_second_network_date {
             attrs.insert(
-                "scanopy_first_network_date".to_string(),
+                "scanopy_second_network_date".to_string(),
                 serde_json::json!(v),
             );
         }

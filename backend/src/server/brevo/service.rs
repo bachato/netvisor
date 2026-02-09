@@ -486,8 +486,8 @@ impl BrevoService {
         let mut company_attrs = CompanyAttributes::new();
 
         match &event.operation {
-            TelemetryOperation::FirstNetworkCreated => {
-                company_attrs = company_attrs.with_first_network_date(event.timestamp);
+            TelemetryOperation::SecondNetworkCreated => {
+                company_attrs = company_attrs.with_second_network_date(event.timestamp);
             }
             TelemetryOperation::FirstTagCreated => {
                 company_attrs = company_attrs.with_first_tag_date(event.timestamp);
@@ -504,7 +504,7 @@ impl BrevoService {
             TelemetryOperation::InviteAccepted => {
                 company_attrs = company_attrs.with_first_invite_accepted_date(event.timestamp);
             }
-            TelemetryOperation::SecondNetworkCreated
+            TelemetryOperation::FirstNetworkCreated
             | TelemetryOperation::FirstDiscoveryCompleted
             | TelemetryOperation::FirstHostDiscovered => {
                 tracing::debug!(
@@ -742,8 +742,11 @@ impl BrevoService {
         let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
         let network_count = networks.len() as i64;
 
-        if let Some(first_network) = networks.iter().min_by_key(|n| n.created_at) {
-            attrs = attrs.with_first_network_date(first_network.created_at);
+        // Track second network date (first is created during onboarding, so not meaningful)
+        let mut sorted_networks: Vec<_> = networks.iter().collect();
+        sorted_networks.sort_by_key(|n| n.created_at);
+        if let Some(second_network) = sorted_networks.get(1) {
+            attrs = attrs.with_second_network_date(second_network.created_at);
         }
 
         let host_filter = StorableFilter::<Host>::new_from_network_ids(&network_ids);
