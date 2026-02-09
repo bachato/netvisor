@@ -471,9 +471,9 @@ pub struct TrackEventRequest {
     pub event_name: String,
     pub identifiers: EventIdentifiers,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub event_properties: Option<HashMap<String, serde_json::Value>>,
+    pub event_properties: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub contact_properties: Option<HashMap<String, serde_json::Value>>,
+    pub contact_properties: Option<serde_json::Value>,
 }
 
 /// POST /crm/deals - create deal
@@ -482,7 +482,7 @@ pub struct TrackEventRequest {
 pub struct CreateDealRequest {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub attributes: Option<HashMap<String, serde_json::Value>>,
+    pub attributes: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linked_contacts_ids: Option<Vec<i64>>,
     #[serde(skip_serializing_if = "Option::is_none")]

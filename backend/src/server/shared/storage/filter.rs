@@ -140,6 +140,18 @@ impl<T: Storable> StorableFilter<T> {
             .standby(false)
     }
 
+    pub fn new_with_stripe_customer_id(id: &String) -> Self {
+        Self::new().stripe_customer_id(id)
+    }
+
+    pub fn stripe_customer_id(mut self, id: &String) -> Self {
+        let col = self.qualify_column("stripe_customer_id");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::String(*id));
+        self
+    }
+
     /// Qualify a column name with the table name.
     fn qualify_column(&self, column: &str) -> String {
         format!("{}.{}", T::table_name(), column)

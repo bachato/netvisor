@@ -401,29 +401,11 @@ async fn submit_enterprise_inquiry(
         .ok_or_else(ApiError::organization_required)?;
 
     let deal_name = format!("Enterprise Inquiry - {}", &request.company);
-    let mut deal_attrs = std::collections::HashMap::new();
-    deal_attrs.insert(
-        "team_size".to_string(),
-        serde_json::json!(&request.team_size),
-    );
-    deal_attrs.insert("message".to_string(), serde_json::json!(&request.message));
-    if let Some(urgency) = &request.urgency {
-        deal_attrs.insert("urgency".to_string(), serde_json::json!(urgency));
-    }
-    if let Some(plan_type) = &request.plan_type {
-        deal_attrs.insert("plan_type".to_string(), serde_json::json!(plan_type));
-    }
-    if let Some(network_count) = request.network_count {
-        deal_attrs.insert(
-            "network_count".to_string(),
-            serde_json::json!(network_count.to_string()),
-        );
-    }
 
     let company_ids = org.base.brevo_company_id.map(|id| vec![id]);
     if let Err(e) = brevo_service
         .client
-        .create_deal(&deal_name, Some(deal_attrs), company_ids)
+        .create_deal(&deal_name, Some(serde_json::to_value(&request)?), company_ids)
         .await
     {
         tracing::warn!(
@@ -433,24 +415,10 @@ async fn submit_enterprise_inquiry(
         );
     }
 
-    // 2. Track event for automation triggers (notifications)
-    let mut event_props = std::collections::HashMap::new();
-    event_props.insert("company".to_string(), serde_json::json!(&request.company));
-    event_props.insert(
-        "team_size".to_string(),
-        serde_json::json!(&request.team_size),
-    );
-    event_props.insert("message".to_string(), serde_json::json!(&request.message));
-    if let Some(urgency) = &request.urgency {
-        event_props.insert("urgency".to_string(), serde_json::json!(urgency));
-    }
-    if let Some(plan_type) = &request.plan_type {
-        event_props.insert("plan_type".to_string(), serde_json::json!(plan_type));
-    }
-
+    // 2. Fire event for tracking and triggers
     if let Err(e) = brevo_service
         .client
-        .track_event("enterprise_inquiry", &request.email, Some(event_props))
+        .track_event("enterprise_inquiry", &request.email, Some(serde_json::to_value(&request)?))
         .await
     {
         tracing::warn!(

@@ -20,7 +20,7 @@ use crate::server::{
 };
 use anyhow::Result;
 use chrono::Utc;
-use std::{collections::HashMap, sync::Arc};
+use std::{sync::Arc};
 use uuid::Uuid;
 
 /// Service for syncing data to Brevo CRM
@@ -396,11 +396,9 @@ impl BrevoService {
 
         // Track event for automation
         if let Some(email) = self.get_owner_email(event.organization_id).await {
-            let mut props = HashMap::new();
-            props.insert("plan".to_string(), serde_json::json!(plan_name));
             if let Err(e) = self
                 .client
-                .track_event("checkout_completed", &email, Some(props))
+                .track_event("checkout_completed", &email, Some(event.metadata.clone()))
                 .await
             {
                 tracing::warn!(error = %e, "Failed to track checkout_completed event in Brevo");
@@ -453,11 +451,9 @@ impl BrevoService {
             .await?;
 
         if let Some(email) = self.get_owner_email(event.organization_id).await {
-            let mut props = HashMap::new();
-            props.insert("converted".to_string(), serde_json::json!(converted));
             if let Err(e) = self
                 .client
-                .track_event("trial_ended", &email, Some(props))
+                .track_event("trial_ended", &email, Some(event.metadata.clone()))
                 .await
             {
                 tracing::warn!(error = %e, "Failed to track trial_ended event in Brevo");
@@ -526,11 +522,9 @@ impl BrevoService {
             .await?;
 
         if let Some(email) = self.get_owner_email(event.organization_id).await {
-            let mut props = HashMap::new();
-            props.insert("new_plan".to_string(), serde_json::json!(new_plan));
             if let Err(e) = self
                 .client
-                .track_event("plan_changed", &email, Some(props))
+                .track_event("plan_changed", &email, Some(event.metadata.clone()))
                 .await
             {
                 tracing::warn!(error = %e, "Failed to track plan_changed event in Brevo");

@@ -1068,7 +1068,7 @@ impl BillingService {
 
             if let Some(ref email_service) = self.email_service
                 && let Err(e) = email_service
-                    .send_trial_ending_email(owner.base.email.clone(), plan.name())
+                    .send_trial_ending_email(owner.base.email.clone(), plan.name(), organization.base.has_payment_method)
                     .await
             {
                 tracing::warn!(error = %e, "Failed to send trial_ending email");

@@ -8,7 +8,7 @@ use anyhow::{Result, anyhow};
 use backon::{ExponentialBuilder, Retryable};
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::InMemoryState};
 use reqwest::Client;
-use std::{collections::HashMap, num::NonZeroU32, sync::Arc};
+use std::{num::NonZeroU32, sync::Arc};
 
 const BREVO_API_BASE: &str = "https://api.brevo.com/v3";
 
@@ -463,7 +463,7 @@ impl BrevoClient {
     pub async fn create_deal(
         &self,
         name: &str,
-        attributes: Option<HashMap<String, serde_json::Value>>,
+        attributes: Option<serde_json::Value>,
         company_ids: Option<Vec<String>>,
     ) -> Result<String> {
         let url = format!("{}/crm/deals", BREVO_API_BASE);
@@ -529,7 +529,7 @@ impl BrevoClient {
         &self,
         event_name: &str,
         email: &str,
-        event_properties: Option<HashMap<String, serde_json::Value>>,
+        event_properties: Option<serde_json::Value>,
     ) -> Result<()> {
         let url = format!("{}/events", BREVO_API_BASE);
         let body = TrackEventRequest {

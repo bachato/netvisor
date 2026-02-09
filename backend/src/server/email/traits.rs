@@ -6,11 +6,7 @@ use email_address::EmailAddress;
 
 use crate::server::{
     email::templates::{
-        EMAIL_FOOTER, EMAIL_HEADER, EMAIL_VERIFICATION_BODY, INVITE_LINK_BODY, PASSWORD_RESET_BODY,
-        PAYMENT_METHOD_ADDED_BODY, PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY,
-        PLAN_CHANGED_TITLE, SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE,
-        TRIAL_ENDING_BODY, TRIAL_ENDING_TITLE, TRIAL_EXPIRED_BODY, TRIAL_EXPIRED_TITLE,
-        TRIAL_STARTED_BODY, TRIAL_STARTED_TITLE,
+        EMAIL_FOOTER, EMAIL_HEADER, EMAIL_VERIFICATION_BODY, INVITE_LINK_BODY, PASSWORD_RESET_BODY, PAYMENT_METHOD_ADDED_BODY, PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY, PLAN_CHANGED_TITLE, SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE, TRIAL_ENDING_BODY_HAS_PAYMENT, TRIAL_ENDING_BODY_NO_PAYMENT, TRIAL_ENDING_TITLE, TRIAL_EXPIRED_BODY, TRIAL_EXPIRED_TITLE, TRIAL_STARTED_BODY, TRIAL_STARTED_TITLE
     },
     users::service::UserService,
 };
@@ -99,8 +95,13 @@ pub trait EmailProvider: Send + Sync {
         &self,
         to: EmailAddress,
         plan_name: &str,
+        has_payment: bool,
     ) -> Result<(), Error> {
-        let (subject, body) = self.build_trial_ending_email(plan_name);
+        let (subject, body) = if has_payment {
+            self.build_trial_ending_email_has_payment(plan_name)
+        } else {
+            self.build_trial_ending_email_no_payment(plan_name)
+        };
         self.send_billing_email(to, subject, body).await
     }
 
@@ -136,8 +137,13 @@ pub trait EmailProvider: Send + Sync {
         (TRIAL_STARTED_TITLE.to_string(), body)
     }
 
-    fn build_trial_ending_email(&self, plan_name: &str) -> (String, String) {
-        let body = self.build_email(TRIAL_ENDING_BODY.replace("{plan_name}", plan_name));
+    fn build_trial_ending_email_no_payment(&self, plan_name: &str) -> (String, String) {
+        let body = self.build_email(TRIAL_ENDING_BODY_NO_PAYMENT.replace("{plan_name}", plan_name));
+        (TRIAL_ENDING_TITLE.to_string(), body)
+    }
+
+    fn build_trial_ending_email_has_payment(&self, plan_name: &str) -> (String, String) {
+        let body = self.build_email(TRIAL_ENDING_BODY_HAS_PAYMENT.replace("{plan_name}", plan_name));
         (TRIAL_ENDING_TITLE.to_string(), body)
     }
 
@@ -226,8 +232,8 @@ impl EmailService {
             .await
     }
 
-    pub async fn send_trial_ending_email(&self, to: EmailAddress, plan_name: &str) -> Result<()> {
-        self.provider.send_trial_ending_email(to, plan_name).await
+    pub async fn send_trial_ending_email(&self, to: EmailAddress, plan_name: &str, has_payment: bool) -> Result<()> {
+        self.provider.send_trial_ending_email(to, plan_name, has_payment).await
     }
 
     pub async fn send_trial_expired_email(&self, to: EmailAddress, plan_name: &str) -> Result<()> {
