@@ -49,6 +49,7 @@ use stripe_checkout::checkout_session::{
 };
 use stripe_checkout::{
     CheckoutSession, CheckoutSessionBillingAddressCollection, CheckoutSessionMode,
+    CheckoutSessionPaymentMethodCollection,
 };
 use stripe_core::customer::CreateCustomer;
 use stripe_core::customer::ListPaymentMethodsCustomer;
@@ -1063,8 +1064,9 @@ impl BillingService {
 
     /// Handle checkout.session.completed — mark payment method as collected.
     ///
-    /// Fires for both setup mode (card collection without charge) and subscription mode
-    /// (new subscription via Checkout). Both mean the customer now has a payment method.
+    /// Only sets has_payment_method when payment was actually collected (setup mode,
+    /// or subscription mode with payment_method_collection = Always). Trial checkouts
+    /// use IfRequired and don't collect payment upfront.
     async fn handle_checkout_completed(
         &self,
         session: stripe_checkout::CheckoutSession,
@@ -1076,8 +1078,18 @@ impl BillingService {
             return Ok(());
         }
 
-        // Subscription-mode sessions store org_id in subscription_data.metadata,
-        // which is on the session's top-level metadata. Setup-mode uses session metadata directly.
+        // Trial checkouts use IfRequired — no payment method is collected
+        let collected_payment = session.payment_method_collection
+            != Some(CheckoutSessionPaymentMethodCollection::IfRequired);
+
+        if !collected_payment {
+            tracing::debug!(
+                mode = ?session.mode,
+                "Checkout completed without payment collection (trial) — skipping has_payment_method"
+            );
+            return Ok(());
+        }
+
         let metadata = session
             .metadata
             .as_ref()
