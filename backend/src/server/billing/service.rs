@@ -51,6 +51,7 @@ use stripe_checkout::{
     CheckoutSession, CheckoutSessionBillingAddressCollection, CheckoutSessionMode,
 };
 use stripe_core::customer::CreateCustomer;
+use stripe_core::customer::ListPaymentMethodsCustomer;
 use stripe_core::{CustomerId, EventType};
 use stripe_product::Price;
 use stripe_product::price::CreatePriceRecurring;
@@ -721,6 +722,22 @@ impl BillingService {
                     self.handle_checkout_completed(session).await?;
                 }
             }
+            EventType::PaymentMethodAttached => {
+                if let EventObject::PaymentMethodAttached(pm) = event.data.object
+                    && let Some(customer) = pm.customer.as_ref()
+                {
+                    self.handle_payment_method_attached(customer.id().to_string())
+                        .await?;
+                }
+            }
+            EventType::PaymentMethodDetached => {
+                if let EventObject::PaymentMethodDetached(pm) = event.data.object
+                    && let Some(customer) = pm.customer.as_ref()
+                {
+                    self.handle_payment_method_detached(customer.id().to_string())
+                        .await?;
+                }
+            }
             _ => {
                 tracing::debug!(
                     event_type = ?event.type_,
@@ -1087,6 +1104,65 @@ impl BillingService {
             mode = ?session.mode,
             "Payment method confirmed via checkout"
         );
+
+        Ok(())
+    }
+
+    async fn handle_payment_method_attached(&self, customer_id: String) -> Result<(), Error> {
+        let filter = StorableFilter::<Organization>::new_with_stripe_customer_id(&customer_id);
+        let Some(mut organization) = self.organization_service.get_one(filter).await? else {
+            tracing::debug!(
+                stripe_customer_id = %customer_id,
+                "No organization found for payment_method.attached — ignoring"
+            );
+            return Ok(());
+        };
+
+        organization.base.has_payment_method = true;
+        self.organization_service
+            .update(&mut organization, AuthenticatedEntity::System)
+            .await?;
+
+        tracing::info!(
+            organization_id = %organization.id,
+            "Payment method attached — has_payment_method set to true"
+        );
+
+        Ok(())
+    }
+
+    async fn handle_payment_method_detached(&self, customer_id: String) -> Result<(), Error> {
+        let filter = StorableFilter::<Organization>::new_with_stripe_customer_id(&customer_id);
+        let Some(mut organization) = self.organization_service.get_one(filter).await? else {
+            tracing::debug!(
+                stripe_customer_id = %customer_id,
+                "No organization found for payment_method.detached — ignoring"
+            );
+            return Ok(());
+        };
+
+        // Check if the customer still has any payment methods remaining
+        let remaining = ListPaymentMethodsCustomer::new(CustomerId::from(customer_id.clone()))
+            .send(&self.stripe)
+            .await?;
+
+        if remaining.data.is_empty() {
+            organization.base.has_payment_method = false;
+            self.organization_service
+                .update(&mut organization, AuthenticatedEntity::System)
+                .await?;
+
+            tracing::info!(
+                organization_id = %organization.id,
+                "Last payment method detached — has_payment_method set to false"
+            );
+        } else {
+            tracing::info!(
+                organization_id = %organization.id,
+                remaining_count = remaining.data.len(),
+                "Payment method detached but customer still has others"
+            );
+        }
 
         Ok(())
     }
