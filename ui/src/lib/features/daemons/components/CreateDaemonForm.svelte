@@ -8,7 +8,7 @@
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
 	import { ArrowUpCircle, ChevronDown, ChevronRight, RotateCcwKey } from 'lucide-svelte';
-	import type { Component } from 'svelte';
+
 	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
 	import {
@@ -432,7 +432,7 @@
 													{
 														label: 'Upgrade',
 														color: 'Yellow',
-														icon: ArrowUpCircle as unknown as Component
+														icon: ArrowUpCircle
 													}
 												]
 											: []

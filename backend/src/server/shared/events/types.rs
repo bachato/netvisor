@@ -419,6 +419,9 @@ pub enum TelemetryOperation {
     TrialWillEnd,
     SubscriptionCancelled,
     PlanChanged,
+    PaymentFailed,
+    PaymentActionRequired,
+    PaymentRecovered,
 
     // Engagement signals
     FirstDaemonRegistered,
@@ -453,6 +456,9 @@ impl TelemetryOperation {
                 | TelemetryOperation::TrialWillEnd
                 | TelemetryOperation::SubscriptionCancelled
                 | TelemetryOperation::PlanChanged
+                | TelemetryOperation::PaymentFailed
+                | TelemetryOperation::PaymentActionRequired
+                | TelemetryOperation::PaymentRecovered
         )
     }
 }

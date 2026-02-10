@@ -217,7 +217,7 @@ pub async fn rate_limit_middleware(
     {
         let path = request.uri().path();
 
-        let exempt_paths = ["/api/billing/webhooks/", "/api/config", "/api/metadata"];
+        let exempt_paths = ["/api/billing/webhooks", "/api/config", "/api/metadata"];
 
         // Exempt static file serving, billing webhooks, config and metadata
         if !path.starts_with("/api/") || exempt_paths.contains(&path) {

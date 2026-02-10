@@ -106,13 +106,10 @@ pub async fn require_billing_for_users(
 
     // Check subscription status
     match organization.base.plan_status.as_deref() {
-        Some("active") | Some("trialing") | Some("pending_cancellation") => {
-            // Active subscription (or scheduled downgrade) - allow request
+        Some("active") | Some("trialing") | Some("pending_cancellation") | Some("past_due") => {
+            // Active subscription (or scheduled downgrade / past due with retries) - allow request
             next.run(request).await
         }
-        Some("past_due") => billing_error_response(
-            "Your subscription is past due. Please update your payment method.",
-        ),
         Some("canceled") => {
             billing_error_response("Your subscription has been canceled. Please renew to continue.")
         }

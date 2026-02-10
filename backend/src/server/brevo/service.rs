@@ -20,7 +20,7 @@ use crate::server::{
 };
 use anyhow::Result;
 use chrono::Utc;
-use std::{sync::Arc};
+use std::sync::Arc;
 use uuid::Uuid;
 
 /// Service for syncing data to Brevo CRM
@@ -113,6 +113,27 @@ impl BrevoService {
             }
             TelemetryOperation::PlanChanged => {
                 self.handle_plan_changed(event).await?;
+            }
+            TelemetryOperation::PaymentFailed => {
+                self.update_company_by_org(
+                    event.organization_id,
+                    CompanyAttributes::new().with_plan_status("payment_failed"),
+                )
+                .await?;
+            }
+            TelemetryOperation::PaymentActionRequired => {
+                self.update_company_by_org(
+                    event.organization_id,
+                    CompanyAttributes::new().with_plan_status("payment_action_required"),
+                )
+                .await?;
+            }
+            TelemetryOperation::PaymentRecovered => {
+                self.update_company_by_org(
+                    event.organization_id,
+                    CompanyAttributes::new().with_plan_status("active"),
+                )
+                .await?;
             }
             TelemetryOperation::FirstDaemonRegistered => {
                 self.handle_first_daemon_registered(event).await?;
@@ -395,14 +416,13 @@ impl BrevoService {
         }
 
         // Track event for automation
-        if let Some(email) = self.get_owner_email(event.organization_id).await {
-            if let Err(e) = self
+        if let Some(email) = self.get_owner_email(event.organization_id).await
+            && let Err(e) = self
                 .client
                 .track_event("checkout_completed", &email, Some(event.metadata.clone()))
                 .await
-            {
-                tracing::warn!(error = %e, "Failed to track checkout_completed event in Brevo");
-            }
+        {
+            tracing::warn!(error = %e, "Failed to track checkout_completed event in Brevo");
         }
 
         tracing::info!(
@@ -450,14 +470,13 @@ impl BrevoService {
         self.update_company_by_org(event.organization_id, company_attrs)
             .await?;
 
-        if let Some(email) = self.get_owner_email(event.organization_id).await {
-            if let Err(e) = self
+        if let Some(email) = self.get_owner_email(event.organization_id).await
+            && let Err(e) = self
                 .client
                 .track_event("trial_ended", &email, Some(event.metadata.clone()))
                 .await
-            {
-                tracing::warn!(error = %e, "Failed to track trial_ended event in Brevo");
-            }
+        {
+            tracing::warn!(error = %e, "Failed to track trial_ended event in Brevo");
         }
 
         tracing::debug!(
@@ -521,14 +540,13 @@ impl BrevoService {
         self.update_company_by_org(event.organization_id, company_attrs)
             .await?;
 
-        if let Some(email) = self.get_owner_email(event.organization_id).await {
-            if let Err(e) = self
+        if let Some(email) = self.get_owner_email(event.organization_id).await
+            && let Err(e) = self
                 .client
                 .track_event("plan_changed", &email, Some(event.metadata.clone()))
                 .await
-            {
-                tracing::warn!(error = %e, "Failed to track plan_changed event in Brevo");
-            }
+        {
+            tracing::warn!(error = %e, "Failed to track plan_changed event in Brevo");
         }
 
         tracing::debug!(

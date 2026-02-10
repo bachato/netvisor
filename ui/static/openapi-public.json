@@ -9282,14 +9282,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-09T16:38:49.513396Z",
-              "id": "d08d3da0-3765-456d-a825-f9618a97832c",
+              "created_at": "2026-02-10T01:38:08.926495Z",
+              "id": "797fb716-d886-49ca-aeeb-7771c97d645c",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-09T16:38:49.513396Z"
+              "updated_at": "2026-02-10T01:38:08.926495Z"
             }
           },
           "error": {
@@ -10034,14 +10034,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-09T16:38:49.500864Z",
-                      "id": "a9d62055-0941-4d0d-afb6-0e691580fe8d",
+                      "created_at": "2026-02-10T01:38:08.914040Z",
+                      "id": "f1d16e50-88f4-471a-8d36-0b719a1213a0",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-09T16:38:49.500864Z"
+                      "updated_at": "2026-02-10T01:38:08.914040Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10050,7 +10050,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Ring Doorbell",
+                  "service_definition": "FreshRSS",
                   "source": {
                     "type": "Manual"
                   },
@@ -10853,14 +10853,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-09T16:38:49.509443Z",
-                  "id": "2b227f62-1734-477f-b667-b657867dab90",
+                  "created_at": "2026-02-10T01:38:08.922403Z",
+                  "id": "3129b093-1ada-4d30-a9fa-2ab4747a7427",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-09T16:38:49.509443Z"
+                  "updated_at": "2026-02-10T01:38:08.922403Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -10869,7 +10869,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Ring Doorbell",
+              "service_definition": "FreshRSS",
               "source": {
                 "type": "Manual"
               },
@@ -12068,14 +12068,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-09T16:38:49.501090Z",
-          "id": "f563d29a-27a8-4ccb-be88-3115b7f3fe1a",
+          "created_at": "2026-02-10T01:38:08.914257Z",
+          "id": "2bb4e545-9852-4fbf-a89e-0f185674be68",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-09T16:38:49.501090Z"
+          "updated_at": "2026-02-10T01:38:08.914257Z"
         }
       },
       "BindingBase": {
@@ -12569,7 +12569,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Ring Doorbell",
+              "service_definition": "FreshRSS",
               "tags": [],
               "virtualization": null
             }
@@ -14425,14 +14425,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-09T16:38:49.500574Z",
-                  "id": "d695cf20-2eb9-4460-a8bc-1fe38bf12f28",
+                  "created_at": "2026-02-10T01:38:08.913738Z",
+                  "id": "65c35652-e083-4aea-a793-0e1b869de845",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-09T16:38:49.500574Z"
+                  "updated_at": "2026-02-10T01:38:08.913738Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14441,7 +14441,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Ring Doorbell",
+              "service_definition": "FreshRSS",
               "source": {
                 "type": "Manual"
               },
@@ -16334,14 +16334,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-09T16:38:49.494550Z",
-                        "id": "ce39b57b-c744-4f0a-8a36-97fe7544ffd4",
+                        "created_at": "2026-02-10T01:38:08.906820Z",
+                        "id": "2074c721-375c-428b-8380-15e97b300e82",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-09T16:38:49.494550Z"
+                        "updated_at": "2026-02-10T01:38:08.906820Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16350,7 +16350,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Ring Doorbell",
+                    "service_definition": "FreshRSS",
                     "source": {
                       "type": "Manual"
                     },
@@ -16427,14 +16427,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-09T16:38:49.508396Z",
-                    "id": "1aef4e54-84e5-4723-8a9e-7196b39baa4e",
+                    "created_at": "2026-02-10T01:38:08.921278Z",
+                    "id": "7ebc4c8e-2a64-4aa1-beb6-dde55ddbebcc",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-09T16:38:49.508396Z"
+                    "updated_at": "2026-02-10T01:38:08.921278Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16443,7 +16443,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Ring Doorbell",
+                "service_definition": "FreshRSS",
                 "source": {
                   "type": "Manual"
                 },
@@ -17425,14 +17425,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-09T16:38:49.501012Z",
-              "id": "9c0bf42a-d574-4287-8736-667662e4c277",
+              "created_at": "2026-02-10T01:38:08.914181Z",
+              "id": "84afeebd-0f27-4798-be9c-69096280edc4",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-09T16:38:49.501012Z"
+              "updated_at": "2026-02-10T01:38:08.914181Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17441,7 +17441,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Ring Doorbell",
+          "service_definition": "FreshRSS",
           "source": {
             "type": "Manual"
           },
@@ -18171,6 +18171,9 @@
           "TrialWillEnd",
           "SubscriptionCancelled",
           "PlanChanged",
+          "PaymentFailed",
+          "PaymentActionRequired",
+          "PaymentRecovered",
           "FirstDaemonRegistered",
           "FirstTopologyRebuild",
           "FirstDiscoveryCompleted",

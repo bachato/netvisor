@@ -54,7 +54,7 @@
 
 	let selectedUseCase = $state<UseCase | null>(null);
 	let showLicenseWarning = $state(false);
-	let qualFieldsEl = $state<HTMLElement | undefined>(undefined);
+	let scrollContainerEl = $state<HTMLElement | undefined>(undefined);
 
 	// Role options
 	const roleOptions = [
@@ -144,9 +144,11 @@
 			showLicenseWarning = false;
 		}
 
-		// Auto-scroll to qualification fields after DOM updates
+		// Auto-scroll to bottom of modal after DOM updates
 		tick().then(() => {
-			qualFieldsEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			if (scrollContainerEl) {
+				scrollContainerEl.scrollTo({ top: scrollContainerEl.scrollHeight, behavior: 'smooth' });
+			}
 		});
 	}
 
@@ -230,7 +232,7 @@
 	{/snippet}
 
 	<div class="flex min-h-0 flex-1 flex-col">
-		<div class="flex-1 overflow-y-auto p-6">
+		<div class="flex-1 overflow-y-auto p-6" bind:this={scrollContainerEl}>
 			<div class="space-y-6">
 				<p class="text-secondary text-center text-sm">{onboarding_tailorSetup()}</p>
 
@@ -292,7 +294,7 @@
 
 					<!-- Referral Source (all use cases on Cloud) -->
 					{#if selectedUseCase}
-						<div class="card card-static" bind:this={qualFieldsEl}>
+						<div class="card card-static">
 							<form.Field name="referralSource">
 								{#snippet children(field)}
 									<SelectInput

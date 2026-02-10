@@ -25,7 +25,6 @@
 	import {
 		common_confirmDeleteName,
 		common_create,
-		common_schedule,
 		common_tags,
 		discovery_confirmDeleteScheduled,
 		discovery_noScheduledSessions,

@@ -18,10 +18,14 @@
 
 	let {
 		isOpen = false,
-		onClose
+		onClose,
+		initialTab = 'account',
+		dismissible = true
 	}: {
 		isOpen: boolean;
 		onClose: () => void;
+		initialTab?: string;
+		dismissible?: boolean;
 	} = $props();
 
 	// TanStack Query for current user and organization
@@ -69,7 +73,7 @@
 
 	// Reset sub-views when modal opens or tab changes
 	function handleOpen() {
-		activeTab = 'account';
+		activeTab = initialTab;
 		accountSubView = 'main';
 		orgSubView = 'main';
 	}
@@ -82,6 +86,7 @@
 	}
 
 	function handleClose() {
+		if (!dismissible) return;
 		// Reset sub-views on close
 		accountSubView = 'main';
 		orgSubView = 'main';
@@ -95,7 +100,8 @@
 	size="xl"
 	onClose={handleClose}
 	onOpen={handleOpen}
-	showCloseButton={true}
+	preventCloseOnClickOutside={!dismissible}
+	showCloseButton={dismissible}
 	tabs={visibleTabs}
 	{activeTab}
 	onTabChange={handleTabChange}
@@ -110,7 +116,7 @@
 		{:else if activeTab === 'organization'}
 			<OrganizationTab bind:subView={orgSubView} onClose={handleClose} />
 		{:else if activeTab === 'billing'}
-			<BillingTab {isOpen} onClose={handleClose} />
+			<BillingTab {isOpen} onClose={handleClose} {dismissible} />
 		{/if}
 	</div>
 </GenericModal>

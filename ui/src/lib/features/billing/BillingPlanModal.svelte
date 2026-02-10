@@ -13,7 +13,7 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import PlanInquiryModal from '$lib/features/billing/PlanInquiryModal.svelte';
-	import { trackEvent } from '$lib/shared/utils/analytics';
+	import { storeEventForAfterRedirect } from '$lib/shared/utils/analytics';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 
 	let {
@@ -92,9 +92,9 @@
 
 	async function handlePlanSelect(plan: BillingPlan) {
 		try {
-			// Track plan selection
+			// Store event to flush after Stripe redirect (hard navigation kills pending PostHog requests)
 			const metadata = billingPlanHelpers.getMetadata(plan.type);
-			trackEvent('plan_selected', {
+			storeEventForAfterRedirect('plan_selected', {
 				plan: plan.type,
 				is_commercial: metadata?.is_commercial ?? false
 			});

@@ -1,5 +1,5 @@
 import type { IconComponent } from '$lib/shared/utils/types';
-import type { Component, Snippet } from 'svelte';
+import type { Snippet } from 'svelte';
 import type { Color } from '$lib/shared/utils/styling';
 
 // ============================================================================
@@ -14,7 +14,7 @@ export interface TagProps {
 	textColor?: string;
 	bgColor?: string;
 	color?: Color;
-	icon?: Component;
+	icon?: IconComponent;
 }
 
 export interface CardAction {
@@ -30,7 +30,7 @@ export interface CardAction {
 export interface CardFieldItem {
 	id: string;
 	label: string;
-	icon?: Component; // Svelte component instead of HTML
+	icon?: IconComponent; // Svelte component instead of HTML
 	iconColor?: string;
 	bgColor?: string;
 	color?: Color;

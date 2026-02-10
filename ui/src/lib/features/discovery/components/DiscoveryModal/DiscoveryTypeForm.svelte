@@ -10,7 +10,7 @@
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { showBillingPlanModal } from '$lib/features/billing/stores';
 	import { ArrowUpCircle } from 'lucide-svelte';
-	import type { Component } from 'svelte';
+
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
 	import {
 		SimpleOptionDisplay,
@@ -110,7 +110,7 @@
 						{
 							label: 'Upgrade',
 							color: 'Yellow',
-							icon: ArrowUpCircle as unknown as Component
+							icon: ArrowUpCircle
 						}
 					]
 				: []

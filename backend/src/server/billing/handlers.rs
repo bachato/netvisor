@@ -130,7 +130,7 @@ async fn create_checkout_session(
 
                 if needs_checkout {
                     // Route through Stripe Checkout to collect payment / apply trial
-                    let success_url = format!("{}?session_id={{CHECKOUT_SESSION_ID}}", request.url);
+                    let success_url = format!("{}?billing_flow=checkout", request.url);
                     let cancel_url = request.url.clone();
                     let session = billing_service
                         .create_checkout_session(
@@ -152,7 +152,7 @@ async fn create_checkout_session(
             }
         } else {
             // First-time subscriber — create Stripe checkout session
-            let success_url = format!("{}?session_id={{CHECKOUT_SESSION_ID}}", request.url);
+            let success_url = format!("{}?billing_flow=checkout", request.url);
             let cancel_url = request.url.clone();
 
             let session = billing_service
@@ -193,7 +193,7 @@ async fn setup_payment_method(
         .organization_id()
         .ok_or_else(ApiError::organization_required)?;
 
-    let success_url = format!("{}?setup_complete=true", request.url);
+    let success_url = format!("{}?billing_flow=payment_setup", request.url);
     let cancel_url = request.url;
 
     if let Some(billing_service) = state.services.billing_service.clone() {
@@ -403,9 +403,21 @@ async fn submit_enterprise_inquiry(
     let deal_name = format!("Enterprise Inquiry - {}", &request.company);
 
     let company_ids = org.base.brevo_company_id.map(|id| vec![id]);
+    let mut deal_attributes = serde_json::to_value(&request)?;
+    if let Some(obj) = deal_attributes.as_object_mut() {
+        obj.remove("email");
+        obj.remove("company");
+        obj.remove("name");
+        // Brevo deal attributes must all be strings
+        for value in obj.values_mut() {
+            if let serde_json::Value::Number(n) = value {
+                *value = serde_json::Value::String(n.to_string());
+            }
+        }
+    }
     if let Err(e) = brevo_service
         .client
-        .create_deal(&deal_name, Some(serde_json::to_value(&request)?), company_ids)
+        .create_deal(&deal_name, Some(deal_attributes), company_ids)
         .await
     {
         tracing::warn!(
@@ -418,7 +430,11 @@ async fn submit_enterprise_inquiry(
     // 2. Fire event for tracking and triggers
     if let Err(e) = brevo_service
         .client
-        .track_event("enterprise_inquiry", &request.email, Some(serde_json::to_value(&request)?))
+        .track_event(
+            "enterprise_inquiry",
+            &request.email,
+            Some(serde_json::to_value(&request)?),
+        )
         .await
     {
         tracing::warn!(

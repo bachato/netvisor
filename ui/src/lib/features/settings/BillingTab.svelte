@@ -4,7 +4,7 @@
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
 	import { billingPlans } from '$lib/shared/stores/metadata';
-	import { trackEvent } from '$lib/shared/utils/analytics';
+	import { trackEvent, storeEventForAfterRedirect } from '$lib/shared/utils/analytics';
 	import {
 		useCustomerPortalMutation,
 		useSetupPaymentMethodMutation
@@ -25,6 +25,7 @@
 		settings_billing_canceled,
 		settings_billing_contactUs,
 		settings_billing_currentPlan,
+		settings_billing_downgrade_pending,
 		settings_billing_manageSubscription,
 		settings_billing_needHelp,
 		settings_billing_pastDue,
@@ -33,13 +34,18 @@
 		settings_billing_trialDays,
 		settings_billing_unableToLoad
 	} from '$lib/paraglide/messages';
+	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
+	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
+	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
 
 	let {
 		isOpen = false,
-		onClose
+		onClose,
+		dismissible = true
 	}: {
 		isOpen?: boolean;
 		onClose: () => void;
+		dismissible?: boolean;
 	} = $props();
 
 	// TanStack Query for users - only fetch when modal is open (Owner only)
@@ -125,7 +131,7 @@
 	});
 
 	async function handleManageSubscription() {
-		trackEvent('billing_portal_opened', { plan_type: org?.plan?.type });
+		storeEventForAfterRedirect('billing_portal_opened', { plan_type: org?.plan?.type });
 		try {
 			const url = await customerPortalMutation.mutateAsync();
 			if (url) {
@@ -137,7 +143,7 @@
 	}
 
 	async function handleSetupPayment() {
-		trackEvent('payment_method_setup_initiated', {
+		storeEventForAfterRedirect('payment_method_setup_initiated', {
 			plan_status: org?.plan_status,
 			trial_days_left: trialDaysLeft
 		});
@@ -330,31 +336,22 @@
 							{/if}
 
 							{#if org.plan_status === 'trialing'}
-								<div
-									class="rounded-md border border-blue-800 bg-blue-900/30 p-3 text-sm text-blue-300"
-								>
-									{settings_billing_trialActive()}
-								</div>
+								<InlineInfo title={settings_billing_trialActive()} />
 							{:else if org.plan_status === 'past_due'}
-								<div
-									class="rounded-md border border-red-800 bg-red-900/30 p-3 text-sm text-red-300"
-								>
-									{settings_billing_pastDue()}
-								</div>
+								<InlineDanger title={settings_billing_pastDue()} />
 							{:else if org.plan_status === 'canceled'}
-								<div
-									class="rounded-md border border-yellow-800 bg-yellow-900/30 p-3 text-sm text-yellow-300"
-								>
-									{settings_billing_canceled()}
-								</div>
+								<InlineWarning title={settings_billing_canceled()} />
 							{:else if org.plan_status === 'pending_cancellation'}
-								<div
-									class="rounded-md border border-amber-800 bg-amber-900/30 p-3 text-sm text-amber-300"
+								<InlineWarning title={settings_billing_downgrade_pending()} />
+							{/if}
+
+							{#if !isFree}
+								<button
+									onclick={handleManageSubscription}
+									class="{org.plan_status === 'past_due' ? 'btn-primary' : 'btn-secondary'} w-full"
 								>
-									Your plan will change to Free at the end of your current billing cycle. To cancel
-									this change, upgrade to a paid plan or manage your subscription in the billing
-									portal.
-								</div>
+									{settings_billing_manageSubscription()}
+								</button>
 							{/if}
 						</div>
 					</svelte:fragment>
@@ -386,15 +383,6 @@
 					</div>
 				</InfoCard>
 
-				<!-- Actions -->
-				<div class="space-y-3">
-					{#if !isFree}
-						<button onclick={handleManageSubscription} class="btn-secondary w-full">
-							{settings_billing_manageSubscription()}
-						</button>
-					{/if}
-				</div>
-
 				<!-- Additional Info -->
 				<InfoCard title={settings_billing_needHelp()}>
 					<p class="text-secondary text-sm">
@@ -415,9 +403,11 @@
 	</div>
 
 	<!-- Footer -->
-	<div class="modal-footer">
-		<div class="flex justify-end">
-			<button type="button" onclick={onClose} class="btn-secondary">{common_close()}</button>
+	{#if dismissible}
+		<div class="modal-footer">
+			<div class="flex justify-end">
+				<button type="button" onclick={onClose} class="btn-secondary">{common_close()}</button>
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>

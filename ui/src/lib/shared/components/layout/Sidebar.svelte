@@ -45,12 +45,18 @@
 		activeTab = $bindable('topology'),
 		collapsed = $bindable(false),
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		allTabs = $bindable<Array<{ id: string; component: any; isReadOnly: boolean }>>([])
+		allTabs = $bindable<Array<{ id: string; component: any; isReadOnly: boolean }>>([]),
+		showSettings = $bindable(false),
+		settingsInitialTab = 'account',
+		settingsDismissible = true
 	}: {
 		activeTab?: string;
 		collapsed?: boolean;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		allTabs?: Array<{ id: string; component: any; isReadOnly: boolean }>;
+		showSettings?: boolean;
+		settingsInitialTab?: string;
+		settingsDismissible?: boolean;
 	} = $props();
 
 	// TanStack Query for current user and organization
@@ -69,16 +75,16 @@
 	let showUpgradeButton = $derived(isFreePlan && isOwner && isBillingEnabled);
 	let isReadOnly = $derived(userPermissions === 'Viewer');
 
-	let showSettings = $state(false);
 	let showSupport = $state(false);
 
 	// Show notification on settings only when trialing without payment method
 	// Free plan users don't need a payment method, so no dot for them
 	let showBillingNotification = $derived.by(() => {
 		if (!organization) return false;
+		const isPastDue = organization.plan_status === 'past_due';
 		const isTrialing = organization.plan_status === 'trialing';
 		const hasPayment = organization.has_payment_method ?? false;
-		return isTrialing && !hasPayment;
+		return isPastDue || (isTrialing && !hasPayment);
 	});
 
 	// Reopen settings modal when billing plan modal closes (if opened from settings)
@@ -648,5 +654,10 @@
 	</div>
 </div>
 
-<SettingsModal isOpen={showSettings} onClose={() => (showSettings = false)} />
+<SettingsModal
+	isOpen={showSettings}
+	onClose={() => (showSettings = false)}
+	initialTab={settingsInitialTab}
+	dismissible={settingsDismissible}
+/>
 <SupportModal isOpen={showSupport} onClose={() => (showSupport = false)} />

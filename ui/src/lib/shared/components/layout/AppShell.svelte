@@ -4,8 +4,13 @@
 	import type { Snippet } from 'svelte';
 	import { queryClient, queryKeys } from '$lib/api/query-client';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
-	import { useOrganizationQuery } from '$lib/features/organizations/queries';
-	import { identifyUser, trackEvent, flushEventQueue } from '$lib/shared/utils/analytics';
+	import { useOrganizationQuery, fetchOrganization } from '$lib/features/organizations/queries';
+	import {
+		identifyUser,
+		trackEvent,
+		flushEventQueue,
+		flushStoredEvents
+	} from '$lib/shared/utils/analytics';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import { resolve } from '$app/paths';
 	import { resetTopologyOptions } from '$lib/features/topology/queries';
@@ -43,6 +48,7 @@
 	// Track if we've done initial setup
 	let hasInitialized = $state(false);
 	let previouslyAuthenticated = $state<boolean | null>(null);
+	let handlingStripeReturn = $state(false);
 
 	// Effect to handle logout (clear data when user goes from authenticated to not)
 	$effect(() => {
@@ -85,6 +91,7 @@
 					loaded: () => {
 						posthogInstance = posthog;
 						flushEventQueue();
+						flushStoredEvents();
 					}
 				});
 			});
@@ -100,11 +107,9 @@
 
 	async function waitForBillingActivation(maxAttempts = 10) {
 		for (let i = 0; i < maxAttempts; i++) {
-			// Invalidate and refetch organization data
+			// Invalidate cache then fetch fresh organization data
 			await queryClient.invalidateQueries({ queryKey: queryKeys.organizations.current() });
-			const orgData = queryClient.getQueryData<typeof organization>(
-				queryKeys.organizations.current()
-			);
+			const orgData = await fetchOrganization();
 
 			if (orgData && isBillingPlanActive(orgData)) {
 				// Track billing completion for funnel analytics
@@ -184,32 +189,47 @@
 	$effect(() => {
 		if (!authCheckComplete || !isAuthenticated || !browser) return;
 		if (!organization) return;
+		if (handlingStripeReturn) return;
 
-		const sessionId = $page.url.searchParams.get('session_id');
+		const billingFlow = $page.url.searchParams.get('billing_flow');
 
-		// Handle Stripe session callback (billing activation)
-		if (sessionId && !isBillingPlanActive(organization)) {
+		// Handle Stripe checkout callback (new subscription activation)
+		if (billingFlow === 'checkout') {
 			const cleanUrl = new URL($page.url);
-			cleanUrl.searchParams.delete('session_id');
+			cleanUrl.searchParams.delete('billing_flow');
 			window.history.replaceState({}, '', cleanUrl.toString());
 
-			waitForBillingActivation().then((activated) => {
-				if (activated) {
-					const correctRoute = getRoute();
-					// eslint-disable-next-line svelte/no-navigation-without-resolve
-					goto(correctRoute);
-				}
-			});
-			return;
-		} else if (sessionId && isBillingPlanActive(organization)) {
-			// User returned from Stripe payment method setup while already on an active/trialing plan
+			if (isBillingPlanActive(organization)) {
+				// Webhook already processed — fire event directly
+				trackEvent('billing_completed', {
+					plan: organization.plan?.type ?? 'unknown',
+					amount: organization.plan?.base_cents ?? 0,
+					plan_status: organization.plan_status
+				});
+				pushSuccess(billing_subscriptionActivated());
+			} else {
+				// Webhook hasn't processed yet — poll until activation
+				handlingStripeReturn = true;
+				waitForBillingActivation()
+					.then((activated) => {
+						if (activated) {
+							// eslint-disable-next-line svelte/no-navigation-without-resolve
+							goto(getRoute());
+						}
+					})
+					.finally(() => {
+						handlingStripeReturn = false;
+					});
+				return;
+			}
+		} else if (billingFlow === 'payment_setup') {
 			trackEvent('payment_method_setup_completed', {
 				plan_type: organization.plan?.type,
 				plan_status: organization.plan_status
 			});
 
 			const cleanUrl = new URL($page.url);
-			cleanUrl.searchParams.delete('session_id');
+			cleanUrl.searchParams.delete('billing_flow');
 			window.history.replaceState({}, '', cleanUrl.toString());
 
 			// Refresh org data to update has_payment_method

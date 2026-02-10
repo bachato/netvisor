@@ -20,11 +20,11 @@
 	// After first billing checkout, trigger daemon setup
 	if (typeof window !== 'undefined') {
 		const params = new URLSearchParams(window.location.search);
-		if (params.has('session_id')) {
+		if (params.get('billing_flow') === 'checkout') {
 			sessionStorage.setItem('showDaemonSetup', 'true');
-			// Clean up URL
+			// Clean up URL (AppShell also cleans billing_flow, but this runs first)
 			const url = new URL(window.location.href);
-			url.searchParams.delete('session_id');
+			url.searchParams.delete('billing_flow');
 			window.history.replaceState({}, '', url.toString());
 		}
 	}
@@ -52,6 +52,8 @@
 	let appInitialized = $state(false);
 	let sidebarCollapsed = $state(false);
 	let dataLoadingStarted = $state(false);
+	let showSettings = $state(false);
+	let isPastDue = $derived(organization?.plan_status === 'past_due');
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	let allTabs = $state<Array<{ id: string; component: any; isReadOnly: boolean }>>([]);
 
@@ -73,6 +75,13 @@
 				sessionStorage.getItem('showDaemonSetup') === 'true';
 			activeTab = hasDaemons && !wantsDaemonSetup ? 'topology' : 'daemons';
 			initialTabSet = true;
+		}
+	});
+
+	// Auto-open settings modal to billing tab when past_due
+	$effect(() => {
+		if (isPastDue && appInitialized) {
+			showSettings = true;
 		}
 	});
 
@@ -131,7 +140,14 @@
 	<div class="flex h-screen">
 		<!-- Sidebar -->
 		<div class="flex-shrink-0">
-			<Sidebar bind:activeTab bind:collapsed={sidebarCollapsed} bind:allTabs />
+			<Sidebar
+				bind:activeTab
+				bind:collapsed={sidebarCollapsed}
+				bind:allTabs
+				bind:showSettings
+				settingsInitialTab={isPastDue ? 'billing' : 'account'}
+				settingsDismissible={!isPastDue}
+			/>
 		</div>
 
 		<!-- Main Content -->

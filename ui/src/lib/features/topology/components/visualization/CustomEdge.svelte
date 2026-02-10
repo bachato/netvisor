@@ -133,9 +133,17 @@
 	let baseOpacity = $derived.by(() => {
 		if ($isExporting) return 1;
 		// Fade if either endpoint is hidden by tag filter
-		if (isEndpointHiddenByTagFilter) return 0.3;
+		if (isEndpointHiddenByTagFilter) return 0.4;
 		// Fade based on selection state
 		if (!$topologyOptions.local.no_fade_edges && !shouldShowFull) return 0.4;
+		return 1;
+	});
+	// Labels stay fully visible unless there's an active selection causing edges to fade
+	let labelOpacity = $derived.by(() => {
+		if ($isExporting) return 1;
+		if (isEndpointHiddenByTagFilter) return 0.4;
+		if (!$topologyOptions.local.no_fade_edges && (selectedNode || selectedEdge) && !shouldShowFull)
+			return 0.4;
 		return 1;
 	});
 
@@ -343,7 +351,7 @@
 					class="card text-secondary nopan"
 					style="font-size: 12px; font-weight: 500; padding: 0.5rem 0.75rem; border-color: rgb(55 65 81); cursor: {isDragging
 						? 'grabbing'
-						: 'grab'}; pointer-events: auto;"
+						: 'grab'}; pointer-events: auto; opacity: {labelOpacity}; transition: opacity 0.2s ease-in-out;"
 					draggable="true"
 					role="button"
 					tabindex="0"

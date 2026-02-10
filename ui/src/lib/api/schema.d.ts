@@ -2697,14 +2697,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-02-08T23:37:22.040620Z",
-             *       "id": "8983fe78-3788-4947-bc5c-85cb7119f8b5",
+             *       "created_at": "2026-02-09T22:04:58.904735Z",
+             *       "id": "f4490466-8f29-4f6d-b414-8309130772f6",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-02-08T23:37:22.040620Z"
+             *       "updated_at": "2026-02-09T22:04:58.904735Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2939,14 +2939,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-02-08T23:37:22.029763Z",
-             *               "id": "3871a86f-37a3-4e26-acf7-0174ab7d437c",
+             *               "created_at": "2026-02-09T22:04:58.887244Z",
+             *               "id": "1af824f5-6498-42b3-8091-756beac58eea",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-02-08T23:37:22.029763Z"
+             *               "updated_at": "2026-02-09T22:04:58.887244Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -2955,7 +2955,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Tyk",
+             *           "service_definition": "BookLore",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3187,7 +3187,6 @@ export interface components {
                 has_integrated_daemon: boolean;
                 needs_cookie_consent: boolean;
                 oidc_providers: components["schemas"]["OidcProviderMetadata"][];
-                plunk_key?: string | null;
                 posthog_key?: string | null;
                 public_url: string;
                 /** Format: int32 */
@@ -3229,14 +3228,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-02-08T23:37:22.037210Z",
-             *           "id": "4751c822-4b5a-4e10-9e7e-4d8d8f715568",
+             *           "created_at": "2026-02-09T22:04:58.899764Z",
+             *           "id": "35abf46e-0db0-4319-82d3-acd42c1201b6",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-02-08T23:37:22.037210Z"
+             *           "updated_at": "2026-02-09T22:04:58.899764Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3245,7 +3244,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Tyk",
+             *       "service_definition": "BookLore",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3548,14 +3547,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-02-08T23:37:22.029993Z",
-         *       "id": "be43c941-c89c-4291-bffb-3e378cc4ae9f",
+         *       "created_at": "2026-02-09T22:04:58.887600Z",
+         *       "id": "2c65820e-f6d9-4aab-b4ec-0ccf927bdd4a",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-02-08T23:37:22.029993Z"
+         *       "updated_at": "2026-02-09T22:04:58.887600Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3732,7 +3731,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Tyk",
+         *           "service_definition": "BookLore",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -3856,7 +3855,7 @@ export interface components {
             /** Format: uuid */
             network_id: string;
             /** @description Whether the daemon is on standby due to plan restrictions (DaemonPoll on Free plan). */
-            standby?: boolean;
+            readonly standby?: boolean;
             tags: string[];
             readonly url: string;
             /**
@@ -4367,14 +4366,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-02-08T23:37:22.029468Z",
-         *               "id": "8656c151-aa59-4f64-b000-e2475e5c1b67",
+         *               "created_at": "2026-02-09T22:04:58.886779Z",
+         *               "id": "40316d7e-6d4e-4805-880a-6c4d53584d0c",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-02-08T23:37:22.029468Z"
+         *               "updated_at": "2026-02-09T22:04:58.886779Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4383,7 +4382,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Tyk",
+         *           "service_definition": "BookLore",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5266,7 +5265,6 @@ export interface components {
             has_integrated_daemon: boolean;
             needs_cookie_consent: boolean;
             oidc_providers: components["schemas"]["OidcProviderMetadata"][];
-            plunk_key?: string | null;
             posthog_key?: string | null;
             public_url: string;
             /** Format: int32 */
@@ -5327,14 +5325,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-02-08T23:37:22.029917Z",
-         *           "id": "550d4139-2100-4684-b0df-f1fabc82e0fa",
+         *           "created_at": "2026-02-09T22:04:58.887482Z",
+         *           "id": "0d7ed1f5-43be-4271-b13f-a8ac79fb1fce",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-02-08T23:37:22.029917Z"
+         *           "updated_at": "2026-02-09T22:04:58.887482Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5343,7 +5341,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Tyk",
+         *       "service_definition": "BookLore",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -5602,7 +5600,7 @@ export interface components {
          */
         TagOrderField: "created_at" | "name" | "color" | "updated_at";
         /** @enum {string} */
-        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "FirstApiKeyCreated" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "SubscriptionCancelled" | "FirstNetworkCreated" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted";
+        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "TrialWillEnd" | "SubscriptionCancelled" | "PlanChanged" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted" | "FirstApiKeyCreated" | "FirstNetworkCreated";
         Topology: components["schemas"]["TopologyBase"] & {
             /** Format: date-time */
             readonly created_at: string;

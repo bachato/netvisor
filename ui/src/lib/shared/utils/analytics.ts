@@ -125,6 +125,32 @@ export function resetIdentity() {
 }
 
 /**
+ * Store an event in sessionStorage to be flushed after a page redirect.
+ * Use this instead of trackEvent() when a hard navigation (window.location.href)
+ * follows immediately — PostHog batches capture() calls, and the redirect
+ * kills the pending request before it flushes.
+ */
+export function storeEventForAfterRedirect(event: string, properties?: Record<string, unknown>) {
+	const events = JSON.parse(sessionStorage.getItem('pendingAnalyticsEvents') || '[]');
+	events.push({ event, properties });
+	sessionStorage.setItem('pendingAnalyticsEvents', JSON.stringify(events));
+}
+
+/**
+ * Flush events stored by storeEventForAfterRedirect().
+ * Called from AppShell when PostHog finishes loading after a redirect.
+ */
+export function flushStoredEvents() {
+	const raw = sessionStorage.getItem('pendingAnalyticsEvents');
+	if (!raw) return;
+	sessionStorage.removeItem('pendingAnalyticsEvents');
+	const events: { event: string; properties?: Record<string, unknown> }[] = JSON.parse(raw);
+	for (const { event, properties } of events) {
+		trackEvent(event, properties);
+	}
+}
+
+/**
  * Get PostHog distinct ID if available.
  * Safe to call even if PostHog hasn't loaded yet (e.g., with lazy loading).
  * Uses window.posthog which is set by posthog-js when initialized.

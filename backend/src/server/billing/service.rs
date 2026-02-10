@@ -54,6 +54,8 @@ use stripe_checkout::{
 };
 use stripe_core::customer::CreateCustomer;
 use stripe_core::customer::ListPaymentMethodsCustomer;
+use stripe_core::customer::UpdateCustomer;
+use stripe_core::customer::UpdateCustomerInvoiceSettings;
 use stripe_core::{CustomerId, EventType};
 use stripe_product::Price;
 use stripe_product::price::CreatePriceRecurring;
@@ -719,7 +721,12 @@ impl BillingService {
                 }
             }
             EventType::CustomerSubscriptionPaused | EventType::CustomerSubscriptionDeleted => {
-                if let EventObject::CustomerSubscriptionDeleted(sub) = event.data.object {
+                let sub = match event.data.object {
+                    EventObject::CustomerSubscriptionDeleted(sub) => Some(sub),
+                    EventObject::CustomerSubscriptionPaused(sub) => Some(sub),
+                    _ => None,
+                };
+                if let Some(sub) = sub {
                     self.handle_subscription_deleted(sub).await?;
                 }
             }
@@ -732,8 +739,11 @@ impl BillingService {
                 if let EventObject::PaymentMethodAttached(pm) = event.data.object
                     && let Some(customer) = pm.customer.as_ref()
                 {
-                    self.handle_payment_method_attached(customer.id().to_string())
-                        .await?;
+                    self.handle_payment_method_attached(
+                        customer.id().to_string(),
+                        pm.id.to_string(),
+                    )
+                    .await?;
                 }
             }
             EventType::PaymentMethodDetached => {
@@ -750,6 +760,21 @@ impl BillingService {
                         self.handle_payment_method_detached(customer_id.to_string())
                             .await?;
                     }
+                }
+            }
+            EventType::InvoicePaymentFailed => {
+                if let EventObject::InvoicePaymentFailed(invoice) = event.data.object {
+                    self.handle_invoice_payment_failed(invoice).await?;
+                }
+            }
+            EventType::InvoicePaymentActionRequired => {
+                if let EventObject::InvoicePaymentActionRequired(invoice) = event.data.object {
+                    self.handle_invoice_payment_action_required(invoice).await?;
+                }
+            }
+            EventType::InvoicePaid => {
+                if let EventObject::InvoicePaid(invoice) = event.data.object {
+                    self.handle_invoice_paid(invoice).await?;
                 }
             }
             _ => {
@@ -1094,7 +1119,11 @@ impl BillingService {
 
             if let Some(ref email_service) = self.email_service
                 && let Err(e) = email_service
-                    .send_trial_ending_email(owner.base.email.clone(), plan.name(), organization.base.has_payment_method)
+                    .send_trial_ending_email(
+                        owner.base.email.clone(),
+                        plan.name(),
+                        organization.base.has_payment_method,
+                    )
                     .await
             {
                 tracing::warn!(error = %e, "Failed to send trial_ending email");
@@ -1162,7 +1191,11 @@ impl BillingService {
         Ok(())
     }
 
-    async fn handle_payment_method_attached(&self, customer_id: String) -> Result<(), Error> {
+    async fn handle_payment_method_attached(
+        &self,
+        customer_id: String,
+        payment_method_id: String,
+    ) -> Result<(), Error> {
         let filter = StorableFilter::<Organization>::new_with_stripe_customer_id(&customer_id);
         let Some(mut organization) = self.organization_service.get_one(filter).await? else {
             tracing::debug!(
@@ -1177,9 +1210,18 @@ impl BillingService {
             .update(&mut organization, AuthenticatedEntity::System)
             .await?;
 
+        // Set as default payment method for future invoices so Stripe can
+        // charge it when the trial ends or the next billing cycle occurs
+        let mut invoice_settings = UpdateCustomerInvoiceSettings::new();
+        invoice_settings.default_payment_method = Some(payment_method_id);
+        UpdateCustomer::new(CustomerId::from(customer_id))
+            .invoice_settings(invoice_settings)
+            .send(&self.stripe)
+            .await?;
+
         tracing::info!(
             organization_id = %organization.id,
-            "Payment method attached — has_payment_method set to true"
+            "Payment method attached — has_payment_method set to true, default invoice payment method updated"
         );
 
         Ok(())
@@ -1613,6 +1655,110 @@ impl BillingService {
         } else {
             Err(anyhow!("No active subscription found to modify"))
         }
+    }
+
+    async fn get_org_from_invoice(
+        &self,
+        invoice: &stripe_billing::Invoice,
+    ) -> Result<Option<Organization>, Error> {
+        let Some(customer) = invoice.customer.as_ref() else {
+            return Ok(None);
+        };
+        let customer_id = customer.id().to_string();
+        let filter = StorableFilter::<Organization>::new_with_stripe_customer_id(&customer_id);
+        self.organization_service.get_one(filter).await
+    }
+
+    async fn handle_invoice_payment_failed(
+        &self,
+        invoice: stripe_billing::Invoice,
+    ) -> Result<(), Error> {
+        let Some(organization) = self.get_org_from_invoice(&invoice).await? else {
+            tracing::debug!("No org found for invoice.payment_failed — ignoring");
+            return Ok(());
+        };
+
+        tracing::info!(
+            organization_id = %organization.id,
+            attempt_count = invoice.attempt_count,
+            "Invoice payment failed"
+        );
+
+        self.event_bus
+            .publish_telemetry(TelemetryEvent::new(
+                Uuid::new_v4(),
+                organization.id,
+                TelemetryOperation::PaymentFailed,
+                Utc::now(),
+                AuthenticatedEntity::System,
+                json!({ "org_id": organization.id.to_string() }),
+            ))
+            .await?;
+
+        Ok(())
+    }
+
+    async fn handle_invoice_payment_action_required(
+        &self,
+        invoice: stripe_billing::Invoice,
+    ) -> Result<(), Error> {
+        let Some(organization) = self.get_org_from_invoice(&invoice).await? else {
+            tracing::debug!("No org found for invoice.payment_action_required — ignoring");
+            return Ok(());
+        };
+
+        tracing::info!(
+            organization_id = %organization.id,
+            "Invoice payment action required (3D Secure / SCA)"
+        );
+
+        self.event_bus
+            .publish_telemetry(TelemetryEvent::new(
+                Uuid::new_v4(),
+                organization.id,
+                TelemetryOperation::PaymentActionRequired,
+                Utc::now(),
+                AuthenticatedEntity::System,
+                json!({ "org_id": organization.id.to_string() }),
+            ))
+            .await?;
+
+        Ok(())
+    }
+
+    async fn handle_invoice_paid(&self, invoice: stripe_billing::Invoice) -> Result<(), Error> {
+        let Some(organization) = self.get_org_from_invoice(&invoice).await? else {
+            tracing::debug!("No org found for invoice.paid — ignoring");
+            return Ok(());
+        };
+
+        let was_past_due = organization
+            .base
+            .plan_status
+            .as_ref()
+            .is_some_and(|s| s == "past_due");
+
+        if !was_past_due {
+            return Ok(());
+        }
+
+        tracing::info!(
+            organization_id = %organization.id,
+            "Payment recovered for past-due organization"
+        );
+
+        self.event_bus
+            .publish_telemetry(TelemetryEvent::new(
+                Uuid::new_v4(),
+                organization.id,
+                TelemetryOperation::PaymentRecovered,
+                Utc::now(),
+                AuthenticatedEntity::System,
+                json!({ "org_id": organization.id.to_string() }),
+            ))
+            .await?;
+
+        Ok(())
     }
 
     /// Enforce all plan restrictions for an organization.

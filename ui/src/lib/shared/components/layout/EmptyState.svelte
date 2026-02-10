@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Plus, Search } from 'lucide-svelte';
-	import type { Snippet, Component } from 'svelte';
+	import type { Snippet } from 'svelte';
+	import type { IconComponent as IconComponentType } from '$lib/shared/utils/types';
 
 	let {
 		IconComponent = Search,
@@ -10,7 +11,7 @@
 		cta = '',
 		children
 	}: {
-		IconComponent?: Component;
+		IconComponent?: IconComponentType;
 		title?: string;
 		subtitle?: string;
 		onClick?: () => void;
