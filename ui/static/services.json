@@ -245,6 +245,15 @@
   {
     "category": "Printer",
     "color": "Gray",
+    "description": "HP JetDirect RAW printing protocol",
+    "discovery_pattern": "9100/tcp is open",
+    "logo_needs_white_background": false,
+    "logo_url": "",
+    "name": "JetDirect"
+  },
+  {
+    "category": "Printer",
+    "color": "Gray",
     "description": "An HP Printer",
     "discovery_pattern": "All of: (Any of: (Endpoint response body from <ip>:80 contains \"LaserJet\", Endpoint response body from <ip>:80 contains \"DeskJet\", Endpoint response body from <ip>:80 contains \"OfficeJet\", Endpoint response body from <ip>:8080 contains \"LaserJet\", Endpoint response body from <ip>:8080 contains \"DeskJet\", Endpoint response body from <ip>:8080 contains \"OfficeJet\"), Any of: (631/tcp is open, 515/tcp is open, 515/udp is open))",
     "logo_needs_white_background": true,
