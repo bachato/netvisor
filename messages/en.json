@@ -35,7 +35,7 @@
 	"auth_signInToScanopy": "Sign in to Scanopy",
 	"auth_signInWith": "Sign in with {provider}",
 	"auth_signInWithEmail": "Sign In with Email",
-	"auth_signUpForUpdates": "Sign up for product updates via email",
+	"auth_signUpForUpdates": "Keep me posted on Scanopy partnerships, press, and community news",
 	"auth_signingIn": "Signing in...",
 	"auth_termsAndPrivacy": "I agree to the <a class='text-link' target='_blank' href='https://scanopy.net/terms'>terms</a> and <a target='_blank' class='text-link' href='https://scanopy.net/privacy'>privacy policy</a>",
 	"auth_youreInvitedBody": "You have been invited to join {orgName} by {invitedBy}. Please sign in or register to continue.",

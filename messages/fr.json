@@ -33,7 +33,7 @@
     "auth_signInToScanopy": "Se connecter à Scanopy",
     "auth_signInWith": "Se connecter avec {provider}",
     "auth_signInWithEmail": "S'enregistrer avec une adresse électronique",
-    "auth_signUpForUpdates": "S'enregistrer pour des mises à jour produit par adresse électronique",
+    "auth_signUpForUpdates": "",
     "auth_signingIn": "Enregistrement...",
     "auth_termsAndPrivacy": "J'accepte les termes <a class='text-link' target='_blank' href='https://scanopy.net/terms'></a>et<a target='_blank' class='text-link' href='https://scanopy.net/privacy'>la politique de gestion de la vie privée</a>",
     "auth_youreAllSetBodyMultiple": "Enregistrez vous pour finir l'installation. Vos services vont commencer à scanner \"{networkNames}\" et compléter votre carte réseau.",

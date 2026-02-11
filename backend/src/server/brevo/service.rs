@@ -23,6 +23,11 @@ use chrono::Utc;
 use std::sync::Arc;
 use uuid::Uuid;
 
+/// Brevo list ID for "App Users - Product Updates" (all app signups)
+const BREVO_PRODUCT_UPDATES_LIST_ID: i64 = 9;
+/// Brevo list ID for "App Users - Marketing" (explicit opt-in only)
+const BREVO_MARKETING_LIST_ID: i64 = 10;
+
 /// Service for syncing data to Brevo CRM
 pub struct BrevoService {
     pub client: Arc<BrevoClient>,
@@ -260,7 +265,9 @@ impl BrevoService {
             .with_role("owner")
             .with_signup_date(event.timestamp)
             .with_last_login_date(event.timestamp)
-            .with_email_blacklisted(!marketing_opt_in);
+            .with_email_blacklisted(false)
+            .with_marketing_opt_in(marketing_opt_in)
+            .with_marketing_opt_in_date(event.timestamp);
 
         if let Some(use_case) = &use_case {
             contact_attrs = contact_attrs.with_use_case(use_case);
@@ -294,6 +301,25 @@ impl BrevoService {
             .client
             .sync_contact_and_company(email.as_ref(), contact_attrs, org_name, company_attrs)
             .await?;
+
+        // Add to "Product Updates" list (all signups)
+        if let Err(e) = self
+            .client
+            .add_contacts_to_list(BREVO_PRODUCT_UPDATES_LIST_ID, vec![email.to_string()])
+            .await
+        {
+            tracing::warn!(error = %e, "Failed to add contact to Product Updates list");
+        }
+
+        // Add to "Marketing" list only if opted in
+        if marketing_opt_in
+            && let Err(e) = self
+                .client
+                .add_contacts_to_list(BREVO_MARKETING_LIST_ID, vec![email.to_string()])
+                .await
+        {
+            tracing::warn!(error = %e, "Failed to add contact to Marketing list");
+        }
 
         // Store the company ID on the organization
         if let Some(mut org) = self

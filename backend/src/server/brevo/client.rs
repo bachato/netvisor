@@ -1,8 +1,8 @@
 use crate::server::brevo::types::{
-    CompanyAttributes, CompanyListResponse, CompanyResponse, ContactAttributes,
-    CreateCompanyRequest, CreateContactRequest, CreateContactResponse, CreateDealRequest,
-    CreateDealResponse, EventIdentifiers, LinkUnlinkRequest, TrackEventRequest,
-    UpdateCompanyRequest, UpdateContactRequest,
+    AddContactsToListRequest, CompanyAttributes, CompanyListResponse, CompanyResponse,
+    ContactAttributes, CreateCompanyRequest, CreateContactRequest, CreateContactResponse,
+    CreateDealRequest, CreateDealResponse, EventIdentifiers, LinkUnlinkRequest,
+    RemoveContactsFromListRequest, TrackEventRequest, UpdateCompanyRequest, UpdateContactRequest,
 };
 use anyhow::{Result, anyhow};
 use backon::{ExponentialBuilder, Retryable};
@@ -576,6 +576,115 @@ impl BrevoClient {
             }
 
             Err(anyhow!("Brevo event error {}: {}", status, error_body))
+        };
+
+        operation
+            .retry(
+                ExponentialBuilder::default()
+                    .with_max_times(3)
+                    .with_min_delay(std::time::Duration::from_millis(500))
+                    .with_max_delay(std::time::Duration::from_secs(10)),
+            )
+            .when(|e| e.to_string().contains("retryable"))
+            .await
+    }
+
+    /// Add contacts to a Brevo list
+    pub async fn add_contacts_to_list(&self, list_id: i64, emails: Vec<String>) -> Result<()> {
+        let url = format!("{}/contacts/lists/{}/contacts/add", BREVO_API_BASE, list_id);
+        let body = AddContactsToListRequest { emails };
+
+        let operation = || async {
+            self.wait_for_rate_limit().await;
+
+            let response = self
+                .client
+                .post(&url)
+                .header("api-key", &self.api_key)
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| anyhow!("Brevo add to list failed: {}", e))?;
+
+            let status = response.status();
+
+            if status.is_success() {
+                return Ok(());
+            }
+
+            let error_body = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+
+            if Self::is_retryable_error(status) {
+                return Err(anyhow!(
+                    "Brevo list add error (retryable) {}: {}",
+                    status,
+                    error_body
+                ));
+            }
+
+            Err(anyhow!("Brevo list add error {}: {}", status, error_body))
+        };
+
+        operation
+            .retry(
+                ExponentialBuilder::default()
+                    .with_max_times(3)
+                    .with_min_delay(std::time::Duration::from_millis(500))
+                    .with_max_delay(std::time::Duration::from_secs(10)),
+            )
+            .when(|e| e.to_string().contains("retryable"))
+            .await
+    }
+
+    /// Remove contacts from a Brevo list
+    pub async fn remove_contacts_from_list(&self, list_id: i64, emails: Vec<String>) -> Result<()> {
+        let url = format!(
+            "{}/contacts/lists/{}/contacts/remove",
+            BREVO_API_BASE, list_id
+        );
+        let body = RemoveContactsFromListRequest { emails };
+
+        let operation = || async {
+            self.wait_for_rate_limit().await;
+
+            let response = self
+                .client
+                .post(&url)
+                .header("api-key", &self.api_key)
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| anyhow!("Brevo remove from list failed: {}", e))?;
+
+            let status = response.status();
+
+            if status.is_success() {
+                return Ok(());
+            }
+
+            let error_body = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+
+            if Self::is_retryable_error(status) {
+                return Err(anyhow!(
+                    "Brevo list remove error (retryable) {}: {}",
+                    status,
+                    error_body
+                ));
+            }
+
+            Err(anyhow!(
+                "Brevo list remove error {}: {}",
+                status,
+                error_body
+            ))
         };
 
         operation

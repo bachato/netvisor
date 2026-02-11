@@ -73,7 +73,7 @@
 			email: '',
 			password: '',
 			confirmPassword: '',
-			subscribed: true,
+			subscribed: false,
 			terms_accepted: false
 		},
 		onSubmit: async ({ value }) => {
@@ -99,7 +99,7 @@
 			email: '',
 			password: '',
 			confirmPassword: '',
-			subscribed: true,
+			subscribed: false,
 			terms_accepted: false
 		});
 		subStep = 'email';

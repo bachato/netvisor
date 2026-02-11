@@ -20,6 +20,8 @@ pub struct ContactAttributes {
     /// Brevo built-in field (not a custom attribute) — controls email campaign eligibility.
     /// true = blocklisted from campaigns, false = can receive campaigns.
     pub email_blacklisted: Option<bool>,
+    pub scanopy_marketing_opt_in: Option<bool>,
+    pub scanopy_marketing_opt_in_date: Option<String>,
 }
 
 impl ContactAttributes {
@@ -72,6 +74,16 @@ impl ContactAttributes {
         self
     }
 
+    pub fn with_marketing_opt_in(mut self, opt_in: bool) -> Self {
+        self.scanopy_marketing_opt_in = Some(opt_in);
+        self
+    }
+
+    pub fn with_marketing_opt_in_date(mut self, date: DateTime<Utc>) -> Self {
+        self.scanopy_marketing_opt_in_date = Some(date.to_rfc3339());
+        self
+    }
+
     /// Convert to Brevo API attributes map (UPPERCASE keys)
     pub fn to_attributes(&self) -> HashMap<String, serde_json::Value> {
         let mut attrs = HashMap::new();
@@ -102,6 +114,15 @@ impl ContactAttributes {
         }
         if let Some(v) = &self.scanopy_last_login_date {
             attrs.insert("SCANOPY_LAST_LOGIN_DATE".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = self.scanopy_marketing_opt_in {
+            attrs.insert("SCANOPY_MARKETING_OPT_IN".to_string(), serde_json::json!(v));
+        }
+        if let Some(v) = &self.scanopy_marketing_opt_in_date {
+            attrs.insert(
+                "SCANOPY_MARKETING_OPT_IN_DATE".to_string(),
+                serde_json::json!(v),
+            );
         }
         attrs
     }
@@ -502,4 +523,16 @@ pub struct CreateDealResponse {
 pub struct EventIdentifiers {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email_id: Option<String>,
+}
+
+/// POST /contacts/lists/{listId}/contacts/add
+#[derive(Debug, Clone, Serialize)]
+pub struct AddContactsToListRequest {
+    pub emails: Vec<String>,
+}
+
+/// POST /contacts/lists/{listId}/contacts/remove
+#[derive(Debug, Clone, Serialize)]
+pub struct RemoveContactsFromListRequest {
+    pub emails: Vec<String>,
 }
