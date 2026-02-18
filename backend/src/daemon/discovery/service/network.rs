@@ -478,9 +478,13 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             );
 
             let host_tx = host_tx.clone();
-            for (ip, subnet) in non_interfaced_ips {
-                let _ = host_tx.send((ip, subnet, None)).await;
-            }
+            tokio::spawn(async move {
+                for (ip, subnet) in non_interfaced_ips {
+                    if host_tx.send((ip, subnet, None)).await.is_err() {
+                        break; // Receiver dropped
+                    }
+                }
+            });
         }
 
         // Drop our copy of the sender so the channel closes when all forwarders are done

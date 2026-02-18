@@ -171,7 +171,11 @@ pub trait DaemonUtils {
 
         for (interface_name, ip_addr, mac_address) in interface_data {
             // Find which subnet this IP belongs to
-            if let Some(subnet) = subnet_map.values().find(|s| s.base.cidr.contains(&ip_addr)) {
+            if let Some(subnet) = subnet_map
+                .values()
+                .filter(|s| s.base.cidr.contains(&ip_addr))
+                .max_by_key(|s| s.base.cidr.network_length())
+            {
                 cidr_to_mac.insert(subnet.base.cidr, mac_address);
 
                 interfaces.push(Interface::new(InterfaceBase {

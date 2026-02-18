@@ -27,19 +27,26 @@ pub fn is_available() -> bool {
     );
 
     // Log why each interface is rejected
+    // Note: on Windows, pnet hardcodes flags=0 so is_up() always returns false.
+    // We skip the is_up() check there and rely on datalink::channel() as the real test.
     for iface in &interfaces {
         if iface.is_loopback() {
             tracing::trace!(name = %iface.name, "Skipping loopback interface");
-        } else if !iface.is_up() {
+        } else if !cfg!(target_family = "windows") && !iface.is_up() {
             tracing::trace!(name = %iface.name, "Skipping interface: not up");
         } else if iface.mac.is_none() {
             tracing::trace!(name = %iface.name, "Skipping interface: no MAC address");
         }
     }
 
-    let suitable = interfaces
-        .into_iter()
-        .find(|iface| iface.is_up() && !iface.is_loopback() && iface.mac.is_some());
+    let suitable = interfaces.into_iter().find(|iface| {
+        #[cfg(target_family = "windows")]
+        let up_check = true; // pnet flags are broken on Windows
+        #[cfg(not(target_family = "windows"))]
+        let up_check = iface.is_up();
+
+        up_check && !iface.is_loopback() && iface.mac.is_some()
+    });
 
     let Some(interface) = suitable else {
         tracing::warn!(
