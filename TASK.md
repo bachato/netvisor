@@ -1,80 +1,137 @@
 > **First:** Read `CLAUDE.md` (project instructions) — you are a **worker**.
 
-# Task: Onboarding Emails — Brevo Event Fix + Transactional Templates
+# Task: Demo Data Overhaul — 2 Networks with Complex Topologies + Virtualization
 
 ## Objective
 
-Implement three backend changes for the onboarding email campaign:
-1. Fix Brevo event mapping so `first_discovery_completed` fires from the correct handler
-2. Add `track_event("first_daemon_registered")` to daemon registration handler
-3. Add 4 transactional email templates (A3-free, A3-paid, A5, C2) and wire them to telemetry handlers
+Rewrite demo data to have only **2 networks** (instead of 4), both with complex and interesting topologies (akin to the current Headquarters topology). Crucially, add **explicit virtualization** (Docker containers and VMs) so that virtualization relationships are visible in topology visualizations.
+
+## Context
+
+**Current state:** `backend/src/server/organizations/demo_data.rs` (~2800 lines) generates 4 networks:
+1. Headquarters (19 hosts, 6 subnets — the most interesting topology)
+2. Cloud Infrastructure (6-8 hosts, 2 subnets)
+3. Remote Office - Denver (5 hosts, 2 subnets)
+4. Client: Riverside Medical (5-6 hosts, 2 subnets)
+
+**Problem:** 4 networks dilute the demo. Most have simple topologies. No virtualization relationships are modeled — Proxmox hypervisors and Docker hosts exist but have no actual VMs or containers running on them.
+
+## Requirements
+
+### 1. Consolidate to 2 Networks
+
+**Network 1: "Headquarters"** — Corporate on-premises + cloud hybrid network
+- Merge the most interesting elements from current HQ + Cloud networks
+- Should have 25-35 hosts across multiple subnets
+- Rich topology: firewalls, switches, hypervisors with VMs, Docker hosts with containers, databases, monitoring stack, IoT devices, workstations
+- Multiple subnet types: Management, LAN, Servers, IoT, DockerBridge, Guest, Storage
+- LLDP/CDP neighbor relationships (IfEntries) for physical link topology
+- Multiple groups showing service flows (web traffic, monitoring stack, backup flow, etc.)
+
+**Network 2: "Data Center"** (or "Remote Site" / "Branch Office" — pick what creates the most interesting topology)
+- Should have 15-25 hosts
+- Different topology character than HQ — e.g., more focused on specific workloads
+- Interesting in its own right, not just "a smaller version of HQ"
+- Should also include virtualization relationships
+
+### 2. Add Explicit Virtualization
+
+This is the key addition. Currently `virtualization` fields are `None` on all hosts/services.
+
+**Proxmox VMs (HostVirtualization):**
+- Create VM hosts that are **virtualized by** Proxmox hypervisors
+- Set the `virtualization` field on VM hosts:
+  ```rust
+  virtualization: Some(Virtualization {
+      virtualization_type: VirtualizationType::ProxmoxVe, // or similar
+      details: VirtualizationDetails {
+          service_id: <proxmox_service_id>,
+          // ... other fields
+      }
+  })
+  ```
+- This creates `HostVirtualization` edges in the topology between hypervisor and VM hosts
+- Example: `proxmox-hv01` runs VMs like `gitlab-vm`, `nextcloud-vm`, etc.
+- The VMs should have their own interfaces, services, and subnet membership
+
+**Docker Containers (ServiceVirtualization):**
+- Create containerized services that are **virtualized by** Docker daemon services
+- Set the `virtualization` field on container services
+- This creates `ServiceVirtualization` edges in topology
+- Example: `docker-prod01` runs containers like `traefik`, `grafana`, `prometheus`, `portainer`
+- Containers should have their own services/ports on the Docker bridge subnet
+
+**Important:** Study the existing `Virtualization`, `VirtualizationType`, and `VirtualizationDetails` types in the codebase to understand the exact structure needed. Check:
+- `backend/src/server/shared/types/` for virtualization type definitions
+- `backend/src/server/hosts/` for how virtualization is set on hosts
+- `backend/src/server/services/` for how virtualization is set on services
+- `backend/src/server/topology/` for how virtualization generates edges
+
+### 3. Maintain Demo Quality
+
+Keep these existing elements (adjusted for 2 networks):
+- **Tags** (10) — same set, redistributed across 2 networks
+- **SNMP credentials** (2) — same
+- **Daemons** — 2 (one per network, at least 1 with Docker socket access)
+- **Discoveries** — adjusted for 2 networks (active + historical)
+- **Groups** — at least 4-6 showing different edge types and flow patterns
+- **IfEntries** — LLDP/CDP neighbor data for physical link topology
+- **Shares** — 1 public share for the most interesting topology
+- **User API Keys** — 1
+
+### 4. Keep the Generation Pattern
+
+Follow the existing `DemoData::generate()` pattern:
+- Same method structure: `generate_tags()`, `generate_networks()`, `generate_hosts_and_services()`, etc.
+- Same UUID generation pattern (pre-generated for cross-references)
+- Same service binding pattern (services → interfaces)
+- Same deferred neighbor update pattern for IfEntries
+
+## Files Likely Involved
+
+- `backend/src/server/organizations/demo_data.rs` — main rewrite (~2800 lines)
+- `backend/src/server/organizations/handlers.rs` — verify `populate_demo_data` handler still works (read only, should not need changes)
+
+## Acceptance Criteria
+
+- [x] Exactly 2 networks in demo data
+- [x] Both networks have complex, interesting topologies (30 and 20 hosts respectively)
+- [x] Proxmox VMs exist with `virtualization` field set, creating HostVirtualization edges
+- [x] Docker containers exist with `virtualization` field set, creating ServiceVirtualization edges
+- [x] LLDP/CDP neighbor relationships create PhysicalLink edges
+- [x] Groups define service flow relationships (RequestPath, HubAndSpoke, etc.)
+- [x] All existing entity types represented (tags, credentials, daemons, discoveries, shares, API keys)
+- [x] Demo data populates successfully without errors
+- [x] `cd backend && cargo test` passes
+- [x] `cargo fmt && cargo clippy` passes
 
 ## Work Summary
 
 ### What was implemented
 
-**1. Brevo Event Mapping Fixes (`brevo/service.rs`, `brevo/types.rs`)**
-- Extracted `FirstDiscoveryCompleted` from the multi-arm `handle_engagement_event` match into its own `handle_first_discovery_completed` handler
-- New handler sets `scanopy_first_discovery_completed_date` company attribute and fires `track_event("first_discovery_completed")`
-- Fixed `handle_first_topology_rebuild` — removed incorrect `track_event("first_discovery_completed")` call
-- Added `track_event("first_daemon_registered")` to `handle_first_daemon_registered`
-- Added 3 missing fields to `CompanyAttributes::to_attributes()`: `scanopy_first_discovery_completed_date`, `scanopy_first_host_discovered_date`, `scanopy_first_topology_rebuild_date`
+Rewrote `backend/src/server/organizations/demo_data.rs` (~2800 lines → ~2900 lines) to consolidate 4 networks into 2 with rich virtualization.
 
-**2. Email Templates (`email/templates.rs`)**
-- Added 5 template constant pairs: `DISCOVERY_GUIDE_FREE`, `DISCOVERY_GUIDE_PAID`, `TOPOLOGY_READY`, `PLAN_LIMIT_APPROACHING`, `PLAN_LIMIT_REACHED`
-- All use inline CSS matching existing style, upgrade CTAs use `?modal=billing-plan`
+**Networks:** Headquarters (30 hosts, 7 subnets) + Data Center (20 hosts, 6 subnets)
 
-**3. EmailService Expansion (`email/traits.rs`)**
-- Added service dependencies: `organization_service`, `host_service`, `network_service`, `service_service`
-- Added builder methods on `EmailProvider` trait for all 5 new email types
-- Added high-level methods on `EmailService`: `send_discovery_guide_email`, `send_discovery_guide_for_org`, `send_topology_ready_for_org`, `check_plan_limits`
-- `check_plan_limits` implements threshold-crossing detection with `LimitNotificationLevel` state machine
+**Virtualization wiring:**
+- 3 Proxmox hypervisors with pre-generated service IDs
+- 7 VMs with `HostVirtualization::Proxmox` referencing their hypervisor's Proxmox VE service
+- 2 Docker hosts with dual interfaces (eth0 on LAN, docker0 on DockerBridge)
+- 8 container services with `ServiceVirtualization::Docker` referencing their Docker daemon service
 
-**4. Plan Limit Infrastructure (`organizations/impl/base.rs`, migration)**
-- Added `LimitNotificationLevel` enum (`None`, `Approaching`, `Reached`) and `PlanLimitNotifications` struct
-- Added `plan_limit_notifications` field to `OrganizationBase` (JSON column, defaults to `{}`)
-- Added `network_limit()` and `seat_limit()` methods to `BillingPlan`
-- Added `PlanLimitNotifications` variant to `SqlValue` enum with proper binding
-- Migration: `ALTER TABLE organizations ADD COLUMN plan_limit_notifications JSONB NOT NULL DEFAULT '{}'`
+**New/modified helpers:**
+- `create_host` — added `virtualization` param
+- `create_service_with_id` — for services needing pre-generated UUIDs
+- `create_container_service` — for Docker container services with virtualization
 
-**5. EventBus-driven Email Triggering (`email/subscriber.rs`)**
-- EmailService subscribes to both entity events (Host/Network/User Created) and telemetry events (FirstDaemonRegistered, FirstDiscoveryCompleted) via a custom `EventFilter`
-- Entity events trigger `check_plan_limits` for the affected org
-- `FirstDaemonRegistered` telemetry triggers discovery guide email (free/paid variant based on org plan)
-- `FirstDiscoveryCompleted` telemetry triggers topology ready email
-- Registered as event subscriber in factory
+**LLDP:** HQ 48-port switch (6 bidirectional neighbors) + DC 24-port switch (4 bidirectional neighbors)
 
-**6. Telemetry Event Enrichment (`daemons/service.rs`)**
-- `FirstDaemonRegistered` event metadata now includes `daemon_name` and `network_name` so the email subscriber can use them without needing a DaemonService dependency
+**Groups:** 6 network-scoped groups (3 HQ, 3 DC) using `find_binding` scoped by network_id
 
-### Deviations from original plan
-
-- **EventBus instead of OnceLock**: Original plan called for injecting `EmailService` directly into `DaemonService` and `DiscoveryService` via OnceLock. Refactored to use EventBus — EmailService subscribes to telemetry events, eliminating circular dependency concerns entirely.
-- **C2 replaced with general plan limit system**: Instead of a single "free upgrade nudge" email (C2), implemented a full plan limit notification system with approaching (80%) and reached (100%) thresholds for hosts, networks, and seats. Uses threshold-crossing detection to avoid duplicate notifications.
+**Other entities adjusted:** 2 daemons, 2 daemon API keys, 4 active + 3 historical discoveries, 1 share, 1 user API key
 
 ### Files changed
+- `backend/src/server/organizations/demo_data.rs` — full rewrite
 
-| File | Change |
-|------|--------|
-| `backend/src/server/brevo/service.rs` | Event mapping fixes, new handler |
-| `backend/src/server/brevo/types.rs` | Missing `to_attributes()` fields |
-| `backend/src/server/email/templates.rs` | 5 new template pairs |
-| `backend/src/server/email/traits.rs` | New dependencies, builders, high-level methods |
-| `backend/src/server/email/subscriber.rs` | **New** — EventSubscriber for plan limits + onboarding emails |
-| `backend/src/server/email/mod.rs` | Added `pub mod subscriber` |
-| `backend/src/server/daemons/service.rs` | Enriched telemetry metadata, removed OnceLock email_service |
-| `backend/src/server/discovery/service.rs` | Removed OnceLock email_service |
-| `backend/src/server/organizations/impl/base.rs` | `LimitNotificationLevel`, `PlanLimitNotifications` |
-| `backend/src/server/organizations/impl/storage.rs` | Storage for `plan_limit_notifications` |
-| `backend/src/server/billing/types/base.rs` | `network_limit()`, `seat_limit()` |
-| `backend/src/server/shared/storage/traits.rs` | `SqlValue::PlanLimitNotifications` variant |
-| `backend/src/server/shared/storage/generic.rs` | Binding for new SqlValue variant |
-| `backend/src/server/shared/services/factory.rs` | Wire EmailService deps + register subscriber |
-| `backend/src/server/auth/service.rs` | Default `plan_limit_notifications` in org init |
-| `backend/src/server/shared/types/examples.rs` | Default `plan_limit_notifications` in example |
-| `backend/migrations/20260221120000_add_plan_limit_notifications.sql` | New column |
-
-### Verification
-
-- `cargo test` — 110 tests pass, 0 failures
-- `cargo fmt && cargo clippy` — clean, no warnings
+### Deviations
+- None — implemented as planned
