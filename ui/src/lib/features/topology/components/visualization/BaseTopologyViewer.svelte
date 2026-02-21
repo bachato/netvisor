@@ -178,43 +178,41 @@
 				nodes.set(sortedNodes);
 
 				// Create edges with markers
-				const flowEdges: Edge[] = topology.edges
-					.filter((edge) => edge.edge_type != 'HostVirtualization')
-					.map((edge: TopologyEdge, index: number) => {
-						const edgeType = edge.edge_type as string;
-						const edgeMetadata = edgeTypes.getMetadata(edgeType);
-						const edgeColorHelper = edgeTypes.getColorHelper(edgeType);
+				const flowEdges: Edge[] = topology.edges.map((edge: TopologyEdge, index: number) => {
+					const edgeType = edge.edge_type as string;
+					const edgeMetadata = edgeTypes.getMetadata(edgeType);
+					const edgeColorHelper = edgeTypes.getColorHelper(edgeType);
 
-						const markerStart = !edgeMetadata.has_start_marker
-							? undefined
-							: ({
-									type: 'arrow',
-									color: edgeColorHelper.rgb
-								} as EdgeMarkerType);
-						const markerEnd = !edgeMetadata.has_end_marker
-							? undefined
-							: ({
-									type: 'arrow',
-									color: edgeColorHelper.rgb
-								} as EdgeMarkerType);
+					const markerStart = !edgeMetadata.has_start_marker
+						? undefined
+						: ({
+								type: 'arrow',
+								color: edgeColorHelper.rgb
+							} as EdgeMarkerType);
+					const markerEnd = !edgeMetadata.has_end_marker
+						? undefined
+						: ({
+								type: 'arrow',
+								color: edgeColorHelper.rgb
+							} as EdgeMarkerType);
 
-						const edgeId = `edge-${index}`;
+					const edgeId = `edge-${index}`;
 
-						return {
-							id: `edge-${index}`,
-							source: edge.source,
-							target: edge.target,
-							markerEnd,
-							markerStart,
-							sourceHandle: edge.source_handle.toString(),
-							targetHandle: edge.target_handle.toString(),
-							type: 'custom',
-							label: edge.label ?? undefined,
-							data: { ...edge, edgeIndex: index },
-							animated: animatedStates.get(edgeId) ?? false,
-							interactionWidth: 50
-						};
-					});
+					return {
+						id: `edge-${index}`,
+						source: edge.source,
+						target: edge.target,
+						markerEnd,
+						markerStart,
+						sourceHandle: edge.source_handle.toString(),
+						targetHandle: edge.target_handle.toString(),
+						type: 'custom',
+						label: edge.label ?? undefined,
+						data: { ...edge, edgeIndex: index },
+						animated: animatedStates.get(edgeId) ?? false,
+						interactionWidth: 50
+					};
+				});
 
 				pendingEdges = flowEdges;
 
