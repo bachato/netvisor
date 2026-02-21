@@ -94,13 +94,16 @@
 		if (isOpen && !wasOpen) {
 			instanceKey++;
 
+			// Let the parent initialize first (e.g. reset form, set default tab)
+			onOpen?.();
+
 			// Check if modalState has a tab for this modal (from URL deep-link)
 			const state = get(modalState);
 			const urlTab = name && state.name === name ? state.tab : null;
 
 			if (tabs.length > 0) {
 				if (urlTab && tabs.some((t) => t.id === urlTab)) {
-					// URL specifies a valid tab — use it
+					// URL specifies a valid tab — override the default
 					activeTab = urlTab;
 					onTabChange?.(activeTab);
 				} else if (!tabs.some((t) => t.id === activeTab)) {
@@ -113,7 +116,6 @@
 			if (name) {
 				openModal(name, { id: entityId, tab: activeTab || undefined });
 			}
-			onOpen?.();
 		}
 		wasOpen = isOpen;
 	});
