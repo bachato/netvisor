@@ -24,7 +24,7 @@ use crate::server::{
         base::{Host, HostBase},
         virtualization::{HostVirtualization, ProxmoxVirtualization},
     },
-    if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus, Neighbor},
+    if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus},
     interfaces::r#impl::base::{Interface, InterfaceBase},
     networks::r#impl::{Network, NetworkBase},
     ports::r#impl::base::{Port, PortType},
@@ -2830,7 +2830,7 @@ fn generate_if_entries(
             target_if_index: 1,
         });
 
-        // Port 6 → unifi-ap-lobby (Host-only neighbor, no IfEntry on AP)
+        // Port 6 ↔ unifi-ap-lobby (deferred via NeighborUpdate)
         if_entries.push(IfEntry {
             id: Uuid::new_v4(),
             created_at: now,
@@ -2847,7 +2847,7 @@ fn generate_if_entries(
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
                 interface_id: None,
-                neighbor: ap_host.map(|h| Neighbor::Host(h.id)),
+                neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("fc:ec:da:aa:bb:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("eth0".to_string())),
                 lldp_sys_name: Some("unifi-ap-lobby".to_string()),
@@ -2860,6 +2860,12 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
             },
+        });
+        neighbor_updates.push(NeighborUpdate {
+            source_host_name: "unifi-usw-48".to_string(),
+            source_if_index: 6,
+            target_host_name: "unifi-ap-lobby".to_string(),
+            target_if_index: 1,
         });
 
         // Ports 7-48 — empty/down
@@ -2894,6 +2900,53 @@ fn generate_if_entries(
                 },
             });
         }
+    }
+
+    // ========================================================================
+    // HQ: unifi-ap-lobby — single IfEntry for LLDP neighbor with switch port 6
+    // ========================================================================
+    if let Some(host) = find_host("unifi-ap-lobby") {
+        let network = networks
+            .iter()
+            .find(|n| n.id == host.base.network_id)
+            .unwrap();
+        let interface = find_interface(host.id);
+
+        if_entries.push(IfEntry {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+            base: IfEntryBase {
+                host_id: host.id,
+                network_id: network.id,
+                if_index: 1,
+                if_descr: "eth0".to_string(),
+                if_alias: Some("Ethernet".to_string()),
+                if_type: 6,
+                speed_bps: Some(1_000_000_000),
+                admin_status: IfAdminStatus::Up,
+                oper_status: IfOperStatus::Up,
+                mac_address: None,
+                interface_id: interface.map(|i| i.id),
+                neighbor: None,
+                lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
+                lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/6".to_string())),
+                lldp_sys_name: Some("unifi-usw-48".to_string()),
+                lldp_port_desc: Some("Port 6 - UniFi AP".to_string()),
+                lldp_mgmt_addr: Some(std::net::IpAddr::V4(std::net::Ipv4Addr::new(10, 0, 1, 3))),
+                lldp_sys_desc: Some("UniFi USW-48-PoE".to_string()),
+                cdp_device_id: None,
+                cdp_port_id: None,
+                cdp_platform: None,
+                cdp_address: None,
+            },
+        });
+        neighbor_updates.push(NeighborUpdate {
+            source_host_name: "unifi-ap-lobby".to_string(),
+            source_if_index: 1,
+            target_host_name: "unifi-usw-48".to_string(),
+            target_if_index: 6,
+        });
     }
 
     // ========================================================================

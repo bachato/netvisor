@@ -20,7 +20,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_cidr,
 		common_confirmDeleteName,
@@ -64,7 +64,7 @@
 
 	// Deep-link: open subnet editor from URL
 	$effect(() => {
-		if ($modalState.name === 'subnet-editor') {
+		if ($modalState.name === 'subnet-editor' && !showSubnetEditor) {
 			if ($modalState.id) {
 				const subnet = subnetsData.find((e) => e.id === $modalState.id);
 				if (subnet) {
@@ -75,7 +75,6 @@
 				editingSubnet = null;
 				showSubnetEditor = true;
 			}
-			closeModal();
 		}
 	});
 

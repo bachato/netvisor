@@ -22,7 +22,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_confirmDeleteName,
 		common_create,
@@ -70,7 +70,7 @@
 
 	// Deep-link: open group editor from URL
 	$effect(() => {
-		if ($modalState.name === 'group-editor') {
+		if ($modalState.name === 'group-editor' && !showGroupEditor) {
 			if ($modalState.id) {
 				const group = groupsData.find((e) => e.id === $modalState.id);
 				if (group) {
@@ -81,7 +81,6 @@
 				editingGroup = null;
 				showGroupEditor = true;
 			}
-			closeModal();
 		}
 	});
 

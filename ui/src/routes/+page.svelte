@@ -165,7 +165,7 @@
 			<div class="p-8 [&_.sticky]:sticky [&_.sticky]:top-0">
 				<!-- Programmatically render all tabs based on sidebar config -->
 				{#each allTabs as tab (tab.id)}
-					<div class:hidden={activeTab !== tab.id}>
+					<div class={activeTab !== tab.id ? 'h-0 overflow-hidden' : ''}>
 						<tab.component isReadOnly={tab.isReadOnly} />
 					</div>
 				{/each}

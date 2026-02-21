@@ -21,7 +21,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_services,
 		services_confirmBulkDelete,
@@ -123,7 +123,7 @@
 
 	// Deep-link: open service editor from URL
 	$effect(() => {
-		if ($modalState.name === 'service-editor') {
+		if ($modalState.name === 'service-editor' && !showServiceEditor) {
 			if ($modalState.id) {
 				const service = servicesData.find((e) => e.id === $modalState.id);
 				if (service) {
@@ -134,7 +134,6 @@
 					}
 				}
 			}
-			closeModal();
 		}
 	});
 

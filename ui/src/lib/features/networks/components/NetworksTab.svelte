@@ -37,7 +37,7 @@
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 
 	// Queries
 	const currentUserQuery = useCurrentUserQuery();
@@ -76,7 +76,7 @@
 
 	// Deep-link: open network editor from URL
 	$effect(() => {
-		if ($modalState.name === 'network-editor') {
+		if ($modalState.name === 'network-editor' && !showCreateNetworkModal) {
 			if ($modalState.id) {
 				const network = networksData.find((e) => e.id === $modalState.id);
 				if (network) {
@@ -87,7 +87,6 @@
 				editingNetwork = null;
 				showCreateNetworkModal = true;
 			}
-			closeModal();
 		}
 	});
 

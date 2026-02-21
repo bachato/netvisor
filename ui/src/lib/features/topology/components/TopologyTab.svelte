@@ -34,7 +34,7 @@
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import {
 		common_auto,
@@ -113,7 +113,7 @@
 
 	// Deep-link: open topology editor from URL
 	$effect(() => {
-		if ($modalState.name === 'topology-editor') {
+		if ($modalState.name === 'topology-editor' && !isCreateEditOpen) {
 			if ($modalState.id) {
 				const entity = topologiesData.find((e) => e.id === $modalState.id);
 				if (entity) {
@@ -124,7 +124,6 @@
 				editingTopology = null;
 				isCreateEditOpen = true;
 			}
-			closeModal();
 		}
 	});
 

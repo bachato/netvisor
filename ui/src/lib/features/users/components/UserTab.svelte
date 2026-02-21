@@ -18,7 +18,7 @@
 	import { useUsersQuery, useBulkDeleteUsersMutation } from '../queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_created,
 		common_email,
@@ -66,15 +66,14 @@
 
 	// Deep-link: open invite modal from URL
 	$effect(() => {
-		if ($modalState.name === 'invite-user') {
+		if ($modalState.name === 'invite-user' && !showInviteModal) {
 			showInviteModal = true;
-			closeModal();
 		}
 	});
 
 	// Deep-link: open user editor from URL
 	$effect(() => {
-		if ($modalState.name === 'user-editor') {
+		if ($modalState.name === 'user-editor' && !showEditModal) {
 			if ($modalState.id) {
 				const entity = usersData.find((e) => e.id === $modalState.id);
 				if (entity) {
@@ -85,7 +84,6 @@
 				editingUser = null;
 				showEditModal = true;
 			}
-			closeModal();
 		}
 	});
 

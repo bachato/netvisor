@@ -16,7 +16,13 @@
 	import type { Snippet } from 'svelte';
 	import { X } from 'lucide-svelte';
 	import { common_closeModal, common_modal } from '$lib/paraglide/messages';
-	import { openModal, closeModal, setModalTab } from '$lib/shared/stores/modal-registry';
+	import { get } from 'svelte/store';
+	import {
+		modalState,
+		openModal,
+		closeModal,
+		setModalTab
+	} from '$lib/shared/stores/modal-registry';
 
 	let {
 		title = common_modal(),
@@ -87,10 +93,23 @@
 	$effect(() => {
 		if (isOpen && !wasOpen) {
 			instanceKey++;
-			if (tabs.length > 0 && !tabs.some((t) => t.id === activeTab)) {
-				activeTab = tabs[0].id;
-				onTabChange?.(activeTab);
+
+			// Check if modalState has a tab for this modal (from URL deep-link)
+			const state = get(modalState);
+			const urlTab = name && state.name === name ? state.tab : null;
+
+			if (tabs.length > 0) {
+				if (urlTab && tabs.some((t) => t.id === urlTab)) {
+					// URL specifies a valid tab — use it
+					activeTab = urlTab;
+					onTabChange?.(activeTab);
+				} else if (!tabs.some((t) => t.id === activeTab)) {
+					// Current activeTab is invalid — reset to first tab
+					activeTab = tabs[0].id;
+					onTabChange?.(activeTab);
+				}
 			}
+
 			if (name) {
 				openModal(name, { id: entityId, tab: activeTab || undefined });
 			}

@@ -61,11 +61,13 @@
 
 	// Auto-open modal when deep-linked via ?modal=create-daemon
 	$effect(() => {
-		if ($modalState.name === 'create-daemon' && daemonsQuery.isSuccess) {
+		if ($modalState.name === 'create-daemon' && !showCreateDaemonModal && daemonsQuery.isSuccess) {
 			if (daemonsData.length === 0) {
 				showCreateDaemonModal = true;
+			} else {
+				// Daemons exist, nothing to open — clean up the deep-link
+				closeModal();
 			}
-			closeModal();
 		}
 	});
 

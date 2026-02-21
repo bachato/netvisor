@@ -19,7 +19,7 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_create,
 		common_created,
@@ -58,7 +58,7 @@
 
 	// Deep-link: open daemon API key editor from URL
 	$effect(() => {
-		if ($modalState.name === 'daemon-api-key') {
+		if ($modalState.name === 'daemon-api-key' && !showCreateApiKeyModal) {
 			if ($modalState.id) {
 				const entity = apiKeysData.find((e) => e.id === $modalState.id);
 				if (entity) {
@@ -69,7 +69,6 @@
 				editingApiKey = null;
 				showCreateApiKeyModal = true;
 			}
-			closeModal();
 		}
 	});
 

@@ -20,7 +20,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_color,
 		common_confirmDeleteName,
@@ -45,7 +45,7 @@
 
 	// Deep-link: open tag editor from URL
 	$effect(() => {
-		if ($modalState.name === 'tag-editor') {
+		if ($modalState.name === 'tag-editor' && !showTagEditor) {
 			if ($modalState.id) {
 				const tag = tags.find((e) => e.id === $modalState.id);
 				if (tag) {
@@ -56,7 +56,6 @@
 				editingTag = null;
 				showTagEditor = true;
 			}
-			closeModal();
 		}
 	});
 

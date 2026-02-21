@@ -23,7 +23,7 @@
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_confirmDeleteName,
 		common_create,
@@ -67,7 +67,7 @@
 
 	// Deep-link: open discovery editor from URL
 	$effect(() => {
-		if ($modalState.name === 'discovery-editor') {
+		if ($modalState.name === 'discovery-editor' && !showDiscoveryModal) {
 			if ($modalState.id) {
 				const entity = discoveriesData.find((e) => e.id === $modalState.id);
 				if (entity) {
@@ -78,7 +78,6 @@
 				editingDiscovery = null;
 				showDiscoveryModal = true;
 			}
-			closeModal();
 		}
 	});
 
