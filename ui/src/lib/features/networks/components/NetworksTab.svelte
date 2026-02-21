@@ -36,6 +36,7 @@
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 
 	// Queries
 	const currentUserQuery = useCurrentUserQuery();
@@ -71,6 +72,23 @@
 
 	let showCreateNetworkModal = $state(false);
 	let editingNetwork = $state<Network | null>(null);
+
+	// Deep-link: open network editor from URL
+	$effect(() => {
+		if ($modalState.name === 'network-editor') {
+			if ($modalState.id) {
+				const network = networksData.find((e) => e.id === $modalState.id);
+				if (network) {
+					editingNetwork = network;
+					showCreateNetworkModal = true;
+				}
+			} else {
+				editingNetwork = null;
+				showCreateNetworkModal = true;
+			}
+			closeModal();
+		}
+	});
 
 	let allowBulkDelete = $derived(
 		!isReadOnly && currentUser
@@ -230,6 +248,7 @@
 </div>
 
 <NetworkEditModal
+	name="network-editor"
 	isOpen={showCreateNetworkModal}
 	network={editingNetwork}
 	onCreate={handleNetworkCreate}

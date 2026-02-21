@@ -20,12 +20,14 @@
 		isOpen = false,
 		onClose,
 		initialTab = 'account',
-		dismissible = true
+		dismissible = true,
+		name = undefined
 	}: {
 		isOpen: boolean;
 		onClose: () => void;
 		initialTab?: string;
 		dismissible?: boolean;
+		name?: string;
 	} = $props();
 
 	// TanStack Query for current user and organization
@@ -97,6 +99,7 @@
 <GenericModal
 	{isOpen}
 	title={common_settings()}
+	{name}
 	size="xl"
 	onClose={handleClose}
 	onOpen={handleOpen}

@@ -19,6 +19,7 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import {
 		common_create,
 		common_name,
@@ -53,6 +54,23 @@
 
 	let showCreateApiKeyModal = $state(false);
 	let editingApiKey = $state<ApiKey | null>(null);
+
+	// Deep-link: open daemon API key editor from URL
+	$effect(() => {
+		if ($modalState.name === 'daemon-api-key') {
+			if ($modalState.id) {
+				const entity = apiKeysData.find((e) => e.id === $modalState.id);
+				if (entity) {
+					editingApiKey = entity;
+					showCreateApiKeyModal = true;
+				}
+			} else {
+				editingApiKey = null;
+				showCreateApiKeyModal = true;
+			}
+			closeModal();
+		}
+	});
 
 	async function handleDeleteApiKey(apiKey: ApiKey) {
 		if (confirm(daemonApiKeys_confirmDelete({ name: apiKey.name }))) {
@@ -181,6 +199,7 @@
 </div>
 
 <CreateApiKeyModal
+	name="daemon-api-key"
 	isOpen={showCreateApiKeyModal}
 	onClose={handleCloseCreateApiKey}
 	onUpdate={handleUpdateApiKey}

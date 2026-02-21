@@ -12,17 +12,23 @@
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
-	import { showBillingPlanModal } from '$lib/features/billing/stores';
+	import { reopenSettingsAfterBilling } from '$lib/features/billing/stores';
+	import {
+		modalState,
+		openModal,
+		closeModal,
+		initModalFromUrl
+	} from '$lib/shared/stores/modal-registry';
 
 	// Read hash immediately during script initialization, before onMount
 	const initialHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
 
-	// After first billing checkout, trigger daemon setup
-	// Don't clean billing_flow from URL here — AppShell needs it to fire billing_completed
+	// After first billing checkout, set flag so we open daemon setup after billing resolves
+	let pendingDaemonSetup = false;
 	if (typeof window !== 'undefined') {
 		const params = new URLSearchParams(window.location.search);
 		if (params.get('billing_flow') === 'checkout') {
-			sessionStorage.setItem('showDaemonSetup', 'true');
+			pendingDaemonSetup = true;
 		}
 	}
 
@@ -43,7 +49,7 @@
 	let needsPlanSelection = $derived(
 		billingEnabled && organization != null && !isBillingPlanActive(organization)
 	);
-	let showBillingModal = $derived(needsPlanSelection || $showBillingPlanModal);
+	let showBillingModal = $derived(needsPlanSelection || $modalState.name === 'billing-plan');
 
 	let activeTab = $state(initialHash || 'topology');
 	let appInitialized = $state(false);
@@ -67,10 +73,12 @@
 	$effect(() => {
 		if (!initialHash && !initialTabSet && daemonsQuery.isSuccess && !showBillingModal) {
 			const hasDaemons = (daemonsQuery.data?.length ?? 0) > 0;
-			const wantsDaemonSetup =
-				typeof sessionStorage !== 'undefined' &&
-				sessionStorage.getItem('showDaemonSetup') === 'true';
+			const wantsDaemonSetup = pendingDaemonSetup || $modalState.name === 'create-daemon';
 			activeTab = hasDaemons && !wantsDaemonSetup ? 'topology' : 'daemons';
+			if (pendingDaemonSetup) {
+				openModal('create-daemon');
+				pendingDaemonSetup = false;
+			}
 			initialTabSet = true;
 		}
 	});
@@ -78,7 +86,7 @@
 	// Auto-open settings modal to billing tab when past_due
 	$effect(() => {
 		if (isPastDue && appInitialized) {
-			showSettings = true;
+			openModal('settings', { tab: 'billing' });
 		}
 	});
 
@@ -106,6 +114,7 @@
 		discoverySSEManager.connect();
 
 		appInitialized = true;
+		initModalFromUrl();
 	}
 
 	// Reactive effect: initialize app when authenticated
@@ -169,8 +178,15 @@
 	<!-- Billing modal rendered last so it stacks on top of other modals -->
 	<BillingPlanModal
 		isOpen={showBillingModal}
+		name="billing-plan"
 		dismissible={!needsPlanSelection}
-		onClose={() => showBillingPlanModal.set(false)}
+		onClose={() => {
+			closeModal();
+			if ($reopenSettingsAfterBilling) {
+				reopenSettingsAfterBilling.set(false);
+				openModal('settings', { tab: 'billing' });
+			}
+		}}
 	/>
 {:else}
 	<!-- Data still loading -->

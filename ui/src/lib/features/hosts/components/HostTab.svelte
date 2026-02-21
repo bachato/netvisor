@@ -51,6 +51,7 @@
 	import { useServicesByIds } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import type { components } from '$lib/api/schema';
 
 	type HostOrderField = components['schemas']['HostOrderField'];
@@ -157,6 +158,23 @@
 
 	let otherHost = $state<Host | null>(null);
 	let showHostConsolidationModal = $state(false);
+
+	// Deep-link: open host editor from URL
+	$effect(() => {
+		if ($modalState.name === 'host-editor') {
+			if ($modalState.id) {
+				const host = hostsData.find((h) => h.id === $modalState.id);
+				if (host) {
+					editingHost = host;
+					showHostEditor = true;
+				}
+			} else {
+				editingHost = null;
+				showHostEditor = true;
+			}
+			closeModal();
+		}
+	});
 
 	// Define field configuration for the DataTableControls
 	// Uses defineFields to ensure all HostOrderField values are covered
@@ -377,6 +395,7 @@
 
 <HostEditor
 	isOpen={showHostEditor}
+	name="host-editor"
 	host={editingHost}
 	onCreate={handleHostCreate}
 	onDelete={handleDeleteHost}

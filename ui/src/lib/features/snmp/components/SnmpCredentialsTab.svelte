@@ -18,6 +18,7 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import type { components } from '$lib/api/schema';
@@ -41,6 +42,23 @@
 
 	let showCredentialEditor = $state(false);
 	let editingCredential: SnmpCredential | null = $state(null);
+
+	// Deep-link: open SNMP credential editor from URL
+	$effect(() => {
+		if ($modalState.name === 'snmp-credential-editor') {
+			if ($modalState.id) {
+				const entity = credentials.find((e) => e.id === $modalState.id);
+				if (entity) {
+					editingCredential = entity;
+					showCredentialEditor = true;
+				}
+			} else {
+				editingCredential = null;
+				showCredentialEditor = true;
+			}
+			closeModal();
+		}
+	});
 
 	// Queries and mutations
 	const currentUserQuery = useCurrentUserQuery();
@@ -188,6 +206,7 @@
 </div>
 
 <SnmpCredentialEditModal
+	name="snmp-credential-editor"
 	isOpen={showCredentialEditor}
 	credential={editingCredential}
 	onCreate={handleCredentialCreate}

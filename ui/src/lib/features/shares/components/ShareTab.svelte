@@ -15,6 +15,7 @@
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import {
 		common_confirmDeleteName,
 		common_created,
@@ -57,6 +58,23 @@
 
 	let showEditor = $state(false);
 	let editingShare = $state<Share | null>(null);
+
+	// Deep-link: open share editor from URL
+	$effect(() => {
+		if ($modalState.name === 'share-editor') {
+			if ($modalState.id) {
+				const share = sharesData.find((e) => e.id === $modalState.id);
+				if (share) {
+					editingShare = share;
+					showEditor = true;
+				}
+			} else {
+				editingShare = null;
+				showEditor = true;
+			}
+			closeModal();
+		}
+	});
 
 	// Define field configuration for DataControls
 	const shareFields: FieldConfig<Share>[] = [
@@ -177,4 +195,9 @@
 	{/if}
 </div>
 
-<ShareModal isOpen={showEditor} share={editingShare} onClose={handleCloseEditor} />
+<ShareModal
+	name="share-editor"
+	isOpen={showEditor}
+	share={editingShare}
+	onClose={handleCloseEditor}
+/>

@@ -1251,10 +1251,10 @@ async fn handle_link_flow(params: HandleLinkFlowParams<'_>) -> Result<Redirect, 
         host: _,
     } = params;
 
-    // Add auth_modal query param to return URL
+    // Add modal query param to return URL so settings modal opens
     return_url
         .query_pairs_mut()
-        .append_pair("auth_modal", "true");
+        .append_pair("modal", "settings");
 
     // Verify user is logged in
     let user_id: Uuid = session.get("user_id").await.ok().flatten().ok_or_else(|| {

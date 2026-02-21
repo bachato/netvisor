@@ -34,6 +34,7 @@
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import {
 		common_auto,
@@ -109,6 +110,23 @@
 
 	let isCreateEditOpen = $state(false);
 	let editingTopology: Topology | null = $state(null);
+
+	// Deep-link: open topology editor from URL
+	$effect(() => {
+		if ($modalState.name === 'topology-editor') {
+			if ($modalState.id) {
+				const entity = topologiesData.find((e) => e.id === $modalState.id);
+				if (entity) {
+					editingTopology = entity;
+					isCreateEditOpen = true;
+				}
+			} else {
+				editingTopology = null;
+				isCreateEditOpen = true;
+			}
+			closeModal();
+		}
+	});
 
 	let isRefreshConflictsOpen = $state(false);
 	let isShareModalOpen = $state(false);
@@ -412,7 +430,13 @@
 	</div>
 </SvelteFlowProvider>
 
-<TopologyModal bind:isOpen={isCreateEditOpen} {onSubmit} {onClose} topo={editingTopology} />
+<TopologyModal
+	name="topology-editor"
+	bind:isOpen={isCreateEditOpen}
+	{onSubmit}
+	{onClose}
+	topo={editingTopology}
+/>
 
 {#if currentTopology}
 	<RefreshConflictsModal

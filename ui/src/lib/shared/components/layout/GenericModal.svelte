@@ -16,6 +16,7 @@
 	import type { Snippet } from 'svelte';
 	import { X } from 'lucide-svelte';
 	import { common_closeModal, common_modal } from '$lib/paraglide/messages';
+	import { openModal, closeModal, setModalTab } from '$lib/shared/stores/modal-registry';
 
 	let {
 		title = common_modal(),
@@ -33,6 +34,8 @@
 		onTabChange = null,
 		onOpen = null,
 		instanceKey = $bindable(0),
+		name = undefined,
+		entityId = undefined,
 		headerIcon,
 		children,
 		footer
@@ -52,6 +55,8 @@
 		onTabChange?: ((tabId: string) => void) | null;
 		onOpen?: (() => void) | null;
 		instanceKey?: number;
+		name?: string;
+		entityId?: string;
 		headerIcon?: Snippet;
 		children?: Snippet<[number]>;
 		footer?: Snippet;
@@ -62,6 +67,9 @@
 
 	function handleTabClick(tabId: string) {
 		activeTab = tabId;
+		if (name) {
+			setModalTab(tabId);
+		}
 		onTabChange?.(tabId);
 	}
 
@@ -83,6 +91,9 @@
 				activeTab = tabs[0].id;
 				onTabChange?.(activeTab);
 			}
+			if (name) {
+				openModal(name, { id: entityId, tab: activeTab || undefined });
+			}
 			onOpen?.();
 		}
 		wasOpen = isOpen;
@@ -99,6 +110,9 @@
 
 	function handleClose() {
 		activeTab = tabs.length > 0 ? tabs[0].id : '';
+		if (name) {
+			closeModal();
+		}
 		onClose?.();
 	}
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CheckCircle, AlertCircle, CreditCard, AlertTriangle } from 'lucide-svelte';
-	import { showBillingPlanModal, reopenSettingsAfterBilling } from '$lib/features/billing/stores';
+	import { reopenSettingsAfterBilling } from '$lib/features/billing/stores';
+	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
 	import { billingPlans } from '$lib/shared/stores/metadata';
@@ -375,7 +376,7 @@
 						</div>
 						<button
 							onclick={() => {
-								showBillingPlanModal.set(true);
+								openModal('billing-plan');
 								reopenSettingsAfterBilling.set(true);
 								onClose();
 							}}

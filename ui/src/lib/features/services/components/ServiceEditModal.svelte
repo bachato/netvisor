@@ -50,9 +50,10 @@
 		isOpen?: boolean;
 		onUpdate: (id: string, data: Service) => Promise<void> | void;
 		onClose: () => void;
+		name?: string;
 	}
 
-	let { service, host, isOpen = false, onUpdate, onClose }: Props = $props();
+	let { service, host, isOpen = false, onUpdate, onClose, name = undefined }: Props = $props();
 
 	let loading = $state(false);
 	let formData = $state(service);
@@ -102,7 +103,15 @@
 	}
 </script>
 
-<GenericModal {isOpen} {title} {onClose} onOpen={handleOpen} size="xl">
+<GenericModal
+	{isOpen}
+	{title}
+	{name}
+	entityId={service?.id}
+	{onClose}
+	onOpen={handleOpen}
+	size="xl"
+>
 	{#snippet headerIcon()}
 		<ModalHeaderIcon
 			Icon={serviceDefinitions.getIconComponent(service.service_definition)}

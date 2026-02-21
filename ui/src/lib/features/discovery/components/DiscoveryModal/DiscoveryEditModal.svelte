@@ -43,6 +43,7 @@
 		onUpdate: (id: string, data: Discovery) => Promise<void> | void;
 		onClose: () => void;
 		onDelete?: ((id: string) => Promise<void> | void) | null;
+		name?: string;
 	}
 
 	let {
@@ -53,7 +54,8 @@
 		onCreate,
 		onUpdate,
 		onClose,
-		onDelete = null
+		onDelete = null,
+		name = undefined
 	}: Props = $props();
 
 	const organizationQuery = useOrganizationQuery();
@@ -207,7 +209,16 @@
 	let colorHelper = entities.getColorHelper('Discovery');
 </script>
 
-<GenericModal {isOpen} {title} {onClose} onOpen={handleOpen} size="xl" showCloseButton={true}>
+<GenericModal
+	{isOpen}
+	{title}
+	{name}
+	entityId={discovery?.id}
+	{onClose}
+	onOpen={handleOpen}
+	size="xl"
+	showCloseButton={true}
+>
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={entities.getIconComponent('Discovery')} color={colorHelper.color} />
 	{/snippet}

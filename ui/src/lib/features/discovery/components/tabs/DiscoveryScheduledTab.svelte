@@ -22,6 +22,7 @@
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import {
 		common_confirmDeleteName,
 		common_create,
@@ -59,6 +60,23 @@
 
 	let showDiscoveryModal = $state(false);
 	let editingDiscovery: Discovery | null = $state(null);
+
+	// Deep-link: open discovery editor from URL
+	$effect(() => {
+		if ($modalState.name === 'discovery-editor') {
+			if ($modalState.id) {
+				const entity = discoveriesData.find((e) => e.id === $modalState.id);
+				if (entity) {
+					editingDiscovery = entity;
+					showDiscoveryModal = true;
+				}
+			} else {
+				editingDiscovery = null;
+				showDiscoveryModal = true;
+			}
+			closeModal();
+		}
+	});
 
 	function handleCreateDiscovery() {
 		editingDiscovery = null;
@@ -190,6 +208,7 @@
 </div>
 
 <DiscoveryEditModal
+	name="discovery-editor"
 	isOpen={showDiscoveryModal}
 	daemons={daemonsData}
 	hosts={hostsData}

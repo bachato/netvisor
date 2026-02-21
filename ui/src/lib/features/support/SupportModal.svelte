@@ -41,10 +41,12 @@
 
 	let {
 		isOpen = false,
-		onClose
+		onClose,
+		name = undefined
 	}: {
 		isOpen: boolean;
 		onClose: () => void;
+		name?: string;
 	} = $props();
 
 	// TanStack Query for current user and organization
@@ -118,7 +120,7 @@
 	}
 </script>
 
-<GenericModal {isOpen} title={support_title()} {onClose} size="xl">
+<GenericModal {isOpen} title={support_title()} {name} {onClose} size="xl">
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={LifeBuoy} color="Blue" />
 	{/snippet}

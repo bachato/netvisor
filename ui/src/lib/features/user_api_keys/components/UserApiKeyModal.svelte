@@ -54,9 +54,17 @@
 		onUpdate: (data: UserApiKey) => Promise<void> | void;
 		onDelete?: ((id: string) => Promise<void> | void) | null;
 		apiKey?: UserApiKey | null;
+		name?: string;
 	}
 
-	let { isOpen = false, onClose, onUpdate, onDelete = null, apiKey = null }: Props = $props();
+	let {
+		isOpen = false,
+		onClose,
+		onUpdate,
+		onDelete = null,
+		apiKey = null,
+		name = undefined
+	}: Props = $props();
 
 	// Mutations
 	const createMutation = useCreateUserApiKeyMutation();
@@ -180,6 +188,8 @@
 <GenericModal
 	{isOpen}
 	{title}
+	{name}
+	entityId={apiKey?.id}
 	size="xl"
 	onClose={handleOnClose}
 	onOpen={handleOpen}

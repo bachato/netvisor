@@ -16,6 +16,7 @@
 	} from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
@@ -58,16 +59,13 @@
 	let showCreateDaemonModal = $state(false);
 	let daemon = $state<Daemon | null>(null);
 
-	// Auto-open modal after onboarding (only if no daemons exist yet)
+	// Auto-open modal when deep-linked via ?modal=create-daemon
 	$effect(() => {
-		if (typeof sessionStorage !== 'undefined' && daemonsQuery.isSuccess) {
-			const shouldShow = sessionStorage.getItem('showDaemonSetup');
-			if (shouldShow === 'true') {
-				sessionStorage.removeItem('showDaemonSetup');
-				if (daemonsData.length === 0) {
-					showCreateDaemonModal = true;
-				}
+		if ($modalState.name === 'create-daemon' && daemonsQuery.isSuccess) {
+			if (daemonsData.length === 0) {
+				showCreateDaemonModal = true;
 			}
+			closeModal();
 		}
 	});
 
@@ -189,4 +187,9 @@
 	{/if}
 </div>
 
-<CreateDaemonModal isOpen={showCreateDaemonModal} onClose={handleCloseCreateDaemon} {daemon} />
+<CreateDaemonModal
+	isOpen={showCreateDaemonModal}
+	name="create-daemon"
+	onClose={handleCloseCreateDaemon}
+	{daemon}
+/>

@@ -19,7 +19,7 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
-	import { showBillingPlanModal } from '$lib/features/billing/stores';
+	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { fieldDefs } from '../config';
 	import type { Daemon } from '../types/base';
 	import {
@@ -439,7 +439,7 @@
 									};
 								})}
 								onSelect={(value) => field.handleChange(value)}
-								onDisabledClick={() => showBillingPlanModal.set(true)}
+								onDisabledClick={() => openModal('billing-plan')}
 								displayComponent={SimpleOptionDisplay}
 								disabled={def.disabled?.(isNewDaemon) ?? false}
 							/>

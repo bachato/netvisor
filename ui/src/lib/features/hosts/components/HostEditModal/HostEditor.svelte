@@ -64,6 +64,7 @@
 		onUpdate: (data: UpdateHostWithServicesRequest) => Promise<void> | void;
 		onClose: () => void;
 		onDelete?: ((host: Host) => Promise<void> | void) | null;
+		name?: string;
 	}
 
 	let {
@@ -72,7 +73,8 @@
 		onCreate,
 		onUpdate,
 		onClose,
-		onDelete = null
+		onDelete = null,
+		name = undefined
 	}: Props = $props();
 
 	// TanStack Query hooks
@@ -412,6 +414,8 @@
 <GenericModal
 	{isOpen}
 	{title}
+	{name}
+	entityId={host?.id}
 	onClose={handleClose}
 	onOpen={handleOpen}
 	size="full"

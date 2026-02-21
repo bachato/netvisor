@@ -37,7 +37,8 @@
 		onCreate,
 		onUpdate,
 		onClose,
-		onDelete = null
+		onDelete = null,
+		name = undefined
 	}: {
 		tag?: Tag | null;
 		isOpen?: boolean;
@@ -45,6 +46,7 @@
 		onUpdate: (id: string, data: Tag) => Promise<void> | void;
 		onClose: () => void;
 		onDelete?: ((id: string) => Promise<void> | void) | null;
+		name?: string;
 	} = $props();
 
 	// TanStack Query for organization
@@ -118,7 +120,16 @@
 	let colorHelper = $derived(createColorHelper(form.state.values.color));
 </script>
 
-<GenericModal {isOpen} {title} size="xl" {onClose} onOpen={handleOpen} showCloseButton={true}>
+<GenericModal
+	{isOpen}
+	{title}
+	{name}
+	entityId={tag?.id}
+	size="xl"
+	{onClose}
+	onOpen={handleOpen}
+	showCloseButton={true}
+>
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={TagIcon} color={colorHelper.color} />
 	{/snippet}

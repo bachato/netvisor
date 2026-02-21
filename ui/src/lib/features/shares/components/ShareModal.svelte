@@ -73,13 +73,15 @@
 		onClose,
 		share = null,
 		topologyId = '',
-		networkId = ''
+		networkId = '',
+		name = undefined
 	}: {
 		isOpen?: boolean;
 		onClose: () => void;
 		share?: Share | null;
 		topologyId?: string;
 		networkId?: string;
+		name?: string;
 	} = $props();
 
 	// Mutations
@@ -235,6 +237,8 @@
 <GenericModal
 	{isOpen}
 	{title}
+	{name}
+	entityId={share?.id}
 	size="xl"
 	onClose={handleClose}
 	onOpen={handleOpen}

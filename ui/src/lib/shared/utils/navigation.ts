@@ -34,3 +34,19 @@ export async function navigate(): Promise<void> {
 	// eslint-disable-next-line svelte/no-navigation-without-resolve
 	await goto(route);
 }
+
+/**
+ * Navigate to the appropriate route with a modal query param
+ */
+export async function navigateWithModal(
+	modalName: string,
+	opts?: { id?: string; tab?: string }
+): Promise<void> {
+	const route = getRoute();
+	const url = new URL(route, window.location.origin);
+	url.searchParams.set('modal', modalName);
+	if (opts?.id) url.searchParams.set('id', opts.id);
+	if (opts?.tab) url.searchParams.set('tab', opts.tab);
+	// eslint-disable-next-line svelte/no-navigation-without-resolve
+	await goto(url.pathname + url.search);
+}
