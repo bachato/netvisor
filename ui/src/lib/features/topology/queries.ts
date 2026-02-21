@@ -17,7 +17,7 @@ import { writable, get } from 'svelte/store';
 export const defaultTopologyOptions: TopologyOptions = {
 	local: {
 		left_zone_title: 'Infrastructure',
-		hide_edge_types: [],
+		hide_edge_types: ['HostVirtualization'],
 		no_fade_edges: false,
 		hide_resize_handles: false,
 		tag_filter: {
@@ -32,7 +32,7 @@ export const defaultTopologyOptions: TopologyOptions = {
 		hide_vm_title_on_docker_container: false,
 		show_gateway_in_left_zone: true,
 		left_zone_service_categories: ['DNS', 'ReverseProxy'],
-		hide_service_categories: []
+		hide_service_categories: ['OpenPorts']
 	}
 };
 
