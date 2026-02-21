@@ -28,6 +28,7 @@
 		common_hosts,
 		common_name,
 		common_network,
+		common_services,
 		common_tags,
 		common_unknownNetwork,
 		common_updated,
@@ -48,7 +49,7 @@
 		useConsolidateHostsMutation,
 		type HostQueryOptions
 	} from '../queries';
-	import { useServicesByIds } from '$lib/features/services/queries';
+	import { useServicesByIds, useServicesCacheQuery } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import type { components } from '$lib/api/schema';
@@ -109,6 +110,8 @@
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let hostsPagination = $derived(hostsQuery.data?.pagination ?? null);
 	let servicesData = $derived(servicesQuery.data ?? []);
+	const servicesCacheQuery = useServicesCacheQuery();
+	let allServicesData = $derived(servicesCacheQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
 	// Only show full loading on initial load (no data yet)
 	let isInitialLoading = $derived(hostsQuery.isPending && !hostsQuery.data);
@@ -211,6 +214,17 @@
 						entity.tags
 							.map((id) => tagsData.find((t) => t.id === id)?.name)
 							.filter((name): name is string => !!name)
+				},
+				{
+					key: 'services',
+					label: common_services(),
+					type: 'array',
+					searchable: true,
+					filterable: true,
+					getValue: (host) =>
+						allServicesData
+							.filter((s) => s.host_id === host.id)
+							.map((s) => s.name)
 				}
 			]
 		)
