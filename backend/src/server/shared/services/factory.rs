@@ -321,7 +321,12 @@ impl ServiceFactory {
         let posthog_service =
             if let Some(posthog_key) = config.as_ref().and_then(|c| c.posthog_key.clone()) {
                 Some(Arc::new(
-                    PosthogService::new(posthog_key, "https://ph.scanopy.net".to_string()).await,
+                    PosthogService::new(
+                        posthog_key,
+                        "https://ph.scanopy.net".to_string(),
+                        network_service.clone(),
+                    )
+                    .await,
                 ))
             } else {
                 None

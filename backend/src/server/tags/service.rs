@@ -22,8 +22,8 @@ impl EventBusService<Tag> for TagService {
     fn get_network_id(&self, _entity: &Tag) -> Option<Uuid> {
         None
     }
-    fn get_organization_id(&self, _entity: &Tag) -> Option<Uuid> {
-        None
+    fn get_organization_id(&self, entity: &Tag) -> Option<Uuid> {
+        Some(entity.base.organization_id)
     }
 }
 
