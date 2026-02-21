@@ -148,8 +148,10 @@ impl BrevoService {
             TelemetryOperation::FirstTopologyRebuild => {
                 self.handle_first_topology_rebuild(event).await?;
             }
+            TelemetryOperation::FirstDiscoveryCompleted => {
+                self.handle_first_discovery_completed(event).await?;
+            }
             TelemetryOperation::SecondNetworkCreated
-            | TelemetryOperation::FirstDiscoveryCompleted
             | TelemetryOperation::FirstHostDiscovered
             | TelemetryOperation::FirstTagCreated
             | TelemetryOperation::FirstUserApiKeyCreated
@@ -184,9 +186,6 @@ impl BrevoService {
             }
             TelemetryOperation::InviteAccepted => {
                 company_attrs = company_attrs.with_first_invite_accepted_date(event.timestamp);
-            }
-            TelemetryOperation::FirstDiscoveryCompleted => {
-                company_attrs = company_attrs.with_first_discovery_completed_date(event.timestamp)
             }
             TelemetryOperation::FirstHostDiscovered => {
                 company_attrs = company_attrs.with_first_host_discovered_date(event.timestamp)
@@ -597,6 +596,15 @@ impl BrevoService {
         self.update_company_by_org(event.organization_id, company_attrs)
             .await?;
 
+        if let Some(email) = self.get_owner_email(event.organization_id).await
+            && let Err(e) = self
+                .client
+                .track_event("first_daemon_registered", &email, None)
+                .await
+        {
+            tracing::warn!(error = %e, "Failed to track first_daemon_registered event in Brevo");
+        }
+
         tracing::debug!(
             organization_id = %event.organization_id,
             "Updated Brevo: first daemon registered"
@@ -604,9 +612,9 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_first_topology_rebuild(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_first_discovery_completed(&self, event: &TelemetryEvent) -> Result<()> {
         let company_attrs =
-            CompanyAttributes::new().with_first_topology_rebuild_date(event.timestamp);
+            CompanyAttributes::new().with_first_discovery_completed_date(event.timestamp);
         self.update_company_by_org(event.organization_id, company_attrs)
             .await?;
 
@@ -622,6 +630,19 @@ impl BrevoService {
         tracing::debug!(
             organization_id = %event.organization_id,
             "Updated Brevo: first discovery completed"
+        );
+        Ok(())
+    }
+
+    async fn handle_first_topology_rebuild(&self, event: &TelemetryEvent) -> Result<()> {
+        let company_attrs =
+            CompanyAttributes::new().with_first_topology_rebuild_date(event.timestamp);
+        self.update_company_by_org(event.organization_id, company_attrs)
+            .await?;
+
+        tracing::debug!(
+            organization_id = %event.organization_id,
+            "Updated Brevo: first topology rebuild"
         );
         Ok(())
     }

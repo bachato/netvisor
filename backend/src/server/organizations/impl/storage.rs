@@ -78,6 +78,7 @@ impl Storable for Organization {
                     has_payment_method,
                     trial_end_date,
                     brevo_company_id,
+                    plan_limit_notifications,
                 },
         } = self.clone();
 
@@ -94,6 +95,7 @@ impl Storable for Organization {
                 "has_payment_method",
                 "trial_end_date",
                 "brevo_company_id",
+                "plan_limit_notifications",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -107,6 +109,7 @@ impl Storable for Organization {
                 SqlValue::Bool(has_payment_method),
                 SqlValue::OptionTimestamp(trial_end_date),
                 SqlValue::OptionalString(brevo_company_id),
+                SqlValue::PlanLimitNotifications(plan_limit_notifications),
             ],
         ))
     }
@@ -134,6 +137,11 @@ impl Storable for Organization {
                 has_payment_method: row.get("has_payment_method"),
                 trial_end_date: row.get("trial_end_date"),
                 brevo_company_id: row.get("brevo_company_id"),
+                plan_limit_notifications: row
+                    .try_get::<serde_json::Value, _>("plan_limit_notifications")
+                    .ok()
+                    .and_then(|v| serde_json::from_value(v).ok())
+                    .unwrap_or_default(),
             },
         })
     }

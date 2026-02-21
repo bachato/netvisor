@@ -15,6 +15,7 @@ use crate::server::{
     hosts::r#impl::{base::Host, virtualization::HostVirtualization},
     if_entries::r#impl::base::IfEntry,
     interfaces::r#impl::base::Interface,
+    organizations::r#impl::base::PlanLimitNotifications,
     ports::r#impl::base::Port,
     services::r#impl::{definitions::ServiceDefinition, virtualization::ServiceVirtualization},
     shared::{storage::filter::StorableFilter, types::entities::EntitySource},
@@ -229,4 +230,5 @@ pub enum SqlValue {
     OptionalMacAddress(Option<MacAddress>),
     IfEntries(Vec<IfEntry>),
     Tags(Vec<Tag>),
+    PlanLimitNotifications(PlanLimitNotifications),
 }

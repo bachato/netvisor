@@ -3,22 +3,31 @@ use std::sync::Arc;
 use anyhow::{Error, Result};
 use async_trait::async_trait;
 use email_address::EmailAddress;
+use uuid::Uuid;
 
 use crate::server::{
     email::templates::{
-        EMAIL_FOOTER, EMAIL_HEADER, EMAIL_VERIFICATION_BODY, INVITE_LINK_BODY, PASSWORD_RESET_BODY,
-        PAYMENT_METHOD_ADDED_BODY, PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY,
-        PLAN_CHANGED_TITLE, SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE,
-        TRIAL_ENDING_BODY_HAS_PAYMENT, TRIAL_ENDING_BODY_NO_PAYMENT, TRIAL_ENDING_TITLE,
-        TRIAL_EXPIRED_BODY, TRIAL_EXPIRED_TITLE, TRIAL_STARTED_BODY, TRIAL_STARTED_TITLE,
+        DISCOVERY_GUIDE_FREE_BODY, DISCOVERY_GUIDE_FREE_TITLE, DISCOVERY_GUIDE_PAID_BODY,
+        DISCOVERY_GUIDE_PAID_TITLE, EMAIL_FOOTER, EMAIL_HEADER, EMAIL_VERIFICATION_BODY,
+        INVITE_LINK_BODY, PASSWORD_RESET_BODY, PAYMENT_METHOD_ADDED_BODY,
+        PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY, PLAN_CHANGED_TITLE,
+        PLAN_LIMIT_APPROACHING_BODY, PLAN_LIMIT_APPROACHING_TITLE, PLAN_LIMIT_REACHED_BODY,
+        PLAN_LIMIT_REACHED_TITLE, SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE,
+        TOPOLOGY_READY_BODY, TOPOLOGY_READY_TITLE, TRIAL_ENDING_BODY_HAS_PAYMENT,
+        TRIAL_ENDING_BODY_NO_PAYMENT, TRIAL_ENDING_TITLE, TRIAL_EXPIRED_BODY, TRIAL_EXPIRED_TITLE,
+        TRIAL_STARTED_BODY, TRIAL_STARTED_TITLE,
     },
-    users::service::UserService,
+    hosts::{r#impl::base::Host, service::HostService},
+    networks::{r#impl::Network, service::NetworkService},
+    organizations::{r#impl::base::LimitNotificationLevel, service::OrganizationService},
+    services::service::ServiceService,
+    shared::{services::traits::CrudService, storage::filter::StorableFilter},
+    users::{r#impl::base::User, service::UserService},
 };
 
 /// Trait for email provider implementations
 #[async_trait]
 pub trait EmailProvider: Send + Sync {
-    // Example usage function
     fn build_email(&self, body: String) -> String {
         format!("{}{}{}", EMAIL_HEADER, body, EMAIL_FOOTER)
     }
@@ -171,21 +180,131 @@ pub trait EmailProvider: Send + Sync {
         let body = self.build_email(PAYMENT_METHOD_ADDED_BODY.to_string());
         (PAYMENT_METHOD_ADDED_TITLE.to_string(), body)
     }
+
+    // ========================================================================
+    // Onboarding email builders
+    // ========================================================================
+
+    fn build_discovery_guide_free_email(
+        &self,
+        first_name: Option<&str>,
+        daemon_name: &str,
+        network_name: &str,
+    ) -> (String, String) {
+        let body = self.build_email(
+            DISCOVERY_GUIDE_FREE_BODY
+                .replace("{first_name}", first_name.unwrap_or("there"))
+                .replace("{daemon_name}", daemon_name)
+                .replace("{network_name}", network_name),
+        );
+        (DISCOVERY_GUIDE_FREE_TITLE.to_string(), body)
+    }
+
+    fn build_discovery_guide_paid_email(
+        &self,
+        first_name: Option<&str>,
+        daemon_name: &str,
+        network_name: &str,
+    ) -> (String, String) {
+        let body = self.build_email(
+            DISCOVERY_GUIDE_PAID_BODY
+                .replace("{first_name}", first_name.unwrap_or("there"))
+                .replace("{daemon_name}", daemon_name)
+                .replace("{network_name}", network_name),
+        );
+        (DISCOVERY_GUIDE_PAID_TITLE.to_string(), body)
+    }
+
+    fn build_topology_ready_email(
+        &self,
+        first_name: Option<&str>,
+        host_count: u64,
+        service_count: u64,
+        network_name: &str,
+    ) -> (String, String) {
+        let body = self.build_email(
+            TOPOLOGY_READY_BODY
+                .replace("{first_name}", first_name.unwrap_or("there"))
+                .replace("{host_count}", &host_count.to_string())
+                .replace("{service_count}", &service_count.to_string())
+                .replace("{network_name}", network_name),
+        );
+        (TOPOLOGY_READY_TITLE.to_string(), body)
+    }
+
+    fn build_plan_limit_approaching_email(
+        &self,
+        first_name: Option<&str>,
+        limit_type: &str,
+        current_count: u64,
+        limit: u64,
+        plan_name: &str,
+    ) -> (String, String) {
+        let body = self.build_email(
+            PLAN_LIMIT_APPROACHING_BODY
+                .replace("{first_name}", first_name.unwrap_or("there"))
+                .replace("{limit_type}", limit_type)
+                .replace("{current_count}", &current_count.to_string())
+                .replace("{limit}", &limit.to_string())
+                .replace("{plan_name}", plan_name),
+        );
+        let subject = PLAN_LIMIT_APPROACHING_TITLE.replace("{limit_type}", limit_type);
+        (subject, body)
+    }
+
+    fn build_plan_limit_reached_email(
+        &self,
+        first_name: Option<&str>,
+        limit_type: &str,
+        current_count: u64,
+        limit: u64,
+        plan_name: &str,
+    ) -> (String, String) {
+        let body = self.build_email(
+            PLAN_LIMIT_REACHED_BODY
+                .replace("{first_name}", first_name.unwrap_or("there"))
+                .replace("{limit_type}", limit_type)
+                .replace("{current_count}", &current_count.to_string())
+                .replace("{limit}", &limit.to_string())
+                .replace("{plan_name}", plan_name),
+        );
+        let subject = PLAN_LIMIT_REACHED_TITLE.replace("{limit_type}", limit_type);
+        (subject, body)
+    }
 }
 
 /// Email service that wraps the provider
 pub struct EmailService {
     provider: Box<dyn EmailProvider>,
     pub user_service: Arc<UserService>,
+    pub organization_service: Arc<OrganizationService>,
+    pub host_service: Arc<HostService>,
+    pub network_service: Arc<NetworkService>,
+    pub service_service: Arc<ServiceService>,
 }
 
 impl EmailService {
-    pub fn new(provider: Box<dyn EmailProvider>, user_service: Arc<UserService>) -> Self {
+    pub fn new(
+        provider: Box<dyn EmailProvider>,
+        user_service: Arc<UserService>,
+        organization_service: Arc<OrganizationService>,
+        host_service: Arc<HostService>,
+        network_service: Arc<NetworkService>,
+        service_service: Arc<ServiceService>,
+    ) -> Self {
         Self {
             provider,
             user_service,
+            organization_service,
+            host_service,
+            network_service,
+            service_service,
         }
     }
+
+    // ========================================================================
+    // Existing email methods
+    // ========================================================================
 
     /// Send an HTML email
     pub async fn send_password_reset(
@@ -258,6 +377,239 @@ impl EmailService {
 
     pub async fn send_subscription_cancelled_email(&self, to: EmailAddress) -> Result<()> {
         self.provider.send_subscription_cancelled_email(to).await
+    }
+
+    // ========================================================================
+    // Onboarding email methods
+    // ========================================================================
+
+    /// Send discovery guide email (Free or Paid variant based on `is_free`)
+    pub async fn send_discovery_guide_email(
+        &self,
+        to: EmailAddress,
+        first_name: Option<String>,
+        daemon_name: &str,
+        network_name: &str,
+        is_free: bool,
+    ) -> Result<()> {
+        let first_name_ref = first_name.as_deref();
+        let (subject, body) = if is_free {
+            self.provider.build_discovery_guide_free_email(
+                first_name_ref,
+                daemon_name,
+                network_name,
+            )
+        } else {
+            self.provider.build_discovery_guide_paid_email(
+                first_name_ref,
+                daemon_name,
+                network_name,
+            )
+        };
+        self.provider.send_billing_email(to, subject, body).await
+    }
+
+    /// Send discovery guide email for an organization after first daemon registration.
+    /// Determines free/paid variant from org plan and looks up owner email.
+    pub async fn send_discovery_guide_for_org(
+        &self,
+        org_id: Uuid,
+        daemon_name: &str,
+        network_name: &str,
+    ) -> Result<()> {
+        let org = self
+            .organization_service
+            .get_by_id(&org_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Organization not found"))?;
+
+        let owner_email = self.get_owner_email(&org_id).await?;
+        let is_free = org.base.plan.as_ref().map(|p| p.is_free()).unwrap_or(true);
+
+        self.send_discovery_guide_email(owner_email, None, daemon_name, network_name, is_free)
+            .await
+    }
+
+    /// Send topology ready email for an organization after first discovery completion
+    pub async fn send_topology_ready_for_org(&self, org_id: Uuid) -> Result<()> {
+        // Verify org exists
+        self.organization_service
+            .get_by_id(&org_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Organization not found"))?;
+
+        let owner_email = self.get_owner_email(&org_id).await?;
+
+        let network_filter = StorableFilter::<Network>::new_from_org_id(&org_id);
+        let networks = self.network_service.get_all(network_filter).await?;
+        let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
+        let network_name = networks
+            .first()
+            .map(|n| n.base.name.clone())
+            .unwrap_or_else(|| "your network".to_string());
+
+        let host_filter = StorableFilter::<Host>::new_from_network_ids(&network_ids);
+        let host_count = self.host_service.get_all(host_filter).await?.len() as u64;
+
+        let service_count = {
+            let filter = crate::server::shared::storage::filter::StorableFilter::<
+                crate::server::services::r#impl::base::Service,
+            >::new_from_network_ids(&network_ids);
+            self.service_service.get_all(filter).await?.len() as u64
+        };
+
+        let (subject, body) = self.provider.build_topology_ready_email(
+            None, // User model has no first_name field
+            host_count,
+            service_count,
+            &network_name,
+        );
+        self.provider
+            .send_billing_email(owner_email, subject, body)
+            .await
+    }
+
+    /// Check plan limits for an organization and send notification emails on threshold crossings
+    pub async fn check_plan_limits(&self, org_id: Uuid) -> Result<()> {
+        let mut org = match self.organization_service.get_by_id(&org_id).await? {
+            Some(org) => org,
+            None => return Ok(()),
+        };
+
+        let plan = match &org.base.plan {
+            Some(plan) => *plan,
+            None => return Ok(()),
+        };
+
+        let plan_name = plan.to_string();
+        let mut notifications = org.base.plan_limit_notifications.clone();
+        let mut changed = false;
+        let mut emails_to_send: Vec<(String, String)> = Vec::new();
+
+        // Check each limit type
+        struct LimitCheck {
+            limit: Option<u64>,
+            count: u64,
+            limit_type: &'static str,
+            level: LimitNotificationLevel,
+        }
+
+        let network_filter = StorableFilter::<Network>::new_from_org_id(&org_id);
+        let network_count = self.network_service.get_all(network_filter).await?.len() as u64;
+
+        let networks = self
+            .network_service
+            .get_all(StorableFilter::<Network>::new_from_org_id(&org_id))
+            .await?;
+        let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
+
+        let host_filter = StorableFilter::<Host>::new_from_network_ids(&network_ids);
+        let host_count = self.host_service.get_all(host_filter).await?.len() as u64;
+
+        let user_filter = StorableFilter::<User>::new_from_org_id(&org_id);
+        let seat_count = self.user_service.get_all(user_filter).await?.len() as u64;
+
+        let checks = vec![
+            LimitCheck {
+                limit: plan.host_limit(),
+                count: host_count,
+                limit_type: "hosts",
+                level: notifications.hosts.clone(),
+            },
+            LimitCheck {
+                limit: plan.network_limit(),
+                count: network_count,
+                limit_type: "networks",
+                level: notifications.networks.clone(),
+            },
+            LimitCheck {
+                limit: plan.seat_limit(),
+                count: seat_count,
+                limit_type: "seats",
+                level: notifications.seats.clone(),
+            },
+        ];
+
+        for check in checks {
+            let limit = match check.limit {
+                Some(l) if l > 1 => l,
+                _ => continue, // Skip unlimited or limits <= 1 (always at capacity)
+            };
+
+            let threshold_80 = (limit as f64 * 0.8) as u64;
+            let new_level = if check.count >= limit {
+                if check.level != LimitNotificationLevel::Reached {
+                    let (subject, body) = self.provider.build_plan_limit_reached_email(
+                        None,
+                        check.limit_type,
+                        check.count,
+                        limit,
+                        &plan_name,
+                    );
+                    emails_to_send.push((subject, body));
+                }
+                LimitNotificationLevel::Reached
+            } else if check.count >= threshold_80 {
+                if check.level == LimitNotificationLevel::None {
+                    let (subject, body) = self.provider.build_plan_limit_approaching_email(
+                        None,
+                        check.limit_type,
+                        check.count,
+                        limit,
+                        &plan_name,
+                    );
+                    emails_to_send.push((subject, body));
+                }
+                LimitNotificationLevel::Approaching
+            } else {
+                LimitNotificationLevel::None
+            };
+
+            if new_level != check.level {
+                changed = true;
+                match check.limit_type {
+                    "hosts" => notifications.hosts = new_level,
+                    "networks" => notifications.networks = new_level,
+                    "seats" => notifications.seats = new_level,
+                    _ => {}
+                }
+            }
+        }
+
+        if !emails_to_send.is_empty()
+            && let Ok(owner_email) = self.get_owner_email(&org_id).await
+        {
+            for (subject, body) in emails_to_send {
+                if let Err(e) = self
+                    .provider
+                    .send_billing_email(owner_email.clone(), subject, body)
+                    .await
+                {
+                    tracing::warn!(error = %e, "Failed to send plan limit email");
+                }
+            }
+        }
+
+        if changed {
+            org.base.plan_limit_notifications = notifications;
+            self.organization_service
+                .update(
+                    &mut org,
+                    crate::server::auth::middleware::auth::AuthenticatedEntity::System,
+                )
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    /// Get the owner email for an organization
+    async fn get_owner_email(&self, org_id: &Uuid) -> Result<EmailAddress> {
+        let owners = self.user_service.get_organization_owners(org_id).await?;
+        let owner = owners
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("No owner found for organization {}", org_id))?;
+        Ok(owner.base.email.clone())
     }
 }
 

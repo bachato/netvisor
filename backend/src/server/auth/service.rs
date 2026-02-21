@@ -239,6 +239,7 @@ impl AuthService {
                         has_payment_method: false,
                         trial_end_date: None,
                         brevo_company_id: None,
+                        plan_limit_notifications: Default::default(),
                     }),
                     AuthenticatedEntity::System,
                 )

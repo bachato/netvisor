@@ -10,6 +10,21 @@ use crate::server::{
     shared::{entities::ChangeTriggersTopologyStaleness, events::types::TelemetryOperation},
 };
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Hash)]
+pub enum LimitNotificationLevel {
+    #[default]
+    None,
+    Approaching,
+    Reached,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Hash)]
+pub struct PlanLimitNotifications {
+    pub hosts: LimitNotificationLevel,
+    pub networks: LimitNotificationLevel,
+    pub seats: LimitNotificationLevel,
+}
+
 #[derive(
     Debug, Clone, Serialize, Validate, Deserialize, Default, PartialEq, Eq, Hash, ToSchema,
 )]
@@ -36,6 +51,9 @@ pub struct OrganizationBase {
     /// Brevo company ID - internal, not exposed to API
     #[serde(default, skip_serializing)]
     pub brevo_company_id: Option<String>,
+    /// Tracks which plan limit notification levels have been sent
+    #[serde(default, skip_serializing)]
+    pub plan_limit_notifications: PlanLimitNotifications,
 }
 
 #[derive(
