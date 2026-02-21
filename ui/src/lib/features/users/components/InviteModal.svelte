@@ -52,7 +52,11 @@
 	import PermissionSelect from '$lib/shared/components/api-keys/PermissionSelect.svelte';
 	import NetworkAccessSelect from '$lib/shared/components/api-keys/NetworkAccessSelect.svelte';
 
-	let { isOpen = $bindable(false), onClose }: { isOpen: boolean; onClose: () => void } = $props();
+	let {
+		isOpen = $bindable(false),
+		onClose,
+		name = undefined
+	}: { isOpen: boolean; onClose: () => void; name?: string } = $props();
 
 	// Mutation for creating invite
 	const createInviteMutation = useCreateInviteMutation();
@@ -170,6 +174,7 @@
 <GenericModal
 	{isOpen}
 	title={users_inviteUser()}
+	{name}
 	size="xl"
 	onClose={handleClose}
 	onOpen={handleOpen}

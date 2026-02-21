@@ -16,7 +16,7 @@
 		useOnboardingStateQuery
 	} from '$lib/features/auth/queries';
 	import { fetchOrganization } from '$lib/features/organizations/queries';
-	import { navigate } from '$lib/shared/utils/navigation';
+	import { navigateWithModal } from '$lib/shared/utils/navigation';
 	import { resolve } from '$app/paths';
 	import { onboardingStore } from '$lib/features/auth/stores/onboarding';
 	import { trackEvent } from '$lib/shared/utils/analytics';
@@ -236,10 +236,8 @@
 			// Clear onboarding store
 			onboardingStore.reset();
 
-			// Set flag so main app opens daemon setup modal
-			sessionStorage.setItem('showDaemonSetup', 'true');
-
-			await navigate();
+			// Navigate to main app with modal param so daemon setup opens
+			await navigateWithModal('create-daemon');
 		} catch {
 			// Error handled by mutation
 		}

@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
 	import SettingsModal from '$lib/features/settings/SettingsModal.svelte';
 	import SupportModal from '$lib/features/support/SupportModal.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
-	import { showBillingPlanModal, reopenSettingsAfterBilling } from '$lib/features/billing/stores';
+	import { modalState, openModal } from '$lib/shared/stores/modal-registry';
 	import type { IconComponent } from '$lib/shared/utils/types';
 	import {
 		Menu,
@@ -87,11 +86,14 @@
 		return isPastDue || (isTrialing && !hasPayment);
 	});
 
-	// Reopen settings modal when billing plan modal closes (if opened from settings)
+	// Sync settings/support modal state from modal registry (for deep-link opens)
 	$effect(() => {
-		if (!$showBillingPlanModal && $reopenSettingsAfterBilling) {
+		if ($modalState.name === 'settings' && !showSettings) {
+			settingsInitialTab = $modalState.tab ?? 'account';
 			showSettings = true;
-			reopenSettingsAfterBilling.set(false);
+		}
+		if ($modalState.name === 'support' && !showSupport) {
+			showSupport = true;
 		}
 	});
 
@@ -411,12 +413,7 @@
 	let bottomNavItems = $derived(filterByPosition(navConfig, 'bottom'));
 
 	onMount(() => {
-		// Show auth modal
 		if (typeof window !== 'undefined') {
-			if ($page.url.searchParams.get('auth_modal')) {
-				showSettings = true;
-			}
-
 			try {
 				const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
 				if (stored !== null) {
@@ -614,7 +611,7 @@
 						title={collapsed ? 'Upgrade' : ''}
 						onclick={() => {
 							trackEvent('upgrade_button_clicked', { feature: 'sidebar' });
-							showBillingPlanModal.set(true);
+							openModal('billing-plan');
 						}}
 					>
 						<ArrowUpCircle class="h-5 w-5 flex-shrink-0" />
@@ -656,8 +653,9 @@
 
 <SettingsModal
 	isOpen={showSettings}
+	name="settings"
 	onClose={() => (showSettings = false)}
 	initialTab={settingsInitialTab}
 	dismissible={settingsDismissible}
 />
-<SupportModal isOpen={showSupport} onClose={() => (showSupport = false)} />
+<SupportModal isOpen={showSupport} name="support" onClose={() => (showSupport = false)} />

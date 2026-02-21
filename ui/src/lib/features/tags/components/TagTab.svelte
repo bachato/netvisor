@@ -20,6 +20,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import {
 		common_color,
 		common_confirmDeleteName,
@@ -41,6 +42,23 @@
 
 	let showTagEditor = $state(false);
 	let editingTag: Tag | null = $state(null);
+
+	// Deep-link: open tag editor from URL
+	$effect(() => {
+		if ($modalState.name === 'tag-editor') {
+			if ($modalState.id) {
+				const tag = tags.find((e) => e.id === $modalState.id);
+				if (tag) {
+					editingTag = tag;
+					showTagEditor = true;
+				}
+			} else {
+				editingTag = null;
+				showTagEditor = true;
+			}
+			closeModal();
+		}
+	});
 
 	// Queries and mutations
 	const currentUserQuery = useCurrentUserQuery();
@@ -175,6 +193,7 @@
 </div>
 
 <TagEditModal
+	name="tag-editor"
 	isOpen={showTagEditor}
 	tag={editingTag}
 	onCreate={handleTagCreate}

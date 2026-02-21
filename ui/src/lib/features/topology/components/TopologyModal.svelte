@@ -49,12 +49,14 @@
 		isOpen = $bindable(false),
 		onSubmit,
 		onClose,
-		topo = null
+		topo = null,
+		name = undefined
 	}: {
 		isOpen: boolean;
 		onSubmit: () => Promise<void> | void;
 		onClose: () => void;
 		topo: Topology | null;
+		name?: string;
 	} = $props();
 
 	let isEditing = $derived(topo != null);
@@ -189,7 +191,16 @@
 	let Icon = entities.getIconComponent('Topology');
 </script>
 
-<GenericModal {isOpen} {title} size="md" {onClose} onOpen={handleOpen} showCloseButton={true}>
+<GenericModal
+	{isOpen}
+	{title}
+	{name}
+	entityId={topo?.id}
+	size="md"
+	{onClose}
+	onOpen={handleOpen}
+	showCloseButton={true}
+>
 	{#snippet headerIcon()}
 		<ModalHeaderIcon {Icon} color={colorHelper.color} />
 	{/snippet}

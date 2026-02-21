@@ -44,6 +44,7 @@
 		onContinue?: (() => void) | null;
 		provisionalApiKey?: string | null;
 		provisionalNetworkId?: string | null;
+		name?: string;
 	}
 
 	let {
@@ -54,7 +55,8 @@
 		onSkip = null,
 		onContinue = null,
 		provisionalApiKey = null,
-		provisionalNetworkId = null
+		provisionalNetworkId = null,
+		name = undefined
 	}: Props = $props();
 
 	const networksQuery = useNetworksQuery();
@@ -180,6 +182,8 @@
 <GenericModal
 	{isOpen}
 	{title}
+	{name}
+	entityId={daemon?.id}
 	size="xl"
 	onClose={handleOnClose}
 	showCloseButton={!onboardingMode}

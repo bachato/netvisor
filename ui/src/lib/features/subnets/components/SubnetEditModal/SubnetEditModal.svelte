@@ -45,6 +45,7 @@
 		onUpdate: (id: string, data: Subnet) => Promise<void> | void;
 		onClose: () => void;
 		onDelete?: ((id: string) => Promise<void> | void) | null;
+		name?: string;
 	}
 
 	let {
@@ -53,7 +54,8 @@
 		onCreate,
 		onUpdate,
 		onClose,
-		onDelete = null
+		onDelete = null,
+		name = undefined
 	}: Props = $props();
 
 	let loading = $state(false);
@@ -130,7 +132,16 @@
 	);
 </script>
 
-<GenericModal {isOpen} {title} size="xl" {onClose} onOpen={handleOpen} showCloseButton={true}>
+<GenericModal
+	{isOpen}
+	{title}
+	{name}
+	entityId={subnet?.id}
+	size="xl"
+	{onClose}
+	onOpen={handleOpen}
+	showCloseButton={true}
+>
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={entities.getIconComponent('Subnet')} color={colorHelper.color} />
 	{/snippet}

@@ -35,11 +35,13 @@
 	let {
 		isOpen = $bindable(false),
 		user,
-		onClose
+		onClose,
+		name = undefined
 	}: {
 		isOpen: boolean;
 		user: User | null;
 		onClose: () => void;
+		name?: string;
 	} = $props();
 
 	// TanStack Query for current user
@@ -160,6 +162,8 @@
 <GenericModal
 	{isOpen}
 	{title}
+	{name}
+	entityId={user?.id}
 	size="xl"
 	onClose={handleClose}
 	onOpen={handleOpen}

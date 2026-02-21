@@ -1,83 +1,112 @@
 > **First:** Read `CLAUDE.md` (project instructions) — you are a **worker**.
 
-# Task: Group/Filter/Sort by Service on Hosts and Services Pages (Issue #499)
+# Task: Generic Modal Deep-Link System
 
 ## Objective
 
-Add "Service" as a grouping, filtering, and sorting option on the Hosts page. Verify that the Services page already has adequate group/sort/filter support.
-
-## Context
-
-- GitHub Issue: #499 — "Group/Filter/Sort by Service on Services and Hosts pages"
-- Users want to answer questions like "show all hosts running SSH" or "group hosts by service"
-- The Hosts API already returns `services: Vec<Service>` on each host response — no new API calls needed
+Implement bidirectional URL ↔ modal state synchronization so that any modal can be opened via URL parameters, and opening a modal manually updates the URL. This replaces scattered one-off patterns (`?auth_modal`, `sessionStorage.showDaemonSetup`, `showBillingPlanModal` store) with a single generic system.
 
 ## Requirements
 
-### 1. Hosts Page — Add Service Field
+### 1. Add `name` prop to GenericModal
 
-**File:** `ui/src/lib/features/hosts/components/HostTab.svelte`
+**File:** `ui/src/lib/shared/components/layout/GenericModal.svelte`
 
-Add a new `DisplayFieldConfig` (client-side only) for services:
+- Add optional `name?: string` prop — the deep-link identifier for this modal
+- Add optional `entityId?: string` prop — for entity-specific modals
+- When a modal with `name` opens:
+  - Update URL: `?modal=<name>` (plus `&id=<entityId>` if present, `&tab=<tabId>` if tabs active)
+  - Use `history.replaceState` to avoid polluting browser history
+- When a modal with `name` closes:
+  - Remove `modal`, `id`, `tab` params from URL via `replaceState`
+- When URL already has `?modal=<name>` on mount/change:
+  - Trigger the modal to open (set `isOpen = true`)
+  - If `&tab=<tabId>` present, set `activeTab`
 
-```typescript
-{
-  key: 'services',
-  label: 'Services',  // use i18n function
-  type: 'string',
-  filterable: true,
-  groupable: true,
-  searchable: true,
-  getValue: (host) => {
-    // Return comma-separated service names for this host
-    // host.services is already loaded (Vec<Service> on HostResponse)
-    return host.services?.map(s => s.name).join(', ') || 'No services';
-  }
-}
-```
+### 2. Create Modal Registry Store
 
-**Many-to-one consideration:** A host can have multiple services. For filtering, each unique service name should appear as a filterable option. For grouping, hosts with a specific service should appear in that service's group. DataControls already handles this for comma-separated string values in the filter panel (it splits by unique values). Verify this behavior works correctly.
+**File:** `ui/src/lib/shared/stores/modal-registry.ts` (new)
 
-If DataControls doesn't handle multi-value grouping/filtering well for comma-separated strings, consider an alternative: make the field `type: 'array'` and return `host.services?.map(s => s.name) || []`. Check how the `tags` field (which is also an array) handles filtering — it may provide the pattern.
+- Central store mapping modal names → open/close/setTab callbacks
+- GenericModal registers on mount (if `name` provided), unregisters on destroy
+- Provide `openModal(name, opts?: { id?, tab? })` function for programmatic use
+- Provide `closeModal(name)` function
+- URL watcher: on `$page.url` change, if `?modal=` is present, call appropriate registry entry
 
-### 2. Services Page — Verify Existing Support
+### 3. Add `name` to key modal instances
 
-**File:** `ui/src/lib/features/services/components/ServiceTab.svelte`
+Add `name` prop to these GenericModal call sites:
 
-The Services page already has:
-- `host` field: orderable, filterable, groupable (server-side via `ServiceOrderField::Host`)
-- `name` field: orderable, searchable
-- `network_id` field: orderable, filterable, groupable
-- `containerized_by` display field
+| Modal | `name` value | Has tabs? | Entity-specific? |
+|-------|-------------|-----------|------------------|
+| BillingPlanModal | `billing-plan` | No | No |
+| SettingsModal | `settings` | Yes (`account`, `organization`, `billing`) | No |
+| SupportModal | `support` | No | No |
+| CreateDaemonModal | `create-daemon` | No | No |
+| HostEditor | `host-editor` | Yes (7 tabs) | Yes (`host.id`) |
+| NetworkEditModal | `network-editor` | No | Yes |
+| TagEditModal | `tag-editor` | No | Yes |
+| GroupEditModal | `group-editor` | Yes (3 tabs) | Yes |
+| ServiceEditModal | `service-editor` | No | Yes |
+| DiscoveryEditModal | `discovery-editor` | No | Yes |
+| ShareModal | `share-editor` | No | Yes |
+| UserEditModal | `user-editor` | No | Yes |
+| UserApiKeyModal | `user-api-key` | No | Yes |
 
-Verify these work correctly:
-- [ ] Can group services by Host
-- [ ] Can filter services by Host
-- [ ] Can sort services by Host
-- [ ] Can search services by name
+Entity-specific modals: the parent component (e.g., HostTab) needs to watch for `?modal=host-editor&id=<uuid>` and handle fetching the entity + opening the modal. Add a small reactive block in each parent tab that reads from the modal registry or URL.
 
-If the Services page needs a "Service Category" or "Service Definition" grouping option (to group by type of service like SSH, HTTP, DNS), add that as a display field.
+### 4. Deprecate existing one-off triggers
 
-### 3. I18n
+| Current Pattern | Location | Replace With |
+|----------------|----------|-------------|
+| `?auth_modal` → opens settings | `Sidebar.svelte` onMount | `?modal=settings` (handled generically) |
+| `sessionStorage.showDaemonSetup` | `DaemonTab.svelte`, `onboarding/+page.svelte`, `+page.svelte` | Set `?modal=create-daemon` in URL during redirect |
+| `showBillingPlanModal` store | `billing/stores.ts`, used in 6+ files | `openModal('billing-plan')` from registry. Keep store as thin wrapper initially if needed for backwards compat, but it should delegate to the registry |
+| `reopenSettingsAfterBilling` store | `Sidebar.svelte`, `BillingTab.svelte` | After Stripe return, set `?modal=settings&tab=billing` |
+| Past due → forced settings | `+page.svelte` | `openModal('settings', { tab: 'billing' })` with non-dismissible flag |
 
-Add any new i18n strings needed for the service field labels. Check existing i18n patterns in `ui/src/lib/i18n/` or `ui/src/lib/paraglide/`.
+### 5. Keep as-is (do NOT change)
+
+- `?billing_flow=checkout/payment_setup` — Stripe callback, not a modal trigger
+- `?error` — OIDC error toast
+- `?token` — auth redirect
+- `ConfirmationDialog`, `PasswordGate`, `LoginModal`, `RegisterModal` — don't need deep-linking
+
+## Edge Cases
+
+- If user is not authenticated, modal params stay in URL. After login redirect, the effect should pick them up.
+- Multiple modals: only one `?modal=` at a time (last one wins). Nested modals (e.g., PlanInquiryModal inside BillingPlanModal) don't get URL params.
+- Entity-specific without ID in URL: `?modal=host-editor` without `&id=` should open create mode.
+- Tab param without modal: `?tab=billing` alone does nothing — requires `?modal=settings`.
 
 ## Files Likely Involved
 
-- `ui/src/lib/features/hosts/components/HostTab.svelte` — add service field to hostFields
-- `ui/src/lib/features/services/components/ServiceTab.svelte` — verify, possibly add category field
-- `ui/src/lib/shared/components/data/DataControls.svelte` — read to understand multi-value filtering behavior (DO NOT modify unless necessary)
-- `ui/src/lib/shared/components/data/types.ts` — read to understand field config types
+- `ui/src/lib/shared/components/layout/GenericModal.svelte` — core changes
+- `ui/src/lib/shared/stores/modal-registry.ts` — new file
+- `ui/src/lib/shared/components/layout/Sidebar.svelte` — deprecate `?auth_modal`, `reopenSettingsAfterBilling`
+- `ui/src/lib/shared/components/layout/AppShell.svelte` — may need URL watcher integration
+- `ui/src/lib/features/billing/stores.ts` — deprecate/thin-wrap `showBillingPlanModal`
+- `ui/src/lib/shared/components/UpgradeButton.svelte` — use registry instead of store
+- `ui/src/lib/features/settings/BillingTab.svelte` — use registry
+- `ui/src/lib/features/daemons/components/DaemonTab.svelte` — deprecate sessionStorage
+- `ui/src/lib/features/daemons/components/CreateDaemonForm.svelte` — use registry
+- `ui/src/lib/features/discovery/components/DiscoveryModal/DiscoveryTypeForm.svelte` — use registry
+- `ui/src/routes/+page.svelte` — deprecate sessionStorage, past-due logic
+- `ui/src/routes/onboarding/+page.svelte` — use URL param instead of sessionStorage
+- All 13+ modal wrapper files listed above — add `name` prop
 
 ## Acceptance Criteria
 
-- [x] Hosts page: can filter by service name (e.g., show only hosts with SSH)
-- [ ] ~~Hosts page: can group by service name~~ — DataControls restricts grouping to orderable string fields; array fields (which is the correct type for multi-value services) cannot be grouped
-- [x] Hosts page: service names are searchable
-- [x] Services page: existing group/sort/filter by Host works correctly
-- [x] No backend changes required (all client-side)
-- [ ] `cd ui && npm run check` passes — npm deps not installed in env; needs local verification
-- [ ] `make format && make lint` passes — backend passes; UI needs local verification
+- [ ] `?modal=billing-plan` opens billing plan modal from any page
+- [ ] `?modal=settings&tab=billing` opens settings modal on billing tab
+- [ ] `?modal=host-editor&id=<uuid>&tab=services` opens host editor for that host on services tab
+- [ ] Opening a modal manually (button click) updates the URL to include `?modal=...`
+- [ ] Closing a modal removes modal params from URL
+- [ ] All 5 deprecated triggers replaced and working via the new system
+- [ ] `sessionStorage.showDaemonSetup` fully removed
+- [ ] No regressions in existing modal flows (Stripe return, past-due billing, onboarding → daemon)
+- [ ] `cd ui && npm run check` passes
+- [ ] `make format && make lint` passes
 
 ---
 
@@ -85,18 +114,47 @@ Add any new i18n strings needed for the service field labels. Check existing i18
 
 ### What was implemented
 
-Added a `services` display field to the Hosts page, enabling users to filter and search hosts by service name (e.g., "show all hosts running SSH").
+A generic modal deep-link system that replaces scattered one-off patterns with a single `?modal=<name>&id=<id>&tab=<tab>` URL-driven approach.
 
-### File changed
+### Core infrastructure (2 new/modified files)
 
-- **`ui/src/lib/features/hosts/components/HostTab.svelte`** — 3 edits:
-  1. Imported `useServicesCacheQuery` from services queries and `common_services` i18n message
-  2. Added `servicesCacheQuery` + `allServicesData` derived state (reads from TanStack Query cache, no API calls)
-  3. Added `services` display field to `hostFields` with `type: 'array'`, `searchable: true`, `filterable: true`, using `getValue` that joins services to hosts via `host_id`
+- **`ui/src/lib/shared/stores/modal-registry.ts`** (NEW): Central store with `modalState`, `openModal()`, `closeModal()`, `setModalTab()`, `initModalFromUrl()`. Uses `history.replaceState` for URL sync.
+- **`ui/src/lib/shared/components/layout/GenericModal.svelte`**: Added `name` and `entityId` props. On open transition, syncs to URL via `openModal()`. On close, calls `closeModal()`. On tab click, calls `setModalTab()`.
 
-### Design decisions
+### Modal wrappers updated (18 files)
 
-- **Used `useServicesCacheQuery()`** instead of the existing `useServicesByIds()` — the latter only fetches services for virtualization display. The cache query reads all services from the TanStack Query cache (populated by hosts query) reactively without additional API calls.
-- **Used `type: 'array'`** (not `type: 'string'`) — follows the `tags` field pattern exactly. Array type gives proper per-value filtering (each service name appears as a separate filter option) rather than comma-separated string matching.
-- **No grouping** — DataControls restricts grouping to orderable string fields (`DataControls.svelte:400-403`). Array fields cannot be grouped. This is a framework limitation, not a bug.
-- **No Services page changes** — existing implementation already has host field (searchable, filterable, groupable), name field (searchable), network_id (filterable, groupable), plus containerized_by, confidence, and tags display fields.
+All 18 modal wrappers received `name?: string` prop forwarded to GenericModal (+ `entityId` where applicable):
+BillingPlanModal, SettingsModal, SupportModal, CreateDaemonModal, HostEditor, NetworkEditModal, TagEditModal, GroupEditModal, ServiceEditModal, DiscoveryEditModal, ShareModal, UserEditModal, InviteModal, UserApiKeyModal, SubnetEditModal, SnmpCredentialEditModal, ApiKeyModal (daemon), TopologyModal.
+
+### Parent tabs with deep-link watchers (14 files)
+
+Each parent tab added:
+1. Import of `modalState`/`closeModal`
+2. `$effect` watcher that opens the modal from store state, finds entity by ID in existing query data
+3. `name` prop on the modal component instance
+
+Tabs: HostTab, NetworksTab, TagTab, GroupTab, ServiceTab, ShareTab, SubnetTab, SnmpCredentialsTab, UserTab (2 modals), UserApiKeyTab, ApiKeyTab (daemon), TopologyTab, DaemonTab, DiscoveryScheduledTab.
+
+### Deprecated one-off triggers replaced
+
+| Old Pattern | New Pattern | Files Changed |
+|---|---|---|
+| `?auth_modal` URL param + backend | `?modal=settings` | Sidebar.svelte, backend auth/handlers.rs |
+| `sessionStorage.showDaemonSetup` | `?modal=create-daemon` URL param | +page.svelte, onboarding/+page.svelte, DaemonTab.svelte |
+| `showBillingPlanModal` writable store | `openModal('billing-plan')` | billing/stores.ts, UpgradeButton, Sidebar, BillingTab, CreateDaemonForm, DiscoveryTypeForm, +page.svelte |
+| `reopenSettingsAfterBilling` + `showBillingPlanModal` combo | `reopenSettingsAfterBilling` flag + `openModal('settings', { tab: 'billing' })` | BillingTab.svelte, +page.svelte, Sidebar.svelte |
+| Past-due forced settings `showSettings = true` | `openModal('settings', { tab: 'billing' })` | +page.svelte |
+
+### Additional changes
+
+- **`ui/src/lib/shared/utils/navigation.ts`**: Added `navigateWithModal()` for onboarding→daemon flow
+- **`backend/src/server/auth/handlers.rs`**: Changed `append_pair("auth_modal", "true")` to `append_pair("modal", "settings")`
+
+### Verification
+
+- `cargo check`: passes
+- `cargo test --lib`: 110 tests pass
+- `npm test`: 14 tests pass (3 test files)
+- `eslint`: passes (fixed unused `navigate` import in onboarding page)
+- `svelte-check`: only pre-existing `$lib/paraglide/messages` errors (generated module)
+- `make format`: clean

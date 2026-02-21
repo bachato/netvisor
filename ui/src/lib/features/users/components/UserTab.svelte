@@ -18,6 +18,7 @@
 	import { useUsersQuery, useBulkDeleteUsersMutation } from '../queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
 	import {
 		common_created,
 		common_email,
@@ -62,6 +63,31 @@
 	let showInviteModal = $state(false);
 	let showEditModal = $state(false);
 	let editingUser = $state<User | null>(null);
+
+	// Deep-link: open invite modal from URL
+	$effect(() => {
+		if ($modalState.name === 'invite-user') {
+			showInviteModal = true;
+			closeModal();
+		}
+	});
+
+	// Deep-link: open user editor from URL
+	$effect(() => {
+		if ($modalState.name === 'user-editor') {
+			if ($modalState.id) {
+				const entity = usersData.find((e) => e.id === $modalState.id);
+				if (entity) {
+					editingUser = entity;
+					showEditModal = true;
+				}
+			} else {
+				editingUser = null;
+				showEditModal = true;
+			}
+			closeModal();
+		}
+	});
 
 	// Combine users and invites into single array
 	let combinedItems = $derived([
@@ -212,5 +238,10 @@
 	{/if}
 </div>
 
-<InviteModal isOpen={showInviteModal} onClose={handleCloseInviteModal} />
-<UserEditModal isOpen={showEditModal} user={editingUser} onClose={handleCloseEditModal} />
+<InviteModal name="invite-user" isOpen={showInviteModal} onClose={handleCloseInviteModal} />
+<UserEditModal
+	name="user-editor"
+	isOpen={showEditModal}
+	user={editingUser}
+	onClose={handleCloseEditModal}
+/>

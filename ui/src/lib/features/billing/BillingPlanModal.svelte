@@ -19,11 +19,13 @@
 	let {
 		isOpen = false,
 		dismissible = true,
-		onClose
+		onClose,
+		name = undefined
 	}: {
 		isOpen?: boolean;
 		dismissible?: boolean;
 		onClose: () => void;
+		name?: string;
 	} = $props();
 
 	// Create helpers from static fixtures (no API calls needed)
@@ -126,6 +128,7 @@
 <GenericModal
 	{isOpen}
 	title=""
+	{name}
 	onClose={dismissible ? onClose : null}
 	size="full"
 	preventCloseOnClickOutside={!dismissible}
