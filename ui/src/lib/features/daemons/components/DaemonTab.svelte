@@ -16,7 +16,7 @@
 	} from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
-	import { modalState, closeModal } from '$lib/shared/stores/modal-registry';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
@@ -64,9 +64,6 @@
 		if ($modalState.name === 'create-daemon' && !showCreateDaemonModal && daemonsQuery.isSuccess) {
 			if (daemonsData.length === 0) {
 				showCreateDaemonModal = true;
-			} else {
-				// Daemons exist, nothing to open — clean up the deep-link
-				closeModal();
 			}
 		}
 	});
