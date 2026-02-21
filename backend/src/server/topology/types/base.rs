@@ -232,7 +232,7 @@ impl Default for TopologyLocalOptions {
             left_zone_title: "Infrastructure".to_string(),
             no_fade_edges: false,
             hide_resize_handles: false,
-            hide_edge_types: Vec::new(),
+            hide_edge_types: vec![EdgeTypeDiscriminants::HostVirtualization],
             tag_filter: TopologyTagFilter::default(),
         }
     }
@@ -255,7 +255,7 @@ impl Default for TopologyRequestOptions {
             hide_vm_title_on_docker_container: false,
             hide_ports: false,
             left_zone_service_categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
-            hide_service_categories: Vec::new(),
+            hide_service_categories: vec![ServiceCategory::OpenPorts],
             show_gateway_in_left_zone: true,
         }
     }
