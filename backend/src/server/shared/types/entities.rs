@@ -31,6 +31,10 @@ pub enum EntitySource {
     Unknown,
 }
 
+/// Maximum number of discovery metadata entries to retain per entity.
+/// Newest entries are kept; older entries are pruned on upsert.
+pub const MAX_DISCOVERY_METADATA_ENTRIES: usize = 10;
+
 impl EntitySource {
     /// Returns true if this entity was created via discovery (network, Docker, etc.)
     pub fn is_from_discovery(&self) -> bool {
@@ -38,6 +42,19 @@ impl EntitySource {
             self,
             EntitySource::Discovery { .. } | EntitySource::DiscoveryWithMatch { .. }
         )
+    }
+
+    /// Truncate discovery metadata to the most recent entries.
+    /// Since new entries are prepended, this keeps the newest.
+    pub fn cap_metadata(mut self) -> Self {
+        match &mut self {
+            EntitySource::Discovery { metadata }
+            | EntitySource::DiscoveryWithMatch { metadata, .. } => {
+                metadata.truncate(MAX_DISCOVERY_METADATA_ENTRIES);
+            }
+            _ => {}
+        }
+        self
     }
 }
 

@@ -1411,6 +1411,7 @@ impl HostService {
                 EntitySource::Discovery {
                     metadata: [new_metadata, existing_metadata].concat(),
                 }
+                .cap_metadata()
             }
             (
                 _,
