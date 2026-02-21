@@ -230,6 +230,14 @@ impl BillingPlan {
         self.config().included_hosts
     }
 
+    pub fn network_limit(&self) -> Option<u64> {
+        self.config().included_networks
+    }
+
+    pub fn seat_limit(&self) -> Option<u64> {
+        self.config().included_seats
+    }
+
     pub fn can_invite_users(&self) -> bool {
         // If there's an included amount, then there's a cap and seat_cents needs to be Some to buy more
         if self.config().included_seats.is_some() {

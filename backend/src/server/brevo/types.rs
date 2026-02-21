@@ -408,6 +408,24 @@ impl CompanyAttributes {
                 serde_json::json!(v),
             );
         }
+        if let Some(v) = &self.scanopy_first_discovery_completed_date {
+            attrs.insert(
+                "scanopy_first_discovery_completed_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_host_discovered_date {
+            attrs.insert(
+                "scanopy_first_host_discovered_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_topology_rebuild_date {
+            attrs.insert(
+                "scanopy_first_topology_rebuild_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
         attrs
     }
 }

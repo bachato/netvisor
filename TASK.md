@@ -1,160 +1,80 @@
 > **First:** Read `CLAUDE.md` (project instructions) — you are a **worker**.
 
-# Task: Generic Modal Deep-Link System
+# Task: Onboarding Emails — Brevo Event Fix + Transactional Templates
 
 ## Objective
 
-Implement bidirectional URL ↔ modal state synchronization so that any modal can be opened via URL parameters, and opening a modal manually updates the URL. This replaces scattered one-off patterns (`?auth_modal`, `sessionStorage.showDaemonSetup`, `showBillingPlanModal` store) with a single generic system.
-
-## Requirements
-
-### 1. Add `name` prop to GenericModal
-
-**File:** `ui/src/lib/shared/components/layout/GenericModal.svelte`
-
-- Add optional `name?: string` prop — the deep-link identifier for this modal
-- Add optional `entityId?: string` prop — for entity-specific modals
-- When a modal with `name` opens:
-  - Update URL: `?modal=<name>` (plus `&id=<entityId>` if present, `&tab=<tabId>` if tabs active)
-  - Use `history.replaceState` to avoid polluting browser history
-- When a modal with `name` closes:
-  - Remove `modal`, `id`, `tab` params from URL via `replaceState`
-- When URL already has `?modal=<name>` on mount/change:
-  - Trigger the modal to open (set `isOpen = true`)
-  - If `&tab=<tabId>` present, set `activeTab`
-
-### 2. Create Modal Registry Store
-
-**File:** `ui/src/lib/shared/stores/modal-registry.ts` (new)
-
-- Central store mapping modal names → open/close/setTab callbacks
-- GenericModal registers on mount (if `name` provided), unregisters on destroy
-- Provide `openModal(name, opts?: { id?, tab? })` function for programmatic use
-- Provide `closeModal(name)` function
-- URL watcher: on `$page.url` change, if `?modal=` is present, call appropriate registry entry
-
-### 3. Add `name` to key modal instances
-
-Add `name` prop to these GenericModal call sites:
-
-| Modal | `name` value | Has tabs? | Entity-specific? |
-|-------|-------------|-----------|------------------|
-| BillingPlanModal | `billing-plan` | No | No |
-| SettingsModal | `settings` | Yes (`account`, `organization`, `billing`) | No |
-| SupportModal | `support` | No | No |
-| CreateDaemonModal | `create-daemon` | No | No |
-| HostEditor | `host-editor` | Yes (7 tabs) | Yes (`host.id`) |
-| NetworkEditModal | `network-editor` | No | Yes |
-| TagEditModal | `tag-editor` | No | Yes |
-| GroupEditModal | `group-editor` | Yes (3 tabs) | Yes |
-| ServiceEditModal | `service-editor` | No | Yes |
-| DiscoveryEditModal | `discovery-editor` | No | Yes |
-| ShareModal | `share-editor` | No | Yes |
-| UserEditModal | `user-editor` | No | Yes |
-| UserApiKeyModal | `user-api-key` | No | Yes |
-
-Entity-specific modals: the parent component (e.g., HostTab) needs to watch for `?modal=host-editor&id=<uuid>` and handle fetching the entity + opening the modal. Add a small reactive block in each parent tab that reads from the modal registry or URL.
-
-### 4. Deprecate existing one-off triggers
-
-| Current Pattern | Location | Replace With |
-|----------------|----------|-------------|
-| `?auth_modal` → opens settings | `Sidebar.svelte` onMount | `?modal=settings` (handled generically) |
-| `sessionStorage.showDaemonSetup` | `DaemonTab.svelte`, `onboarding/+page.svelte`, `+page.svelte` | Set `?modal=create-daemon` in URL during redirect |
-| `showBillingPlanModal` store | `billing/stores.ts`, used in 6+ files | `openModal('billing-plan')` from registry. Keep store as thin wrapper initially if needed for backwards compat, but it should delegate to the registry |
-| `reopenSettingsAfterBilling` store | `Sidebar.svelte`, `BillingTab.svelte` | After Stripe return, set `?modal=settings&tab=billing` |
-| Past due → forced settings | `+page.svelte` | `openModal('settings', { tab: 'billing' })` with non-dismissible flag |
-
-### 5. Keep as-is (do NOT change)
-
-- `?billing_flow=checkout/payment_setup` — Stripe callback, not a modal trigger
-- `?error` — OIDC error toast
-- `?token` — auth redirect
-- `ConfirmationDialog`, `PasswordGate`, `LoginModal`, `RegisterModal` — don't need deep-linking
-
-## Edge Cases
-
-- If user is not authenticated, modal params stay in URL. After login redirect, the effect should pick them up.
-- Multiple modals: only one `?modal=` at a time (last one wins). Nested modals (e.g., PlanInquiryModal inside BillingPlanModal) don't get URL params.
-- Entity-specific without ID in URL: `?modal=host-editor` without `&id=` should open create mode.
-- Tab param without modal: `?tab=billing` alone does nothing — requires `?modal=settings`.
-
-## Files Likely Involved
-
-- `ui/src/lib/shared/components/layout/GenericModal.svelte` — core changes
-- `ui/src/lib/shared/stores/modal-registry.ts` — new file
-- `ui/src/lib/shared/components/layout/Sidebar.svelte` — deprecate `?auth_modal`, `reopenSettingsAfterBilling`
-- `ui/src/lib/shared/components/layout/AppShell.svelte` — may need URL watcher integration
-- `ui/src/lib/features/billing/stores.ts` — deprecate/thin-wrap `showBillingPlanModal`
-- `ui/src/lib/shared/components/UpgradeButton.svelte` — use registry instead of store
-- `ui/src/lib/features/settings/BillingTab.svelte` — use registry
-- `ui/src/lib/features/daemons/components/DaemonTab.svelte` — deprecate sessionStorage
-- `ui/src/lib/features/daemons/components/CreateDaemonForm.svelte` — use registry
-- `ui/src/lib/features/discovery/components/DiscoveryModal/DiscoveryTypeForm.svelte` — use registry
-- `ui/src/routes/+page.svelte` — deprecate sessionStorage, past-due logic
-- `ui/src/routes/onboarding/+page.svelte` — use URL param instead of sessionStorage
-- All 13+ modal wrapper files listed above — add `name` prop
-
-## Acceptance Criteria
-
-- [ ] `?modal=billing-plan` opens billing plan modal from any page
-- [ ] `?modal=settings&tab=billing` opens settings modal on billing tab
-- [ ] `?modal=host-editor&id=<uuid>&tab=services` opens host editor for that host on services tab
-- [ ] Opening a modal manually (button click) updates the URL to include `?modal=...`
-- [ ] Closing a modal removes modal params from URL
-- [ ] All 5 deprecated triggers replaced and working via the new system
-- [ ] `sessionStorage.showDaemonSetup` fully removed
-- [ ] No regressions in existing modal flows (Stripe return, past-due billing, onboarding → daemon)
-- [ ] `cd ui && npm run check` passes
-- [ ] `make format && make lint` passes
-
----
+Implement three backend changes for the onboarding email campaign:
+1. Fix Brevo event mapping so `first_discovery_completed` fires from the correct handler
+2. Add `track_event("first_daemon_registered")` to daemon registration handler
+3. Add 4 transactional email templates (A3-free, A3-paid, A5, C2) and wire them to telemetry handlers
 
 ## Work Summary
 
 ### What was implemented
 
-A generic modal deep-link system that replaces scattered one-off patterns with a single `?modal=<name>&id=<id>&tab=<tab>` URL-driven approach.
+**1. Brevo Event Mapping Fixes (`brevo/service.rs`, `brevo/types.rs`)**
+- Extracted `FirstDiscoveryCompleted` from the multi-arm `handle_engagement_event` match into its own `handle_first_discovery_completed` handler
+- New handler sets `scanopy_first_discovery_completed_date` company attribute and fires `track_event("first_discovery_completed")`
+- Fixed `handle_first_topology_rebuild` — removed incorrect `track_event("first_discovery_completed")` call
+- Added `track_event("first_daemon_registered")` to `handle_first_daemon_registered`
+- Added 3 missing fields to `CompanyAttributes::to_attributes()`: `scanopy_first_discovery_completed_date`, `scanopy_first_host_discovered_date`, `scanopy_first_topology_rebuild_date`
 
-### Core infrastructure (2 new/modified files)
+**2. Email Templates (`email/templates.rs`)**
+- Added 5 template constant pairs: `DISCOVERY_GUIDE_FREE`, `DISCOVERY_GUIDE_PAID`, `TOPOLOGY_READY`, `PLAN_LIMIT_APPROACHING`, `PLAN_LIMIT_REACHED`
+- All use inline CSS matching existing style, upgrade CTAs use `?modal=billing-plan`
 
-- **`ui/src/lib/shared/stores/modal-registry.ts`** (NEW): Central store with `modalState`, `openModal()`, `closeModal()`, `setModalTab()`, `initModalFromUrl()`. Uses `history.replaceState` for URL sync.
-- **`ui/src/lib/shared/components/layout/GenericModal.svelte`**: Added `name` and `entityId` props. On open transition, syncs to URL via `openModal()`. On close, calls `closeModal()`. On tab click, calls `setModalTab()`.
+**3. EmailService Expansion (`email/traits.rs`)**
+- Added service dependencies: `organization_service`, `host_service`, `network_service`, `service_service`
+- Added builder methods on `EmailProvider` trait for all 5 new email types
+- Added high-level methods on `EmailService`: `send_discovery_guide_email`, `send_discovery_guide_for_org`, `send_topology_ready_for_org`, `check_plan_limits`
+- `check_plan_limits` implements threshold-crossing detection with `LimitNotificationLevel` state machine
 
-### Modal wrappers updated (18 files)
+**4. Plan Limit Infrastructure (`organizations/impl/base.rs`, migration)**
+- Added `LimitNotificationLevel` enum (`None`, `Approaching`, `Reached`) and `PlanLimitNotifications` struct
+- Added `plan_limit_notifications` field to `OrganizationBase` (JSON column, defaults to `{}`)
+- Added `network_limit()` and `seat_limit()` methods to `BillingPlan`
+- Added `PlanLimitNotifications` variant to `SqlValue` enum with proper binding
+- Migration: `ALTER TABLE organizations ADD COLUMN plan_limit_notifications JSONB NOT NULL DEFAULT '{}'`
 
-All 18 modal wrappers received `name?: string` prop forwarded to GenericModal (+ `entityId` where applicable):
-BillingPlanModal, SettingsModal, SupportModal, CreateDaemonModal, HostEditor, NetworkEditModal, TagEditModal, GroupEditModal, ServiceEditModal, DiscoveryEditModal, ShareModal, UserEditModal, InviteModal, UserApiKeyModal, SubnetEditModal, SnmpCredentialEditModal, ApiKeyModal (daemon), TopologyModal.
+**5. EventBus-driven Email Triggering (`email/subscriber.rs`)**
+- EmailService subscribes to both entity events (Host/Network/User Created) and telemetry events (FirstDaemonRegistered, FirstDiscoveryCompleted) via a custom `EventFilter`
+- Entity events trigger `check_plan_limits` for the affected org
+- `FirstDaemonRegistered` telemetry triggers discovery guide email (free/paid variant based on org plan)
+- `FirstDiscoveryCompleted` telemetry triggers topology ready email
+- Registered as event subscriber in factory
 
-### Parent tabs with deep-link watchers (14 files)
+**6. Telemetry Event Enrichment (`daemons/service.rs`)**
+- `FirstDaemonRegistered` event metadata now includes `daemon_name` and `network_name` so the email subscriber can use them without needing a DaemonService dependency
 
-Each parent tab added:
-1. Import of `modalState`/`closeModal`
-2. `$effect` watcher that opens the modal from store state, finds entity by ID in existing query data
-3. `name` prop on the modal component instance
+### Deviations from original plan
 
-Tabs: HostTab, NetworksTab, TagTab, GroupTab, ServiceTab, ShareTab, SubnetTab, SnmpCredentialsTab, UserTab (2 modals), UserApiKeyTab, ApiKeyTab (daemon), TopologyTab, DaemonTab, DiscoveryScheduledTab.
+- **EventBus instead of OnceLock**: Original plan called for injecting `EmailService` directly into `DaemonService` and `DiscoveryService` via OnceLock. Refactored to use EventBus — EmailService subscribes to telemetry events, eliminating circular dependency concerns entirely.
+- **C2 replaced with general plan limit system**: Instead of a single "free upgrade nudge" email (C2), implemented a full plan limit notification system with approaching (80%) and reached (100%) thresholds for hosts, networks, and seats. Uses threshold-crossing detection to avoid duplicate notifications.
 
-### Deprecated one-off triggers replaced
+### Files changed
 
-| Old Pattern | New Pattern | Files Changed |
-|---|---|---|
-| `?auth_modal` URL param + backend | `?modal=settings` | Sidebar.svelte, backend auth/handlers.rs |
-| `sessionStorage.showDaemonSetup` | `?modal=create-daemon` URL param | +page.svelte, onboarding/+page.svelte, DaemonTab.svelte |
-| `showBillingPlanModal` writable store | `openModal('billing-plan')` | billing/stores.ts, UpgradeButton, Sidebar, BillingTab, CreateDaemonForm, DiscoveryTypeForm, +page.svelte |
-| `reopenSettingsAfterBilling` + `showBillingPlanModal` combo | `reopenSettingsAfterBilling` flag + `openModal('settings', { tab: 'billing' })` | BillingTab.svelte, +page.svelte, Sidebar.svelte |
-| Past-due forced settings `showSettings = true` | `openModal('settings', { tab: 'billing' })` | +page.svelte |
-
-### Additional changes
-
-- **`ui/src/lib/shared/utils/navigation.ts`**: Added `navigateWithModal()` for onboarding→daemon flow
-- **`backend/src/server/auth/handlers.rs`**: Changed `append_pair("auth_modal", "true")` to `append_pair("modal", "settings")`
+| File | Change |
+|------|--------|
+| `backend/src/server/brevo/service.rs` | Event mapping fixes, new handler |
+| `backend/src/server/brevo/types.rs` | Missing `to_attributes()` fields |
+| `backend/src/server/email/templates.rs` | 5 new template pairs |
+| `backend/src/server/email/traits.rs` | New dependencies, builders, high-level methods |
+| `backend/src/server/email/subscriber.rs` | **New** — EventSubscriber for plan limits + onboarding emails |
+| `backend/src/server/email/mod.rs` | Added `pub mod subscriber` |
+| `backend/src/server/daemons/service.rs` | Enriched telemetry metadata, removed OnceLock email_service |
+| `backend/src/server/discovery/service.rs` | Removed OnceLock email_service |
+| `backend/src/server/organizations/impl/base.rs` | `LimitNotificationLevel`, `PlanLimitNotifications` |
+| `backend/src/server/organizations/impl/storage.rs` | Storage for `plan_limit_notifications` |
+| `backend/src/server/billing/types/base.rs` | `network_limit()`, `seat_limit()` |
+| `backend/src/server/shared/storage/traits.rs` | `SqlValue::PlanLimitNotifications` variant |
+| `backend/src/server/shared/storage/generic.rs` | Binding for new SqlValue variant |
+| `backend/src/server/shared/services/factory.rs` | Wire EmailService deps + register subscriber |
+| `backend/src/server/auth/service.rs` | Default `plan_limit_notifications` in org init |
+| `backend/src/server/shared/types/examples.rs` | Default `plan_limit_notifications` in example |
+| `backend/migrations/20260221120000_add_plan_limit_notifications.sql` | New column |
 
 ### Verification
 
-- `cargo check`: passes
-- `cargo test --lib`: 110 tests pass
-- `npm test`: 14 tests pass (3 test files)
-- `eslint`: passes (fixed unused `navigate` import in onboarding page)
-- `svelte-check`: only pre-existing `$lib/paraglide/messages` errors (generated module)
-- `make format`: clean
+- `cargo test` — 110 tests pass, 0 failures
+- `cargo fmt && cargo clippy` — clean, no warnings

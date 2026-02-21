@@ -208,6 +208,116 @@ pub const PAYMENT_METHOD_ADDED_BODY: &str = r#"                    <!-- Main Con
 "#;
 
 // ============================================================================
+// Onboarding Templates
+// ============================================================================
+
+pub const DISCOVERY_GUIDE_FREE_TITLE: &str =
+    "Your Daemon is Connected - Start Your First Discovery";
+
+pub const DISCOVERY_GUIDE_FREE_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Your Daemon is Connected!</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi {first_name},</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Great news — your daemon <strong>{daemon_name}</strong> just registered on <strong>{network_name}</strong>. Scanopy is now running an initial discovery to map out your network.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Here's what happens next:</p>
+                            <ul style="margin: 0 0 20px 0; padding-left: 20px; font-size: 16px; line-height: 28px; color: #4a4a4a;">
+                                <li><strong>Self-report:</strong> The daemon host's own services and interfaces are mapped automatically.</li>
+                                <li><strong>Network scan:</strong> Scanopy scans your local subnets for other hosts, ports, and services.</li>
+                                <li><strong>Topology:</strong> Once discovery finishes, your interactive topology map will be ready.</li>
+                            </ul>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">On the Free plan, discoveries run manually. Upgrade to unlock scheduled discovery that keeps your documentation current automatically.</p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td align="center" style="padding: 0 40px 30px 40px;">
+                            <a href="https://app.scanopy.net/?modal=billing-plan" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Explore Plans</a>
+                        </td>
+                    </tr>
+"#;
+
+pub const DISCOVERY_GUIDE_PAID_TITLE: &str = "Your Daemon is Connected - Discovery is Running";
+
+pub const DISCOVERY_GUIDE_PAID_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Your Daemon is Connected!</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi {first_name},</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Great news — your daemon <strong>{daemon_name}</strong> just registered on <strong>{network_name}</strong>. Scanopy is now running an initial discovery to map out your network.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Here's what happens next:</p>
+                            <ul style="margin: 0 0 20px 0; padding-left: 20px; font-size: 16px; line-height: 28px; color: #4a4a4a;">
+                                <li><strong>Self-report:</strong> The daemon host's own services and interfaces are mapped automatically.</li>
+                                <li><strong>Network scan:</strong> Scanopy scans your local subnets for other hosts, ports, and services.</li>
+                                <li><strong>Topology:</strong> Once discovery finishes, your interactive topology map will be ready.</li>
+                                <li><strong>Scheduled discovery:</strong> Your plan includes daily scheduled discovery — your network documentation stays up to date automatically.</li>
+                            </ul>
+                        </td>
+                    </tr>
+"#;
+
+pub const TOPOLOGY_READY_TITLE: &str = "Your Network Topology is Ready";
+
+pub const TOPOLOGY_READY_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Your Topology is Ready!</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi {first_name},</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your first network discovery on <strong>{network_name}</strong> has completed. Scanopy found <strong>{host_count} hosts</strong> and <strong>{service_count} services</strong>.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your interactive topology map is now available — open Scanopy to explore your network visually.</p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td align="center" style="padding: 0 40px 30px 40px;">
+                            <a href="https://app.scanopy.net" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">View Topology</a>
+                        </td>
+                    </tr>
+"#;
+
+pub const PLAN_LIMIT_APPROACHING_TITLE: &str = "You're Approaching Your {limit_type} Limit";
+
+pub const PLAN_LIMIT_APPROACHING_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Approaching Plan Limit</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi {first_name},</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">You're using <strong>{current_count}</strong> of your <strong>{limit}</strong> included {limit_type} on the {plan_name} plan.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Upgrade your plan to increase your limits and keep growing.</p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td align="center" style="padding: 0 40px 30px 40px;">
+                            <a href="https://app.scanopy.net/?modal=billing-plan" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Upgrade Plan</a>
+                        </td>
+                    </tr>
+"#;
+
+pub const PLAN_LIMIT_REACHED_TITLE: &str = "You've Reached Your {limit_type} Limit";
+
+pub const PLAN_LIMIT_REACHED_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Plan Limit Reached</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi {first_name},</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">You've reached <strong>{current_count}</strong> of your <strong>{limit}</strong> included {limit_type} on the {plan_name} plan. New {limit_type} may be blocked until you upgrade.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Upgrade now to increase your limits and continue adding {limit_type}.</p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td align="center" style="padding: 0 40px 30px 40px;">
+                            <a href="https://app.scanopy.net/?modal=billing-plan" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Upgrade Plan</a>
+                        </td>
+                    </tr>
+"#;
+
+// ============================================================================
 // Auth Templates
 // ============================================================================
 
