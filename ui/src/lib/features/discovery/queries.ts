@@ -128,6 +128,7 @@ export function useBulkDeleteDiscoveriesMutation() {
 
 import { utcTimeZoneSentinel, uuidv4Sentinel } from '$lib/shared/utils/formatting';
 import type { Daemon } from '../daemons/types/base';
+import type { Network } from '../networks/types';
 import type { FieldConfig } from '$lib/shared/components/data/types';
 
 // ============================================================================
@@ -221,12 +222,16 @@ export function generateCronSchedule(hours: number): string {
 /**
  * Field configuration for the DataTableControls
  */
-export const discoveryFields = (daemons: Daemon[]): FieldConfig<Discovery>[] => [
+export const discoveryFields = (
+	daemons: Daemon[],
+	networks: Network[]
+): FieldConfig<Discovery>[] => [
 	{
 		key: 'name',
 		label: m.common_name(),
 		type: 'string',
 		searchable: true,
+		sortable: true,
 		getValue: (item: Discovery) => item.name
 	},
 	{
@@ -234,14 +239,25 @@ export const discoveryFields = (daemons: Daemon[]): FieldConfig<Discovery>[] => 
 		label: m.common_daemon(),
 		type: 'string',
 		filterable: true,
+		groupable: true,
 		getValue: (item: Discovery) =>
 			daemons.find((d) => d.id == item.daemon_id)?.name ?? m.discovery_unknownDaemon()
+	},
+	{
+		key: 'network_id',
+		label: m.common_network(),
+		type: 'string',
+		filterable: true,
+		groupable: true,
+		getValue: (item: Discovery) =>
+			networks.find((n) => n.id === item.network_id)?.name ?? m.common_unknownNetwork()
 	},
 	{
 		key: 'discovery_type',
 		label: m.common_type(),
 		type: 'string',
 		filterable: true,
+		groupable: true,
 		getValue: (item: Discovery) => item.discovery_type.type
 	}
 ];

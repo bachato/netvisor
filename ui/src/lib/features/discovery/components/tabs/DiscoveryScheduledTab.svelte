@@ -19,12 +19,14 @@
 		useInitiateDiscoveryMutation
 	} from '../../queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
+	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import {
 		common_confirmDeleteName,
 		common_create,
+		common_created,
 		common_tags,
 		discovery_confirmDeleteScheduled,
 		discovery_noScheduledSessions,
@@ -38,6 +40,7 @@
 	const tagsQuery = useTagsQuery();
 	const discoveriesQuery = useDiscoveriesQuery();
 	const daemonsQuery = useDaemonsQuery();
+	const networksQuery = useNetworksQuery();
 	// Use limit: 0 to get all hosts for modal dropdown
 	const hostsQuery = useHostsQuery({ limit: 0 });
 
@@ -52,6 +55,7 @@
 	let tagsData = $derived(tagsQuery.data ?? []);
 	let discoveriesData = $derived(discoveriesQuery.data ?? []);
 	let daemonsData = $derived(daemonsQuery.data ?? []);
+	let networksData = $derived(networksQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let isLoading = $derived(
 		discoveriesQuery.isPending || daemonsQuery.isPending || hostsQuery.isPending
@@ -109,13 +113,14 @@
 	}
 
 	let fields: FieldConfig<Discovery>[] = $derived([
-		...discoveryFields(daemonsData),
+		...discoveryFields(daemonsData, networksData),
 		{
 			key: 'run_type',
 			label: discovery_runType(),
 			type: 'string',
 			searchable: true,
 			filterable: true,
+			groupable: true,
 			getValue: (item) => item.run_type.type
 		},
 		{
@@ -130,6 +135,12 @@
 					.map((id) => tagsData.find((t) => t.id === id)?.name)
 					.filter((name): name is string => !!name);
 			}
+		},
+		{
+			key: 'created_at',
+			label: common_created(),
+			type: 'date',
+			sortable: true
 		}
 	]);
 </script>

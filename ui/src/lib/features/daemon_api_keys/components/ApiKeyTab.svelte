@@ -21,6 +21,7 @@
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import {
 		common_create,
+		common_created,
 		common_name,
 		common_network,
 		common_tags,
@@ -101,13 +102,15 @@
 			key: 'name',
 			label: common_name(),
 			type: 'string',
-			searchable: true
+			searchable: true,
+			sortable: true
 		},
 		{
 			key: 'network_id',
 			type: 'string',
 			label: common_network(),
 			filterable: true,
+			groupable: true,
 			getValue(item) {
 				return networksData.find((n) => n.id == item.network_id)?.name || common_unknownNetwork();
 			}
@@ -124,6 +127,12 @@
 					.map((id) => tagsData.find((t) => t.id === id)?.name)
 					.filter((name): name is string => !!name);
 			}
+		},
+		{
+			key: 'created_at',
+			label: common_created(),
+			type: 'date',
+			sortable: true
 		}
 	];
 </script>

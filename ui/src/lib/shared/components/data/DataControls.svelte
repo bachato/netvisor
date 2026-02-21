@@ -17,6 +17,7 @@
 	import {
 		type FieldConfig,
 		isOrderableField,
+		isDisplayField,
 		getFieldKey,
 		PAGE_SIZE_OPTIONS,
 		type PageSizeOption
@@ -397,13 +398,19 @@
 		return Array.from(values).sort();
 	}
 
-	// Get groupable fields (orderable string fields with groupable !== false)
+	// Get groupable fields (orderable string fields with groupable !== false, or display fields with groupable === true)
 	let groupableFields = $derived(
-		fields.filter((f) => f.type === 'string' && isOrderableField(f) && f.groupable !== false)
+		fields.filter(
+			(f) =>
+				(f.type === 'string' && isOrderableField(f) && f.groupable !== false) ||
+				(isDisplayField(f) && f.groupable === true)
+		)
 	);
 
-	// Get sortable fields (only orderable fields)
-	let sortableFields = $derived(fields.filter(isOrderableField));
+	// Get sortable fields (orderable fields, or display fields with sortable === true)
+	let sortableFields = $derived(
+		fields.filter((f) => isOrderableField(f) || (isDisplayField(f) && f.sortable === true))
+	);
 
 	// Apply all filters, sorting, and grouping
 	let processedItems = $derived.by(() => {

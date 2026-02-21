@@ -77,9 +77,14 @@ export interface OrderableFieldConfig<T, O extends string> extends BaseFieldConf
 /**
  * Display-only field (no server-side ordering).
  * Used for fields that are shown in the UI but can't be sorted/grouped on the backend.
+ * Can opt-in to client-side sorting/grouping via `sortable` and `groupable` flags.
  */
 export interface DisplayFieldConfig<T> extends BaseFieldConfig<T> {
 	key: string;
+	/** Whether this field can be used for client-side sorting. */
+	sortable?: boolean;
+	/** Whether this field can be used for client-side grouping. */
+	groupable?: boolean;
 }
 
 /**
@@ -98,6 +103,15 @@ export function isOrderableField<T, O extends string>(
 	field: FieldConfig<T, O>
 ): field is OrderableFieldConfig<T, O> {
 	return 'orderField' in field;
+}
+
+/**
+ * Type guard to check if a field is a display-only field.
+ */
+export function isDisplayField<T, O extends string>(
+	field: FieldConfig<T, O>
+): field is DisplayFieldConfig<T> {
+	return 'key' in field;
 }
 
 /**

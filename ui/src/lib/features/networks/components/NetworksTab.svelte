@@ -16,6 +16,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import {
 		common_create,
+		common_created,
 		common_name,
 		common_networks,
 		common_tags,
@@ -146,7 +147,8 @@
 			key: 'name',
 			label: common_name(),
 			type: 'string',
-			searchable: true
+			searchable: true,
+			sortable: true
 		},
 		{
 			key: 'tags',
@@ -160,6 +162,12 @@
 					.map((id) => tagsData.find((t) => t.id === id)?.name)
 					.filter((name): name is string => !!name);
 			}
+		},
+		{
+			key: 'created_at',
+			label: common_created(),
+			type: 'date',
+			sortable: true
 		}
 	];
 </script>

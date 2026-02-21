@@ -64,7 +64,8 @@
 			key: 'name',
 			label: common_name(),
 			type: 'string',
-			searchable: true
+			searchable: true,
+			sortable: true
 		},
 		{
 			key: 'topology_id',
@@ -83,6 +84,7 @@
 			label: common_network(),
 			type: 'string',
 			filterable: true,
+			groupable: true,
 			getValue: (share) => {
 				return networksData.find((n) => n.id === share.network_id)?.name || common_unknownNetwork();
 			}
@@ -96,12 +98,14 @@
 		{
 			key: 'expires_at',
 			label: common_expires(),
-			type: 'date'
+			type: 'date',
+			sortable: true
 		},
 		{
 			key: 'created_at',
 			label: common_created(),
-			type: 'date'
+			type: 'date',
+			sortable: true
 		}
 	];
 

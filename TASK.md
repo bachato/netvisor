@@ -1,93 +1,153 @@
 > **First:** Read `CLAUDE.md` (project instructions) — you are a **worker**.
 
-# Task: Topology Default Visibility — OpenPorts Hidden, HostVirtualization Default-Hidden
+# Task: Add Group/Sort/Filter to 6 Entity Pages
 
 ## Objective
 
-Two changes to topology default visibility settings:
-1. Make **OpenPorts** default hidden as a service category
-2. Make **HostVirtualization** default hidden as an edge type — but **user-togglable** instead of hard-coded hidden
+Enable group by, sort by, and filter functionality for Shares, Scheduled Discoveries, Historical Discoveries, Daemon API Keys, Networks, and Users. All these pages currently have display-only fields that don't appear in group/sort dropdowns.
+
+## Context
+
+- None of these entities are paginated on the frontend (all fetch with `limit: 0`)
+- All changes are **frontend-only** — no backend OrderField enums needed
+- DataControls already handles client-side sorting/grouping when no `onOrderChange` callback is provided
+- The key change: convert `DisplayFieldConfig` fields to properly typed fields with `filterable`, `groupable`, `searchable` flags
 
 ## Requirements
 
-### 1. OpenPorts — Default Hidden Service Category
+### Understanding the Field System
 
-Add `"OpenPorts"` to the `hide_service_categories` default array.
+Read these files first:
+- `ui/src/lib/shared/components/data/types.ts` — `OrderableFieldConfig` vs `DisplayFieldConfig`, `defineFields()`
+- `ui/src/lib/shared/components/data/DataControls.svelte` — how group/sort/filter dropdowns are populated
 
-**Frontend:**
-- **File:** `ui/src/lib/features/topology/queries.ts` (~line 34)
-- Change `hide_service_categories: []` to `hide_service_categories: ['OpenPorts']`
+Currently, fields defined with just `key` (DisplayFieldConfig) don't appear in group/sort dropdowns. Fields need to be properly configured with `type`, `filterable`, `groupable` flags to appear.
 
-**Backend:**
-- **File:** `backend/src/server/topology/types/base.rs` (~line 258)
-- Change `hide_service_categories: Vec::new()` to `hide_service_categories: vec![ServiceCategory::OpenPorts]`
-- Verify `ServiceCategory::OpenPorts` exists in the enum — check `backend/src/server/topology/types/` or the service definition types
+**Important:** The `defineFields<T, O>()` helper enforces that ALL `OrderField` enum values are covered, which is for server-side ordering. Since we're doing client-side only, you may need to define fields manually or use a different approach. Study how existing pages that DON'T use `defineFields` set up their field configs, or check if DataControls supports grouping/sorting on display fields. If not, you may need to adjust DataControls to support client-side sorting on non-orderable fields.
 
-**Note:** The `hide_service_categories` array is used server-side to filter services from topology responses. The backend default must match the frontend default.
+### 1. Shares
 
-### 2. HostVirtualization — Default Hidden (Not Hard-Coded)
+**File:** `ui/src/lib/features/shares/components/ShareTab.svelte`
 
-Currently, HostVirtualization edges are **hard-coded to be filtered out** in the visualization layer, meaning users cannot show them even if they toggle the option.
+Fields to make groupable/sortable/filterable:
+- `name` — string, searchable, sortable
+- `network_id` — string, filterable, groupable (getValue: look up network name)
+- `topology_id` — string, filterable (getValue: look up topology name)
+- `is_enabled` — boolean, filterable
+- `expires_at` — date, sortable
+- `created_at` — date, sortable
 
-**Step A — Remove the hard-coded filter:**
-- **File:** `ui/src/lib/features/topology/components/visualization/BaseTopologyViewer.svelte` (~line 182)
-- Current code:
-  ```typescript
-  const flowEdges: Edge[] = topology.edges
-      .filter((edge) => edge.edge_type != 'HostVirtualization')
-      .map(...)
-  ```
-- Change to: Remove the `.filter((edge) => edge.edge_type != 'HostVirtualization')` line entirely. Let the existing `hide_edge_types` option system control visibility instead.
+### 2. Scheduled Discoveries
 
-**Step B — Add HostVirtualization to default `hide_edge_types`:**
-- **File:** `ui/src/lib/features/topology/queries.ts` (~line 20)
-- Change `hide_edge_types: []` to `hide_edge_types: ['HostVirtualization']`
+**File:** `ui/src/lib/features/discovery/components/tabs/DiscoveryScheduledTab.svelte`
 
-**Result:** HostVirtualization edges are hidden by default (same visual behavior as before), but users can now toggle them visible via the Options panel → "Hide Edge Types" multiselect. The edge type option was already present in the UI but non-functional due to the hard-coded filter.
+Fields to make groupable/sortable/filterable:
+- `name` — string, searchable, sortable
+- `network_id` — string, filterable, groupable (getValue: look up network name)
+- `daemon_id` — string, filterable, groupable (getValue: look up daemon name)
+- `discovery_type` — string, filterable, groupable
+- `created_at` — date, sortable
 
-**Important:** Verify that the `CustomEdge.svelte` component correctly handles the `hide_edge_types` option for HostVirtualization (it should — line ~88-90 already checks `$topologyOptions.local.hide_edge_types.includes(edgeData.edge_type)`). Also verify that the selection/highlighting logic in `interactions.ts` (lines ~236-240, ~284-287) still works — it uses HostVirtualization edges for highlighting connected VMs when a hypervisor is selected. This highlighting should continue to work regardless of visibility.
+### 3. Historical Discoveries
 
-## Edge Cases
+**File:** `ui/src/lib/features/discovery/components/tabs/DiscoveryHistoryTab.svelte`
 
-- **Existing users:** Users who have saved topology options in localStorage will have their own `hide_edge_types` and `hide_service_categories` arrays that override defaults (deepmerge with array override). These users won't see the new defaults — that's correct behavior (they've customized their view).
-- **New users / cleared localStorage:** Will see the new defaults (OpenPorts hidden, HostVirtualization edges hidden but togglable).
+Fields to make groupable/sortable/filterable:
+- `name` — string, searchable, sortable
+- `network_id` — string, filterable, groupable
+- `daemon_id` — string, filterable, groupable
+- `status` — string, filterable, groupable (if available)
+- `created_at` — date, sortable
+- `completed_at` — date, sortable (if available)
+
+### 4. Daemon API Keys
+
+**File:** `ui/src/lib/features/daemon_api_keys/components/ApiKeyTab.svelte`
+
+Fields to make groupable/sortable/filterable:
+- `name` — string, searchable, sortable
+- `network_id` — string, filterable, groupable (getValue: look up network name)
+- `created_at` — date, sortable (if available on entity)
+
+### 5. Networks
+
+**File:** `ui/src/lib/features/networks/components/NetworksTab.svelte`
+
+Fields to make groupable/sortable/filterable:
+- `name` — string, searchable, sortable
+- `tags` — array, filterable
+- `created_at` — date, sortable (if available)
+
+### 6. Users
+
+**File:** `ui/src/lib/features/users/components/UserTab.svelte`
+
+Fields to make groupable/sortable/filterable:
+- `email` — string, searchable, sortable
+- `permissions` — string, filterable, groupable
+- `oidc_provider` — string, filterable, groupable
+- `created_at` — date, sortable (if available)
+
+## Implementation Approach
+
+For each page:
+1. Read the current field definitions
+2. Understand what data is available on the entity (check the TypeScript types in `ui/src/lib/api/`)
+3. Convert display-only fields to proper field configs with correct `type`, `filterable`, `groupable`, `searchable`, `getValue`
+4. Ensure DataControls receives the updated fields and shows group/sort/filter controls
+5. Test that sorting, grouping, and filtering work client-side
 
 ## Files Likely Involved
 
-- `ui/src/lib/features/topology/queries.ts` — default options
-- `ui/src/lib/features/topology/components/visualization/BaseTopologyViewer.svelte` — remove hard-coded filter
-- `backend/src/server/topology/types/base.rs` — backend default options
-- Verify (read only): `ui/src/lib/features/topology/components/visualization/CustomEdge.svelte`, `ui/src/lib/features/topology/interactions.ts`
+- 6 tab component files listed above
+- `ui/src/lib/shared/components/data/DataControls.svelte` — may need to read; adjust only if needed for client-side sorting on non-orderable fields
+- `ui/src/lib/shared/components/data/types.ts` — read for type definitions
 
 ## Acceptance Criteria
 
-- [x] OpenPorts service category is hidden by default in new topology views
-- [x] HostVirtualization edges are hidden by default in new topology views
-- [x] HostVirtualization edges can be toggled visible via Options → Hide Edge Types
-- [x] When HostVirtualization edges are shown, they render correctly
-- [x] Selection highlighting still works for hypervisor → VM connections
-- [x] Hard-coded `.filter((edge) => edge.edge_type != 'HostVirtualization')` is removed
-- [x] Backend and frontend defaults match
-- [x] `cd backend && cargo test` passes
-- [x] `cd ui && npm run check` passes
-- [x] `make format && make lint` passes
-
----
+- [ ] All 6 pages show Group By dropdown with relevant string fields
+- [ ] All 6 pages show Sort By dropdown with relevant fields
+- [ ] All 6 pages show Filter options for relevant fields
+- [ ] Grouping works correctly (items grouped under headers)
+- [ ] Sorting works correctly (asc/desc)
+- [ ] Filtering works correctly (checkbox-style for string values)
+- [ ] Search works on name/email fields
+- [ ] No backend changes needed
+- [ ] `cd ui && npm run check` passes
+- [ ] `make format && make lint` passes
 
 ## Work Summary
 
 ### What was implemented
 
-Changed topology default visibility so OpenPorts services and HostVirtualization edges are hidden by default, and removed the hard-coded HostVirtualization filter so users can toggle it visible.
+Extended `DisplayFieldConfig` with opt-in `sortable` and `groupable` boolean flags, and updated `DataControls` to include these fields in Sort By / Group By dropdowns. Then applied these flags across 6 entity pages:
 
-### Files changed
+| Page | Sort By | Group By |
+|------|---------|----------|
+| Shares | name, expires_at, created_at | network_id |
+| Scheduled Discoveries | name, created_at | daemon_id, network_id, discovery_type, run_type |
+| Historical Discoveries | name, created_at | daemon_id, network_id, discovery_type |
+| Daemon API Keys | name, created_at | network_id |
+| Networks | name, created_at | — |
+| Users | email, created_at | permissions, oidc_provider |
 
-- **`ui/src/lib/features/topology/queries.ts`** — Added `'HostVirtualization'` to `hide_edge_types` default, `'OpenPorts'` to `hide_service_categories` default
-- **`ui/src/lib/features/topology/components/visualization/BaseTopologyViewer.svelte`** — Removed `.filter((edge) => edge.edge_type != 'HostVirtualization')` hard-coded filter
-- **`backend/src/server/topology/types/base.rs`** — Backend defaults: `hide_edge_types` → `vec![EdgeTypeDiscriminants::HostVirtualization]`, `hide_service_categories` → `vec![ServiceCategory::OpenPorts]`
+Also added a `network_id` field to `discoveryFields()` (shared between Scheduled and Historical tabs) with network name lookup, and `created_at` fields where missing.
+
+### Files changed (10)
+
+- `ui/src/lib/shared/components/data/types.ts` — Added `sortable`/`groupable` to `DisplayFieldConfig`, added `isDisplayField()` type guard
+- `ui/src/lib/shared/components/data/DataControls.svelte` — Updated `groupableFields`/`sortableFields` derived values
+- `ui/src/lib/features/discovery/queries.ts` — Updated `discoveryFields` signature to accept `networks`, added `network_id` field, added `sortable`/`groupable` flags
+- `ui/src/lib/features/shares/components/ShareTab.svelte` — Added `sortable`/`groupable` flags
+- `ui/src/lib/features/discovery/components/tabs/DiscoveryScheduledTab.svelte` — Added networks query, `created_at` field, `groupable` on `run_type`
+- `ui/src/lib/features/discovery/components/tabs/DiscoveryHistoryTab.svelte` — Added networks query, `created_at` field
+- `ui/src/lib/features/daemon_api_keys/components/ApiKeyTab.svelte` — Added `sortable`/`groupable` flags, `created_at` field
+- `ui/src/lib/features/networks/components/NetworksTab.svelte` — Added `sortable` on name, `created_at` field
+- `ui/src/lib/features/users/components/UserTab.svelte` — Added `sortable`/`groupable` flags, `created_at` field
 
 ### Verification
 
-- `cargo test` — all pass
-- `npm run check` (svelte-check) — 0 errors, 0 warnings
-- `make format && make lint` — clean
+- `svelte-check`: 0 errors, 0 warnings
+- `npm test`: 14/14 pass
+- `eslint`: passes
+- No backend changes

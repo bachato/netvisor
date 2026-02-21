@@ -19,6 +19,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import {
+		common_created,
 		common_email,
 		common_emailAndPassword,
 		common_role,
@@ -115,6 +116,7 @@
 			label: common_email(),
 			type: 'string',
 			searchable: true,
+			sortable: true,
 			getValue(item) {
 				return isUser(item) ? item.data.email : '';
 			}
@@ -124,6 +126,7 @@
 			label: common_role(),
 			type: 'string',
 			filterable: true,
+			groupable: true,
 			getValue(item) {
 				return isUser(item) ? item.data.permissions : '';
 			}
@@ -133,9 +136,17 @@
 			label: users_authMethod(),
 			type: 'string',
 			filterable: true,
+			groupable: true,
 			getValue(item) {
 				return isUser(item) ? item.data.oidc_provider || common_emailAndPassword() : '';
 			}
+		},
+		{
+			key: 'created_at',
+			label: common_created(),
+			type: 'date',
+			sortable: true,
+			getValue: (item) => item.data.created_at
 		}
 	];
 </script>

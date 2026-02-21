@@ -16,10 +16,12 @@
 		useBulkDeleteDiscoveriesMutation
 	} from '../../queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
+	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import {
+		common_created,
 		common_duration,
 		common_unknown,
 		discovery_confirmDeleteHistorical,
@@ -34,6 +36,7 @@
 	// Queries
 	const discoveriesQuery = useDiscoveriesQuery();
 	const daemonsQuery = useDaemonsQuery();
+	const networksQuery = useNetworksQuery();
 	// Use limit: 0 to get all hosts for modal dropdown
 	const hostsQuery = useHostsQuery({ limit: 0 });
 
@@ -45,6 +48,7 @@
 	// Derived data
 	let discoveriesData = $derived(discoveriesQuery.data ?? []);
 	let daemonsData = $derived(daemonsQuery.data ?? []);
+	let networksData = $derived(networksQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let isLoading = $derived(
 		discoveriesQuery.isPending || daemonsQuery.isPending || hostsQuery.isPending
@@ -87,7 +91,7 @@
 	}
 
 	let fields: FieldConfig<Discovery>[] = $derived([
-		...discoveryFields(daemonsData),
+		...discoveryFields(daemonsData, networksData),
 		{
 			key: 'started_at',
 			label: discovery_startedAt(),
@@ -124,6 +128,12 @@
 				}
 				return common_unknown();
 			}
+		},
+		{
+			key: 'created_at',
+			label: common_created(),
+			type: 'date',
+			sortable: true
 		}
 	]);
 </script>
