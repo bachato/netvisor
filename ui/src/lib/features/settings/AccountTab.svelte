@@ -10,6 +10,7 @@
 	import { submitForm } from '$lib/shared/components/forms/form-context';
 	import {
 		required,
+		email as emailValidator,
 		password as passwordValidator,
 		confirmPasswordMatch
 	} from '$lib/shared/components/forms/validators';
@@ -77,7 +78,6 @@
 
 	let linkingProviderSlug: string | null = $state(null);
 	let savingCredentials = $state(false);
-	let emailChangeEmail = $state('');
 	let emailChangeLoading = $state(false);
 
 	// Create form for password update
@@ -116,30 +116,34 @@
 		}
 	}));
 
+	// Create form for email change
+	const emailChangeForm = createForm(() => ({
+		defaultValues: { newEmail: '' },
+		onSubmit: async ({ value }) => {
+			if (!value.newEmail) return;
+			emailChangeLoading = true;
+			try {
+				const { data } = await apiClient.POST('/api/auth/request-email-change', {
+					body: { new_email: value.newEmail }
+				});
+				if (data?.success) {
+					pushSuccess('Verification email sent to ' + value.newEmail);
+					emailChangeForm.reset({ newEmail: '' });
+					subView = 'main';
+				} else {
+					pushError(data?.error || 'Failed to request email change');
+				}
+			} finally {
+				emailChangeLoading = false;
+			}
+		}
+	}));
+
 	// Reset form when switching to credentials view
 	export function resetForm() {
 		linkingProviderSlug = null;
-		emailChangeEmail = '';
 		form.reset({ currentPassword: '', password: '', confirmPassword: '' });
-	}
-
-	async function requestEmailChange() {
-		if (!emailChangeEmail) return;
-		emailChangeLoading = true;
-		try {
-			const { data } = await apiClient.POST('/api/auth/request-email-change', {
-				body: { new_email: emailChangeEmail }
-			});
-			if (data?.success) {
-				pushSuccess('Verification email sent to ' + emailChangeEmail);
-				emailChangeEmail = '';
-				subView = 'main';
-			} else {
-				pushError(data?.error || 'Failed to request email change');
-			}
-		} finally {
-			emailChangeLoading = false;
-		}
+		emailChangeForm.reset({ newEmail: '' });
 	}
 
 	// Find which provider (if any) is linked to this user
@@ -168,7 +172,7 @@
 
 	async function handleSubmit() {
 		if (subView === 'email-change') {
-			await requestEmailChange();
+			await submitForm(emailChangeForm);
 		} else {
 			await submitForm(form);
 		}
@@ -178,7 +182,7 @@
 		if (subView === 'credentials' || subView === 'email-change') {
 			subView = 'main';
 			form.reset({ currentPassword: '', password: '', confirmPassword: '' });
-			emailChangeEmail = '';
+			emailChangeForm.reset({ newEmail: '' });
 		} else {
 			onClose();
 		}
@@ -220,7 +224,7 @@
 								<button
 									type="button"
 									onclick={() => {
-										emailChangeEmail = '';
+										emailChangeForm.reset({ newEmail: '' });
 										subView = 'email-change';
 									}}
 									class="text-xs text-blue-500 hover:text-blue-700"
@@ -402,18 +406,22 @@
 					Enter your new email address. We'll send a verification link to confirm the change.
 				</p>
 				<div class="space-y-6">
-					<div>
-						<label for="newEmail" class="text-primary mb-1 block text-sm font-medium"
-							>New Email</label
-						>
-						<input
-							id="newEmail"
-							type="email"
-							bind:value={emailChangeEmail}
-							placeholder={settings_account_enterEmail()}
-							class="input w-full"
-						/>
-					</div>
+					<emailChangeForm.Field
+						name="newEmail"
+						validators={{
+							onBlur: ({ value }) => required(value) || emailValidator(value)
+						}}
+					>
+						{#snippet children(field)}
+							<TextInput
+								label={common_email()}
+								id="newEmail"
+								{field}
+								placeholder={settings_account_enterEmail()}
+								required
+							/>
+						{/snippet}
+					</emailChangeForm.Field>
 				</div>
 			</div>
 		{/if}
