@@ -254,15 +254,39 @@ impl EventSubscriber for TopologyService {
                         topology.base.if_entries = if_entries.clone();
                     }
 
-                    // Update topology in database
-                    let updated = self
-                        .update(&mut topology, AuthenticatedEntity::System)
-                        .await?;
+                    // Only update topology in database if there were actual changes
+                    let has_changes = changes.should_mark_stale
+                        || changes.clear_stale
+                        || !changes.removed_hosts.is_empty()
+                        || !changes.removed_interfaces.is_empty()
+                        || !changes.removed_services.is_empty()
+                        || !changes.removed_subnets.is_empty()
+                        || !changes.removed_groups.is_empty()
+                        || !changes.removed_ports.is_empty()
+                        || !changes.removed_bindings.is_empty()
+                        || !changes.removed_if_entries.is_empty()
+                        || (changes.updated_hosts && changes.removed_hosts.is_empty())
+                        || (changes.updated_interfaces && changes.removed_interfaces.is_empty())
+                        || (changes.updated_services && changes.removed_services.is_empty())
+                        || (changes.updated_subnets && changes.removed_subnets.is_empty())
+                        || (changes.updated_groups && changes.removed_groups.is_empty())
+                        || (changes.updated_ports && changes.removed_ports.is_empty())
+                        || (changes.updated_bindings && changes.removed_bindings.is_empty())
+                        || (changes.updated_if_entries && changes.removed_if_entries.is_empty());
 
-                    // Send the UPDATED topology to SSE
-                    let _ = self.staleness_tx.send(updated).inspect_err(|e| {
-                        tracing::debug!("Staleness notification skipped (no receivers): {}", e)
-                    });
+                    if has_changes {
+                        let updated = self
+                            .update(&mut topology, AuthenticatedEntity::System)
+                            .await?;
+
+                        // Send the UPDATED topology to SSE
+                        let _ = self.staleness_tx.send(updated).inspect_err(|e| {
+                            tracing::debug!(
+                                "Staleness notification skipped (no receivers): {}",
+                                e
+                            )
+                        });
+                    }
                 }
             }
         }
