@@ -152,7 +152,7 @@ export function useRefreshTopologyMutation() {
 				params: { path: { id: topology.id } },
 				body: {
 					network_id: topology.network_id,
-					options: topology.options,
+					options: get(topologyOptions),
 					nodes: [],
 					edges: []
 				}
@@ -175,7 +175,7 @@ export function useRebuildTopologyMutation() {
 				params: { path: { id: topology.id } },
 				body: {
 					network_id: topology.network_id,
-					options: topology.options,
+					options: get(topologyOptions),
 					nodes: topology.nodes,
 					edges: topology.edges
 				}
@@ -599,7 +599,7 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 							params: { path: { id: update.id } },
 							body: {
 								network_id: update.network_id,
-								options: update.options,
+								options: get(topologyOptions),
 								nodes: update.nodes,
 								edges: update.edges
 							}
