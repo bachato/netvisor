@@ -81,6 +81,28 @@ impl AuthService {
         self.email_service.is_some()
     }
 
+    /// Send OIDC linked notification email (non-blocking)
+    pub async fn send_oidc_linked_notification(&self, email: EmailAddress, provider_name: &str) {
+        if let Some(email_service) = &self.email_service
+            && let Err(e) = email_service
+                .send_oidc_linked_email(email, provider_name)
+                .await
+        {
+            tracing::warn!(error = %e, "Failed to send OIDC linked notification email");
+        }
+    }
+
+    /// Send OIDC unlinked notification email (non-blocking)
+    pub async fn send_oidc_unlinked_notification(&self, email: EmailAddress, provider_name: &str) {
+        if let Some(email_service) = &self.email_service
+            && let Err(e) = email_service
+                .send_oidc_unlinked_email(email, provider_name)
+                .await
+        {
+            tracing::warn!(error = %e, "Failed to send OIDC unlinked notification email");
+        }
+    }
+
     /// Register a new user with password
     pub async fn register(
         &self,
@@ -465,8 +487,8 @@ impl AuthService {
     pub async fn update_password(
         &self,
         user_id: Uuid,
-        password: Option<String>,
-        email: Option<EmailAddress>,
+        current_password: Option<String>,
+        new_password: String,
         ip: IpAddr,
         user_agent: Option<String>,
         authentication: AuthenticatedEntity,
@@ -477,13 +499,18 @@ impl AuthService {
             .await?
             .ok_or_else(|| anyhow::anyhow!("User not found".to_string()))?;
 
-        if let Some(password) = password {
-            user.set_password(hash_password(&password)?);
+        let had_password = user.base.password_hash.is_some();
+
+        // If user already has a password, verify the current one
+        if had_password {
+            let current = current_password
+                .ok_or_else(|| anyhow!("Current password is required to change your password"))?;
+            verify_password(&current, user.base.password_hash.as_ref().unwrap())?;
         }
 
-        if let Some(email) = email {
-            user.base.email = email
-        }
+        user.set_password(hash_password(&new_password)?);
+
+        let email_addr = user.base.email.clone();
 
         self.event_bus
             .publish_auth(AuthEvent {
@@ -494,13 +521,28 @@ impl AuthService {
                 operation: AuthOperation::PasswordChanged,
                 ip_address: ip,
                 user_agent,
-                metadata: serde_json::json!({}),
+                metadata: serde_json::json!({
+                    "action": if had_password { "changed" } else { "set" },
+                }),
 
                 authentication: authentication.clone(),
             })
             .await?;
 
-        self.user_service.update(&mut user, authentication).await
+        let result = self.user_service.update(&mut user, authentication).await?;
+
+        // Send notification email (non-blocking — don't fail the operation)
+        if let Some(email_service) = &self.email_service {
+            let timestamp = Utc::now().format("%Y-%m-%d %H:%M UTC").to_string();
+            if let Err(e) = email_service
+                .send_password_changed_email(email_addr, &timestamp)
+                .await
+            {
+                tracing::warn!(error = %e, "Failed to send password changed notification email");
+            }
+        }
+
+        Ok(result)
     }
 
     /// Initiate password reset process - generates a token stored in database
@@ -671,7 +713,83 @@ impl AuthService {
         Ok(())
     }
 
-    /// Verify email using token
+    /// Request an email change — sends verification email to the new address
+    pub async fn request_email_change(
+        &self,
+        user_id: Uuid,
+        new_email: EmailAddress,
+        ip: IpAddr,
+        user_agent: Option<String>,
+    ) -> Result<()> {
+        let email_service = self
+            .email_service
+            .as_ref()
+            .ok_or_else(|| anyhow!("Email service not configured"))?;
+
+        let mut user = self
+            .user_service
+            .get_by_id(&user_id)
+            .await?
+            .ok_or_else(|| anyhow!("User not found"))?;
+
+        // Verify new email differs from current
+        if new_email
+            .as_ref()
+            .eq_ignore_ascii_case(user.base.email.as_ref())
+        {
+            return Err(anyhow!(
+                "New email must be different from your current email"
+            ));
+        }
+
+        // Check new email isn't already taken
+        let existing = self
+            .user_service
+            .get_all(StorableFilter::<User>::new_from_email(&new_email))
+            .await?;
+        if !existing.is_empty() {
+            return Err(anyhow!("This email address is already in use"));
+        }
+
+        // Generate token + expiry (reuse verification token fields)
+        let token = Uuid::new_v4().to_string();
+        let expires = Utc::now() + Duration::hours(Self::VERIFICATION_TOKEN_EXPIRY_HOURS);
+
+        user.base.pending_email = Some(new_email.clone());
+        user.base.email_verification_token = Some(token.clone());
+        user.base.email_verification_expires = Some(expires);
+
+        self.user_service
+            .update(&mut user, AuthenticatedEntity::System)
+            .await?;
+
+        // Publish audit event
+        let authentication: AuthenticatedEntity = user.clone().into();
+        self.event_bus
+            .publish_auth(AuthEvent {
+                id: Uuid::new_v4(),
+                user_id: Some(user.id),
+                organization_id: Some(user.base.organization_id),
+                timestamp: Utc::now(),
+                operation: AuthOperation::EmailChangeRequested,
+                ip_address: ip,
+                user_agent,
+                metadata: serde_json::json!({
+                    "new_email": new_email.to_string(),
+                }),
+                authentication,
+            })
+            .await?;
+
+        // Send verification email to the NEW address
+        email_service
+            .send_verification_email(new_email, self.public_url.clone(), token)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Verify email using token — handles both initial verification and email change flows
     pub async fn verify_email(
         &self,
         token: &str,
@@ -698,28 +816,70 @@ impl AuthService {
             return Err(anyhow!("Invalid verification token"));
         }
 
-        // Mark as verified and clear token
-        user.base.email_verified = true;
-        user.base.email_verification_token = None;
-        user.base.email_verification_expires = None;
+        // Check if this is an email change flow (pending_email is set)
+        if let Some(pending_email) = user.base.pending_email.take() {
+            let old_email = user.base.email.clone();
+            let old_email_str = old_email.to_string();
+            user.base.email = pending_email;
+            user.base.email_verified = true;
+            user.base.email_verification_token = None;
+            user.base.email_verification_expires = None;
 
-        self.user_service
-            .update(&mut user, AuthenticatedEntity::System)
-            .await?;
+            self.user_service
+                .update(&mut user, AuthenticatedEntity::System)
+                .await?;
 
-        self.event_bus
-            .publish_auth(AuthEvent {
-                id: Uuid::new_v4(),
-                user_id: Some(user.id),
-                organization_id: Some(user.base.organization_id),
-                timestamp: Utc::now(),
-                operation: AuthOperation::EmailVerified,
-                ip_address: ip,
-                user_agent,
-                metadata: serde_json::json!({}),
-                authentication: user.clone().into(),
-            })
-            .await?;
+            let new_email_str = user.base.email.to_string();
+
+            self.event_bus
+                .publish_auth(AuthEvent {
+                    id: Uuid::new_v4(),
+                    user_id: Some(user.id),
+                    organization_id: Some(user.base.organization_id),
+                    timestamp: Utc::now(),
+                    operation: AuthOperation::EmailChanged,
+                    ip_address: ip,
+                    user_agent,
+                    metadata: serde_json::json!({
+                        "old_email": old_email_str,
+                        "new_email": new_email_str,
+                    }),
+                    authentication: user.clone().into(),
+                })
+                .await?;
+
+            // Send notification to old email address
+            if let Some(email_service) = &self.email_service
+                && let Err(e) = email_service
+                    .send_email_changed_old_email(old_email, &new_email_str)
+                    .await
+            {
+                tracing::warn!(error = %e, "Failed to send email changed notification to old address");
+            }
+        } else {
+            // Standard initial verification flow
+            user.base.email_verified = true;
+            user.base.email_verification_token = None;
+            user.base.email_verification_expires = None;
+
+            self.user_service
+                .update(&mut user, AuthenticatedEntity::System)
+                .await?;
+
+            self.event_bus
+                .publish_auth(AuthEvent {
+                    id: Uuid::new_v4(),
+                    user_id: Some(user.id),
+                    organization_id: Some(user.base.organization_id),
+                    timestamp: Utc::now(),
+                    operation: AuthOperation::EmailVerified,
+                    ip_address: ip,
+                    user_agent,
+                    metadata: serde_json::json!({}),
+                    authentication: user.clone().into(),
+                })
+                .await?;
+        }
 
         Ok(user)
     }

@@ -145,6 +145,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/request-email-change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["request_email_change"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/resend-verification": {
         parameters: {
             query?: never;
@@ -2688,7 +2704,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.14.4"
+         *       "server_version": "0.14.6"
          *     }
          */
         ApiMeta: {
@@ -2699,7 +2715,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.14.4
+             * @example 0.14.6
              */
             server_version: string;
         };
@@ -2713,14 +2729,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-02-10T16:23:59.217459Z",
-             *       "id": "0a54ebd3-ca95-41c3-94c8-6ea83edff654",
+             *       "created_at": "2026-02-22T08:16:45.461938Z",
+             *       "id": "a9beb781-db93-45a5-9352-35e5393e058a",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-02-10T16:23:59.217459Z"
+             *       "updated_at": "2026-02-22T08:16:45.461938Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2955,14 +2971,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-02-10T16:23:59.196981Z",
-             *               "id": "3d5a7810-e4b4-4ce5-bd9e-fa263999c7b4",
+             *               "created_at": "2026-02-22T08:16:45.445607Z",
+             *               "id": "eb938946-dc6f-4411-ba7a-a32da81b7e67",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-02-10T16:23:59.196981Z"
+             *               "updated_at": "2026-02-22T08:16:45.445607Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -2971,7 +2987,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "NATS",
+             *           "service_definition": "Nginx Proxy Manager",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3244,14 +3260,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-02-10T16:23:59.213102Z",
-             *           "id": "4652f742-34cb-4359-a01f-ee44894f3fc3",
+             *           "created_at": "2026-02-22T08:16:45.457281Z",
+             *           "id": "cff9e999-24c1-445a-82f9-7f5eed8e79ca",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-02-10T16:23:59.213102Z"
+             *           "updated_at": "2026-02-22T08:16:45.457281Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3260,7 +3276,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "NATS",
+             *       "service_definition": "Nginx Proxy Manager",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3563,14 +3579,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-02-10T16:23:59.197187Z",
-         *       "id": "2133bb44-e4fe-4c74-a062-5590c4d658af",
+         *       "created_at": "2026-02-22T08:16:45.445939Z",
+         *       "id": "eea73053-4ed8-4be3-b77a-115d5c4b8959",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-02-10T16:23:59.197187Z"
+         *       "updated_at": "2026-02-22T08:16:45.445939Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3752,7 +3768,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "NATS",
+         *           "service_definition": "Nginx Proxy Manager",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4387,14 +4403,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-02-10T16:23:59.196697Z",
-         *               "id": "c4f88351-a1ff-4c40-9597-39037f0959f9",
+         *               "created_at": "2026-02-22T08:16:45.445149Z",
+         *               "id": "e858c024-69e9-4b83-84c3-165b911fff83",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-02-10T16:23:59.196697Z"
+         *               "updated_at": "2026-02-22T08:16:45.445149Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4403,7 +4419,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "NATS",
+         *           "service_definition": "Nginx Proxy Manager",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4939,7 +4955,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.14.4"
+         *       "server_version": "0.14.6"
          *     }
          */
         PaginatedApiMeta: {
@@ -4952,7 +4968,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.14.4
+             * @example 0.14.6
              */
             server_version: string;
         };
@@ -5307,6 +5323,10 @@ export interface components {
             password: string;
             terms_accepted: boolean;
         };
+        RequestEmailChangeRequest: {
+            /** Format: email */
+            new_email: string;
+        };
         /** @description Request to resend verification email */
         ResendVerificationRequest: {
             /** Format: email */
@@ -5346,14 +5366,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-02-10T16:23:59.197117Z",
-         *           "id": "ac39c9fd-6f29-4b26-bb5a-76c1b15de413",
+         *           "created_at": "2026-02-22T08:16:45.445822Z",
+         *           "id": "f3c39934-7934-49e5-894b-cb53a2efe7c6",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-02-10T16:23:59.197117Z"
+         *           "updated_at": "2026-02-22T08:16:45.445822Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5362,7 +5382,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "NATS",
+         *       "service_definition": "Nginx Proxy Manager",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -5814,11 +5834,6 @@ export interface components {
             metadata: unknown;
             name: string | null;
         };
-        UpdateEmailPasswordRequest: {
-            /** Format: email */
-            email?: string | null;
-            password?: string | null;
-        };
         /**
          * @description Request type for updating a host with its children.
          *     Uses the same input types as CreateHostRequest.
@@ -5856,6 +5871,15 @@ export interface components {
             services?: components["schemas"]["ServiceInput"][] | null;
             tags: string[];
             virtualization?: null | components["schemas"]["HostVirtualization"];
+        };
+        UpdatePasswordRequest: {
+            /**
+             * @description Current password — required if the user already has a password set.
+             *     Not required for OIDC-only users adding their first password.
+             */
+            current_password?: string | null;
+            /** @description New password to set */
+            new_password: string;
         };
         User: components["schemas"]["UserBase"] & {
             /** Format: date-time */
@@ -6246,6 +6270,48 @@ export interface operations {
             };
         };
     };
+    request_email_change: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestEmailChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Verification email sent to new address */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     resend_verification: {
         parameters: {
             query?: never;
@@ -6363,7 +6429,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateEmailPasswordRequest"];
+                "application/json": components["schemas"]["UpdatePasswordRequest"];
             };
         };
         responses: {

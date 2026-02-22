@@ -76,6 +76,7 @@ pub enum AuthenticatedEntity {
         permissions: UserOrgPermissions,
         network_ids: Vec<Uuid>,
         email: EmailAddress,
+        email_verified: bool,
     },
     Daemon {
         network_id: Uuid,
@@ -245,6 +246,16 @@ impl AuthenticatedEntity {
             _ => None,
         }
     }
+
+    /// Check if the entity's email is verified.
+    /// Returns true for non-User entities (daemons, API keys, etc.) since
+    /// email verification only applies to user sessions.
+    pub fn email_verified(&self) -> bool {
+        match self {
+            AuthenticatedEntity::User { email_verified, .. } => *email_verified,
+            _ => true,
+        }
+    }
 }
 
 impl From<User> for AuthenticatedEntity {
@@ -255,6 +266,7 @@ impl From<User> for AuthenticatedEntity {
             permissions: value.base.permissions,
             network_ids: vec![],
             email: value.base.email,
+            email_verified: value.base.email_verified,
         }
     }
 }
@@ -606,6 +618,7 @@ impl AuthenticatedEntity {
             permissions: user.base.permissions,
             network_ids,
             email: user.base.email,
+            email_verified: user.base.email_verified,
         })
     }
 }

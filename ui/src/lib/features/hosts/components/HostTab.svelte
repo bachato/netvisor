@@ -239,9 +239,7 @@
 					searchable: true,
 					filterable: true,
 					getValue: (host) =>
-						allServicesData
-							.filter((s) => s.host_id === host.id)
-							.map((s) => s.name)
+						allServicesData.filter((s) => s.host_id === host.id).map((s) => s.name)
 				}
 			]
 		)
