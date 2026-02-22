@@ -10,7 +10,6 @@
 	import { submitForm } from '$lib/shared/components/forms/form-context';
 	import {
 		required,
-		email,
 		password as passwordValidator,
 		confirmPasswordMatch
 	} from '$lib/shared/components/forms/validators';
@@ -54,10 +53,10 @@
 	} from '$lib/paraglide/messages';
 
 	let {
-		subView = $bindable<'main' | 'credentials'>('main'),
+		subView = $bindable<'main' | 'credentials' | 'email-change'>('main'),
 		onClose
 	}: {
-		subView?: 'main' | 'credentials';
+		subView?: 'main' | 'credentials' | 'email-change';
 		onClose: () => void;
 	} = $props();
 
@@ -78,30 +77,30 @@
 
 	let linkingProviderSlug: string | null = $state(null);
 	let savingCredentials = $state(false);
+	let emailChangeEmail = $state('');
+	let emailChangeLoading = $state(false);
 
-	// Create form for credentials section
+	// Create form for password update
 	const form = createForm(() => ({
-		defaultValues: { email: '', password: '', confirmPassword: '' },
+		defaultValues: { currentPassword: '', password: '', confirmPassword: '' },
 		onSubmit: async ({ value }) => {
 			savingCredentials = true;
 			try {
-				const updateRequest: { email?: string; password?: string } = {};
-
-				if (value.email !== user?.email) {
-					updateRequest.email = value.email;
-				}
-
-				if (value.password) {
-					updateRequest.password = value.password;
-				}
-
-				if (Object.keys(updateRequest).length === 0) {
+				if (!value.password) {
 					pushError(settings_account_noChanges());
 					return;
 				}
 
+				const body: { current_password?: string; new_password: string } = {
+					new_password: value.password
+				};
+
+				if (value.currentPassword) {
+					body.current_password = value.currentPassword;
+				}
+
 				const { data } = await apiClient.POST('/api/auth/update', {
-					body: updateRequest
+					body
 				});
 
 				if (data?.success && data.data) {
@@ -120,7 +119,27 @@
 	// Reset form when switching to credentials view
 	export function resetForm() {
 		linkingProviderSlug = null;
-		form.reset({ email: user?.email || '', password: '', confirmPassword: '' });
+		emailChangeEmail = '';
+		form.reset({ currentPassword: '', password: '', confirmPassword: '' });
+	}
+
+	async function requestEmailChange() {
+		if (!emailChangeEmail) return;
+		emailChangeLoading = true;
+		try {
+			const { data } = await apiClient.POST('/api/auth/request-email-change', {
+				body: { new_email: emailChangeEmail }
+			});
+			if (data?.success) {
+				pushSuccess('Verification email sent to ' + emailChangeEmail);
+				emailChangeEmail = '';
+				subView = 'main';
+			} else {
+				pushError(data?.error || 'Failed to request email change');
+			}
+		} finally {
+			emailChangeLoading = false;
+		}
 	}
 
 	// Find which provider (if any) is linked to this user
@@ -148,13 +167,18 @@
 	}
 
 	async function handleSubmit() {
-		await submitForm(form);
+		if (subView === 'email-change') {
+			await requestEmailChange();
+		} else {
+			await submitForm(form);
+		}
 	}
 
 	function handleCancel() {
-		if (subView === 'credentials') {
+		if (subView === 'credentials' || subView === 'email-change') {
 			subView = 'main';
-			form.reset({ email: user?.email || '', password: '', confirmPassword: '' });
+			form.reset({ currentPassword: '', password: '', confirmPassword: '' });
+			emailChangeEmail = '';
 		} else {
 			onClose();
 		}
@@ -171,7 +195,7 @@
 	}
 
 	let hasLinkedOidc = $derived(!!user?.oidc_provider);
-	let showSave = $derived(subView === 'credentials');
+	let showSave = $derived(subView === 'credentials' || subView === 'email-change');
 	let cancelLabel = $derived(subView === 'main' ? common_close() : common_back());
 </script>
 
@@ -179,7 +203,7 @@
 	onsubmit={(e) => {
 		e.preventDefault();
 		e.stopPropagation();
-		if (showSave) handleSubmit();
+		if (subView === 'email-change' || subView === 'credentials') handleSubmit();
 	}}
 	class="flex min-h-0 flex-1 flex-col"
 >
@@ -190,7 +214,21 @@
 					<!-- User Info -->
 					<InfoCard title={settings_account_userInfo()}>
 						<InfoRow label={common_organization()}>{organization?.name}</InfoRow>
-						<InfoRow label={common_email()}>{user.email}</InfoRow>
+						<InfoRow label={common_email()}>
+							<div class="flex items-center gap-2">
+								<span>{user.email}</span>
+								<button
+									type="button"
+									onclick={() => {
+										emailChangeEmail = '';
+										subView = 'email-change';
+									}}
+									class="text-xs text-blue-500 hover:text-blue-700"
+								>
+									Change
+								</button>
+							</div>
+						</InfoRow>
 						<InfoRow label={common_permissions()} mono={true}>{user.permissions}</InfoRow>
 						<InfoRow label={common_userId()} mono={true}>{user.id}</InfoRow>
 					</InfoCard>
@@ -219,7 +257,7 @@
 										type="button"
 										onclick={() => {
 											subView = 'credentials';
-											form.reset({ email: user.email, password: '', confirmPassword: '' });
+											form.reset({ currentPassword: '', password: '', confirmPassword: '' });
 										}}
 										class="btn-primary"
 									>
@@ -320,17 +358,18 @@
 				<p class="text-secondary mb-2 text-sm">{settings_account_updateCredentials()}</p>
 				<div class="space-y-6">
 					<form.Field
-						name="email"
+						name="currentPassword"
 						validators={{
-							onBlur: ({ value }) => required(value) || email(value)
+							onBlur: ({ value }) => required(value)
 						}}
 					>
 						{#snippet children(field)}
 							<TextInput
-								label={common_email()}
-								id="email"
+								label="Current Password"
+								id="currentPassword"
+								type="password"
 								{field}
-								placeholder={settings_account_enterEmail()}
+								placeholder="Enter your current password"
 							/>
 						{/snippet}
 					</form.Field>
@@ -350,11 +389,31 @@
 								}}
 							>
 								{#snippet children(confirmPasswordField)}
-									<Password {passwordField} {confirmPasswordField} required={false} />
+									<Password {passwordField} {confirmPasswordField} required={true} />
 								{/snippet}
 							</form.Field>
 						{/snippet}
 					</form.Field>
+				</div>
+			</div>
+		{:else if subView === 'email-change'}
+			<div class="space-y-2">
+				<p class="text-secondary mb-2 text-sm">
+					Enter your new email address. We'll send a verification link to confirm the change.
+				</p>
+				<div class="space-y-6">
+					<div>
+						<label for="newEmail" class="text-primary mb-1 block text-sm font-medium"
+							>New Email</label
+						>
+						<input
+							id="newEmail"
+							type="email"
+							bind:value={emailChangeEmail}
+							placeholder={settings_account_enterEmail()}
+							class="input w-full"
+						/>
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -367,8 +426,9 @@
 				{cancelLabel}
 			</button>
 			{#if showSave}
-				<button type="submit" disabled={savingCredentials} class="btn-primary">
-					{savingCredentials ? common_saving() : common_saveChanges()}
+				{@const isSaving = subView === 'email-change' ? emailChangeLoading : savingCredentials}
+				<button type="submit" disabled={isSaving} class="btn-primary">
+					{isSaving ? common_saving() : common_saveChanges()}
 				</button>
 			{/if}
 		</div>

@@ -69,6 +69,9 @@ pub struct UserBase {
     /// Expiration time for password reset token
     #[serde(skip)]
     pub password_reset_expires: Option<DateTime<Utc>>,
+    /// Pending email address for email change flow - never exposed to client
+    #[serde(skip)]
+    pub pending_email: Option<EmailAddress>,
 }
 
 impl Default for UserBase {
@@ -88,6 +91,7 @@ impl Default for UserBase {
             email_verification_expires: None,
             password_reset_token: None,
             password_reset_expires: None,
+            pending_email: None,
         }
     }
 }
@@ -118,6 +122,7 @@ impl UserBase {
             email_verification_expires: None,
             password_reset_token: None,
             password_reset_expires: None,
+            pending_email: None,
         }
     }
 
@@ -145,6 +150,7 @@ impl UserBase {
             email_verification_expires: None,
             password_reset_token: None,
             password_reset_expires: None,
+            pending_email: None,
         }
     }
 }
@@ -244,6 +250,7 @@ impl Storable for User {
                     email_verification_expires,
                     password_reset_token,
                     password_reset_expires,
+                    pending_email,
                     ..
                 },
         } = self.clone();
@@ -267,6 +274,7 @@ impl Storable for User {
                 "email_verification_expires",
                 "password_reset_token",
                 "password_reset_expires",
+                "pending_email",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -285,6 +293,7 @@ impl Storable for User {
                 SqlValue::OptionTimestamp(email_verification_expires),
                 SqlValue::OptionalString(password_reset_token),
                 SqlValue::OptionTimestamp(password_reset_expires),
+                SqlValue::OptionalString(pending_email.map(|e| e.to_string())),
             ],
         ))
     }
@@ -297,6 +306,10 @@ impl Storable for User {
         let permissions: UserOrgPermissions = permissions_str
             .parse()
             .or(Err(Error::msg("Failed to parse permissions")))?;
+
+        let pending_email: Option<EmailAddress> = row
+            .get::<Option<String>, _>("pending_email")
+            .and_then(|s| EmailAddress::from_str(&s).ok());
 
         // Note: network_ids is populated separately from user_network_access junction table
         Ok(User {
@@ -318,6 +331,7 @@ impl Storable for User {
                 email_verification_expires: row.get("email_verification_expires"),
                 password_reset_token: row.get("password_reset_token"),
                 password_reset_expires: row.get("password_reset_expires"),
+                pending_email,
             },
         })
     }

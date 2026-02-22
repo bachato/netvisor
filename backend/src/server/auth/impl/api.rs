@@ -64,10 +64,18 @@ pub struct OidcCallbackParams {
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct UpdateEmailPasswordRequest {
-    pub password: Option<String>,
-    #[schema(value_type = Option<String>, format = "email")]
-    pub email: Option<EmailAddress>,
+pub struct UpdatePasswordRequest {
+    /// Current password — required if the user already has a password set.
+    /// Not required for OIDC-only users adding their first password.
+    pub current_password: Option<String>,
+    /// New password to set
+    pub new_password: String,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct RequestEmailChangeRequest {
+    #[schema(value_type = String, format = "email")]
+    pub new_email: EmailAddress,
 }
 
 #[derive(Debug, Deserialize)]

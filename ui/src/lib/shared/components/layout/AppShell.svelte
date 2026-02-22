@@ -185,6 +185,17 @@
 		}
 	});
 
+	// Reactive email verification guard — catches unverified state regardless of navigation method.
+	// The init effect above only runs once; hash navigation (/#topology) doesn't change pathname,
+	// so this separate effect ensures unverified users are always redirected.
+	$effect(() => {
+		if (!browser || !authCheckComplete || !isAuthenticated) return;
+		if (!currentUser || currentUser.email_verified) return;
+		if ($page.url.pathname === '/verify-email') return;
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto(`${resolve('/verify-email')}?email=${encodeURIComponent(currentUser.email)}`);
+	});
+
 	// Handle organization-dependent routing (runs after org data loads)
 	$effect(() => {
 		if (!authCheckComplete || !isAuthenticated || !browser) return;

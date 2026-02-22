@@ -361,6 +361,57 @@
         }
       }
     },
+    "/api/auth/request-email-change": {
+      "post": {
+        "tags": [
+          "auth",
+          "internal"
+        ],
+        "operationId": "request_email_change",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestEmailChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Verification email sent to new address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/resend-verification": {
       "post": {
         "tags": [
@@ -506,7 +557,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateEmailPasswordRequest"
+                "$ref": "#/components/schemas/UpdatePasswordRequest"
               }
             }
           },
@@ -11965,14 +12016,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-21T20:49:13.126193Z",
-              "id": "67d8e247-7940-4ac8-a523-20218f4075a6",
+              "created_at": "2026-02-22T08:16:45.461938Z",
+              "id": "a9beb781-db93-45a5-9352-35e5393e058a",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-21T20:49:13.126193Z"
+              "updated_at": "2026-02-22T08:16:45.461938Z"
             }
           },
           "error": {
@@ -12717,14 +12768,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-21T20:49:13.114641Z",
-                      "id": "33231add-d67a-4184-8005-e420e5f92bd9",
+                      "created_at": "2026-02-22T08:16:45.445607Z",
+                      "id": "eb938946-dc6f-4411-ba7a-a32da81b7e67",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-21T20:49:13.114641Z"
+                      "updated_at": "2026-02-22T08:16:45.445607Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12733,7 +12784,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Workstation",
+                  "service_definition": "Nginx Proxy Manager",
                   "source": {
                     "type": "Manual"
                   },
@@ -13536,14 +13587,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-21T20:49:13.122529Z",
-                  "id": "303d5a2a-ba25-4bef-b7e1-a73ea4db3e26",
+                  "created_at": "2026-02-22T08:16:45.457281Z",
+                  "id": "cff9e999-24c1-445a-82f9-7f5eed8e79ca",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-21T20:49:13.122529Z"
+                  "updated_at": "2026-02-22T08:16:45.457281Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13552,7 +13603,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Workstation",
+              "service_definition": "Nginx Proxy Manager",
               "source": {
                 "type": "Manual"
               },
@@ -14751,14 +14802,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-21T20:49:13.114850Z",
-          "id": "404f8885-c96c-4ccc-a4a2-c2dddfa664c9",
+          "created_at": "2026-02-22T08:16:45.445939Z",
+          "id": "eea73053-4ed8-4be3-b77a-115d5c4b8959",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-21T20:49:13.114850Z"
+          "updated_at": "2026-02-22T08:16:45.445939Z"
         }
       },
       "BindingBase": {
@@ -15265,7 +15316,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Workstation",
+              "service_definition": "Nginx Proxy Manager",
               "tags": [],
               "virtualization": null
             }
@@ -17121,14 +17172,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-21T20:49:13.114344Z",
-                  "id": "4a1d21e7-2810-4bae-bb13-efbbea0b46c8",
+                  "created_at": "2026-02-22T08:16:45.445149Z",
+                  "id": "e858c024-69e9-4b83-84c3-165b911fff83",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-21T20:49:13.114344Z"
+                  "updated_at": "2026-02-22T08:16:45.445149Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -17137,7 +17188,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Workstation",
+              "service_definition": "Nginx Proxy Manager",
               "source": {
                 "type": "Manual"
               },
@@ -19030,14 +19081,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-21T20:49:13.107862Z",
-                        "id": "b2a6c4c8-6c78-4cf1-92de-0381d55c1f2a",
+                        "created_at": "2026-02-22T08:16:45.433976Z",
+                        "id": "7d7b3d09-e6f8-4ec3-a7d7-f4fcad5dacc2",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-21T20:49:13.107862Z"
+                        "updated_at": "2026-02-22T08:16:45.433976Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -19046,7 +19097,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Workstation",
+                    "service_definition": "Nginx Proxy Manager",
                     "source": {
                       "type": "Manual"
                     },
@@ -19123,14 +19174,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-21T20:49:13.121548Z",
-                    "id": "dc984f87-2200-4a2c-a0a6-b5bfc7192cc7",
+                    "created_at": "2026-02-22T08:16:45.455959Z",
+                    "id": "4d796909-a9d3-4840-a187-c81822961e0f",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-21T20:49:13.121548Z"
+                    "updated_at": "2026-02-22T08:16:45.455959Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -19139,7 +19190,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Workstation",
+                "service_definition": "Nginx Proxy Manager",
                 "source": {
                   "type": "Manual"
                 },
@@ -19956,6 +20007,18 @@
           }
         }
       },
+      "RequestEmailChangeRequest": {
+        "type": "object",
+        "required": [
+          "new_email"
+        ],
+        "properties": {
+          "new_email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
       "ResendVerificationRequest": {
         "type": "object",
         "description": "Request to resend verification email",
@@ -20121,14 +20184,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-21T20:49:13.114777Z",
-              "id": "e55b1d16-2da6-4404-ba2b-e30a9c13b2f9",
+              "created_at": "2026-02-22T08:16:45.445822Z",
+              "id": "f3c39934-7934-49e5-894b-cb53a2efe7c6",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-21T20:49:13.114777Z"
+              "updated_at": "2026-02-22T08:16:45.445822Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20137,7 +20200,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Workstation",
+          "service_definition": "Nginx Proxy Manager",
           "source": {
             "type": "Manual"
           },
@@ -21427,24 +21490,6 @@
           }
         }
       },
-      "UpdateEmailPasswordRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "email"
-          },
-          "password": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
       "UpdateHostRequest": {
         "type": "object",
         "description": "Request type for updating a host with its children.\nUses the same input types as CreateHostRequest.\nServer will sync children (create new, update existing, delete removed) only if provided.",
@@ -21531,6 +21576,25 @@
                 "$ref": "#/components/schemas/HostVirtualization"
               }
             ]
+          }
+        }
+      },
+      "UpdatePasswordRequest": {
+        "type": "object",
+        "required": [
+          "new_password"
+        ],
+        "properties": {
+          "current_password": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Current password — required if the user already has a password set.\nNot required for OIDC-only users adding their first password."
+          },
+          "new_password": {
+            "type": "string",
+            "description": "New password to set"
           }
         }
       },

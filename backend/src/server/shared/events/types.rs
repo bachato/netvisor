@@ -236,6 +236,8 @@ pub enum AuthOperation {
     EmailVerified,
     OidcLinked,
     OidcUnlinked,
+    EmailChangeRequested,
+    EmailChanged,
     LoggedOut,
 
     // Api Key Auth

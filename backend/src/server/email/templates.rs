@@ -318,6 +318,62 @@ pub const PLAN_LIMIT_REACHED_BODY: &str = r#"                    <!-- Main Conte
 "#;
 
 // ============================================================================
+// Account Change Notification Templates
+// ============================================================================
+
+pub const PASSWORD_CHANGED_TITLE: &str = "Your Scanopy Password Was Changed";
+
+pub const PASSWORD_CHANGED_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Password Changed</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your Scanopy password was changed on {timestamp}.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">If you made this change, no action is needed. If you didn't change your password, please reset it immediately and contact support.</p>
+                        </td>
+                    </tr>
+"#;
+
+pub const OIDC_LINKED_TITLE: &str = "{provider_name} Login Connected - Scanopy";
+
+pub const OIDC_LINKED_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Login Method Connected</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {provider_name} account has been linked to your Scanopy account. You can now sign in using {provider_name}.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">If you didn't make this change, please sign in to your account and unlink this provider from Settings.</p>
+                        </td>
+                    </tr>
+"#;
+
+pub const OIDC_UNLINKED_TITLE: &str = "{provider_name} Login Disconnected - Scanopy";
+
+pub const OIDC_UNLINKED_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Login Method Disconnected</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {provider_name} account has been unlinked from your Scanopy account. You can no longer sign in using {provider_name}.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">If you didn't make this change, please sign in to your account and review your security settings.</p>
+                        </td>
+                    </tr>
+"#;
+
+pub const EMAIL_CHANGED_OLD_TITLE: &str = "Your Scanopy Email Was Changed";
+
+pub const EMAIL_CHANGED_OLD_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Email Address Changed</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">The email address on your Scanopy account was changed to <strong>{new_email}</strong>.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">If you made this change, no action is needed. If you didn't request this change, please contact support immediately.</p>
+                        </td>
+                    </tr>
+"#;
+
+// ============================================================================
 // Auth Templates
 // ============================================================================
 

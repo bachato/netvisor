@@ -4,16 +4,16 @@ use crate::server::{
             api::{
                 CheckEmailRequest, ForgotPasswordRequest, LoginRequest, OidcAuthorizeParams,
                 OidcCallbackParams, OnboardingNetworkState, OnboardingStateResponse,
-                OnboardingStepRequest, RegisterRequest, ResendVerificationRequest,
-                ResetPasswordRequest, SetupRequest, SetupResponse, UpdateEmailPasswordRequest,
-                VerifyEmailRequest,
+                OnboardingStepRequest, RegisterRequest, RequestEmailChangeRequest,
+                ResendVerificationRequest, ResetPasswordRequest, SetupRequest, SetupResponse,
+                UpdatePasswordRequest, VerifyEmailRequest,
             },
             base::{LoginRegisterParams, PendingNetworkSetup, PendingSetup},
             oidc::{OidcFlow, OidcPendingAuth, OidcProviderMetadata, OidcRegisterParams},
         },
         middleware::{
             auth::AuthenticatedEntity,
-            permissions::{Authorized, IsUser},
+            permissions::{AllowUnverified, Authorized, IsUser},
         },
         oidc::{OidcRegisterResult, OidcService},
     },
@@ -88,6 +88,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .route("/oidc/{slug}/authorize", get(oidc_authorize))
         .route("/oidc/{slug}/callback", get(oidc_callback))
         .routes(routes!(unlink_oidc_account))
+        .routes(routes!(request_email_change))
         .routes(routes!(forgot_password))
         .routes(routes!(reset_password))
         .routes(routes!(verify_email))
@@ -784,8 +785,8 @@ async fn update_password_auth(
     session: Session,
     ClientIp(ip): ClientIp,
     user_agent: Option<TypedHeader<UserAgent>>,
-    auth: Authorized<IsUser>,
-    Json(request): Json<UpdateEmailPasswordRequest>,
+    auth: Authorized<AllowUnverified<IsUser>>,
+    Json(request): Json<UpdatePasswordRequest>,
 ) -> ApiResult<Json<ApiResponse<User>>> {
     let user_id: Uuid = session
         .get("user_id")
@@ -800,8 +801,8 @@ async fn update_password_auth(
         .auth_service
         .update_password(
             user_id,
-            request.password,
-            request.email,
+            request.current_password,
+            request.new_password,
             ip,
             user_agent,
             auth.into_entity(),
@@ -809,6 +810,36 @@ async fn update_password_auth(
         .await?;
 
     Ok(Json(ApiResponse::success(user)))
+}
+
+#[utoipa::path(
+    post,
+    path = "/request-email-change",
+    tags = ["auth", "internal"],
+    request_body = RequestEmailChangeRequest,
+    responses(
+        (status = 200, description = "Verification email sent to new address", body = EmptyApiResponse),
+        (status = 400, description = "Invalid request", body = ApiErrorResponse),
+        (status = 401, description = "Not authenticated", body = ApiErrorResponse),
+    )
+)]
+async fn request_email_change(
+    State(state): State<Arc<AppState>>,
+    ClientIp(ip): ClientIp,
+    user_agent: Option<TypedHeader<UserAgent>>,
+    auth: Authorized<IsUser>,
+    Json(request): Json<RequestEmailChangeRequest>,
+) -> ApiResult<Json<ApiResponse<()>>> {
+    let user_id = auth.require_user_id()?;
+    let user_agent = user_agent.map(|u| u.to_string());
+
+    state
+        .services
+        .auth_service
+        .request_email_change(user_id, request.new_email, ip, user_agent)
+        .await?;
+
+    Ok(Json(ApiResponse::success(())))
 }
 
 #[utoipa::path(

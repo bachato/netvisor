@@ -35,6 +35,12 @@ pub trait PermissionRequirement: Send + Sync + 'static {
 
     /// Human-readable description of this requirement for error messages.
     fn description() -> &'static str;
+
+    /// Whether this requirement allows unverified email users.
+    /// Defaults to `false` — most endpoints require verified email.
+    fn allows_unverified() -> bool {
+        false
+    }
 }
 
 // ============================================================================
@@ -321,6 +327,10 @@ where
     fn description() -> &'static str {
         "Insufficient permissions"
     }
+
+    fn allows_unverified() -> bool {
+        A::allows_unverified() || B::allows_unverified()
+    }
 }
 
 /// Requires both A and B to pass.
@@ -341,6 +351,33 @@ where
 
     fn description() -> &'static str {
         "Insufficient permissions"
+    }
+
+    fn allows_unverified() -> bool {
+        A::allows_unverified() && B::allows_unverified()
+    }
+}
+
+// ============================================================================
+// Unverified Email Wrapper
+// ============================================================================
+
+/// Wraps a permission requirement to allow access even when the user's email
+/// is not yet verified. Use sparingly — only for endpoints that unverified
+/// users must reach (e.g., updating password, verifying email).
+pub struct AllowUnverified<P>(PhantomData<P>);
+
+impl<P: PermissionRequirement> PermissionRequirement for AllowUnverified<P> {
+    fn check(entity: &AuthenticatedEntity) -> Result<(), ApiError> {
+        P::check(entity)
+    }
+
+    fn description() -> &'static str {
+        P::description()
+    }
+
+    fn allows_unverified() -> bool {
+        true
     }
 }
 
@@ -429,6 +466,13 @@ where
 
         // Check the permission requirement
         P::check(&entity).map_err(AuthError)?;
+
+        // Check email verification unless the endpoint explicitly allows unverified users
+        if !P::allows_unverified() && !entity.email_verified() {
+            return Err(AuthError(ApiError::forbidden(
+                "Email verification required. Please verify your email before accessing this resource.",
+            )));
+        }
 
         Ok(Authorized {
             entity,
