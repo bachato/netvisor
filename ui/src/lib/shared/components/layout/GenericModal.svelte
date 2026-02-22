@@ -89,7 +89,7 @@
 		}
 	});
 
-	// Fire onOpen callback when modal transitions from closed to open
+	// Sync modal state with URL on open/close transitions
 	$effect(() => {
 		if (isOpen && !wasOpen) {
 			instanceKey++;
@@ -116,6 +116,9 @@
 			if (name) {
 				openModal(name, { id: entityId, tab: activeTab || undefined });
 			}
+		} else if (!isOpen && wasOpen && name) {
+			// Modal closed (by parent, form submit, etc.) — clear URL params
+			closeModal();
 		}
 		wasOpen = isOpen;
 	});
