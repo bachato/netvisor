@@ -39,8 +39,8 @@
 	const tagsQuery = useTagsQuery();
 	const apiKeysQuery = useApiKeysQuery();
 	const networksQuery = useNetworksQuery();
-	// Daemons query to ensure data is loaded (needed for API key display)
-	useDaemonsQuery();
+	// Daemons query — also used to determine which API keys are in use
+	const daemonsQuery = useDaemonsQuery();
 
 	// Mutations
 	const updateApiKeyMutation = useUpdateApiKeyMutation();
@@ -52,6 +52,13 @@
 	let apiKeysData = $derived(apiKeysQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
 	let isLoading = $derived(apiKeysQuery.isPending);
+	let apiKeyIdsInUse = $derived(
+		new Set(
+			(daemonsQuery.data ?? [])
+				.map((d) => d.api_key_id)
+				.filter((id): id is string => id != null)
+		)
+	);
 
 	let showCreateApiKeyModal = $state(false);
 	let editingApiKey = $state<ApiKey | null>(null);
@@ -195,6 +202,7 @@
 			)}
 				<ApiKeyCard
 					apiKey={item}
+					isInUse={apiKeyIdsInUse.has(item.id)}
 					{viewMode}
 					selected={isSelected}
 					{onSelectionChange}

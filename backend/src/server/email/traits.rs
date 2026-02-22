@@ -8,8 +8,10 @@ use uuid::Uuid;
 use crate::server::{
     email::templates::{
         DISCOVERY_GUIDE_FREE_BODY, DISCOVERY_GUIDE_FREE_TITLE, DISCOVERY_GUIDE_PAID_BODY,
-        DISCOVERY_GUIDE_PAID_TITLE, EMAIL_FOOTER, EMAIL_HEADER, EMAIL_VERIFICATION_BODY,
-        INVITE_LINK_BODY, PASSWORD_RESET_BODY, PAYMENT_METHOD_ADDED_BODY,
+        DISCOVERY_GUIDE_PAID_TITLE, EMAIL_CHANGED_OLD_BODY, EMAIL_CHANGED_OLD_TITLE, EMAIL_FOOTER,
+        EMAIL_HEADER, EMAIL_VERIFICATION_BODY, INVITE_LINK_BODY, OIDC_LINKED_BODY,
+        OIDC_LINKED_TITLE, OIDC_UNLINKED_BODY, OIDC_UNLINKED_TITLE, PASSWORD_CHANGED_BODY,
+        PASSWORD_CHANGED_TITLE, PASSWORD_RESET_BODY, PAYMENT_METHOD_ADDED_BODY,
         PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY, PLAN_CHANGED_TITLE,
         PLAN_LIMIT_APPROACHING_BODY, PLAN_LIMIT_APPROACHING_TITLE, PLAN_LIMIT_REACHED_BODY,
         PLAN_LIMIT_REACHED_TITLE, SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE,
@@ -179,6 +181,68 @@ pub trait EmailProvider: Send + Sync {
     fn build_payment_method_added_email(&self) -> (String, String) {
         let body = self.build_email(PAYMENT_METHOD_ADDED_BODY.to_string());
         (PAYMENT_METHOD_ADDED_TITLE.to_string(), body)
+    }
+
+    // ========================================================================
+    // Account change notification builders
+    // ========================================================================
+
+    fn build_password_changed_email(&self, timestamp: &str) -> (String, String) {
+        let body = self.build_email(PASSWORD_CHANGED_BODY.replace("{timestamp}", timestamp));
+        (PASSWORD_CHANGED_TITLE.to_string(), body)
+    }
+
+    fn build_oidc_linked_email(&self, provider_name: &str) -> (String, String) {
+        let body = self.build_email(OIDC_LINKED_BODY.replace("{provider_name}", provider_name));
+        let subject = OIDC_LINKED_TITLE.replace("{provider_name}", provider_name);
+        (subject, body)
+    }
+
+    fn build_oidc_unlinked_email(&self, provider_name: &str) -> (String, String) {
+        let body = self.build_email(OIDC_UNLINKED_BODY.replace("{provider_name}", provider_name));
+        let subject = OIDC_UNLINKED_TITLE.replace("{provider_name}", provider_name);
+        (subject, body)
+    }
+
+    fn build_email_changed_old_email(&self, new_email: &str) -> (String, String) {
+        let body = self.build_email(EMAIL_CHANGED_OLD_BODY.replace("{new_email}", new_email));
+        (EMAIL_CHANGED_OLD_TITLE.to_string(), body)
+    }
+
+    async fn send_password_changed_email(
+        &self,
+        to: EmailAddress,
+        timestamp: &str,
+    ) -> Result<(), Error> {
+        let (subject, body) = self.build_password_changed_email(timestamp);
+        self.send_billing_email(to, subject, body).await
+    }
+
+    async fn send_oidc_linked_email(
+        &self,
+        to: EmailAddress,
+        provider_name: &str,
+    ) -> Result<(), Error> {
+        let (subject, body) = self.build_oidc_linked_email(provider_name);
+        self.send_billing_email(to, subject, body).await
+    }
+
+    async fn send_oidc_unlinked_email(
+        &self,
+        to: EmailAddress,
+        provider_name: &str,
+    ) -> Result<(), Error> {
+        let (subject, body) = self.build_oidc_unlinked_email(provider_name);
+        self.send_billing_email(to, subject, body).await
+    }
+
+    async fn send_email_changed_old_email(
+        &self,
+        to: EmailAddress,
+        new_email: &str,
+    ) -> Result<(), Error> {
+        let (subject, body) = self.build_email_changed_old_email(new_email);
+        self.send_billing_email(to, subject, body).await
     }
 
     // ========================================================================
@@ -423,6 +487,50 @@ impl EmailService {
 
     pub async fn send_subscription_cancelled_email(&self, to: EmailAddress) -> Result<()> {
         self.provider.send_subscription_cancelled_email(to).await
+    }
+
+    // ========================================================================
+    // Account change notification methods
+    // ========================================================================
+
+    pub async fn send_password_changed_email(
+        &self,
+        to: EmailAddress,
+        timestamp: &str,
+    ) -> Result<()> {
+        self.provider
+            .send_password_changed_email(to, timestamp)
+            .await
+    }
+
+    pub async fn send_oidc_linked_email(
+        &self,
+        to: EmailAddress,
+        provider_name: &str,
+    ) -> Result<()> {
+        self.provider
+            .send_oidc_linked_email(to, provider_name)
+            .await
+    }
+
+    pub async fn send_oidc_unlinked_email(
+        &self,
+        to: EmailAddress,
+        provider_name: &str,
+    ) -> Result<()> {
+        self.provider
+            .send_oidc_unlinked_email(to, provider_name)
+            .await
+    }
+
+    pub async fn send_email_changed_old_email(
+        &self,
+        to: EmailAddress,
+        new_email: &str,
+    ) -> Result<()> {
+        self.provider
+            .send_email_changed_old_email(to, new_email)
+            .await
     }
 
     // ========================================================================

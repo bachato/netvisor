@@ -196,10 +196,11 @@
         "tags": [
           "Daemon API Keys"
         ],
-        "summary": "Bulk delete Daemon API Keys",
-        "operationId": "bulk_delete_Daemon API Keys",
+        "summary": "Bulk delete daemon_api_keys",
+        "description": "Returns 409 Conflict if any key is currently assigned to a daemon.",
+        "operationId": "bulk_delete_daemon_api_keys",
         "requestBody": {
-          "description": "Array of Daemon API Key IDs to delete",
+          "description": "Array of daemon_api_key IDs to delete",
           "content": {
             "application/json": {
               "schema": {
@@ -215,11 +216,21 @@
         },
         "responses": {
           "200": {
-            "description": "Daemon API Keys deleted",
+            "description": "daemon_api_keys deleted",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "One or more API keys are in use by daemons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -434,13 +445,14 @@
         "tags": [
           "Daemon API Keys"
         ],
-        "summary": "Delete Daemon API Key",
-        "operationId": "delete_Daemon API Key",
+        "summary": "Delete daemon_api_key",
+        "description": "Returns 409 Conflict if the key is currently assigned to a daemon.",
+        "operationId": "delete_daemon_api_key",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "Daemon API Key ID",
+            "description": "daemon_api_key ID",
             "required": true,
             "schema": {
               "type": "string",
@@ -450,7 +462,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Daemon API Key deleted",
+            "description": "daemon_api_key deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -460,7 +472,17 @@
             }
           },
           "404": {
-            "description": "Daemon API Key not found",
+            "description": "daemon_api_key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "API key is in use by a daemon",
             "content": {
               "application/json": {
                 "schema": {
@@ -9282,14 +9304,23 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-21T20:49:13.126156Z",
-              "id": "c7b05975-41f6-4e34-9be1-7fe7054fb4dd",
+<<<<<<< .merge_file_tjfpxG
+              "created_at": "2026-02-22T07:40:28.131949Z",
+              "id": "20f1c73e-f036-425e-9e20-ea29d8d32783",
+=======
+              "created_at": "2026-02-22T08:16:45.461939Z",
+              "id": "c9377f89-8dd3-479b-9426-39f71cf7f173",
+>>>>>>> .merge_file_UONjzM
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-21T20:49:13.126156Z"
+<<<<<<< .merge_file_tjfpxG
+              "updated_at": "2026-02-22T07:40:28.131949Z"
+=======
+              "updated_at": "2026-02-22T08:16:45.461939Z"
+>>>>>>> .merge_file_UONjzM
             }
           },
           "error": {
@@ -10034,14 +10065,23 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-21T20:49:13.114554Z",
-                      "id": "31e8f685-e3e4-4f2a-befb-744d2997ca21",
+<<<<<<< .merge_file_tjfpxG
+                      "created_at": "2026-02-22T07:40:28.119566Z",
+                      "id": "73a1b8a2-fe50-4afd-9b74-cf92eeb686bc",
+=======
+                      "created_at": "2026-02-22T08:16:45.445588Z",
+                      "id": "da5af7ea-09ad-481e-b93f-9b2bde670ea4",
+>>>>>>> .merge_file_UONjzM
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-21T20:49:13.114554Z"
+<<<<<<< .merge_file_tjfpxG
+                      "updated_at": "2026-02-22T07:40:28.119566Z"
+=======
+                      "updated_at": "2026-02-22T08:16:45.445588Z"
+>>>>>>> .merge_file_UONjzM
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10050,7 +10090,11 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Workstation",
+<<<<<<< .merge_file_tjfpxG
+                  "service_definition": "Frigate",
+=======
+                  "service_definition": "Nginx Proxy Manager",
+>>>>>>> .merge_file_UONjzM
                   "source": {
                     "type": "Manual"
                   },
@@ -10853,14 +10897,23 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-21T20:49:13.122510Z",
-                  "id": "a5d227fe-06e3-4da8-9705-9424fc266c20",
+<<<<<<< .merge_file_tjfpxG
+                  "created_at": "2026-02-22T07:40:28.128227Z",
+                  "id": "076a573d-5f5d-45ac-8790-af08600aeaf8",
+=======
+                  "created_at": "2026-02-22T08:16:45.457299Z",
+                  "id": "8d9499d7-27e8-4c00-a9c9-e2086a747cf2",
+>>>>>>> .merge_file_UONjzM
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-21T20:49:13.122510Z"
+<<<<<<< .merge_file_tjfpxG
+                  "updated_at": "2026-02-22T07:40:28.128227Z"
+=======
+                  "updated_at": "2026-02-22T08:16:45.457299Z"
+>>>>>>> .merge_file_UONjzM
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -10869,7 +10922,11 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Workstation",
+<<<<<<< .merge_file_tjfpxG
+              "service_definition": "Frigate",
+=======
+              "service_definition": "Nginx Proxy Manager",
+>>>>>>> .merge_file_UONjzM
               "source": {
                 "type": "Manual"
               },
@@ -12068,14 +12125,23 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-21T20:49:13.114751Z",
-          "id": "6acf167c-888f-4fe4-9116-a222548c6729",
+<<<<<<< .merge_file_tjfpxG
+          "created_at": "2026-02-22T07:40:28.119771Z",
+          "id": "39a21803-c98f-41b7-b44d-92231ac4592c",
+=======
+          "created_at": "2026-02-22T08:16:45.445909Z",
+          "id": "97ebf065-b75a-4712-a153-ba17b8f50a85",
+>>>>>>> .merge_file_UONjzM
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-21T20:49:13.114751Z"
+<<<<<<< .merge_file_tjfpxG
+          "updated_at": "2026-02-22T07:40:28.119771Z"
+=======
+          "updated_at": "2026-02-22T08:16:45.445909Z"
+>>>>>>> .merge_file_UONjzM
         }
       },
       "BindingBase": {
@@ -12582,7 +12648,11 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Workstation",
+<<<<<<< .merge_file_tjfpxG
+              "service_definition": "Frigate",
+=======
+              "service_definition": "Nginx Proxy Manager",
+>>>>>>> .merge_file_UONjzM
               "tags": [],
               "virtualization": null
             }
@@ -14438,14 +14508,23 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-21T20:49:13.114279Z",
-                  "id": "d8835954-b4a1-49cf-98fb-938102f623a8",
+<<<<<<< .merge_file_tjfpxG
+                  "created_at": "2026-02-22T07:40:28.119280Z",
+                  "id": "29e80b64-6978-426e-a4f8-7387f19349d6",
+=======
+                  "created_at": "2026-02-22T08:16:45.445138Z",
+                  "id": "7881ecb8-e8f8-43af-8998-a4abd3d9975b",
+>>>>>>> .merge_file_UONjzM
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-21T20:49:13.114279Z"
+<<<<<<< .merge_file_tjfpxG
+                  "updated_at": "2026-02-22T07:40:28.119280Z"
+=======
+                  "updated_at": "2026-02-22T08:16:45.445138Z"
+>>>>>>> .merge_file_UONjzM
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14454,7 +14533,11 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Workstation",
+<<<<<<< .merge_file_tjfpxG
+              "service_definition": "Frigate",
+=======
+              "service_definition": "Nginx Proxy Manager",
+>>>>>>> .merge_file_UONjzM
               "source": {
                 "type": "Manual"
               },
@@ -16347,14 +16430,23 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-21T20:49:13.107958Z",
-                        "id": "255d0379-11f7-4c62-a0ab-6a73698ba259",
+<<<<<<< .merge_file_tjfpxG
+                        "created_at": "2026-02-22T07:40:28.112927Z",
+                        "id": "f8e47bf8-5802-4d3f-934b-e9c71b83907a",
+=======
+                        "created_at": "2026-02-22T08:16:45.433956Z",
+                        "id": "85c8942a-16f1-425c-8231-e51e8871286b",
+>>>>>>> .merge_file_UONjzM
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-21T20:49:13.107958Z"
+<<<<<<< .merge_file_tjfpxG
+                        "updated_at": "2026-02-22T07:40:28.112927Z"
+=======
+                        "updated_at": "2026-02-22T08:16:45.433956Z"
+>>>>>>> .merge_file_UONjzM
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16363,7 +16455,11 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Workstation",
+<<<<<<< .merge_file_tjfpxG
+                    "service_definition": "Frigate",
+=======
+                    "service_definition": "Nginx Proxy Manager",
+>>>>>>> .merge_file_UONjzM
                     "source": {
                       "type": "Manual"
                     },
@@ -16440,14 +16536,23 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-21T20:49:13.121543Z",
-                    "id": "f3e1edfc-08fb-4fc2-a899-324a2786f240",
+<<<<<<< .merge_file_tjfpxG
+                    "created_at": "2026-02-22T07:40:28.127179Z",
+                    "id": "6ea58b5d-a6bf-4d52-b489-908a702a5a4f",
+=======
+                    "created_at": "2026-02-22T08:16:45.455970Z",
+                    "id": "db099681-8ccd-42eb-9afe-cf4034ebf363",
+>>>>>>> .merge_file_UONjzM
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-21T20:49:13.121543Z"
+<<<<<<< .merge_file_tjfpxG
+                    "updated_at": "2026-02-22T07:40:28.127179Z"
+=======
+                    "updated_at": "2026-02-22T08:16:45.455970Z"
+>>>>>>> .merge_file_UONjzM
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16456,7 +16561,11 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Workstation",
+<<<<<<< .merge_file_tjfpxG
+                "service_definition": "Frigate",
+=======
+                "service_definition": "Nginx Proxy Manager",
+>>>>>>> .merge_file_UONjzM
                 "source": {
                   "type": "Manual"
                 },
@@ -17273,6 +17382,18 @@
           }
         }
       },
+      "RequestEmailChangeRequest": {
+        "type": "object",
+        "required": [
+          "new_email"
+        ],
+        "properties": {
+          "new_email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
       "ResendVerificationRequest": {
         "type": "object",
         "description": "Request to resend verification email",
@@ -17438,14 +17559,23 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-21T20:49:13.114680Z",
-              "id": "b325b67f-abba-4b52-9329-0e37e462e44d",
+<<<<<<< .merge_file_tjfpxG
+              "created_at": "2026-02-22T07:40:28.119699Z",
+              "id": "360940c4-1729-4144-b817-52f12ee5c419",
+=======
+              "created_at": "2026-02-22T08:16:45.445797Z",
+              "id": "d690454f-9a13-4d1c-a749-f725ecbd4e27",
+>>>>>>> .merge_file_UONjzM
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-21T20:49:13.114680Z"
+<<<<<<< .merge_file_tjfpxG
+              "updated_at": "2026-02-22T07:40:28.119699Z"
+=======
+              "updated_at": "2026-02-22T08:16:45.445797Z"
+>>>>>>> .merge_file_UONjzM
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17454,7 +17584,11 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Workstation",
+<<<<<<< .merge_file_tjfpxG
+          "service_definition": "Frigate",
+=======
+          "service_definition": "Nginx Proxy Manager",
+>>>>>>> .merge_file_UONjzM
           "source": {
             "type": "Manual"
           },
@@ -18744,24 +18878,6 @@
           }
         }
       },
-      "UpdateEmailPasswordRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "email"
-          },
-          "password": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
       "UpdateHostRequest": {
         "type": "object",
         "description": "Request type for updating a host with its children.\nUses the same input types as CreateHostRequest.\nServer will sync children (create new, update existing, delete removed) only if provided.",
@@ -18848,6 +18964,25 @@
                 "$ref": "#/components/schemas/HostVirtualization"
               }
             ]
+          }
+        }
+      },
+      "UpdatePasswordRequest": {
+        "type": "object",
+        "required": [
+          "new_password"
+        ],
+        "properties": {
+          "current_password": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Current password — required if the user already has a password set.\nNot required for OIDC-only users adding their first password."
+          },
+          "new_password": {
+            "type": "string",
+            "description": "New password to set"
           }
         }
       },

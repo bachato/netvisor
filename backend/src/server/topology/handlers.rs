@@ -303,7 +303,6 @@ async fn refresh(
         entity_tags,
     });
 
-    topology.base.is_stale = true;
     service.update(&mut topology, auth.into_entity()).await?;
 
     // Return will be handled through event subscriber which triggers SSE

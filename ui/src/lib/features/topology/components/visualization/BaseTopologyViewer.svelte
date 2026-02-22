@@ -164,8 +164,7 @@
 				const currentEdges = get(edges);
 				const animatedStates = new Map(currentEdges.map((edge) => [edge.id, edge.animated]));
 
-				// Clear nodes and edges for clean re-render
-				nodes.set([]);
+				// Clear edges FIRST
 				edges.set([]);
 
 				// Sort so children come before parents (as per Svelte Flow docs)
