@@ -99,15 +99,6 @@ impl EventSubscriber for TopologyService {
                     // value (rebuild clears it, refresh marks it).
                     // Services were already set by the handler — no need to re-fetch.
 
-                    tracing::debug!(
-                        "Subscriber fast path: topology={}, is_stale={}, trigger_stale={}, services={}, hide={:?}",
-                        topology.id,
-                        topology.base.is_stale,
-                        trigger_stale,
-                        topology.base.services.len(),
-                        topology.base.options.request.hide_service_categories
-                    );
-
                     let _ = self.staleness_tx.send(topology).inspect_err(|e| {
                         tracing::debug!("Staleness notification skipped (no receivers): {}", e)
                     });

@@ -148,17 +148,11 @@ export function useDeleteTopologyMutation() {
 export function useRefreshTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
-			const opts = get(topologyOptions);
-			console.log('[topology:refresh] Sending options:', {
-				hide_service_categories: opts.request.hide_service_categories,
-				server_hide_service_categories: topology.options.request.hide_service_categories,
-				group_docker_bridges: opts.request.group_docker_bridges_by_host
-			});
 			await apiClient.POST('/api/v1/topology/{id}/refresh', {
 				params: { path: { id: topology.id } },
 				body: {
 					network_id: topology.network_id,
-					options: opts,
+					options: get(topologyOptions),
 					nodes: [],
 					edges: []
 				}
@@ -177,22 +171,15 @@ export function useRefreshTopologyMutation() {
 export function useRebuildTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
-			const opts = get(topologyOptions);
-			console.log('[topology:rebuild] Sending options:', {
-				hide_service_categories: opts.request.hide_service_categories,
-				server_hide_service_categories: topology.options.request.hide_service_categories,
-				group_docker_bridges: opts.request.group_docker_bridges_by_host
-			});
 			await apiClient.POST('/api/v1/topology/{id}/rebuild', {
 				params: { path: { id: topology.id } },
 				body: {
 					network_id: topology.network_id,
-					options: opts,
+					options: get(topologyOptions),
 					nodes: topology.nodes,
 					edges: topology.edges
 				}
 			});
-
 			return topology.id;
 		}
 	}));
@@ -562,13 +549,33 @@ let expandedInitialized = false;
 let autoRebuildInitialized = false;
 
 if (browser) {
+	let optionsRebuildTimeout: ReturnType<typeof setTimeout>;
 	topologyOptions.subscribe((options) => {
 		if (optionsInitialized) {
-			console.log('[topology:options] Store updated:', {
-				hide_service_categories: options.request.hide_service_categories,
-				group_docker_bridges: options.request.group_docker_bridges_by_host
-			});
 			saveOptionsToStorage(options);
+
+			// Trigger a rebuild when request options change (replaces the old
+			// debounced PUT that was lost in the TanStack migration)
+			clearTimeout(optionsRebuildTimeout);
+			optionsRebuildTimeout = setTimeout(() => {
+				if (!get(autoRebuild)) return;
+				const topologyId = get(selectedTopologyId);
+				if (!topologyId) return;
+
+				const topologies = queryClient.getQueryData<Topology[]>(queryKeys.topology.all);
+				const topology = topologies?.find((t) => t.id === topologyId);
+				if (!topology) return;
+
+				apiClient.POST('/api/v1/topology/{id}/rebuild', {
+					params: { path: { id: topologyId } },
+					body: {
+						network_id: topology.network_id,
+						options: options,
+						nodes: topology.nodes,
+						edges: topology.edges
+					}
+				});
+			}, 500);
 		}
 		optionsInitialized = true;
 	});
@@ -600,16 +607,8 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 		return {
 			url: '/api/v1/topology/stream',
 			onMessage: (update) => {
-				console.log('[topology:sse] Received:', {
-					is_stale: update.is_stale,
-					services_count: update.services?.length,
-					hide_service_categories: update.options?.request?.hide_service_categories,
-					group_docker_bridges: update.options?.request?.group_docker_bridges_by_host
-				});
-
 				// If the update says it's NOT stale, apply immediately (it's a full refresh)
 				if (!update.is_stale) {
-					console.log('[topology:sse] Full update path (is_stale=false)');
 					this.applyFullUpdate(update);
 					return;
 				}
@@ -664,26 +663,12 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 
 	private applyFullUpdate(update: Topology) {
 		queryClient.setQueryData<Topology[]>(queryKeys.topology.all, (old) => {
-			const prev = old?.find((t) => t.id === update.id);
-			console.log('[topology:cache] Full update applied:', {
-				prev_services: prev?.services?.length,
-				new_services: update.services?.length,
-				prev_hide: prev?.options?.request?.hide_service_categories,
-				new_hide: update.options?.request?.hide_service_categories,
-				prev_group_docker: prev?.options?.request?.group_docker_bridges_by_host,
-				new_group_docker: update.options?.request?.group_docker_bridges_by_host,
-				ref_changed: prev !== update
-			});
 			if (!old) return [update];
 			return old.map((topo) => (topo.id === update.id ? update : topo));
 		});
 	}
 
 	private applyPartialUpdate(topologyId: string, updates: Partial<Topology>) {
-		console.log('[topology:cache] Partial update applied:', {
-			is_stale: updates.is_stale,
-			hide: updates.options?.request?.hide_service_categories
-		});
 		queryClient.setQueryData<Topology[]>(queryKeys.topology.all, (old) => {
 			if (!old) return [];
 			return old.map((topo) => (topo.id === topologyId ? { ...topo, ...updates } : topo));
