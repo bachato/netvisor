@@ -3,7 +3,6 @@
 	import { validateForm } from '$lib/shared/components/forms/form-context';
 	import type { FormValue } from '$lib/shared/components/forms/validators';
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
-	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
@@ -30,6 +29,7 @@
 		common_generateKey,
 		common_linux,
 		common_macos,
+		common_optionNumber,
 		common_pressGenerateKey,
 		common_stepNumber,
 		common_windows,
@@ -43,11 +43,10 @@
 		daemons_generateNewKey,
 		daemons_generateNewKeyHelp,
 		daemons_operatingSystem,
-		daemons_option1,
 		daemons_option1Text,
-		daemons_option2,
 		daemons_option2Text,
 		daemons_pasteApiKey,
+		daemons_runDaemon,
 		daemons_runInPowershell,
 		daemons_useExistingKey,
 		daemons_useExistingKeyHelp,
@@ -720,27 +719,39 @@
 				</div>
 
 				{#if selectedOS === 'linux'}
-					<!-- Linux: install script + run command -->
+					<!-- Linux Option 1: install script + run command -->
 					<div class="text-secondary">
-						<b>{daemons_option1()}</b>
+						<b>{common_optionNumber({ number: '1' })}</b>
 						{daemons_option1Text()}
 					</div>
+					<div class="text-secondary text-sm">
+						<b>{common_stepNumber({ number: '1' })}</b>
+						{daemons_downloadDaemon()}
+					</div>
 					<CodeContainer language="bash" expandable={false} code={installScript} />
+					<div class="text-secondary text-sm">
+						<b>{common_stepNumber({ number: '2' })}</b>
+						{daemons_runDaemon()}
+					</div>
 					<CodeContainer language="bash" expandable={false} code={runCommand} />
 
-					<!-- Linux: Docker Compose -->
+					<!-- Linux Option 2: Docker Compose -->
 					<div class="text-secondary">
-						<b>{daemons_option2()}</b>
+						<b>{common_optionNumber({ number: '2' })}</b>
 						{daemons_option2Text()}
 					</div>
 					<CodeContainer language="yaml" expandable={false} code={dockerCompose} />
 				{:else if selectedOS === 'macos'}
 					<!-- macOS: install script + run command -->
-					<div class="text-secondary">
-						<b>{daemons_option1()}</b>
-						{daemons_option1Text()}
+					<div class="text-secondary text-sm">
+						<b>{common_stepNumber({ number: '1' })}</b>
+						{daemons_downloadDaemon()}
 					</div>
 					<CodeContainer language="bash" expandable={false} code={installScript} />
+					<div class="text-secondary text-sm">
+						<b>{common_stepNumber({ number: '2' })}</b>
+						{daemons_runDaemon()}
+					</div>
 					<CodeContainer language="bash" expandable={false} code={runCommand} />
 
 					<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
@@ -764,12 +775,12 @@
 
 					<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 				{:else if selectedOS === 'freebsd'}
-					<InlineDanger
+					<InlineWarning
 						title={onboarding_notSupportedTitle()}
 						body={onboarding_freebsdNotSupported()}
 					/>
 				{:else if selectedOS === 'openbsd'}
-					<InlineDanger
+					<InlineWarning
 						title={onboarding_notSupportedTitle()}
 						body={onboarding_openbsdNotSupported()}
 					/>
