@@ -484,7 +484,7 @@
 					if (aVal === null || aVal === undefined) return 1;
 					if (bVal === null || bVal === undefined) return -1;
 
-					let comparison = 0;
+					let comparison: number;
 
 					if (field.type === 'date') {
 						const aDate = aVal instanceof Date ? aVal : new Date(String(aVal));

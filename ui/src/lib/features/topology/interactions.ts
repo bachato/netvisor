@@ -362,8 +362,8 @@ export function getEdgeDisplayState(
 	const edgeTypeMetadata = edgeTypes.getMetadata(edgeData.edge_type);
 	const isGroupEdge = edgeTypeMetadata.is_group_edge;
 
-	let shouldShowFull = false;
-	let shouldAnimate = false;
+	let shouldShowFull: boolean;
+	let shouldAnimate: boolean;
 
 	// Check if this edge is hovered
 	const isThisEdgeHovered = get(edgeHoverState).get(edge.id) || false;

@@ -53,7 +53,7 @@ impl Hash for BillingPlan {
 impl Default for BillingPlan {
     fn default() -> Self {
         #[cfg(feature = "commercial")]
-        {   
+        {
             use crate::server::billing::plans::get_commercial_self_hosted_plan;
 
             get_commercial_self_hosted_plan()

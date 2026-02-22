@@ -23,7 +23,9 @@ jobs:
   lint-and-test:
     name: ui-lint-and-test
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
       

@@ -54,9 +54,7 @@
 	let isLoading = $derived(apiKeysQuery.isPending);
 	let apiKeyIdsInUse = $derived(
 		new Set(
-			(daemonsQuery.data ?? [])
-				.map((d) => d.api_key_id)
-				.filter((id): id is string => id != null)
+			(daemonsQuery.data ?? []).map((d) => d.api_key_id).filter((id): id is string => id != null)
 		)
 	);
 
