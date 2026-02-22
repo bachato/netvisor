@@ -3,6 +3,8 @@
 	import { validateForm } from '$lib/shared/components/forms/form-context';
 	import type { FormValue } from '$lib/shared/components/forms/validators';
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
+	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
+	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
@@ -22,25 +24,39 @@
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { fieldDefs } from '../config';
 	import type { Daemon } from '../types/base';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 	import {
 		common_apiKey,
 		common_generateKey,
+		common_linux,
+		common_macos,
 		common_pressGenerateKey,
+		common_stepNumber,
+		common_windows,
 		daemons_advancedConfiguration,
 		daemons_apiKeyHelp,
+		daemons_dockerLinuxOnly,
+		daemons_dockerLinuxOnlyBody,
+		daemons_downloadDaemon,
 		daemons_fixValidationErrors,
 		daemons_fixValidationErrorsBody,
 		daemons_generateNewKey,
 		daemons_generateNewKeyHelp,
-		daemons_linuxOnly,
+		daemons_operatingSystem,
 		daemons_option1,
 		daemons_option1Text,
 		daemons_option2,
 		daemons_option2Text,
 		daemons_pasteApiKey,
+		daemons_runInPowershell,
 		daemons_useExistingKey,
 		daemons_useExistingKeyHelp,
-		daemons_useKey
+		daemons_useKey,
+		daemons_wslWarning,
+		daemons_wslWarningBody,
+		onboarding_freebsdNotSupported,
+		onboarding_notSupportedTitle,
+		onboarding_openbsdNotSupported
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -102,6 +118,36 @@
 	// Track which sections are expanded
 	let advancedExpanded = $state(false);
 
+	// OS selection for install instructions
+	type DaemonOS = 'linux' | 'macos' | 'windows' | 'freebsd' | 'openbsd';
+
+	function detectOS(): DaemonOS {
+		if (typeof navigator === 'undefined') return 'linux';
+		const ua = navigator.userAgent.toLowerCase();
+		if (ua.includes('win')) return 'windows';
+		if (ua.includes('mac')) return 'macos';
+		return 'linux';
+	}
+
+	let selectedOS: DaemonOS = $state(detectOS());
+
+	function handleOsSelect(os: DaemonOS) {
+		selectedOS = os;
+		trackEvent('daemon_install_os_selected', { os });
+	}
+
+	const osOptions: { id: DaemonOS; label: () => string }[] = [
+		{ id: 'linux', label: common_linux },
+		{ id: 'macos', label: common_macos },
+		{ id: 'windows', label: common_windows },
+		{ id: 'freebsd', label: () => 'FreeBSD' },
+		{ id: 'openbsd', label: () => 'OpenBSD' }
+	];
+
+	const windowsDownloadUrl =
+		'https://github.com/scanopy/scanopy/releases/latest/download/scanopy-daemon-windows-amd64.exe';
+	const windowsInstallCommand = `Invoke-WebRequest -Uri "${windowsDownloadUrl}" -OutFile "scanopy-daemon-windows-amd64.exe"`;
+
 	// Build default values from field definitions
 	function buildDefaultValues(): Record<string, string | number | boolean> {
 		const defaults: Record<string, string | number | boolean> = {};
@@ -162,7 +208,7 @@
 	});
 
 	let runCommand = $derived(
-		buildRunCommand(serverUrl, networkId, apiKey, formValues, daemon, currentUserId)
+		buildRunCommand(serverUrl, networkId, apiKey, formValues, daemon, currentUserId, selectedOS)
 	);
 	let dockerCompose = $derived(
 		apiKey ? buildDockerCompose(serverUrl, networkId, apiKey, formValues, currentUserId) : ''
@@ -184,9 +230,13 @@
 		key: string | null,
 		values: Record<string, string | number | boolean>,
 		daemon: Daemon | null,
-		userId: string | null
+		userId: string | null,
+		os: DaemonOS = 'linux'
 	): string {
-		let cmd = `sudo scanopy-daemon --server-url ${serverUrl}`;
+		const isWindows = os === 'windows';
+		const binary = isWindows ? '.\\scanopy-daemon-windows-amd64.exe' : 'scanopy-daemon';
+		const prefix = isWindows ? '' : 'sudo ';
+		let cmd = `${prefix}${binary} --server-url ${serverUrl}`;
 
 		if (!daemon && networkId) {
 			cmd += ` --network-id ${networkId}`;
@@ -653,19 +703,77 @@
 			/>
 		{:else}
 			<div class="space-y-4">
-				<div class="text-secondary">
-					<b>{daemons_option1()}</b>
-					{daemons_option1Text()}
+				<!-- OS Selector -->
+				<div class="space-y-3" role="group" aria-label={daemons_operatingSystem()}>
+					<span class="text-secondary block text-sm font-medium">{daemons_operatingSystem()}</span>
+					<div class="flex gap-2">
+						{#each osOptions as option (option.id)}
+							<button
+								type="button"
+								class="btn-secondary flex-1 {selectedOS === option.id ? 'ring-primary ring-2' : ''}"
+								onclick={() => handleOsSelect(option.id)}
+							>
+								{option.label()}
+							</button>
+						{/each}
+					</div>
 				</div>
-				<CodeContainer language="bash" expandable={false} code={installScript} />
-				<CodeContainer language="bash" expandable={false} code={runCommand} />
 
-				<div class="text-secondary">
-					<b>{daemons_option2()}</b>
-					{daemons_option2Text()}
-					<span class="text-tertiary">{daemons_linuxOnly()}</span>
-				</div>
-				<CodeContainer language="yaml" expandable={false} code={dockerCompose} />
+				{#if selectedOS === 'linux'}
+					<!-- Linux: install script + run command -->
+					<div class="text-secondary">
+						<b>{daemons_option1()}</b>
+						{daemons_option1Text()}
+					</div>
+					<CodeContainer language="bash" expandable={false} code={installScript} />
+					<CodeContainer language="bash" expandable={false} code={runCommand} />
+
+					<!-- Linux: Docker Compose -->
+					<div class="text-secondary">
+						<b>{daemons_option2()}</b>
+						{daemons_option2Text()}
+					</div>
+					<CodeContainer language="yaml" expandable={false} code={dockerCompose} />
+				{:else if selectedOS === 'macos'}
+					<!-- macOS: install script + run command -->
+					<div class="text-secondary">
+						<b>{daemons_option1()}</b>
+						{daemons_option1Text()}
+					</div>
+					<CodeContainer language="bash" expandable={false} code={installScript} />
+					<CodeContainer language="bash" expandable={false} code={runCommand} />
+
+					<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
+				{:else if selectedOS === 'windows'}
+					<!-- Windows: WSL warning -->
+					<InlineWarning title={daemons_wslWarning()} body={daemons_wslWarningBody()} />
+
+					<!-- Windows: Step 1 - Download -->
+					<div class="text-secondary">
+						<b>{common_stepNumber({ number: '1' })}</b>
+						{daemons_downloadDaemon()}
+					</div>
+					<CodeContainer language="powershell" expandable={false} code={windowsInstallCommand} />
+
+					<!-- Windows: Step 2 - Run -->
+					<div class="text-secondary">
+						<b>{common_stepNumber({ number: '2' })}</b>
+						{daemons_runInPowershell()}
+					</div>
+					<CodeContainer language="powershell" expandable={false} code={runCommand} />
+
+					<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
+				{:else if selectedOS === 'freebsd'}
+					<InlineDanger
+						title={onboarding_notSupportedTitle()}
+						body={onboarding_freebsdNotSupported()}
+					/>
+				{:else if selectedOS === 'openbsd'}
+					<InlineDanger
+						title={onboarding_notSupportedTitle()}
+						body={onboarding_openbsdNotSupported()}
+					/>
+				{/if}
 			</div>
 		{/if}
 	{/if}

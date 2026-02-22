@@ -5,6 +5,7 @@
 	import 'prismjs/components/prism-yaml';
 	import 'prismjs/components/prism-json';
 	import 'prismjs/components/prism-bash';
+	import 'prismjs/components/prism-powershell';
 	import 'prismjs/themes/prism-twilight.css';
 	import { common_copied, common_copy, common_failedToCopy } from '$lib/paraglide/messages';
 
