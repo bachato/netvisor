@@ -63,7 +63,9 @@ impl EventSubscriber for EmailService {
                     };
 
                     if let Some(org_id) = org_id
-                        && let Err(e) = self.check_plan_limits(org_id).await
+                        && let Err(e) = self
+                            .check_plan_limits(org_id, e.operation == EntityOperation::Deleted)
+                            .await
                     {
                         tracing::warn!(
                             organization_id = %org_id,

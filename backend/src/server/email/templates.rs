@@ -272,7 +272,7 @@ pub const TOPOLOGY_READY_BODY: &str = r#"                    <!-- Main Content -
                     <!-- CTA Button -->
                     <tr>
                         <td align="center" style="padding: 0 40px 30px 40px;">
-                            <a href="{base_url}" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">View Topology</a>
+                            <a href="{base_url}/#topology" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">View Topology</a>
                         </td>
                     </tr>
 "#;

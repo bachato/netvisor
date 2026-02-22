@@ -518,7 +518,7 @@ impl EmailService {
     }
 
     /// Check plan limits for an organization and send notification emails on threshold crossings
-    pub async fn check_plan_limits(&self, org_id: Uuid) -> Result<()> {
+    pub async fn check_plan_limits(&self, org_id: Uuid, suppress_emails: bool) -> Result<()> {
         let mut org = match self.organization_service.get_by_id(&org_id).await? {
             Some(org) => org,
             None => return Ok(()),
@@ -631,7 +631,8 @@ impl EmailService {
             }
         }
 
-        if !emails_to_send.is_empty()
+        if !suppress_emails
+            && !emails_to_send.is_empty()
             && let Ok(owner_email) = self.get_owner_email(&org_id).await
         {
             for (subject, body) in emails_to_send {
