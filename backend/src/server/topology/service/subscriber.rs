@@ -95,9 +95,8 @@ impl EventSubscriber for TopologyService {
                     && entity_event.operation == EntityOperation::Updated
                 {
                     let mut topology = *boxed_topology;
-                    if trigger_stale {
-                        topology.base.is_stale = true;
-                    }
+                    // Don't override is_stale — the handler already set the correct
+                    // value (rebuild clears it, refresh marks it)
 
                     topology.base.services = self
                         .get_service_data(network_id, &topology.base.options)
