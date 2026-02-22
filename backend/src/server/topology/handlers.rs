@@ -348,6 +348,12 @@ async fn rebuild(
         .ok_or_else(|| ApiError::not_found(format!("Topology {} not found", id)))?;
 
     // Update options from request
+    tracing::debug!(
+        "Rebuild topology {}: hide_service_categories={:?}, group_docker_bridges={}",
+        id,
+        request.options.request.hide_service_categories,
+        request.options.request.group_docker_bridges_by_host
+    );
     topology.base.options = request.options.clone();
 
     let (hosts, interfaces, subnets, groups, ports, bindings, if_entries) =
@@ -356,6 +362,13 @@ async fn rebuild(
     let services = service
         .get_service_data(request.network_id, &topology.base.options)
         .await?;
+
+    tracing::debug!(
+        "Rebuild topology {}: fetched {} services with hide={:?}",
+        id,
+        services.len(),
+        topology.base.options.request.hide_service_categories
+    );
 
     let entity_tags = service.get_entity_tags(&hosts, &services, &subnets).await?;
 
@@ -388,6 +401,15 @@ async fn rebuild(
     topology.set_graph(nodes, edges);
 
     topology.clear_stale();
+
+    tracing::debug!(
+        "Rebuild topology {}: is_stale={}, services={}, nodes={}, edges={}",
+        id,
+        topology.base.is_stale,
+        topology.base.services.len(),
+        topology.base.nodes.len(),
+        topology.base.edges.len()
+    );
 
     let organization_id = auth.organization_id();
     let entity = auth.into_entity();
@@ -757,6 +779,13 @@ async fn staleness_stream(
                     Ok(update) => {
                         // Only emit if user has access to this topology's network
                         if allowed.contains(&update.base.network_id) {
+                            tracing::debug!(
+                                "SSE sending topology {}: is_stale={}, services={}, hide={:?}",
+                                update.id,
+                                update.base.is_stale,
+                                update.base.services.len(),
+                                update.base.options.request.hide_service_categories
+                            );
                             let json = serde_json::to_string(&update).ok()?;
                             return Some((Ok(Event::default().data(json)), rx));
                         }
