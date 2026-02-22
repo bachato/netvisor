@@ -724,12 +724,12 @@
 						<b>{common_optionNumber({ number: '1' })}</b>
 						{daemons_option1Text()}
 					</div>
-					<div class="text-secondary text-sm">
+					<div class="text-secondary">
 						<b>{common_stepNumber({ number: '1' })}</b>
 						{daemons_downloadDaemon()}
 					</div>
 					<CodeContainer language="bash" expandable={false} code={installScript} />
-					<div class="text-secondary text-sm">
+					<div class="text-secondary">
 						<b>{common_stepNumber({ number: '2' })}</b>
 						{daemons_runDaemon()}
 					</div>
@@ -743,12 +743,12 @@
 					<CodeContainer language="yaml" expandable={false} code={dockerCompose} />
 				{:else if selectedOS === 'macos'}
 					<!-- macOS: install script + run command -->
-					<div class="text-secondary text-sm">
+					<div class="text-secondary">
 						<b>{common_stepNumber({ number: '1' })}</b>
 						{daemons_downloadDaemon()}
 					</div>
 					<CodeContainer language="bash" expandable={false} code={installScript} />
-					<div class="text-secondary text-sm">
+					<div class="text-secondary">
 						<b>{common_stepNumber({ number: '2' })}</b>
 						{daemons_runDaemon()}
 					</div>
