@@ -50,7 +50,8 @@ export function useTopologiesQuery() {
 				throw new Error(data?.error || 'Failed to fetch topologies');
 			}
 			return data.data;
-		}
+		},
+		structuralSharing: false
 	}));
 }
 
