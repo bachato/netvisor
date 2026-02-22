@@ -157,9 +157,6 @@
 					<!-- Organization Info -->
 					<InfoCard title={settings_org_info()}>
 						<InfoRow label={common_name()}>{org.name}</InfoRow>
-						{#if org.plan}
-							<InfoRow label={common_plan()}>{org.plan.type}</InfoRow>
-						{/if}
 						<InfoRow label={common_created()}>
 							{formatTimestamp(org.created_at)}
 						</InfoRow>

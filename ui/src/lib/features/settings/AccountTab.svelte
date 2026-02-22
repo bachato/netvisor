@@ -189,7 +189,6 @@
 				<div class="space-y-6">
 					<!-- User Info -->
 					<InfoCard title={settings_account_userInfo()}>
-						<InfoRow label={common_organization()}>{organization?.name}</InfoRow>
 						<InfoRow label={common_email()}>{user.email}</InfoRow>
 						<InfoRow label={common_permissions()} mono={true}>{user.permissions}</InfoRow>
 						<InfoRow label={common_userId()} mono={true}>{user.id}</InfoRow>
