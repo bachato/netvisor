@@ -720,31 +720,29 @@
 
 				{#if selectedOS === 'linux'}
 					<!-- Linux Option 1: install script + run command -->
-					<div class="border-tertiary space-y-4 border-l-2 pl-4">
-						<div class="text-secondary">
-							<b>{common_optionNumber({ number: '1' })}</b>
-							{daemons_option1Text()}
-						</div>
-						<div class="text-secondary">
-							<b>{common_stepNumber({ number: '1' })}</b>
-							{daemons_downloadDaemon()}
-						</div>
-						<CodeContainer language="bash" expandable={false} code={installScript} />
-						<div class="text-secondary">
-							<b>{common_stepNumber({ number: '2' })}</b>
-							{daemons_runDaemon()}
-						</div>
-						<CodeContainer language="bash" expandable={false} code={runCommand} />
+					<div class="text-secondary">
+						<b>{common_optionNumber({ number: '1' })}</b>
+						{daemons_option1Text()}
 					</div>
+					<div class="text-secondary">
+						<b>{common_stepNumber({ number: '1' })}</b>
+						{daemons_downloadDaemon()}
+					</div>
+					<CodeContainer language="bash" expandable={false} code={installScript} />
+					<div class="text-secondary">
+						<b>{common_stepNumber({ number: '2' })}</b>
+						{daemons_runDaemon()}
+					</div>
+					<CodeContainer language="bash" expandable={false} code={runCommand} />
 
 					<!-- Linux Option 2: Docker Compose -->
-					<div class="border-tertiary space-y-4 border-l-2 pl-4">
+					<div class="border-tertiary border-t pt-4">
 						<div class="text-secondary">
 							<b>{common_optionNumber({ number: '2' })}</b>
 							{daemons_option2Text()}
 						</div>
-						<CodeContainer language="yaml" expandable={false} code={dockerCompose} />
 					</div>
+					<CodeContainer language="yaml" expandable={false} code={dockerCompose} />
 				{:else if selectedOS === 'macos'}
 					<!-- macOS: install script + run command -->
 					<div class="text-secondary">
