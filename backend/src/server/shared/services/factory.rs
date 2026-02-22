@@ -243,6 +243,8 @@ impl ServiceFactory {
         ));
 
         let email_service = config.clone().and_then(|c| {
+            let public_url = c.public_url.clone();
+
             // Prefer Brevo if API key is provided
             if let Some(ref brevo_api_key) = c.brevo_api_key {
                 let provider = Box::new(BrevoEmailProvider::new(brevo_api_key.clone()));
@@ -253,6 +255,7 @@ impl ServiceFactory {
                     host_service.clone(),
                     network_service.clone(),
                     service_service.clone(),
+                    public_url,
                 )));
             }
 
@@ -270,6 +273,7 @@ impl ServiceFactory {
                     host_service.clone(),
                     network_service.clone(),
                     service_service.clone(),
+                    public_url,
                 )));
             }
 

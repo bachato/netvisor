@@ -226,14 +226,14 @@ pub const DISCOVERY_GUIDE_FREE_BODY: &str = r#"                    <!-- Main Con
                                 <li><strong>Network scan:</strong> Scanopy scans your local subnets for other hosts, ports, and services.</li>
                                 <li><strong>Topology:</strong> Once discovery finishes, your interactive topology map will be ready.</li>
                             </ul>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">On the Free plan, discoveries run manually. Upgrade to unlock scheduled discovery that keeps your documentation current automatically.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">The first discovery runs automatically, but you'll need to trigger subsequent sessions manually. To keep your network map up to date, consider upgrading to a plan with scheduled discovery.</p>
                         </td>
                     </tr>
 
                     <!-- CTA Button -->
                     <tr>
                         <td align="center" style="padding: 0 40px 30px 40px;">
-                            <a href="https://app.scanopy.net/?modal=billing-plan" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Explore Plans</a>
+                            <a href="{base_url}/?modal=billing-plan" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Explore Plans</a>
                         </td>
                     </tr>
 "#;
@@ -272,7 +272,7 @@ pub const TOPOLOGY_READY_BODY: &str = r#"                    <!-- Main Content -
                     <!-- CTA Button -->
                     <tr>
                         <td align="center" style="padding: 0 40px 30px 40px;">
-                            <a href="https://app.scanopy.net" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">View Topology</a>
+                            <a href="{base_url}" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">View Topology</a>
                         </td>
                     </tr>
 "#;
@@ -285,14 +285,14 @@ pub const PLAN_LIMIT_APPROACHING_BODY: &str = r#"                    <!-- Main C
                             <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Approaching Plan Limit</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi {first_name},</p>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">You're using <strong>{current_count}</strong> of your <strong>{limit}</strong> included {limit_type} on the {plan_name} plan.</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Upgrade your plan to increase your limits and keep growing.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">{limit_message}</p>
                         </td>
                     </tr>
 
                     <!-- CTA Button -->
                     <tr>
                         <td align="center" style="padding: 0 40px 30px 40px;">
-                            <a href="https://app.scanopy.net/?modal=billing-plan" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Upgrade Plan</a>
+                            <a href="{base_url}/?modal={cta_modal}" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">{cta_label}</a>
                         </td>
                     </tr>
 "#;
@@ -304,15 +304,15 @@ pub const PLAN_LIMIT_REACHED_BODY: &str = r#"                    <!-- Main Conte
                         <td style="padding: 0 40px 20px 40px;">
                             <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Plan Limit Reached</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi {first_name},</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">You've reached <strong>{current_count}</strong> of your <strong>{limit}</strong> included {limit_type} on the {plan_name} plan. New {limit_type} may be blocked until you upgrade.</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Upgrade now to increase your limits and continue adding {limit_type}.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">You've reached <strong>{current_count}</strong> of your <strong>{limit}</strong> included {limit_type} on the {plan_name} plan.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">{limit_message}</p>
                         </td>
                     </tr>
 
                     <!-- CTA Button -->
                     <tr>
                         <td align="center" style="padding: 0 40px 30px 40px;">
-                            <a href="https://app.scanopy.net/?modal=billing-plan" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Upgrade Plan</a>
+                            <a href="{base_url}/?modal={cta_modal}" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">{cta_label}</a>
                         </td>
                     </tr>
 "#;

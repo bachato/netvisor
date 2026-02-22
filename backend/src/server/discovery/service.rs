@@ -712,7 +712,9 @@ impl DiscoveryService {
                         TelemetryOperation::FirstDiscoveryCompleted,
                         Utc::now(),
                         AuthenticatedEntity::System,
-                        serde_json::json!({}),
+                        serde_json::json!({
+                            "discovery_type": session.discovery_type.to_string(),
+                        }),
                     ))
                     .await;
             }

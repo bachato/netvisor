@@ -239,14 +239,34 @@ pub trait EmailProvider: Send + Sync {
         current_count: u64,
         limit: u64,
         plan_name: &str,
+        has_overage: bool,
     ) -> (String, String) {
+        let (limit_message, cta_modal, cta_label) = if has_overage {
+            (
+                format!(
+                    "Additional {} beyond your included amount will be billed automatically.",
+                    limit_type
+                ),
+                "settings&tab=billing",
+                "View Billing",
+            )
+        } else {
+            (
+                "Upgrade your plan to increase your limits and keep growing.".to_string(),
+                "billing-plan",
+                "Upgrade Plan",
+            )
+        };
         let body = self.build_email(
             PLAN_LIMIT_APPROACHING_BODY
                 .replace("{first_name}", first_name.unwrap_or("there"))
                 .replace("{limit_type}", limit_type)
                 .replace("{current_count}", &current_count.to_string())
                 .replace("{limit}", &limit.to_string())
-                .replace("{plan_name}", plan_name),
+                .replace("{plan_name}", plan_name)
+                .replace("{limit_message}", &limit_message)
+                .replace("{cta_modal}", cta_modal)
+                .replace("{cta_label}", cta_label),
         );
         let subject = PLAN_LIMIT_APPROACHING_TITLE.replace("{limit_type}", limit_type);
         (subject, body)
@@ -259,14 +279,37 @@ pub trait EmailProvider: Send + Sync {
         current_count: u64,
         limit: u64,
         plan_name: &str,
+        has_overage: bool,
     ) -> (String, String) {
+        let (limit_message, cta_modal, cta_label) = if has_overage {
+            (
+                format!(
+                    "Additional {} beyond your included amount are being billed automatically.",
+                    limit_type
+                ),
+                "settings&tab=billing",
+                "View Billing",
+            )
+        } else {
+            (
+                format!(
+                    "You won't be able to add new {} until you upgrade.",
+                    limit_type
+                ),
+                "billing-plan",
+                "Upgrade Plan",
+            )
+        };
         let body = self.build_email(
             PLAN_LIMIT_REACHED_BODY
                 .replace("{first_name}", first_name.unwrap_or("there"))
                 .replace("{limit_type}", limit_type)
                 .replace("{current_count}", &current_count.to_string())
                 .replace("{limit}", &limit.to_string())
-                .replace("{plan_name}", plan_name),
+                .replace("{plan_name}", plan_name)
+                .replace("{limit_message}", &limit_message)
+                .replace("{cta_modal}", cta_modal)
+                .replace("{cta_label}", cta_label),
         );
         let subject = PLAN_LIMIT_REACHED_TITLE.replace("{limit_type}", limit_type);
         (subject, body)
@@ -281,6 +324,7 @@ pub struct EmailService {
     pub host_service: Arc<HostService>,
     pub network_service: Arc<NetworkService>,
     pub service_service: Arc<ServiceService>,
+    pub public_url: String,
 }
 
 impl EmailService {
@@ -291,6 +335,7 @@ impl EmailService {
         host_service: Arc<HostService>,
         network_service: Arc<NetworkService>,
         service_service: Arc<ServiceService>,
+        public_url: String,
     ) -> Self {
         Self {
             provider,
@@ -299,6 +344,7 @@ impl EmailService {
             host_service,
             network_service,
             service_service,
+            public_url,
         }
     }
 
@@ -406,6 +452,7 @@ impl EmailService {
                 network_name,
             )
         };
+        let body = body.replace("{base_url}", &self.public_url);
         self.provider.send_billing_email(to, subject, body).await
     }
 
@@ -464,6 +511,7 @@ impl EmailService {
             service_count,
             &network_name,
         );
+        let body = body.replace("{base_url}", &self.public_url);
         self.provider
             .send_billing_email(owner_email, subject, body)
             .await
@@ -492,6 +540,7 @@ impl EmailService {
             count: u64,
             limit_type: &'static str,
             level: LimitNotificationLevel,
+            has_overage: bool,
         }
 
         let network_filter = StorableFilter::<Network>::new_from_org_id(&org_id);
@@ -509,24 +558,28 @@ impl EmailService {
         let user_filter = StorableFilter::<User>::new_from_org_id(&org_id);
         let seat_count = self.user_service.get_all(user_filter).await?.len() as u64;
 
+        let config = plan.config();
         let checks = vec![
             LimitCheck {
                 limit: plan.host_limit(),
                 count: host_count,
                 limit_type: "hosts",
                 level: notifications.hosts.clone(),
+                has_overage: config.host_cents.is_some(),
             },
             LimitCheck {
                 limit: plan.network_limit(),
                 count: network_count,
                 limit_type: "networks",
                 level: notifications.networks.clone(),
+                has_overage: config.network_cents.is_some(),
             },
             LimitCheck {
                 limit: plan.seat_limit(),
                 count: seat_count,
                 limit_type: "seats",
                 level: notifications.seats.clone(),
+                has_overage: config.seat_cents.is_some(),
             },
         ];
 
@@ -545,18 +598,20 @@ impl EmailService {
                         check.count,
                         limit,
                         &plan_name,
+                        check.has_overage,
                     );
                     emails_to_send.push((subject, body));
                 }
                 LimitNotificationLevel::Reached
             } else if check.count >= threshold_80 {
-                if check.level == LimitNotificationLevel::None {
+                if check.level != LimitNotificationLevel::Approaching {
                     let (subject, body) = self.provider.build_plan_limit_approaching_email(
                         None,
                         check.limit_type,
                         check.count,
                         limit,
                         &plan_name,
+                        check.has_overage,
                     );
                     emails_to_send.push((subject, body));
                 }
@@ -580,6 +635,7 @@ impl EmailService {
             && let Ok(owner_email) = self.get_owner_email(&org_id).await
         {
             for (subject, body) in emails_to_send {
+                let body = body.replace("{base_url}", &self.public_url);
                 if let Err(e) = self
                     .provider
                     .send_billing_email(owner_email.clone(), subject, body)

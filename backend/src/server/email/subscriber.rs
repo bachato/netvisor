@@ -101,7 +101,18 @@ impl EventSubscriber for EmailService {
                         }
                     }
                     TelemetryOperation::FirstDiscoveryCompleted => {
-                        if let Err(e) = self.send_topology_ready_for_org(t.organization_id).await {
+                        // Only send topology ready email for Network discoveries, not SelfReport
+                        let is_network = t
+                            .metadata
+                            .get("discovery_type")
+                            .and_then(|v| v.as_str())
+                            .map(|dt| dt.starts_with("Network"))
+                            .unwrap_or(false);
+
+                        if is_network
+                            && let Err(e) =
+                                self.send_topology_ready_for_org(t.organization_id).await
+                        {
                             tracing::warn!(
                                 organization_id = %t.organization_id,
                                 error = %e,
