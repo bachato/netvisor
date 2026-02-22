@@ -704,14 +704,14 @@ impl BillingService {
         );
 
         match event.type_ {
-            EventType::CustomerSubscriptionCreated => {
-                tracing::info!(
-                    event_id = %event.id,
-                    "Ignoring subscription.created webhook (handled via subscription.updated)"
-                );
-            }
-            EventType::CustomerSubscriptionUpdated => {
-                if let EventObject::CustomerSubscriptionUpdated(sub) = event.data.object {
+            EventType::CustomerSubscriptionCreated | EventType::CustomerSubscriptionUpdated => {
+                let sub = match event.data.object {
+                    EventObject::CustomerSubscriptionCreated(sub) => Some(sub),
+                    EventObject::CustomerSubscriptionUpdated(sub) => Some(sub),
+                    _ => None,
+                };
+
+                if let Some(sub) = sub {
                     self.handle_subscription_update(sub).await?;
                 }
             }
