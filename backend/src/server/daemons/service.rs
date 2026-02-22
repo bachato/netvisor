@@ -663,11 +663,11 @@ impl DaemonService {
 
         daemon.id = request.daemon_id;
 
-        // Send telemetry event if this is the organization's first daemon
-        self.emit_first_daemon_telemetry(daemon.id, daemon.base.network_id)
-            .await?;
-
         let registered_daemon = self.create(daemon, auth.clone()).await?;
+
+        // Send telemetry event if this is the organization's first daemon
+        self.emit_first_daemon_telemetry(registered_daemon.id, registered_daemon.base.network_id)
+            .await?;
 
         // Create default discovery jobs
         let is_free_plan = matches!(org.base.plan, Some(BillingPlan::Free(_)));

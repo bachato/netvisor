@@ -22,15 +22,15 @@ impl EventSubscriber for EmailService {
             entity_operations: Some(HashMap::from([
                 (
                     EntityDiscriminants::Host,
-                    Some(vec![EntityOperation::Created]),
+                    Some(vec![EntityOperation::Created, EntityOperation::Deleted]),
                 ),
                 (
                     EntityDiscriminants::Network,
-                    Some(vec![EntityOperation::Created]),
+                    Some(vec![EntityOperation::Created, EntityOperation::Deleted]),
                 ),
                 (
                     EntityDiscriminants::User,
-                    Some(vec![EntityOperation::Created]),
+                    Some(vec![EntityOperation::Created, EntityOperation::Deleted]),
                 ),
             ])),
             telemetry_operations: Some(vec![
