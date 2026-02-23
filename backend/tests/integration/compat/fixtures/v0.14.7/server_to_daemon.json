@@ -5,8 +5,8 @@
       "method": "POST",
       "path": "/api/initialize",
       "request_body": {
-        "api_key": "scp_d_WNUfJA6bV5hn5hbIDKUPmBBdbjb6PXWR",
-        "network_id": "693ca06a-5aec-459d-99f5-120c2ebe4f49"
+        "api_key": "scp_d_Oh1oerZe4CG2Ma6aarVXkRHXHn5GM86s",
+        "network_id": "aba491f2-de43-41c7-a78d-c5601ba88a75"
       },
       "response_status": 200,
       "response_body": {
@@ -22,7 +22,7 @@
       "method": "POST",
       "path": "/api/first-contact",
       "request_body": {
-        "daemon_id": "105c7d00-b271-48d0-9f6f-59c07f9f40d3",
+        "daemon_id": "83b6c74c-3422-447e-9bd8-26d737814717",
         "server_capabilities": {
           "minimum_daemon_version": "0.12.0",
           "server_version": "0.14.7"
@@ -80,12 +80,12 @@
           "subnet_ids": null,
           "type": "Network"
         },
-        "session_id": "fc763d82-db54-4afe-a68c-383a21cc24a2"
+        "session_id": "969d115c-0112-4ba3-8757-bb1ece340112"
       },
       "response_status": 200,
       "response_body": {
         "data": {
-          "session_id": "fc763d82-db54-4afe-a68c-383a21cc24a2"
+          "session_id": "969d115c-0112-4ba3-8757-bb1ece340112"
         },
         "meta": {
           "api_version": 1,
@@ -123,19 +123,19 @@
         "hosts": [],
         "subnets": [
           [
-            "0af03084-8e9f-4cd3-8961-66d52c62ea00",
+            "d0001b27-6561-4c29-85a5-a0838ea68455",
             {
               "cidr": "172.25.0.0/28",
-              "created_at": "2026-02-23T01:12:27.226334938Z",
+              "created_at": "2026-02-23T01:53:22.009883518Z",
               "description": null,
-              "id": "0af03084-8e9f-4cd3-8961-66d52c62ea00",
+              "id": "d0001b27-6561-4c29-85a5-a0838ea68455",
               "name": "172.25.0.0/28",
-              "network_id": "693ca06a-5aec-459d-99f5-120c2ebe4f49",
+              "network_id": "aba491f2-de43-41c7-a78d-c5601ba88a75",
               "source": {
                 "metadata": [
                   {
-                    "daemon_id": "105c7d00-b271-48d0-9f6f-59c07f9f40d3",
-                    "date": "2026-02-23T01:12:27.226330641Z",
+                    "daemon_id": "83b6c74c-3422-447e-9bd8-26d737814717",
+                    "date": "2026-02-23T01:53:22.009879240Z",
                     "host_naming_fallback": "BestService",
                     "probe_raw_socket_ports": false,
                     "snmp_credentials": {
@@ -150,7 +150,7 @@
               },
               "subnet_type": "Lan",
               "tags": [],
-              "updated_at": "2026-02-23T01:12:27.226334938Z"
+              "updated_at": "2026-02-23T01:53:22.009883518Z"
             }
           ]
         ]
