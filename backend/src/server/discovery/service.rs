@@ -697,6 +697,7 @@ impl DiscoveryService {
 
             // Emit FirstDiscoveryCompleted telemetry if this is the org's first completed discovery
             if session.phase == DiscoveryPhase::Complete
+                && matches!(session.discovery_type, DiscoveryType::Network { .. })
                 && let Ok(Some(network)) = self.network_service.get_by_id(&network_id).await
                 && let Ok(Some(org)) = self
                     .organization_service
@@ -712,7 +713,9 @@ impl DiscoveryService {
                         TelemetryOperation::FirstDiscoveryCompleted,
                         Utc::now(),
                         AuthenticatedEntity::System,
-                        serde_json::json!({}),
+                        serde_json::json!({
+                            "discovery_type": session.discovery_type.to_string(),
+                        }),
                     ))
                     .await;
             }

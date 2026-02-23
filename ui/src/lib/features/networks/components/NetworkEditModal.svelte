@@ -40,7 +40,8 @@
 		onCreate,
 		onUpdate,
 		onClose,
-		onDelete = null
+		onDelete = null,
+		name = undefined
 	}: {
 		network?: Network | null;
 		isOpen?: boolean;
@@ -48,6 +49,7 @@
 		onUpdate: (id: string, data: Network) => Promise<void> | void;
 		onClose: () => void;
 		onDelete?: ((id: string) => Promise<void> | void) | null;
+		name?: string;
 	} = $props();
 
 	// TanStack Query for organization and current user
@@ -202,6 +204,8 @@
 <GenericModal
 	{isOpen}
 	{title}
+	{name}
+	entityId={network?.id}
 	size="xl"
 	onClose={handleClose}
 	onOpen={handleOpen}

@@ -21,6 +21,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_services,
 		services_confirmBulkDelete,
@@ -119,6 +120,22 @@
 
 	let showServiceEditor = $state(false);
 	let editingService = $state<Service | null>(null);
+
+	// Deep-link: open service editor from URL
+	$effect(() => {
+		if ($modalState.name === 'service-editor' && !showServiceEditor) {
+			if ($modalState.id) {
+				const service = servicesData.find((e) => e.id === $modalState.id);
+				if (service) {
+					const host = serviceHosts.get(service.id);
+					if (host) {
+						editingService = service;
+						showServiceEditor = true;
+					}
+				}
+			}
+		}
+	});
 
 	function handleEditService(service: Service) {
 		editingService = service;
@@ -282,6 +299,7 @@
 	{@const editingServiceHost = serviceHosts.get(editingService.id)}
 	{#if editingServiceHost}
 		<ServiceEditModal
+			name="service-editor"
 			service={editingService}
 			host={editingServiceHost}
 			isOpen={showServiceEditor}

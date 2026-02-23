@@ -73,6 +73,7 @@ erDiagram
   timestamp_with_time_zone email_verification_expires
   text password_reset_token
   timestamp_with_time_zone password_reset_expires
+  text pending_email
 }
 "public.networks" {
   uuid id
@@ -187,6 +188,7 @@ erDiagram
   text brevo_company_id
   boolean has_payment_method
   timestamp_with_time_zone trial_end_date
+  jsonb plan_limit_notifications
 }
 "public.topologies" {
   uuid id

@@ -7,7 +7,7 @@ WORKDIR /app/ui
 
 # Copy package files and install dependencies
 COPY ui/package*.json ./
-RUN npm ci --frozen-lockfile
+RUN npm ci
 
 # Copy UI source code
 COPY ui/ ./

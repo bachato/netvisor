@@ -49,9 +49,17 @@
 		onUpdate: (data: ApiKey) => Promise<void> | void;
 		onDelete?: ((id: string) => Promise<void> | void) | null;
 		apiKey?: ApiKey | null;
+		name?: string;
 	}
 
-	let { isOpen = false, onClose, onUpdate, onDelete = null, apiKey = null }: Props = $props();
+	let {
+		isOpen = false,
+		onClose,
+		onUpdate,
+		onDelete = null,
+		apiKey = null,
+		name = undefined
+	}: Props = $props();
 
 	// TanStack Query hooks
 	const networksQuery = useNetworksQuery();
@@ -176,6 +184,8 @@
 <GenericModal
 	{isOpen}
 	{title}
+	{name}
+	entityId={apiKey?.id}
 	size="xl"
 	onClose={handleOnClose}
 	onOpen={handleOpen}

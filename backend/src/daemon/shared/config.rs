@@ -37,7 +37,7 @@ pub struct DaemonCli {
     #[arg(long)]
     log_level: Option<String>,
 
-    /// Seconds between heartbeat updates / work requests (for daemons in pull mode) to server
+    /// Seconds between heartbeat updates to the server
     #[arg(long)]
     heartbeat_interval: Option<u64>,
 
@@ -53,7 +53,7 @@ pub struct DaemonCli {
     #[arg(long)]
     daemon_api_key: Option<String>,
 
-    /// Optional proxy for Docker API. Can use both non-SSL and SSL proxy; SSL proxy requires additional SSL config vars
+    /// Optional local proxy for Docker API on the daemon host. Supports non-SSL and SSL; SSL requires additional config vars
     #[arg(long)]
     docker_proxy: Option<String>,
 
@@ -105,7 +105,7 @@ pub struct DaemonCli {
     #[arg(long)]
     port_scan_batch_size: Option<usize>,
 
-    /// Restrict daemon to specific network interface(s). Comma-separated for multiple (e.g., eth0,eth1). Leave empty for all interfaces. Only applies to network discovery
+    /// Restrict daemon to specific network interface(s). Comma-separated for multiple (e.g., eth0,eth1). Leave empty for all interfaces
     #[arg(long, value_delimiter = ',')]
     interfaces: Option<Vec<String>>,
 }

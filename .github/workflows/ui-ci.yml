@@ -23,7 +23,9 @@ jobs:
   lint-and-test:
     name: ui-lint-and-test
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
       
@@ -35,7 +37,7 @@ jobs:
           cache-dependency-path: ui/package-lock.json
       
       - name: Install dependencies
-        run: npm ci --frozen-lockfile
+        run: npm ci
       
       - name: Check formatting
         run: npm run format -- --check

@@ -16,6 +16,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import {
 		common_create,
+		common_created,
 		common_name,
 		common_networks,
 		common_tags,
@@ -36,6 +37,7 @@
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 
 	// Queries
 	const currentUserQuery = useCurrentUserQuery();
@@ -71,6 +73,22 @@
 
 	let showCreateNetworkModal = $state(false);
 	let editingNetwork = $state<Network | null>(null);
+
+	// Deep-link: open network editor from URL
+	$effect(() => {
+		if ($modalState.name === 'network-editor' && !showCreateNetworkModal) {
+			if ($modalState.id) {
+				const network = networksData.find((e) => e.id === $modalState.id);
+				if (network) {
+					editingNetwork = network;
+					showCreateNetworkModal = true;
+				}
+			} else {
+				editingNetwork = null;
+				showCreateNetworkModal = true;
+			}
+		}
+	});
 
 	let allowBulkDelete = $derived(
 		!isReadOnly && currentUser
@@ -146,7 +164,8 @@
 			key: 'name',
 			label: common_name(),
 			type: 'string',
-			searchable: true
+			searchable: true,
+			sortable: true
 		},
 		{
 			key: 'tags',
@@ -160,6 +179,12 @@
 					.map((id) => tagsData.find((t) => t.id === id)?.name)
 					.filter((name): name is string => !!name);
 			}
+		},
+		{
+			key: 'created_at',
+			label: common_created(),
+			type: 'date',
+			sortable: true
 		}
 	];
 </script>
@@ -230,6 +255,7 @@
 </div>
 
 <NetworkEditModal
+	name="network-editor"
 	isOpen={showCreateNetworkModal}
 	network={editingNetwork}
 	onCreate={handleNetworkCreate}

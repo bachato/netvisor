@@ -6,7 +6,7 @@
 //! - Polling loop for ServerPoll mode (formerly in poller.rs)
 //! - HTTP client for daemon communication
 
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Error, Result};
@@ -84,7 +84,7 @@ pub struct DaemonService {
 
     // Lazy dependency (set after construction to break circular dependency)
     // HostService uses DaemonService, and DaemonService uses HostService
-    host_service: OnceLock<Arc<HostService>>,
+    host_service: std::sync::OnceLock<Arc<HostService>>,
 
     // Polling state
     poll_semaphore: Arc<Semaphore>,
@@ -149,7 +149,7 @@ impl DaemonService {
             organization_service,
             user_service,
             daemon_api_key_service,
-            host_service: OnceLock::new(),
+            host_service: std::sync::OnceLock::new(),
             poll_semaphore: Arc::new(Semaphore::new(MAX_CONCURRENT_POLLS)),
         }
     }
@@ -663,11 +663,11 @@ impl DaemonService {
 
         daemon.id = request.daemon_id;
 
-        // Send telemetry event if this is the organization's first daemon
-        self.emit_first_daemon_telemetry(daemon.id, daemon.base.network_id)
-            .await?;
-
         let registered_daemon = self.create(daemon, auth.clone()).await?;
+
+        // Send telemetry event if this is the organization's first daemon
+        self.emit_first_daemon_telemetry(registered_daemon.id, registered_daemon.base.network_id)
+            .await?;
 
         // Create default discovery jobs
         let is_free_plan = matches!(org.base.plan, Some(BillingPlan::Free(_)));
@@ -1003,6 +1003,12 @@ impl DaemonService {
             .ok_or_else(|| ApiError::not_found("Organization not found".to_string()))?;
 
         if org.not_onboarded(&TelemetryOperation::FirstDaemonRegistered) {
+            let daemon_name = self
+                .get_by_id(&daemon_id)
+                .await?
+                .map(|d| d.base.name.clone())
+                .unwrap_or_else(|| "your daemon".to_string());
+
             tracing::info!(
                 daemon_id = %daemon_id,
                 organization_id = %org.id,
@@ -1016,7 +1022,9 @@ impl DaemonService {
                     operation: TelemetryOperation::FirstDaemonRegistered,
                     timestamp: Utc::now(),
                     metadata: serde_json::json!({
-                        "mode": "server_poll"
+                        "mode": "server_poll",
+                        "daemon_name": daemon_name,
+                        "network_name": network.base.name,
                     }),
                     authentication: AuthenticatedEntity::System,
                 })

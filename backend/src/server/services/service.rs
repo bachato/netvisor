@@ -21,7 +21,10 @@ use crate::server::{
         position::next_position,
         services::traits::{ChildCrudService, CrudService, EventBusService},
         storage::{filter::StorableFilter, generic::GenericPostgresStorage, traits::Storage},
-        types::{api::ValidationError, entities::EntitySource},
+        types::{
+            api::ValidationError,
+            entities::{EntitySource, MAX_DISCOVERY_METADATA_ENTRIES},
+        },
     },
 };
 use anyhow::anyhow;
@@ -968,11 +971,12 @@ impl ServiceService {
                     details: new_service_details,
                 },
             ) => {
-                let new_metadata = [
+                let mut new_metadata = [
                     new_service_metadata.clone(),
                     existing_service_metadata.clone(),
                 ]
                 .concat();
+                new_metadata.truncate(MAX_DISCOVERY_METADATA_ENTRIES);
 
                 // Max confidence
                 let confidence = existing_service_details

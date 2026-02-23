@@ -94,14 +94,10 @@ impl EventSubscriber for TopologyService {
                 if let Entity::Topology(boxed_topology) = entity_event.entity_type.clone()
                     && entity_event.operation == EntityOperation::Updated
                 {
-                    let mut topology = *boxed_topology;
-                    if trigger_stale {
-                        topology.base.is_stale = true;
-                    }
-
-                    topology.base.services = self
-                        .get_service_data(network_id, &topology.base.options)
-                        .await?;
+                    let topology = *boxed_topology;
+                    // Don't override is_stale — the handler already set the correct
+                    // value (rebuild clears it, refresh marks it).
+                    // Services were already set by the handler — no need to re-fetch.
 
                     let _ = self.staleness_tx.send(topology).inspect_err(|e| {
                         tracing::debug!("Staleness notification skipped (no receivers): {}", e)

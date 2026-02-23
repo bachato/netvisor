@@ -374,6 +374,18 @@ impl OidcService {
             .await?
             .ok_or_else(|| anyhow::anyhow!("User not found"))?;
 
+        // Verify OIDC email matches Scanopy account email
+        if let Some(ref oidc_email) = user_info.email
+            && !oidc_email.eq_ignore_ascii_case(user.base.email.as_ref())
+        {
+            return Err(anyhow!(
+                "The email from your {} account ({}) doesn't match your Scanopy account email. \
+                 Please use an account with the same email address.",
+                provider.name,
+                oidc_email
+            ));
+        }
+
         // ERROR if user already has a different OIDC provider linked
         if let Some(existing_provider) = &user.base.oidc_provider
             && existing_provider != provider_slug
@@ -416,7 +428,14 @@ impl OidcService {
             })
             .await?;
 
-        self.user_service.update(&mut user, authentication).await
+        let result = self.user_service.update(&mut user, authentication).await?;
+
+        // Send notification email
+        self.auth_service
+            .send_oidc_linked_notification(result.base.email.clone(), &provider.name)
+            .await;
+
+        Ok(result)
     }
 
     /// Unlink OIDC from user
@@ -472,6 +491,13 @@ impl OidcService {
             })
             .await?;
 
-        self.user_service.update(&mut user, authentication).await
+        let result = self.user_service.update(&mut user, authentication).await?;
+
+        // Send notification email
+        self.auth_service
+            .send_oidc_unlinked_notification(result.base.email.clone(), &provider.name)
+            .await;
+
+        Ok(result)
     }
 }

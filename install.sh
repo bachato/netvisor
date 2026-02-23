@@ -3,6 +3,17 @@ set -e
 
 REPO="scanopy/scanopy"
 PLATFORM=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+case "$PLATFORM" in
+    mingw*|msys*|cygwin*)
+        echo "Windows detected. This install script is for Linux and macOS."
+        echo ""
+        echo "To install on Windows, go to the Scanopy web UI and create a daemon — it will"
+        echo "generate the correct PowerShell download and run commands for you."
+        exit 1
+        ;;
+esac
+
 ARCH=$(uname -m)
 
 # Map architecture names to match release binaries

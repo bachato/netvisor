@@ -21,6 +21,7 @@
 
 	let {
 		apiKey,
+		isInUse = false,
 		onDelete = () => {},
 		onEdit = () => {},
 		viewMode,
@@ -28,6 +29,7 @@
 		onSelectionChange = () => {}
 	}: {
 		apiKey: ApiKey;
+		isInUse?: boolean;
 		onDelete?: (apiKey: ApiKey) => void;
 		onEdit?: (apiKey: ApiKey) => void;
 		viewMode: 'card' | 'list';
@@ -68,6 +70,7 @@
 				label: common_delete(),
 				icon: Trash2,
 				class: 'btn-icon-danger',
+				disabled: isInUse,
 				onClick: () => onDelete(apiKey)
 			},
 			{

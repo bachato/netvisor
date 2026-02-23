@@ -108,60 +108,6 @@ export const fieldDefs: FieldDef[] = [
 		validators: [portRangeValidation],
 		showWhen: (values) => values.mode === 'server_poll'
 	},
-	// Network section
-	{
-		id: 'bindAddress',
-		label: () => m.daemons_config_bindAddress(),
-		type: 'string',
-		defaultValue: '',
-		cliFlag: '--bind-address',
-		envVar: 'SCANOPY_BIND_ADDRESS',
-		helpText: () => m.daemons_config_bindAddressHelp(),
-		placeholder: '0.0.0.0',
-		section: () => m.daemons_config_sectionServerConnection(),
-		validators: [ipAddressFormat],
-		showWhen: (values) => values.mode === 'server_poll'
-	},
-	{
-		id: 'allowSelfSignedCerts',
-		label: () => m.daemons_config_allowSelfSignedCerts(),
-		type: 'boolean',
-		defaultValue: false,
-		cliFlag: '--allow-self-signed-certs',
-		envVar: 'SCANOPY_ALLOW_SELF_SIGNED_CERTS',
-		helpText: () => m.daemons_config_allowSelfSignedCertsHelp(),
-		section: () => m.daemons_config_sectionServerConnection(),
-		showWhen: (values) => values.mode === 'daemon_poll'
-	},
-	// Performance section
-	{
-		id: 'logLevel',
-		label: () => m.daemons_config_logLevel(),
-		type: 'select',
-		defaultValue: 'info',
-		cliFlag: '--log-level',
-		envVar: 'SCANOPY_LOG_LEVEL',
-		helpText: () => m.daemons_config_logLevelHelp(),
-		section: () => m.common_performance(),
-		options: [
-			{ label: () => m.common_trace(), value: 'trace' },
-			{ label: () => m.common_debug(), value: 'debug' },
-			{ label: () => m.common_info(), value: 'info' },
-			{ label: () => m.common_warn(), value: 'warn' },
-			{ label: () => m.common_error(), value: 'error' }
-		]
-	},
-	{
-		id: 'heartbeatInterval',
-		label: () => m.daemons_config_heartbeatInterval(),
-		type: 'number',
-		placeholder: 30,
-		cliFlag: '--heartbeat-interval',
-		envVar: 'SCANOPY_HEARTBEAT_INTERVAL',
-		helpText: () => m.daemons_config_heartbeatIntervalHelp(),
-		section: () => m.common_performance(),
-		validators: [min(0), max(300)]
-	},
 	// Docker Discovery
 	{
 		id: 'dockerProxy',
@@ -283,5 +229,70 @@ export const fieldDefs: FieldDef[] = [
 		helpText: () => m.daemons_config_concurrentScansHelp(),
 		placeholder: () => m.common_auto(),
 		section: () => m.daemons_config_sectionNetworkDiscovery()
+	},
+	// Server Connection
+	{
+		id: 'bindAddress',
+		label: () => m.daemons_config_bindAddress(),
+		type: 'string',
+		defaultValue: '',
+		cliFlag: '--bind-address',
+		envVar: 'SCANOPY_BIND_ADDRESS',
+		helpText: () => m.daemons_config_bindAddressHelp(),
+		placeholder: '0.0.0.0',
+		section: () => m.daemons_config_sectionServerConnection(),
+		validators: [ipAddressFormat],
+		showWhen: (values) => values.mode === 'server_poll'
+	},
+	{
+		id: 'allowSelfSignedCerts',
+		label: () => m.daemons_config_allowSelfSignedCerts(),
+		type: 'boolean',
+		defaultValue: false,
+		cliFlag: '--allow-self-signed-certs',
+		envVar: 'SCANOPY_ALLOW_SELF_SIGNED_CERTS',
+		helpText: () => m.daemons_config_allowSelfSignedCertsHelp(),
+		section: () => m.daemons_config_sectionServerConnection(),
+		showWhen: (values) => values.mode === 'daemon_poll'
+	},
+	// Performance
+	{
+		id: 'logLevel',
+		label: () => m.daemons_config_logLevel(),
+		type: 'select',
+		defaultValue: 'info',
+		cliFlag: '--log-level',
+		envVar: 'SCANOPY_LOG_LEVEL',
+		helpText: () => m.daemons_config_logLevelHelp(),
+		section: () => m.common_performance(),
+		options: [
+			{ label: () => m.common_trace(), value: 'trace' },
+			{ label: () => m.common_debug(), value: 'debug' },
+			{ label: () => m.common_info(), value: 'info' },
+			{ label: () => m.common_warn(), value: 'warn' },
+			{ label: () => m.common_error(), value: 'error' }
+		]
+	},
+	{
+		id: 'heartbeatInterval',
+		label: () => m.daemons_config_heartbeatInterval(),
+		type: 'number',
+		placeholder: 30,
+		cliFlag: '--heartbeat-interval',
+		envVar: 'SCANOPY_HEARTBEAT_INTERVAL',
+		helpText: () => m.daemons_config_heartbeatIntervalHelp(),
+		section: () => m.common_performance(),
+		validators: [min(0), max(300)],
+		showWhen: (values) => values.mode === 'daemon_poll'
 	}
 ];
+
+export const sectionDefs: Record<string, { description: () => string; docsHint?: () => string }> = {
+	'Docker Discovery': {
+		description: () => m.daemons_config_sectionDockerDiscoveryDesc(),
+		docsHint: () => m.daemons_docsDockerProxy()
+	},
+	'Network Discovery': { description: () => m.daemons_config_sectionNetworkDiscoveryDesc() },
+	'Server Connection': { description: () => m.daemons_config_sectionServerConnectionDesc() },
+	Performance: { description: () => m.daemons_config_sectionPerformanceDesc() }
+};

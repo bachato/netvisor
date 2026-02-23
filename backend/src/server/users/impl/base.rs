@@ -42,9 +42,13 @@ pub struct UserBase {
     /// Password hash - None for legacy users created before auth migration or users using OIDC
     #[serde(skip)] // Never send to client, never accept from client
     pub password_hash: Option<String>,
+    /// Whether the user has a password set — computed from password_hash, never stored in DB
+    #[serde(default)]
+    #[schema(read_only)]
+    pub has_password: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub oidc_provider: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip)]
     pub oidc_subject: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub oidc_linked_at: Option<DateTime<Utc>>,
@@ -69,6 +73,9 @@ pub struct UserBase {
     /// Expiration time for password reset token
     #[serde(skip)]
     pub password_reset_expires: Option<DateTime<Utc>>,
+    /// Pending email address for email change flow - never exposed to client
+    #[serde(skip)]
+    pub pending_email: Option<EmailAddress>,
 }
 
 impl Default for UserBase {
@@ -78,6 +85,7 @@ impl Default for UserBase {
             permissions: UserOrgPermissions::Owner,
             organization_id: Uuid::new_v4(),
             password_hash: None,
+            has_password: false,
             oidc_linked_at: None,
             oidc_provider: None,
             oidc_subject: None,
@@ -88,6 +96,7 @@ impl Default for UserBase {
             email_verification_expires: None,
             password_reset_token: None,
             password_reset_expires: None,
+            pending_email: None,
         }
     }
 }
@@ -105,6 +114,7 @@ impl UserBase {
         Self {
             email,
             password_hash: None,
+            has_password: false,
             oidc_linked_at: Some(Utc::now()),
             permissions,
             organization_id,
@@ -118,6 +128,7 @@ impl UserBase {
             email_verification_expires: None,
             password_reset_token: None,
             password_reset_expires: None,
+            pending_email: None,
         }
     }
 
@@ -132,6 +143,7 @@ impl UserBase {
         Self {
             email,
             password_hash: Some(password_hash),
+            has_password: true,
             organization_id,
             permissions,
             oidc_linked_at: None,
@@ -145,6 +157,7 @@ impl UserBase {
             email_verification_expires: None,
             password_reset_token: None,
             password_reset_expires: None,
+            pending_email: None,
         }
     }
 }
@@ -170,6 +183,7 @@ pub struct User {
 impl User {
     pub fn set_password(&mut self, password_hash: String) {
         self.base.password_hash = Some(password_hash);
+        self.base.has_password = true;
         self.updated_at = Utc::now();
     }
 }
@@ -244,6 +258,7 @@ impl Storable for User {
                     email_verification_expires,
                     password_reset_token,
                     password_reset_expires,
+                    pending_email,
                     ..
                 },
         } = self.clone();
@@ -267,6 +282,7 @@ impl Storable for User {
                 "email_verification_expires",
                 "password_reset_token",
                 "password_reset_expires",
+                "pending_email",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -285,6 +301,7 @@ impl Storable for User {
                 SqlValue::OptionTimestamp(email_verification_expires),
                 SqlValue::OptionalString(password_reset_token),
                 SqlValue::OptionTimestamp(password_reset_expires),
+                SqlValue::OptionalString(pending_email.map(|e| e.to_string())),
             ],
         ))
     }
@@ -298,6 +315,13 @@ impl Storable for User {
             .parse()
             .or(Err(Error::msg("Failed to parse permissions")))?;
 
+        let pending_email: Option<EmailAddress> = row
+            .get::<Option<String>, _>("pending_email")
+            .and_then(|s| EmailAddress::from_str(&s).ok());
+
+        let password_hash: Option<String> = row.get("password_hash");
+        let has_password = password_hash.is_some();
+
         // Note: network_ids is populated separately from user_network_access junction table
         Ok(User {
             id: row.get("id"),
@@ -305,7 +329,8 @@ impl Storable for User {
             updated_at: row.get("updated_at"),
             base: UserBase {
                 email,
-                password_hash: row.get("password_hash"),
+                password_hash,
+                has_password,
                 permissions,
                 organization_id: row.get("organization_id"),
                 oidc_linked_at: row.get("oidc_linked_at"),
@@ -318,6 +343,7 @@ impl Storable for User {
                 email_verification_expires: row.get("email_verification_expires"),
                 password_reset_token: row.get("password_reset_token"),
                 password_reset_expires: row.get("password_reset_expires"),
+                pending_email,
             },
         })
     }

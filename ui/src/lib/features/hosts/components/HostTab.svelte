@@ -28,6 +28,7 @@
 		common_hosts,
 		common_name,
 		common_network,
+		common_services,
 		common_tags,
 		common_unknownNetwork,
 		common_updated,
@@ -48,9 +49,10 @@
 		useConsolidateHostsMutation,
 		type HostQueryOptions
 	} from '../queries';
-	import { useServicesByIds } from '$lib/features/services/queries';
+	import { useServicesByIds, useServicesCacheQuery } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import type { components } from '$lib/api/schema';
 
 	type HostOrderField = components['schemas']['HostOrderField'];
@@ -109,6 +111,8 @@
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let hostsPagination = $derived(hostsQuery.data?.pagination ?? null);
 	let servicesData = $derived(servicesQuery.data ?? []);
+	const servicesCacheQuery = useServicesCacheQuery();
+	let allServicesData = $derived(servicesCacheQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
 	// Only show full loading on initial load (no data yet)
 	let isInitialLoading = $derived(hostsQuery.isPending && !hostsQuery.data);
@@ -157,6 +161,22 @@
 
 	let otherHost = $state<Host | null>(null);
 	let showHostConsolidationModal = $state(false);
+
+	// Deep-link: open host editor from URL
+	$effect(() => {
+		if ($modalState.name === 'host-editor' && !showHostEditor) {
+			if ($modalState.id) {
+				const host = hostsData.find((h) => h.id === $modalState.id);
+				if (host) {
+					editingHost = host;
+					showHostEditor = true;
+				}
+			} else {
+				editingHost = null;
+				showHostEditor = true;
+			}
+		}
+	});
 
 	// Define field configuration for the DataTableControls
 	// Uses defineFields to ensure all HostOrderField values are covered
@@ -211,6 +231,15 @@
 						entity.tags
 							.map((id) => tagsData.find((t) => t.id === id)?.name)
 							.filter((name): name is string => !!name)
+				},
+				{
+					key: 'services',
+					label: common_services(),
+					type: 'array',
+					searchable: true,
+					filterable: true,
+					getValue: (host) =>
+						allServicesData.filter((s) => s.host_id === host.id).map((s) => s.name)
 				}
 			]
 		)
@@ -377,6 +406,7 @@
 
 <HostEditor
 	isOpen={showHostEditor}
+	name="host-editor"
 	host={editingHost}
 	onCreate={handleHostCreate}
 	onDelete={handleDeleteHost}

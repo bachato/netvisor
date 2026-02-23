@@ -56,6 +56,7 @@
 		onUpdate: (id: string, data: Group) => Promise<void> | void;
 		onClose: () => void;
 		onDelete?: ((id: string) => Promise<void> | void) | null;
+		name?: string;
 	}
 
 	let {
@@ -64,7 +65,8 @@
 		onCreate,
 		onUpdate,
 		onClose,
-		onDelete = null
+		onDelete = null,
+		name = undefined
 	}: Props = $props();
 
 	// TanStack Query hooks
@@ -281,6 +283,8 @@
 <GenericModal
 	{isOpen}
 	{title}
+	{name}
+	entityId={group?.id}
 	size="full"
 	{onClose}
 	onOpen={handleOpen}

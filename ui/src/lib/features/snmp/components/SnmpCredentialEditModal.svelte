@@ -36,7 +36,8 @@
 		onCreate,
 		onUpdate,
 		onClose,
-		onDelete = null
+		onDelete = null,
+		name = undefined
 	}: {
 		credential?: SnmpCredential | null;
 		isOpen?: boolean;
@@ -44,6 +45,7 @@
 		onUpdate: (id: string, data: SnmpCredential) => Promise<void> | void;
 		onClose: () => void;
 		onDelete?: ((id: string) => Promise<void> | void) | null;
+		name?: string;
 	} = $props();
 
 	// TanStack Query for organization
@@ -118,7 +120,16 @@
 	}
 </script>
 
-<GenericModal {isOpen} {title} size="xl" {onClose} onOpen={handleOpen} showCloseButton={true}>
+<GenericModal
+	{isOpen}
+	{title}
+	{name}
+	entityId={credential?.id}
+	size="xl"
+	{onClose}
+	onOpen={handleOpen}
+	showCloseButton={true}
+>
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={Key} color={colorHelper.color} />
 	{/snippet}

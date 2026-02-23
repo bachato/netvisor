@@ -17,7 +17,7 @@ import { writable, get } from 'svelte/store';
 export const defaultTopologyOptions: TopologyOptions = {
 	local: {
 		left_zone_title: 'Infrastructure',
-		hide_edge_types: [],
+		hide_edge_types: ['HostVirtualization'],
 		no_fade_edges: false,
 		hide_resize_handles: false,
 		tag_filter: {
@@ -32,7 +32,7 @@ export const defaultTopologyOptions: TopologyOptions = {
 		hide_vm_title_on_docker_container: false,
 		show_gateway_in_left_zone: true,
 		left_zone_service_categories: ['DNS', 'ReverseProxy'],
-		hide_service_categories: []
+		hide_service_categories: ['OpenPorts']
 	}
 };
 
@@ -152,7 +152,7 @@ export function useRefreshTopologyMutation() {
 				params: { path: { id: topology.id } },
 				body: {
 					network_id: topology.network_id,
-					options: topology.options,
+					options: get(topologyOptions),
 					nodes: [],
 					edges: []
 				}
@@ -175,12 +175,11 @@ export function useRebuildTopologyMutation() {
 				params: { path: { id: topology.id } },
 				body: {
 					network_id: topology.network_id,
-					options: topology.options,
+					options: get(topologyOptions),
 					nodes: topology.nodes,
 					edges: topology.edges
 				}
 			});
-
 			return topology.id;
 		}
 	}));
@@ -550,9 +549,33 @@ let expandedInitialized = false;
 let autoRebuildInitialized = false;
 
 if (browser) {
+	let optionsRebuildTimeout: ReturnType<typeof setTimeout>;
 	topologyOptions.subscribe((options) => {
 		if (optionsInitialized) {
 			saveOptionsToStorage(options);
+
+			// Trigger a rebuild when request options change (replaces the old
+			// debounced PUT that was lost in the TanStack migration)
+			clearTimeout(optionsRebuildTimeout);
+			optionsRebuildTimeout = setTimeout(() => {
+				if (!get(autoRebuild)) return;
+				const topologyId = get(selectedTopologyId);
+				if (!topologyId) return;
+
+				const topologies = queryClient.getQueryData<Topology[]>(queryKeys.topology.all);
+				const topology = topologies?.find((t) => t.id === topologyId);
+				if (!topology) return;
+
+				apiClient.POST('/api/v1/topology/{id}/rebuild', {
+					params: { path: { id: topologyId } },
+					body: {
+						network_id: topology.network_id,
+						options: options,
+						nodes: topology.nodes,
+						edges: topology.edges
+					}
+				});
+			}, 500);
 		}
 		optionsInitialized = true;
 	});
@@ -599,7 +622,7 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 							params: { path: { id: update.id } },
 							body: {
 								network_id: update.network_id,
-								options: update.options,
+								options: get(topologyOptions),
 								nodes: update.nodes,
 								edges: update.edges
 							}

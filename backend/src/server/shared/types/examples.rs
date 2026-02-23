@@ -308,6 +308,7 @@ pub fn user() -> User {
             organization_id: ids::ORGANIZATION,
             permissions: UserOrgPermissions::Admin,
             password_hash: None,
+            has_password: false,
             oidc_provider: None,
             oidc_subject: None,
             oidc_linked_at: None,
@@ -318,6 +319,7 @@ pub fn user() -> User {
             email_verification_expires: None,
             password_reset_token: None,
             password_reset_expires: None,
+            pending_email: None,
         },
     }
 }
@@ -337,6 +339,7 @@ pub fn organization() -> Organization {
             has_payment_method: false,
             trial_end_date: None,
             brevo_company_id: None,
+            plan_limit_notifications: Default::default(),
         },
     }
 }

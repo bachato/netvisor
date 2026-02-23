@@ -148,7 +148,6 @@ pub struct CompanyAttributes {
     pub scanopy_last_discovery_date: Option<String>,
     pub scanopy_discovery_count: Option<i64>,
     pub scanopy_first_daemon_date: Option<String>,
-    pub scanopy_first_discovery_date: Option<String>,
     pub scanopy_trial_started_date: Option<String>,
     pub scanopy_checkout_completed_date: Option<String>,
     pub scanopy_second_network_date: Option<String>,
@@ -357,12 +356,6 @@ impl CompanyAttributes {
                 serde_json::json!(v),
             );
         }
-        if let Some(v) = &self.scanopy_first_discovery_date {
-            attrs.insert(
-                "scanopy_first_discovery_date".to_string(),
-                serde_json::json!(v),
-            );
-        }
         if let Some(v) = &self.scanopy_trial_started_date {
             attrs.insert(
                 "scanopy_trial_started_date".to_string(),
@@ -405,6 +398,24 @@ impl CompanyAttributes {
         if let Some(v) = &self.scanopy_first_invite_accepted_date {
             attrs.insert(
                 "scanopy_first_invite_accepted_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_discovery_completed_date {
+            attrs.insert(
+                "scanopy_first_discovery_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_host_discovered_date {
+            attrs.insert(
+                "scanopy_first_host_discovered_date".to_string(),
+                serde_json::json!(v),
+            );
+        }
+        if let Some(v) = &self.scanopy_first_topology_rebuild_date {
+            attrs.insert(
+                "scanopy_first_topology_rebuild_date".to_string(),
                 serde_json::json!(v),
             );
         }

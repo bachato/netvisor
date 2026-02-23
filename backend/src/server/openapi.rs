@@ -244,6 +244,11 @@ pub fn build_openapi(paths_from_handlers: OpenApi) -> OpenApi {
     // Fix schema examples that utoipa doesn't handle well
     fix_schema_examples(&mut base);
 
+    // Sanitize operationIds: CRUD macros build them from ENTITY_NAME constants which
+    // contain spaces for multi-word entities (e.g. "list_Daemon API Keys"). Normalize
+    // to lowercase with underscores so they're valid identifiers.
+    sanitize_operation_ids(&mut base);
+
     base
 }
 
@@ -261,6 +266,31 @@ fn fix_schema_examples(spec: &mut OpenApi) {
             "offset": 0,
             "has_more": true
         }));
+    }
+}
+
+/// Normalize operationIds: lowercase and replace spaces with underscores.
+///
+/// CRUD macros build operationIds via `concatcp!` with `ENTITY_NAME_*` constants that may
+/// contain spaces for multi-word entities (e.g. "list_Daemon API Keys" → "list_daemon_api_keys").
+fn sanitize_operation_ids(spec: &mut OpenApi) {
+    for item in spec.paths.paths.values_mut() {
+        for op in [
+            &mut item.get,
+            &mut item.post,
+            &mut item.put,
+            &mut item.delete,
+            &mut item.patch,
+            &mut item.head,
+            &mut item.options,
+            &mut item.trace,
+        ] {
+            if let Some(op) = op
+                && let Some(ref mut id) = op.operation_id
+            {
+                *id = id.to_lowercase().replace(' ', "_");
+            }
+        }
     }
 }
 
@@ -296,41 +326,55 @@ fn add_security_schemes(spec: &mut OpenApi) {
     );
 }
 
-/// Check if a path item has any operations tagged with "internal"
-fn has_internal_tag(path_item: &PathItem) -> bool {
-    let operations = [
-        path_item.get.as_ref(),
-        path_item.post.as_ref(),
-        path_item.put.as_ref(),
-        path_item.delete.as_ref(),
-        path_item.patch.as_ref(),
-        path_item.head.as_ref(),
-        path_item.options.as_ref(),
-        path_item.trace.as_ref(),
-    ];
-
-    // If any operation is tagged with "internal", hide the path
-    operations.iter().flatten().any(|op| {
-        op.tags
-            .as_ref()
-            .is_some_and(|tags| tags.contains(&INTERNAL_TAG.to_string()))
-    })
+/// Remove operations tagged "internal" from a path item.
+///
+/// Checks each HTTP method individually so that public operations sharing a path
+/// with internal ones (e.g. GET + DELETE on `/{id}` alongside an internal PUT)
+/// are preserved.
+fn strip_internal_operations(item: &mut PathItem) {
+    macro_rules! strip_if_internal {
+        ($($method:ident),*) => {
+            $(
+                if let Some(ref op) = item.$method {
+                    if op.tags.as_ref().is_some_and(|tags| tags.contains(&INTERNAL_TAG.to_string())) {
+                        item.$method = None;
+                    }
+                }
+            )*
+        };
+    }
+    strip_if_internal!(get, post, put, delete, patch, head, options, trace);
 }
 
-/// Filter out paths tagged with "internal" from the OpenAPI spec.
+/// Check if a path item has at least one operation remaining.
+fn has_any_operations(item: &PathItem) -> bool {
+    item.get.is_some()
+        || item.post.is_some()
+        || item.put.is_some()
+        || item.delete.is_some()
+        || item.patch.is_some()
+        || item.head.is_some()
+        || item.options.is_some()
+        || item.trace.is_some()
+}
+
+/// Filter out operations tagged with "internal" from the OpenAPI spec.
 /// Used to create a public documentation version while keeping the full spec
 /// for client generation.
 ///
-/// Endpoints can have multiple tags (e.g., `tags = ["billing", "internal"]`).
-/// Any endpoint with "internal" as one of its tags will be filtered out.
+/// Works at the operation level rather than the path level so that public
+/// operations sharing a path with internal ones are preserved.
 pub fn filter_internal_paths(spec: &OpenApi) -> OpenApi {
     let mut filtered = spec.clone();
 
-    // Remove paths that have any "internal" tag
+    // Strip internal operations from each path, then remove empty paths
+    for item in filtered.paths.paths.values_mut() {
+        strip_internal_operations(item);
+    }
     filtered
         .paths
         .paths
-        .retain(|_path, item| !has_internal_tag(item));
+        .retain(|_path, item| has_any_operations(item));
 
     // Remove the "internal" tag from the tags list
     if let Some(ref mut tags) = filtered.tags {

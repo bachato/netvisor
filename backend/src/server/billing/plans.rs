@@ -81,7 +81,7 @@ pub fn get_free_plan() -> BillingPlan {
     })
 }
 
-fn get_community_plan() -> BillingPlan {
+pub fn get_community_plan() -> BillingPlan {
     BillingPlan::Community(PlanConfig {
         base_cents: 0,
         rate: BillingRate::Month,
@@ -89,13 +89,13 @@ fn get_community_plan() -> BillingPlan {
         seat_cents: None,
         network_cents: None,
         host_cents: None,
-        included_seats: None,
-        included_networks: None,
+        included_seats: Some(1),
+        included_networks: Some(3),
         included_hosts: None,
     })
 }
 
-fn get_commercial_self_hosted_plan() -> BillingPlan {
+pub fn get_commercial_self_hosted_plan() -> BillingPlan {
     BillingPlan::CommercialSelfHosted(PlanConfig {
         base_cents: 0,
         rate: BillingRate::Month,

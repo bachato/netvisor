@@ -10,6 +10,8 @@ jobs:
   check-branches:
     name: pr_dev_only
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check branches
         env:

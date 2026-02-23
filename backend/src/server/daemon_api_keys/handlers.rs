@@ -2,12 +2,15 @@ use crate::server::{
     auth::middleware::permissions::{Authorized, Member},
     config::AppState,
     daemon_api_keys::r#impl::{api::DaemonApiKeyResponse, base::DaemonApiKey},
+    daemons::r#impl::base::Daemon,
     shared::{
         api_key_common::{ApiKeyService, ApiKeyType, generate_api_key_for_storage},
-        handlers::traits::{CrudHandlers, update_handler},
+        handlers::traits::{
+            BulkDeleteResponse, CrudHandlers, bulk_delete_handler, delete_handler, update_handler,
+        },
         services::traits::CrudService,
-        storage::traits::Entity,
-        types::api::{ApiError, ApiErrorResponse, ApiResponse, ApiResult},
+        storage::{filter::StorableFilter, traits::Entity},
+        types::api::{ApiError, ApiErrorResponse, ApiResponse, ApiResult, EmptyApiResponse},
         validation::validate_network_access,
     },
 };
@@ -25,18 +28,16 @@ mod generated {
     use super::*;
     crate::crud_get_all_handler!(DaemonApiKey);
     crate::crud_get_by_id_handler!(DaemonApiKey);
-    crate::crud_delete_handler!(DaemonApiKey);
-    crate::crud_bulk_delete_handler!(DaemonApiKey);
     crate::crud_export_csv_handler!(DaemonApiKey);
 }
 
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(generated::get_all, create_daemon_api_key))
-        .routes(routes!(generated::get_by_id, generated::delete))
+        .routes(routes!(generated::get_by_id, delete_daemon_api_key))
         .routes(routes!(update_daemon_api_key))
         .routes(routes!(rotate_key_handler))
-        .routes(routes!(generated::bulk_delete))
+        .routes(routes!(bulk_delete_daemon_api_keys))
         .routes(routes!(generated::export_csv))
 }
 
@@ -166,4 +167,95 @@ pub async fn rotate_key_handler(
         })?;
 
     Ok(Json(ApiResponse::success(key)))
+}
+
+/// Delete a Daemon API Key
+///
+/// Returns 409 Conflict if the key is currently assigned to a daemon.
+#[utoipa::path(
+    delete,
+    path = "/{id}",
+    tag = DaemonApiKey::ENTITY_NAME_PLURAL,
+    operation_id = "delete_daemon_api_key",
+    summary = "Delete daemon_api_key",
+    params(("id" = Uuid, Path, description = "daemon_api_key ID")),
+    responses(
+        (status = 200, description = "daemon_api_key deleted", body = EmptyApiResponse),
+        (status = 404, description = "daemon_api_key not found", body = ApiErrorResponse),
+        (status = 409, description = "API key is in use by a daemon", body = ApiErrorResponse),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+pub async fn delete_daemon_api_key(
+    state: State<Arc<AppState>>,
+    auth: Authorized<Member>,
+    Path(id): Path<Uuid>,
+) -> ApiResult<Json<ApiResponse<()>>> {
+    let filter = StorableFilter::<Daemon>::new_from_uuid_column("api_key_id", &id);
+    let daemons = state
+        .services
+        .daemon_service
+        .get_all(filter)
+        .await
+        .map_err(|e| ApiError::internal_error(&e.to_string()))?;
+
+    if !daemons.is_empty() {
+        let names: Vec<&str> = daemons.iter().map(|d| d.base.name.as_str()).collect();
+        return Err(ApiError::conflict(&format!(
+            "Cannot delete API key: currently in use by daemon(s): {}",
+            names.join(", ")
+        )));
+    }
+
+    delete_handler::<DaemonApiKey>(state, auth, Path(id)).await
+}
+
+/// Bulk delete Daemon API Keys
+///
+/// Returns 409 Conflict if any key is currently assigned to a daemon.
+#[utoipa::path(
+    post,
+    path = "/bulk-delete",
+    tag = DaemonApiKey::ENTITY_NAME_PLURAL,
+    operation_id = "bulk_delete_daemon_api_keys",
+    summary = "Bulk delete daemon_api_keys",
+    request_body(content = Vec<Uuid>, description = "Array of daemon_api_key IDs to delete"),
+    responses(
+        (status = 200, description = "daemon_api_keys deleted", body = ApiResponse<BulkDeleteResponse>),
+        (status = 409, description = "One or more API keys are in use by daemons", body = ApiErrorResponse),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+pub async fn bulk_delete_daemon_api_keys(
+    state: State<Arc<AppState>>,
+    auth: Authorized<Member>,
+    Json(ids): Json<Vec<Uuid>>,
+) -> ApiResult<Json<ApiResponse<BulkDeleteResponse>>> {
+    let filter = StorableFilter::<Daemon>::new_from_uuids_column("api_key_id", &ids);
+    let daemons = state
+        .services
+        .daemon_service
+        .get_all(filter)
+        .await
+        .map_err(|e| ApiError::internal_error(&e.to_string()))?;
+
+    if !daemons.is_empty() {
+        let details: Vec<String> = daemons
+            .iter()
+            .map(|d| {
+                let key_id = d
+                    .base
+                    .api_key_id
+                    .map(|id| id.to_string())
+                    .unwrap_or_default();
+                format!("key {} (daemon: {})", key_id, d.base.name)
+            })
+            .collect();
+        return Err(ApiError::conflict(&format!(
+            "Cannot delete API keys: currently in use by daemon(s): {}",
+            details.join(", ")
+        )));
+    }
+
+    bulk_delete_handler::<DaemonApiKey>(state, auth, Json(ids)).await
 }

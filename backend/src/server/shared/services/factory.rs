@@ -243,10 +243,20 @@ impl ServiceFactory {
         ));
 
         let email_service = config.clone().and_then(|c| {
+            let public_url = c.public_url.clone();
+
             // Prefer Brevo if API key is provided
             if let Some(ref brevo_api_key) = c.brevo_api_key {
                 let provider = Box::new(BrevoEmailProvider::new(brevo_api_key.clone()));
-                return Some(Arc::new(EmailService::new(provider, user_service.clone())));
+                return Some(Arc::new(EmailService::new(
+                    provider,
+                    user_service.clone(),
+                    organization_service.clone(),
+                    host_service.clone(),
+                    network_service.clone(),
+                    service_service.clone(),
+                    public_url,
+                )));
             }
 
             // Fall back to SMTP
@@ -259,6 +269,11 @@ impl ServiceFactory {
                 return Some(Arc::new(EmailService::new(
                     Box::new(provider),
                     user_service.clone(),
+                    organization_service.clone(),
+                    host_service.clone(),
+                    network_service.clone(),
+                    service_service.clone(),
+                    public_url,
                 )));
             }
 
@@ -321,7 +336,12 @@ impl ServiceFactory {
         let posthog_service =
             if let Some(posthog_key) = config.as_ref().and_then(|c| c.posthog_key.clone()) {
                 Some(Arc::new(
-                    PosthogService::new(posthog_key, "https://ph.scanopy.net".to_string()).await,
+                    PosthogService::new(
+                        posthog_key,
+                        "https://ph.scanopy.net".to_string(),
+                        network_service.clone(),
+                    )
+                    .await,
                 ))
             } else {
                 None
@@ -362,6 +382,10 @@ impl ServiceFactory {
 
         if let Some(posthog_service) = posthog_service.clone() {
             event_bus.register_subscriber(posthog_service).await;
+        }
+
+        if let Some(email_service) = email_service.clone() {
+            event_bus.register_subscriber(email_service).await;
         }
 
         event_bus.register_subscriber(daemon_service.clone()).await;

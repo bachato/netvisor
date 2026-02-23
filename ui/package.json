@@ -1,7 +1,7 @@
 {
 	"name": "scanopy-ui",
 	"private": true,
-	"version": "0.14.6",
+	"version": "0.14.7",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -16,34 +16,35 @@
 		"generate:api": "npx tsx scripts/generate-api-types.ts"
 	},
 	"devDependencies": {
-		"@eslint/compat": "^1.2.5",
-		"@eslint/js": "^9.18.0",
+		"@eslint/compat": "^2.0.2",
+		"@eslint/js": "^10.0.1",
 		"@magidoc/plugin-svelte-prismjs": "^6.3.0",
 		"@sveltejs/adapter-static": "^3.0.9",
-		"@sveltejs/kit": "^2.49.5",
+		"@sveltejs/kit": "^2.52.2",
 		"@sveltejs/vite-plugin-svelte": "^6.1.4",
 		"@types/node": "^25.0.8",
 		"@types/prismjs": "^1.26.5",
 		"autoprefixer": "^10.4.21",
 		"baseline-browser-mapping": "^2.8.32",
-		"eslint": "^9.18.0",
+		"eslint": "^10.0.1",
 		"eslint-config-prettier": "^10.0.1",
-		"eslint-plugin-svelte": "^3.0.0",
+		"eslint-plugin-svelte": "^3.15.0",
 		"globals": "^16.0.0",
 		"lucide-svelte": "^0.526.0",
-		"prettier": "^3.4.2",
-		"prettier-plugin-svelte": "^3.3.3",
+		"prettier": "~3.6.2",
+		"prettier-plugin-svelte": "^3.5.0",
 		"prettier-plugin-tailwindcss": "^0.6.11",
 		"prismjs": "^1.30.0",
-		"svelte": "^5.0.0",
+		"svelte": "^5.51.5",
 		"svelte-check": "^4.0.0",
 		"typescript": "^5.0.0",
-		"typescript-eslint": "^8.20.0",
+		"typescript-eslint": "^8.56.0",
 		"vite-node": "^5.3.0",
 		"vitest": "^4.0.17"
 	},
 	"overrides": {
-		"cookie": "^0.7.0"
+		"cookie": "^0.7.0",
+		"svelte": "$svelte"
 	},
 	"dependencies": {
 		"@beyonk/gdpr-cookie-consent-banner": "^16.0.2",

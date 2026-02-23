@@ -4,7 +4,7 @@
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import DaemonCard from './DaemonCard.svelte';
-	import CreateDaemonModal from './CreateDaemonModal.svelte';
+	import CreateDaemonModal from './CreateDaemonModal/CreateDaemonModal.svelte';
 	import { defineFields } from '$lib/shared/components/data/types';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import { Plus } from 'lucide-svelte';
@@ -16,6 +16,7 @@
 	} from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
@@ -56,18 +57,11 @@
 	let isLoading = $derived(daemonsQuery.isPending || networksQuery.isPending);
 
 	let showCreateDaemonModal = $state(false);
-	let daemon = $state<Daemon | null>(null);
 
-	// Auto-open modal after onboarding (only if no daemons exist yet)
+	// Auto-open modal when deep-linked via ?modal=create-daemon
 	$effect(() => {
-		if (typeof sessionStorage !== 'undefined' && daemonsQuery.isSuccess) {
-			const shouldShow = sessionStorage.getItem('showDaemonSetup');
-			if (shouldShow === 'true') {
-				sessionStorage.removeItem('showDaemonSetup');
-				if (daemonsData.length === 0) {
-					showCreateDaemonModal = true;
-				}
-			}
+		if ($modalState.name === 'create-daemon' && !showCreateDaemonModal) {
+			showCreateDaemonModal = true;
 		}
 	});
 
@@ -79,12 +73,10 @@
 
 	function handleCreateDaemon() {
 		showCreateDaemonModal = true;
-		daemon = null;
 	}
 
 	function handleCloseCreateDaemon() {
 		showCreateDaemonModal = false;
-		daemon = null;
 	}
 
 	async function handleBulkDelete(ids: string[]) {
@@ -189,4 +181,8 @@
 	{/if}
 </div>
 
-<CreateDaemonModal isOpen={showCreateDaemonModal} onClose={handleCloseCreateDaemon} {daemon} />
+<CreateDaemonModal
+	isOpen={showCreateDaemonModal}
+	name="create-daemon"
+	onClose={handleCloseCreateDaemon}
+/>

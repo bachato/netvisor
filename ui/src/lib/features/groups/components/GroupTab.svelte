@@ -22,6 +22,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState } from '$lib/shared/stores/modal-registry';
 	import {
 		common_confirmDeleteName,
 		common_create,
@@ -66,6 +67,22 @@
 
 	let showGroupEditor = $state(false);
 	let editingGroup = $state<Group | null>(null);
+
+	// Deep-link: open group editor from URL
+	$effect(() => {
+		if ($modalState.name === 'group-editor' && !showGroupEditor) {
+			if ($modalState.id) {
+				const group = groupsData.find((e) => e.id === $modalState.id);
+				if (group) {
+					editingGroup = group;
+					showGroupEditor = true;
+				}
+			} else {
+				editingGroup = null;
+				showGroupEditor = true;
+			}
+		}
+	});
 
 	function handleCreateGroup() {
 		editingGroup = null;
@@ -217,6 +234,7 @@
 
 <!-- Modal -->
 <GroupEditModal
+	name="group-editor"
 	isOpen={showGroupEditor}
 	group={editingGroup}
 	onCreate={handleGroupCreate}

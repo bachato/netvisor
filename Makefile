@@ -295,6 +295,12 @@ set-plan-community:
 		"UPDATE organizations SET plan = '{\"type\": \"Community\", \"base_cents\": 0, \"rate\": \"Month\", \"trial_days\": 0, \"seat_cents\": null, \"network_cents\": null, \"included_seats\": null, \"included_networks\": null}'::jsonb"
 	@echo "Done!"
 
+set-plan-free:
+	@echo "Setting all organizations to Free plan..."
+	@docker exec -t scanopy-postgres psql -U postgres -d scanopy -c \
+		"UPDATE organizations SET plan = '{\"type\": \"Free\", \"base_cents\": 999, \"rate\": \"Month\", \"trial_days\": 7, \"seat_cents\": null, \"network_cents\": null, \"included_seats\": 1, \"included_networks\": 1, \"included_hosts\": 25}'::jsonb"
+	@echo "Done!"
+
 set-plan-starter:
 	@echo "Setting all organizations to Starter plan..."
 	@docker exec -t scanopy-postgres psql -U postgres -d scanopy -c \

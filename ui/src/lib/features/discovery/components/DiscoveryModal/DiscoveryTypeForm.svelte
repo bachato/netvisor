@@ -8,7 +8,7 @@
 	import { billingPlans, discoveryTypes, subnetTypes } from '$lib/shared/stores/metadata';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
-	import { showBillingPlanModal } from '$lib/features/billing/stores';
+	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { ArrowUpCircle } from 'lucide-svelte';
 
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
@@ -288,7 +288,7 @@
 						selectedValue={field.state.value}
 						options={runTypeOptions}
 						onSelect={(value) => field.handleChange(value)}
-						onDisabledClick={() => showBillingPlanModal.set(true)}
+						onDisabledClick={() => openModal('billing-plan')}
 						displayComponent={SimpleOptionDisplay}
 						disabled={readOnly}
 					/>
