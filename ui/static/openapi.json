@@ -1381,7 +1381,7 @@
           "Daemon API Keys"
         ],
         "summary": "List all Daemon API Keys",
-        "operationId": "list_Daemon API Keys",
+        "operationId": "list_daemon_api_keys",
         "parameters": [
           {
             "name": "network_id",
@@ -1619,7 +1619,7 @@
         ],
         "summary": "Export Daemon API Keys to CSV",
         "description": "Export all Daemon API Keys matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Daemon API Keys_csv",
+        "operationId": "export_daemon_api_keys_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -1704,7 +1704,7 @@
           "Daemon API Keys"
         ],
         "summary": "Get Daemon API Key by ID",
-        "operationId": "get_Daemon API Key_by_id",
+        "operationId": "get_daemon_api_key_by_id",
         "parameters": [
           {
             "name": "id",
@@ -2108,7 +2108,7 @@
         ],
         "summary": "Export User API Keys to CSV",
         "description": "Export all User API Keys matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_User API Keys_csv",
+        "operationId": "export_user_api_keys_csv",
         "parameters": [
           {
             "name": "limit",
@@ -2382,7 +2382,7 @@
           "Bindings"
         ],
         "summary": "List all Bindings",
-        "operationId": "list_Bindings",
+        "operationId": "list_bindings",
         "parameters": [
           {
             "name": "service_id",
@@ -2578,7 +2578,7 @@
           "Bindings"
         ],
         "summary": "Bulk delete Bindings",
-        "operationId": "bulk_delete_Bindings",
+        "operationId": "bulk_delete_bindings",
         "requestBody": {
           "description": "Array of Binding IDs to delete",
           "content": {
@@ -2623,7 +2623,7 @@
         ],
         "summary": "Export Bindings to CSV",
         "description": "Export all Bindings matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Bindings_csv",
+        "operationId": "export_bindings_csv",
         "parameters": [
           {
             "name": "service_id",
@@ -2731,7 +2731,7 @@
           "Bindings"
         ],
         "summary": "Get Binding by ID",
-        "operationId": "get_Binding_by_id",
+        "operationId": "get_binding_by_id",
         "parameters": [
           {
             "name": "id",
@@ -2850,7 +2850,7 @@
           "Bindings"
         ],
         "summary": "Delete Binding",
-        "operationId": "delete_Binding",
+        "operationId": "delete_binding",
         "parameters": [
           {
             "name": "id",
@@ -3023,7 +3023,7 @@
           "Daemons"
         ],
         "summary": "Bulk delete Daemons",
-        "operationId": "bulk_delete_Daemons",
+        "operationId": "bulk_delete_daemons",
         "requestBody": {
           "description": "Array of Daemon IDs to delete",
           "content": {
@@ -3068,7 +3068,7 @@
         ],
         "summary": "Export Daemons to CSV",
         "description": "Export all Daemons matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Daemons_csv",
+        "operationId": "export_daemons_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -3306,7 +3306,7 @@
           "Daemons"
         ],
         "summary": "Delete Daemon",
-        "operationId": "delete_Daemon",
+        "operationId": "delete_daemon",
         "parameters": [
           {
             "name": "id",
@@ -3419,7 +3419,7 @@
           "Discoveries"
         ],
         "summary": "List all Discoveries",
-        "operationId": "list_Discoveries",
+        "operationId": "list_discoveries",
         "parameters": [
           {
             "name": "network_id",
@@ -3607,7 +3607,7 @@
           "Discoveries"
         ],
         "summary": "Bulk delete Discoveries",
-        "operationId": "bulk_delete_Discoveries",
+        "operationId": "bulk_delete_discoveries",
         "requestBody": {
           "description": "Array of Discovery IDs to delete",
           "content": {
@@ -3652,7 +3652,7 @@
         ],
         "summary": "Export Discoveries to CSV",
         "description": "Export all Discoveries matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Discoveries_csv",
+        "operationId": "export_discoveries_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -3784,7 +3784,7 @@
           "Discoveries"
         ],
         "summary": "Get Discovery by ID",
-        "operationId": "get_Discovery_by_id",
+        "operationId": "get_discovery_by_id",
         "parameters": [
           {
             "name": "id",
@@ -3892,7 +3892,7 @@
           "Discoveries"
         ],
         "summary": "Delete Discovery",
-        "operationId": "delete_Discovery",
+        "operationId": "delete_discovery",
         "parameters": [
           {
             "name": "id",
@@ -4203,7 +4203,7 @@
           "Groups"
         ],
         "summary": "Bulk delete Groups",
-        "operationId": "bulk_delete_Groups",
+        "operationId": "bulk_delete_groups",
         "requestBody": {
           "description": "Array of Group IDs to delete",
           "content": {
@@ -4248,7 +4248,7 @@
         ],
         "summary": "Export Groups to CSV",
         "description": "Export all Groups matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Groups_csv",
+        "operationId": "export_groups_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -4365,7 +4365,7 @@
           "Groups"
         ],
         "summary": "Get Group by ID",
-        "operationId": "get_Group_by_id",
+        "operationId": "get_group_by_id",
         "parameters": [
           {
             "name": "id",
@@ -4483,7 +4483,7 @@
           "Groups"
         ],
         "summary": "Delete Group",
-        "operationId": "delete_Group",
+        "operationId": "delete_group",
         "parameters": [
           {
             "name": "id",
@@ -4853,7 +4853,7 @@
         ],
         "summary": "Export Hosts to CSV",
         "description": "Export all Hosts matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Hosts_csv",
+        "operationId": "export_hosts_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -5406,7 +5406,7 @@
           "ifTable Entries"
         ],
         "summary": "List all ifTable Entries",
-        "operationId": "list_ifTable Entries",
+        "operationId": "list_iftable_entries",
         "parameters": [
           {
             "name": "host_id",
@@ -5582,7 +5582,7 @@
           "ifTable Entries"
         ],
         "summary": "Bulk delete ifTable Entries",
-        "operationId": "bulk_delete_ifTable Entries",
+        "operationId": "bulk_delete_iftable_entries",
         "requestBody": {
           "description": "Array of ifTable Entry IDs to delete",
           "content": {
@@ -5627,7 +5627,7 @@
         ],
         "summary": "Export ifTable Entries to CSV",
         "description": "Export all ifTable Entries matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_ifTable Entries_csv",
+        "operationId": "export_iftable_entries_csv",
         "parameters": [
           {
             "name": "host_id",
@@ -5725,7 +5725,7 @@
           "ifTable Entries"
         ],
         "summary": "Get ifTable Entry by ID",
-        "operationId": "get_ifTable Entry_by_id",
+        "operationId": "get_iftable_entry_by_id",
         "parameters": [
           {
             "name": "id",
@@ -5843,7 +5843,7 @@
           "ifTable Entries"
         ],
         "summary": "Delete ifTable Entry",
-        "operationId": "delete_ifTable Entry",
+        "operationId": "delete_iftable_entry",
         "parameters": [
           {
             "name": "id",
@@ -5894,7 +5894,7 @@
           "Interfaces"
         ],
         "summary": "List all Interfaces",
-        "operationId": "list_Interfaces",
+        "operationId": "list_interfaces",
         "parameters": [
           {
             "name": "host_id",
@@ -6120,7 +6120,7 @@
         ],
         "summary": "Export Interfaces to CSV",
         "description": "Export all Interfaces matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Interfaces_csv",
+        "operationId": "export_interfaces_csv",
         "parameters": [
           {
             "name": "host_id",
@@ -6215,7 +6215,7 @@
           "Interfaces"
         ],
         "summary": "Get Interface by ID",
-        "operationId": "get_Interface_by_id",
+        "operationId": "get_interface_by_id",
         "parameters": [
           {
             "name": "id",
@@ -6582,7 +6582,7 @@
           "Networks"
         ],
         "summary": "List all Networks",
-        "operationId": "list_Networks",
+        "operationId": "list_networks",
         "parameters": [
           {
             "name": "limit",
@@ -6760,7 +6760,7 @@
         ],
         "summary": "Export Networks to CSV",
         "description": "Export all Networks matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Networks_csv",
+        "operationId": "export_networks_csv",
         "parameters": [
           {
             "name": "limit",
@@ -6816,7 +6816,7 @@
           "Networks"
         ],
         "summary": "Get Network by ID",
-        "operationId": "get_Network_by_id",
+        "operationId": "get_network_by_id",
         "parameters": [
           {
             "name": "id",
@@ -7226,7 +7226,7 @@
           "Ports"
         ],
         "summary": "List all Ports",
-        "operationId": "list_Ports",
+        "operationId": "list_ports",
         "parameters": [
           {
             "name": "host_id",
@@ -7401,7 +7401,7 @@
           "Ports"
         ],
         "summary": "Bulk delete Ports",
-        "operationId": "bulk_delete_Ports",
+        "operationId": "bulk_delete_ports",
         "requestBody": {
           "description": "Array of Port IDs to delete",
           "content": {
@@ -7446,7 +7446,7 @@
         ],
         "summary": "Export Ports to CSV",
         "description": "Export all Ports matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Ports_csv",
+        "operationId": "export_ports_csv",
         "parameters": [
           {
             "name": "host_id",
@@ -7544,7 +7544,7 @@
           "Ports"
         ],
         "summary": "Get Port by ID",
-        "operationId": "get_Port_by_id",
+        "operationId": "get_port_by_id",
         "parameters": [
           {
             "name": "id",
@@ -7662,7 +7662,7 @@
           "Ports"
         ],
         "summary": "Delete Port",
-        "operationId": "delete_Port",
+        "operationId": "delete_port",
         "parameters": [
           {
             "name": "id",
@@ -7928,7 +7928,7 @@
           "Services"
         ],
         "summary": "Bulk delete Services",
-        "operationId": "bulk_delete_Services",
+        "operationId": "bulk_delete_services",
         "requestBody": {
           "description": "Array of Service IDs to delete",
           "content": {
@@ -7973,7 +7973,7 @@
         ],
         "summary": "Export Services to CSV",
         "description": "Export all Services matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Services_csv",
+        "operationId": "export_services_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -8135,7 +8135,7 @@
           "Services"
         ],
         "summary": "Get Service by ID",
-        "operationId": "get_Service_by_id",
+        "operationId": "get_service_by_id",
         "parameters": [
           {
             "name": "id",
@@ -8254,7 +8254,7 @@
           "Services"
         ],
         "summary": "Delete Service",
-        "operationId": "delete_Service",
+        "operationId": "delete_service",
         "parameters": [
           {
             "name": "id",
@@ -8305,7 +8305,7 @@
           "Shares"
         ],
         "summary": "List all Shares",
-        "operationId": "list_Shares",
+        "operationId": "list_shares",
         "parameters": [
           {
             "name": "network_id",
@@ -8464,7 +8464,7 @@
           "Shares"
         ],
         "summary": "Bulk delete Shares",
-        "operationId": "bulk_delete_Shares",
+        "operationId": "bulk_delete_shares",
         "requestBody": {
           "description": "Array of Share IDs to delete",
           "content": {
@@ -8509,7 +8509,7 @@
         ],
         "summary": "Export Shares to CSV",
         "description": "Export all Shares matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Shares_csv",
+        "operationId": "export_shares_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -8699,7 +8699,7 @@
           "Shares"
         ],
         "summary": "Get Share by ID",
-        "operationId": "get_Share_by_id",
+        "operationId": "get_share_by_id",
         "parameters": [
           {
             "name": "id",
@@ -8807,7 +8807,7 @@
           "Shares"
         ],
         "summary": "Delete Share",
-        "operationId": "delete_Share",
+        "operationId": "delete_share",
         "parameters": [
           {
             "name": "id",
@@ -9079,7 +9079,7 @@
         ],
         "summary": "Export SNMP Credentials to CSV",
         "description": "Export all SNMP Credentials matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_SNMP Credentials_csv",
+        "operationId": "export_snmp_credentials_csv",
         "parameters": [
           {
             "name": "group_by",
@@ -9183,7 +9183,7 @@
           "SNMP Credentials"
         ],
         "summary": "Get SNMP Credential by ID",
-        "operationId": "get_SNMP Credential_by_id",
+        "operationId": "get_snmp_credential_by_id",
         "parameters": [
           {
             "name": "id",
@@ -9527,7 +9527,7 @@
           "Subnets"
         ],
         "summary": "Bulk delete Subnets",
-        "operationId": "bulk_delete_Subnets",
+        "operationId": "bulk_delete_subnets",
         "requestBody": {
           "description": "Array of Subnet IDs to delete",
           "content": {
@@ -9572,7 +9572,7 @@
         ],
         "summary": "Export Subnets to CSV",
         "description": "Export all Subnets matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Subnets_csv",
+        "operationId": "export_subnets_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -9689,7 +9689,7 @@
           "Subnets"
         ],
         "summary": "Get Subnet by ID",
-        "operationId": "get_Subnet_by_id",
+        "operationId": "get_subnet_by_id",
         "parameters": [
           {
             "name": "id",
@@ -9808,7 +9808,7 @@
           "Subnets"
         ],
         "summary": "Delete Subnet",
-        "operationId": "delete_Subnet",
+        "operationId": "delete_subnet",
         "parameters": [
           {
             "name": "id",
@@ -10196,7 +10196,7 @@
           "Tags"
         ],
         "summary": "Bulk delete Tags",
-        "operationId": "bulk_delete_Tags",
+        "operationId": "bulk_delete_tags",
         "requestBody": {
           "description": "Array of Tag IDs to delete",
           "content": {
@@ -10241,7 +10241,7 @@
         ],
         "summary": "Export Tags to CSV",
         "description": "Export all Tags matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Tags_csv",
+        "operationId": "export_tags_csv",
         "parameters": [
           {
             "name": "group_by",
@@ -10345,7 +10345,7 @@
           "Tags"
         ],
         "summary": "Get Tag by ID",
-        "operationId": "get_Tag_by_id",
+        "operationId": "get_tag_by_id",
         "parameters": [
           {
             "name": "id",
@@ -10394,7 +10394,7 @@
           "Tags"
         ],
         "summary": "Update Tag",
-        "operationId": "update_Tag",
+        "operationId": "update_tag",
         "parameters": [
           {
             "name": "id",
@@ -10453,7 +10453,7 @@
           "Tags"
         ],
         "summary": "Delete Tag",
-        "operationId": "delete_Tag",
+        "operationId": "delete_tag",
         "parameters": [
           {
             "name": "id",
@@ -10643,7 +10643,7 @@
         ],
         "summary": "Export Topologies to CSV",
         "description": "Export all Topologies matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Topologies_csv",
+        "operationId": "export_topologies_csv",
         "parameters": [
           {
             "name": "network_id",
@@ -10728,7 +10728,7 @@
           "Topologies"
         ],
         "summary": "Get Topology by ID",
-        "operationId": "get_Topology_by_id",
+        "operationId": "get_topology_by_id",
         "parameters": [
           {
             "name": "id",
@@ -10836,7 +10836,7 @@
           "Topologies"
         ],
         "summary": "Delete Topology",
-        "operationId": "delete_Topology",
+        "operationId": "delete_topology",
         "parameters": [
           {
             "name": "id",
@@ -11560,7 +11560,7 @@
         ],
         "summary": "Export Users to CSV",
         "description": "Export all Users matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_Users_csv",
+        "operationId": "export_users_csv",
         "parameters": [
           {
             "name": "limit",
@@ -12038,14 +12038,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-22T21:57:35.916985Z",
-              "id": "a4badeac-e6bd-4e3a-81fe-f20f4501a887",
+              "created_at": "2026-02-23T00:27:49.354828Z",
+              "id": "e858d9f9-53a2-4bd1-bab9-261f5009f416",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-22T21:57:35.916985Z"
+              "updated_at": "2026-02-23T00:27:49.354828Z"
             }
           },
           "error": {
@@ -12790,14 +12790,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-22T21:57:35.893480Z",
-                      "id": "81f7177b-1b64-4113-acdf-8b22e75af079",
+                      "created_at": "2026-02-23T00:27:49.340673Z",
+                      "id": "5af10dcf-45b5-4657-917e-59ff97958fb7",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-22T21:57:35.893480Z"
+                      "updated_at": "2026-02-23T00:27:49.340673Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12806,7 +12806,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Lidarr",
+                  "service_definition": "FTP Server",
                   "source": {
                     "type": "Manual"
                   },
@@ -13609,14 +13609,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-22T21:57:35.910060Z",
-                  "id": "cfa9a2d3-41a7-4f0e-8642-506a63dd0143",
+                  "created_at": "2026-02-23T00:27:49.350419Z",
+                  "id": "a3af232d-504b-4c35-a2de-a158839c5c52",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-22T21:57:35.910060Z"
+                  "updated_at": "2026-02-23T00:27:49.350419Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13625,7 +13625,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Lidarr",
+              "service_definition": "FTP Server",
               "source": {
                 "type": "Manual"
               },
@@ -14824,14 +14824,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-22T21:57:35.893815Z",
-          "id": "f1f84cdc-724e-40ce-908e-23ecb2ab01d8",
+          "created_at": "2026-02-23T00:27:49.340887Z",
+          "id": "3008f4ec-4999-45d1-a4b0-4ce075b95390",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-22T21:57:35.893815Z"
+          "updated_at": "2026-02-23T00:27:49.340887Z"
         }
       },
       "BindingBase": {
@@ -15338,7 +15338,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Lidarr",
+              "service_definition": "FTP Server",
               "tags": [],
               "virtualization": null
             }
@@ -17194,14 +17194,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-22T21:57:35.893180Z",
-                  "id": "e47dd727-e32a-45d2-b4fa-29b67001419c",
+                  "created_at": "2026-02-23T00:27:49.340387Z",
+                  "id": "94b1bc2f-c84f-4f97-ace9-b94bea504f9c",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-22T21:57:35.893180Z"
+                  "updated_at": "2026-02-23T00:27:49.340387Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -17210,7 +17210,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Lidarr",
+              "service_definition": "FTP Server",
               "source": {
                 "type": "Manual"
               },
@@ -19103,14 +19103,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-22T21:57:35.882518Z",
-                        "id": "3bb59f53-ec93-4787-aa8c-6fcab6cc7c2e",
+                        "created_at": "2026-02-23T00:27:49.329804Z",
+                        "id": "7f21027f-fd3d-4e82-a487-f0fc4886deb2",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-22T21:57:35.882518Z"
+                        "updated_at": "2026-02-23T00:27:49.329804Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -19119,7 +19119,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Lidarr",
+                    "service_definition": "FTP Server",
                     "source": {
                       "type": "Manual"
                     },
@@ -19196,14 +19196,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-22T21:57:35.906436Z",
-                    "id": "b0d930d6-4c3f-4968-9354-b67ff9d7fb13",
+                    "created_at": "2026-02-23T00:27:49.349280Z",
+                    "id": "99eb5b6b-4af4-4e75-a74c-dea540304e4c",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-22T21:57:35.906436Z"
+                    "updated_at": "2026-02-23T00:27:49.349280Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -19212,7 +19212,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Lidarr",
+                "service_definition": "FTP Server",
                 "source": {
                   "type": "Manual"
                 },
@@ -20213,14 +20213,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-22T21:57:35.893685Z",
-              "id": "06605257-c5cd-4476-9467-e6d63a0b07c7",
+              "created_at": "2026-02-23T00:27:49.340818Z",
+              "id": "7189066a-7c67-45c5-90ff-9026e5fdb808",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-22T21:57:35.893685Z"
+              "updated_at": "2026-02-23T00:27:49.340818Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20229,7 +20229,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Lidarr",
+          "service_definition": "FTP Server",
           "source": {
             "type": "Manual"
           },
@@ -21808,12 +21808,6 @@
             "format": "date-time"
           },
           "oidc_provider": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "oidc_subject": {
             "type": [
               "string",
               "null"

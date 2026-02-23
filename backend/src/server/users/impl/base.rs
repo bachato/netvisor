@@ -48,7 +48,7 @@ pub struct UserBase {
     pub has_password: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub oidc_provider: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip)]
     pub oidc_subject: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub oidc_linked_at: Option<DateTime<Utc>>,

@@ -4,7 +4,7 @@
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import DaemonCard from './DaemonCard.svelte';
-	import CreateDaemonModal from './CreateDaemonModal.svelte';
+	import CreateDaemonModal from './CreateDaemonModal/CreateDaemonModal.svelte';
 	import { defineFields } from '$lib/shared/components/data/types';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import { Plus } from 'lucide-svelte';
@@ -57,7 +57,6 @@
 	let isLoading = $derived(daemonsQuery.isPending || networksQuery.isPending);
 
 	let showCreateDaemonModal = $state(false);
-	let daemon = $state<Daemon | null>(null);
 
 	// Auto-open modal when deep-linked via ?modal=create-daemon
 	$effect(() => {
@@ -74,12 +73,10 @@
 
 	function handleCreateDaemon() {
 		showCreateDaemonModal = true;
-		daemon = null;
 	}
 
 	function handleCloseCreateDaemon() {
 		showCreateDaemonModal = false;
-		daemon = null;
 	}
 
 	async function handleBulkDelete(ids: string[]) {
@@ -188,5 +185,4 @@
 	isOpen={showCreateDaemonModal}
 	name="create-daemon"
 	onClose={handleCloseCreateDaemon}
-	{daemon}
 />

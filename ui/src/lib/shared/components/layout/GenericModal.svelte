@@ -9,6 +9,7 @@
 		label: string;
 		icon?: IconComponent;
 		notification?: boolean;
+		disabled?: boolean;
 	}
 </script>
 
@@ -35,6 +36,7 @@
 		showBackdrop = true,
 		borderless = false,
 		floatingCloseButton = false,
+		fixedHeight = false,
 		tabs = [],
 		activeTab = $bindable(''),
 		onTabChange = null,
@@ -56,6 +58,7 @@
 		showBackdrop?: boolean;
 		borderless?: boolean;
 		floatingCloseButton?: boolean;
+		fixedHeight?: boolean;
 		tabs?: ModalTab[];
 		activeTab?: string;
 		onTabChange?: ((tabId: string) => void) | null;
@@ -181,7 +184,8 @@
 
 		<!-- Modal content -->
 		<div
-			class="{borderless ? '' : 'modal-container'} {sizeClasses[size]} {size === 'full'
+			class="{borderless ? '' : 'modal-container'} {sizeClasses[size]} {size === 'full' ||
+			fixedHeight
 				? 'h-[calc(100vh-2rem)] sm:h-[calc(100vh-8rem)]'
 				: 'max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-8rem)]'} flex w-full flex-col"
 		>
@@ -225,12 +229,15 @@
 							{#each tabs as tab (tab.id)}
 								<button
 									type="button"
-									onclick={() => handleTabClick(tab.id)}
+									onclick={() => !tab.disabled && handleTabClick(tab.id)}
 									class="border-b-2 px-1 pb-3 text-sm font-medium transition-colors
-									{activeTab === tab.id
-										? 'text-primary border-blue-500'
-										: 'text-muted hover:text-secondary border-transparent'}"
+									{tab.disabled
+										? 'text-muted cursor-not-allowed border-transparent opacity-50'
+										: activeTab === tab.id
+											? 'text-primary border-blue-500'
+											: 'text-muted hover:text-secondary border-transparent'}"
 									aria-current={activeTab === tab.id ? 'page' : undefined}
+									aria-disabled={tab.disabled ? 'true' : undefined}
 								>
 									<div class="flex items-center gap-2">
 										{#if tab.icon}

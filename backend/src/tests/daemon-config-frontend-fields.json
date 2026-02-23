@@ -45,13 +45,13 @@
     "id": "heartbeat_interval",
     "cliFlag": "--heartbeat-interval",
     "envVar": "SCANOPY_HEARTBEAT_INTERVAL",
-    "helpText": "Seconds between heartbeat updates / work requests (for daemons in pull mode) to server"
+    "helpText": "Seconds between heartbeat updates to the server"
   },
   {
     "id": "docker_proxy",
     "cliFlag": "--docker-proxy",
     "envVar": "SCANOPY_DOCKER_PROXY",
-    "helpText": "Optional proxy for Docker API. Can use both non-SSL and SSL proxy; SSL proxy requires additional SSL config vars"
+    "helpText": "Optional local proxy for Docker API on the daemon host. Supports non-SSL and SSL; SSL requires additional config vars"
   },
   {
     "id": "docker_proxy_ssl_cert",
@@ -75,7 +75,7 @@
     "id": "interfaces",
     "cliFlag": "--interfaces",
     "envVar": "SCANOPY_INTERFACES",
-    "helpText": "Restrict daemon to specific network interface(s). Comma-separated for multiple (e.g., eth0,eth1). Leave empty for all interfaces. Only applies to network discovery"
+    "helpText": "Restrict daemon to specific network interface(s). Comma-separated for multiple (e.g., eth0,eth1). Leave empty for all interfaces"
   },
   {
     "id": "arp_retries",
