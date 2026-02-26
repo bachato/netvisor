@@ -226,6 +226,7 @@ async fn receive_discovery_update(
     responses(
         (status = 200, description = "Discovery session started", body = ApiResponse<DiscoveryUpdatePayload>),
         (status = 404, description = "Discovery not found", body = ApiErrorResponse),
+        (status = 409, description = "A session is already running for this discovery", body = ApiErrorResponse),
     ),
      security(("user_api_key" = []), ("session" = []))
 )]
