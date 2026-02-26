@@ -290,10 +290,21 @@ async fn main() -> anyhow::Result<()> {
 
     // Public share routes with permissive CORS (embeds on customer domains)
     let (public_share_router, _) = create_public_share_routes().split_for_parts();
-    let public_share_app = Router::new()
+    let mut public_share_app = Router::new()
         .merge(public_share_router)
-        .with_state(state.clone())
-        .layer(public_cors);
+        .with_state(state.clone());
+
+    // Serve share pages without frame-ancestors CSP so they can be embedded in iframes.
+    // Non-share pages (/dashboard, /settings, etc.) still get frame-ancestors 'self'
+    // from protected_app's fallback.
+    if let Some(static_path) = &web_external_path {
+        public_share_app = public_share_app.route_service(
+            "/share/{*rest}",
+            ServeFile::new(format!("{}/index.html", static_path.display())),
+        );
+    }
+
+    let public_share_app = public_share_app.layer(public_cors);
 
     // Health check endpoint without middleware (for kamal-proxy health checks)
     // Metrics endpoint is now at /api/metrics with external service auth (see factory.rs)
