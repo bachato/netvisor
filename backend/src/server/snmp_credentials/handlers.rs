@@ -1,5 +1,5 @@
 use crate::server::auth::middleware::permissions::{Admin, Authorized, Viewer};
-use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
+use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
@@ -328,16 +328,16 @@ pub async fn create_snmp_credential(
             .await?;
 
         if let Some(organization) = organization
-            && organization.not_onboarded(&TelemetryOperation::FirstSnmpCredentialCreated)
+            && organization.not_onboarded(&OnboardingOperation::FirstSnmpCredentialCreated)
         {
             state
                 .services
                 .snmp_credential_service
                 .event_bus()
-                .publish_telemetry(TelemetryEvent {
+                .publish_onboarding(OnboardingEvent {
                     id: Uuid::new_v4(),
                     organization_id,
-                    operation: TelemetryOperation::FirstSnmpCredentialCreated,
+                    operation: OnboardingOperation::FirstSnmpCredentialCreated,
                     timestamp: Utc::now(),
                     metadata: serde_json::json!({}),
                     authentication: entity,

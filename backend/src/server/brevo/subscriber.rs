@@ -36,7 +36,8 @@ impl EventSubscriber for BrevoService {
         EventFilter {
             entity_operations: Some(entity_ops),
             auth_operations: Some(vec![AuthOperation::LoginSuccess]),
-            telemetry_operations: None,
+            billing_operations: None,
+            onboarding_operations: None,
             discovery_phases: Some(vec![DiscoveryPhase::Scanning]),
             network_ids: None,
         }

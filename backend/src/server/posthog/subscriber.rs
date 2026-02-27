@@ -7,7 +7,9 @@ use crate::{
             entities::EntityDiscriminants,
             events::{
                 bus::{EventFilter, EventSubscriber},
-                types::{AuthOperation, EntityOperation, Event, TelemetryOperation},
+                types::{
+                    AuthOperation, BillingOperation, EntityOperation, Event, OnboardingOperation,
+                },
             },
         },
     },
@@ -104,34 +106,33 @@ impl EventSubscriber for PosthogService {
         EventFilter {
             entity_operations: Some(entity_ops),
             auth_operations: Some(vec![AuthOperation::LoginSuccess]),
-            telemetry_operations: Some(vec![
-                // Billing lifecycle
-                TelemetryOperation::CheckoutStarted,
-                TelemetryOperation::CheckoutCompleted,
-                TelemetryOperation::TrialStarted,
-                TelemetryOperation::TrialEnded,
-                TelemetryOperation::TrialWillEnd,
-                TelemetryOperation::SubscriptionCancelled,
-                TelemetryOperation::PlanChanged,
-                TelemetryOperation::PaymentFailed,
-                TelemetryOperation::PaymentActionRequired,
-                TelemetryOperation::PaymentRecovered,
-                // Onboarding & activation milestones
-                TelemetryOperation::OrgCreated,
-                TelemetryOperation::OnboardingModalCompleted,
-                TelemetryOperation::PlanSelected,
-                // Engagement milestones (fire once per org)
-                TelemetryOperation::FirstDaemonRegistered,
-                TelemetryOperation::FirstTopologyRebuild,
-                TelemetryOperation::FirstDiscoveryCompleted,
-                TelemetryOperation::FirstHostDiscovered,
-                TelemetryOperation::SecondNetworkCreated,
-                TelemetryOperation::FirstTagCreated,
-                TelemetryOperation::FirstGroupCreated,
-                TelemetryOperation::FirstUserApiKeyCreated,
-                TelemetryOperation::FirstSnmpCredentialCreated,
-                TelemetryOperation::InviteSent,
-                TelemetryOperation::InviteAccepted,
+            billing_operations: Some(vec![
+                BillingOperation::CheckoutStarted,
+                BillingOperation::CheckoutCompleted,
+                BillingOperation::TrialStarted,
+                BillingOperation::TrialEnded,
+                BillingOperation::TrialWillEnd,
+                BillingOperation::SubscriptionCancelled,
+                BillingOperation::PlanChanged,
+                BillingOperation::PaymentFailed,
+                BillingOperation::PaymentActionRequired,
+                BillingOperation::PaymentRecovered,
+            ]),
+            onboarding_operations: Some(vec![
+                OnboardingOperation::OrgCreated,
+                OnboardingOperation::OnboardingModalCompleted,
+                OnboardingOperation::PlanSelected,
+                OnboardingOperation::FirstDaemonRegistered,
+                OnboardingOperation::FirstTopologyRebuild,
+                OnboardingOperation::FirstDiscoveryCompleted,
+                OnboardingOperation::FirstHostDiscovered,
+                OnboardingOperation::SecondNetworkCreated,
+                OnboardingOperation::FirstTagCreated,
+                OnboardingOperation::FirstGroupCreated,
+                OnboardingOperation::FirstUserApiKeyCreated,
+                OnboardingOperation::FirstSnmpCredentialCreated,
+                OnboardingOperation::InviteSent,
+                OnboardingOperation::InviteAccepted,
             ]),
             discovery_phases: Some(vec![
                 DiscoveryPhase::Pending,
@@ -196,43 +197,99 @@ impl EventSubscriber for PosthogService {
                     inject_org_group(&mut props);
                     self.capture("login", &distinct_id, props).await;
                 }
-                Event::Telemetry(telemetry_event) => {
+                Event::Billing(billing_event) => {
                     let Some(distinct_id) = self.resolve_distinct_id(event).await else {
                         tracing::debug!(
-                            operation = %telemetry_event.operation,
-                            "Skipping PostHog telemetry event — cannot attribute"
+                            operation = %billing_event.operation,
+                            "Skipping PostHog billing event — cannot attribute"
                         );
                         continue;
                     };
 
-                    let event_name = telemetry_event.operation.to_string();
-                    let org_id_str = telemetry_event.organization_id.to_string();
+                    let event_name = billing_event.operation.to_string();
+                    let org_id_str = billing_event.organization_id.to_string();
 
                     let mut props = auth_properties(event);
                     props["organization_id"] = json!(&org_id_str);
-                    props["metadata"] = telemetry_event.metadata.clone();
+                    props["metadata"] = billing_event.metadata.clone();
+
+                    inject_org_group(&mut props);
+                    self.capture(&event_name, &distinct_id, props).await;
+
+                    // Update person and group properties on billing events
+                    let plan_name = billing_event
+                        .metadata
+                        .get("plan_name")
+                        .cloned()
+                        .unwrap_or(json!(null));
+                    let plan_status = billing_event
+                        .metadata
+                        .get("plan_status")
+                        .cloned()
+                        .unwrap_or(json!(null));
+                    let has_payment_method = billing_event
+                        .metadata
+                        .get("has_payment_method")
+                        .cloned()
+                        .unwrap_or(json!(null));
+
+                    self.identify(
+                        &distinct_id,
+                        json!({
+                            "plan_type": plan_name,
+                            "plan_status": plan_status,
+                            "has_payment_method": has_payment_method,
+                        }),
+                    )
+                    .await;
+
+                    self.group_identify(
+                        "organization",
+                        &org_id_str,
+                        json!({
+                            "plan_type": plan_name,
+                            "plan_status": plan_status,
+                        }),
+                    )
+                    .await;
+                }
+                Event::Onboarding(onboarding_event) => {
+                    let Some(distinct_id) = self.resolve_distinct_id(event).await else {
+                        tracing::debug!(
+                            operation = %onboarding_event.operation,
+                            "Skipping PostHog onboarding event — cannot attribute"
+                        );
+                        continue;
+                    };
+
+                    let event_name = onboarding_event.operation.to_string();
+                    let org_id_str = onboarding_event.organization_id.to_string();
+
+                    let mut props = auth_properties(event);
+                    props["organization_id"] = json!(&org_id_str);
+                    props["metadata"] = onboarding_event.metadata.clone();
 
                     inject_org_group(&mut props);
                     self.capture(&event_name, &distinct_id, props).await;
 
                     // Identify person and group on OrgCreated
-                    if telemetry_event.operation == TelemetryOperation::OrgCreated {
-                        let plan_type = telemetry_event
+                    if onboarding_event.operation == OnboardingOperation::OrgCreated {
+                        let plan_type = onboarding_event
                             .metadata
                             .get("plan_type")
                             .cloned()
                             .unwrap_or(json!(null));
-                        let plan_status = telemetry_event
+                        let plan_status = onboarding_event
                             .metadata
                             .get("plan_status")
                             .cloned()
                             .unwrap_or(json!(null));
-                        let has_payment_method = telemetry_event
+                        let has_payment_method = onboarding_event
                             .metadata
                             .get("has_payment_method")
                             .cloned()
                             .unwrap_or(json!(false));
-                        let org_name = telemetry_event
+                        let org_name = onboarding_event
                             .metadata
                             .get("org_name")
                             .cloned()
@@ -256,46 +313,7 @@ impl EventSubscriber for PosthogService {
                                 "plan_type": plan_type,
                                 "plan_status": plan_status,
                                 "name": org_name,
-                                "created_at": telemetry_event.timestamp.to_rfc3339(),
-                            }),
-                        )
-                        .await;
-                    }
-
-                    // Update person and group properties on billing events
-                    if telemetry_event.operation.is_billing_operation() {
-                        let plan_name = telemetry_event
-                            .metadata
-                            .get("plan_name")
-                            .cloned()
-                            .unwrap_or(json!(null));
-                        let plan_status = telemetry_event
-                            .metadata
-                            .get("plan_status")
-                            .cloned()
-                            .unwrap_or(json!(null));
-                        let has_payment_method = telemetry_event
-                            .metadata
-                            .get("has_payment_method")
-                            .cloned()
-                            .unwrap_or(json!(null));
-
-                        self.identify(
-                            &distinct_id,
-                            json!({
-                                "plan_type": plan_name,
-                                "plan_status": plan_status,
-                                "has_payment_method": has_payment_method,
-                            }),
-                        )
-                        .await;
-
-                        self.group_identify(
-                            "organization",
-                            &org_id_str,
-                            json!({
-                                "plan_type": plan_name,
-                                "plan_status": plan_status,
+                                "created_at": onboarding_event.timestamp.to_rfc3339(),
                             }),
                         )
                         .await;

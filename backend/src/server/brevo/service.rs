@@ -9,7 +9,10 @@ use crate::server::{
     networks::{r#impl::Network, service::NetworkService},
     organizations::{r#impl::base::Organization, service::OrganizationService},
     shared::{
-        events::types::{AuthOperation, Event, TelemetryEvent, TelemetryOperation},
+        events::types::{
+            AuthOperation, BillingEvent, BillingOperation, Event, OnboardingEvent,
+            OnboardingOperation,
+        },
         services::traits::CrudService,
         storage::filter::StorableFilter,
     },
@@ -72,7 +75,8 @@ impl BrevoService {
     /// Handle events and sync to Brevo
     pub async fn handle_event(&self, event: &Event) -> Result<()> {
         match event {
-            Event::Telemetry(telemetry) => self.handle_telemetry_event(telemetry).await,
+            Event::Billing(billing) => self.handle_billing_event(billing).await,
+            Event::Onboarding(onboarding) => self.handle_onboarding_event(onboarding).await,
             Event::Auth(auth) => {
                 if auth.operation == AuthOperation::LoginSuccess
                     && let AuthenticatedEntity::User { email, user_id, .. } = &auth.authentication
@@ -95,70 +99,76 @@ impl BrevoService {
         }
     }
 
-    async fn handle_telemetry_event(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_billing_event(&self, event: &BillingEvent) -> Result<()> {
         match &event.operation {
-            TelemetryOperation::OrgCreated => {
-                self.handle_org_created(event).await?;
-            }
-            TelemetryOperation::CheckoutStarted => {
+            BillingOperation::CheckoutStarted => {
                 self.handle_checkout_started(event).await?;
             }
-            TelemetryOperation::CheckoutCompleted => {
+            BillingOperation::CheckoutCompleted => {
                 self.handle_checkout_completed(event).await?;
             }
-            TelemetryOperation::TrialStarted => {
+            BillingOperation::TrialStarted => {
                 self.handle_trial_started(event).await?;
             }
-            TelemetryOperation::TrialEnded => {
+            BillingOperation::TrialEnded => {
                 self.handle_trial_ended(event).await?;
             }
-            TelemetryOperation::SubscriptionCancelled => {
+            BillingOperation::SubscriptionCancelled => {
                 self.handle_subscription_cancelled(event).await?;
             }
-            TelemetryOperation::TrialWillEnd => {
+            BillingOperation::TrialWillEnd => {
                 self.handle_trial_will_end(event).await?;
             }
-            TelemetryOperation::PlanChanged => {
+            BillingOperation::PlanChanged => {
                 self.handle_plan_changed(event).await?;
             }
-            TelemetryOperation::PaymentFailed => {
+            BillingOperation::PaymentFailed => {
                 self.update_company_by_org(
                     event.organization_id,
                     CompanyAttributes::new().with_plan_status("payment_failed"),
                 )
                 .await?;
             }
-            TelemetryOperation::PaymentActionRequired => {
+            BillingOperation::PaymentActionRequired => {
                 self.update_company_by_org(
                     event.organization_id,
                     CompanyAttributes::new().with_plan_status("payment_action_required"),
                 )
                 .await?;
             }
-            TelemetryOperation::PaymentRecovered => {
+            BillingOperation::PaymentRecovered => {
                 self.update_company_by_org(
                     event.organization_id,
                     CompanyAttributes::new().with_plan_status("active"),
                 )
                 .await?;
             }
-            TelemetryOperation::FirstDaemonRegistered => {
+        }
+        Ok(())
+    }
+
+    async fn handle_onboarding_event(&self, event: &OnboardingEvent) -> Result<()> {
+        match &event.operation {
+            OnboardingOperation::OrgCreated => {
+                self.handle_org_created(event).await?;
+            }
+            OnboardingOperation::FirstDaemonRegistered => {
                 self.handle_first_daemon_registered(event).await?;
             }
-            TelemetryOperation::FirstTopologyRebuild => {
+            OnboardingOperation::FirstTopologyRebuild => {
                 self.handle_first_topology_rebuild(event).await?;
             }
-            TelemetryOperation::FirstDiscoveryCompleted => {
+            OnboardingOperation::FirstDiscoveryCompleted => {
                 self.handle_first_discovery_completed(event).await?;
             }
-            TelemetryOperation::SecondNetworkCreated
-            | TelemetryOperation::FirstHostDiscovered
-            | TelemetryOperation::FirstTagCreated
-            | TelemetryOperation::FirstGroupCreated
-            | TelemetryOperation::FirstUserApiKeyCreated
-            | TelemetryOperation::FirstSnmpCredentialCreated
-            | TelemetryOperation::InviteSent
-            | TelemetryOperation::InviteAccepted => {
+            OnboardingOperation::SecondNetworkCreated
+            | OnboardingOperation::FirstHostDiscovered
+            | OnboardingOperation::FirstTagCreated
+            | OnboardingOperation::FirstGroupCreated
+            | OnboardingOperation::FirstUserApiKeyCreated
+            | OnboardingOperation::FirstSnmpCredentialCreated
+            | OnboardingOperation::InviteSent
+            | OnboardingOperation::InviteAccepted => {
                 self.handle_engagement_event(event).await?;
             }
             _ => {}
@@ -166,32 +176,32 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_engagement_event(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_engagement_event(&self, event: &OnboardingEvent) -> Result<()> {
         let mut company_attrs = CompanyAttributes::new();
 
         match &event.operation {
-            TelemetryOperation::SecondNetworkCreated => {
+            OnboardingOperation::SecondNetworkCreated => {
                 company_attrs = company_attrs.with_second_network_date(event.timestamp);
             }
-            TelemetryOperation::FirstTagCreated => {
+            OnboardingOperation::FirstTagCreated => {
                 company_attrs = company_attrs.with_first_tag_date(event.timestamp);
             }
-            TelemetryOperation::FirstGroupCreated => {
+            OnboardingOperation::FirstGroupCreated => {
                 company_attrs = company_attrs.with_first_group_date(event.timestamp);
             }
-            TelemetryOperation::FirstUserApiKeyCreated => {
+            OnboardingOperation::FirstUserApiKeyCreated => {
                 company_attrs = company_attrs.with_first_api_key_date(event.timestamp);
             }
-            TelemetryOperation::FirstSnmpCredentialCreated => {
+            OnboardingOperation::FirstSnmpCredentialCreated => {
                 company_attrs = company_attrs.with_first_snmp_credential_date(event.timestamp);
             }
-            TelemetryOperation::InviteSent => {
+            OnboardingOperation::InviteSent => {
                 company_attrs = company_attrs.with_first_invite_sent_date(event.timestamp);
             }
-            TelemetryOperation::InviteAccepted => {
+            OnboardingOperation::InviteAccepted => {
                 company_attrs = company_attrs.with_first_invite_accepted_date(event.timestamp);
             }
-            TelemetryOperation::FirstHostDiscovered => {
+            OnboardingOperation::FirstHostDiscovered => {
                 company_attrs = company_attrs.with_first_host_discovered_date(event.timestamp)
             }
             _ => return Ok(()),
@@ -209,7 +219,7 @@ impl BrevoService {
     }
 
     /// Handle org created - create contact and company, store company ID on org.
-    async fn handle_org_created(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_org_created(&self, event: &OnboardingEvent) -> Result<()> {
         let (email, user_id) = match &event.authentication {
             AuthenticatedEntity::User { email, user_id, .. } => (email.clone(), *user_id),
             _ => return Ok(()),
@@ -398,7 +408,7 @@ impl BrevoService {
         }
     }
 
-    async fn handle_checkout_started(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_checkout_started(&self, event: &BillingEvent) -> Result<()> {
         let plan_name = event
             .metadata
             .get("plan_name")
@@ -419,7 +429,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_checkout_completed(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_checkout_completed(&self, event: &BillingEvent) -> Result<()> {
         let plan_name = event
             .metadata
             .get("plan_name")
@@ -473,7 +483,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_trial_started(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_trial_started(&self, event: &BillingEvent) -> Result<()> {
         let company_attrs = CompanyAttributes::new()
             .with_plan_status("trialing")
             .with_trial_started_date(event.timestamp);
@@ -494,7 +504,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_trial_ended(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_trial_ended(&self, event: &BillingEvent) -> Result<()> {
         let converted = event
             .metadata
             .get("converted")
@@ -527,7 +537,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_subscription_cancelled(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_subscription_cancelled(&self, event: &BillingEvent) -> Result<()> {
         let company_attrs = CompanyAttributes::new().with_plan_status("cancelled");
         self.update_company_by_org(event.organization_id, company_attrs)
             .await?;
@@ -548,7 +558,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_trial_will_end(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_trial_will_end(&self, event: &BillingEvent) -> Result<()> {
         let company_attrs = CompanyAttributes::new().with_plan_status("trial_ending_soon");
         self.update_company_by_org(event.organization_id, company_attrs)
             .await?;
@@ -569,7 +579,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_plan_changed(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_plan_changed(&self, event: &BillingEvent) -> Result<()> {
         let new_plan = event
             .metadata
             .get("new_plan")
@@ -601,7 +611,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_first_daemon_registered(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_first_daemon_registered(&self, event: &OnboardingEvent) -> Result<()> {
         let company_attrs = CompanyAttributes::new().with_first_daemon_date(event.timestamp);
         self.update_company_by_org(event.organization_id, company_attrs)
             .await?;
@@ -622,7 +632,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_first_discovery_completed(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_first_discovery_completed(&self, event: &OnboardingEvent) -> Result<()> {
         let company_attrs =
             CompanyAttributes::new().with_first_discovery_completed_date(event.timestamp);
         self.update_company_by_org(event.organization_id, company_attrs)
@@ -644,7 +654,7 @@ impl BrevoService {
         Ok(())
     }
 
-    async fn handle_first_topology_rebuild(&self, event: &TelemetryEvent) -> Result<()> {
+    async fn handle_first_topology_rebuild(&self, event: &OnboardingEvent) -> Result<()> {
         let company_attrs =
             CompanyAttributes::new().with_first_topology_rebuild_date(event.timestamp);
         self.update_company_by_org(event.organization_id, company_attrs)

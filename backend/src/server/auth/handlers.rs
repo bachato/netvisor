@@ -23,7 +23,7 @@ use crate::server::{
     networks::r#impl::{Network, NetworkBase},
     shared::api_key_common::{ApiKeyType, generate_api_key_for_storage},
     shared::{
-        events::types::{TelemetryEvent, TelemetryOperation},
+        events::types::{OnboardingEvent, OnboardingOperation},
         services::traits::CrudService,
         storage::filter::StorableFilter,
         storage::traits::Storable,
@@ -626,10 +626,10 @@ async fn apply_pending_setup(
     state
         .services
         .event_bus
-        .publish_telemetry(TelemetryEvent {
+        .publish_onboarding(OnboardingEvent {
             id: Uuid::new_v4(),
             organization_id,
-            operation: TelemetryOperation::OnboardingModalCompleted,
+            operation: OnboardingOperation::OnboardingModalCompleted,
             timestamp: Utc::now(),
             metadata: serde_json::json!({
                 "pre_registration_setup": true,

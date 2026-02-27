@@ -8,7 +8,7 @@
 	import { onMount } from 'svelte';
 
 	type Organization = components['schemas']['Organization'];
-	type TelemetryOperation = components['schemas']['TelemetryOperation'];
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	type DashboardSummary = components['schemas']['DashboardSummary'];
 
 	let {
@@ -33,7 +33,7 @@
 
 	const planType = $derived(organization.plan?.type ?? null);
 	const onboarding = $derived(organization.onboarding ?? []);
-	const has = (op: TelemetryOperation) => onboarding.includes(op);
+	const has = (op: OnboardingOperation) => onboarding.includes(op);
 
 	const isPaidPlan = $derived(planType != null && planType !== 'Free' && planType !== 'Demo');
 	const isProPlus = $derived(isPaidPlan && planType !== 'Starter');

@@ -9,7 +9,7 @@ use crate::server::organizations::service::OrganizationService;
 use crate::server::shared::entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants};
 use crate::server::shared::events::bus::EventBus;
 use crate::server::shared::events::types::{EntityEvent, EntityOperation};
-use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
+use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::generic::GenericPostgresStorage;
@@ -728,14 +728,14 @@ impl DiscoveryService {
                     .organization_service
                     .get_by_id(&network.base.organization_id)
                     .await
-                && org.not_onboarded(&TelemetryOperation::FirstDiscoveryCompleted)
+                && org.not_onboarded(&OnboardingOperation::FirstDiscoveryCompleted)
             {
                 let _ = self
                     .event_bus
-                    .publish_telemetry(TelemetryEvent::new(
+                    .publish_onboarding(OnboardingEvent::new(
                         Uuid::new_v4(),
                         org.id,
-                        TelemetryOperation::FirstDiscoveryCompleted,
+                        OnboardingOperation::FirstDiscoveryCompleted,
                         Utc::now(),
                         AuthenticatedEntity::System,
                         serde_json::json!({

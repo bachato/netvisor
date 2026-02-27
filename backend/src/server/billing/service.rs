@@ -17,8 +17,9 @@ use crate::server::networks::service::NetworkService;
 use crate::server::organizations::r#impl::base::Organization;
 use crate::server::organizations::service::OrganizationService;
 use crate::server::shared::events::bus::EventBus;
-use crate::server::shared::events::types::TelemetryEvent;
-use crate::server::shared::events::types::TelemetryOperation;
+use crate::server::shared::events::types::{
+    BillingEvent, BillingOperation, OnboardingEvent, OnboardingOperation,
+};
 use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::types::metadata::TypeMetadataProvider;
@@ -475,10 +476,10 @@ impl BillingService {
 
         // Publish checkout_started event for email automation
         self.event_bus
-            .publish_telemetry(TelemetryEvent::new(
+            .publish_billing(BillingEvent::new(
                 Uuid::new_v4(),
                 organization_id,
-                TelemetryOperation::CheckoutStarted,
+                BillingOperation::CheckoutStarted,
                 Utc::now(),
                 auth_for_event,
                 json!({
@@ -851,15 +852,14 @@ impl BillingService {
         // First time signing up for a plan
         if let Some(owner) = owners.first()
             && organization.base.plan.is_none()
-            && organization.not_onboarded(&TelemetryOperation::CommercialPlanSelected)
-            && organization.not_onboarded(&TelemetryOperation::PersonalPlanSelected)
+            && organization.not_onboarded(&OnboardingOperation::PlanSelected)
         {
             let authentication: AuthenticatedEntity = owner.clone().into();
             self.event_bus
-                .publish_telemetry(TelemetryEvent {
+                .publish_onboarding(OnboardingEvent {
                     id: Uuid::new_v4(),
                     organization_id: organization.id,
-                    operation: TelemetryOperation::PlanSelected,
+                    operation: OnboardingOperation::PlanSelected,
                     timestamp: Utc::now(),
                     metadata: serde_json::json!({
                         "plan": plan.to_string(),
@@ -883,10 +883,10 @@ impl BillingService {
             {
                 let plan_config = plan.config();
                 self.event_bus
-                    .publish_telemetry(TelemetryEvent::new(
+                    .publish_billing(BillingEvent::new(
                         Uuid::new_v4(),
                         organization.id,
-                        TelemetryOperation::CheckoutCompleted,
+                        BillingOperation::CheckoutCompleted,
                         Utc::now(),
                         authentication.clone(),
                         json!({
@@ -905,10 +905,10 @@ impl BillingService {
                 if is_trialing {
                     let trial_days = plan.config().trial_days;
                     self.event_bus
-                        .publish_telemetry(TelemetryEvent::new(
+                        .publish_billing(BillingEvent::new(
                             Uuid::new_v4(),
                             organization.id,
-                            TelemetryOperation::TrialStarted,
+                            BillingOperation::TrialStarted,
                             Utc::now(),
                             authentication.clone(),
                             json!({
@@ -942,10 +942,10 @@ impl BillingService {
                 let now_active = sub.status == SubscriptionStatus::Active;
                 if was_trialing && now_active {
                     self.event_bus
-                        .publish_telemetry(TelemetryEvent::new(
+                        .publish_billing(BillingEvent::new(
                             Uuid::new_v4(),
                             organization.id,
-                            TelemetryOperation::TrialEnded,
+                            BillingOperation::TrialEnded,
                             Utc::now(),
                             authentication,
                             json!({
@@ -1041,10 +1041,10 @@ impl BillingService {
                 && let Some(owner) = owners.first()
             {
                 self.event_bus
-                    .publish_telemetry(TelemetryEvent::new(
+                    .publish_billing(BillingEvent::new(
                         Uuid::new_v4(),
                         org_id,
-                        TelemetryOperation::PlanChanged,
+                        BillingOperation::PlanChanged,
                         Utc::now(),
                         owner.clone().into(),
                         json!({
@@ -1109,10 +1109,10 @@ impl BillingService {
 
         if let Some(owner) = owners.first() {
             self.event_bus
-                .publish_telemetry(TelemetryEvent::new(
+                .publish_billing(BillingEvent::new(
                     Uuid::new_v4(),
                     org_id,
-                    TelemetryOperation::TrialWillEnd,
+                    BillingOperation::TrialWillEnd,
                     Utc::now(),
                     owner.clone().into(),
                     json!({
@@ -1342,10 +1342,10 @@ impl BillingService {
                 .unwrap_or(false);
 
             self.event_bus
-                .publish_telemetry(TelemetryEvent::new(
+                .publish_billing(BillingEvent::new(
                     Uuid::new_v4(),
                     organization.id,
-                    TelemetryOperation::SubscriptionCancelled,
+                    BillingOperation::SubscriptionCancelled,
                     Utc::now(),
                     authentication.clone(),
                     json!({
@@ -1367,10 +1367,10 @@ impl BillingService {
             // If trial was cancelled (not converted), send trial_ended event
             if was_trialing {
                 self.event_bus
-                    .publish_telemetry(TelemetryEvent::new(
+                    .publish_billing(BillingEvent::new(
                         Uuid::new_v4(),
                         organization.id,
-                        TelemetryOperation::TrialEnded,
+                        BillingOperation::TrialEnded,
                         Utc::now(),
                         authentication,
                         json!({
@@ -1413,10 +1413,10 @@ impl BillingService {
         // Sync the Free plan to Brevo so plan_type and plan_status are up to date
         if let Some(owner) = owners.first() {
             self.event_bus
-                .publish_telemetry(TelemetryEvent::new(
+                .publish_billing(BillingEvent::new(
                     Uuid::new_v4(),
                     organization.id,
-                    TelemetryOperation::PlanChanged,
+                    BillingOperation::PlanChanged,
                     Utc::now(),
                     owner.clone().into(),
                     json!({
@@ -1713,10 +1713,10 @@ impl BillingService {
         );
 
         self.event_bus
-            .publish_telemetry(TelemetryEvent::new(
+            .publish_billing(BillingEvent::new(
                 Uuid::new_v4(),
                 organization.id,
-                TelemetryOperation::PaymentFailed,
+                BillingOperation::PaymentFailed,
                 Utc::now(),
                 AuthenticatedEntity::System,
                 json!({ "org_id": organization.id.to_string() }),
@@ -1741,10 +1741,10 @@ impl BillingService {
         );
 
         self.event_bus
-            .publish_telemetry(TelemetryEvent::new(
+            .publish_billing(BillingEvent::new(
                 Uuid::new_v4(),
                 organization.id,
-                TelemetryOperation::PaymentActionRequired,
+                BillingOperation::PaymentActionRequired,
                 Utc::now(),
                 AuthenticatedEntity::System,
                 json!({ "org_id": organization.id.to_string() }),
@@ -1793,10 +1793,10 @@ impl BillingService {
         );
 
         self.event_bus
-            .publish_telemetry(TelemetryEvent::new(
+            .publish_billing(BillingEvent::new(
                 Uuid::new_v4(),
                 organization.id,
-                TelemetryOperation::PaymentRecovered,
+                BillingOperation::PaymentRecovered,
                 Utc::now(),
                 AuthenticatedEntity::System,
                 json!({ "org_id": organization.id.to_string() }),

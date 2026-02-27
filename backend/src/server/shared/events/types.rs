@@ -15,7 +15,8 @@ use uuid::Uuid;
 pub enum Event {
     Entity(Box<EntityEvent>),
     Auth(AuthEvent),
-    Telemetry(TelemetryEvent),
+    Billing(BillingEvent),
+    Onboarding(OnboardingEvent),
     Discovery(DiscoverySessionEvent),
 }
 
@@ -23,7 +24,8 @@ pub enum Event {
 pub enum EventOperation {
     EntityOperation(EntityOperation),
     AuthOperation(AuthOperation),
-    TelemetryOperation(TelemetryOperation),
+    BillingOperation(BillingOperation),
+    OnboardingOperation(OnboardingOperation),
     DiscoveryOperation(DiscoveryPhase),
 }
 
@@ -41,9 +43,8 @@ impl EventOperation {
         match self {
             EventOperation::EntityOperation(entity_operation) => entity_operation.log_level(),
             EventOperation::AuthOperation(auth_operation) => auth_operation.log_level(),
-            EventOperation::TelemetryOperation(telemetry_operation) => {
-                telemetry_operation.log_level()
-            }
+            EventOperation::BillingOperation(op) => op.log_level(),
+            EventOperation::OnboardingOperation(op) => op.log_level(),
             EventOperation::DiscoveryOperation(phase) => phase.log_level(),
         }
     }
@@ -54,9 +55,8 @@ impl Display for EventOperation {
         let string = match self {
             EventOperation::EntityOperation(entity_operation) => entity_operation.to_string(),
             EventOperation::AuthOperation(auth_operation) => auth_operation.to_string(),
-            EventOperation::TelemetryOperation(telemetry_operation) => {
-                telemetry_operation.to_string()
-            }
+            EventOperation::BillingOperation(op) => op.to_string(),
+            EventOperation::OnboardingOperation(op) => op.to_string(),
             EventOperation::DiscoveryOperation(phase) => phase.to_string(),
         };
 
@@ -76,9 +76,15 @@ impl From<AuthOperation> for EventOperation {
     }
 }
 
-impl From<TelemetryOperation> for EventOperation {
-    fn from(value: TelemetryOperation) -> Self {
-        Self::TelemetryOperation(value)
+impl From<BillingOperation> for EventOperation {
+    fn from(value: BillingOperation) -> Self {
+        Self::BillingOperation(value)
+    }
+}
+
+impl From<OnboardingOperation> for EventOperation {
+    fn from(value: OnboardingOperation) -> Self {
+        Self::OnboardingOperation(value)
     }
 }
 
@@ -93,7 +99,8 @@ impl Event {
         match self {
             Event::Auth(a) => a.id,
             Event::Entity(e) => e.id,
-            Event::Telemetry(t) => t.id,
+            Event::Billing(b) => b.id,
+            Event::Onboarding(o) => o.id,
             Event::Discovery(d) => d.id,
         }
     }
@@ -102,7 +109,8 @@ impl Event {
         match self {
             Event::Auth(a) => a.organization_id,
             Event::Entity(e) => e.organization_id,
-            Event::Telemetry(t) => Some(t.organization_id),
+            Event::Billing(b) => Some(b.organization_id),
+            Event::Onboarding(o) => Some(o.organization_id),
             Event::Discovery(_) => None,
         }
     }
@@ -111,7 +119,8 @@ impl Event {
         match self {
             Event::Auth(_) => None,
             Event::Entity(e) => e.network_id,
-            Event::Telemetry(_) => None,
+            Event::Billing(_) => None,
+            Event::Onboarding(_) => None,
             Event::Discovery(d) => Some(d.network_id),
         }
     }
@@ -120,7 +129,8 @@ impl Event {
         match self {
             Event::Auth(e) => e.metadata.clone(),
             Event::Entity(e) => e.metadata.clone(),
-            Event::Telemetry(e) => e.metadata.clone(),
+            Event::Billing(e) => e.metadata.clone(),
+            Event::Onboarding(e) => e.metadata.clone(),
             Event::Discovery(d) => d.metadata.clone(),
         }
     }
@@ -129,7 +139,8 @@ impl Event {
         match self {
             Event::Auth(e) => e.authentication.clone(),
             Event::Entity(e) => e.authentication.clone(),
-            Event::Telemetry(e) => e.authentication.clone(),
+            Event::Billing(e) => e.authentication.clone(),
+            Event::Onboarding(e) => e.authentication.clone(),
             Event::Discovery(d) => d.authentication.clone(),
         }
     }
@@ -138,7 +149,8 @@ impl Event {
         match self {
             Event::Auth(e) => e.operation.clone().into(),
             Event::Entity(e) => e.operation.clone().into(),
-            Event::Telemetry(e) => e.operation.clone().into(),
+            Event::Billing(e) => e.operation.clone().into(),
+            Event::Onboarding(e) => e.operation.clone().into(),
             Event::Discovery(d) => d.phase.into(),
         }
     }
@@ -186,7 +198,13 @@ impl Event {
                     operation = %event.operation,
                 );
             }
-            Event::Telemetry(event) => {
+            Event::Billing(event) => {
+                tracing::info!(
+                    organization_id = %event.organization_id,
+                    operation = %event.operation,
+                );
+            }
+            Event::Onboarding(event) => {
                 tracing::info!(
                     organization_id = %event.organization_id,
                     operation = %event.operation,
@@ -207,7 +225,8 @@ impl Display for Event {
         match self {
             Event::Auth(a) => write!(f, "{a}"),
             Event::Entity(e) => write!(f, "{e}"),
-            Event::Telemetry(t) => write!(f, "{t}"),
+            Event::Billing(b) => write!(f, "{b}"),
+            Event::Onboarding(o) => write!(f, "{o}"),
             Event::Discovery(d) => write!(f, "{d}"),
         }
     }
@@ -399,21 +418,9 @@ impl Display for EntityEvent {
     }
 }
 
-#[derive(
-    Debug, Clone, Serialize, PartialEq, Eq, Hash, Deserialize, strum::Display, utoipa::ToSchema,
-)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Hash, strum::Display, utoipa::ToSchema)]
 #[strum(serialize_all = "snake_case")]
-pub enum TelemetryOperation {
-    // Onboarding funnel
-    OrgCreated,
-    OnboardingModalCompleted,
-    PlanSelected,
-    // Legacy: kept for DB compat, used as guard only
-    PersonalPlanSelected,
-    // Legacy: kept for DB compat, used as guard only
-    CommercialPlanSelected,
-
-    // Billing lifecycle (for email automation)
+pub enum BillingOperation {
     CheckoutStarted,
     CheckoutCompleted,
     TrialStarted,
@@ -424,8 +431,22 @@ pub enum TelemetryOperation {
     PaymentFailed,
     PaymentActionRequired,
     PaymentRecovered,
+}
 
-    // Engagement signals
+impl BillingOperation {
+    fn log_level(&self) -> EventLogLevel {
+        EventLogLevel::Info
+    }
+}
+
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, strum::Display, utoipa::ToSchema,
+)]
+#[strum(serialize_all = "snake_case")]
+pub enum OnboardingOperation {
+    OrgCreated,
+    OnboardingModalCompleted,
+    PlanSelected,
     FirstDaemonRegistered,
     FirstTopologyRebuild,
     FirstDiscoveryCompleted,
@@ -437,51 +458,29 @@ pub enum TelemetryOperation {
     FirstSnmpCredentialCreated,
     InviteSent,
     InviteAccepted,
-
-    // Deprecated: kept for DB compat (stored in org onboarding arrays), never emitted
-    FirstApiKeyCreated,
-    // Deprecated: kept for DB compat, never emitted
-    FirstNetworkCreated,
 }
 
-impl TelemetryOperation {
+impl OnboardingOperation {
     fn log_level(&self) -> EventLogLevel {
         EventLogLevel::Info
-    }
-
-    pub fn is_billing_operation(&self) -> bool {
-        matches!(
-            self,
-            TelemetryOperation::CheckoutStarted
-                | TelemetryOperation::CheckoutCompleted
-                | TelemetryOperation::TrialStarted
-                | TelemetryOperation::TrialEnded
-                | TelemetryOperation::TrialWillEnd
-                | TelemetryOperation::SubscriptionCancelled
-                | TelemetryOperation::PlanChanged
-                | TelemetryOperation::PaymentFailed
-                | TelemetryOperation::PaymentActionRequired
-                | TelemetryOperation::PaymentRecovered
-        )
     }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct TelemetryEvent {
+pub struct BillingEvent {
     pub id: Uuid,
     pub organization_id: Uuid,
-    pub operation: TelemetryOperation,
+    pub operation: BillingOperation,
     pub timestamp: DateTime<Utc>,
     pub authentication: AuthenticatedEntity,
     pub metadata: serde_json::Value,
 }
 
-impl TelemetryEvent {
-    /// Create a new TelemetryEvent, automatically deriving auth_method from authentication
+impl BillingEvent {
     pub fn new(
         id: Uuid,
         organization_id: Uuid,
-        operation: TelemetryOperation,
+        operation: BillingOperation,
         timestamp: DateTime<Utc>,
         authentication: AuthenticatedEntity,
         metadata: serde_json::Value,
@@ -497,7 +496,47 @@ impl TelemetryEvent {
     }
 }
 
-impl Display for TelemetryEvent {
+impl Display for BillingEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{{ id: {}, organization_id: {}, operation: {}, authentication: {} }}",
+            self.id, self.organization_id, self.operation, self.authentication
+        )
+    }
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct OnboardingEvent {
+    pub id: Uuid,
+    pub organization_id: Uuid,
+    pub operation: OnboardingOperation,
+    pub timestamp: DateTime<Utc>,
+    pub authentication: AuthenticatedEntity,
+    pub metadata: serde_json::Value,
+}
+
+impl OnboardingEvent {
+    pub fn new(
+        id: Uuid,
+        organization_id: Uuid,
+        operation: OnboardingOperation,
+        timestamp: DateTime<Utc>,
+        authentication: AuthenticatedEntity,
+        metadata: serde_json::Value,
+    ) -> Self {
+        Self {
+            id,
+            organization_id,
+            operation,
+            timestamp,
+            authentication,
+            metadata,
+        }
+    }
+}
+
+impl Display for OnboardingEvent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

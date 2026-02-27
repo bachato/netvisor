@@ -13,7 +13,7 @@
 	import type { components } from '$lib/api/schema';
 	import { onMount } from 'svelte';
 
-	type TelemetryOperation = components['schemas']['TelemetryOperation'];
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let { isReadOnly = false }: TabProps = $props();
@@ -26,7 +26,7 @@
 	let organization = $derived(organizationQuery.data);
 	let currentUser = $derived(currentUserQuery.data);
 
-	let onboarding = $derived((organization?.onboarding ?? []) as TelemetryOperation[]);
+	let onboarding = $derived((organization?.onboarding ?? []) as OnboardingOperation[]);
 	let isOwner = $derived(currentUser?.permissions === 'Owner');
 
 	// Checklist dismiss state
@@ -36,7 +36,7 @@
 	});
 
 	// Journey stage derivation
-	const has = (op: TelemetryOperation) => onboarding.includes(op);
+	const has = (op: OnboardingOperation) => onboarding.includes(op);
 	let hasDaemon = $derived(has('FirstDaemonRegistered'));
 	let hasDiscovery = $derived(has('FirstDiscoveryCompleted'));
 	let hasTopology = $derived(has('FirstTopologyRebuild'));

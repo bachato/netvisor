@@ -4,7 +4,7 @@ use crate::server::auth::middleware::permissions::{Admin, Authorized};
 use crate::server::config::AppState;
 use crate::server::invites::r#impl::base::Invite;
 use crate::server::organizations::r#impl::api::CreateInviteRequest;
-use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
+use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::traits::Entity;
@@ -156,16 +156,16 @@ async fn create_invite(
         .await?;
 
     if let Some(organization) = organization
-        && organization.not_onboarded(&TelemetryOperation::InviteSent)
+        && organization.not_onboarded(&OnboardingOperation::InviteSent)
     {
         state
             .services
             .invite_service
             .event_bus()
-            .publish_telemetry(TelemetryEvent {
+            .publish_onboarding(OnboardingEvent {
                 id: Uuid::new_v4(),
                 organization_id,
-                operation: TelemetryOperation::InviteSent,
+                operation: OnboardingOperation::InviteSent,
                 timestamp: Utc::now(),
                 metadata: serde_json::json!({}),
                 authentication: entity,
@@ -532,15 +532,15 @@ pub async fn process_pending_invite(
         .flatten();
 
     if let Some(organization) = organization
-        && organization.not_onboarded(&TelemetryOperation::InviteAccepted)
+        && organization.not_onboarded(&OnboardingOperation::InviteAccepted)
         && let Err(e) = state
             .services
             .invite_service
             .event_bus()
-            .publish_telemetry(TelemetryEvent {
+            .publish_onboarding(OnboardingEvent {
                 id: Uuid::new_v4(),
                 organization_id: pending_org_id,
-                operation: TelemetryOperation::InviteAccepted,
+                operation: OnboardingOperation::InviteAccepted,
                 timestamp: Utc::now(),
                 metadata: serde_json::json!({}),
                 authentication: AuthenticatedEntity::System,

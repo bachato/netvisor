@@ -16,7 +16,7 @@ use crate::server::{
 #[async_trait]
 impl EventSubscriber for OrganizationService {
     fn event_filter(&self) -> EventFilter {
-        EventFilter::telemetry_only(None)
+        EventFilter::onboarding_only(None)
     }
 
     async fn handle_events(&self, events: Vec<Event>) -> Result<(), Error> {
@@ -25,8 +25,7 @@ impl EventSubscriber for OrganizationService {
         }
 
         for event in events {
-            if let Event::Telemetry(event) = event
-                && !event.operation.is_billing_operation()
+            if let Event::Onboarding(event) = event
                 && let Some(mut organization) = self.get_by_id(&event.organization_id).await?
                 && organization.not_onboarded(&event.operation)
             {

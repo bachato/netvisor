@@ -13,8 +13,8 @@ use crate::{
     server::shared::{
         entities::EntityDiscriminants,
         events::types::{
-            AuthEvent, AuthOperation, DiscoverySessionEvent, EntityEvent, EntityOperation, Event,
-            TelemetryEvent, TelemetryOperation,
+            AuthEvent, AuthOperation, BillingEvent, BillingOperation, DiscoverySessionEvent,
+            EntityEvent, EntityOperation, Event, OnboardingEvent, OnboardingOperation,
         },
     },
 };
@@ -44,7 +44,8 @@ pub struct EventFilter {
     // None = match all values (ignore as a filter)
     pub entity_operations: Option<HashMap<EntityDiscriminants, Option<Vec<EntityOperation>>>>,
     pub auth_operations: Option<Vec<AuthOperation>>,
-    pub telemetry_operations: Option<Vec<TelemetryOperation>>,
+    pub billing_operations: Option<Vec<BillingOperation>>,
+    pub onboarding_operations: Option<Vec<OnboardingOperation>>,
     pub discovery_phases: Option<Vec<DiscoveryPhase>>,
     pub network_ids: Option<Vec<Uuid>>,
 }
@@ -54,7 +55,8 @@ impl EventFilter {
         Self {
             entity_operations: None,
             auth_operations: None,
-            telemetry_operations: None,
+            billing_operations: None,
+            onboarding_operations: None,
             discovery_phases: None,
             network_ids: None,
         }
@@ -66,7 +68,8 @@ impl EventFilter {
         Self {
             entity_operations: Some(entity_operations),
             auth_operations: Some(vec![]),
-            telemetry_operations: Some(vec![]),
+            billing_operations: Some(vec![]),
+            onboarding_operations: Some(vec![]),
             discovery_phases: Some(vec![]),
             network_ids: None,
         }
@@ -75,17 +78,30 @@ impl EventFilter {
     pub fn auth_only(auth_operations: Option<Vec<AuthOperation>>) -> Self {
         Self {
             entity_operations: Some(HashMap::new()),
-            telemetry_operations: Some(vec![]),
+            billing_operations: Some(vec![]),
+            onboarding_operations: Some(vec![]),
             auth_operations,
             discovery_phases: Some(vec![]),
             network_ids: Some(vec![]),
         }
     }
 
-    pub fn telemetry_only(telemetry_operations: Option<Vec<TelemetryOperation>>) -> Self {
+    pub fn onboarding_only(onboarding_operations: Option<Vec<OnboardingOperation>>) -> Self {
         Self {
             entity_operations: Some(HashMap::new()),
-            telemetry_operations,
+            billing_operations: Some(vec![]),
+            onboarding_operations,
+            auth_operations: Some(vec![]),
+            discovery_phases: Some(vec![]),
+            network_ids: Some(vec![]),
+        }
+    }
+
+    pub fn billing_only(billing_operations: Option<Vec<BillingOperation>>) -> Self {
+        Self {
+            entity_operations: Some(HashMap::new()),
+            billing_operations,
+            onboarding_operations: Some(vec![]),
             auth_operations: Some(vec![]),
             discovery_phases: Some(vec![]),
             network_ids: Some(vec![]),
@@ -95,7 +111,8 @@ impl EventFilter {
     pub fn discovery_only(discovery_phases: Option<Vec<DiscoveryPhase>>) -> Self {
         Self {
             entity_operations: Some(HashMap::new()),
-            telemetry_operations: Some(vec![]),
+            billing_operations: Some(vec![]),
+            onboarding_operations: Some(vec![]),
             auth_operations: Some(vec![]),
             discovery_phases,
             network_ids: Some(vec![]),
@@ -106,7 +123,8 @@ impl EventFilter {
         match event {
             Event::Entity(entity_event) => self.matches_entity(entity_event),
             Event::Auth(auth_event) => self.matches_auth(auth_event),
-            Event::Telemetry(telemetry_event) => self.matches_telemetry(telemetry_event),
+            Event::Billing(billing_event) => self.matches_billing(billing_event),
+            Event::Onboarding(onboarding_event) => self.matches_onboarding(onboarding_event),
             Event::Discovery(discovery_event) => self.matches_discovery(discovery_event),
         }
     }
@@ -138,7 +156,6 @@ impl EventFilter {
     }
 
     fn matches_auth(&self, event: &AuthEvent) -> bool {
-        // Check auth operation filter
         if let Some(auth_operations) = &self.auth_operations {
             return auth_operations.contains(&event.operation);
         }
@@ -146,10 +163,17 @@ impl EventFilter {
         true
     }
 
-    fn matches_telemetry(&self, event: &TelemetryEvent) -> bool {
-        // Check auth operation filter
-        if let Some(telemetry_operations) = &self.telemetry_operations {
-            return telemetry_operations.contains(&event.operation);
+    fn matches_billing(&self, event: &BillingEvent) -> bool {
+        if let Some(billing_operations) = &self.billing_operations {
+            return billing_operations.contains(&event.operation);
+        }
+
+        true
+    }
+
+    fn matches_onboarding(&self, event: &OnboardingEvent) -> bool {
+        if let Some(onboarding_operations) = &self.onboarding_operations {
+            return onboarding_operations.contains(&event.operation);
         }
 
         true
@@ -328,9 +352,14 @@ impl EventBus {
         self.publish(Event::Auth(event)).await
     }
 
-    /// Publish an auth event
-    pub async fn publish_telemetry(&self, event: TelemetryEvent) -> Result<()> {
-        self.publish(Event::Telemetry(event)).await
+    /// Publish a billing event
+    pub async fn publish_billing(&self, event: BillingEvent) -> Result<()> {
+        self.publish(Event::Billing(event)).await
+    }
+
+    /// Publish an onboarding event
+    pub async fn publish_onboarding(&self, event: OnboardingEvent) -> Result<()> {
+        self.publish(Event::Onboarding(event)).await
     }
 
     pub async fn publish_discovery(&self, event: DiscoverySessionEvent) -> Result<()> {

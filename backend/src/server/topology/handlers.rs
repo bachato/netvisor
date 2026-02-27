@@ -4,7 +4,7 @@ use crate::server::{
     auth::middleware::permissions::{Authorized, IsUser, Member, Viewer},
     config::AppState,
     shared::{
-        events::types::{TelemetryEvent, TelemetryOperation},
+        events::types::{OnboardingEvent, OnboardingOperation},
         handlers::{
             query::{FilterQueryExtractor, NetworkFilterQuery},
             traits::{CrudHandlers, update_handler},
@@ -402,16 +402,16 @@ async fn rebuild(
             .await?;
 
         if let Some(organization) = organization
-            && organization.not_onboarded(&TelemetryOperation::FirstTopologyRebuild)
-            && !organization.not_onboarded(&TelemetryOperation::FirstDiscoveryCompleted)
+            && organization.not_onboarded(&OnboardingOperation::FirstTopologyRebuild)
+            && !organization.not_onboarded(&OnboardingOperation::FirstDiscoveryCompleted)
         {
             state
                 .services
                 .event_bus
-                .publish_telemetry(TelemetryEvent {
+                .publish_onboarding(OnboardingEvent {
                     id: Uuid::new_v4(),
                     organization_id: entity.organization_id().expect("User should have org_id"),
-                    operation: TelemetryOperation::FirstTopologyRebuild,
+                    operation: OnboardingOperation::FirstTopologyRebuild,
                     timestamp: Utc::now(),
                     metadata: serde_json::json!({}),
                     authentication: entity,

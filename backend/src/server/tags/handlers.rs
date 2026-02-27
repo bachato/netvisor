@@ -1,6 +1,6 @@
 use crate::server::auth::middleware::permissions::{Admin, Authorized, Member, Viewer};
 use crate::server::shared::entities::{EntityDiscriminants, is_entity_taggable};
-use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
+use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
@@ -237,16 +237,16 @@ pub async fn create_tag(
             .await?;
 
         if let Some(organization) = organization
-            && organization.not_onboarded(&TelemetryOperation::FirstTagCreated)
+            && organization.not_onboarded(&OnboardingOperation::FirstTagCreated)
         {
             state
                 .services
                 .tag_service
                 .event_bus()
-                .publish_telemetry(TelemetryEvent {
+                .publish_onboarding(OnboardingEvent {
                     id: Uuid::new_v4(),
                     organization_id,
-                    operation: TelemetryOperation::FirstTagCreated,
+                    operation: OnboardingOperation::FirstTagCreated,
                     timestamp: Utc::now(),
                     metadata: serde_json::json!({}),
                     authentication: entity,

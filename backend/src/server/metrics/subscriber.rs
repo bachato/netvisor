@@ -21,7 +21,8 @@ impl EventSubscriber for MetricsService {
             let entity = match &event {
                 Event::Entity(e) => e.entity_type.discriminant().to_string(),
                 Event::Auth(_) => "auth".to_string(),
-                Event::Telemetry(_) => "telemetry".to_string(),
+                Event::Billing(_) => "billing".to_string(),
+                Event::Onboarding(_) => "onboarding".to_string(),
                 Event::Discovery(_) => "discovery".to_string(),
             };
 

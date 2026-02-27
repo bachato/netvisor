@@ -1,4 +1,4 @@
-use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
+use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::extractors::Query;
 use crate::server::shared::storage::traits::Entity;
 use crate::server::{
@@ -176,14 +176,14 @@ pub async fn create_user_api_key(
         .await?;
 
     if let Some(organization) = organization
-        && organization.not_onboarded(&TelemetryOperation::FirstUserApiKeyCreated)
+        && organization.not_onboarded(&OnboardingOperation::FirstUserApiKeyCreated)
     {
         service
             .event_bus()
-            .publish_telemetry(TelemetryEvent {
+            .publish_onboarding(OnboardingEvent {
                 id: Uuid::new_v4(),
                 organization_id,
-                operation: TelemetryOperation::FirstUserApiKeyCreated,
+                operation: OnboardingOperation::FirstUserApiKeyCreated,
                 timestamp: Utc::now(),
                 metadata: serde_json::json!({}),
                 authentication: entity,

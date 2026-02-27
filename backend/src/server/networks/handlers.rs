@@ -11,7 +11,7 @@ use crate::server::{
         permissions::{Admin, Authorized, Member},
     },
     shared::{
-        events::types::{TelemetryEvent, TelemetryOperation},
+        events::types::{OnboardingEvent, OnboardingOperation},
         types::api::{ApiErrorResponse, EmptyApiResponse},
     },
 };
@@ -89,7 +89,7 @@ async fn create_network(
 
             if let Some(organization) = organization {
                 // Check for SecondNetworkCreated (if first is already onboarded but second is not)
-                if organization.not_onboarded(&TelemetryOperation::SecondNetworkCreated) {
+                if organization.not_onboarded(&OnboardingOperation::SecondNetworkCreated) {
                     // Count networks to confirm this is actually the second+
                     let network_filter =
                         StorableFilter::<Network>::new_from_org_id(&organization_id);
@@ -99,10 +99,10 @@ async fn create_network(
                     if network_count >= 2 {
                         service
                             .event_bus()
-                            .publish_telemetry(TelemetryEvent {
+                            .publish_onboarding(OnboardingEvent {
                                 id: Uuid::new_v4(),
                                 organization_id,
-                                operation: TelemetryOperation::SecondNetworkCreated,
+                                operation: OnboardingOperation::SecondNetworkCreated,
                                 timestamp: Utc::now(),
                                 metadata: serde_json::json!({
                                     "network_id": network.id,

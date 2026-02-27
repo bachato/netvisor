@@ -7,7 +7,7 @@ use crate::server::auth::middleware::permissions::{Authorized, Member, Viewer};
 use crate::server::bindings::r#impl::base::Binding;
 use crate::server::config::AppState;
 use crate::server::groups::r#impl::base::Group;
-use crate::server::shared::events::types::{TelemetryEvent, TelemetryOperation};
+use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
@@ -238,16 +238,16 @@ async fn create_group(
             .await?;
 
         if let Some(organization) = organization
-            && organization.not_onboarded(&TelemetryOperation::FirstGroupCreated)
+            && organization.not_onboarded(&OnboardingOperation::FirstGroupCreated)
         {
             state
                 .services
                 .group_service
                 .event_bus()
-                .publish_telemetry(TelemetryEvent {
+                .publish_onboarding(OnboardingEvent {
                     id: Uuid::new_v4(),
                     organization_id,
-                    operation: TelemetryOperation::FirstGroupCreated,
+                    operation: OnboardingOperation::FirstGroupCreated,
                     timestamp: Utc::now(),
                     metadata: serde_json::json!({}),
                     authentication: entity,

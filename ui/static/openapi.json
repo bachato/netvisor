@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.7\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.7\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.8\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.8\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -11990,12 +11990,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.7"
+            "example": "0.14.8"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.14.7"
+          "server_version": "0.14.8"
         }
       },
       "ApiResponse": {
@@ -12069,14 +12069,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-24T16:13:55.735120Z",
-              "id": "ce8fd8a3-62f1-43e9-bf9d-91222ffda176",
+              "created_at": "2026-02-26T00:40:06.942412Z",
+              "id": "8ee0e863-bfe8-4550-b86f-5c9c6cc8cb62",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-24T16:13:55.735120Z"
+              "updated_at": "2026-02-26T00:40:06.942412Z"
             }
           },
           "error": {
@@ -12875,14 +12875,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-24T16:13:55.721650Z",
-                      "id": "3e2f48d6-ddfb-4814-bebb-211e56b5feff",
+                      "created_at": "2026-02-26T00:40:06.931582Z",
+                      "id": "09fd770c-e6a3-466b-9ae9-5f3487757ed6",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-24T16:13:55.721650Z"
+                      "updated_at": "2026-02-26T00:40:06.931582Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12891,7 +12891,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Gitea",
+                  "service_definition": "Proxmox Datacenter Manager",
                   "source": {
                     "type": "Manual"
                   },
@@ -13694,14 +13694,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-24T16:13:55.731386Z",
-                  "id": "196e2766-73c2-49d1-9cc8-f91895853d66",
+                  "created_at": "2026-02-26T00:40:06.938989Z",
+                  "id": "9ea9df46-a4e6-44c3-a900-862e98b144f1",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-24T16:13:55.731386Z"
+                  "updated_at": "2026-02-26T00:40:06.938989Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13710,7 +13710,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Gitea",
+              "service_definition": "Proxmox Datacenter Manager",
               "source": {
                 "type": "Manual"
               },
@@ -14909,14 +14909,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-24T16:13:55.721862Z",
-          "id": "6ec989ce-2fa4-40f2-a91b-33e6ba4fb9a4",
+          "created_at": "2026-02-26T00:40:06.931794Z",
+          "id": "6f242aa6-c6ef-4a03-a673-b81a41b39bb5",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-24T16:13:55.721862Z"
+          "updated_at": "2026-02-26T00:40:06.931794Z"
         }
       },
       "BindingBase": {
@@ -15423,7 +15423,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Gitea",
+              "service_definition": "Proxmox Datacenter Manager",
               "tags": [],
               "virtualization": null
             }
@@ -17312,14 +17312,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-24T16:13:55.721369Z",
-                  "id": "ec46f013-e75d-4af9-a3e9-8d8c8839ead6",
+                  "created_at": "2026-02-26T00:40:06.931308Z",
+                  "id": "2c1bf929-3224-4050-b719-8f626f4eec5d",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-24T16:13:55.721369Z"
+                  "updated_at": "2026-02-26T00:40:06.931308Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -17328,7 +17328,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Gitea",
+              "service_definition": "Proxmox Datacenter Manager",
               "source": {
                 "type": "Manual"
               },
@@ -18690,6 +18690,25 @@
           }
         }
       },
+      "OnboardingOperation": {
+        "type": "string",
+        "enum": [
+          "OrgCreated",
+          "OnboardingModalCompleted",
+          "PlanSelected",
+          "FirstDaemonRegistered",
+          "FirstTopologyRebuild",
+          "FirstDiscoveryCompleted",
+          "FirstHostDiscovered",
+          "SecondNetworkCreated",
+          "FirstTagCreated",
+          "FirstGroupCreated",
+          "FirstUserApiKeyCreated",
+          "FirstSnmpCredentialCreated",
+          "InviteSent",
+          "InviteAccepted"
+        ]
+      },
       "OnboardingStateResponse": {
         "type": "object",
         "description": "Response from onboarding state endpoint",
@@ -18842,7 +18861,7 @@
           "onboarding": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TelemetryOperation"
+              "$ref": "#/components/schemas/OnboardingOperation"
             }
           },
           "plan": {
@@ -18894,7 +18913,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.7"
+            "example": "0.14.8"
           }
         },
         "example": {
@@ -18905,7 +18924,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.14.7"
+          "server_version": "0.14.8"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -19262,14 +19281,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-24T16:13:55.712488Z",
-                        "id": "78b4c0bd-97d7-46cf-b91c-cb8d032c3cb0",
+                        "created_at": "2026-02-26T00:40:06.926219Z",
+                        "id": "7337be23-139f-4dd7-ac0e-d5462fbdddd6",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-24T16:13:55.712488Z"
+                        "updated_at": "2026-02-26T00:40:06.926219Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -19278,7 +19297,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Gitea",
+                    "service_definition": "Proxmox Datacenter Manager",
                     "source": {
                       "type": "Manual"
                     },
@@ -19355,14 +19374,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-24T16:13:55.730311Z",
-                    "id": "9ee243ef-e2bd-47b2-b865-450950412e2a",
+                    "created_at": "2026-02-26T00:40:06.938039Z",
+                    "id": "54f6a81a-7aac-45dd-92ce-9f3e81e22d93",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-24T16:13:55.730311Z"
+                    "updated_at": "2026-02-26T00:40:06.938039Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -19371,7 +19390,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Gitea",
+                "service_definition": "Proxmox Datacenter Manager",
                 "source": {
                   "type": "Manual"
                 },
@@ -20422,14 +20441,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-24T16:13:55.721791Z",
-              "id": "060bb4ab-48f6-4693-975f-c8215759a5d6",
+              "created_at": "2026-02-26T00:40:06.931722Z",
+              "id": "b9b35c2a-2150-49b7-9403-0f268aec4b1d",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-24T16:13:55.721791Z"
+              "updated_at": "2026-02-26T00:40:06.931722Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20438,7 +20457,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Gitea",
+          "service_definition": "Proxmox Datacenter Manager",
           "source": {
             "type": "Manual"
           },
@@ -21151,39 +21170,6 @@
           "name",
           "color",
           "updated_at"
-        ]
-      },
-      "TelemetryOperation": {
-        "type": "string",
-        "enum": [
-          "OrgCreated",
-          "OnboardingModalCompleted",
-          "PlanSelected",
-          "PersonalPlanSelected",
-          "CommercialPlanSelected",
-          "CheckoutStarted",
-          "CheckoutCompleted",
-          "TrialStarted",
-          "TrialEnded",
-          "TrialWillEnd",
-          "SubscriptionCancelled",
-          "PlanChanged",
-          "PaymentFailed",
-          "PaymentActionRequired",
-          "PaymentRecovered",
-          "FirstDaemonRegistered",
-          "FirstTopologyRebuild",
-          "FirstDiscoveryCompleted",
-          "FirstHostDiscovered",
-          "SecondNetworkCreated",
-          "FirstTagCreated",
-          "FirstGroupCreated",
-          "FirstUserApiKeyCreated",
-          "FirstSnmpCredentialCreated",
-          "InviteSent",
-          "InviteAccepted",
-          "FirstApiKeyCreated",
-          "FirstNetworkCreated"
         ]
       },
       "Topology": {

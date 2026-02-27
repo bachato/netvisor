@@ -5,7 +5,7 @@ use crate::server::groups::r#impl::base::Group;
 use crate::server::services::r#impl::base::Service;
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::entity_metadata::EntityCategory;
-use crate::server::shared::events::types::TelemetryOperation;
+use crate::server::shared::events::types::OnboardingOperation;
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::tags::r#impl::base::Tag;
 use crate::server::{
@@ -222,7 +222,7 @@ pub enum SqlValue {
     Services(Vec<Service>),
     Bindings(Vec<Binding>),
     Groups(Vec<Group>),
-    TelemetryOperation(Vec<TelemetryOperation>),
+    OnboardingOperation(Vec<OnboardingOperation>),
     StringArray(Vec<String>),
     OptionalStringArray(Option<Vec<String>>),
     JsonValue(serde_json::Value),

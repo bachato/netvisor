@@ -10,7 +10,7 @@ use crate::server::{
     shared::{
         entities::EntityDiscriminants,
         entity_metadata::EntityCategory,
-        events::types::TelemetryOperation,
+        events::types::OnboardingOperation,
         storage::traits::{Entity, SqlValue, Storable},
     },
 };
@@ -105,7 +105,7 @@ impl Storable for Organization {
                 SqlValue::OptionalString(stripe_customer_id),
                 SqlValue::OptionBillingPlan(plan),
                 SqlValue::OptionalString(plan_status),
-                SqlValue::TelemetryOperation(onboarding),
+                SqlValue::OnboardingOperation(onboarding),
                 SqlValue::Bool(has_payment_method),
                 SqlValue::OptionTimestamp(trial_end_date),
                 SqlValue::OptionalString(brevo_company_id),
@@ -120,9 +120,13 @@ impl Storable for Organization {
             .unwrap_or(None)
             .and_then(|v| serde_json::from_value(v).ok());
 
-        let onboarding: Vec<TelemetryOperation> =
+        let raw: Vec<serde_json::Value> =
             serde_json::from_value(row.get::<serde_json::Value, _>("onboarding"))
                 .map_err(|e| anyhow::anyhow!("Failed to deserialize onboarding: {}", e))?;
+        let onboarding: Vec<OnboardingOperation> = raw
+            .into_iter()
+            .filter_map(|v| serde_json::from_value(v).ok())
+            .collect();
 
         Ok(Organization {
             id: row.get("id"),

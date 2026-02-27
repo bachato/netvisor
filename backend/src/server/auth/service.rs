@@ -1,4 +1,4 @@
-use crate::server::shared::events::types::TelemetryOperation;
+use crate::server::shared::events::types::OnboardingOperation;
 use crate::server::shared::types::metadata::TypeMetadataProvider;
 use crate::server::{
     auth::{
@@ -16,7 +16,7 @@ use crate::server::{
     shared::{
         events::{
             bus::EventBus,
-            types::{AuthEvent, AuthOperation, TelemetryEvent},
+            types::{AuthEvent, AuthOperation, OnboardingEvent},
         },
         services::traits::CrudService,
         storage::{filter::StorableFilter, traits::Storable},
@@ -244,7 +244,7 @@ impl AuthService {
 
             // Mark OnboardingModalCompleted if setup was provided (pre-registration setup flow)
             let onboarding = if pending_setup.is_some() {
-                vec![TelemetryOperation::OnboardingModalCompleted]
+                vec![OnboardingOperation::OnboardingModalCompleted]
             } else {
                 vec![]
             };
@@ -367,10 +367,10 @@ impl AuthService {
             }
 
             self.event_bus
-                .publish_telemetry(TelemetryEvent {
+                .publish_onboarding(OnboardingEvent {
                     id: Uuid::new_v4(),
                     organization_id: user.base.organization_id,
-                    operation: TelemetryOperation::OrgCreated,
+                    operation: OnboardingOperation::OrgCreated,
                     timestamp: Utc::now(),
                     metadata,
                     authentication,

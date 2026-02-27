@@ -151,7 +151,7 @@ where
             SqlValue::IfEntries(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::Tags(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::PlanLimitNotifications(v) => query.bind(serde_json::to_value(v)?),
-            SqlValue::TelemetryOperation(v) => query.bind(serde_json::to_value(v)?),
+            SqlValue::OnboardingOperation(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::StringArray(v) => query.bind(v.clone()),
             SqlValue::OptionalStringArray(v) => query.bind(v.clone()),
             SqlValue::JsonValue(v) => query.bind(v.clone()),

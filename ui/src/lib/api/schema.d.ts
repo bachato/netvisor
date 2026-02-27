@@ -4999,7 +4999,7 @@ export interface components {
         OrganizationBase: {
             readonly has_payment_method?: boolean;
             name: string;
-            onboarding: components["schemas"]["TelemetryOperation"][];
+            onboarding: components["schemas"]["OnboardingOperation"][];
             plan: null | components["schemas"]["BillingPlan"];
             readonly plan_status: string | null;
             /** Format: date-time */
@@ -5721,7 +5721,9 @@ export interface components {
          */
         TagOrderField: "created_at" | "name" | "color" | "updated_at";
         /** @enum {string} */
-        TelemetryOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "PersonalPlanSelected" | "CommercialPlanSelected" | "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "TrialWillEnd" | "SubscriptionCancelled" | "PlanChanged" | "PaymentFailed" | "PaymentActionRequired" | "PaymentRecovered" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstGroupCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted" | "FirstApiKeyCreated" | "FirstNetworkCreated";
+        BillingOperation: "CheckoutStarted" | "CheckoutCompleted" | "TrialStarted" | "TrialEnded" | "TrialWillEnd" | "SubscriptionCancelled" | "PlanChanged" | "PaymentFailed" | "PaymentActionRequired" | "PaymentRecovered";
+        /** @enum {string} */
+        OnboardingOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstGroupCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted";
         Topology: components["schemas"]["TopologyBase"] & {
             /** Format: date-time */
             readonly created_at: string;

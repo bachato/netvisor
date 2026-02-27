@@ -9,7 +9,7 @@ use crate::server::{
         entities::EntityDiscriminants,
         events::{
             bus::{EventFilter, EventSubscriber},
-            types::{EntityOperation, Event, TelemetryOperation},
+            types::{EntityOperation, Event, OnboardingOperation},
         },
         services::traits::CrudService,
     },
@@ -33,9 +33,10 @@ impl EventSubscriber for EmailService {
                     Some(vec![EntityOperation::Created, EntityOperation::Deleted]),
                 ),
             ])),
-            telemetry_operations: Some(vec![
-                TelemetryOperation::FirstDaemonRegistered,
-                TelemetryOperation::FirstDiscoveryCompleted,
+            billing_operations: Some(vec![]),
+            onboarding_operations: Some(vec![
+                OnboardingOperation::FirstDaemonRegistered,
+                OnboardingOperation::FirstDiscoveryCompleted,
             ]),
             auth_operations: Some(vec![]),
             discovery_phases: Some(vec![]),
@@ -74,8 +75,8 @@ impl EventSubscriber for EmailService {
                         );
                     }
                 }
-                Event::Telemetry(t) => match t.operation {
-                    TelemetryOperation::FirstDaemonRegistered => {
+                Event::Onboarding(t) => match t.operation {
+                    OnboardingOperation::FirstDaemonRegistered => {
                         let daemon_name = t
                             .metadata
                             .get("daemon_name")
@@ -102,7 +103,7 @@ impl EventSubscriber for EmailService {
                             );
                         }
                     }
-                    TelemetryOperation::FirstDiscoveryCompleted => {
+                    OnboardingOperation::FirstDiscoveryCompleted => {
                         // Only send topology ready email for Network discoveries, not SelfReport
                         let is_network = t
                             .metadata

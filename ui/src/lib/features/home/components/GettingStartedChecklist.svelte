@@ -4,13 +4,13 @@
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { onMount } from 'svelte';
 
-	type TelemetryOperation = components['schemas']['TelemetryOperation'];
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
 	let {
 		onboarding,
 		onNavigate
 	}: {
-		onboarding: TelemetryOperation[];
+		onboarding: OnboardingOperation[];
 		onNavigate: (tab: string) => void;
 	} = $props();
 
@@ -24,8 +24,8 @@
 
 	interface ChecklistStep {
 		id: string;
-		milestone: TelemetryOperation;
-		prerequisite: TelemetryOperation | null;
+		milestone: OnboardingOperation;
+		prerequisite: OnboardingOperation | null;
 		label: string;
 		description: string;
 		action: () => void;

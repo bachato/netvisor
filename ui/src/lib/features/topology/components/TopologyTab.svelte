@@ -76,8 +76,8 @@
 	const topologiesQuery = useTopologiesQuery();
 	const organizationQuery = useOrganizationQuery();
 
-	type TelemetryOperation = components['schemas']['TelemetryOperation'];
-	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as TelemetryOperation[]);
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
+	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
 
 	// Mutations
 	const deleteTopologyMutation = useDeleteTopologyMutation();

@@ -7,7 +7,7 @@ use validator::Validate;
 
 use crate::server::{
     billing::types::base::BillingPlan,
-    shared::{entities::ChangeTriggersTopologyStaleness, events::types::TelemetryOperation},
+    shared::{entities::ChangeTriggersTopologyStaleness, events::types::OnboardingOperation},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Hash)]
@@ -41,7 +41,7 @@ pub struct OrganizationBase {
     #[schema(read_only, required)]
     pub plan_status: Option<String>,
     #[schema(read_only, required)]
-    pub onboarding: Vec<TelemetryOperation>,
+    pub onboarding: Vec<OnboardingOperation>,
     #[serde(default)]
     #[schema(read_only)]
     pub has_payment_method: bool,
@@ -75,11 +75,11 @@ pub struct Organization {
 }
 
 impl Organization {
-    pub fn not_onboarded(&self, step: &TelemetryOperation) -> bool {
+    pub fn not_onboarded(&self, step: &OnboardingOperation) -> bool {
         !self.base.onboarding.contains(step)
     }
 
-    pub fn has_onboarded(&self, step: &TelemetryOperation) -> bool {
+    pub fn has_onboarded(&self, step: &OnboardingOperation) -> bool {
         self.base.onboarding.contains(step)
     }
 }
