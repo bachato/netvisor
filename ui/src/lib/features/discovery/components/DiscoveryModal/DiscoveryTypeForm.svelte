@@ -250,6 +250,39 @@
 		}
 	}
 
+	// Toggle day-of-week selection
+	function toggleDay(field: AnyFieldApi, dayIndex: number) {
+		if (readOnly) return;
+		const current = ((field.state.value as string) ?? '0,1,2,3,4,5,6')
+			.split(',')
+			.filter(Boolean)
+			.map(Number);
+		let updated: number[];
+		if (current.includes(dayIndex)) {
+			if (current.length <= 1) return;
+			updated = current.filter((d) => d !== dayIndex);
+		} else {
+			updated = [...current, dayIndex].sort((a, b) => a - b);
+		}
+		field.handleChange(updated.join(','));
+		if (formData.run_type.type !== 'Scheduled') return;
+		const time: string = form.state.values.schedule_time ?? '00:00';
+		const [hour, minute] = time.split(':').map((n: string) => parseInt(n));
+		formData.run_type = {
+			...formData.run_type,
+			cron_schedule: generateDayTimeCronSchedule(updated, hour || 0, minute || 0)
+		};
+	}
+
+	// Helper to check if a day is selected
+	function isDaySelected(field: AnyFieldApi, dayIndex: number): boolean {
+		return ((field.state.value as string) ?? '0,1,2,3,4,5,6')
+			.split(',')
+			.filter(Boolean)
+			.map(Number)
+			.includes(dayIndex);
+	}
+
 	// Switch to raw cron mode
 	function switchToRawCron() {
 		rawCronMode = true;
@@ -520,41 +553,13 @@
 								</label>
 								<div class="flex gap-1">
 									{#each [1, 2, 3, 4, 5, 6, 0] as dayIndex (dayIndex)}
-										{@const days = (field.state.value ?? '0,1,2,3,4,5,6')
-											.split(',')
-											.filter(Boolean)
-											.map(Number)}
 										<button
 											type="button"
-											class="{days.includes(dayIndex)
+											class="{isDaySelected(field, dayIndex)
 												? 'btn-info'
 												: 'btn-secondary'} px-3 py-1.5 text-sm"
 											disabled={readOnly}
-											onclick={() => {
-												const current = (field.state.value ?? '0,1,2,3,4,5,6')
-													.split(',')
-													.filter(Boolean)
-													.map(Number);
-												let updated;
-												if (current.includes(dayIndex)) {
-													if (current.length <= 1) return;
-													updated = current.filter((d: number) => d !== dayIndex);
-												} else {
-													updated = [...current, dayIndex].sort((a, b) => a - b);
-												}
-												field.handleChange(updated.join(','));
-												if (formData.run_type.type !== 'Scheduled') return;
-												const time = form.state.values.schedule_time ?? '00:00';
-												const [hour, minute] = time.split(':').map((n: string) => parseInt(n));
-												formData.run_type = {
-													...formData.run_type,
-													cron_schedule: generateDayTimeCronSchedule(
-														updated,
-														hour || 0,
-														minute || 0
-													)
-												};
-											}}
+											onclick={() => toggleDay(field, dayIndex)}
 										>
 											{dayLabels[dayIndex]()}
 										</button>
