@@ -294,13 +294,17 @@
 			description: hosts_editor_snmpTabDesc(),
 			disabled: !isEditing && furthestReached < 1
 		},
-		{
-			id: 'if-entries',
-			label: common_ifEntries(),
-			icon: entities.getIconComponent('IfEntry'),
-			description: hosts_ifEntries_subtitle(),
-			disabled: !isEditing && !hasIfEntries
-		},
+		...(isEditing
+			? [
+					{
+						id: 'if-entries',
+						label: common_ifEntries(),
+						icon: entities.getIconComponent('IfEntry'),
+						description: hosts_ifEntries_subtitle(),
+						disabled: !hasIfEntries
+					}
+				]
+			: []),
 		{
 			id: 'interfaces',
 			label: common_interfaces(),
@@ -322,13 +326,16 @@
 			description: common_serviceConfiguration(),
 			disabled: !isEditing && furthestReached < 4
 		},
-		{
-			id: 'virtualization',
-			label: common_virtualization(),
-			icon: concepts.getIconComponent('Virtualization'),
-			description: hosts_editor_virtualizationDesc(),
-			disabled: vmManagerServices.length === 0
-		}
+		...(isEditing && vmManagerServices.length > 0
+			? [
+					{
+						id: 'virtualization',
+						label: common_virtualization(),
+						icon: concepts.getIconComponent('Virtualization'),
+						description: hosts_editor_virtualizationDesc()
+					}
+				]
+			: [])
 	]);
 
 	let enabledTabs = $derived(tabs.filter((t) => !t.disabled));
