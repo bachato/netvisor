@@ -20,8 +20,17 @@ services:
       scanopy-dev:
         ipv4_address: 172.25.0.6
 
+  ui-builder:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.dev
+    command: sh -c "npm run build && cp -r build/* /output/"
+    volumes:
+      - ./messages:/messages:ro
+      - ui-build:/output
+
   server:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile.dev
     command: sh -c "cargo run --bin server --features generate-fixtures"
@@ -43,6 +52,8 @@ services:
       - cargo-git:/usr/local/cargo/git
       - rust-target:/app/target
     depends_on:
+      ui-builder:
+        condition: service_completed_successfully
       postgres-dev:
         condition: service_healthy
       daemon:
