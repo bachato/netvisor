@@ -67,7 +67,7 @@
 		<Loading />
 	{:else if dashboard && organization}
 		<!-- Getting Started Checklist -->
-		{#if !checklistComplete || !checklistDismissed}
+		{#if !checklistComplete && !checklistDismissed}
 			<GettingStartedChecklist {onboarding} onNavigate={navigateTo} />
 		{/if}
 

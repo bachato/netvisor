@@ -80,27 +80,19 @@
 	}
 </script>
 
-{#if !(allComplete && dismissed)}
+{#if !allComplete && !dismissed}
 	<section>
 		<div class="rounded-lg border border-blue-600/30 bg-blue-900/20 p-4">
 			<div class="mb-3 flex items-center justify-between">
-				<h3 class="text-primary text-base font-semibold">
-					{#if allComplete}
-						Setup complete
-					{:else}
-						Getting Started
-					{/if}
-				</h3>
+				<h3 class="text-primary text-base font-semibold">Getting Started</h3>
 				<div class="flex items-center gap-3">
 					<span class="text-tertiary text-sm">{completedCount} of {steps.length} complete</span>
-					{#if allComplete}
-						<button
-							onclick={dismiss}
-							class="text-tertiary hover:text-secondary text-sm transition-colors"
-						>
-							Dismiss
-						</button>
-					{/if}
+					<button
+						onclick={dismiss}
+						class="text-tertiary hover:text-secondary text-sm transition-colors"
+					>
+						Dismiss
+					</button>
 				</div>
 			</div>
 
