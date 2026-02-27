@@ -23,7 +23,7 @@ use scanopy::server::{
 };
 use tower::ServiceBuilder;
 use tower_http::{
-    cors::CorsLayer,
+    cors::{AllowCredentials, AllowOrigin, CorsLayer},
     services::{ServeDir, ServeFile},
     set_header::SetResponseHeaderLayer,
     trace::TraceLayer,
@@ -180,14 +180,17 @@ async fn main() -> anyhow::Result<()> {
             .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
             .allow_credentials(true)
     } else {
-        // Production: Restrict to public_url origin
+        // Production: Reflect any origin, but only send credentials for app origins.
+        // - Session users from app/demo origins: credentials=true → cookies work
+        // - API key users from any domain: origin reflected, no credentials → Bearer works
         let parsed_url = url::Url::parse(&public_url).expect("Invalid public_url");
         let origin_str = format!("{}://{}", parsed_url.scheme(), parsed_url.authority());
         let public_origin: HeaderValue =
             origin_str.parse().expect("Invalid origin from public_url");
+        let demo_origin: HeaderValue = "https://demo.scanopy.net".parse().unwrap();
 
         CorsLayer::new()
-            .allow_origin(public_origin)
+            .allow_origin(AllowOrigin::mirror_request())
             .allow_methods([
                 Method::GET,
                 Method::POST,
@@ -196,7 +199,11 @@ async fn main() -> anyhow::Result<()> {
                 Method::OPTIONS,
             ])
             .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
-            .allow_credentials(true)
+            .allow_credentials(AllowCredentials::predicate(
+                move |origin: &HeaderValue, _parts: &_| {
+                    origin == public_origin || origin == demo_origin
+                },
+            ))
     };
 
     // Permissive CORS for public share routes (used by embeds on customer domains)
@@ -264,7 +271,7 @@ async fn main() -> anyhow::Result<()> {
         ServiceBuilder::new()
             .layer(client_ip_source.into_extension())
             .layer(TraceLayer::new_for_http())
-            .layer(cors.clone())
+            .layer(cors)
             .layer(session_store)
             .layer(middleware::from_fn_with_state(
                 state.clone(),
@@ -314,6 +321,12 @@ async fn main() -> anyhow::Result<()> {
 
     let public_share_app = public_share_app.layer(public_cors);
 
+    // Permissive CORS for health check (marketing site, uptime monitors, etc.)
+    let health_cors = CorsLayer::new()
+        .allow_origin(tower_http::cors::Any)
+        .allow_methods([Method::GET, Method::OPTIONS])
+        .allow_headers([header::CONTENT_TYPE]);
+
     // Health check endpoint without middleware (for kamal-proxy health checks)
     // Metrics endpoint is now at /api/metrics with external service auth (see factory.rs)
     let app = Router::new()
@@ -328,7 +341,7 @@ async fn main() -> anyhow::Result<()> {
             }),
         )
         .with_state(state.clone())
-        .layer(cors)
+        .layer(health_cors)
         .merge(public_share_app)
         .merge(protected_app);
     let listener = tokio::net::TcpListener::bind(&listen_addr).await?;
