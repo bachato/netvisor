@@ -14,6 +14,7 @@ use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::generic::GenericPostgresStorage;
 use crate::server::shared::storage::traits::{Storable, Storage};
+use crate::server::shared::types::api::ApiError;
 use crate::server::snmp_credentials::service::SnmpCredentialService;
 use crate::server::tags::entity_tags::EntityTagService;
 use anyhow::anyhow;
@@ -30,6 +31,7 @@ pub struct DiscoveryService {
     discovery_storage: Arc<GenericPostgresStorage<Discovery>>,
     sessions: RwLock<HashMap<Uuid, DiscoveryUpdatePayload>>, // session_id -> session state mapping
     daemon_sessions: RwLock<HashMap<Uuid, Vec<Uuid>>>,       // daemon_id -> session_id mapping
+    discovery_sessions: RwLock<HashMap<Uuid, Uuid>>, // discovery_id -> session_id mapping (enforces one active session per discovery)
     daemon_pull_cancellations: RwLock<HashMap<Uuid, (bool, Uuid)>>, // daemon_id -> (boolean, session_id) mapping for pull mode cancellations of current session on daemon
     session_last_updated: RwLock<HashMap<Uuid, chrono::DateTime<Utc>>>,
     update_tx: broadcast::Sender<DiscoveryUpdatePayload>,
@@ -82,6 +84,7 @@ impl DiscoveryService {
             discovery_storage,
             sessions: RwLock::new(HashMap::new()),
             daemon_sessions: RwLock::new(HashMap::new()),
+            discovery_sessions: RwLock::new(HashMap::new()),
             daemon_pull_cancellations: RwLock::new(HashMap::new()),
             session_last_updated: RwLock::new(HashMap::new()),
             update_tx: tx,
@@ -140,11 +143,13 @@ impl DiscoveryService {
         let mut daemon_sessions = self.daemon_sessions.write().await;
         let mut session_last_updated = self.session_last_updated.write().await;
         let mut daemon_pull_cancellations = self.daemon_pull_cancellations.write().await;
+        let mut discovery_sessions = self.discovery_sessions.write().await;
 
         if let Some(session_ids) = daemon_sessions.remove(daemon_id) {
             for session_id in &session_ids {
                 sessions.remove(session_id);
                 session_last_updated.remove(session_id);
+                discovery_sessions.retain(|_, sid| sid != session_id);
             }
             tracing::debug!(
                 daemon_id = %daemon_id,
@@ -532,7 +537,7 @@ impl DiscoveryService {
                         };
                     }
                     Err(e) => {
-                        tracing::error!("Scheduled discovery {} failed: {}", discovery_id, e);
+                        tracing::error!("Scheduled discovery {} failed: {:?}", discovery_id, e);
                     }
                 }
             })
@@ -557,7 +562,19 @@ impl DiscoveryService {
         &self,
         discovery: Discovery,
         authentication: AuthenticatedEntity,
-    ) -> Result<DiscoveryUpdatePayload, anyhow::Error> {
+    ) -> Result<DiscoveryUpdatePayload, ApiError> {
+        // Enforce one active session per discovery configuration
+        if self
+            .discovery_sessions
+            .read()
+            .await
+            .contains_key(&discovery.id)
+        {
+            return Err(ApiError::conflict(
+                "A session is already running for this discovery",
+            ));
+        }
+
         let session_id = Uuid::new_v4();
 
         // Hydrate SNMP credentials
@@ -574,7 +591,8 @@ impl DiscoveryService {
                 snmp_credentials: self
                     .snmp_credential_service
                     .build_credentials_for_discovery(discovery.base.network_id)
-                    .await?,
+                    .await
+                    .map_err(|e| ApiError::internal_error(&e.to_string()))?,
                 probe_raw_socket_ports,
             }
         } else {
@@ -593,6 +611,12 @@ impl DiscoveryService {
             .write()
             .await
             .insert(session_id, session_payload.clone());
+
+        // Track discovery -> session mapping
+        self.discovery_sessions
+            .write()
+            .await
+            .insert(discovery.id, session_id);
 
         // Check if daemon has any sessions running
         let daemon_is_running_discovery = if let Some(daemon_sessions) = self
@@ -619,7 +643,8 @@ impl DiscoveryService {
         if !daemon_is_running_discovery {
             self.event_bus()
                 .publish_discovery(session_payload.into_discovery_event_with_auth(authentication))
-                .await?;
+                .await
+                .map_err(|e| ApiError::internal_error(&e.to_string()))?;
         }
 
         let _ = self.update_tx.send(session_payload.clone());
@@ -787,6 +812,12 @@ impl DiscoveryService {
             // Remove the completed session
             sessions.remove(&update.session_id);
 
+            // Remove from discovery_sessions map (find by session_id value)
+            self.discovery_sessions
+                .write()
+                .await
+                .retain(|_, sid| *sid != update.session_id);
+
             // Drop the sessions lock before sending the request
             drop(sessions);
 
@@ -849,6 +880,12 @@ impl DiscoveryService {
                     queue.retain(|id| *id != session_id);
                 }
 
+                // Remove from discovery_sessions map
+                self.discovery_sessions
+                    .write()
+                    .await
+                    .retain(|_, sid| *sid != session_id);
+
                 drop(sessions);
                 drop(daemon_sessions);
 
@@ -907,6 +944,7 @@ impl DiscoveryService {
         let mut sessions = self.sessions.write().await;
         let mut daemon_sessions = self.daemon_sessions.write().await;
         let mut daemon_pull_cancellations = self.daemon_pull_cancellations.write().await;
+        let mut discovery_sessions = self.discovery_sessions.write().await;
 
         let mut to_remove = Vec::new();
         for (session_id, session) in sessions.iter() {
@@ -924,6 +962,8 @@ impl DiscoveryService {
                 if let Some(daemon_sessions) = daemon_sessions.get_mut(&session.daemon_id) {
                     daemon_sessions.retain(|s| *s != session.session_id);
                 }
+
+                discovery_sessions.retain(|_, sid| *sid != session_id);
 
                 tracing::debug!("Cleaned up old discovery session {}", session_id);
             }
@@ -1027,6 +1067,7 @@ impl DiscoveryService {
         let mut last_updated = self.session_last_updated.write().await;
         let mut daemon_sessions = self.daemon_sessions.write().await;
         let mut daemon_pull_cancellations = self.daemon_pull_cancellations.write().await;
+        let mut discovery_sessions = self.discovery_sessions.write().await;
 
         let mut stalled_count = 0;
 
@@ -1054,6 +1095,9 @@ impl DiscoveryService {
                 if let Some(queue) = daemon_sessions.get_mut(&daemon_id) {
                     queue.retain(|id| *id != session_id);
                 }
+
+                // Remove from discovery_sessions map
+                discovery_sessions.retain(|_, sid| *sid != session_id);
 
                 // Remove from last_updated tracking
                 last_updated.remove(&session_id);
