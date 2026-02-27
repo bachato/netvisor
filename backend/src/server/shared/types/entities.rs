@@ -69,8 +69,9 @@ pub struct DiscoveryMetadata {
 impl DiscoveryMetadata {
     pub fn new(discovery_type: DiscoveryType, daemon_id: Uuid) -> Self {
         Self {
-            // Sanitize to redact sensitive data (SNMP credentials) before storage
-            discovery_type: discovery_type.sanitized(),
+            // SNMP credentials are wrapped in Secret<String> and automatically
+            // redacted during serialization — no manual sanitization needed
+            discovery_type,
             daemon_id,
             date: Utc::now(),
         }

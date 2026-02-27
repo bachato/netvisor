@@ -31,7 +31,7 @@ pub async fn create_session(ip: IpAddr, credential: &SnmpQueryCredential) -> Res
         SnmpVersion::V2c => {
             match timeout(
                 SNMP_SESSION_TIMEOUT,
-                AsyncSession::new_v2c(&target, credential.community.as_bytes(), 0),
+                AsyncSession::new_v2c(&target, credential.community.expose_secret().as_bytes(), 0),
             )
             .await
             {

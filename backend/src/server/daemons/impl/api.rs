@@ -76,6 +76,17 @@ pub struct DaemonDiscoveryRequest {
     pub discovery_type: DiscoveryType,
 }
 
+impl DaemonDiscoveryRequest {
+    /// Serialize with SNMP credentials exposed as plaintext for daemon transmission.
+    /// The default Serialize impl redacts credentials via Secret<String>.
+    pub fn to_daemon_value(&self) -> serde_json::Value {
+        serde_json::json!({
+            "session_id": self.session_id,
+            "discovery_type": self.discovery_type.to_daemon_value()
+        })
+    }
+}
+
 impl From<DiscoveryUpdatePayload> for DaemonDiscoveryRequest {
     fn from(payload: DiscoveryUpdatePayload) -> Self {
         Self {

@@ -71,23 +71,21 @@ impl Default for DiscoveryType {
 }
 
 impl DiscoveryType {
-    /// Create a sanitized copy with sensitive data (SNMP credentials) redacted.
-    /// Used when storing EntitySource to prevent credential leakage in API responses.
-    pub fn sanitized(&self) -> Self {
-        match self {
-            DiscoveryType::Network {
-                subnet_ids,
-                host_naming_fallback,
-                snmp_credentials,
-                probe_raw_socket_ports,
-            } => DiscoveryType::Network {
-                subnet_ids: subnet_ids.clone(),
-                host_naming_fallback: *host_naming_fallback,
-                snmp_credentials: snmp_credentials.sanitized(),
-                probe_raw_socket_ports: *probe_raw_socket_ports,
-            },
-            other => other.clone(),
+    /// Serialize with SNMP credentials exposed as plaintext.
+    /// Used ONLY for daemon transmission where the daemon needs actual credentials.
+    pub fn to_daemon_value(&self) -> serde_json::Value {
+        let mut value = serde_json::to_value(self).unwrap_or_default();
+        if let DiscoveryType::Network {
+            snmp_credentials, ..
+        } = self
+            && let serde_json::Value::Object(ref mut map) = value
+        {
+            map.insert(
+                "snmp_credentials".to_string(),
+                snmp_credentials.to_exposed_value(),
+            );
         }
+        value
     }
 }
 

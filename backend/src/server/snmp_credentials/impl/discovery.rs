@@ -1,5 +1,6 @@
 use crate::server::snmp_credentials::r#impl::base::SnmpCredential;
 use crate::server::snmp_credentials::r#impl::base::SnmpVersion;
+use redact::Secret;
 use secrecy::ExposeSecret;
 use serde::Deserialize;
 use serde::Serialize;
@@ -8,20 +9,35 @@ use utoipa::ToSchema;
 
 /// Minimal SNMP credential for daemon queries (version + community only)
 /// Does not include organization_id, name, timestamps - just what's needed for SNMP queries
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash, Default, ToSchema)]
+///
+/// The community string is wrapped in `Secret` to prevent accidental exposure in logs,
+/// debug output, and API responses. Use `community.expose_secret()` for explicit access
+/// (e.g. daemon SNMP sessions).
+#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Hash, Default, ToSchema)]
 pub struct SnmpQueryCredential {
     /// SNMP version (V2c or V3)
     #[serde(default)]
     pub version: SnmpVersion,
-    /// SNMPv2c community string
-    pub community: String,
+    /// SNMPv2c community string — redacted in serialization/debug by default
+    #[serde(serialize_with = "redact::serde::redact_secret")]
+    #[schema(value_type = String)]
+    pub community: Secret<String>,
+}
+
+impl std::fmt::Debug for SnmpQueryCredential {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SnmpQueryCredential")
+            .field("version", &self.version)
+            .field("community", &"[REDACTED]")
+            .finish()
+    }
 }
 
 impl From<SnmpCredential> for SnmpQueryCredential {
     fn from(value: SnmpCredential) -> Self {
         Self {
             version: value.base.version,
-            community: value.base.community.expose_secret().to_string(),
+            community: Secret::from(value.base.community.expose_secret().to_string()),
         }
     }
 }
@@ -63,28 +79,21 @@ impl SnmpCredentialMapping {
         self.default_credential.is_some() || !self.ip_overrides.is_empty()
     }
 
-    /// Create a sanitized copy with community strings redacted.
-    /// Used when storing EntitySource to prevent credential leakage in API responses.
-    pub fn sanitized(&self) -> Self {
-        Self {
-            default_credential: self
-                .default_credential
-                .as_ref()
-                .map(|c| SnmpQueryCredential {
-                    version: c.version,
-                    community: "********".to_string(),
-                }),
-            ip_overrides: self
-                .ip_overrides
-                .iter()
-                .map(|o| SnmpIpOverride {
-                    ip: o.ip,
-                    credential: SnmpQueryCredential {
-                        version: o.credential.version,
-                        community: "********".to_string(),
-                    },
-                })
-                .collect(),
-        }
+    /// Serialize with community strings exposed as plaintext.
+    /// Used ONLY for daemon transmission where the daemon needs actual credentials.
+    pub fn to_exposed_value(&self) -> serde_json::Value {
+        serde_json::json!({
+            "default_credential": self.default_credential.as_ref().map(|c| serde_json::json!({
+                "version": c.version,
+                "community": c.community.expose_secret()
+            })),
+            "ip_overrides": self.ip_overrides.iter().map(|o| serde_json::json!({
+                "ip": o.ip,
+                "credential": {
+                    "version": o.credential.version,
+                    "community": o.credential.community.expose_secret()
+                }
+            })).collect::<Vec<_>>()
+        })
     }
 }

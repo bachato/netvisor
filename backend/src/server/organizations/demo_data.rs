@@ -3629,7 +3629,7 @@ fn generate_discoveries(
                     snmp_credentials: SnmpCredentialMapping {
                         default_credential: default_cred.map(|_| SnmpQueryCredential {
                             version: SnmpVersion::V2c,
-                            community: "public".to_string(),
+                            community: "public".to_string().into(),
                         }),
                         ip_overrides: vec![],
                     },
