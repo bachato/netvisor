@@ -294,12 +294,12 @@ async fn main() -> anyhow::Result<()> {
         .merge(public_share_router)
         .with_state(state.clone());
 
-    // Serve share pages without frame-ancestors CSP so they can be embedded in iframes.
-    // Non-share pages (/dashboard, /settings, etc.) still get frame-ancestors 'self'
-    // from protected_app's fallback.
+    // Only serve the /embed route without frame-ancestors CSP so it can be embedded in iframes.
+    // Regular /share/{id} pages fall through to protected_app which has frame-ancestors 'self',
+    // preventing unauthorized iframe embedding that would bypass domain validation.
     if let Some(static_path) = &web_external_path {
         public_share_app = public_share_app.route_service(
-            "/share/{*rest}",
+            "/share/{id}/embed",
             ServeFile::new(format!("{}/index.html", static_path.display())),
         );
     }
