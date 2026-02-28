@@ -377,6 +377,7 @@
     "daemons_setupScanning": "",
     "daemons_updateAvailable": "",
     "daemons_upgradeDaemon": "",
+    "daemons_upgradeConfigPreserved": "",
     "daemons_upgradeDownload": "",
     "daemons_upgradeRestartSystemd": "",
     "daemons_upgradeStartProcess": "",

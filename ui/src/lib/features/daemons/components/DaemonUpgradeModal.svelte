@@ -21,6 +21,7 @@
 		daemons_dockerPinnedVersion,
 		daemons_latestVersion,
 		daemons_updateAvailable,
+		daemons_upgradeConfigPreserved,
 		daemons_upgradeDownload,
 		daemons_upgradeDaemon,
 		daemons_upgradeRestartSystemd,
@@ -42,17 +43,31 @@
 	type LinuxMethod = 'binary' | 'docker';
 	let linuxMethod: LinuxMethod = $state('binary');
 
+	// Whether daemon has a custom name (non-default needs --name flag on restart)
+	let hasCustomName = $derived(daemon.name !== 'scanopy-daemon');
+
 	// Commands for upgrading
 	const binaryUpgradeCommand = `bash -c "$(curl -fsSL https://raw.githubusercontent.com/scanopy/scanopy/refs/heads/main/install.sh)"`;
 	const systemdRestart = 'sudo systemctl restart scanopy-daemon';
 
+	const macosStopCommand = 'sudo pkill scanopy-daemon';
+	let macosStartCommand = $derived(
+		hasCustomName ? `sudo scanopy-daemon --name ${daemon.name}` : 'sudo scanopy-daemon'
+	);
+
 	const windowsDownloadUrl =
 		'https://github.com/scanopy/scanopy/releases/latest/download/scanopy-daemon-windows-amd64.exe';
 	const windowsDownloadCommand = `Invoke-WebRequest -Uri "${windowsDownloadUrl}" -OutFile "scanopy-daemon-windows-amd64.exe"`;
+	const windowsStopCommand = 'Stop-Process -Name "scanopy-daemon-windows-amd64"';
+	let windowsStartCommand = $derived(
+		hasCustomName
+			? `.\\scanopy-daemon-windows-amd64.exe --name ${daemon.name}`
+			: '.\\scanopy-daemon-windows-amd64.exe'
+	);
 
 	const dockerComposeLatestPull = `docker compose pull
 docker compose up -d`;
-	const dockerComposeImageLine = `image: ghcr.io/scanopy/scanopy/daemon:latest`;
+	let dockerComposeImageLine = $derived(`image: ghcr.io/scanopy/scanopy/daemon:v${VERSION}`);
 
 	function handleOsSelect(os: DaemonOS) {
 		selectedOS = os;
@@ -133,6 +148,7 @@ docker compose up -d`;
 								<b>{common_stepNumber({ number: '1' })}</b>
 								{daemons_upgradeStopProcess()}
 							</div>
+							<CodeContainer language="bash" expandable={false} code={macosStopCommand} />
 							<div class="text-secondary">
 								<b>{common_stepNumber({ number: '2' })}</b>
 								{daemons_upgradeDownload()}
@@ -142,7 +158,9 @@ docker compose up -d`;
 								<b>{common_stepNumber({ number: '3' })}</b>
 								{daemons_upgradeStartProcess()}
 							</div>
+							<CodeContainer language="bash" expandable={false} code={macosStartCommand} />
 
+							<InlineInfo title="" body={daemons_upgradeConfigPreserved()} />
 							<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 						</div>
 					{:else if selectedOS === 'windows'}
@@ -152,6 +170,7 @@ docker compose up -d`;
 								<b>{common_stepNumber({ number: '1' })}</b>
 								{daemons_upgradeStopProcess()}
 							</div>
+							<CodeContainer language="powershell" expandable={false} code={windowsStopCommand} />
 							<div class="text-secondary">
 								<b>{common_stepNumber({ number: '2' })}</b>
 								{daemons_upgradeDownload()}
@@ -165,7 +184,9 @@ docker compose up -d`;
 								<b>{common_stepNumber({ number: '3' })}</b>
 								{daemons_upgradeStartProcess()}
 							</div>
+							<CodeContainer language="powershell" expandable={false} code={windowsStartCommand} />
 
+							<InlineInfo title="" body={daemons_upgradeConfigPreserved()} />
 							<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 						</div>
 					{/if}
