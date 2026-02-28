@@ -13,6 +13,7 @@
 		topology_flowNotFound,
 		topology_noNodesToExport
 	} from '$lib/paraglide/messages';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 
 	const { getNodes, getEdges, getViewport, setViewport } = useSvelteFlow();
 
@@ -220,6 +221,7 @@
 				pixelRatio: 2
 			});
 			downloadImage(dataUrl);
+			trackEvent('topology_exported', { format: 'png' });
 		} catch (err) {
 			console.error('Export failed:', err);
 			pushError(topology_exportFailed());

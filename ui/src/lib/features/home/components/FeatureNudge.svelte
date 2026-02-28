@@ -2,6 +2,7 @@
 	import { X, ArrowRight } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import type { IconComponent } from '$lib/shared/utils/types';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 
 	let {
 		id,
@@ -33,9 +34,15 @@
 	});
 
 	function dismiss() {
+		trackEvent('nudge_dismissed', { nudge_id: id });
 		localStorage.setItem(dismissKey, 'true');
 		dismissed = true;
 		onDismiss?.();
+	}
+
+	function handleAction() {
+		trackEvent('nudge_action_clicked', { nudge_id: id });
+		onAction();
 	}
 </script>
 
@@ -51,7 +58,7 @@
 				<h4 class="text-primary mb-1 text-sm font-semibold">{title}</h4>
 				<p class="text-tertiary text-sm">{description}</p>
 				<button
-					onclick={onAction}
+					onclick={handleAction}
 					class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-blue-400 transition-colors hover:text-blue-300"
 				>
 					{actionLabel}

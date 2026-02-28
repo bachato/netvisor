@@ -29,6 +29,7 @@
 	import { TopologyDisplay } from '$lib/shared/components/forms/selection/display/TopologyDisplay.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { useUsersQuery } from '$lib/features/users/queries';
@@ -148,6 +149,19 @@
 	// Track which topologies have had their initial auto-rebuild check
 	let initialRebuildChecked = new SvelteSet<string>();
 	let onboardingRebuildChecked = new SvelteSet<string>();
+	let topologyViewTracked = new SvelteSet<string>();
+
+	// Track topology_viewed once per topology when tab is active and data is loaded
+	$effect(() => {
+		if (!isActive || !currentTopology) return;
+		if (topologyViewTracked.has(currentTopology.id)) return;
+		topologyViewTracked.add(currentTopology.id);
+		trackEvent('topology_viewed', {
+			network_id: currentTopology.network_id,
+			node_count: currentTopology.nodes.length,
+			view_type: 'app'
+		});
+	});
 
 	// One-time rebuild for onboarding: triggers when FirstTopologyRebuild milestone is missing,
 	// regardless of autoRebuild setting, so the checklist item clears on first topology visit.

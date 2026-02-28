@@ -13,6 +13,7 @@
 	import ReadOnlyTopologyViewer from './ReadOnlyTopologyViewer.svelte';
 	import { AlertTriangle } from 'lucide-svelte';
 	import { getMetadata } from '$lib/shared/stores/metadata';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 
 	interface Props {
 		shareId: string | undefined;
@@ -76,6 +77,30 @@
 		}
 
 		loading = false;
+
+		if (isEmbed) {
+			let referrer_domain: string | null = null;
+			if (document.referrer) {
+				try {
+					referrer_domain = new URL(document.referrer).hostname;
+				} catch {
+					referrer_domain = null;
+				}
+			}
+			trackEvent('share_embed_viewed', {
+				share_id: shareId,
+				organization_id: null,
+				referrer_domain,
+				view_type: 'embed'
+			});
+		} else {
+			trackEvent('share_link_viewed', {
+				share_id: shareId,
+				organization_id: null,
+				has_password: shareMetadata.requires_password,
+				view_type: 'share'
+			});
+		}
 	}
 
 	async function handlePasswordSubmit(password: string): Promise<boolean> {

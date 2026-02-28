@@ -3,6 +3,7 @@
 	import { Check, Circle } from 'lucide-svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { onMount } from 'svelte';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -75,6 +76,7 @@
 	}
 
 	function dismiss() {
+		trackEvent('checklist_dismissed', { completed_count: completedCount });
 		localStorage.setItem(DISMISS_KEY, 'true');
 		dismissed = true;
 	}

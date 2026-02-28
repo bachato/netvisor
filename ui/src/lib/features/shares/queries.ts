@@ -231,9 +231,9 @@ export function generateShareUrl(shareId: string): string {
  */
 export function generateEmbedUrl(shareId: string): string {
 	if (typeof window !== 'undefined') {
-		return `${window.location.origin}/share/${shareId}?embed=true`;
+		return `${window.location.origin}/share/${shareId}/embed`;
 	}
-	return `/share/${shareId}?embed=true`;
+	return `/share/${shareId}/embed`;
 }
 
 /**
