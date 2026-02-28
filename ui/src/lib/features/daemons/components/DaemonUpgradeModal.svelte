@@ -26,6 +26,7 @@
 		daemons_upgradeDaemon,
 		daemons_upgradeMultipleDaemons,
 		daemons_upgradeMultipleDaemonsBody,
+		daemons_upgradeMultipleDaemonsLearnMore,
 		daemons_upgradeStartProcess,
 		daemons_upgradeStopProcess
 	} from '$lib/paraglide/messages';
@@ -118,11 +119,27 @@ docker compose up -d`;
 								</div>
 								<CodeContainer language="bash" expandable={false} code={startCommand} />
 
-								<InlineInfo
-									title={daemons_upgradeMultipleDaemons()}
-									body={daemons_upgradeMultipleDaemonsBody()}
-								/>
-								<CodeContainer language="bash" expandable={false} code={linuxConfigListCommand} />
+								<details class="text-secondary text-sm">
+									<summary class="cursor-pointer font-medium hover:text-blue-400"
+										>{daemons_upgradeMultipleDaemons()}</summary
+									>
+									<div class="mt-2 space-y-2">
+										<p>{daemons_upgradeMultipleDaemonsBody()}</p>
+										<CodeContainer
+											language="bash"
+											expandable={false}
+											code={linuxConfigListCommand}
+										/>
+										<a
+											href="https://scanopy.net/docs/multiple-daemons/"
+											target="_blank"
+											rel="external noopener noreferrer"
+											class="text-info hover:underline"
+										>
+											{daemons_upgradeMultipleDaemonsLearnMore()} &rarr;
+										</a>
+									</div>
+								</details>
 							</div>
 						{:else if linuxMethod === 'docker'}
 							<!-- Linux Docker Compose -->
@@ -169,11 +186,23 @@ docker compose up -d`;
 							</div>
 							<CodeContainer language="bash" expandable={false} code={startCommand} />
 
-							<InlineInfo
-								title={daemons_upgradeMultipleDaemons()}
-								body={daemons_upgradeMultipleDaemonsBody()}
-							/>
-							<CodeContainer language="bash" expandable={false} code={macosConfigListCommand} />
+							<details class="text-secondary text-sm">
+								<summary class="cursor-pointer font-medium hover:text-blue-400"
+									>{daemons_upgradeMultipleDaemons()}</summary
+								>
+								<div class="mt-2 space-y-2">
+									<p>{daemons_upgradeMultipleDaemonsBody()}</p>
+									<CodeContainer language="bash" expandable={false} code={macosConfigListCommand} />
+									<a
+										href="https://scanopy.net/docs/multiple-daemons/"
+										target="_blank"
+										rel="external noopener noreferrer"
+										class="text-info hover:underline"
+									>
+										{daemons_upgradeMultipleDaemonsLearnMore()} &rarr;
+									</a>
+								</div>
+							</details>
 
 							<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 						</div>
@@ -200,15 +229,27 @@ docker compose up -d`;
 							</div>
 							<CodeContainer language="powershell" expandable={false} code={windowsStartCommand} />
 
-							<InlineInfo
-								title={daemons_upgradeMultipleDaemons()}
-								body={daemons_upgradeMultipleDaemonsBody()}
-							/>
-							<CodeContainer
-								language="powershell"
-								expandable={false}
-								code={windowsConfigListCommand}
-							/>
+							<details class="text-secondary text-sm">
+								<summary class="cursor-pointer font-medium hover:text-blue-400"
+									>{daemons_upgradeMultipleDaemons()}</summary
+								>
+								<div class="mt-2 space-y-2">
+									<p>{daemons_upgradeMultipleDaemonsBody()}</p>
+									<CodeContainer
+										language="powershell"
+										expandable={false}
+										code={windowsConfigListCommand}
+									/>
+									<a
+										href="https://scanopy.net/docs/multiple-daemons/"
+										target="_blank"
+										rel="external noopener noreferrer"
+										class="text-info hover:underline"
+									>
+										{daemons_upgradeMultipleDaemonsLearnMore()} &rarr;
+									</a>
+								</div>
+							</details>
 
 							<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 						</div>
