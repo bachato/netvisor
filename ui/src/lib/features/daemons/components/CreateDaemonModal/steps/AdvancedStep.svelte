@@ -4,9 +4,10 @@
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
+	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { common_documentation } from '$lib/paraglide/messages';
+	import { common_documentation, common_documentationLinkText } from '$lib/paraglide/messages';
 	import { fieldDefs, sectionDefs } from '../../../config';
 
 	interface Props {
@@ -57,8 +58,11 @@
 </script>
 
 <div class="space-y-6">
-	<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted i18n content -->
-	<p class="docs-hint text-tertiary text-xs">{@html common_documentation()}</p>
+	<DocsHint
+		text={common_documentation()}
+		href="https://scanopy.net/docs/daemon-configuration/"
+		linkText={common_documentationLinkText()}
+	/>
 
 	{#each advancedSections as section (section.name)}
 		{@const sectionName = section.name()}
@@ -87,8 +91,12 @@
 
 			{#if isExpanded}
 				{#if sectionDef?.docsHint}
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted i18n content -->
-					<p class="docs-hint text-tertiary mt-3 text-xs">{@html sectionDef.docsHint()}</p>
+					<DocsHint
+						class="mt-3"
+						text={sectionDef.docsHint.text()}
+						href={sectionDef.docsHint.href}
+						linkText={sectionDef.docsHint.linkText()}
+					/>
 				{/if}
 				<div class="mt-3 grid grid-cols-2 gap-4">
 					{#each section.fields as def (def.id)}
@@ -157,12 +165,3 @@
 		</div>
 	{/each}
 </div>
-
-<style>
-	.docs-hint :global(a) {
-		color: var(--color-blue-500, #3b82f6);
-	}
-	.docs-hint :global(a:hover) {
-		text-decoration: underline;
-	}
-</style>

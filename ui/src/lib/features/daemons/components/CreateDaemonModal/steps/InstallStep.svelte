@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
+	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import type { DaemonOS } from '../../../utils';
@@ -11,7 +12,11 @@
 		daemons_dockerLinuxOnly,
 		daemons_dockerLinuxOnlyBody,
 		daemons_docsMacvlan,
+		daemons_docsMacvlanLinkText,
+		daemons_docsMultipleDaemons,
+		daemons_docsMultipleDaemonsLinkText,
 		daemons_docsMultiVlan,
+		daemons_docsMultiVlanLinkText,
 		daemons_downloadDaemon,
 		daemons_fixValidationErrors,
 		daemons_fixValidationErrorsBody,
@@ -52,8 +57,16 @@
 	{#if hasErrors}
 		<InlineWarning title={daemons_fixValidationErrors()} body={daemons_fixValidationErrorsBody()} />
 	{:else}
-		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted i18n content -->
-		<p class="docs-hint text-tertiary text-xs">{@html daemons_docsMultiVlan()}</p>
+		<DocsHint
+			text={daemons_docsMultiVlan()}
+			href="https://scanopy.net/docs/multi-vlan/"
+			linkText={daemons_docsMultiVlanLinkText()}
+		/>
+		<DocsHint
+			text={daemons_docsMultipleDaemons()}
+			href="https://scanopy.net/docs/multiple-daemons/"
+			linkText={daemons_docsMultipleDaemonsLinkText()}
+		/>
 		<OsSelector
 			{selectedOS}
 			onOsSelect={handleOsSelect}
@@ -75,8 +88,11 @@
 					<CodeContainer language="bash" expandable={false} code={runCommand} />
 				{:else if linuxMethod === 'docker' && dockerCompose}
 					<!-- Linux Docker Compose -->
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted i18n content -->
-					<p class="docs-hint text-tertiary text-xs">{@html daemons_docsMacvlan()}</p>
+					<DocsHint
+						text={daemons_docsMacvlan()}
+						href="https://scanopy.net/docs/macvlan-setup/"
+						linkText={daemons_docsMacvlanLinkText()}
+					/>
 					<CodeContainer language="yaml" expandable={false} code={dockerCompose} />
 				{/if}
 			{:else if selectedOS === 'macos'}
@@ -115,12 +131,3 @@
 		</OsSelector>
 	{/if}
 </div>
-
-<style>
-	.docs-hint :global(a) {
-		color: var(--color-blue-500, #3b82f6);
-	}
-	.docs-hint :global(a:hover) {
-		text-decoration: underline;
-	}
-</style>

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
+	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
-	import { ArrowBigUpDash, ExternalLink } from 'lucide-svelte';
+	import { ArrowBigUpDash } from 'lucide-svelte';
 	import type { Daemon } from '../types/base';
 	import { VERSION } from '$lib/version';
 	import { type DaemonOS, detectOS } from '../utils';
@@ -24,9 +25,10 @@
 		daemons_upgradeConfigPreserved,
 		daemons_upgradeDownload,
 		daemons_upgradeDaemon,
+		daemons_docsMultipleDaemons,
+		daemons_docsMultipleDaemonsLinkText,
 		daemons_upgradeMultipleDaemons,
 		daemons_upgradeMultipleDaemonsBody,
-		daemons_upgradeMultipleDaemonsLearnMore,
 		daemons_upgradeStartProcess,
 		daemons_upgradeStopProcess
 	} from '$lib/paraglide/messages';
@@ -128,15 +130,11 @@ docker compose up -d`;
 											expandable={false}
 											code={linuxConfigListCommand}
 										/>
-										<a
+										<DocsHint
+											text={daemons_docsMultipleDaemons()}
 											href="https://scanopy.net/docs/multiple-daemons/"
-											target="_blank"
-											rel="external noopener noreferrer"
-											class="text-info flex items-center gap-1 hover:underline"
-										>
-											{daemons_upgradeMultipleDaemonsLearnMore()}
-											<ExternalLink class="h-3 w-3" />
-										</a>
+											linkText={daemons_docsMultipleDaemonsLinkText()}
+										/>
 									</div>
 								</details>
 								<CodeContainer language="bash" expandable={false} code={startCommand} />
@@ -191,15 +189,11 @@ docker compose up -d`;
 								<div class="mt-2 space-y-2">
 									<p>{daemons_upgradeMultipleDaemonsBody()}</p>
 									<CodeContainer language="bash" expandable={false} code={macosConfigListCommand} />
-									<a
+									<DocsHint
+										text={daemons_docsMultipleDaemons()}
 										href="https://scanopy.net/docs/multiple-daemons/"
-										target="_blank"
-										rel="external noopener noreferrer"
-										class="text-info flex items-center gap-1 hover:underline"
-									>
-										{daemons_upgradeMultipleDaemonsLearnMore()}
-										<ExternalLink class="h-3 w-3" />
-									</a>
+										linkText={daemons_docsMultipleDaemonsLinkText()}
+									/>
 								</div>
 							</details>
 							<CodeContainer language="bash" expandable={false} code={startCommand} />
@@ -238,15 +232,11 @@ docker compose up -d`;
 										expandable={false}
 										code={windowsConfigListCommand}
 									/>
-									<a
+									<DocsHint
+										text={daemons_docsMultipleDaemons()}
 										href="https://scanopy.net/docs/multiple-daemons/"
-										target="_blank"
-										rel="external noopener noreferrer"
-										class="text-info flex items-center gap-1 hover:underline"
-									>
-										{daemons_upgradeMultipleDaemonsLearnMore()}
-										<ExternalLink class="h-3 w-3" />
-									</a>
+										linkText={daemons_docsMultipleDaemonsLinkText()}
+									/>
 								</div>
 							</details>
 							<CodeContainer language="powershell" expandable={false} code={windowsStartCommand} />

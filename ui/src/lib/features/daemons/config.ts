@@ -297,10 +297,20 @@ export const fieldDefs: FieldDef[] = [
 	}
 ];
 
-export const sectionDefs: Record<string, { description: () => string; docsHint?: () => string }> = {
+export const sectionDefs: Record<
+	string,
+	{
+		description: () => string;
+		docsHint?: { text: () => string; href: string; linkText: () => string };
+	}
+> = {
 	'Docker Discovery': {
 		description: () => m.daemons_config_sectionDockerDiscoveryDesc(),
-		docsHint: () => m.daemons_docsDockerProxy()
+		docsHint: {
+			text: () => m.daemons_docsDockerProxy(),
+			href: 'https://scanopy.net/docs/docker-proxy/',
+			linkText: () => m.daemons_docsDockerProxyLinkText()
+		}
 	},
 	'Network Discovery': { description: () => m.daemons_config_sectionNetworkDiscoveryDesc() },
 	'Server Connection': { description: () => m.daemons_config_sectionServerConnectionDesc() },
