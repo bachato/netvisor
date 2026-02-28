@@ -23,10 +23,12 @@
 	// Get unique section names in order of appearance (compare by return value, not function reference)
 	const sectionNames = [...new Set(advancedFieldDefs.map((d) => d.section!()))];
 
-	// Group advanced fields by section (compare by return value)
+	// Group advanced fields by section (compare by return value), booleans sorted to end
 	const advancedSections = sectionNames.map((name) => ({
 		name: () => name,
-		fields: advancedFieldDefs.filter((d) => d.section!() === name)
+		fields: advancedFieldDefs
+			.filter((d) => d.section!() === name)
+			.sort((a, b) => (a.type === 'boolean' ? 1 : 0) - (b.type === 'boolean' ? 1 : 0))
 	}));
 
 	// Track which sections are expanded (default: all collapsed)
