@@ -7,7 +7,6 @@
 	import OrgNetworksModal from '$lib/features/auth/components/onboarding/OrgNetworksModal.svelte';
 	import RegisterModal from '$lib/features/auth/components/RegisterModal.svelte';
 	import UseCaseStep from '$lib/features/auth/components/onboarding/UseCaseStep.svelte';
-	import BlockerFlow from '$lib/features/auth/components/onboarding/BlockerFlow.svelte';
 	import type { RegisterRequest, SetupRequest, UseCase } from '$lib/features/auth/types/base';
 	import {
 		useSetupMutation,
@@ -56,7 +55,7 @@
 	let isInviteFlow = $derived(!!invitedBy);
 
 	// Step tracking
-	type Step = 'use_case' | 'blocker' | 'setup' | 'register';
+	type Step = 'use_case' | 'setup' | 'register';
 
 	// Get initial step from URL params or default
 	function getInitialStep(): Step {
@@ -111,7 +110,7 @@
 
 	// Helper to validate step
 	function isValidStep(step: string): step is Step {
-		return ['use_case', 'blocker', 'setup', 'register'].includes(step);
+		return ['use_case', 'setup', 'register'].includes(step);
 	}
 
 	// Persist step to session whenever it changes
@@ -135,7 +134,7 @@
 	let useCase = $derived($onboardingStore.useCase);
 
 	// Calculate total steps based on flow
-	// use_case -> (blocker?) -> setup -> register = 3 steps
+	// use_case -> setup -> register = 3 steps
 	// Invite: just register = 1 step
 	let totalSteps = $derived(() => {
 		if (isInviteFlow) return 1;
@@ -147,7 +146,6 @@
 
 		const stepMap: Record<Step, number> = {
 			use_case: 1,
-			blocker: 1, // Blocker doesn't count as a separate step in progress
 			setup: 2,
 			register: 3
 		};
@@ -157,14 +155,6 @@
 	// Note: Auth check is handled by +layout.svelte
 
 	function handleUseCaseNext() {
-		currentStep = 'setup';
-	}
-
-	function handleBlockerFlow() {
-		currentStep = 'blocker';
-	}
-
-	function handleBlockerResolved() {
 		currentStep = 'setup';
 	}
 
@@ -188,9 +178,6 @@
 
 	function handleBack() {
 		switch (currentStep) {
-			case 'blocker':
-				currentStep = 'use_case';
-				break;
 			case 'setup':
 				currentStep = 'use_case';
 				break;
@@ -268,7 +255,7 @@
 			<div
 				class="flex items-center gap-2 rounded-full bg-gray-800/90 px-4 py-2 shadow-lg backdrop-blur-sm"
 			>
-				{#if currentStepNumber() > 1 && currentStep !== 'blocker'}
+				{#if currentStepNumber() > 1}
 					<button
 						type="button"
 						onclick={handleBack}
@@ -303,17 +290,8 @@
 				<UseCaseStep
 					isOpen={true}
 					onNext={handleUseCaseNext}
-					onBlockerFlow={handleBlockerFlow}
 					onClose={handleClose}
 					onSwitchToLogin={handleSwitchToLogin}
-				/>
-			{:else if currentStep === 'blocker'}
-				<!-- Blocker Resolution Flow (Cloud users only) -->
-				<BlockerFlow
-					isOpen={true}
-					useCase={useCase ?? 'homelab'}
-					onResolved={handleBlockerResolved}
-					onClose={handleClose}
 				/>
 			{:else if currentStep === 'setup'}
 				<!-- Organization & Network Setup -->

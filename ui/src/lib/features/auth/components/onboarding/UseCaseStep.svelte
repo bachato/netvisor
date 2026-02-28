@@ -18,11 +18,9 @@
 		onboarding_alreadyHaveAccount,
 		onboarding_commercialNoticeBody,
 		onboarding_commercialNoticeTitle,
-		onboarding_haveQuestionsFirst,
 		onboarding_howDidYouHear,
 		onboarding_howWillYouUse,
 		onboarding_logInHere,
-		onboarding_readyToScan,
 		onboarding_referralSource_blogArticle,
 		onboarding_referralSource_hackerNews,
 		onboarding_referralSource_otherPlaceholder,
@@ -31,20 +29,17 @@
 		onboarding_referralSource_socialMedia,
 		onboarding_referralSource_wordOfMouth,
 		onboarding_tailorSetup,
-		onboarding_understandContinue,
-		onboarding_yesLetsGo
+		onboarding_understandContinue
 	} from '$lib/paraglide/messages';
 
 	let {
 		isOpen,
 		onNext,
-		onBlockerFlow,
 		onClose,
 		onSwitchToLogin = null
 	}: {
 		isOpen: boolean;
 		onNext: () => void;
-		onBlockerFlow: () => void;
 		onClose: () => void;
 		onSwitchToLogin?: (() => void) | null;
 	} = $props();
@@ -170,7 +165,6 @@
 		}
 	}
 
-	// Self hosted handlers
 	function handleContinue() {
 		if (!selectedUseCase) return;
 		saveBusinessFields();
@@ -186,42 +180,6 @@
 		onNext();
 	}
 
-	// Cloud handlers
-	function handleReadyYes() {
-		if (!selectedUseCase) return;
-		saveBusinessFields();
-		const values = form.state.values;
-		trackEvent('onboarding_use_case_selected', {
-			use_case: selectedUseCase,
-			role: values.role || undefined,
-			company_size: values.companySize || undefined,
-			referral_source: values.referralSource || undefined,
-			referral_source_other: values.referralSourceOther || undefined
-		});
-		trackEvent('onboarding_ready_to_scan', { ready: true, use_case: selectedUseCase });
-		onboardingStore.setUseCase(selectedUseCase);
-		onboardingStore.setReadyToScan(true);
-		onNext();
-	}
-
-	function handleReadyNo() {
-		if (!selectedUseCase) return;
-		saveBusinessFields();
-		const values = form.state.values;
-		trackEvent('onboarding_use_case_selected', {
-			use_case: selectedUseCase,
-			role: values.role || undefined,
-			company_size: values.companySize || undefined,
-			referral_source: values.referralSource || undefined,
-			referral_source_other: values.referralSourceOther || undefined
-		});
-		trackEvent('onboarding_ready_to_scan', { ready: false, use_case: selectedUseCase });
-		onboardingStore.setUseCase(selectedUseCase);
-		onboardingStore.setReadyToScan(false);
-		onBlockerFlow();
-	}
-
-	let isCloudDeployment = $derived(configData && isCloud(configData));
 	let canProceed = $derived(selectedUseCase !== null && !showLicenseWarning);
 </script>
 
@@ -354,42 +312,11 @@
 
 		<div class="modal-footer">
 			<div class="flex w-full flex-col gap-4">
-				{#if isCloudDeployment}
-					<!-- Cloud: Show ready to scan buttons (disabled until use case selected) -->
-					<p class="text-secondary text-center text-sm">
-						{onboarding_readyToScan()}
-					</p>
-					<div class="flex gap-3">
-						<button
-							type="button"
-							class="btn-secondary flex-1"
-							disabled={!canProceed}
-							onclick={handleReadyNo}
-						>
-							{onboarding_haveQuestionsFirst()}
-						</button>
-						<button
-							type="button"
-							class="btn-primary flex-1"
-							disabled={!canProceed}
-							onclick={handleReadyYes}
-						>
-							{onboarding_yesLetsGo()}
-						</button>
-					</div>
-				{:else}
-					<!-- Self-hosted: Show continue button -->
-					<div class="flex justify-end">
-						<button
-							type="button"
-							class="btn-primary"
-							disabled={!canProceed}
-							onclick={handleContinue}
-						>
-							{common_continue()}
-						</button>
-					</div>
-				{/if}
+				<div class="flex justify-end">
+					<button type="button" class="btn-primary" disabled={!canProceed} onclick={handleContinue}>
+						{common_continue()}
+					</button>
+				</div>
 
 				{#if onSwitchToLogin}
 					<p class="text-secondary text-center text-sm">

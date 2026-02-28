@@ -1,13 +1,11 @@
 import { writable, get } from 'svelte/store';
-import type { UseCase, BlockerType, NetworkSetup } from '../types/base';
+import type { UseCase, NetworkSetup } from '../types/base';
 
 export interface OnboardingState {
 	useCase: UseCase | null;
-	readyToScan: boolean | null;
 	organizationName: string;
 	network: NetworkSetup;
 	populateSeedData: boolean;
-	currentBlocker: BlockerType | null;
 	// CRM qualification data (company/msp only, not persisted to DB)
 	jobTitle: string | null;
 	companySize: string | null;
@@ -56,11 +54,9 @@ const persisted = loadPersistedState();
 
 const initialState: OnboardingState = {
 	useCase: persisted.useCase,
-	readyToScan: null,
 	organizationName: '',
 	network: { name: '' },
 	populateSeedData: true,
-	currentBlocker: null,
 	jobTitle: null,
 	companySize: persisted.companySize,
 	referralSource: null,
@@ -100,12 +96,6 @@ function createOnboardingStore() {
 				useCase
 			})),
 
-		setReadyToScan: (ready: boolean) =>
-			update((state) => ({
-				...state,
-				readyToScan: ready
-			})),
-
 		setOrganizationName: (name: string) =>
 			update((state) => ({
 				...state,
@@ -128,12 +118,6 @@ function createOnboardingStore() {
 			update((state) => ({
 				...state,
 				populateSeedData: populate
-			})),
-
-		setCurrentBlocker: (blocker: BlockerType | null) =>
-			update((state) => ({
-				...state,
-				currentBlocker: blocker
 			})),
 
 		setJobTitle: (jobTitle: string | null) =>

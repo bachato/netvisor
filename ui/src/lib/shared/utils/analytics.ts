@@ -51,11 +51,7 @@ export function isDemo(): boolean {
  * PostHog is already initialized in +layout.svelte, this is just a helper.
  * In demo mode, events are tracked with a demo=true flag.
  *
- * Events focused on understanding friction:
- * - onboarding_blocker_selected - What's blocking users?
- * - onboarding_blocker_resolved - Did resolution help?
- * - onboarding_compatibility_issue - Only when incompatible
- * - onboarding_feedback_submitted - "Something else" friction
+ * Events focused on understanding friction.
  */
 export function trackEvent(event: string, properties?: Record<string, unknown>) {
 	if (posthog.__loaded) {
