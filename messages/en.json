@@ -384,6 +384,7 @@
 	"daemons_docsDockerProxyLinkText": "Docker Proxy guide",
 	"daemons_docsMacvlan": "Need network isolation without host networking? See the %link%.",
 	"daemons_docsMacvlanLinkText": "Macvlan setup guide",
+	"daemons_docsMultipleDaemons": "Scanning multiple networks from a single machine? See the %link%.",
 	"daemons_docsMultipleDaemonsLinkText": "Multiple Daemons guide",
 	"daemons_docsMultiVlan": "Deploying daemons across multiple VLANs? Check out the %link%.",
 	"daemons_docsMultiVlanLinkText": "Multi-VLAN guide",

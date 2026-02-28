@@ -7,13 +7,13 @@
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import OsSelector from '../../OsSelector.svelte';
 	import {
-		common_docsLink,
 		common_stepNumber,
 		daemons_advancedHint,
 		daemons_dockerLinuxOnly,
 		daemons_dockerLinuxOnlyBody,
 		daemons_docsMacvlan,
 		daemons_docsMacvlanLinkText,
+		daemons_docsMultipleDaemons,
 		daemons_docsMultipleDaemonsLinkText,
 		daemons_docsMultiVlan,
 		daemons_docsMultiVlanLinkText,
@@ -63,7 +63,7 @@
 			linkText={daemons_docsMultiVlanLinkText()}
 		/>
 		<DocsHint
-			text={common_docsLink()}
+			text={daemons_docsMultipleDaemons()}
 			href="https://scanopy.net/docs/multiple-daemons/"
 			linkText={daemons_docsMultipleDaemonsLinkText()}
 		/>
