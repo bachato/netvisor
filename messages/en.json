@@ -407,6 +407,8 @@
 	"daemons_upgradeDaemon": "Upgrade Daemon",
 	"daemons_upgradeConfigPreserved": "Your daemon configuration is preserved automatically — no need to re-enter server URL, API key, or other settings.",
 	"daemons_upgradeDownload": "Download the latest version:",
+	"daemons_upgradeMultipleDaemons": "Multiple daemons on this machine?",
+	"daemons_upgradeMultipleDaemonsBody": "All daemons share the same binary. After upgrading, restart each one with its name. To list your daemon names, check your config directory:",
 	"daemons_upgradeStartProcess": "Start the daemon:",
 	"daemons_upgradeStopProcess": "Stop the running daemon:",
 	"daemons_useExistingKey": "Use existing API key",

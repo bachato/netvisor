@@ -24,6 +24,8 @@
 		daemons_upgradeConfigPreserved,
 		daemons_upgradeDownload,
 		daemons_upgradeDaemon,
+		daemons_upgradeMultipleDaemons,
+		daemons_upgradeMultipleDaemonsBody,
 		daemons_upgradeStartProcess,
 		daemons_upgradeStopProcess
 	} from '$lib/paraglide/messages';
@@ -48,6 +50,11 @@
 	const stopCommand = 'sudo pkill scanopy-daemon';
 	let startCommand = $derived(`sudo scanopy-daemon --name ${daemon.name}`);
 
+	// Commands to list daemon config directories (each subdirectory = a daemon name)
+	const linuxConfigListCommand = 'ls ~/.config/scanopy/daemon/';
+	const macosConfigListCommand = 'ls ~/Library/Application\\ Support/com.scanopy.daemon/';
+	const windowsConfigListCommand = 'dir %APPDATA%\\scanopy\\daemon\\';
+
 	const windowsDownloadUrl =
 		'https://github.com/scanopy/scanopy/releases/latest/download/scanopy-daemon-windows-amd64.exe';
 	const windowsDownloadCommand = `Invoke-WebRequest -Uri "${windowsDownloadUrl}" -OutFile "scanopy-daemon-windows-amd64.exe"`;
@@ -66,7 +73,7 @@ docker compose up -d`;
 	let colorHelper = entities.getColorHelper('Daemon');
 </script>
 
-<GenericModal {isOpen} title={daemons_upgradeDaemon()} size="lg" {onClose}>
+<GenericModal {isOpen} title={daemons_upgradeDaemon()} size="xl" {onClose}>
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={ArrowBigUpDash} color={colorHelper.color} />
 	{/snippet}
@@ -110,6 +117,12 @@ docker compose up -d`;
 									{daemons_upgradeStartProcess()}
 								</div>
 								<CodeContainer language="bash" expandable={false} code={startCommand} />
+
+								<InlineInfo
+									title={daemons_upgradeMultipleDaemons()}
+									body={daemons_upgradeMultipleDaemonsBody()}
+								/>
+								<CodeContainer language="bash" expandable={false} code={linuxConfigListCommand} />
 							</div>
 						{:else if linuxMethod === 'docker'}
 							<!-- Linux Docker Compose -->
@@ -156,6 +169,12 @@ docker compose up -d`;
 							</div>
 							<CodeContainer language="bash" expandable={false} code={startCommand} />
 
+							<InlineInfo
+								title={daemons_upgradeMultipleDaemons()}
+								body={daemons_upgradeMultipleDaemonsBody()}
+							/>
+							<CodeContainer language="bash" expandable={false} code={macosConfigListCommand} />
+
 							<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 						</div>
 					{:else if selectedOS === 'windows'}
@@ -180,6 +199,16 @@ docker compose up -d`;
 								{daemons_upgradeStartProcess()}
 							</div>
 							<CodeContainer language="powershell" expandable={false} code={windowsStartCommand} />
+
+							<InlineInfo
+								title={daemons_upgradeMultipleDaemons()}
+								body={daemons_upgradeMultipleDaemonsBody()}
+							/>
+							<CodeContainer
+								language="powershell"
+								expandable={false}
+								code={windowsConfigListCommand}
+							/>
 
 							<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 						</div>

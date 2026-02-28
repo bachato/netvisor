@@ -379,6 +379,8 @@
     "daemons_upgradeDaemon": "",
     "daemons_upgradeConfigPreserved": "",
     "daemons_upgradeDownload": "",
+    "daemons_upgradeMultipleDaemons": "",
+    "daemons_upgradeMultipleDaemonsBody": "",
     "daemons_upgradeStartProcess": "",
     "daemons_upgradeStopProcess": "",
     "daemons_useExistingKey": "",
