@@ -1,5 +1,5 @@
 {
-  "version": "0.14.9",
+  "version": "0.14.10",
   "exchanges": [
     {
       "method": "POST",
@@ -513,6 +513,141 @@
         "progress": 0,
         "session_id": "1a182cd9-9710-482e-8645-d95c40db018a",
         "started_at": "2026-01-26T14:03:24.338877430Z"
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": null,
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.10"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/discovery/f2d5414b-3369-4280-929d-5422dd11a4b4/update",
+      "request_body": {
+        "daemon_id": "e97be8ba-eb31-4da8-b52a-ced7cc7167ba",
+        "discovery_type": {
+          "host_id": "8f6b3991-b3ef-4d1d-9708-d2f57289a34f",
+          "type": "SelfReport"
+        },
+        "error": null,
+        "finished_at": null,
+        "network_id": "e5d503e7-c988-4fd8-86e1-681f04518315",
+        "phase": "Started",
+        "progress": 0,
+        "session_id": "f2d5414b-3369-4280-929d-5422dd11a4b4",
+        "started_at": "2026-02-28T21:31:54.076702615Z"
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": null,
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.10"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/discovery/6845dcc8-6ea0-47af-9ce3-054b8cf1f667/update",
+      "request_body": {
+        "daemon_id": "28f7ea22-9aa9-4924-b23e-dd639e5e3de2",
+        "discovery_type": {
+          "host_id": "1438e666-92b6-4fad-bc37-aa2717d9ba42",
+          "type": "SelfReport"
+        },
+        "error": null,
+        "finished_at": null,
+        "network_id": "e5d503e7-c988-4fd8-86e1-681f04518315",
+        "phase": "Started",
+        "progress": 0,
+        "session_id": "6845dcc8-6ea0-47af-9ce3-054b8cf1f667",
+        "started_at": "2026-02-28T21:31:54.611016926Z"
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": null,
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.10"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/discovery/c8c6530c-aaff-4d7c-a872-ba4457906d77/update",
+      "request_body": {
+        "daemon_id": "28f7ea22-9aa9-4924-b23e-dd639e5e3de2",
+        "discovery_type": {
+          "host_id": "cc741d90-bcc0-4653-b38b-52b23f9e6a61",
+          "type": "SelfReport"
+        },
+        "error": null,
+        "finished_at": null,
+        "network_id": "e5d503e7-c988-4fd8-86e1-681f04518315",
+        "phase": "Started",
+        "progress": 0,
+        "session_id": "c8c6530c-aaff-4d7c-a872-ba4457906d77",
+        "started_at": "2026-02-28T21:31:55.411682031Z"
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": null,
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.10"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/discovery/5b19fece-cb82-45d8-a676-df53cc38a014/update",
+      "request_body": {
+        "daemon_id": "28f7ea22-9aa9-4924-b23e-dd639e5e3de2",
+        "discovery_type": {
+          "host_id": "a9590643-88e0-45c1-8420-738ed98070ba",
+          "type": "SelfReport"
+        },
+        "error": null,
+        "finished_at": null,
+        "network_id": "e5d503e7-c988-4fd8-86e1-681f04518315",
+        "phase": "Started",
+        "progress": 0,
+        "session_id": "5b19fece-cb82-45d8-a676-df53cc38a014",
+        "started_at": "2026-02-28T21:31:56.751093380Z"
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": null,
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.10"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/discovery/b64df0ca-f173-4ba8-a48b-edf7e372974a/update",
+      "request_body": {
+        "daemon_id": "28f7ea22-9aa9-4924-b23e-dd639e5e3de2",
+        "discovery_type": {
+          "host_id": "09900acc-93fd-4af9-8a9b-9f45ace7475c",
+          "type": "SelfReport"
+        },
+        "error": null,
+        "finished_at": null,
+        "network_id": "e5d503e7-c988-4fd8-86e1-681f04518315",
+        "phase": "Started",
+        "progress": 0,
+        "session_id": "b64df0ca-f173-4ba8-a48b-edf7e372974a",
+        "started_at": "2026-02-28T21:31:57.008996342Z"
       },
       "response_status": 200,
       "response_body": {
