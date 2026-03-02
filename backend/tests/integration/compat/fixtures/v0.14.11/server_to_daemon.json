@@ -1,0 +1,183 @@
+{
+  "version": "0.14.11",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/initialize",
+      "request_body": {
+        "api_key": "scp_d_bZe1opLh7HV2h7T0F5cDWEqSyDX3iwOf",
+        "network_id": "bce7339d-7f0a-430d-8f3c-ed852f9f9ea6"
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": "Daemon initialized successfully",
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.11"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/first-contact",
+      "request_body": {
+        "daemon_id": "c326cc73-c09f-4608-bf38-55f1e1387491",
+        "server_capabilities": {
+          "minimum_daemon_version": "0.12.0",
+          "server_version": "0.14.11"
+        }
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": {
+          "capabilities": {
+            "has_docker_socket": false,
+            "interfaced_subnet_ids": []
+          },
+          "mode": "server_poll",
+          "name": "scanopy-daemon-serverpoll",
+          "version": "0.14.11"
+        },
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.11"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/poll",
+      "request_body": {},
+      "response_status": 200,
+      "response_body": {
+        "data": {
+          "entities": {
+            "hosts": [],
+            "subnets": []
+          },
+          "progress": null
+        },
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.11"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/discovery/initiate",
+      "request_body": {
+        "discovery_type": {
+          "host_naming_fallback": "BestService",
+          "probe_raw_socket_ports": false,
+          "snmp_credentials": {
+            "default_credential": null,
+            "ip_overrides": []
+          },
+          "subnet_ids": null,
+          "type": "Network"
+        },
+        "session_id": "27ff5779-08b0-4970-aebd-04649d27c725"
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": {
+          "session_id": "27ff5779-08b0-4970-aebd-04649d27c725"
+        },
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.11"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/status",
+      "request_body": {},
+      "response_status": 200,
+      "response_body": {
+        "data": {
+          "capabilities": {
+            "has_docker_socket": false,
+            "interfaced_subnet_ids": []
+          },
+          "mode": "server_poll",
+          "name": "scanopy-daemon-serverpoll",
+          "version": "0.14.11"
+        },
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.11"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/discovery/entities-created",
+      "request_body": {
+        "hosts": [],
+        "subnets": [
+          [
+            "6fb9df6f-8089-4504-9b54-4aa949d810db",
+            {
+              "cidr": "172.25.0.0/28",
+              "created_at": "2026-03-02T09:08:44.074700580Z",
+              "description": null,
+              "id": "6fb9df6f-8089-4504-9b54-4aa949d810db",
+              "name": "172.25.0.0/28",
+              "network_id": "bce7339d-7f0a-430d-8f3c-ed852f9f9ea6",
+              "source": {
+                "metadata": [
+                  {
+                    "daemon_id": "c326cc73-c09f-4608-bf38-55f1e1387491",
+                    "date": "2026-03-02T09:08:44.074696743Z",
+                    "host_naming_fallback": "BestService",
+                    "probe_raw_socket_ports": false,
+                    "snmp_credentials": {
+                      "default_credential": null,
+                      "ip_overrides": []
+                    },
+                    "subnet_ids": null,
+                    "type": "Network"
+                  }
+                ],
+                "type": "Discovery"
+              },
+              "subnet_type": "Lan",
+              "tags": [],
+              "updated_at": "2026-03-02T09:08:44.074700580Z"
+            }
+          ]
+        ]
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": "Created entities acknowledged",
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.11"
+        },
+        "success": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/discovery/cancel",
+      "request_body": "00000000-0000-0000-0000-000000000000",
+      "response_status": 409,
+      "response_body": {
+        "error": "Discovery session not currently running",
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.14.11"
+        },
+        "success": false
+      }
+    }
+  ]
+}
