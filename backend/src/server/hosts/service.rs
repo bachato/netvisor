@@ -1766,13 +1766,25 @@ impl HostService {
             } else if let Some(ref device_id) = if_entry.base.cdp_device_id {
                 // Try CDP resolution using device_id (hostname-based)
                 // Don't fall back to cdp_address - it's management address, not physical connection
-                resolver
+                if let Some(host_id) = resolver
                     .find_host_by_chassis_id(device_id, network_id)
                     .await
-                    .map(|id| {
-                        stats.hosts_resolved += 1;
-                        Neighbor::Host(id)
-                    })
+                {
+                    stats.hosts_resolved += 1;
+
+                    // Try CDP port resolution using cdp_port_id (long ifDescr format)
+                    if let Some(ref port_id) = if_entry.base.cdp_port_id
+                        && let Some(remote_if_entry_id) =
+                            resolver.find_if_entry_by_name(port_id, host_id).await
+                    {
+                        stats.ports_resolved += 1;
+                        Some(Neighbor::IfEntry(remote_if_entry_id))
+                    } else {
+                        Some(Neighbor::Host(host_id))
+                    }
+                } else {
+                    None
+                }
             } else {
                 None
             };

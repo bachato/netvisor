@@ -173,9 +173,8 @@ impl LldpPortId {
     ) -> Option<Uuid> {
         match self {
             Self::MacAddress(mac) => resolver.find_if_entry_by_mac(mac, host_id).await,
-            Self::InterfaceName(name) | Self::InterfaceAlias(name) => {
-                resolver.find_if_entry_by_name(name, host_id).await
-            }
+            Self::InterfaceName(name) => resolver.find_if_entry_by_name(name, host_id).await,
+            Self::InterfaceAlias(_) => None, // user-configurable, non-unique
             Self::NetworkAddress(ip) => resolver.find_if_entry_by_ip(ip, host_id).await,
             // These subtypes don't have reliable resolution strategies
             Self::PortComponent(_) | Self::AgentCircuitId(_) | Self::LocallyAssigned(_) => None,

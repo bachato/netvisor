@@ -219,8 +219,16 @@ pub async fn query_lldp_neighbors(
 
     let columns = [
         (
+            oids::lldp::remote::entry::LLDP_REM_CHASSIS_ID_SUBTYPE,
+            "remChassisIdSubtype",
+        ),
+        (
             oids::lldp::remote::entry::LLDP_REM_CHASSIS_ID,
             "remChassisId",
+        ),
+        (
+            oids::lldp::remote::entry::LLDP_REM_PORT_ID_SUBTYPE,
+            "remPortIdSubtype",
         ),
         (oids::lldp::remote::entry::LLDP_REM_PORT_ID, "remPortId"),
         (oids::lldp::remote::entry::LLDP_REM_PORT_DESC, "remPortDesc"),
@@ -273,8 +281,10 @@ pub async fn query_lldp_neighbors(
                                 neighbors.entry((local_port, rem_index)).or_insert_with(|| {
                                     LldpNeighbor {
                                         local_port_index: local_port,
-                                        remote_chassis_id: None,
-                                        remote_port_id: None,
+                                        remote_chassis_id_subtype: None,
+                                        remote_chassis_id_bytes: None,
+                                        remote_port_id_subtype: None,
+                                        remote_port_id_bytes: None,
                                         remote_port_desc: None,
                                         remote_sys_name: None,
                                         remote_sys_desc: None,
@@ -283,24 +293,24 @@ pub async fn query_lldp_neighbors(
                                 });
 
                             match column_name {
-                                "remChassisId" => {
-                                    neighbor.remote_chassis_id =
-                                        value_to_string(&value).or_else(|| {
-                                            // Try to format as hex if not printable
-                                            if let Value::OctetString(bytes) = &value {
-                                                Some(
-                                                    bytes
-                                                        .iter()
-                                                        .map(|b| format!("{:02x}", b))
-                                                        .collect::<Vec<_>>()
-                                                        .join(":"),
-                                                )
-                                            } else {
-                                                None
-                                            }
-                                        })
+                                "remChassisIdSubtype" => {
+                                    neighbor.remote_chassis_id_subtype =
+                                        value_to_i32(&value).map(|v| v as u8)
                                 }
-                                "remPortId" => neighbor.remote_port_id = value_to_string(&value),
+                                "remChassisId" => {
+                                    if let Value::OctetString(bytes) = &value {
+                                        neighbor.remote_chassis_id_bytes = Some(bytes.to_vec());
+                                    }
+                                }
+                                "remPortIdSubtype" => {
+                                    neighbor.remote_port_id_subtype =
+                                        value_to_i32(&value).map(|v| v as u8)
+                                }
+                                "remPortId" => {
+                                    if let Value::OctetString(bytes) = &value {
+                                        neighbor.remote_port_id_bytes = Some(bytes.to_vec());
+                                    }
+                                }
                                 "remPortDesc" => {
                                     neighbor.remote_port_desc = value_to_string(&value)
                                 }

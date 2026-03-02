@@ -112,6 +112,8 @@ pub struct IfEntryBase {
     /// SNMP ifDescr - interface description (e.g., GigabitEthernet0/1)
     #[validate(length(min = 1, message = "Interface description is required"))]
     pub if_descr: String,
+    /// SNMP ifName - short interface name (e.g., Gi1/0/1)
+    pub if_name: Option<String>,
     /// SNMP ifAlias - user-configured description
     pub if_alias: Option<String>,
     /// SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)
@@ -169,6 +171,7 @@ impl Default for IfEntryBase {
             network_id: Uuid::nil(),
             if_index: 0,
             if_descr: String::new(),
+            if_name: None,
             if_alias: None,
             if_type: 1, // other
             speed_bps: None,

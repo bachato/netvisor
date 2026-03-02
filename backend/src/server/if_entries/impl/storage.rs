@@ -25,6 +25,7 @@ pub struct IfEntryCsvRow {
     pub network_id: Uuid,
     pub if_index: i32,
     pub if_descr: String,
+    pub if_name: Option<String>,
     pub if_alias: Option<String>,
     pub if_type: i32,
     pub speed_bps: Option<i64>,
@@ -96,6 +97,7 @@ impl Storable for IfEntry {
                     network_id,
                     if_index,
                     if_descr,
+                    if_name,
                     if_alias,
                     if_type,
                     speed_bps,
@@ -140,6 +142,7 @@ impl Storable for IfEntry {
             "network_id",
             "if_index",
             "if_descr",
+            "if_name",
             "if_alias",
             "if_type",
             "admin_status",
@@ -168,6 +171,7 @@ impl Storable for IfEntry {
             SqlValue::Uuid(network_id),
             SqlValue::I32(if_index),
             SqlValue::String(if_descr),
+            SqlValue::OptionalString(if_name),
             SqlValue::OptionalString(if_alias),
             SqlValue::I32(if_type),
             SqlValue::I32(i32::from(admin_status)),
@@ -191,9 +195,10 @@ impl Storable for IfEntry {
         ];
 
         // Handle speed_bps separately - it's BIGINT which needs special handling
+        // Insert after if_type (index 8 = after id, host_id, network_id, if_index, if_descr, if_name, if_alias, if_type)
         if speed_bps.is_some() {
-            columns.insert(7, "speed_bps");
-            values.insert(7, SqlValue::I32(speed_bps.unwrap_or(0) as i32));
+            columns.insert(8, "speed_bps");
+            values.insert(8, SqlValue::I32(speed_bps.unwrap_or(0) as i32));
         }
 
         Ok((columns, values))
@@ -257,6 +262,7 @@ impl Storable for IfEntry {
                 network_id: row.get("network_id"),
                 if_index: row.get("if_index"),
                 if_descr: row.get("if_descr"),
+                if_name: row.get("if_name"),
                 if_alias: row.get("if_alias"),
                 if_type: row.get("if_type"),
                 speed_bps,
@@ -290,6 +296,7 @@ impl Entity for IfEntry {
             network_id: self.base.network_id,
             if_index: self.base.if_index,
             if_descr: self.base.if_descr.clone(),
+            if_name: self.base.if_name.clone(),
             if_alias: self.base.if_alias.clone(),
             if_type: self.base.if_type,
             speed_bps: self.base.speed_bps,

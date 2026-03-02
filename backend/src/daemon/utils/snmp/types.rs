@@ -52,10 +52,14 @@ pub struct IfTableEntry {
 pub struct LldpNeighbor {
     /// Local port ifIndex where neighbor was seen
     pub local_port_index: i32,
-    /// Remote chassis ID (MAC address or other identifier)
-    pub remote_chassis_id: Option<String>,
-    /// Remote port ID
-    pub remote_port_id: Option<String>,
+    /// Remote chassis ID subtype (lldpRemChassisIdSubtype)
+    pub remote_chassis_id_subtype: Option<u8>,
+    /// Remote chassis ID raw bytes (lldpRemChassisId)
+    pub remote_chassis_id_bytes: Option<Vec<u8>>,
+    /// Remote port ID subtype (lldpRemPortIdSubtype)
+    pub remote_port_id_subtype: Option<u8>,
+    /// Remote port ID raw bytes (lldpRemPortId)
+    pub remote_port_id_bytes: Option<Vec<u8>>,
     /// Remote port description
     pub remote_port_desc: Option<String>,
     /// Remote system name

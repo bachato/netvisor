@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.8\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.8\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.10\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.10\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -9462,12 +9462,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.8"
+            "example": "0.14.10"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.14.8"
+          "server_version": "0.14.10"
         }
       },
       "ApiResponse": {
@@ -9541,14 +9541,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-02-27T20:34:55.543623Z",
-              "id": "8c7d40b6-387b-42b7-90f7-cfe7a6823281",
+              "created_at": "2026-03-02T07:10:08.153236Z",
+              "id": "e3629935-5dd5-4f3e-999d-32f4d23f6665",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-27T20:34:55.543623Z"
+              "updated_at": "2026-03-02T07:10:08.153236Z"
             }
           },
           "error": {
@@ -10299,6 +10299,7 @@
                   "if_alias": "Uplink to Core Switch",
                   "if_descr": "GigabitEthernet0/1",
                   "if_index": 1,
+                  "if_name": "Gi0/1",
                   "if_type": 6,
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "lldp_chassis_id": null,
@@ -10347,14 +10348,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-02-27T20:34:55.528733Z",
-                      "id": "9a84c42b-f630-49a7-a3e9-146b888b8dec",
+                      "created_at": "2026-03-02T07:10:08.140148Z",
+                      "id": "7d9d9b6f-6450-42cd-8c7c-e5ae02a67d3b",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-02-27T20:34:55.528733Z"
+                      "updated_at": "2026-03-02T07:10:08.140148Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10363,7 +10364,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Sentry",
+                  "service_definition": "PeaNUT",
                   "source": {
                     "type": "Manual"
                   },
@@ -11166,14 +11167,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-02-27T20:34:55.539508Z",
-                  "id": "b45348fa-bc72-4d7d-a3ab-c68c80227011",
+                  "created_at": "2026-03-02T07:10:08.149357Z",
+                  "id": "a9293207-abea-43de-8353-e09149099bfa",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-27T20:34:55.539508Z"
+                  "updated_at": "2026-03-02T07:10:08.149357Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11182,7 +11183,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Sentry",
+              "service_definition": "PeaNUT",
               "source": {
                 "type": "Manual"
               },
@@ -12381,14 +12382,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-02-27T20:34:55.528934Z",
-          "id": "ac663c5e-6f3d-457d-9c7a-53078cc52b53",
+          "created_at": "2026-03-02T07:10:08.140405Z",
+          "id": "9748bc1b-49c1-4dc6-abe8-11a5c7b092da",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-02-27T20:34:55.528934Z"
+          "updated_at": "2026-03-02T07:10:08.140405Z"
         }
       },
       "BindingBase": {
@@ -12895,7 +12896,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Sentry",
+              "service_definition": "PeaNUT",
               "tags": [],
               "virtualization": null
             }
@@ -14736,6 +14737,7 @@
               "if_alias": "Uplink to Core Switch",
               "if_descr": "GigabitEthernet0/1",
               "if_index": 1,
+              "if_name": "Gi0/1",
               "if_type": 6,
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "lldp_chassis_id": null,
@@ -14784,14 +14786,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-02-27T20:34:55.528455Z",
-                  "id": "dc84d760-48e4-4d38-96df-a13e48e2c0c5",
+                  "created_at": "2026-03-02T07:10:08.139801Z",
+                  "id": "21c0c0d3-1433-4032-8dab-e7c49ade65ea",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-02-27T20:34:55.528455Z"
+                  "updated_at": "2026-03-02T07:10:08.139801Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14800,7 +14802,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Sentry",
+              "service_definition": "PeaNUT",
               "source": {
                 "type": "Manual"
               },
@@ -14945,6 +14947,13 @@
             "type": "integer",
             "format": "int32",
             "description": "SNMP ifIndex - stable identifier within device"
+          },
+          "if_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SNMP ifName - short interface name (e.g., Gi1/0/1)"
           },
           "if_type": {
             "type": "integer",
@@ -16385,7 +16394,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.8"
+            "example": "0.14.10"
           }
         },
         "example": {
@@ -16396,7 +16405,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.14.8"
+          "server_version": "0.14.10"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -16705,6 +16714,7 @@
                     "if_alias": "Uplink to Core Switch",
                     "if_descr": "GigabitEthernet0/1",
                     "if_index": 1,
+                    "if_name": "Gi0/1",
                     "if_type": 6,
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "lldp_chassis_id": null,
@@ -16753,14 +16763,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-02-27T20:34:55.518674Z",
-                        "id": "f0fc7ef2-3a17-4408-ae06-1de535cdf1dc",
+                        "created_at": "2026-03-02T07:10:08.132332Z",
+                        "id": "3bdbb655-c69b-4aa4-ab8e-620881d3d19b",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-02-27T20:34:55.518674Z"
+                        "updated_at": "2026-03-02T07:10:08.132332Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16769,7 +16779,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Sentry",
+                    "service_definition": "PeaNUT",
                     "source": {
                       "type": "Manual"
                     },
@@ -16846,14 +16856,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-02-27T20:34:55.538576Z",
-                    "id": "d181075b-5e68-426c-ae73-76f231fe1a9d",
+                    "created_at": "2026-03-02T07:10:08.148277Z",
+                    "id": "44463765-a79d-4d48-8af4-2148bee64e3e",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-02-27T20:34:55.538576Z"
+                    "updated_at": "2026-03-02T07:10:08.148277Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16862,7 +16872,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Sentry",
+                "service_definition": "PeaNUT",
                 "source": {
                   "type": "Manual"
                 },
@@ -17927,14 +17937,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-02-27T20:34:55.528864Z",
-              "id": "4d130969-13d3-4996-be21-7cab4d4f3635",
+              "created_at": "2026-03-02T07:10:08.140323Z",
+              "id": "d5882b69-90a4-43cf-9791-b70516fd2583",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-02-27T20:34:55.528864Z"
+              "updated_at": "2026-03-02T07:10:08.140323Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17943,7 +17953,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Sentry",
+          "service_definition": "PeaNUT",
           "source": {
             "type": "Manual"
           },
@@ -18436,14 +18446,14 @@
       },
       "SnmpQueryCredential": {
         "type": "object",
-        "description": "Minimal SNMP credential for daemon queries (version + community only)\nDoes not include organization_id, name, timestamps - just what's needed for SNMP queries",
+        "description": "Minimal SNMP credential for daemon queries (version + community only)\nDoes not include organization_id, name, timestamps - just what's needed for SNMP queries\n\nThe community string is wrapped in `Secret` to prevent accidental exposure in logs,\ndebug output, and API responses. Use `community.expose_secret()` for explicit access\n(e.g. daemon SNMP sessions).",
         "required": [
           "community"
         ],
         "properties": {
           "community": {
             "type": "string",
-            "description": "SNMPv2c community string"
+            "description": "SNMPv2c community string — redacted in serialization/debug by default"
           },
           "version": {
             "$ref": "#/components/schemas/SnmpVersion",

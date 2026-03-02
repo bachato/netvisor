@@ -379,6 +379,7 @@ pub fn if_entry() -> IfEntry {
             network_id: ids::NETWORK,
             if_index: 1,
             if_descr: "GigabitEthernet0/1".to_string(),
+            if_name: Some("Gi0/1".to_string()),
             if_alias: Some("Uplink to Core Switch".to_string()),
             if_type: 6,                     // ethernet
             speed_bps: Some(1_000_000_000), // 1 Gbps

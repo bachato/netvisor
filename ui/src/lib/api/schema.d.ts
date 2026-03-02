@@ -2731,7 +2731,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.14.8"
+         *       "server_version": "0.14.10"
          *     }
          */
         ApiMeta: {
@@ -2742,7 +2742,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.14.8
+             * @example 0.14.10
              */
             server_version: string;
         };
@@ -2756,14 +2756,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-02-27T20:34:55.543612Z",
-             *       "id": "0044a1d5-1a24-4351-b56b-e85863cf1fa8",
+             *       "created_at": "2026-03-02T07:10:08.153238Z",
+             *       "id": "657a39ad-211e-452a-bb26-c5b18579f364",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-02-27T20:34:55.543612Z"
+             *       "updated_at": "2026-03-02T07:10:08.153238Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2962,6 +2962,7 @@ export interface components {
              *           "if_alias": "Uplink to Core Switch",
              *           "if_descr": "GigabitEthernet0/1",
              *           "if_index": 1,
+             *           "if_name": "Gi0/1",
              *           "if_type": 6,
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "lldp_chassis_id": null,
@@ -3010,14 +3011,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-02-27T20:34:55.528728Z",
-             *               "id": "cf47a9e1-93e3-4339-80f1-25f73ec7795c",
+             *               "created_at": "2026-03-02T07:10:08.140150Z",
+             *               "id": "73dc6c64-2d21-47b0-a281-6d30cfdabec7",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-02-27T20:34:55.528728Z"
+             *               "updated_at": "2026-03-02T07:10:08.140150Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3026,7 +3027,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Sentry",
+             *           "service_definition": "PeaNUT",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3299,14 +3300,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-02-27T20:34:55.539346Z",
-             *           "id": "62640026-f0b1-43d3-8883-4c0b7d378d63",
+             *           "created_at": "2026-03-02T07:10:08.149315Z",
+             *           "id": "e5d475de-7396-4673-9c64-34e65577ac95",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-02-27T20:34:55.539346Z"
+             *           "updated_at": "2026-03-02T07:10:08.149315Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3315,7 +3316,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Sentry",
+             *       "service_definition": "PeaNUT",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3618,14 +3619,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-02-27T20:34:55.528926Z",
-         *       "id": "691179d2-5b1f-4c89-9a43-7c4930275ff0",
+         *       "created_at": "2026-03-02T07:10:08.140413Z",
+         *       "id": "da39a29a-abb8-4190-9330-5fbd9295a703",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-02-27T20:34:55.528926Z"
+         *       "updated_at": "2026-03-02T07:10:08.140413Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3807,7 +3808,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Sentry",
+         *           "service_definition": "PeaNUT",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4401,6 +4402,7 @@ export interface components {
          *           "if_alias": "Uplink to Core Switch",
          *           "if_descr": "GigabitEthernet0/1",
          *           "if_index": 1,
+         *           "if_name": "Gi0/1",
          *           "if_type": 6,
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "lldp_chassis_id": null,
@@ -4449,14 +4451,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-02-27T20:34:55.528450Z",
-         *               "id": "f75a0153-e477-4061-9bed-80435ba3b612",
+         *               "created_at": "2026-03-02T07:10:08.139796Z",
+         *               "id": "ae0c7ad1-abdf-40c1-8cfa-2f8e6e0e384b",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-02-27T20:34:55.528450Z"
+         *               "updated_at": "2026-03-02T07:10:08.139796Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4465,7 +4467,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Sentry",
+         *           "service_definition": "PeaNUT",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4553,6 +4555,8 @@ export interface components {
              * @description SNMP ifIndex - stable identifier within device
              */
             if_index: number;
+            /** @description SNMP ifName - short interface name (e.g., Gi1/0/1) */
+            if_name?: string | null;
             /**
              * Format: int32
              * @description SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)
@@ -5017,7 +5021,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.14.8"
+         *       "server_version": "0.14.10"
          *     }
          */
         PaginatedApiMeta: {
@@ -5030,7 +5034,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.14.8
+             * @example 0.14.10
              */
             server_version: string;
         };
@@ -5452,14 +5456,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-02-27T20:34:55.528856Z",
-         *           "id": "138aeabb-6ef2-4cdc-aac8-7efb52229aec",
+         *           "created_at": "2026-03-02T07:10:08.140328Z",
+         *           "id": "799bf172-b24c-443c-afe9-dd44d61797b3",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-02-27T20:34:55.528856Z"
+         *           "updated_at": "2026-03-02T07:10:08.140328Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5468,7 +5472,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Sentry",
+         *       "service_definition": "PeaNUT",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -5641,9 +5645,13 @@ export interface components {
         /**
          * @description Minimal SNMP credential for daemon queries (version + community only)
          *     Does not include organization_id, name, timestamps - just what's needed for SNMP queries
+         *
+         *     The community string is wrapped in `Secret` to prevent accidental exposure in logs,
+         *     debug output, and API responses. Use `community.expose_secret()` for explicit access
+         *     (e.g. daemon SNMP sessions).
          */
         SnmpQueryCredential: {
-            /** @description SNMPv2c community string */
+            /** @description SNMPv2c community string — redacted in serialization/debug by default */
             community: string;
             /** @description SNMP version (V2c or V3) */
             version?: components["schemas"]["SnmpVersion"];
@@ -6949,7 +6957,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Work request processed - returns (Option<DiscoveryUpdatePayload>, bool) */
+            /** @description Work request processed - returns (Option<Value>, bool) */
             200: {
                 headers: {
                     [name: string]: unknown;

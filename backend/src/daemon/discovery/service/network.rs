@@ -1065,11 +1065,23 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         // ipAddrTable maps IP→ifIndex, and ifTable has ifIndex→MAC (ifPhysAddress).
         let mac = mac.or_else(|| {
             let if_index = ip_addr_table.get(&ip)?;
-            snmp_if_entries
-                .iter()
-                .find(|e| e.if_index == *if_index)?
-                .if_phys_address
+            let entry = snmp_if_entries.iter().find(|e| e.if_index == *if_index)?;
+            tracing::debug!(
+                ip = %ip,
+                if_index = %if_index,
+                mac = ?entry.if_phys_address,
+                "ipAddrTable MAC enrichment"
+            );
+            entry.if_phys_address
         });
+        if mac.is_none() && !snmp_if_entries.is_empty() {
+            tracing::debug!(
+                ip = %ip,
+                ip_addr_table_entries = ip_addr_table.len(),
+                snmp_if_entries = snmp_if_entries.len(),
+                "MAC enrichment failed - Interface will have no MAC"
+            );
+        }
 
         let interface = Interface::new(InterfaceBase {
             network_id: subnet.base.network_id,
@@ -1101,6 +1113,12 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                 host.base.sys_object_id = info.sys_object_id.clone();
                 host.base.sys_location = info.sys_location.clone();
                 host.base.sys_contact = info.sys_contact.clone();
+
+                // Set chassis_id from sysName — enables CDP resolution which
+                // matches cdp_device_id (remote sysName) against host chassis_id
+                if host.base.chassis_id.is_none() {
+                    host.base.chassis_id = info.sys_name.clone();
+                }
             }
 
             // Convert SNMP ifTable entries to IfEntry entities with LLDP/CDP data
@@ -1161,24 +1179,18 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             .iter()
             .find(|n| n.local_port_index == entry.if_index);
 
-        // Convert LLDP chassis ID to our enum type
-        // For now, use MacAddress subtype if it looks like a MAC, otherwise LocallyAssigned
+        // Convert LLDP chassis ID using subtype + raw bytes via from_snmp()
         let lldp_chassis_id = lldp_neighbor.and_then(|n| {
-            n.remote_chassis_id.as_ref().map(|id| {
-                // Check if it looks like a MAC address (xx:xx:xx:xx:xx:xx format)
-                if id.contains(':') && id.len() == 17 {
-                    LldpChassisId::MacAddress(id.clone())
-                } else {
-                    LldpChassisId::LocallyAssigned(id.clone())
-                }
-            })
+            let subtype = n.remote_chassis_id_subtype?;
+            let bytes = n.remote_chassis_id_bytes.as_ref()?;
+            LldpChassisId::from_snmp(subtype, bytes)
         });
 
-        // Convert LLDP port ID to our enum type
+        // Convert LLDP port ID using subtype + raw bytes via from_snmp()
         let lldp_port_id = lldp_neighbor.and_then(|n| {
-            n.remote_port_id
-                .as_ref()
-                .map(|id| LldpPortId::InterfaceName(id.clone()))
+            let subtype = n.remote_port_id_subtype?;
+            let bytes = n.remote_port_id_bytes.as_ref()?;
+            LldpPortId::from_snmp(subtype, bytes)
         });
 
         IfEntry::new(IfEntryBase {
@@ -1186,6 +1198,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             network_id,
             if_index: entry.if_index,
             if_descr: entry.if_descr.clone().unwrap_or_default(),
+            if_name: entry.if_name.clone(),
             if_alias: entry.if_alias.clone(),
             if_type: entry.if_type.unwrap_or(1), // 1 = "other"
             speed_bps: entry.if_speed.map(|s| s as i64),

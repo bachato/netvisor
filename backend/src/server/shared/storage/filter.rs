@@ -653,6 +653,15 @@ impl<T: Storable> StorableFilter<T> {
         self
     }
 
+    /// Filter by if_name (for if_entries table)
+    pub fn if_name(mut self, name: &str) -> Self {
+        let col = self.qualify_column("if_name");
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::String(name.to_string()));
+        self
+    }
+
     /// Filter by chassis_id (for hosts table)
     pub fn chassis_id(mut self, chassis_id: &str) -> Self {
         let col = self.qualify_column("chassis_id");

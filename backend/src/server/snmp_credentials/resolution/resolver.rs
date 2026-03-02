@@ -128,9 +128,14 @@ impl LldpResolver for LldpResolverImpl {
     }
 
     async fn find_if_entry_by_name(&self, name: &str, host_id: Uuid) -> Option<Uuid> {
+        // Try if_descr first (long name: "GigabitEthernet1/0/1")
         let filter = StorableFilter::<IfEntry>::new_from_host_ids(&[host_id]).if_descr(name);
+        if let Ok(Some(entry)) = self.if_entry_service.get_one(filter).await {
+            return Some(entry.id);
+        }
+        // Try if_name (short name: "Gi1/0/1")
+        let filter = StorableFilter::<IfEntry>::new_from_host_ids(&[host_id]).if_name(name);
         let entry = self.if_entry_service.get_one(filter).await.ok()??;
-
         Some(entry.id)
     }
 

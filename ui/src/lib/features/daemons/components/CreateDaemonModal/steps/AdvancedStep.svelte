@@ -5,8 +5,7 @@
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
-	import { ChevronDown, ChevronRight } from 'lucide-svelte';
-	import { SvelteSet } from 'svelte/reactivity';
+	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
 	import { common_documentation, common_documentationLinkText } from '$lib/paraglide/messages';
 	import { fieldDefs, sectionDefs } from '../../../config';
 
@@ -30,17 +29,6 @@
 			.filter((d) => d.section!() === name)
 			.sort((a, b) => (a.type === 'boolean' ? 1 : 0) - (b.type === 'boolean' ? 1 : 0))
 	}));
-
-	// Track which sections are expanded (default: all collapsed)
-	let expandedSections = new SvelteSet<string>();
-
-	function toggleSection(name: string) {
-		if (expandedSections.has(name)) {
-			expandedSections.delete(name);
-		} else {
-			expandedSections.add(name);
-		}
-	}
 
 	// Get validators for a field
 	function getValidators(fieldId: string) {
@@ -68,102 +56,79 @@
 
 	{#each advancedSections as section (section.name)}
 		{@const sectionName = section.name()}
-		{@const isExpanded = expandedSections.has(sectionName)}
 		{@const sectionDef = sectionDefs[sectionName]}
 		{@const description = sectionDef?.description()}
-		<div class="card">
-			<button
-				type="button"
-				class="flex w-full items-center justify-between text-left focus:outline-none"
-				onclick={() => toggleSection(sectionName)}
-				aria-expanded={isExpanded}
-			>
-				<div>
-					<div class="text-secondary text-m font-medium">{sectionName}</div>
-					{#if description}
-						<p class="text-tertiary mt-0.5 text-xs">{description}</p>
-					{/if}
-				</div>
-				{#if isExpanded}
-					<ChevronDown class="text-secondary h-4 w-4 flex-shrink-0" />
-				{:else}
-					<ChevronRight class="text-secondary h-4 w-4 flex-shrink-0" />
-				{/if}
-			</button>
-
-			{#if isExpanded}
-				{#if sectionDef?.docsHint}
-					<DocsHint
-						class="mt-3"
-						text={sectionDef.docsHint.text()}
-						href={sectionDef.docsHint.href}
-						linkText={sectionDef.docsHint.linkText()}
-					/>
-				{/if}
-				<div class="mt-3 grid grid-cols-2 gap-4">
-					{#each section.fields as def (def.id)}
-						{#if !def.showWhen || def.showWhen(formValues)}
-							{#if def.docsOnly}
-								<div></div>
-							{:else if def.type === 'string'}
-								<form.Field name={def.id} validators={getValidators(def.id)}>
-									{#snippet children(field: AnyFieldApi)}
-										<TextInput
-											label={def.label()}
-											{field}
-											id={def.id}
-											placeholder={String(
-												typeof def.placeholder === 'function'
-													? def.placeholder()
-													: (def.placeholder ?? '')
-											)}
-											helpText={def.helpText()}
-										/>
-									{/snippet}
-								</form.Field>
-							{:else if def.type === 'number'}
-								<form.Field name={def.id} validators={getValidators(def.id)}>
-									{#snippet children(field: AnyFieldApi)}
-										<TextInput
-											label={def.label()}
-											{field}
-											id={def.id}
-											type="number"
-											placeholder={String(
-												typeof def.placeholder === 'function'
-													? def.placeholder()
-													: (def.placeholder ?? '')
-											)}
-											helpText={def.helpText()}
-										/>
-									{/snippet}
-								</form.Field>
-							{:else if def.type === 'select'}
-								<form.Field name={def.id}>
-									{#snippet children(field: AnyFieldApi)}
-										<SelectInput
-											label={def.label()}
-											{field}
-											id={def.id}
-											options={(def.options ?? []).map((opt) => ({
-												value: opt.value,
-												label: opt.label()
-											}))}
-											helpText={def.helpText()}
-										/>
-									{/snippet}
-								</form.Field>
-							{:else if def.type === 'boolean'}
-								<form.Field name={def.id}>
-									{#snippet children(field: AnyFieldApi)}
-										<Checkbox label={def.label()} {field} id={def.id} helpText={def.helpText()} />
-									{/snippet}
-								</form.Field>
-							{/if}
-						{/if}
-					{/each}
-				</div>
+		<CollapsibleCard title={sectionName} {description} expanded={false}>
+			{#if sectionDef?.docsHint}
+				<DocsHint
+					text={sectionDef.docsHint.text()}
+					href={sectionDef.docsHint.href}
+					linkText={sectionDef.docsHint.linkText()}
+				/>
 			{/if}
-		</div>
+			<div class="grid grid-cols-2 gap-4">
+				{#each section.fields as def (def.id)}
+					{#if !def.showWhen || def.showWhen(formValues)}
+						{#if def.docsOnly}
+							<div></div>
+						{:else if def.type === 'string'}
+							<form.Field name={def.id} validators={getValidators(def.id)}>
+								{#snippet children(field: AnyFieldApi)}
+									<TextInput
+										label={def.label()}
+										{field}
+										id={def.id}
+										placeholder={String(
+											typeof def.placeholder === 'function'
+												? def.placeholder()
+												: (def.placeholder ?? '')
+										)}
+										helpText={def.helpText()}
+									/>
+								{/snippet}
+							</form.Field>
+						{:else if def.type === 'number'}
+							<form.Field name={def.id} validators={getValidators(def.id)}>
+								{#snippet children(field: AnyFieldApi)}
+									<TextInput
+										label={def.label()}
+										{field}
+										id={def.id}
+										type="number"
+										placeholder={String(
+											typeof def.placeholder === 'function'
+												? def.placeholder()
+												: (def.placeholder ?? '')
+										)}
+										helpText={def.helpText()}
+									/>
+								{/snippet}
+							</form.Field>
+						{:else if def.type === 'select'}
+							<form.Field name={def.id}>
+								{#snippet children(field: AnyFieldApi)}
+									<SelectInput
+										label={def.label()}
+										{field}
+										id={def.id}
+										options={(def.options ?? []).map((opt) => ({
+											value: opt.value,
+											label: opt.label()
+										}))}
+										helpText={def.helpText()}
+									/>
+								{/snippet}
+							</form.Field>
+						{:else if def.type === 'boolean'}
+							<form.Field name={def.id}>
+								{#snippet children(field: AnyFieldApi)}
+									<Checkbox label={def.label()} {field} id={def.id} helpText={def.helpText()} />
+								{/snippet}
+							</form.Field>
+						{/if}
+					{/if}
+				{/each}
+			</div>
+		</CollapsibleCard>
 	{/each}
 </div>

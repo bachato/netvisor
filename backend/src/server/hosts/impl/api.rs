@@ -339,6 +339,7 @@ impl IfEntryInput {
                 network_id,
                 if_index: self.if_index,
                 if_descr: self.if_descr,
+                if_name: None,
                 if_alias: self.if_alias,
                 if_type: self.if_type.unwrap_or(1), // 1 = other
                 speed_bps: self.speed_bps,
