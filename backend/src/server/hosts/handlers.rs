@@ -6,6 +6,7 @@ use crate::server::interfaces::r#impl::base::Interface;
 use crate::server::ports::r#impl::base::Port;
 use crate::server::services::r#impl::base::Service;
 use crate::server::shared::entities::EntityDiscriminants;
+use crate::server::shared::events::types::{BillingEvent, BillingOperation};
 use crate::server::shared::extractors::Query;
 use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
@@ -19,6 +20,7 @@ use crate::server::shared::storage::traits::Entity;
 use crate::server::shared::storage::{filter::StorableFilter, traits::Storable};
 use crate::server::shared::types::api::{ApiErrorResponse, EmptyApiResponse};
 use crate::server::shared::types::error_codes::ErrorCode;
+use crate::server::shared::types::metadata::TypeMetadataProvider;
 use crate::server::shared::validation::{validate_network_access, validate_read_access};
 use crate::server::{
     config::AppState,
@@ -35,6 +37,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::http::{HeaderMap, HeaderValue, header};
 use axum::response::{IntoResponse, Json};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::io::{Cursor, Write};
 use std::sync::Arc;
@@ -349,6 +352,24 @@ async fn create_host(
                 let current_hosts =
                     state.services.host_service.get_all(org_filter).await?.len() as u64;
                 if current_hosts >= limit {
+                    let _ = state
+                        .services
+                        .event_bus
+                        .publish_billing(BillingEvent::new(
+                            Uuid::new_v4(),
+                            org_id,
+                            BillingOperation::FeatureLimitHit,
+                            Utc::now(),
+                            entity.clone(),
+                            serde_json::json!({
+                                "limit_type": "hosts",
+                                "current_count": current_hosts,
+                                "limit": limit,
+                                "plan_type": plan.name(),
+                            }),
+                        ))
+                        .await;
+
                     return Err(ApiError::coded(
                         StatusCode::FORBIDDEN,
                         ErrorCode::BillingHostLimitReached { limit },

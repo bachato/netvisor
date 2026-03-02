@@ -1,6 +1,6 @@
 use crate::server::{
     auth::middleware::{
-        auth::AuthError,
+        auth::{AuthError, AuthenticatedEntity},
         cache::CachedOrganization,
         permissions::{Authorized, Viewer},
     },
@@ -9,12 +9,18 @@ use crate::server::{
     networks::r#impl::Network,
     organizations::r#impl::base::Organization,
     shared::{
-        services::traits::CrudService, storage::filter::StorableFilter, types::api::ApiError,
+        events::types::{BillingEvent, BillingOperation},
+        services::traits::CrudService,
+        storage::filter::StorableFilter,
+        types::{api::ApiError, metadata::TypeMetadataProvider},
     },
     users::r#impl::permissions::UserOrgPermissions,
 };
 use async_trait::async_trait;
 use axum::{extract::FromRequestParts, http::request::Parts};
+use chrono::Utc;
+use serde_json::json;
+use uuid::Uuid;
 
 /// Context available for feature/quota checks
 pub struct FeatureCheckContext<'a> {
@@ -185,6 +191,25 @@ impl FeatureCheck for CreateNetworkFeature {
                 .unwrap_or(0);
 
             if current_networks >= max_networks as usize {
+                let _ = ctx
+                    .app_state
+                    .services
+                    .event_bus
+                    .publish_billing(BillingEvent::new(
+                        Uuid::new_v4(),
+                        ctx.organization.id,
+                        BillingOperation::FeatureLimitHit,
+                        Utc::now(),
+                        AuthenticatedEntity::System,
+                        json!({
+                            "limit_type": "networks",
+                            "current_count": current_networks,
+                            "limit": max_networks,
+                            "plan_type": ctx.plan.name(),
+                        }),
+                    ))
+                    .await;
+
                 return FeatureCheckResult::denied(format!(
                     "Network limit reached ({}/{}). Upgrade your plan for more networks.",
                     current_networks, max_networks

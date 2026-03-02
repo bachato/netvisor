@@ -4,13 +4,16 @@ use crate::server::auth::middleware::permissions::{Admin, Authorized};
 use crate::server::config::AppState;
 use crate::server::invites::r#impl::base::Invite;
 use crate::server::organizations::r#impl::api::CreateInviteRequest;
-use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
+use crate::server::shared::events::types::{
+    BillingEvent, BillingOperation, OnboardingEvent, OnboardingOperation,
+};
 use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::traits::Entity;
 use crate::server::shared::types::api::ApiResponse;
 use crate::server::shared::types::api::ApiResult;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, EmptyApiResponse};
+use crate::server::shared::types::metadata::TypeMetadataProvider;
 use crate::server::users::r#impl::base::User;
 use crate::server::users::r#impl::permissions::UserOrgPermissions;
 use anyhow::Error;
@@ -104,6 +107,24 @@ async fn create_invite(
         let total_seats_used = current_members + pending_invites;
 
         if total_seats_used >= max_seats as usize {
+            let _ = state
+                .services
+                .event_bus
+                .publish_billing(BillingEvent::new(
+                    Uuid::new_v4(),
+                    organization_id,
+                    BillingOperation::FeatureLimitHit,
+                    Utc::now(),
+                    auth.entity.clone(),
+                    serde_json::json!({
+                        "limit_type": "seats",
+                        "current_count": total_seats_used,
+                        "limit": max_seats,
+                        "plan_type": plan.name(),
+                    }),
+                ))
+                .await;
+
             return Err(ApiError::forbidden(&format!(
                 "Seat limit reached ({}/{}). Upgrade your plan for more seats, or delete any unused pending invites.",
                 total_seats_used, max_seats

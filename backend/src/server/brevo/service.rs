@@ -143,6 +143,7 @@ impl BrevoService {
                 )
                 .await?;
             }
+            BillingOperation::FeatureLimitHit => {}
         }
         Ok(())
     }

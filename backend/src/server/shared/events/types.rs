@@ -431,6 +431,7 @@ pub enum BillingOperation {
     PaymentFailed,
     PaymentActionRequired,
     PaymentRecovered,
+    FeatureLimitHit,
 }
 
 impl BillingOperation {

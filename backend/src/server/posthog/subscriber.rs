@@ -117,6 +117,7 @@ impl EventSubscriber for PosthogService {
                 BillingOperation::PaymentFailed,
                 BillingOperation::PaymentActionRequired,
                 BillingOperation::PaymentRecovered,
+                BillingOperation::FeatureLimitHit,
             ]),
             onboarding_operations: Some(vec![
                 OnboardingOperation::OrgCreated,
@@ -294,6 +295,11 @@ impl EventSubscriber for PosthogService {
                             .get("org_name")
                             .cloned()
                             .unwrap_or(json!(null));
+                        let use_case = onboarding_event
+                            .metadata
+                            .get("use_case")
+                            .cloned()
+                            .unwrap_or(json!(null));
 
                         self.identify(
                             &distinct_id,
@@ -302,6 +308,7 @@ impl EventSubscriber for PosthogService {
                                 "plan_status": plan_status,
                                 "has_payment_method": has_payment_method,
                                 "organization_id": &org_id_str,
+                                "use_case": use_case,
                             }),
                         )
                         .await;
@@ -313,6 +320,7 @@ impl EventSubscriber for PosthogService {
                                 "plan_type": plan_type,
                                 "plan_status": plan_status,
                                 "name": org_name,
+                                "use_case": use_case,
                                 "created_at": onboarding_event.timestamp.to_rfc3339(),
                             }),
                         )
