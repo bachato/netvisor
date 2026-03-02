@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { createForm } from '@tanstack/svelte-form';
-	import { submitForm } from '$lib/shared/components/forms/form-context';
+	import { submitForm, validateForm } from '$lib/shared/components/forms/form-context';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
+	import type { ModalTab } from '$lib/shared/components/layout/GenericModal.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
 	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
 	import DiscoveryDetailsForm from './DiscoveryDetailsForm.svelte';
-	import DiscoveryTypeForm from './DiscoveryTypeForm.svelte';
+	import DiscoveryTypeConfigForm from './DiscoveryTypeConfigForm.svelte';
+	import DiscoveryScheduleForm from './DiscoveryScheduleForm.svelte';
 	import type { Discovery } from '../../types/base';
 	import DiscoveryHistoricalSummary from './DiscoveryHistoricalSummary.svelte';
 	import { uuidv4Sentinel } from '$lib/shared/utils/formatting';
@@ -17,12 +19,18 @@
 	import type { Host } from '$lib/features/hosts/types/base';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
+	import { Info, Calendar } from 'lucide-svelte';
 	import {
+		common_back,
 		common_cancel,
 		common_close,
+		common_configuration,
 		common_delete,
 		common_deleting,
+		common_details,
+		common_next,
 		common_saving,
+		common_schedule,
 		discovery_couldNotGetNetworkId,
 		discovery_createDiscovery,
 		discovery_createScheduled,
@@ -68,6 +76,8 @@
 	let loading = $state(false);
 	let deleting = $state(false);
 	let rawCronMode = $state(false);
+	let activeTab = $state('details');
+	let furthestReached = $state(0);
 
 	// Mutable form data that sub-components can update
 	let formData = $state<Discovery>(createEmptyDiscoveryFormData(null));
@@ -88,6 +98,97 @@
 	let daemonHostId = $derived(
 		(daemon ? hosts.find((h) => h.id === daemon.host_id)?.id : null) || null
 	);
+
+	let hasConfigTab = $derived(
+		formData.discovery_type.type === 'Network' || formData.discovery_type.type === 'Docker'
+	);
+	let hasScheduleTab = $derived(formData.run_type.type === 'Scheduled');
+
+	let tabs: ModalTab[] = $derived(
+		isHistoricalRun
+			? []
+			: [
+					{ id: 'details', label: common_details(), icon: Info },
+					...(hasConfigTab
+						? [
+								{
+									id: 'type',
+									label: common_configuration(),
+									icon: entities.getIconComponent('Discovery'),
+									disabled: !isEditing && furthestReached < 1
+								}
+							]
+						: []),
+					...(hasScheduleTab
+						? [
+								{
+									id: 'schedule',
+									label: common_schedule(),
+									icon: Calendar,
+									disabled: !isEditing && furthestReached < (hasConfigTab ? 2 : 1)
+								}
+							]
+						: [])
+				]
+	);
+
+	// Auto-navigate away from tabs that no longer exist
+	$effect(() => {
+		if (activeTab === 'schedule' && !hasScheduleTab) {
+			activeTab = 'details';
+		}
+		if (activeTab === 'type' && !hasConfigTab) {
+			activeTab = 'details';
+		}
+	});
+
+	function nextTab() {
+		const flow = [
+			'details',
+			...(hasConfigTab ? ['type'] : []),
+			...(hasScheduleTab ? ['schedule'] : [])
+		];
+		const idx = flow.indexOf(activeTab);
+		if (idx >= 0 && idx < flow.length - 1) {
+			activeTab = flow[idx + 1];
+		}
+	}
+
+	function previousTab() {
+		const flow = [
+			'details',
+			...(hasConfigTab ? ['type'] : []),
+			...(hasScheduleTab ? ['schedule'] : [])
+		];
+		const idx = flow.indexOf(activeTab);
+		if (idx > 0) {
+			activeTab = flow[idx - 1];
+		}
+	}
+
+	async function handleNext() {
+		if (activeTab === 'details') {
+			const isValid = await validateForm(form);
+			if (isValid) {
+				if (furthestReached < 1) furthestReached = 1;
+				nextTab();
+			}
+		} else if (activeTab === 'type') {
+			if (furthestReached < 2) furthestReached = 2;
+			nextTab();
+		}
+	}
+
+	let isLastTab = $derived.by(() => {
+		const flow = [
+			'details',
+			...(hasConfigTab ? ['type'] : []),
+			...(hasScheduleTab ? ['schedule'] : [])
+		];
+		return activeTab === flow[flow.length - 1];
+	});
+
+	let isFirstTab = $derived(activeTab === 'details');
 
 	function getDefaultFormData(): Discovery {
 		const defaultDaemon = daemons.length > 0 ? daemons[0] : null;
@@ -145,6 +246,8 @@
 	}));
 
 	function handleOpen() {
+		activeTab = 'details';
+		furthestReached = discovery ? Infinity : 0;
 		formData = getDefaultFormData();
 
 		// Parse schedule fields from cron
@@ -231,8 +334,12 @@
 	entityId={discovery?.id}
 	{onClose}
 	onOpen={handleOpen}
-	size="xl"
+	size="full"
+	fixedHeight={true}
 	showCloseButton={true}
+	{tabs}
+	bind:activeTab
+	onTabChange={(id) => (activeTab = id)}
 >
 	{#snippet headerIcon()}
 		<ModalHeaderIcon Icon={entities.getIconComponent('Discovery')} color={colorHelper.color} />
@@ -247,24 +354,35 @@
 		class="flex min-h-0 flex-1 flex-col"
 	>
 		<div class="min-h-0 flex-1 overflow-y-auto">
-			<div class="space-y-8 p-6">
-				<DiscoveryDetailsForm {form} {daemons} bind:formData {readOnly} />
-
-				{#if isHistoricalRun && discovery?.run_type.type === 'Historical'}
+			{#if isHistoricalRun && discovery?.run_type.type === 'Historical'}
+				<div class="space-y-8 p-6">
 					<DiscoveryHistoricalSummary payload={discovery.run_type.results} />
-				{:else if daemon}
-					<DiscoveryTypeForm
+				</div>
+			{:else if activeTab === 'details'}
+				<div class="space-y-8 p-6">
+					<DiscoveryDetailsForm
 						{form}
+						{daemons}
 						bind:formData
 						{readOnly}
+						{hasScheduledDiscovery}
 						{daemonHostId}
 						{daemon}
-						bind:rawCronMode
 					/>
-				{:else}
-					<InlineWarning body={discovery_noDaemonSelected()} />
-				{/if}
-			</div>
+				</div>
+			{:else if activeTab === 'type'}
+				<div class="space-y-8 p-6">
+					{#if daemon}
+						<DiscoveryTypeConfigForm {form} bind:formData {readOnly} {daemonHostId} {daemon} />
+					{:else}
+						<InlineWarning body={discovery_noDaemonSelected()} />
+					{/if}
+				</div>
+			{:else if activeTab === 'schedule'}
+				<div class="space-y-8 p-6">
+					<DiscoveryScheduleForm {form} bind:formData {readOnly} bind:rawCronMode />
+				</div>
+			{/if}
 		</div>
 
 		{#if isEditing}
@@ -286,18 +404,39 @@
 					{/if}
 				</div>
 				<div class="flex items-center gap-3">
-					<button
-						type="button"
-						disabled={loading || deleting}
-						onclick={onClose}
-						class="btn-secondary"
-					>
-						{isHistoricalRun ? common_close() : common_cancel()}
-					</button>
-					{#if showSave}
-						<button type="submit" disabled={loading || deleting} class="btn-primary">
-							{loading ? common_saving() : saveLabel}
+					{#if isEditing || isHistoricalRun}
+						<button
+							type="button"
+							disabled={loading || deleting}
+							onclick={onClose}
+							class="btn-secondary"
+						>
+							{isHistoricalRun ? common_close() : common_cancel()}
 						</button>
+						{#if showSave}
+							<button type="submit" disabled={loading || deleting} class="btn-primary">
+								{loading ? common_saving() : saveLabel}
+							</button>
+						{/if}
+					{:else}
+						{#if !isFirstTab}
+							<button type="button" class="btn-secondary" onclick={previousTab}>
+								{common_back()}
+							</button>
+						{:else}
+							<button type="button" onclick={onClose} class="btn-secondary">
+								{common_cancel()}
+							</button>
+						{/if}
+						{#if isLastTab}
+							<button type="submit" disabled={loading} class="btn-primary">
+								{loading ? common_saving() : saveLabel}
+							</button>
+						{:else}
+							<button type="button" class="btn-primary" onclick={handleNext}>
+								{common_next()}
+							</button>
+						{/if}
 					{/if}
 				</div>
 			</div>
