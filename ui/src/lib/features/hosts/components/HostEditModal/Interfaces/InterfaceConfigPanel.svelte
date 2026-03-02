@@ -7,9 +7,10 @@
 		macFormat,
 		max
 	} from '$lib/shared/components/forms/validators';
-	import ConfigHeader from '$lib/shared/components/forms/config/ConfigHeader.svelte';
+	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
+	import { entities } from '$lib/shared/stores/metadata';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import {
 		common_ipAddress,
@@ -19,8 +20,7 @@
 		common_placeholderIpAddress,
 		hosts_interfaces_ipMustBeWithin,
 		hosts_interfaces_macFormat,
-		hosts_interfaces_macReadOnly,
-		hosts_interfaces_subnetInterface
+		hosts_interfaces_macReadOnly
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -56,10 +56,19 @@
 
 {#if subnet}
 	<div class="space-y-6">
-		<ConfigHeader
-			title={hosts_interfaces_subnetInterface({ name: subnet?.name ? subnet.name : subnet.cidr })}
-			subtitle={subnet?.description}
-		/>
+		<div class="border-b border-gray-600 pb-4">
+			<h3 class="text-primary flex items-center gap-1.5 text-sm font-medium">
+				Interface on
+				<Tag
+					label={subnet?.name ? `${subnet.name} (${subnet.cidr})` : subnet.cidr}
+					icon={entities.getIconComponent('Subnet')}
+					color={entities.getColorHelper('Subnet').color}
+				/>
+			</h3>
+			{#if subnet?.description}
+				<p class="text-secondary mt-1 text-sm">{subnet.description}</p>
+			{/if}
+		</div>
 
 		<div class="space-y-4">
 			<form.Field

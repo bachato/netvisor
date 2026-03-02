@@ -3,19 +3,17 @@
 	import { queryKeys } from '$lib/api/query-client';
 	import type { IfEntry, Interface } from '$lib/features/hosts/types/base';
 	import { getHostByIdFromCache } from '$lib/features/hosts/queries';
+	import { getSubnetByIdFromCache } from '$lib/features/subnets/queries';
 	import { getAdminStatusLabels, getOperStatusLabels } from '$lib/features/snmp/types/base';
 	import ConfigHeader from '$lib/shared/components/forms/config/ConfigHeader.svelte';
 	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
 	import InfoRow from '$lib/shared/components/data/InfoRow.svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
-	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
-	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
-	import { IfEntryDisplay } from '$lib/shared/components/forms/selection/display/IfEntryDisplay.svelte';
-	import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
-	import UnresolvedPlaceholder from '$lib/shared/components/data/UnresolvedPlaceholder.svelte';
-	import { CornerDownRight } from 'lucide-svelte';
+	import { entities } from '$lib/shared/stores/metadata';
 	import type { Color } from '$lib/shared/utils/styling';
 	import {
+		common_details,
+		common_ipAddress,
 		common_macAddress,
 		common_speed,
 		common_status,
@@ -24,10 +22,7 @@
 		hosts_ifEntries_aliasDescription,
 		hosts_ifEntries_cdpNeighbor,
 		hosts_ifEntries_chassisId,
-		hosts_ifEntries_details,
-		hosts_ifEntries_ifName,
 		hosts_ifEntries_index,
-		hosts_ifEntries_interfaceId,
 		hosts_ifEntries_lldpNeighbor,
 		hosts_ifEntries_lldpSysDescr,
 		hosts_ifEntries_managementAddress,
@@ -38,9 +33,7 @@
 		hosts_ifEntries_remoteDevice,
 		hosts_ifEntries_remotePlatform,
 		hosts_ifEntries_remotePort,
-		hosts_ifEntries_remoteSystemName,
-		hosts_ifEntries_type,
-		hosts_ifEntries_unresolvedInterface
+		hosts_ifEntries_remoteSystemName
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -75,11 +68,16 @@
 		}
 	});
 
-	// Linked Interface resolution
+	// Linked Interface + Subnet resolution
 	let linkedInterface = $derived.by(() => {
 		if (!ifEntry.interface_id) return null;
 		const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
 		return allInterfaces.find((i) => i.id === ifEntry.interface_id) ?? null;
+	});
+
+	let linkedSubnet = $derived.by(() => {
+		if (!linkedInterface) return null;
+		return getSubnetByIdFromCache(queryClient, linkedInterface.subnet_id);
 	});
 
 	// Neighbor resolution
@@ -124,69 +122,65 @@
 		</InfoRow>
 	</CollapsibleCard>
 
-	<!-- Interface Details Section -->
-	<CollapsibleCard title={hosts_ifEntries_details()} bind:expanded={detailsExpanded}>
-		<InfoRow label={hosts_ifEntries_ifName()}>{ifEntry.if_name || '-'}</InfoRow>
-		<InfoRow label={hosts_ifEntries_type()}>{ifEntry.if_type || '-'}</InfoRow>
+	<!-- Details Section -->
+	<CollapsibleCard title={common_details()} bind:expanded={detailsExpanded}>
+		<InfoRow label="ifName">{ifEntry.if_name || '-'}</InfoRow>
+		<InfoRow label="ifType">{ifEntry.if_type || '-'}</InfoRow>
 		<InfoRow label={common_macAddress()} mono>{ifEntry.mac_address || '-'}</InfoRow>
 		<InfoRow label={common_speed()}>{formatSpeed(ifEntry.speed_bps)}</InfoRow>
 		<InfoRow label={hosts_ifEntries_aliasDescription()}>{ifEntry.if_alias || '-'}</InfoRow>
 
-		<!-- Linked Interface -->
-		{#if linkedInterface}
-			<div class="pt-1">
-				<span class="text-tertiary mb-1.5 block text-xs font-medium"
-					>{hosts_ifEntries_interfaceId()}</span
-				>
-				<div class="card card-static">
-					<EntityDisplayWrapper
-						context={{ subnets: [] }}
-						item={linkedInterface}
-						displayComponent={InterfaceDisplay}
+		<!-- IP Address (linked Interface + Subnet as tags) -->
+		<InfoRow label={common_ipAddress()}>
+			{#if linkedInterface}
+				<div class="flex flex-wrap items-center gap-1">
+					<Tag
+						label={linkedInterface.ip_address}
+						icon={entities.getIconComponent('Interface')}
+						color={entities.getColorHelper('Interface').color}
 					/>
+					<span class="text-tertiary text-xs">on</span>
+					{#if linkedSubnet}
+						<Tag
+							label={linkedSubnet.name
+								? `${linkedSubnet.name} (${linkedSubnet.cidr})`
+								: linkedSubnet.cidr}
+							icon={entities.getIconComponent('Subnet')}
+							color={entities.getColorHelper('Subnet').color}
+						/>
+					{/if}
 				</div>
-			</div>
-		{:else}
-			<InfoRow label={hosts_ifEntries_interfaceId()}>-</InfoRow>
-		{/if}
+			{:else}
+				-
+			{/if}
+		</InfoRow>
 
 		<!-- Neighbor -->
-		{#if ifEntry.neighbor}
-			<div class="pt-1">
-				<span class="text-tertiary mb-1.5 block text-xs font-medium"
-					>{hosts_ifEntries_neighbor()}</span
-				>
-				<div class="space-y-1.5">
-					{#if neighborHost}
-						<div class="card card-static">
-							<EntityDisplayWrapper
-								context={{}}
-								item={neighborHost}
-								displayComponent={HostDisplay}
-							/>
-						</div>
+		<InfoRow label={hosts_ifEntries_neighbor()}>
+			{#if ifEntry.neighbor}
+				<div class="flex flex-wrap items-center gap-1">
+					{#if neighborIfEntry}
+						<Tag
+							label={neighborIfEntry.if_name ||
+								neighborIfEntry.if_descr ||
+								`Index ${neighborIfEntry.if_index}`}
+							icon={entities.getIconComponent('IfEntry')}
+							color={entities.getColorHelper('IfEntry').color}
+						/>
+						<span class="text-tertiary text-xs">on</span>
 					{/if}
-					<div class="flex items-start gap-1.5">
-						<CornerDownRight class="text-tertiary mt-1.5 h-4 w-4 flex-shrink-0" />
-						{#if neighborIfEntry}
-							<div class="card card-static min-w-0 flex-1">
-								<EntityDisplayWrapper
-									context={undefined}
-									item={neighborIfEntry}
-									displayComponent={IfEntryDisplay}
-								/>
-							</div>
-						{:else}
-							<div class="min-w-0 flex-1">
-								<UnresolvedPlaceholder label={hosts_ifEntries_unresolvedInterface()} />
-							</div>
-						{/if}
-					</div>
+					{#if neighborHost}
+						<Tag
+							label={neighborHost.name}
+							icon={entities.getIconComponent('Host')}
+							color={entities.getColorHelper('Host').color}
+						/>
+					{/if}
 				</div>
-			</div>
-		{:else}
-			<InfoRow label={hosts_ifEntries_neighbor()}>-</InfoRow>
-		{/if}
+			{:else}
+				-
+			{/if}
+		</InfoRow>
 	</CollapsibleCard>
 
 	<!-- CDP Neighbor Info Section -->
