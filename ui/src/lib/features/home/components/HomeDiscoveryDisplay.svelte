@@ -3,11 +3,31 @@
 	import { toColor } from '$lib/shared/utils/styling';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import type { Discovery } from '$lib/features/discovery/types/base';
+	import type { Daemon } from '$lib/features/daemons/types/base';
+	import type { components } from '$lib/api/schema';
 
-	export const HomeDiscoveryDisplay: EntityDisplayComponent<Discovery, Record<string, never>> = {
+	type NetworkSummary = components['schemas']['NetworkSummary'];
+
+	export interface HomeDiscoveryContext {
+		daemons: Daemon[];
+		networks: NetworkSummary[];
+	}
+
+	export const HomeDiscoveryDisplay: EntityDisplayComponent<Discovery, HomeDiscoveryContext> = {
 		getId: (discovery) => discovery.id,
-		getLabel: (discovery) => discovery.name,
-		getDescription: (discovery) => formatTimestamp(discovery.created_at),
+		getLabel: (discovery, context) => {
+			// New records already have enriched names ("Type — Network").
+			// Old records missing the separator get enriched client-side.
+			if (discovery.name.includes(' \u2014 ')) return discovery.name;
+			const network = context?.networks.find((n) => n.id === discovery.network_id);
+			if (network) return `${discovery.name} \u2014 ${network.name}`;
+			return discovery.name;
+		},
+		getDescription: (discovery, context) => {
+			const daemon = context.daemons.find((d) => d.id === discovery.daemon_id);
+			const daemonName = daemon?.name ?? 'Unknown Daemon';
+			return `${daemonName} \u00b7 ${formatTimestamp(discovery.created_at)}`;
+		},
 		getIcon: () => entities.getIconComponent('Discovery'),
 		getIconColor: () => entities.getColorHelper('Discovery').icon,
 		getTags: (discovery) => {
@@ -36,8 +56,10 @@
 	import type { EntityDisplayComponent } from '$lib/shared/components/forms/selection/types';
 	import ListSelectItem from '$lib/shared/components/forms/selection/ListSelectItem.svelte';
 
-	export let item: Discovery;
-	export let context: Record<string, never> = {} as Record<string, never>;
+	let {
+		item,
+		context = { daemons: [], networks: [] }
+	}: { item: Discovery; context?: HomeDiscoveryContext } = $props();
 </script>
 
 <ListSelectItem {item} {context} displayComponent={HomeDiscoveryDisplay} />

@@ -20,6 +20,7 @@
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
+	import { modalState, openModal, closeModal } from '$lib/shared/stores/modal-registry';
 	import {
 		common_created,
 		common_duration,
@@ -57,9 +58,23 @@
 	let showDiscoveryModal = $state(false);
 	let editingDiscovery: Discovery | null = $state(null);
 
+	// Deep-link: open detail modal from URL
+	$effect(() => {
+		if ($modalState.name === 'discovery-history-detail' && !showDiscoveryModal) {
+			if ($modalState.id) {
+				const disc = discoveriesData.find((d) => d.id === $modalState.id);
+				if (disc) {
+					editingDiscovery = disc;
+					showDiscoveryModal = true;
+				}
+			}
+		}
+	});
+
 	function handleEditDiscovery(discovery: Discovery) {
 		editingDiscovery = discovery;
 		showDiscoveryModal = true;
+		openModal('discovery-history-detail', { id: discovery.id });
 	}
 
 	async function handleDiscoveryCreate(data: Discovery) {
@@ -77,6 +92,7 @@
 	function handleCloseEditor() {
 		showDiscoveryModal = false;
 		editingDiscovery = null;
+		closeModal();
 	}
 
 	async function handleBulkDelete(ids: string[]) {
@@ -175,6 +191,7 @@
 </div>
 
 <DiscoveryEditModal
+	name="discovery-history-detail"
 	isOpen={showDiscoveryModal}
 	hosts={hostsData}
 	daemons={daemonsData}

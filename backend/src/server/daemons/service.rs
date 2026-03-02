@@ -917,6 +917,11 @@ impl DaemonService {
             "Creating default discovery jobs for daemon"
         );
 
+        let network_name = match self.network_service.get_by_id(&network_id).await {
+            Ok(Some(network)) => network.base.name,
+            _ => "Unknown Network".to_string(),
+        };
+
         // Free plans use AdHoc (run once immediately), paid plans use Scheduled
         let default_run_type = if is_free_plan {
             RunType::AdHoc { last_run: None }
@@ -938,7 +943,7 @@ impl DaemonService {
                 Discovery::new(DiscoveryBase {
                     run_type: default_run_type.clone(),
                     discovery_type: self_report_discovery_type.clone(),
-                    name: self_report_discovery_type.to_string(),
+                    name: format!("{} \u{2014} {}", self_report_discovery_type, network_name),
                     daemon_id,
                     network_id,
                     tags: Vec::new(),
@@ -964,7 +969,7 @@ impl DaemonService {
                     Discovery::new(DiscoveryBase {
                         run_type: default_run_type.clone(),
                         discovery_type: docker_discovery_type.clone(),
-                        name: docker_discovery_type.to_string(),
+                        name: format!("{} \u{2014} {}", docker_discovery_type, network_name),
                         daemon_id,
                         network_id,
                         tags: Vec::new(),
@@ -992,7 +997,7 @@ impl DaemonService {
                 Discovery::new(DiscoveryBase {
                     run_type: default_run_type.clone(),
                     discovery_type: network_discovery_type.clone(),
-                    name: network_discovery_type.to_string(),
+                    name: format!("{} \u{2014} {}", network_discovery_type, network_name),
                     daemon_id,
                     network_id,
                     tags: Vec::new(),

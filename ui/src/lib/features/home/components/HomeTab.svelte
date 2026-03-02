@@ -12,6 +12,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { onMount } from 'svelte';
+	import { openModal } from '$lib/shared/stores/modal-registry';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -83,7 +84,15 @@
 
 		<!-- Recent Discoveries — shown when discoveries exist -->
 		{#if dashboard.recent_discoveries.length > 0}
-			<RecentDiscoveries discoveries={dashboard.recent_discoveries} />
+			<RecentDiscoveries
+				discoveries={dashboard.recent_discoveries}
+				daemons={dashboard.daemons}
+				networks={dashboard.networks}
+				onNavigate={(discovery) => {
+					openModal('discovery-history-detail', { id: discovery.id });
+					navigateTo('discovery-history');
+				}}
+			/>
 		{/if}
 
 		<!-- Plan Usage — always visible if limits are approaching -->

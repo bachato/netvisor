@@ -1,8 +1,22 @@
 <script lang="ts">
 	import type { Discovery } from '$lib/features/discovery/types/base';
+	import type { Daemon } from '$lib/features/daemons/types/base';
+	import type { components } from '$lib/api/schema';
 	import HomeDiscoveryDisplay from './HomeDiscoveryDisplay.svelte';
 
-	let { discoveries }: { discoveries: Discovery[] } = $props();
+	type NetworkSummary = components['schemas']['NetworkSummary'];
+
+	let {
+		discoveries,
+		daemons = [],
+		networks = [],
+		onNavigate
+	}: {
+		discoveries: Discovery[];
+		daemons?: Daemon[];
+		networks?: NetworkSummary[];
+		onNavigate?: (discovery: Discovery) => void;
+	} = $props();
 </script>
 
 <section>
@@ -10,14 +24,15 @@
 	{#if discoveries.length === 0}
 		<p class="text-tertiary text-sm">No discovery results yet.</p>
 	{:else}
-		<div class="sm:w-1/2">
-			<div class="space-y-2">
-				{#each discoveries as discovery (discovery.id)}
-					<div class="card card-static">
-						<HomeDiscoveryDisplay item={discovery} />
-					</div>
-				{/each}
-			</div>
+		<div class="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">
+			{#each discoveries as discovery (discovery.id)}
+				<button
+					class="card card-static cursor-pointer text-left"
+					onclick={() => onNavigate?.(discovery)}
+				>
+					<HomeDiscoveryDisplay item={discovery} context={{ daemons, networks }} />
+				</button>
+			{/each}
 		</div>
 	{/if}
 </section>

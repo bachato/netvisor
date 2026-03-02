@@ -789,6 +789,11 @@ impl DiscoveryService {
             self.pull_cancellation_for_daemon(&session.daemon_id).await;
 
             // Create historical discovery record
+            let network_name = match self.network_service.get_by_id(&session.network_id).await {
+                Ok(Some(network)) => network.base.name,
+                _ => "Unknown Network".to_string(),
+            };
+
             let historical_discovery = Discovery {
                 id: Uuid::new_v4(),
                 created_at: session.started_at.unwrap_or(Utc::now()),
@@ -796,7 +801,7 @@ impl DiscoveryService {
                 base: crate::server::discovery::r#impl::base::DiscoveryBase {
                     daemon_id: session.daemon_id,
                     network_id: session.network_id,
-                    name: session.discovery_type.to_string(),
+                    name: format!("{} \u{2014} {}", session.discovery_type, network_name),
                     tags: Vec::new(),
                     discovery_type: session.discovery_type.clone(),
                     run_type: RunType::Historical {
@@ -1158,6 +1163,11 @@ impl DiscoveryService {
                 }
 
                 // Create historical discovery record for the stalled session
+                let network_name = match self.network_service.get_by_id(&session.network_id).await {
+                    Ok(Some(network)) => network.base.name,
+                    _ => "Unknown Network".to_string(),
+                };
+
                 let historical_discovery = Discovery {
                     id: Uuid::new_v4(),
                     created_at: session.started_at.unwrap_or(now),
@@ -1166,7 +1176,7 @@ impl DiscoveryService {
                         daemon_id: session.daemon_id,
                         network_id: session.network_id,
                         tags: Vec::new(),
-                        name: "Discovery Run (Stalled)".to_string(),
+                        name: format!("{} \u{2014} {}", session.discovery_type, network_name),
                         discovery_type: session.discovery_type.clone(),
                         run_type: RunType::Historical { results: session },
                     },
