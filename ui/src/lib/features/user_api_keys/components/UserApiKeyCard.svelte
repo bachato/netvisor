@@ -1,6 +1,6 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
-	import { entities } from '$lib/shared/stores/metadata';
+	import { entities, permissions } from '$lib/shared/stores/metadata';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { Edit, Trash2 } from 'lucide-svelte';
 	import type { UserApiKey } from '../queries';
@@ -43,11 +43,30 @@
 		fields: [
 			{
 				label: 'Permissions',
-				value: apiKey.permissions
+				value: [
+					{
+						id: apiKey.id,
+						label: permissions.getName(apiKey.permissions ?? null),
+						color: permissions.getColorHelper(apiKey.permissions ?? null).color
+					}
+				]
 			},
 			{
 				label: 'Networks',
-				value: networkNames.length > 0 ? networkNames.join(', ') : 'All networks'
+				value:
+					networkNames.length > 0
+						? (apiKey.network_ids ?? []).map((id, i) => ({
+								id,
+								label: networkNames[i] ?? 'Unknown Network',
+								color: entities.getColorHelper('Network').color
+							}))
+						: [
+								{
+									id: apiKey.id,
+									label: 'All networks',
+									color: entities.getColorHelper('Network').color
+								}
+							]
 			},
 			{
 				label: 'Created',

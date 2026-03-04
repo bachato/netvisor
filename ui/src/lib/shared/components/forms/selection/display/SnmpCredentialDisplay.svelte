@@ -2,7 +2,7 @@
 	export const SnmpCredentialDisplay: EntityDisplayComponent<SnmpCredential, object> = {
 		getId: (credential) => credential.id,
 		getLabel: (credential) => credential.name,
-		getDescription: (credential) => `SNMP ${credential.version}`,
+		getDescription: () => '',
 		getIcon: () => entities.getIconComponent('SnmpCredential'),
 		getIconColor: () => entities.getColorHelper('SnmpCredential').icon,
 		getTags: (credential) => [

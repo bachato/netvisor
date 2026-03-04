@@ -6,9 +6,8 @@
 		useRetryDaemonConnectionMutation
 	} from '$lib/features/daemons/queries';
 	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
-	import { concepts, entities } from '$lib/shared/stores/metadata';
+	import { entities } from '$lib/shared/stores/metadata';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
-	import { toColor } from '$lib/shared/utils/styling';
 	import { ArrowBigUp, RefreshCw, Trash2 } from 'lucide-svelte';
 	import { getDaemonStatusTag } from '$lib/features/daemons/utils';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
@@ -122,10 +121,6 @@
 				value: version
 			},
 			{
-				label: 'Created',
-				value: formatTimestamp(daemon.created_at)
-			},
-			{
 				label: 'Last Seen',
 				value: daemon.last_seen ? formatTimestamp(daemon.last_seen) : 'Never'
 			},
@@ -148,41 +143,18 @@
 					]),
 			{
 				label: 'Has Docker Socket',
-				value: [
-					daemon.capabilities.has_docker_socket
-						? {
-								id: daemon.id,
-								label: 'True',
-								color: concepts.getColorHelper('Virtualization').color
-							}
-						: {
-								id: daemon.id,
-								label: 'False',
-								color: toColor('gray')
-							}
-				]
+				value: daemon.capabilities.has_docker_socket ? 'Yes' : 'No'
 			},
 			{
 				label: 'Interfaces With',
-				value:
-					daemon.capabilities.interfaced_subnet_ids.length > 0
-						? daemon.capabilities.interfaced_subnet_ids
-								.map((s) => subnetsData.find((subnet) => subnet.id == s))
-								.filter((s) => s != undefined)
-								.map((s) => {
-									return {
-										id: s.id,
-										label: s.name,
-										color: entities.getColorHelper('Subnet').color
-									};
-								})
-						: [
-								{
-									id: daemon.id,
-									label: 'No subnet interfaces',
-									color: toColor('gray')
-								}
-							],
+				value: daemon.capabilities.interfaced_subnet_ids
+					.map((s) => subnetsData.find((subnet) => subnet.id == s))
+					.filter((s) => s != undefined)
+					.map((s) => ({
+						id: s.id,
+						label: s.name,
+						color: entities.getColorHelper('Subnet').color
+					})),
 				emptyText: 'No subnet interfaces'
 			},
 			{ label: 'Tags', snippet: tagsSnippet }
