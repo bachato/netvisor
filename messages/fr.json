@@ -7,6 +7,7 @@
     "apiKeys_saveKeyNowTitle": "Sauvegarder cette clé maintenant",
     "auth_backToLogin": "Retour à l'identitification",
     "auth_checkYourEmail": "Vérifiez votre courrier éléctronique",
+    "auth_continueWithEmail": "Continuer avec un email",
     "auth_createAccountWith": "Créer un compte avec {fournisseur}",
     "auth_createAccountWithEmail": "Créer un compte avec une adresse éléctronique",
     "auth_createYourAccount": "Créer un compte",

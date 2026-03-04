@@ -8,6 +8,7 @@
 	"auth_backToLogin": "Back to Login",
 	"auth_checkYourEmail": "Check Your Email",
 	"auth_createAccount": "Create Account",
+	"auth_continueWithEmail": "Continue with Email",
 	"auth_createAccountWith": "Create Account with {provider}",
 	"auth_createYourAccount": "Create your account",
 	"auth_creatingAccount": "Creating account...",

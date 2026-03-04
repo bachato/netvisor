@@ -39,6 +39,7 @@ impl EventSubscriber for BrevoService {
             billing_operations: None,
             onboarding_operations: None,
             discovery_phases: Some(vec![DiscoveryPhase::Scanning]),
+            analytics_operations: Some(vec![]),
             network_ids: None,
         }
     }

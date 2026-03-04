@@ -7,6 +7,7 @@
     "apiKeys_saveKeyNowTitle": "",
     "auth_backToLogin": "",
     "auth_checkYourEmail": "Überprüfe deine E-Mail",
+    "auth_continueWithEmail": "Weiter mit E-Mail",
     "auth_createAccountWith": "Account erstellen über {provider}",
     "auth_createAccountWithEmail": "",
     "auth_createYourAccount": "Erstelle einen Account",

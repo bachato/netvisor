@@ -13,8 +13,9 @@ use crate::{
     server::shared::{
         entities::EntityDiscriminants,
         events::types::{
-            AuthEvent, AuthOperation, BillingEvent, BillingOperation, DiscoverySessionEvent,
-            EntityEvent, EntityOperation, Event, OnboardingEvent, OnboardingOperation,
+            AnalyticsEvent, AnalyticsOperation, AuthEvent, AuthOperation, BillingEvent,
+            BillingOperation, DiscoverySessionEvent, EntityEvent, EntityOperation, Event,
+            OnboardingEvent, OnboardingOperation,
         },
     },
 };
@@ -47,6 +48,7 @@ pub struct EventFilter {
     pub billing_operations: Option<Vec<BillingOperation>>,
     pub onboarding_operations: Option<Vec<OnboardingOperation>>,
     pub discovery_phases: Option<Vec<DiscoveryPhase>>,
+    pub analytics_operations: Option<Vec<AnalyticsOperation>>,
     pub network_ids: Option<Vec<Uuid>>,
 }
 
@@ -58,6 +60,7 @@ impl EventFilter {
             billing_operations: None,
             onboarding_operations: None,
             discovery_phases: None,
+            analytics_operations: None,
             network_ids: None,
         }
     }
@@ -71,6 +74,7 @@ impl EventFilter {
             billing_operations: Some(vec![]),
             onboarding_operations: Some(vec![]),
             discovery_phases: Some(vec![]),
+            analytics_operations: Some(vec![]),
             network_ids: None,
         }
     }
@@ -82,6 +86,7 @@ impl EventFilter {
             onboarding_operations: Some(vec![]),
             auth_operations,
             discovery_phases: Some(vec![]),
+            analytics_operations: Some(vec![]),
             network_ids: Some(vec![]),
         }
     }
@@ -93,6 +98,7 @@ impl EventFilter {
             onboarding_operations,
             auth_operations: Some(vec![]),
             discovery_phases: Some(vec![]),
+            analytics_operations: Some(vec![]),
             network_ids: Some(vec![]),
         }
     }
@@ -104,6 +110,7 @@ impl EventFilter {
             onboarding_operations: Some(vec![]),
             auth_operations: Some(vec![]),
             discovery_phases: Some(vec![]),
+            analytics_operations: Some(vec![]),
             network_ids: Some(vec![]),
         }
     }
@@ -115,6 +122,7 @@ impl EventFilter {
             onboarding_operations: Some(vec![]),
             auth_operations: Some(vec![]),
             discovery_phases,
+            analytics_operations: Some(vec![]),
             network_ids: Some(vec![]),
         }
     }
@@ -126,6 +134,7 @@ impl EventFilter {
             Event::Billing(billing_event) => self.matches_billing(billing_event),
             Event::Onboarding(onboarding_event) => self.matches_onboarding(onboarding_event),
             Event::Discovery(discovery_event) => self.matches_discovery(discovery_event),
+            Event::Analytics(analytics_event) => self.matches_analytics(analytics_event),
         }
     }
 
@@ -182,6 +191,14 @@ impl EventFilter {
     fn matches_discovery(&self, event: &DiscoverySessionEvent) -> bool {
         if let Some(discovery_phases) = &self.discovery_phases {
             return discovery_phases.contains(&event.phase);
+        }
+
+        true
+    }
+
+    fn matches_analytics(&self, event: &AnalyticsEvent) -> bool {
+        if let Some(analytics_operations) = &self.analytics_operations {
+            return analytics_operations.contains(&event.operation);
         }
 
         true
@@ -364,6 +381,11 @@ impl EventBus {
 
     pub async fn publish_discovery(&self, event: DiscoverySessionEvent) -> Result<()> {
         self.publish(Event::Discovery(event)).await
+    }
+
+    /// Publish an analytics event
+    pub async fn publish_analytics(&self, event: AnalyticsEvent) -> Result<()> {
+        self.publish(Event::Analytics(event)).await
     }
 
     /// Publish an event to all subscribers

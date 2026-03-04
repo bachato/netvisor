@@ -8,7 +8,8 @@ use crate::{
             events::{
                 bus::{EventFilter, EventSubscriber},
                 types::{
-                    AuthOperation, BillingOperation, EntityOperation, Event, OnboardingOperation,
+                    AnalyticsOperation, AuthOperation, BillingOperation, EntityOperation, Event,
+                    OnboardingOperation,
                 },
             },
         },
@@ -140,6 +141,10 @@ impl EventSubscriber for PosthogService {
                 DiscoveryPhase::Complete,
                 DiscoveryPhase::Failed,
                 DiscoveryPhase::Cancelled,
+            ]),
+            analytics_operations: Some(vec![
+                AnalyticsOperation::TopologyShareViewed,
+                AnalyticsOperation::TopologyEmbedViewed,
             ]),
             network_ids: None,
         }
@@ -326,6 +331,21 @@ impl EventSubscriber for PosthogService {
                         )
                         .await;
                     }
+                }
+                Event::Analytics(analytics_event) => {
+                    let distinct_id = format!("org:{}", analytics_event.organization_id);
+                    let event_name = analytics_event.operation.to_string();
+
+                    let mut props = auth_properties(event);
+                    props["organization_id"] = json!(analytics_event.organization_id.to_string());
+                    if let Some(meta) = analytics_event.metadata.as_object() {
+                        for (k, v) in meta {
+                            props[k] = v.clone();
+                        }
+                    }
+
+                    inject_org_group(&mut props);
+                    self.capture(&event_name, &distinct_id, props).await;
                 }
                 Event::Discovery(discovery_event) => {
                     let event_name = match discovery_event.phase {
