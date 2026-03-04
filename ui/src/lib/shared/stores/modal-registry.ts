@@ -82,6 +82,9 @@ export function navigateToEntity(
 			window.location.hash = parentConfig.tabId;
 			openModal(parentConfig.modalName, { id: parentId, tab: config.modalTab });
 		}
+	} else {
+		// Entity has no modal — just navigate to its tab
+		window.location.hash = config.tabId;
 	}
 }
 

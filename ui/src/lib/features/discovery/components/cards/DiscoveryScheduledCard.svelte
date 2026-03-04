@@ -4,15 +4,22 @@
 	import { Edit, Play, Trash2 } from 'lucide-svelte';
 	import type { Discovery } from '../../types/base';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
+	import { useHostsQuery } from '$lib/features/hosts/queries';
+	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { formatScheduleDisplay } from '../../queries';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
 
 	// Queries
 	const daemonsQuery = useDaemonsQuery();
+	const hostsQuery = useHostsQuery({ limit: 0 });
+	const subnetsQuery = useSubnetsQuery();
 
 	// Derived data
 	let daemonsData = $derived(daemonsQuery.data ?? []);
+	let hostsData = $derived(hostsQuery.data?.items ?? []);
+	let subnetsData = $derived(subnetsQuery.data ?? []);
 
 	let {
 		viewMode,
@@ -39,7 +46,21 @@
 		fields: [
 			{
 				label: 'Daemon',
-				value: daemonsData.find((d) => d.id == discovery.daemon_id)?.name || 'Unknown Daemon'
+				value: (() => {
+					const daemon = daemonsData.find((d) => d.id == discovery.daemon_id);
+					if (!daemon) return 'Unknown Daemon';
+					return [
+						{
+							id: daemon.id,
+							label: daemon.name,
+							color: entities.getColorHelper('Daemon').color,
+							entityRef: entityRef('Daemon', daemon.id, daemon, {
+								hosts: hostsData,
+								subnets: subnetsData
+							})
+						}
+					];
+				})()
 			},
 			{
 				label: 'Type',

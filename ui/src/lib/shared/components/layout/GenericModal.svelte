@@ -127,6 +127,14 @@
 		wasOpen = isOpen;
 	});
 
+	// Close this modal when another named modal opens (modal-on-modal)
+	$effect(() => {
+		const state = $modalState;
+		if (isOpen && name && state.name && state.name !== name) {
+			onClose?.();
+		}
+	});
+
 	// Size classes
 	const sizeClasses: Record<string, string> = {
 		sm: 'max-w-md',

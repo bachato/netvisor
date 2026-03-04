@@ -9,7 +9,6 @@
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
-	import { matchConfidenceColor, matchConfidenceLabel } from '$lib/shared/types';
 	import { SvelteMap } from 'svelte/reactivity';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 	import { entityRef } from '$lib/shared/components/data/types';
@@ -20,12 +19,8 @@
 		common_portBindings,
 		common_tags,
 		common_unbound,
-		services_confidenceUnavailable,
-		services_matchConfidence,
 		services_noInterfacesAssigned,
-		services_noPortsAssigned,
-		services_notDiscoveredService,
-		services_onHost
+		services_noPortsAssigned
 	} from '$lib/paraglide/messages';
 
 	// TanStack Query hooks
@@ -113,10 +108,20 @@
 	// Build card data
 	let cardData = $derived({
 		title: service.name,
-		subtitle: services_onHost({ hostName: host.name }),
 		iconColor: serviceDefinitions.getColorHelper(service.service_definition).icon,
 		Icon: serviceDefinitions.getIconComponent(service.service_definition),
 		fields: [
+			{
+				label: 'Host',
+				value: [
+					{
+						id: host.id,
+						label: host.name,
+						color: entities.getColorHelper('Host').color,
+						entityRef: entityRef('Host', host.id, host)
+					}
+				]
+			},
 			{
 				label: common_portBindings(),
 				value: groupedPortBindings,
@@ -131,23 +136,6 @@
 					entityRef: entityRef('Interface', iface.id, iface, { subnets: subnetsData })
 				})),
 				emptyText: services_noInterfacesAssigned()
-			},
-			{
-				label: services_matchConfidence(),
-				value: [
-					{
-						id: service.id,
-						label:
-							service.source.type == 'DiscoveryWithMatch'
-								? matchConfidenceLabel(service.source.details.confidence)
-								: services_notDiscoveredService(),
-						color:
-							service.source.type == 'DiscoveryWithMatch'
-								? matchConfidenceColor(service.source.details.confidence)
-								: 'Gray'
-					}
-				],
-				emptyText: services_confidenceUnavailable()
 			},
 			{ label: common_tags(), snippet: tagsSnippet }
 		],
