@@ -2,6 +2,7 @@
 	import type { components } from '$lib/api/schema';
 	import FeatureNudge from './FeatureNudge.svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
+	import { upgradeContext } from '$lib/features/billing/stores';
 	import { optionsPanelExpanded } from '$lib/features/topology/queries';
 	import { entities } from '$lib/shared/stores/metadata';
 	import type { IconComponent } from '$lib/shared/utils/types';
@@ -111,7 +112,10 @@
 				title: 'Schedule Automatic Scans',
 				description: 'Upgrade to automatically discover network changes on a schedule.',
 				actionLabel: 'View Plans',
-				action: () => openModal('billing-plan'),
+				action: () => {
+					upgradeContext.set(null);
+					openModal('billing-plan');
+				},
 				visible: planType === 'Free',
 				icon: entities.getIconComponent('Discovery'),
 				iconColor: entities.getColorHelper('Discovery').icon

@@ -249,7 +249,8 @@
 	function formatSeatAddonPricing(plan: BillingPlan): string {
 		if (plan.seat_cents) {
 			const monthly = plan.rate === 'Year' ? plan.seat_cents / 12 : plan.seat_cents;
-			return `+$${monthly / 100} / seat / mo`;
+			const included = plan.included_seats != null ? `${plan.included_seats} included, ` : '';
+			return `${included}+$${monthly / 100} / seat / mo`;
 		}
 		return '';
 	}
@@ -257,7 +258,8 @@
 	function formatNetworkAddonPricing(plan: BillingPlan): string {
 		if (plan.network_cents) {
 			const monthly = plan.rate === 'Year' ? plan.network_cents / 12 : plan.network_cents;
-			return `+$${monthly / 100} / network / mo`;
+			const included = plan.included_networks != null ? `${plan.included_networks} included, ` : '';
+			return `${included}+$${monthly / 100} / network / mo`;
 		}
 		return '';
 	}
@@ -265,7 +267,8 @@
 	function formatHostAddonPricing(plan: BillingPlan): string {
 		if (plan.host_cents) {
 			const monthly = plan.rate === 'Year' ? plan.host_cents / 12 : plan.host_cents;
-			return `+$${monthly / 100} / host / mo`;
+			const included = plan.included_hosts != null ? `${plan.included_hosts} included, ` : '';
+			return `${included}+$${monthly / 100} / host / mo`;
 		}
 		return '';
 	}
@@ -324,6 +327,15 @@
 	function formatIncludedValue(value: number | null | undefined): string {
 		return value == null ? 'Unlimited' : String(value);
 	}
+
+	function sortFeaturesByCategory(features: string[]): string[] {
+		const order = ['Core', 'Sharing', 'Integrations', 'Support', 'Enterprise'];
+		return [...features].sort((a, b) => {
+			const catA = order.indexOf(featureHelpers.getCategory(a));
+			const catB = order.indexOf(featureHelpers.getCategory(b));
+			return (catA === -1 ? 99 : catA) - (catB === -1 ? 99 : catB);
+		});
+	}
 </script>
 
 <div class="space-y-6 {className}">
@@ -347,7 +359,7 @@
 	</div>
 
 	<!-- Plan Cards -->
-	<div class="plan-cards-container px-4 lg:px-10">
+	<div class="plan-cards-container px-4 lg:px-6">
 		<div class="plan-cards-grid">
 			{#each filteredPlans as plan (plan.type + plan.rate)}
 				{@const IconComponent = billingPlanHelpers.getIconComponent(plan.type)}
@@ -392,12 +404,35 @@
 					<div class="flex flex-col items-center gap-1 pb-4">
 						<div class="flex items-baseline gap-1">
 							<span class="text-primary text-2xl font-bold lg:text-3xl">
-								{formatBasePricing(plan)}
+								{hasExtras(plan)
+									? formatCents(
+											plan.rate === 'Year' ? getEstimatedTotal(plan) / 12 : getEstimatedTotal(plan)
+										)
+									: formatBasePricing(plan)}
 							</span>
 							{#if formatRate(plan)}
 								<span class="text-tertiary text-sm">{formatRate(plan)}</span>
 							{/if}
 						</div>
+						{#if hasExtras(plan)}
+							<div class="text-tertiary text-center text-xs">
+								Base {formatCents(plan.rate === 'Year' ? plan.base_cents / 12 : plan.base_cents)}
+								{#if getExtraSeats(plan.type) > 0}
+									{@const seatCost = getExtraSeats(plan.type) * (plan.seat_cents ?? 0)}
+									+ {getExtraSeats(plan.type)}
+									{getExtraSeats(plan.type) === 1 ? 'seat' : 'seats'} ({formatCents(
+										plan.rate === 'Year' ? seatCost / 12 : seatCost
+									)})
+								{/if}
+								{#if getExtraNetworks(plan.type) > 0}
+									{@const netCost = getExtraNetworks(plan.type) * (plan.network_cents ?? 0)}
+									+ {getExtraNetworks(plan.type)}
+									{getExtraNetworks(plan.type) === 1 ? 'network' : 'networks'} ({formatCents(
+										plan.rate === 'Year' ? netCost / 12 : netCost
+									)})
+								{/if}
+							</div>
+						{/if}
 						{#if showBilledYearly(plan)}
 							<div class="text-tertiary text-xs">billed yearly</div>
 						{/if}
@@ -501,32 +536,6 @@
 						</div>
 					</div>
 
-					<!-- Estimated Total (when extras adjusted) -->
-					{#if hasExtras(plan)}
-						<div class="border-b border-gray-700 py-3">
-							<div class="text-primary text-center text-sm font-semibold">
-								Estimated: {formatCents(
-									plan.rate === 'Year' ? getEstimatedTotal(plan) / 12 : getEstimatedTotal(plan)
-								)} / month
-							</div>
-							<div class="text-tertiary mt-1 text-center text-xs">
-								Base {formatCents(plan.rate === 'Year' ? plan.base_cents / 12 : plan.base_cents)}
-								{#if getExtraSeats(plan.type) > 0}
-									{@const seatCost = getExtraSeats(plan.type) * (plan.seat_cents ?? 0)}
-									+ {getExtraSeats(plan.type)} extra {getExtraSeats(plan.type) === 1
-										? 'seat'
-										: 'seats'} ({formatCents(plan.rate === 'Year' ? seatCost / 12 : seatCost)})
-								{/if}
-								{#if getExtraNetworks(plan.type) > 0}
-									{@const netCost = getExtraNetworks(plan.type) * (plan.network_cents ?? 0)}
-									+ {getExtraNetworks(plan.type)} extra {getExtraNetworks(plan.type) === 1
-										? 'network'
-										: 'networks'} ({formatCents(plan.rate === 'Year' ? netCost / 12 : netCost)})
-								{/if}
-							</div>
-						</div>
-					{/if}
-
 					<!-- Incremental Features -->
 					<div class="flex-1 py-4">
 						{#if prevTier}
@@ -537,12 +546,22 @@
 							<p class="text-tertiary mb-2 text-xs">Key features:</p>
 						{/if}
 						<ul class="space-y-1.5">
-							{#each incrementalFeatures as featureKey (featureKey)}
+							{#each sortFeaturesByCategory(incrementalFeatures) as featureKey (featureKey)}
+								{@const comingSoon = isComingSoon(featureKey)}
 								<li class="flex items-start gap-2 text-sm">
-									<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-success" />
-									<span class="text-secondary" title={featureHelpers.getDescription(featureKey)}
+									<Check
+										class="mt-0.5 h-4 w-4 flex-shrink-0 {comingSoon
+											? 'text-gray-500'
+											: 'text-success'}"
+									/>
+									<span
+										class={comingSoon ? 'text-tertiary' : 'text-secondary'}
+										data-tooltip={featureHelpers.getDescription(featureKey)}
 										>{featureHelpers.getName(featureKey)}</span
 									>
+									{#if comingSoon}
+										<Tag label="Soon" color="Gray" />
+									{/if}
 								</li>
 							{/each}
 						</ul>
@@ -660,7 +679,7 @@
 						<div class="comparison-label-cell">
 							<div
 								class="text-xs font-medium lg:text-sm"
-								title={featureHelpers.getDescription(featureKey)}
+								data-tooltip={featureHelpers.getDescription(featureKey)}
 							>
 								{featureHelpers.getName(featureKey)}
 							</div>
@@ -707,13 +726,14 @@
 
 	@media (min-width: 1024px) {
 		.plan-cards-grid {
-			grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+			grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+			gap: 0.75rem;
 		}
 	}
 
 	/* Individual plan card */
 	.plan-card {
-		padding: 1.5rem;
+		padding: 1.25rem;
 		position: relative;
 	}
 
@@ -811,5 +831,33 @@
 		.comparison-value-cell {
 			padding: 0.75rem;
 		}
+	}
+
+	/* Feature tooltips */
+	[data-tooltip] {
+		position: relative;
+		cursor: help;
+	}
+
+	[data-tooltip]:hover::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		bottom: calc(100% + 6px);
+		left: 50%;
+		transform: translateX(-50%);
+		background: rgb(17 24 39);
+		color: rgb(229 231 235);
+		padding: 0.375rem 0.625rem;
+		border-radius: 0.375rem;
+		font-size: 0.75rem;
+		line-height: 1.25;
+		max-width: 250px;
+		width: max-content;
+		z-index: 50;
+		pointer-events: none;
+		white-space: normal;
+		word-wrap: break-word;
+		border: 1px solid rgb(55 65 81);
+		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
 	}
 </style>

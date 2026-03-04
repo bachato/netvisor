@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { CheckCircle, AlertCircle, CreditCard, AlertTriangle } from 'lucide-svelte';
-	import { reopenSettingsAfterBilling } from '$lib/features/billing/stores';
+	import { reopenSettingsAfterBilling, upgradeContext } from '$lib/features/billing/stores';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
@@ -379,6 +379,7 @@
 						</div>
 						<button
 							onclick={() => {
+								upgradeContext.set(null);
 								openModal('billing-plan');
 								reopenSettingsAfterBilling.set(true);
 								onClose();

@@ -8,6 +8,7 @@
 	import { modalState, openModal } from '$lib/shared/stores/modal-registry';
 	import { entityUIConfig } from '$lib/shared/entity-ui-config';
 	import type { EntityDiscriminants } from '$lib/api/entities';
+	import { upgradeContext } from '$lib/features/billing/stores';
 	import type { IconComponent } from '$lib/shared/utils/types';
 	import {
 		Menu,
@@ -636,6 +637,7 @@
 						title={collapsed ? 'Upgrade' : ''}
 						onclick={() => {
 							trackEvent('upgrade_button_clicked', { feature: 'sidebar' });
+							upgradeContext.set(null);
 							openModal('billing-plan');
 						}}
 					>
