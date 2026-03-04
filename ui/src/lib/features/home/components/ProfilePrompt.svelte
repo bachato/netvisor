@@ -2,6 +2,9 @@
 	import type { components } from '$lib/api/schema';
 	import type { PublicServerConfig } from '$lib/shared/stores/config-query';
 	import { useProfileUpdateMutation } from '$lib/features/auth/queries';
+	import { createForm } from '@tanstack/svelte-form';
+	import { submitForm } from '$lib/shared/components/forms/form-context';
+	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 
 	type Organization = components['schemas']['Organization'];
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
@@ -24,7 +27,7 @@
 	const profileMutation = useProfileUpdateMutation();
 
 	const roleOptions = [
-		{ value: '', label: 'Select your role' },
+		{ value: '', label: 'Select your role', disabled: true },
 		{ value: 'it_admin', label: 'IT Admin' },
 		{ value: 'network_engineer', label: 'Network Engineer' },
 		{ value: 'devops', label: 'DevOps' },
@@ -34,7 +37,7 @@
 	];
 
 	const companySizeOptions = [
-		{ value: '', label: 'Select company size' },
+		{ value: '', label: 'Select company size', disabled: true },
 		{ value: '1-10', label: '1-10 employees' },
 		{ value: '11-25', label: '11-25 employees' },
 		{ value: '26-50', label: '26-50 employees' },
@@ -45,19 +48,26 @@
 		{ value: '1001+', label: '1001+ employees' }
 	];
 
-	let jobTitle = $state('');
-	let companySize = $state('');
+	const form = createForm(() => ({
+		defaultValues: {
+			job_title: '',
+			company_size: ''
+		},
+		onSubmit: async ({ value }) => {
+			profileMutation.mutate({
+				job_title: value.job_title || undefined,
+				company_size: value.company_size || undefined
+			});
+		}
+	}));
 
 	function dismiss() {
 		// Submit empty payload — still records ProfileCompleted milestone
 		profileMutation.mutate({ job_title: undefined, company_size: undefined });
 	}
 
-	function submit() {
-		profileMutation.mutate({
-			job_title: jobTitle || undefined,
-			company_size: companySize || undefined
-		});
+	async function handleSubmit() {
+		await submitForm(form);
 	}
 </script>
 
@@ -73,19 +83,32 @@
 					Dismiss
 				</button>
 			</div>
-			<div class="mt-3 grid gap-3 sm:grid-cols-2">
-				<select bind:value={jobTitle} class="input text-sm">
-					{#each roleOptions as option (option.value)}
-						<option value={option.value}>{option.label}</option>
-					{/each}
-				</select>
-				<select bind:value={companySize} class="input text-sm">
-					{#each companySizeOptions as option (option.value)}
-						<option value={option.value}>{option.label}</option>
-					{/each}
-				</select>
-			</div>
-			<button onclick={submit} class="btn-primary mt-3 text-sm">Submit</button>
+			<form
+				onsubmit={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					handleSubmit();
+				}}
+			>
+				<div class="mt-3 grid gap-3 sm:grid-cols-2">
+					<form.Field name="job_title">
+						{#snippet children(field)}
+							<SelectInput label="Role" id="profile-job-title" {field} options={roleOptions} />
+						{/snippet}
+					</form.Field>
+					<form.Field name="company_size">
+						{#snippet children(field)}
+							<SelectInput
+								label="Company size"
+								id="profile-company-size"
+								{field}
+								options={companySizeOptions}
+							/>
+						{/snippet}
+					</form.Field>
+				</div>
+				<button type="submit" class="btn-primary mt-3 text-sm">Submit</button>
+			</form>
 		</div>
 	</section>
 {/if}

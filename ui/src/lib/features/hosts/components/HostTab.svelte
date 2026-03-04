@@ -357,10 +357,15 @@
 	</TabHeader>
 
 	{#if isNearHostLimit}
-		<InlineWarning
-			title="You're approaching your host limit ({totalHostCount}/{hostLimit}). Upgrade for more hosts."
-			dismissableKey="host-limit-warning"
-		/>
+		<div class="flex items-center gap-3">
+			<div class="flex-1">
+				<InlineWarning
+					title="You're approaching your host limit ({totalHostCount}/{hostLimit})."
+					dismissableKey="host-limit-warning"
+				/>
+			</div>
+			<UpgradeButton feature="more hosts" />
+		</div>
 	{/if}
 
 	<!-- Loading state (only on initial load) -->

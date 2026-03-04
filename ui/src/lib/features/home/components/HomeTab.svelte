@@ -15,6 +15,7 @@
 	import { onMount } from 'svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
+	import { resolve } from '$app/paths';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -49,13 +50,7 @@
 
 	// Journey stage derivation
 	const has = (op: OnboardingOperation) => onboarding.includes(op);
-	let hasDaemon = $derived(has('FirstDaemonRegistered'));
-	let hasDiscovery = $derived(has('FirstDiscoveryCompleted'));
-	let hasTopology = $derived(has('FirstTopologyRebuild'));
-	let checklistComplete = $derived(hasDaemon && hasDiscovery && hasTopology);
-	let showNudges = $derived(
-		(checklistComplete || checklistDismissed) && dashboard != null && organization != null
-	);
+	let showNudges = $derived(dashboard != null && organization != null);
 
 	// Navigation handler — sets the active tab via the URL hash
 	function navigateTo(tab: string) {
@@ -79,7 +74,7 @@
 		<Loading />
 	{:else if dashboard && organization}
 		<!-- Getting Started Checklist -->
-		{#if !checklistComplete && !checklistDismissed}
+		{#if !checklistDismissed}
 			<GettingStartedChecklist {onboarding} onNavigate={navigateTo} />
 		{/if}
 
@@ -96,7 +91,7 @@
 						</h3>
 						<div class="flex items-center gap-3">
 							<a
-								href="https://demo.scanopy.net/share/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+								href={resolve('/share/a1b2c3d4-e5f6-7890-abcd-ef1234567890')}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="text-link text-sm hover:underline"
@@ -116,7 +111,7 @@
 					</p>
 					<div class="h-[400px] w-full">
 						<iframe
-							src="https://demo.scanopy.net/share/a1b2c3d4-e5f6-7890-abcd-ef1234567890/embed"
+							src="/share/a1b2c3d4-e5f6-7890-abcd-ef1234567890/embed"
 							width="100%"
 							height="100%"
 							frameborder="0"

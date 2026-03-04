@@ -217,10 +217,15 @@
 	</TabHeader>
 
 	{#if isNearNetworkLimit}
-		<InlineWarning
-			title="You're approaching your network limit ({networksData.length}/{networkLimit}). Upgrade for more networks."
-			dismissableKey="network-limit-warning"
-		/>
+		<div class="flex items-center gap-3">
+			<div class="flex-1">
+				<InlineWarning
+					title="You're approaching your network limit ({networksData.length}/{networkLimit})."
+					dismissableKey="network-limit-warning"
+				/>
+			</div>
+			<UpgradeButton feature="more networks" />
+		</div>
 	{/if}
 
 	<!-- Loading state -->

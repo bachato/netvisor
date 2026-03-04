@@ -241,7 +241,7 @@
 											onclick={() => handleOidcRegister(provider.slug)}
 											disabled={enableTermsCheckbox && !termsAccepted}
 											type="button"
-											class="btn-secondary flex w-full items-center justify-center gap-3"
+											class="btn-primary flex w-full items-center justify-center gap-3"
 										>
 											{#if provider.logo}
 												<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
@@ -265,7 +265,7 @@
 								type="button"
 								onclick={() => (subStep = 'email')}
 								disabled={enableTermsCheckbox && !termsAccepted}
-								class="btn-secondary w-full"
+								class="btn-primary w-full"
 							>
 								{auth_continueWithEmail()}
 							</button>

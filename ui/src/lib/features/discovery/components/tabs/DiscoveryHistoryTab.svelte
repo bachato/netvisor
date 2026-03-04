@@ -55,6 +55,9 @@
 	let isLoading = $derived(
 		discoveriesQuery.isPending || daemonsQuery.isPending || hostsQuery.isPending
 	);
+	let historicalDiscoveries = $derived(
+		discoveriesData.filter((d) => d.run_type.type === 'Historical')
+	);
 
 	let showDiscoveryModal = $state(false);
 	let editingDiscovery: Discovery | null = $state(null);
@@ -161,7 +164,7 @@
 
 	{#if isLoading}
 		<Loading />
-	{:else if discoveriesData.length === 0}
+	{:else if historicalDiscoveries.length === 0}
 		<!-- Empty state -->
 		<EmptyState
 			title={discovery_noHistorySessions()}
@@ -169,7 +172,7 @@
 		/>
 	{:else}
 		<DataControls
-			items={discoveriesData.filter((d) => d.run_type.type == 'Historical')}
+			items={historicalDiscoveries}
 			{fields}
 			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
 			storageKey="scanopy-discovery-historical-table-state"

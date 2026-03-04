@@ -58,6 +58,10 @@
 	<!-- Hint about Advanced tab -->
 	<InlineInfo title="" body={daemons_advancedHint()} dismissableKey="daemon-wizard-advanced-hint" />
 
+	{#if hasEmail}
+		<InlineInfo title="We'll email you when your daemon connects and your network map is ready." />
+	{/if}
+
 	{#if hasErrors}
 		<InlineWarning title={daemons_fixValidationErrors()} body={daemons_fixValidationErrorsBody()} />
 	{:else}
@@ -133,10 +137,5 @@
 				<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 			{/if}
 		</OsSelector>
-		{#if hasEmail}
-			<InlineInfo
-				title="We'll email you when your daemon connects and your network map is ready."
-			/>
-		{/if}
 	{/if}
 </div>
