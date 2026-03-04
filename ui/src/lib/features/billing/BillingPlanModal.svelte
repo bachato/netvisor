@@ -89,10 +89,6 @@
 	// Determine initial filter based on use case from onboarding
 	let useCase = $derived($onboardingStore.useCase);
 
-	let initialPlanFilter = $derived<'commercial' | 'personal'>(
-		useCase === 'company' || useCase === 'msp' ? 'commercial' : 'personal'
-	);
-
 	// Recommended plan based on use case
 	let baseRecommendedPlan = $derived<string | null>(
 		useCase === 'company' ? 'Team' : useCase === 'msp' ? 'Business' : null
@@ -115,6 +111,14 @@
 	});
 
 	let recommendedPlan = $derived(contextHighlightPlan ?? baseRecommendedPlan);
+
+	let initialPlanFilter = $derived<'all' | 'commercial' | 'personal'>(
+		contextHighlightPlan
+			? 'all'
+			: useCase === 'company' || useCase === 'msp'
+				? 'commercial'
+				: 'personal'
+	);
 
 	async function handlePlanSelect(plan: BillingPlan) {
 		try {

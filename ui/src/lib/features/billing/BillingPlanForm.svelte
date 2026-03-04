@@ -96,8 +96,6 @@
 		let result = plans;
 		if (planFilter !== 'all') {
 			result = result.filter((plan) => {
-				// Free plan appears on both Personal and Commercial toggles
-				if (plan.type === 'Free') return true;
 				const metadata = billingPlanHelpers.getMetadata(plan.type);
 				if (planFilter === 'commercial') return metadata.is_commercial;
 				if (planFilter === 'personal') return !metadata.is_commercial;
@@ -234,28 +232,41 @@
 	function formatBasePricing(plan: BillingPlan): string {
 		const metadata = billingPlanHelpers.getMetadata(plan.type);
 		if (metadata?.custom_price) return metadata.custom_price;
+		if (plan.rate === 'Year') return `$${plan.base_cents / 12 / 100}`;
 		return `$${plan.base_cents / 100}`;
 	}
 
 	function formatRate(plan: BillingPlan): string {
 		const metadata = billingPlanHelpers.getMetadata(plan.type);
 		if (metadata?.custom_price) return '';
-		return `/ ${plan.rate.toLowerCase()}`;
+		return '/ month';
+	}
+
+	function showBilledYearly(plan: BillingPlan): boolean {
+		return plan.rate === 'Year' && !hasCustomPrice(plan);
 	}
 
 	function formatSeatAddonPricing(plan: BillingPlan): string {
-		if (plan.seat_cents) return `+$${plan.seat_cents / 100} / seat / ${plan.rate.toLowerCase()}`;
+		if (plan.seat_cents) {
+			const monthly = plan.rate === 'Year' ? plan.seat_cents / 12 : plan.seat_cents;
+			return `+$${monthly / 100} / seat / mo`;
+		}
 		return '';
 	}
 
 	function formatNetworkAddonPricing(plan: BillingPlan): string {
-		if (plan.network_cents)
-			return `+$${plan.network_cents / 100} / network / ${plan.rate.toLowerCase()}`;
+		if (plan.network_cents) {
+			const monthly = plan.rate === 'Year' ? plan.network_cents / 12 : plan.network_cents;
+			return `+$${monthly / 100} / network / mo`;
+		}
 		return '';
 	}
 
 	function formatHostAddonPricing(plan: BillingPlan): string {
-		if (plan.host_cents) return `+$${plan.host_cents / 100} / host / ${plan.rate.toLowerCase()}`;
+		if (plan.host_cents) {
+			const monthly = plan.rate === 'Year' ? plan.host_cents / 12 : plan.host_cents;
+			return `+$${monthly / 100} / host / mo`;
+		}
 		return '';
 	}
 
@@ -387,6 +398,9 @@
 								<span class="text-tertiary text-sm">{formatRate(plan)}</span>
 							{/if}
 						</div>
+						{#if showBilledYearly(plan)}
+							<div class="text-tertiary text-xs">billed yearly</div>
+						{/if}
 						{#if hasTrial(plan) && !hasCustomPrice(plan)}
 							<div class="text-xs font-medium text-success">{plan.trial_days}-day free trial</div>
 						{/if}
@@ -403,7 +417,12 @@
 					<div class="space-y-2 border-b border-gray-700 pb-4">
 						<!-- Seats -->
 						<div class="flex items-center justify-between text-sm">
-							<span class="text-secondary">Seats</span>
+							<div class="flex flex-col">
+								<span class="text-secondary">Seats</span>
+								{#if plan.seat_cents}
+									<span class="text-tertiary text-xs">{formatSeatAddonPricing(plan)}</span>
+								{/if}
+							</div>
 							{#if plan.seat_cents && plan.included_seats !== null}
 								<div class="stepper">
 									<button
@@ -431,15 +450,15 @@
 								</span>
 							{/if}
 						</div>
-						{#if plan.seat_cents}
-							<div class="text-tertiary text-right text-xs">
-								{formatSeatAddonPricing(plan)}
-							</div>
-						{/if}
 
 						<!-- Networks -->
 						<div class="flex items-center justify-between text-sm">
-							<span class="text-secondary">Networks</span>
+							<div class="flex flex-col">
+								<span class="text-secondary">Networks</span>
+								{#if plan.network_cents}
+									<span class="text-tertiary text-xs">{formatNetworkAddonPricing(plan)}</span>
+								{/if}
+							</div>
 							{#if plan.network_cents && plan.included_networks !== null}
 								<div class="stepper">
 									<button
@@ -467,45 +486,42 @@
 								</span>
 							{/if}
 						</div>
-						{#if plan.network_cents}
-							<div class="text-tertiary text-right text-xs">
-								{formatNetworkAddonPricing(plan)}
-							</div>
-						{/if}
 
 						<!-- Hosts -->
 						<div class="flex items-center justify-between text-sm">
-							<span class="text-secondary">Hosts</span>
+							<div class="flex flex-col">
+								<span class="text-secondary">Hosts</span>
+								{#if plan.host_cents}
+									<span class="text-tertiary text-xs">{formatHostAddonPricing(plan)}</span>
+								{/if}
+							</div>
 							<span class="text-primary font-medium">
 								{formatIncludedValue(plan.included_hosts)}
 							</span>
 						</div>
-						{#if plan.host_cents}
-							<div class="text-tertiary text-right text-xs">
-								{formatHostAddonPricing(plan)}
-							</div>
-						{/if}
 					</div>
 
 					<!-- Estimated Total (when extras adjusted) -->
 					{#if hasExtras(plan)}
 						<div class="border-b border-gray-700 py-3">
 							<div class="text-primary text-center text-sm font-semibold">
-								Estimated: {formatCents(getEstimatedTotal(plan))} / {plan.rate.toLowerCase()}
+								Estimated: {formatCents(
+									plan.rate === 'Year' ? getEstimatedTotal(plan) / 12 : getEstimatedTotal(plan)
+								)} / month
 							</div>
 							<div class="text-tertiary mt-1 text-center text-xs">
-								Base {formatCents(plan.base_cents)}
+								Base {formatCents(plan.rate === 'Year' ? plan.base_cents / 12 : plan.base_cents)}
 								{#if getExtraSeats(plan.type) > 0}
+									{@const seatCost = getExtraSeats(plan.type) * (plan.seat_cents ?? 0)}
 									+ {getExtraSeats(plan.type)} extra {getExtraSeats(plan.type) === 1
 										? 'seat'
-										: 'seats'} ({formatCents(getExtraSeats(plan.type) * (plan.seat_cents ?? 0))})
+										: 'seats'} ({formatCents(plan.rate === 'Year' ? seatCost / 12 : seatCost)})
 								{/if}
 								{#if getExtraNetworks(plan.type) > 0}
+									{@const netCost = getExtraNetworks(plan.type) * (plan.network_cents ?? 0)}
 									+ {getExtraNetworks(plan.type)} extra {getExtraNetworks(plan.type) === 1
 										? 'network'
-										: 'networks'} ({formatCents(
-										getExtraNetworks(plan.type) * (plan.network_cents ?? 0)
-									)})
+										: 'networks'} ({formatCents(plan.rate === 'Year' ? netCost / 12 : netCost)})
 								{/if}
 							</div>
 						</div>
@@ -524,7 +540,9 @@
 							{#each incrementalFeatures as featureKey (featureKey)}
 								<li class="flex items-start gap-2 text-sm">
 									<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-success" />
-									<span class="text-secondary">{featureHelpers.getName(featureKey)}</span>
+									<span class="text-secondary" title={featureHelpers.getDescription(featureKey)}
+										>{featureHelpers.getName(featureKey)}</span
+									>
 								</li>
 							{/each}
 						</ul>
@@ -609,6 +627,23 @@
 	<!-- Full Comparison Grid (expandable) -->
 	{#if showFullComparison}
 		<div class="card mx-4 overflow-auto p-0 lg:mx-10">
+			<!-- Plan Name Headers -->
+			<div
+				class="comparison-row comparison-header-row"
+				style="grid-template-columns: {gridColumns}"
+			>
+				<div class="comparison-label-cell">
+					<div class="text-xs font-medium lg:text-sm">Feature</div>
+				</div>
+				{#each filteredPlans as plan (plan.type)}
+					<div class="comparison-value-cell">
+						<span class="text-primary text-xs font-semibold lg:text-sm"
+							>{billingPlanHelpers.getName(plan.type)}</span
+						>
+					</div>
+				{/each}
+			</div>
+
 			{#each [...groupedFeatures.entries()] as [category, categoryFeatures] (category)}
 				<!-- Category Header -->
 				<div class="comparison-category-row">
@@ -623,7 +658,10 @@
 					{@const comingSoon = isComingSoon(featureKey)}
 					<div class="comparison-row" style="grid-template-columns: {gridColumns}">
 						<div class="comparison-label-cell">
-							<div class="text-xs font-medium lg:text-sm">
+							<div
+								class="text-xs font-medium lg:text-sm"
+								title={featureHelpers.getDescription(featureKey)}
+							>
 								{featureHelpers.getName(featureKey)}
 							</div>
 						</div>
@@ -720,6 +758,13 @@
 	/* ============================================ */
 	/* Full comparison grid                         */
 	/* ============================================ */
+
+	.comparison-header-row {
+		background: rgb(31 41 55);
+		position: sticky;
+		top: 0;
+		z-index: 11;
+	}
 
 	.comparison-category-row {
 		border-bottom: 1px solid rgb(55 65 81);

@@ -94,18 +94,23 @@ impl BillingPlan {
         let mut yearly_config = self.config();
         yearly_config.rate = BillingRate::Year;
 
-        // Round to nearest dollar (100 cents)
-        yearly_config.base_cents =
-            Self::round_to_dollar(yearly_config.base_cents as f32 * 12.0 * (1.0 - discount));
-        yearly_config.seat_cents = yearly_config
-            .seat_cents
-            .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
-        yearly_config.network_cents = yearly_config
-            .network_cents
-            .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
-        yearly_config.host_cents = yearly_config
-            .host_cents
-            .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
+        // Round discounted monthly price first, then multiply by 12.
+        // This guarantees yearly_cents / 12 always produces a clean number.
+        let monthly_base =
+            Self::round_to_dollar(yearly_config.base_cents as f32 * (1.0 - discount));
+        yearly_config.base_cents = monthly_base * 12;
+        yearly_config.seat_cents = yearly_config.seat_cents.map(|c| {
+            let monthly = Self::round_to_dollar(c as f32 * (1.0 - discount));
+            monthly * 12
+        });
+        yearly_config.network_cents = yearly_config.network_cents.map(|c| {
+            let monthly = Self::round_to_dollar(c as f32 * (1.0 - discount));
+            monthly * 12
+        });
+        yearly_config.host_cents = yearly_config.host_cents.map(|c| {
+            let monthly = Self::round_to_dollar(c as f32 * (1.0 - discount));
+            monthly * 12
+        });
 
         let mut yearly_plan = *self;
         yearly_plan.set_config(yearly_config);
@@ -288,25 +293,30 @@ impl BillingPlan {
     }
 
     /// Returns feature IDs added by this plan over its previous tier.
-    /// For plans with no previous tier (Free, self-hosted): returns all enabled non-universal features.
+    /// For Free: returns all enabled features (it's the baseline).
+    /// For self-hosted plans with no previous tier: returns all enabled non-universal features.
+    /// For cloud plans: returns features new vs the previous tier.
     pub fn incremental_features(&self) -> Vec<&'static str> {
         let enabled = self.enabled_feature_ids();
-        let universal = Self::universal_feature_ids();
 
         match self.previous_tier() {
             Some(prev_disc) => {
-                // Build a default plan of the previous tier to get its features
                 let prev_plan = Self::default_for_discriminant(prev_disc);
                 match prev_plan {
                     Some(plan) => {
                         let prev_features = plan.enabled_feature_ids();
                         enabled.difference(&prev_features).copied().collect()
                     }
-                    None => enabled.difference(&universal).copied().collect(),
+                    None => enabled.into_iter().collect(),
                 }
             }
+            None if self.is_free() => {
+                // Free plan: show all enabled features (it's the baseline)
+                enabled.into_iter().collect()
+            }
             None => {
-                // No previous tier: return all enabled features minus universal ones
+                // Self-hosted/other plans: show features beyond universal (Free) baseline
+                let universal = Self::universal_feature_ids();
                 enabled.difference(&universal).copied().collect()
             }
         }
