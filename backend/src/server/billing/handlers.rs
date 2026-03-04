@@ -162,7 +162,13 @@ async fn create_checkout_session(
             }
         } else {
             // First-time subscriber
-            if request.plan.config().trial_days > 0 {
+            if request.plan.is_free() {
+                // Free plan — activate directly, no Stripe needed
+                let result = billing_service
+                    .activate_free_plan(organization_id, request.plan, auth.into_entity())
+                    .await?;
+                Ok(Json(ApiResponse::success(result)))
+            } else if request.plan.config().trial_days > 0 {
                 // Trial plan — create subscription directly, skip Checkout
                 let result = billing_service
                     .create_trial_subscription(organization_id, request.plan, auth.into_entity())

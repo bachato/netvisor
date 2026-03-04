@@ -498,6 +498,69 @@ impl BillingService {
         Ok(session)
     }
 
+    /// Activate the Free plan directly without Stripe
+    pub async fn activate_free_plan(
+        &self,
+        organization_id: Uuid,
+        plan: BillingPlan,
+        authentication: AuthenticatedEntity,
+    ) -> Result<String, Error> {
+        let mut organization = self.get_organization(organization_id).await?;
+
+        self.enforce_plan_restrictions(&organization_id, &plan)
+            .await?;
+
+        organization.base.plan = Some(plan);
+        organization.base.plan_status = Some("active".to_string());
+
+        self.organization_service
+            .update(&mut organization, AuthenticatedEntity::System)
+            .await?;
+
+        // Publish PlanSelected onboarding event
+        if organization.not_onboarded(&OnboardingOperation::PlanSelected) {
+            self.event_bus
+                .publish_onboarding(OnboardingEvent {
+                    id: Uuid::new_v4(),
+                    organization_id,
+                    operation: OnboardingOperation::PlanSelected,
+                    timestamp: Utc::now(),
+                    metadata: json!({
+                        "plan": plan.to_string(),
+                        "is_commercial": plan.is_commercial()
+                    }),
+                    authentication: authentication.clone(),
+                })
+                .await?;
+        }
+
+        // Publish CheckoutCompleted billing event
+        self.event_bus
+            .publish_billing(BillingEvent::new(
+                Uuid::new_v4(),
+                organization_id,
+                BillingOperation::CheckoutCompleted,
+                Utc::now(),
+                authentication,
+                json!({
+                    "checkout_status": "completed",
+                    "plan_name": plan.name(),
+                    "is_commercial": plan.is_commercial(),
+                    "has_trial": false,
+                    "org_id": organization_id.to_string(),
+                }),
+            ))
+            .await?;
+
+        tracing::info!(
+            organization_id = %organization_id,
+            plan = %plan.name(),
+            "Free plan activated directly (no Stripe)"
+        );
+
+        Ok("Free plan activated!".to_string())
+    }
+
     /// Create a trial subscription directly via the Stripe API, skipping Checkout
     pub async fn create_trial_subscription(
         &self,
