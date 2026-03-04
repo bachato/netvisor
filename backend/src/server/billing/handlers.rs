@@ -124,14 +124,23 @@ async fn create_checkout_session(
                     .await?;
                 Ok(Json(ApiResponse::success(result)))
             } else {
-                // Paid target — check if we need checkout (no payment or trial-eligible)
+                // Paid target — check trial eligibility and payment state
                 let is_returning = org.base.trial_end_date.is_some()
                     || org.base.plan.as_ref().is_some_and(|p| !p.is_free());
                 let is_trial_eligible = !is_returning && request.plan.config().trial_days > 0;
-                let needs_checkout = !org.base.has_payment_method || is_trial_eligible;
 
-                if needs_checkout {
-                    // Route through Stripe Checkout to collect payment / apply trial
+                if is_trial_eligible {
+                    // Trial-eligible — create subscription directly, skip Checkout
+                    let result = billing_service
+                        .create_trial_subscription(
+                            organization_id,
+                            request.plan,
+                            auth.into_entity(),
+                        )
+                        .await?;
+                    Ok(Json(ApiResponse::success(result)))
+                } else if !org.base.has_payment_method {
+                    // No payment method, not trial-eligible — collect via Checkout
                     let cancel_url = request.url.clone();
                     let session = billing_service
                         .create_checkout_session(
@@ -152,20 +161,27 @@ async fn create_checkout_session(
                 }
             }
         } else {
-            // First-time subscriber — create Stripe checkout session
-            let cancel_url = request.url.clone();
-
-            let session = billing_service
-                .create_checkout_session(
-                    organization_id,
-                    request.plan,
-                    success_url,
-                    cancel_url,
-                    auth.into_entity(),
-                )
-                .await?;
-
-            Ok(Json(ApiResponse::success(session.url.unwrap())))
+            // First-time subscriber
+            if request.plan.config().trial_days > 0 {
+                // Trial plan — create subscription directly, skip Checkout
+                let result = billing_service
+                    .create_trial_subscription(organization_id, request.plan, auth.into_entity())
+                    .await?;
+                Ok(Json(ApiResponse::success(result)))
+            } else {
+                // No trial — go through Stripe Checkout
+                let cancel_url = request.url.clone();
+                let session = billing_service
+                    .create_checkout_session(
+                        organization_id,
+                        request.plan,
+                        success_url,
+                        cancel_url,
+                        auth.into_entity(),
+                    )
+                    .await?;
+                Ok(Json(ApiResponse::success(session.url.unwrap())))
+            }
         }
     } else {
         Err(ApiError::billing_setup_incomplete())

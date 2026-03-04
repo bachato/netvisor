@@ -36,6 +36,9 @@ use stripe_billing::billing_portal_session::CreateBillingPortalSession;
 use stripe_billing::subscription::CancelSubscription;
 use stripe_billing::subscription::CreateSubscription;
 use stripe_billing::subscription::CreateSubscriptionItems;
+use stripe_billing::subscription::CreateSubscriptionTrialSettings;
+use stripe_billing::subscription::CreateSubscriptionTrialSettingsEndBehavior;
+use stripe_billing::subscription::CreateSubscriptionTrialSettingsEndBehaviorMissingPaymentMethod;
 use stripe_billing::subscription::ListSubscription;
 use stripe_billing::subscription::UpdateSubscription;
 use stripe_billing::subscription::UpdateSubscriptionItems;
@@ -493,6 +496,73 @@ impl BillingService {
             .await?;
 
         Ok(session)
+    }
+
+    /// Create a trial subscription directly via the Stripe API, skipping Checkout
+    pub async fn create_trial_subscription(
+        &self,
+        organization_id: Uuid,
+        plan: BillingPlan,
+        authentication: AuthenticatedEntity,
+    ) -> Result<String, Error> {
+        let auth_for_event = authentication.clone();
+
+        let (_, customer_id) = self
+            .get_or_create_customer(organization_id, authentication)
+            .await?;
+
+        let base_price = self
+            .get_price_from_lookup_key(plan.stripe_base_price_lookup_key())
+            .await?
+            .ok_or_else(|| anyhow!("Could not find base price for selected plan"))?;
+
+        let subscription = CreateSubscription::new(customer_id)
+            .items(vec![CreateSubscriptionItems {
+                price: Some(base_price.id.to_string()),
+                quantity: Some(1),
+                ..Default::default()
+            }])
+            .trial_period_days(plan.config().trial_days)
+            .trial_settings(CreateSubscriptionTrialSettings::new(
+                CreateSubscriptionTrialSettingsEndBehavior::new(
+                    CreateSubscriptionTrialSettingsEndBehaviorMissingPaymentMethod::Cancel,
+                ),
+            ))
+            .metadata([
+                ("organization_id".to_string(), organization_id.to_string()),
+                ("plan".to_string(), serde_json::to_string(&plan)?),
+            ])
+            .send(&self.stripe)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+
+        tracing::info!(
+            organization_id = %organization_id,
+            plan = %plan.name(),
+            subscription_id = %subscription.id,
+            trial_days = plan.config().trial_days,
+            "Trial subscription created directly (skipped checkout)"
+        );
+
+        // Publish checkout_started event for email automation
+        self.event_bus
+            .publish_billing(BillingEvent::new(
+                Uuid::new_v4(),
+                organization_id,
+                BillingOperation::CheckoutStarted,
+                Utc::now(),
+                auth_for_event,
+                json!({
+                    "checkout_status": "pending",
+                    "plan_name": plan.name(),
+                    "is_commercial": plan.is_commercial(),
+                    "has_trial": true,
+                    "org_id": organization_id.to_string(),
+                }),
+            ))
+            .await?;
+
+        Ok(format!("Your {} trial has started!", plan.name()))
     }
 
     pub async fn update_addon_prices(
