@@ -17,11 +17,9 @@
 	const onboarding = $derived(organization.onboarding ?? []);
 	const has = (op: OnboardingOperation) => onboarding.includes(op);
 
-	const hasEmailOptIn = $derived(configData?.has_email_opt_in ?? false);
+	const isCloud = $derived(configData?.deployment_type === 'cloud');
 
-	const visible = $derived(
-		has('FirstDiscoveryCompleted') && !has('ProfileCompleted') && hasEmailOptIn
-	);
+	const visible = $derived(has('FirstDiscoveryCompleted') && !has('ProfileCompleted') && isCloud);
 
 	const profileMutation = useProfileUpdateMutation();
 
