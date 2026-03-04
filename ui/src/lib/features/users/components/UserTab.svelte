@@ -187,7 +187,7 @@
 				{/if}
 				{#if canInviteUsers}
 					{#if isAtSeatLimit}
-						<UpgradeButton feature="more seats" />
+						<UpgradeButton feature="seats" />
 					{:else}
 						<button class="btn-primary flex items-center" onclick={handleCreateInvite}>
 							<UserPlus class="mr-2 h-5 w-5" />

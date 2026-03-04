@@ -344,7 +344,7 @@
 				{/if}
 				{#if !isReadOnly}
 					{#if isAtHostLimit}
-						<UpgradeButton feature="more hosts" />
+						<UpgradeButton feature="hosts" />
 					{:else}
 						<button class="btn-primary flex items-center" onclick={handleCreateHost}
 							><Plus class="h-5 w-5" />{common_create()}</button

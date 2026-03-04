@@ -15,6 +15,7 @@
 	import PlanInquiryModal from '$lib/features/billing/PlanInquiryModal.svelte';
 	import { storeEventForAfterRedirect } from '$lib/shared/utils/analytics';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
+	import { upgradeContext } from '$lib/features/billing/stores';
 
 	let {
 		isOpen = false,
@@ -27,6 +28,11 @@
 		onClose: () => void;
 		name?: string;
 	} = $props();
+
+	function handleClose() {
+		upgradeContext.set(null);
+		onClose();
+	}
 
 	// Create helpers from static fixtures (no API calls needed)
 	const billingPlanHelpers = createStaticHelpers<BillingPlanMetadata>(billingPlansJson);
@@ -88,9 +94,27 @@
 	);
 
 	// Recommended plan based on use case
-	let recommendedPlan = $derived<string | null>(
+	let baseRecommendedPlan = $derived<string | null>(
 		useCase === 'company' ? 'Team' : useCase === 'msp' ? 'Business' : null
 	);
+
+	// Feature-contextual plan highlighting from upgrade CTAs
+	let upgradeCtx = $derived($upgradeContext);
+
+	let contextHighlightPlan = $derived.by(() => {
+		if (!upgradeCtx) return null;
+		const feat = upgradeCtx.feature;
+		// Feature-based: look up minimum_plan from feature metadata
+		const featureMeta = featureHelpers.getMetadata(feat);
+		if (featureMeta?.minimum_plan) return featureMeta.minimum_plan;
+		// Resource-based: find first plan with addon pricing
+		if (feat === 'seats') return plansData.find((p) => p.seat_cents)?.type ?? null;
+		if (feat === 'networks') return plansData.find((p) => p.network_cents)?.type ?? null;
+		if (feat === 'hosts') return plansData.find((p) => p.host_cents)?.type ?? null;
+		return null;
+	});
+
+	let recommendedPlan = $derived(contextHighlightPlan ?? baseRecommendedPlan);
 
 	async function handlePlanSelect(plan: BillingPlan) {
 		try {
@@ -108,7 +132,7 @@
 				window.location.href = result;
 			} else {
 				// Plan change: already done via subscription update, close modal
-				onClose();
+				handleClose();
 			}
 		} catch {
 			// Error handled by mutation
@@ -129,7 +153,7 @@
 	{isOpen}
 	title=""
 	{name}
-	onClose={dismissible ? onClose : null}
+	onClose={dismissible ? handleClose : null}
 	size="full"
 	preventCloseOnClickOutside={!dismissible}
 	showCloseButton={false}

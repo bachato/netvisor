@@ -163,7 +163,7 @@
 			title="Sharing Not Available"
 			subtitle="Upgrade to share live network diagrams with others."
 		>
-			<UpgradeButton feature="sharing" />
+			<UpgradeButton feature="share_views" />
 		</EmptyState>
 	{:else if isLoading}
 		<Loading />

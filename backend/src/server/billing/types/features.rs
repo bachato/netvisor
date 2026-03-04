@@ -65,6 +65,30 @@ impl Feature {
     pub fn is_coming_soon(&self) -> bool {
         matches!(self, Feature::Webhooks | Feature::AuditLogs)
     }
+
+    /// Returns the ID of the lowest-tier cloud plan that includes this feature.
+    pub fn minimum_plan(&self) -> Option<&'static str> {
+        use super::base::{BillingPlan, BillingPlanDiscriminants};
+
+        let feature_id = self.id();
+        let cloud_tiers = [
+            BillingPlanDiscriminants::Free,
+            BillingPlanDiscriminants::Starter,
+            BillingPlanDiscriminants::Pro,
+            BillingPlanDiscriminants::Team,
+            BillingPlanDiscriminants::Business,
+            BillingPlanDiscriminants::Enterprise,
+        ];
+
+        for disc in &cloud_tiers {
+            if let Some(plan) = BillingPlan::default_for_discriminant(*disc)
+                && plan.has_feature(feature_id)
+            {
+                return Some(plan.id());
+            }
+        }
+        None
+    }
 }
 
 impl EntityMetadataProvider for Feature {
@@ -170,7 +194,8 @@ impl TypeMetadataProvider for Feature {
 
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
-            "is_coming_soon": self.is_coming_soon()
+            "is_coming_soon": self.is_coming_soon(),
+            "minimum_plan": self.minimum_plan()
         })
     }
 }

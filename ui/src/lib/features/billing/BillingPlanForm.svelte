@@ -2,13 +2,14 @@
 	/**
 	 * BillingPlanForm Component
 	 *
-	 * A pure presentation layer for displaying billing plans.
-	 * Uses CSS Grid for consistent sticky header/footer on both desktop and mobile.
+	 * Card-based layout with pricing simulator, incremental feature highlights,
+	 * and expandable full comparison grid. Responsive: 1 col mobile, 2 col tablet,
+	 * auto-fit desktop.
 	 */
-	import { Check, X, ChevronDown, Loader2 } from 'lucide-svelte';
+	import { SvelteMap } from 'svelte/reactivity';
+	import { Check, X, ChevronDown, ChevronUp, Loader2, Minus, Plus } from 'lucide-svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import ToggleGroup from './ToggleGroup.svelte';
-	import { SvelteMap } from 'svelte/reactivity';
 	import type { BillingPlan } from './types';
 	import type { BillingPlanMetadata, FeatureMetadata } from '$lib/shared/stores/metadata';
 	import type { ColorStyle, Color } from '$lib/shared/utils/styling';
@@ -63,52 +64,14 @@
 		isReturningCustomer = false
 	}: Props = $props();
 
-	let collapsedCategories = $state<Record<string, boolean>>({});
 	let loadingPlanType = $state<string | null>(null);
+	let showFullComparison = $state(false);
 
 	type PlanFilter = 'all' | 'personal' | 'commercial';
 	let planFilter = $state<PlanFilter>(initialPlanFilter);
 
 	type BillingPeriod = 'monthly' | 'yearly';
 	let billingPeriod = $state<BillingPeriod>('monthly');
-
-	// Refs for scroll sync between header, content, and footer
-	let headerScrollRef = $state<HTMLElement | null>(null);
-	let contentScrollRef = $state<HTMLElement | null>(null);
-	let footerScrollRef = $state<HTMLElement | null>(null);
-
-	// Sync horizontal scroll across header, content, and footer
-	$effect(() => {
-		if (!contentScrollRef) return;
-
-		function syncFromContent() {
-			const scrollLeft = contentScrollRef?.scrollLeft ?? 0;
-			if (headerScrollRef) headerScrollRef.scrollLeft = scrollLeft;
-			if (footerScrollRef) footerScrollRef.scrollLeft = scrollLeft;
-		}
-
-		function syncFromHeader() {
-			const scrollLeft = headerScrollRef?.scrollLeft ?? 0;
-			if (contentScrollRef) contentScrollRef.scrollLeft = scrollLeft;
-			if (footerScrollRef) footerScrollRef.scrollLeft = scrollLeft;
-		}
-
-		function syncFromFooter() {
-			const scrollLeft = footerScrollRef?.scrollLeft ?? 0;
-			if (contentScrollRef) contentScrollRef.scrollLeft = scrollLeft;
-			if (headerScrollRef) headerScrollRef.scrollLeft = scrollLeft;
-		}
-
-		contentScrollRef.addEventListener('scroll', syncFromContent);
-		headerScrollRef?.addEventListener('scroll', syncFromHeader);
-		footerScrollRef?.addEventListener('scroll', syncFromFooter);
-
-		return () => {
-			contentScrollRef?.removeEventListener('scroll', syncFromContent);
-			headerScrollRef?.removeEventListener('scroll', syncFromHeader);
-			footerScrollRef?.removeEventListener('scroll', syncFromFooter);
-		};
-	});
 
 	// Filter out personal option when forceCommercial is true
 	let planTypeOptions = $derived(
@@ -157,68 +120,127 @@
 		return result;
 	});
 
+	// ============================================================================
+	// Pricing simulator state
+	// ============================================================================
+
+	let extraSeats = $state<Record<string, number>>({});
+	let extraNetworks = $state<Record<string, number>>({});
+
+	function adjustExtra(
+		store: Record<string, number>,
+		planType: string,
+		delta: number
+	): Record<string, number> {
+		const current = store[planType] ?? 0;
+		const next = Math.max(0, current + delta);
+		return { ...store, [planType]: next };
+	}
+
+	function getExtraSeats(planType: string): number {
+		return extraSeats[planType] ?? 0;
+	}
+
+	function getExtraNetworks(planType: string): number {
+		return extraNetworks[planType] ?? 0;
+	}
+
+	function hasExtras(plan: BillingPlan): boolean {
+		return getExtraSeats(plan.type) > 0 || getExtraNetworks(plan.type) > 0;
+	}
+
+	function getEstimatedTotal(plan: BillingPlan): number {
+		const seatExtra = getExtraSeats(plan.type) * (plan.seat_cents ?? 0);
+		const netExtra = getExtraNetworks(plan.type) * (plan.network_cents ?? 0);
+		return plan.base_cents + seatExtra + netExtra;
+	}
+
+	function formatCents(cents: number): string {
+		const dollars = cents / 100;
+		return dollars % 1 === 0 ? `$${dollars}` : `$${dollars.toFixed(2)}`;
+	}
+
+	// Reset extras when billing period changes
+	let prevBillingPeriod = $state(billingPeriod);
+	$effect(() => {
+		if (billingPeriod !== prevBillingPeriod) {
+			prevBillingPeriod = billingPeriod;
+			extraSeats = {};
+			extraNetworks = {};
+		}
+	});
+
+	// ============================================================================
+	// Full comparison data
+	// ============================================================================
+
+	function getFeatureValue(planType: string, featureKey: string): boolean | string | number | null {
+		const metadata = billingPlanHelpers.getMetadata(planType);
+		const features = metadata?.features as unknown as
+			| Record<string, boolean | string | number | null>
+			| undefined;
+		return features?.[featureKey] ?? null;
+	}
+
+	function isComingSoon(featureKey: string): boolean {
+		return featureHelpers.getMetadata(featureKey)?.is_coming_soon === true;
+	}
+
 	let featureKeys = $derived(
 		filteredPlans.length > 0
 			? Object.keys(billingPlanHelpers.getMetadata(filteredPlans[0].type)?.features || {})
 			: []
 	);
 
-	let sortedFeatureKeys = $derived(
-		[...featureKeys].sort((a, b) => {
-			const countDiff = getTruthyCount(b) - getTruthyCount(a);
-			if (countDiff !== 0) return countDiff;
-			const aComingSoon = isComingSoon(a);
-			const bComingSoon = isComingSoon(b);
-			if (aComingSoon && !bComingSoon) return 1;
-			if (!aComingSoon && bComingSoon) return -1;
-			const aIsText = isTextField(a);
-			const bIsText = isTextField(b);
-			if (aIsText && !bIsText) return 1;
-			if (!aIsText && bIsText) return -1;
-			return 0;
-		})
-	);
-
+	// Group features by category for the full comparison
 	let groupedFeatures = $derived.by(() => {
-		const groups: SvelteMap<string, string[]> = new SvelteMap();
-		for (const featureKey of sortedFeatureKeys) {
+		const groups = new SvelteMap<string, string[]>();
+		for (const featureKey of featureKeys) {
 			const category = featureHelpers.getCategory(featureKey) || 'Other';
 			if (!groups.has(category)) groups.set(category, []);
 			groups.get(category)!.push(featureKey);
 		}
-		function getCategoryScore(categoryFeatures: string[]): number {
-			return categoryFeatures.reduce((sum, featureKey) => sum + getTruthyCount(featureKey), 0);
-		}
-		const sortedEntries = [...groups.entries()].sort(([a, aFeatures], [b, bFeatures]) => {
-			if (a === 'Support') return 1;
-			if (b === 'Support') return -1;
-			if (a === 'Licensing & Billing') return 1;
-			if (b === 'Licensing & Billing') return -1;
-			if (a === 'Enterprise') return 1;
-			if (b === 'Enterprise') return -1;
-			const scoreDiff = getCategoryScore(bFeatures) - getCategoryScore(aFeatures);
-			if (scoreDiff !== 0) return scoreDiff;
-			return a.localeCompare(b);
+		// Sort categories: Core first, Support/Enterprise/Licensing last
+		const sortedEntries = [...groups.entries()].sort(([a], [b]) => {
+			const order = [
+				'Core',
+				'Sharing',
+				'Integrations',
+				'Support',
+				'Enterprise',
+				'Licensing & Billing'
+			];
+			const aIdx = order.indexOf(a);
+			const bIdx = order.indexOf(b);
+			if (aIdx === -1 && bIdx === -1) return a.localeCompare(b);
+			if (aIdx === -1) return 1;
+			if (bIdx === -1) return -1;
+			return aIdx - bIdx;
 		});
-		return new Map(sortedEntries);
+		return new SvelteMap(sortedEntries);
 	});
 
-	// Grid column template based on number of plans
+	// Grid column template for full comparison
 	let gridColumns = $derived.by(() => {
 		const planCount = filteredPlans.length;
 		if (planCount === 0) return '120px 1fr';
-		// Label column + plan columns
-		return `minmax(100px, 20%) repeat(${planCount}, minmax(120px, 1fr))`;
+		return `minmax(100px, 20%) repeat(${planCount}, minmax(100px, 1fr))`;
 	});
 
-	function toggleCategory(category: string) {
-		collapsedCategories[category] = !collapsedCategories[category];
-	}
+	// ============================================================================
+	// Helper functions
+	// ============================================================================
 
 	function formatBasePricing(plan: BillingPlan): string {
 		const metadata = billingPlanHelpers.getMetadata(plan.type);
 		if (metadata?.custom_price) return metadata.custom_price;
-		return `$${plan.base_cents / 100} / ${plan.rate}`;
+		return `$${plan.base_cents / 100}`;
+	}
+
+	function formatRate(plan: BillingPlan): string {
+		const metadata = billingPlanHelpers.getMetadata(plan.type);
+		if (metadata?.custom_price) return '';
+		return `/ ${plan.rate.toLowerCase()}`;
 	}
 
 	function formatSeatAddonPricing(plan: BillingPlan): string {
@@ -235,36 +257,6 @@
 	function formatHostAddonPricing(plan: BillingPlan): string {
 		if (plan.host_cents) return `+$${plan.host_cents / 100} / host / ${plan.rate.toLowerCase()}`;
 		return '';
-	}
-
-	function isComingSoon(featureKey: string): boolean {
-		return featureHelpers.getMetadata(featureKey)?.is_coming_soon === true;
-	}
-
-	function getFeatureValue(planType: string, featureKey: string): boolean | string | number | null {
-		const metadata = billingPlanHelpers.getMetadata(planType);
-		const features = metadata?.features as
-			| Record<string, boolean | string | number | null>
-			| undefined;
-		return features?.[featureKey] ?? null;
-	}
-
-	function isTextField(featureKey: string): boolean {
-		if (filteredPlans.length === 0) return false;
-		const values = filteredPlans.map((p) => getFeatureValue(p.type, featureKey));
-		return values.some((v) => typeof v === 'string' && v !== 'Unlimited');
-	}
-
-	function isTruthyValue(value: string | boolean | number | null): boolean {
-		if (value === null || value === false) return false;
-		if (value === true) return true;
-		if (typeof value === 'number' && value > 0) return true;
-		if (typeof value === 'string' && value !== '') return true;
-		return false;
-	}
-
-	function getTruthyCount(featureKey: string): number {
-		return filteredPlans.filter((p) => isTruthyValue(getFeatureValue(p.type, featureKey))).length;
 	}
 
 	function getHosting(plan: BillingPlan): string {
@@ -289,19 +281,20 @@
 				return 'Cyan';
 			case 'Managed':
 				return 'Purple';
-			case 'Self-Hosted':
+			case 'SelfHosted':
 				return 'Green';
 			default:
 				return 'Gray';
 		}
 	}
 
-	function anyPlanHasFeature(featureKey: string): boolean {
-		return getTruthyCount(featureKey) > 0;
-	}
-
-	function categoryHasVisibleFeatures(categoryFeatures: string[]): boolean {
-		return categoryFeatures.some((featureKey) => anyPlanHasFeature(featureKey));
+	function getHostingLabel(hosting: string): string {
+		switch (hosting) {
+			case 'SelfHosted':
+				return 'Self-Hosted';
+			default:
+				return hosting;
+		}
 	}
 
 	function isEnterprise(plan: BillingPlan): boolean {
@@ -316,10 +309,14 @@
 			loadingPlanType = null;
 		}
 	}
+
+	function formatIncludedValue(value: number | null | undefined): string {
+		return value == null ? 'Unlimited' : String(value);
+	}
 </script>
 
 <div class="space-y-6 {className}">
-	<!-- Header with GitHub Stars and Toggles -->
+	<!-- Header with Toggles -->
 	<div class="flex flex-wrap items-stretch justify-center gap-3 px-4 lg:gap-6 lg:px-10">
 		{#if showGithubStars}
 			<!-- <GithubStars /> -->
@@ -338,406 +335,436 @@
 		/>
 	</div>
 
-	<!-- Pricing Grid -->
-	<div class="pricing-wrapper card p-0">
-		<!-- Sticky Header -->
-		<div
-			class="sticky-header card card-static rounded-b-none border-0 p-0"
-			bind:this={headerScrollRef}
-		>
-			<div class="grid-row header-row" style="grid-template-columns: {gridColumns}">
-				<div class="grid-cell label-cell"></div>
-				{#each filteredPlans as plan (plan.type)}
-					{@const IconComponent = billingPlanHelpers.getIconComponent(plan.type)}
-					{@const colorHelper = billingPlanHelpers.getColorHelper(plan.type)}
-					{@const isRecommended = recommendedPlan === plan.type}
-					<div class="grid-cell plan-cell">
-						<div class="flex flex-col items-center gap-1 py-2 lg:py-3">
-							<div class="flex items-center justify-center gap-2">
-								<IconComponent class="{colorHelper.icon} h-4 w-4 lg:h-8 lg:w-8" />
-								<span class="text-primary text-sm font-semibold lg:text-lg"
-									>{billingPlanHelpers.getName(plan.type)}</span
-								>
-							</div>
-							{#if isRecommended}
-								<Tag label="Recommended" color="Yellow" />
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
+	<!-- Plan Cards -->
+	<div class="plan-cards-container px-4 lg:px-10">
+		<div class="plan-cards-grid">
+			{#each filteredPlans as plan (plan.type + plan.rate)}
+				{@const IconComponent = billingPlanHelpers.getIconComponent(plan.type)}
+				{@const colorHelper = billingPlanHelpers.getColorHelper(plan.type)}
+				{@const isRecommended = recommendedPlan === plan.type}
+				{@const description = billingPlanHelpers.getDescription(plan.type)}
+				{@const hosting = getHosting(plan)}
+				{@const commercial = isCommercial(plan)}
+				{@const trial = hasTrial(plan)}
+				{@const enterprise = isEnterprise(plan)}
+				{@const metadata = billingPlanHelpers.getMetadata(plan.type)}
+				{@const incrementalFeatures = metadata?.incremental_features ?? []}
+				{@const prevTier = metadata?.previous_tier}
 
-		<!-- Scrollable Content -->
-		<div class="content-scroll rounded-none border-y-0 p-0" bind:this={contentScrollRef}>
-			<!-- Price Row -->
-			<div class="grid-row" style="grid-template-columns: {gridColumns}">
-				<div class="grid-cell label-cell"></div>
-				{#each filteredPlans as plan (plan.type)}
-					<div class="grid-cell plan-cell text-center">
-						<div class="flex min-w-0 flex-col items-center space-y-1">
-							<div class="text-primary min-w-0 text-sm font-bold lg:text-2xl">
-								{formatBasePricing(plan)}
-							</div>
-							{#if hasTrial(plan) && !hasCustomPrice(plan)}
-								<div class="text-xs font-medium text-success">{plan.trial_days}-day free trial</div>
-							{/if}
+				<div
+					class="plan-card card card-static flex flex-col {isRecommended
+						? 'plan-card-recommended'
+						: ''}"
+				>
+					<!-- Recommended Badge -->
+					{#if isRecommended}
+						<div class="-mt-3 mb-1 flex justify-center">
+							<Tag label="Recommended" color="Yellow" />
 						</div>
-					</div>
-				{/each}
-			</div>
+					{/if}
 
-			<!-- Description Row -->
-			<div class="grid-row" style="grid-template-columns: {gridColumns}">
-				<div class="grid-cell label-cell">
-					<div class="text-xs font-medium lg:text-sm">Description</div>
-				</div>
-				{#each filteredPlans as plan (plan.type)}
-					{@const description = billingPlanHelpers.getDescription(plan.type)}
-					<div class="grid-cell plan-cell text-center">
-						{#if description}
-							<div class="text-tertiary text-xs leading-tight lg:text-sm">{description}</div>
-						{:else}
-							<span class="text-tertiary">—</span>
+					<!-- Plan Header -->
+					<div class="flex flex-col items-center gap-2 pb-4">
+						<div class="flex items-center gap-2">
+							<IconComponent class="{colorHelper.icon} h-5 w-5 lg:h-6 lg:w-6" />
+							<span class="text-primary text-base font-semibold lg:text-lg">
+								{billingPlanHelpers.getName(plan.type)}
+							</span>
+						</div>
+
+						{#if showHosting && hosting}
+							<Tag label={getHostingLabel(hosting)} color={getHostingColor(hosting)} />
 						{/if}
 					</div>
-				{/each}
-			</div>
 
-			<!-- Seats Row -->
-			<div class="grid-row" style="grid-template-columns: {gridColumns}">
-				<div class="grid-cell label-cell">
-					<div class="text-xs font-medium lg:text-sm">Seats</div>
-				</div>
-				{#each filteredPlans as plan (plan.type)}
-					<div class="grid-cell plan-cell text-center">
-						<div class="flex flex-col">
-							<span class="text-secondary text-xs lg:text-base"
-								>{plan.included_seats === null ? 'Unlimited' : plan.included_seats}</span
-							>
-							{#if plan.seat_cents}
-								<span class="text-tertiary text-xs">{formatSeatAddonPricing(plan)}</span>
+					<!-- Pricing -->
+					<div class="flex flex-col items-center gap-1 pb-4">
+						<div class="flex items-baseline gap-1">
+							<span class="text-primary text-2xl font-bold lg:text-3xl">
+								{formatBasePricing(plan)}
+							</span>
+							{#if formatRate(plan)}
+								<span class="text-tertiary text-sm">{formatRate(plan)}</span>
 							{/if}
 						</div>
-					</div>
-				{/each}
-			</div>
-
-			<!-- Networks Row -->
-			<div class="grid-row" style="grid-template-columns: {gridColumns}">
-				<div class="grid-cell label-cell">
-					<div class="text-xs font-medium lg:text-sm">Networks</div>
-				</div>
-				{#each filteredPlans as plan (plan.type)}
-					<div class="grid-cell plan-cell text-center">
-						<div class="flex flex-col">
-							<span class="text-secondary text-xs lg:text-base"
-								>{plan.included_networks === null ? 'Unlimited' : plan.included_networks}</span
-							>
-							{#if plan.network_cents}
-								<span class="text-tertiary text-xs">{formatNetworkAddonPricing(plan)}</span>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-
-			<!-- Hosts Row -->
-			<div class="grid-row" style="grid-template-columns: {gridColumns}">
-				<div class="grid-cell label-cell">
-					<div class="text-xs font-medium lg:text-sm">Hosts</div>
-				</div>
-				{#each filteredPlans as plan (plan.type)}
-					<div class="grid-cell plan-cell text-center">
-						<div class="flex flex-col">
-							<span class="text-secondary text-xs lg:text-base"
-								>{plan.included_hosts == null ? 'Unlimited' : plan.included_hosts}</span
-							>
-							{#if plan.host_cents}
-								<span class="text-tertiary text-xs">{formatHostAddonPricing(plan)}</span>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-
-			<!-- Hosting Row -->
-			{#if showHosting}
-				<div class="grid-row" style="grid-template-columns: {gridColumns}">
-					<div class="grid-cell label-cell">
-						<div class="text-xs font-medium lg:text-sm">Hosting</div>
-					</div>
-					{#each filteredPlans as plan (plan.type)}
-						{@const hosting = getHosting(plan)}
-						<div class="grid-cell plan-cell text-center">
-							{#if hosting}
-								<Tag label={hosting} color={getHostingColor(hosting)} />
-							{:else}
-								<span class="text-tertiary">—</span>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{/if}
-
-			<!-- Feature Rows -->
-			{#each [...groupedFeatures.entries()] as [category, categoryFeatures] (category)}
-				{#if categoryHasVisibleFeatures(categoryFeatures)}
-					<!-- Category Header -->
-					<div class="category-row">
-						<button
-							type="button"
-							class="text-secondary hover:text-primary flex w-full items-center gap-2 p-2 text-left transition-colors hover:bg-gray-800/60 lg:p-3"
-							onclick={() => toggleCategory(category)}
-							aria-expanded={!collapsedCategories[category]}
-						>
-							<span class="text-xs font-semibold uppercase tracking-wide lg:text-sm"
-								>{category}</span
-							>
-							<ChevronDown
-								class="h-4 w-4 flex-shrink-0 transition-transform {collapsedCategories[category]
-									? '-rotate-90'
-									: ''}"
-							/>
-						</button>
+						{#if hasTrial(plan) && !hasCustomPrice(plan)}
+							<div class="text-xs font-medium text-success">{plan.trial_days}-day free trial</div>
+						{/if}
 					</div>
 
-					{#if !collapsedCategories[category]}
-						{#each categoryFeatures as featureKey (featureKey)}
-							{#if anyPlanHasFeature(featureKey)}
-								{@const featureDescription = featureHelpers.getDescription(featureKey)}
-								{@const comingSoon = isComingSoon(featureKey)}
-								<div class="grid-row" style="grid-template-columns: {gridColumns}">
-									<div class="grid-cell label-cell">
-										<div class="text-xs font-medium lg:text-sm">
-											{featureHelpers.getName(featureKey)}
-										</div>
-										{#if featureDescription}
-											<div class="feature-description text-tertiary mt-1 leading-tight">
-												{featureDescription}
-											</div>
-										{/if}
-									</div>
-									{#each filteredPlans as plan (plan.type)}
-										{@const value = getFeatureValue(plan.type, featureKey)}
-										<div class="grid-cell plan-cell text-center">
-											{#if comingSoon && value}
-												<Tag label="Coming Soon" color="Gray" />
-											{:else if typeof value === 'boolean'}
-												{#if value}
-													<Check class="mx-auto h-5 w-5 text-success lg:h-8 lg:w-8" />
-												{:else}
-													<X class="text-muted mx-auto h-5 w-5 lg:h-8 lg:w-8" />
-												{/if}
-											{:else if value === null}
-												<span class="text-tertiary">—</span>
-											{:else}
-												<span class="text-secondary text-xs lg:text-lg">{value}</span>
-											{/if}
-										</div>
-									{/each}
-								</div>
-							{/if}
-						{/each}
+					<!-- Description -->
+					{#if description}
+						<p class="text-tertiary pb-4 text-center text-xs leading-relaxed lg:text-sm">
+							{description}
+						</p>
 					{/if}
-				{/if}
-			{/each}
-		</div>
 
-		<!-- Sticky Footer -->
-		<div
-			class="sticky-footer card card-static rounded-t-none border-0 p-0"
-			bind:this={footerScrollRef}
-		>
-			<div class="grid-row footer-row" style="grid-template-columns: {gridColumns}">
-				<div class="grid-cell label-cell"></div>
-				{#each filteredPlans as plan (plan.type)}
-					{@const hosting = getHosting(plan)}
-					{@const commercial = isCommercial(plan)}
-					{@const trial = hasTrial(plan)}
-					{@const enterprise = isEnterprise(plan)}
-					<div class="grid-cell plan-cell footer-plan-cell">
-						<div class="flex w-full flex-col gap-3">
-							{#if enterprise && onPlanInquiry}
-								<!-- Enterprise plan: Request Information button -->
-								<button
-									type="button"
-									onclick={() => onPlanInquiry(plan)}
-									disabled={loadingPlanType !== null}
-									class="btn-primary w-full whitespace-nowrap px-2 text-xs lg:text-sm"
-								>
-									Request Information
-								</button>
-							{:else if hosting === 'Cloud'}
-								<button
-									type="button"
-									onclick={() => handlePlanSelect(plan)}
-									disabled={loadingPlanType !== null}
-									class="btn-primary w-full whitespace-nowrap px-2 text-xs lg:text-sm"
-								>
-									{#if loadingPlanType === plan.type}
-										<Loader2 class="mx-auto h-4 w-4 animate-spin" />
-									{:else}
-										{trial ? 'Start Free Trial' : 'Get Started'}
-									{/if}
-								</button>
-							{:else if hosting === 'Self-Hosted'}
-								{#if commercial && onPlanInquiry}
+					<!-- Included Resources with Stepper Controls -->
+					<div class="space-y-2 border-b border-gray-700 pb-4">
+						<!-- Seats -->
+						<div class="flex items-center justify-between text-sm">
+							<span class="text-secondary">Seats</span>
+							{#if plan.seat_cents && plan.included_seats !== null}
+								<div class="stepper">
 									<button
 										type="button"
-										onclick={() => onPlanInquiry(plan)}
-										disabled={loadingPlanType !== null}
-										class="btn-primary w-full whitespace-nowrap text-xs lg:text-sm"
+										class="stepper-btn"
+										disabled={getExtraSeats(plan.type) === 0}
+										onclick={() => (extraSeats = adjustExtra(extraSeats, plan.type, -1))}
 									>
-										Contact Us
+										<Minus class="h-3 w-3" />
 									</button>
-								{:else}
-									<a
-										href="https://github.com/scanopy/scanopy"
-										target="_blank"
-										rel="noopener noreferrer"
-										class="btn-secondary inline-block w-full whitespace-nowrap text-center text-xs lg:text-sm"
-										>View on GitHub</a
+									<span class="text-primary w-8 text-center text-sm font-medium">
+										{(plan.included_seats ?? 0) + getExtraSeats(plan.type)}
+									</span>
+									<button
+										type="button"
+										class="stepper-btn"
+										onclick={() => (extraSeats = adjustExtra(extraSeats, plan.type, 1))}
 									>
+										<Plus class="h-3 w-3" />
+									</button>
+								</div>
+							{:else}
+								<span class="text-primary font-medium">
+									{formatIncludedValue(plan.included_seats)}
+								</span>
+							{/if}
+						</div>
+						{#if plan.seat_cents}
+							<div class="text-tertiary text-right text-xs">
+								{formatSeatAddonPricing(plan)}
+							</div>
+						{/if}
+
+						<!-- Networks -->
+						<div class="flex items-center justify-between text-sm">
+							<span class="text-secondary">Networks</span>
+							{#if plan.network_cents && plan.included_networks !== null}
+								<div class="stepper">
+									<button
+										type="button"
+										class="stepper-btn"
+										disabled={getExtraNetworks(plan.type) === 0}
+										onclick={() => (extraNetworks = adjustExtra(extraNetworks, plan.type, -1))}
+									>
+										<Minus class="h-3 w-3" />
+									</button>
+									<span class="text-primary w-8 text-center text-sm font-medium">
+										{(plan.included_networks ?? 0) + getExtraNetworks(plan.type)}
+									</span>
+									<button
+										type="button"
+										class="stepper-btn"
+										onclick={() => (extraNetworks = adjustExtra(extraNetworks, plan.type, 1))}
+									>
+										<Plus class="h-3 w-3" />
+									</button>
+								</div>
+							{:else}
+								<span class="text-primary font-medium">
+									{formatIncludedValue(plan.included_networks)}
+								</span>
+							{/if}
+						</div>
+						{#if plan.network_cents}
+							<div class="text-tertiary text-right text-xs">
+								{formatNetworkAddonPricing(plan)}
+							</div>
+						{/if}
+
+						<!-- Hosts -->
+						<div class="flex items-center justify-between text-sm">
+							<span class="text-secondary">Hosts</span>
+							<span class="text-primary font-medium">
+								{formatIncludedValue(plan.included_hosts)}
+							</span>
+						</div>
+						{#if plan.host_cents}
+							<div class="text-tertiary text-right text-xs">
+								{formatHostAddonPricing(plan)}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Estimated Total (when extras adjusted) -->
+					{#if hasExtras(plan)}
+						<div class="border-b border-gray-700 py-3">
+							<div class="text-primary text-center text-sm font-semibold">
+								Estimated: {formatCents(getEstimatedTotal(plan))} / {plan.rate.toLowerCase()}
+							</div>
+							<div class="text-tertiary mt-1 text-center text-xs">
+								Base {formatCents(plan.base_cents)}
+								{#if getExtraSeats(plan.type) > 0}
+									+ {getExtraSeats(plan.type)} extra {getExtraSeats(plan.type) === 1
+										? 'seat'
+										: 'seats'} ({formatCents(getExtraSeats(plan.type) * (plan.seat_cents ?? 0))})
 								{/if}
-							{:else if commercial && onPlanInquiry}
+								{#if getExtraNetworks(plan.type) > 0}
+									+ {getExtraNetworks(plan.type)} extra {getExtraNetworks(plan.type) === 1
+										? 'network'
+										: 'networks'} ({formatCents(
+										getExtraNetworks(plan.type) * (plan.network_cents ?? 0)
+									)})
+								{/if}
+							</div>
+						</div>
+					{/if}
+
+					<!-- Incremental Features -->
+					<div class="flex-1 py-4">
+						{#if prevTier}
+							<p class="text-tertiary mb-2 text-xs">
+								Everything in {billingPlanHelpers.getName(prevTier)}, plus:
+							</p>
+						{:else if plan.type !== 'Free' && incrementalFeatures.length > 0}
+							<p class="text-tertiary mb-2 text-xs">Key features:</p>
+						{/if}
+						<ul class="space-y-1.5">
+							{#each incrementalFeatures as featureKey (featureKey)}
+								<li class="flex items-start gap-2 text-sm">
+									<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-success" />
+									<span class="text-secondary">{featureHelpers.getName(featureKey)}</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+
+					<!-- CTA Button -->
+					<div class="border-t border-gray-700 pt-4">
+						{#if enterprise && onPlanInquiry}
+							<button
+								type="button"
+								onclick={() => onPlanInquiry(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								Request Information
+							</button>
+						{:else if hosting === 'Cloud'}
+							<button
+								type="button"
+								onclick={() => handlePlanSelect(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								{#if loadingPlanType === plan.type}
+									<Loader2 class="mx-auto h-4 w-4 animate-spin" />
+								{:else}
+									{trial ? `Start ${plan.trial_days}-day free trial` : 'Get Started'}
+								{/if}
+							</button>
+						{:else if hosting === 'SelfHosted'}
+							{#if commercial && onPlanInquiry}
 								<button
 									type="button"
 									onclick={() => onPlanInquiry(plan)}
 									disabled={loadingPlanType !== null}
-									class="btn-primary w-full whitespace-nowrap text-xs lg:text-sm"
+									class="btn-primary w-full text-sm"
 								>
 									Contact Us
 								</button>
+							{:else}
+								<a
+									href="https://github.com/scanopy/scanopy"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="btn-secondary inline-block w-full text-center text-sm"
+								>
+									View on GitHub
+								</a>
 							{/if}
-						</div>
+						{:else if commercial && onPlanInquiry}
+							<button
+								type="button"
+								onclick={() => onPlanInquiry(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								Contact Us
+							</button>
+						{/if}
 					</div>
-				{/each}
-			</div>
+				</div>
+			{/each}
 		</div>
 	</div>
+
+	<!-- Compare All Features Toggle -->
+	<div class="flex justify-center px-4">
+		<button
+			type="button"
+			class="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+			onclick={() => (showFullComparison = !showFullComparison)}
+		>
+			{showFullComparison ? 'Hide' : 'Compare all features'}
+			{#if showFullComparison}
+				<ChevronUp class="h-4 w-4" />
+			{:else}
+				<ChevronDown class="h-4 w-4" />
+			{/if}
+		</button>
+	</div>
+
+	<!-- Full Comparison Grid (expandable) -->
+	{#if showFullComparison}
+		<div class="card mx-4 overflow-auto p-0 lg:mx-10">
+			{#each [...groupedFeatures.entries()] as [category, categoryFeatures] (category)}
+				<!-- Category Header -->
+				<div class="comparison-category-row">
+					<span
+						class="text-secondary p-2 text-xs font-semibold uppercase tracking-wide lg:p-3 lg:text-sm"
+					>
+						{category}
+					</span>
+				</div>
+
+				{#each categoryFeatures as featureKey (featureKey)}
+					{@const comingSoon = isComingSoon(featureKey)}
+					<div class="comparison-row" style="grid-template-columns: {gridColumns}">
+						<div class="comparison-label-cell">
+							<div class="text-xs font-medium lg:text-sm">
+								{featureHelpers.getName(featureKey)}
+							</div>
+						</div>
+						{#each filteredPlans as plan (plan.type)}
+							{@const value = getFeatureValue(plan.type, featureKey)}
+							<div class="comparison-value-cell">
+								{#if comingSoon && value}
+									<Tag label="Coming Soon" color="Gray" />
+								{:else if typeof value === 'boolean'}
+									{#if value}
+										<Check class="mx-auto h-4 w-4 text-success lg:h-5 lg:w-5" />
+									{:else}
+										<X class="text-muted mx-auto h-4 w-4 lg:h-5 lg:w-5" />
+									{/if}
+								{:else if value === null}
+									<span class="text-tertiary">&mdash;</span>
+								{:else}
+									<span class="text-secondary text-xs lg:text-sm">{value}</span>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/each}
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>
-	/* Sticky header - sticks below navbar */
-	.sticky-header {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		overflow-x: auto;
-		scrollbar-width: none;
-		box-shadow: none;
-	}
-
-	.sticky-header::-webkit-scrollbar {
-		display: none;
-	}
-
-	/* Scrollable content area */
-	.content-scroll {
-		overflow: auto;
-	}
-
-	/* Sticky footer - sticks to bottom of viewport */
-	.sticky-footer {
-		position: sticky;
-		bottom: 0;
-		z-index: 20;
-		overflow-x: auto;
-		scrollbar-width: none;
-		padding-bottom: env(safe-area-inset-bottom, 0);
-	}
-
-	.sticky-footer::-webkit-scrollbar {
-		display: none;
-	}
-
-	/* Grid rows */
-	.grid-row {
+	/* Card grid layout */
+	.plan-cards-grid {
 		display: grid;
-		min-width: 600px;
+		gap: 1rem;
+		/* Mobile: single column vertical stack */
+		grid-template-columns: 1fr;
 	}
 
-	/* Header row styling */
-	.header-row .grid-cell {
-		border-bottom: none;
-	}
-
-	/* Footer row styling */
-	.footer-row .grid-cell {
-		border-bottom: none;
-	}
-
-	/* Grid cells */
-	.grid-cell {
-		padding: 0.5rem;
-		border-bottom: 1px solid rgb(55 65 81);
-		border-right: 1px solid rgb(55 65 81);
-	}
-
-	@media (min-width: 1024px) {
-		.grid-cell {
-			padding: 1rem;
+	@media (min-width: 640px) {
+		.plan-cards-grid {
+			grid-template-columns: repeat(2, 1fr);
 		}
 	}
 
-	.grid-cell:last-child {
-		border-right: none;
+	@media (min-width: 1024px) {
+		.plan-cards-grid {
+			grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		}
 	}
 
-	/* Plan cells - allow text wrapping */
-	.plan-cell {
-		min-width: 0;
+	/* Individual plan card */
+	.plan-card {
+		padding: 1.5rem;
+		position: relative;
+	}
+
+	.plan-card-recommended {
+		outline: 2px solid rgb(234 179 8);
+		outline-offset: -2px;
+	}
+
+	/* Stepper controls for pricing simulator */
+	.stepper {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.stepper-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		text-align: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: 0.25rem;
+		border: 1px solid rgb(75 85 99);
+		color: rgb(209 213 219);
+		background: transparent;
+		cursor: pointer;
+		transition:
+			background-color 150ms,
+			border-color 150ms;
 	}
 
-	/* Footer plan cells - full width CTAs with padding */
-	.footer-plan-cell {
-		padding: 1rem;
+	.stepper-btn:hover:not(:disabled) {
+		background: rgb(55 65 81);
+		border-color: rgb(107 114 128);
 	}
 
-	@media (min-width: 1024px) {
-		.footer-plan-cell {
-			padding: 1.25rem;
-		}
+	.stepper-btn:disabled {
+		opacity: 0.3;
+		cursor: not-allowed;
 	}
 
-	/* Label column - sticky on horizontal scroll */
-	.label-cell {
+	/* ============================================ */
+	/* Full comparison grid                         */
+	/* ============================================ */
+
+	.comparison-category-row {
+		border-bottom: 1px solid rgb(55 65 81);
+	}
+
+	.comparison-row {
+		display: grid;
+		min-width: 500px;
+		border-bottom: 1px solid rgb(55 65 81);
+	}
+
+	.comparison-row:last-child {
+		border-bottom: none;
+	}
+
+	.comparison-label-cell {
+		padding: 0.5rem;
 		color: rgb(156 163 175);
 		text-align: left;
+		display: flex;
+		align-items: center;
 		position: sticky;
 		left: 0;
 		z-index: 10;
 		background: rgb(31 41 55);
+		border-right: 1px solid rgb(55 65 81);
 	}
 
-	/* Category row - full width, not grid */
-	.category-row {
-		min-width: 600px;
-		border-bottom: 1px solid rgb(55 65 81);
+	.comparison-value-cell {
+		padding: 0.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		border-right: 1px solid rgb(55 65 81);
 	}
 
-	/* Category button stays fixed on horizontal scroll */
-	.category-row button {
-		position: sticky;
-		left: 0;
-		background: rgb(31 41 55 0);
-		width: fit-content;
-	}
-
-	/* Feature descriptions - smaller on mobile */
-	.feature-description {
-		font-size: 0.625rem;
-		line-height: 1.2;
+	.comparison-value-cell:last-child {
+		border-right: none;
 	}
 
 	@media (min-width: 1024px) {
-		.feature-description {
-			font-size: 0.75rem;
+		.comparison-label-cell,
+		.comparison-value-cell {
+			padding: 0.75rem;
 		}
 	}
 </style>

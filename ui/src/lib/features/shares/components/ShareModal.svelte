@@ -254,7 +254,7 @@
 			<p class="text-tertiary mb-6 text-center">
 				Upgrade your plan to share live network diagrams with others.
 			</p>
-			<UpgradeButton feature="sharing" />
+			<UpgradeButton feature="share_views" />
 		</div>
 		<div class="modal-footer">
 			<div class="flex items-center justify-end">

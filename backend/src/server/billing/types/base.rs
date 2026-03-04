@@ -6,6 +6,7 @@ use crate::server::{
     },
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::hash::Hash;
 use stripe_product::price::CreatePriceRecurringInterval;
 use strum::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
@@ -36,6 +37,27 @@ pub enum BillingPlan {
     Enterprise(PlanConfig),
     Demo(PlanConfig),
     CommercialSelfHosted(PlanConfig),
+}
+
+impl PartialOrd for BillingPlanDiscriminants {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        fn cloud_tier(d: &BillingPlanDiscriminants) -> Option<u8> {
+            match d {
+                BillingPlanDiscriminants::Free => Some(0),
+                BillingPlanDiscriminants::Starter => Some(1),
+                BillingPlanDiscriminants::Pro => Some(2),
+                BillingPlanDiscriminants::Team => Some(3),
+                BillingPlanDiscriminants::Business => Some(4),
+                BillingPlanDiscriminants::Enterprise => Some(5),
+                _ => None,
+            }
+        }
+        match (cloud_tier(self), cloud_tier(other)) {
+            (Some(a), Some(b)) => Some(a.cmp(&b)),
+            _ if self == other => Some(std::cmp::Ordering::Equal),
+            _ => None,
+        }
+    }
 }
 
 impl PartialEq for BillingPlan {
@@ -238,6 +260,104 @@ impl BillingPlan {
             BillingPlan::CommercialSelfHosted(_) => Hosting::SelfHosted,
             BillingPlan::Enterprise(_) => Hosting::Managed,
             _ => Hosting::Cloud, // Free, Starter, Pro, Team, Business, Demo
+        }
+    }
+
+    pub fn discriminant(&self) -> BillingPlanDiscriminants {
+        BillingPlanDiscriminants::from(self)
+    }
+
+    /// Returns the next-lower-tier cloud plan, if this is a cloud plan.
+    /// Returns None for Free (no previous) and self-hosted/demo plans.
+    pub fn previous_tier(&self) -> Option<BillingPlanDiscriminants> {
+        let cloud_tiers: Vec<BillingPlanDiscriminants> = vec![
+            BillingPlanDiscriminants::Free,
+            BillingPlanDiscriminants::Starter,
+            BillingPlanDiscriminants::Pro,
+            BillingPlanDiscriminants::Team,
+            BillingPlanDiscriminants::Business,
+            BillingPlanDiscriminants::Enterprise,
+        ];
+
+        let my_disc = self.discriminant();
+        let idx = cloud_tiers.iter().position(|d| *d == my_disc)?;
+        if idx == 0 {
+            return None;
+        }
+        Some(cloud_tiers[idx - 1])
+    }
+
+    /// Returns feature IDs added by this plan over its previous tier.
+    /// For plans with no previous tier (Free, self-hosted): returns all enabled non-universal features.
+    pub fn incremental_features(&self) -> Vec<&'static str> {
+        let enabled = self.enabled_feature_ids();
+        let universal = Self::universal_feature_ids();
+
+        match self.previous_tier() {
+            Some(prev_disc) => {
+                // Build a default plan of the previous tier to get its features
+                let prev_plan = Self::default_for_discriminant(prev_disc);
+                match prev_plan {
+                    Some(plan) => {
+                        let prev_features = plan.enabled_feature_ids();
+                        enabled.difference(&prev_features).copied().collect()
+                    }
+                    None => enabled.difference(&universal).copied().collect(),
+                }
+            }
+            None => {
+                // No previous tier: return all enabled features minus universal ones
+                enabled.difference(&universal).copied().collect()
+            }
+        }
+    }
+
+    /// Returns set of feature IDs where the feature is enabled on this plan.
+    pub fn enabled_feature_ids(&self) -> HashSet<&'static str> {
+        let features = self.features();
+        let json = serde_json::to_value(&features).unwrap();
+        let obj = json.as_object().unwrap();
+        obj.iter()
+            .filter(|(_, v)| v.as_bool().unwrap_or(false))
+            .map(|(k, _)| {
+                // Leak the key string so we get &'static str
+                // This is fine since these are a small fixed set called infrequently
+                let s: &'static str = Box::leak(k.clone().into_boxed_str());
+                s
+            })
+            .collect()
+    }
+
+    /// Features that are universal across all plans (present on Free).
+    fn universal_feature_ids() -> HashSet<&'static str> {
+        use crate::server::billing::plans::get_free_plan;
+        get_free_plan().enabled_feature_ids()
+    }
+
+    /// Whether the feature identified by `feature_id` is enabled on this plan.
+    pub fn has_feature(&self, feature_id: &str) -> bool {
+        let features = self.features();
+        let json = serde_json::to_value(&features).unwrap();
+        json.get(feature_id)
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    }
+
+    /// Build a default plan instance for a given discriminant (monthly, default config).
+    pub fn default_for_discriminant(disc: BillingPlanDiscriminants) -> Option<BillingPlan> {
+        use crate::server::billing::plans::*;
+
+        match disc {
+            BillingPlanDiscriminants::Free => Some(get_free_plan()),
+            BillingPlanDiscriminants::Community => Some(get_community_plan()),
+            BillingPlanDiscriminants::Enterprise => Some(get_enterprise_plan()),
+            BillingPlanDiscriminants::CommercialSelfHosted => {
+                Some(get_commercial_self_hosted_plan())
+            }
+            // For purchasable plans, find them from the default list
+            _ => get_purchasable_plans()
+                .into_iter()
+                .find(|p| p.discriminant() == disc),
         }
     }
 
@@ -682,6 +802,10 @@ impl TypeMetadataProvider for BillingPlan {
 
     fn metadata(&self) -> serde_json::Value {
         let config = self.config();
+        let previous_tier = self
+            .previous_tier()
+            .and_then(BillingPlan::default_for_discriminant)
+            .map(|p| p.id());
 
         serde_json::json!({
             // Pricing information
@@ -698,7 +822,10 @@ impl TypeMetadataProvider for BillingPlan {
             "features": self.features(),
             "is_commercial": self.is_commercial(),
             "hosting": self.hosting(),
-            "custom_price": self.custom_price()
+            "custom_price": self.custom_price(),
+            // Tier relationship
+            "incremental_features": self.incremental_features(),
+            "previous_tier": previous_tier
         })
     }
 }
