@@ -46,7 +46,7 @@
 	{
 		"id": "audit_logs",
 		"name": "Audit Logs",
-		"description": "Comprehensive logs of all access and data modification actions performed in Scanopy",
+		"description": "Track all user actions and data changes for compliance and security",
 		"category": "Enterprise",
 		"icon": "sparkle",
 		"color": "Gray",
@@ -105,7 +105,7 @@
 	},
 	{
 		"id": "api_access",
-		"name": "Api Access",
+		"name": "API Access",
 		"description": "Programmatic access to your data in Scanopy via API",
 		"category": "Integrations",
 		"icon": "sparkle",
@@ -126,7 +126,7 @@
 	{
 		"id": "custom_sso",
 		"name": "Custom SSO",
-		"description": "Configure your own OIDC identity provider for single sign-on",
+		"description": "Use your own identity provider (Okta, Azure AD, etc.) for single sign-on",
 		"category": "Enterprise",
 		"icon": "sparkle",
 		"color": "Gray",
@@ -165,7 +165,7 @@
 	},
 	{
 		"id": "whitelabeling",
-		"name": "Whitelabeling",
+		"name": "White Labeling",
 		"description": "We deploy Scanopy to a custom domain with your branding",
 		"category": "Enterprise",
 		"icon": "sparkle",
@@ -269,7 +269,7 @@
 	},
 	{
 		"id": "embeds",
-		"name": "Embeds",
+		"name": "Embeddable Diagrams",
 		"description": "Embed live network diagrams in wikis, dashboards, or documentation",
 		"category": "Sharing",
 		"icon": "sparkle",
@@ -285,6 +285,54 @@
 =======
 			"is_coming_soon": false
 >>>>>>> feat/actionable-entity-tags
+		}
+	},
+	{
+		"id": "network_discovery",
+		"name": "Network Discovery",
+		"description": "Automatically discover hosts, services, and connections on your network",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "topology_visualization",
+		"name": "Topology Visualization",
+		"description": "Interactive network topology maps with automatic layout",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "diagram_export",
+		"name": "Diagram Export",
+		"description": "Export network diagrams as high-resolution PNG or SVG images",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "host_inventory",
+		"name": "Host Inventory",
+		"description": "Searchable inventory of all discovered hosts and their details",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
 		}
 	},
 	{
@@ -309,8 +357,8 @@
 	},
 	{
 		"id": "daemon_poll",
-		"name": "DaemonPoll Mode",
-		"description": "Daemon-initiated polling — no open ports required on the daemon",
+		"name": "No Port Forwarding",
+		"description": "Run network scans without opening inbound ports or configuring port forwarding",
 		"category": "Core",
 		"icon": "sparkle",
 		"color": "Gray",
@@ -370,6 +418,7 @@
 	{
 		"id": "snmp_integration",
 		"name": "SNMP Integration",
+<<<<<<< HEAD
 		"description": "Query network devices for interface and hardware details",
 		"category": "Core",
 		"icon": "sparkle",
@@ -391,6 +440,9 @@
 		"id": "real_time_updates",
 		"name": "Real-time Updates",
 		"description": "Live topology updates as your network changes",
+=======
+		"description": "Query network devices for hardware, port, and performance details via SNMP",
+>>>>>>> feat/billing-plan-ux
 		"category": "Core",
 		"icon": "sparkle",
 		"color": "Gray",

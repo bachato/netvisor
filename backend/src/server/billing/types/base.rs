@@ -94,10 +94,9 @@ impl BillingPlan {
         let mut yearly_config = self.config();
         yearly_config.rate = BillingRate::Year;
 
-        // Round discounted monthly price first, then multiply by 12.
-        // This guarantees yearly_cents / 12 always produces a clean number.
-        let monthly_base =
-            Self::round_to_dollar(yearly_config.base_cents as f32 * (1.0 - discount));
+        // Round discounted monthly base to nearest dollar then subtract 1 cent
+        // so yearly prices end in .99 (e.g. $14.99/mo → $11.99/mo billed yearly).
+        let monthly_base = Self::round_to_99(yearly_config.base_cents as f32 * (1.0 - discount));
         yearly_config.base_cents = monthly_base * 12;
         yearly_config.seat_cents = yearly_config.seat_cents.map(|c| {
             let monthly = Self::round_to_dollar(c as f32 * (1.0 - discount));
@@ -118,6 +117,11 @@ impl BillingPlan {
     }
     fn round_to_dollar(cents: f32) -> i64 {
         ((cents / 100.0).round() * 100.0) as i64
+    }
+
+    /// Round to nearest dollar, then subtract 1 cent so the price ends in .99.
+    fn round_to_99(cents: f32) -> i64 {
+        Self::round_to_dollar(cents) - 1
     }
 }
 
@@ -181,6 +185,10 @@ pub struct BillingPlanFeatures {
     pub community_support: bool,
     pub priority_support: bool,
     // Core features
+    pub network_discovery: bool,
+    pub topology_visualization: bool,
+    pub diagram_export: bool,
+    pub host_inventory: bool,
     pub scheduled_discovery: bool,
     pub daemon_poll: bool,
     pub service_definitions: bool,
@@ -220,7 +228,8 @@ impl BillingPlan {
     pub fn is_commercial(&self) -> bool {
         matches!(
             self,
-            BillingPlan::Team(_)
+            BillingPlan::Pro(_)
+                | BillingPlan::Team(_)
                 | BillingPlan::Business(_)
                 | BillingPlan::Enterprise(_)
                 | BillingPlan::CommercialSelfHosted(_)
@@ -426,6 +435,10 @@ impl BillingPlan {
                 email_support: false,
                 community_support: true,
                 priority_support: false,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -447,6 +460,10 @@ impl BillingPlan {
                 email_support: false,
                 community_support: true,
                 priority_support: false,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: false,
                 daemon_poll: false,
                 service_definitions: true,
@@ -468,6 +485,10 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: false,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -489,6 +510,10 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: false,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -510,6 +535,10 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -531,6 +560,10 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -552,6 +585,10 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -573,6 +610,10 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -594,6 +635,10 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -624,6 +669,10 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             email_support,
             priority_support,
             community_support,
+            network_discovery,
+            topology_visualization,
+            diagram_export,
+            host_inventory,
             scheduled_discovery,
             daemon_poll,
             service_definitions,
@@ -685,6 +734,22 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
 
         if remove_created_with {
             features.push(Feature::RemoveCreatedWith)
+        }
+
+        if network_discovery {
+            features.push(Feature::NetworkDiscovery)
+        }
+
+        if topology_visualization {
+            features.push(Feature::TopologyVisualization)
+        }
+
+        if diagram_export {
+            features.push(Feature::DiagramExport)
+        }
+
+        if host_inventory {
+            features.push(Feature::HostInventory)
         }
 
         if scheduled_discovery {
@@ -768,18 +833,14 @@ impl TypeMetadataProvider for BillingPlan {
                 "Community plan for individuals self-hosting Scanopy - full control over configuration and integrations"
             }
             BillingPlan::Free { .. } => {
-                "Get started with Scanopy — manual discovery for up to 25 hosts"
+                "Explore your network — discover and document up to 25 hosts"
             }
-            BillingPlan::Starter { .. } => {
-                "Automatically create living documentation of your network"
-            }
-            BillingPlan::Pro { .. } => "Visualize multiple networks and share network diagrams",
+            BillingPlan::Starter { .. } => "Living network documentation that updates itself",
+            BillingPlan::Pro { .. } => "For teams managing multiple networks",
             BillingPlan::Team { .. } => {
                 "Collaborate on infrastructure documentation with your team"
             }
-            BillingPlan::Business { .. } => {
-                "Manage multi-site and multi-customer documentation with advanced features"
-            }
+            BillingPlan::Business { .. } => "For MSPs and multi-site IT teams",
             BillingPlan::Enterprise { .. } => {
                 "Fully managed Scanopy with dedicated support and custom deployment"
             }

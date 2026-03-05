@@ -14,6 +14,7 @@
 	import type { BillingPlanMetadata, FeatureMetadata } from '$lib/shared/stores/metadata';
 	import type { ColorStyle, Color } from '$lib/shared/utils/styling';
 	import type { IconComponent } from '$lib/shared/utils/types';
+	import { tooltip } from './tooltip';
 
 	/**
 	 * Interface for metadata helpers props.
@@ -324,13 +325,18 @@
 		}
 	}
 
-	function formatIncludedValue(value: number | null | undefined): string {
+	function formatIncludedValue(value: number | null | undefined, plan?: BillingPlan): string {
+		if (value == null && plan && hasCustomPrice(plan)) return 'Custom';
 		return value == null ? 'Unlimited' : String(value);
 	}
 
 	function sortFeaturesByCategory(features: string[]): string[] {
 		const order = ['Core', 'Sharing', 'Integrations', 'Support', 'Enterprise'];
 		return [...features].sort((a, b) => {
+			// Coming-soon features sort to end
+			const soonA = isComingSoon(a) ? 1 : 0;
+			const soonB = isComingSoon(b) ? 1 : 0;
+			if (soonA !== soonB) return soonA - soonB;
 			const catA = order.indexOf(featureHelpers.getCategory(a));
 			const catB = order.indexOf(featureHelpers.getCategory(b));
 			return (catA === -1 ? 99 : catA) - (catB === -1 ? 99 : catB);
@@ -481,7 +487,7 @@
 								</div>
 							{:else}
 								<span class="text-primary font-medium">
-									{formatIncludedValue(plan.included_seats)}
+									{formatIncludedValue(plan.included_seats, plan)}
 								</span>
 							{/if}
 						</div>
@@ -517,7 +523,7 @@
 								</div>
 							{:else}
 								<span class="text-primary font-medium">
-									{formatIncludedValue(plan.included_networks)}
+									{formatIncludedValue(plan.included_networks, plan)}
 								</span>
 							{/if}
 						</div>
@@ -531,7 +537,7 @@
 								{/if}
 							</div>
 							<span class="text-primary font-medium">
-								{formatIncludedValue(plan.included_hosts)}
+								{formatIncludedValue(plan.included_hosts, plan)}
 							</span>
 						</div>
 					</div>
@@ -557,7 +563,7 @@
 									<span
 										class={comingSoon ? 'text-tertiary' : 'text-secondary'}
 										data-tooltip={featureHelpers.getDescription(featureKey)}
-										>{featureHelpers.getName(featureKey)}</span
+										use:tooltip>{featureHelpers.getName(featureKey)}</span
 									>
 									{#if comingSoon}
 										<Tag label="Soon" color="Gray" />
@@ -645,7 +651,7 @@
 
 	<!-- Full Comparison Grid (expandable) -->
 	{#if showFullComparison}
-		<div class="card mx-4 overflow-auto p-0 pt-16 lg:mx-10">
+		<div class="card mx-4 overflow-auto p-0 lg:mx-10">
 			<!-- Plan Name Headers -->
 			<div
 				class="comparison-row comparison-header-row"
@@ -680,6 +686,7 @@
 							<div
 								class="text-xs font-medium lg:text-sm"
 								data-tooltip={featureHelpers.getDescription(featureKey)}
+								use:tooltip
 							>
 								{featureHelpers.getName(featureKey)}
 							</div>
@@ -840,27 +847,5 @@
 		text-decoration: underline dotted;
 		text-decoration-color: rgb(107 114 128);
 		text-underline-offset: 2px;
-	}
-
-	[data-tooltip]:hover::after {
-		content: attr(data-tooltip);
-		position: absolute;
-		bottom: calc(100% + 6px);
-		left: 50%;
-		transform: translateX(-50%);
-		background: rgb(17 24 39);
-		color: rgb(229 231 235);
-		padding: 0.375rem 0.625rem;
-		border-radius: 0.375rem;
-		font-size: 0.75rem;
-		line-height: 1.25;
-		max-width: 250px;
-		width: max-content;
-		z-index: 50;
-		pointer-events: none;
-		white-space: normal;
-		word-wrap: break-word;
-		border: 1px solid rgb(55 65 81);
-		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
 	}
 </style>
