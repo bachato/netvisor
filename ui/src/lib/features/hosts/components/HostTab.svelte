@@ -346,7 +346,7 @@
 						<UpgradeButton feature="hosts" />
 					{:else}
 						{#if isNearHostLimit}
-							<UpgradeButton feature="more hosts" />
+							<UpgradeButton feature="hosts" />
 						{/if}
 						<button class="btn-primary flex items-center" onclick={handleCreateHost}
 							><Plus class="h-5 w-5" />{common_create()}</button

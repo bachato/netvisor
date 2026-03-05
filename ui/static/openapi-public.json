@@ -9541,14 +9541,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-03-04T17:10:28.246988Z",
-              "id": "2c8fa5f7-a5d0-459e-b8b5-c2f69a0164f3",
+              "created_at": "2026-03-05T04:02:04.250368Z",
+              "id": "95e13869-a360-43ae-b631-c3fe6eda9f1c",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-04T17:10:28.246988Z"
+              "updated_at": "2026-03-05T04:02:04.250368Z"
             }
           },
           "error": {
@@ -10348,14 +10348,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-03-04T17:10:28.233561Z",
-                      "id": "0a6b870d-2aaa-4430-995b-8c13d6cdd44a",
+                      "created_at": "2026-03-05T04:02:04.231908Z",
+                      "id": "4760aca6-9456-4318-9e4a-ee7f62253054",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-03-04T17:10:28.233561Z"
+                      "updated_at": "2026-03-05T04:02:04.231908Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10364,7 +10364,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Gitea",
+                  "service_definition": "Unifi Access Point",
                   "source": {
                     "type": "Manual"
                   },
@@ -11167,14 +11167,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-03-04T17:10:28.243145Z",
-                  "id": "a6418c4b-e281-41a4-9b84-63499deb1315",
+                  "created_at": "2026-03-05T04:02:04.245120Z",
+                  "id": "c997931d-d69b-4c61-88b3-58c1794fb252",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-04T17:10:28.243145Z"
+                  "updated_at": "2026-03-05T04:02:04.245120Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11183,7 +11183,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Gitea",
+              "service_definition": "Unifi Access Point",
               "source": {
                 "type": "Manual"
               },
@@ -12382,14 +12382,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-03-04T17:10:28.233844Z",
-          "id": "ffe859eb-b1d5-4c5e-bb28-4b3dfa85e3fc",
+          "created_at": "2026-03-05T04:02:04.232311Z",
+          "id": "bcdc1044-40cf-4825-9c53-40c144d47b54",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-03-04T17:10:28.233844Z"
+          "updated_at": "2026-03-05T04:02:04.232311Z"
         }
       },
       "BindingBase": {
@@ -12896,7 +12896,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Gitea",
+              "service_definition": "Unifi Access Point",
               "tags": [],
               "virtualization": null
             }
@@ -14786,14 +14786,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-03-04T17:10:28.233199Z",
-                  "id": "6dc269b5-9e12-4eda-a170-168af4572729",
+                  "created_at": "2026-03-05T04:02:04.231370Z",
+                  "id": "882a27fc-a14e-4670-81e4-5934c6751618",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-04T17:10:28.233199Z"
+                  "updated_at": "2026-03-05T04:02:04.231370Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14802,7 +14802,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Gitea",
+              "service_definition": "Unifi Access Point",
               "source": {
                 "type": "Manual"
               },
@@ -16750,14 +16750,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-03-04T17:10:28.225527Z",
-                        "id": "8c16f1df-563b-4503-9c35-3bb2f4ba2d52",
+                        "created_at": "2026-03-05T04:02:04.219244Z",
+                        "id": "a4e790f6-1446-448b-879f-f628859038da",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-03-04T17:10:28.225527Z"
+                        "updated_at": "2026-03-05T04:02:04.219244Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16766,7 +16766,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Gitea",
+                    "service_definition": "Unifi Access Point",
                     "source": {
                       "type": "Manual"
                     },
@@ -16843,14 +16843,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-03-04T17:10:28.242105Z",
-                    "id": "87b68da6-44b9-485e-9f64-481ff884c3d0",
+                    "created_at": "2026-03-05T04:02:04.243717Z",
+                    "id": "8a56b398-cc46-4a15-91ab-811842afe90a",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-03-04T17:10:28.242105Z"
+                    "updated_at": "2026-03-05T04:02:04.243717Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16859,7 +16859,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Gitea",
+                "service_definition": "Unifi Access Point",
                 "source": {
                   "type": "Manual"
                 },
@@ -17942,14 +17942,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-03-04T17:10:28.233753Z",
-              "id": "fb2307b3-b77b-4b40-a93c-335a7a47ca20",
+              "created_at": "2026-03-05T04:02:04.232177Z",
+              "id": "0f0b05c1-4099-46d2-9f3f-7600ca9cbca7",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-04T17:10:28.233753Z"
+              "updated_at": "2026-03-05T04:02:04.232177Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17958,7 +17958,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Gitea",
+          "service_definition": "Unifi Access Point",
           "source": {
             "type": "Manual"
           },

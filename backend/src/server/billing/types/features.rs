@@ -76,7 +76,7 @@ impl Feature {
 
     /// Returns the ID of the lowest-tier cloud plan that includes this feature.
     pub fn minimum_plan(&self) -> Option<&'static str> {
-        use super::base::{BillingPlan};
+        use super::base::BillingPlan;
 
         let feature_id = self.id();
         let cloud_tiers = [
@@ -142,7 +142,7 @@ impl TypeMetadataProvider for Feature {
         match self {
             Feature::AuditLogs => "Audit Logs",
             Feature::Webhooks => "Webhooks",
-            Feature::ShareViews => "Share Views",
+            Feature::ShareViews => "Shareable Diagrams",
             Feature::OnboardingCall => "Onboarding Call",
             Feature::RemoveCreatedWith => "Remove Watermark",
             Feature::CustomSso => "Custom SSO",

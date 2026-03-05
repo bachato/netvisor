@@ -177,14 +177,14 @@
 			{
 				label: 'Interfaces With',
 				value: daemon.capabilities.interfaced_subnet_ids
-								.map((s) => subnetsData.find((subnet) => subnet.id == s))
-								.filter((s) => s != undefined)
-								.map((s) => ({
-									id: s.id,
-									label: s.name,
-									color: entities.getColorHelper('Subnet').color,
-									entityRef: entityRef('Subnet', s.id, s)
-								})),
+					.map((s) => subnetsData.find((subnet) => subnet.id == s))
+					.filter((s) => s != undefined)
+					.map((s) => ({
+						id: s.id,
+						label: s.name,
+						color: entities.getColorHelper('Subnet').color,
+						entityRef: entityRef('Subnet', s.id, s)
+					})),
 				emptyText: 'No subnet interfaces'
 			},
 			{ label: 'Tags', snippet: tagsSnippet }

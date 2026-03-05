@@ -2773,14 +2773,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-04T17:10:28.246986Z",
-             *       "id": "51f02bac-3bba-4588-bd74-7d1c64dd1a9d",
+             *       "created_at": "2026-03-05T04:02:04.250379Z",
+             *       "id": "66940136-927e-477e-bcd0-9843aa437d04",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-04T17:10:28.246986Z"
+             *       "updated_at": "2026-03-05T04:02:04.250379Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3028,14 +3028,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-04T17:10:28.233565Z",
-             *               "id": "a1b36739-be54-4172-84bb-8101e8426111",
+             *               "created_at": "2026-03-05T04:02:04.231896Z",
+             *               "id": "72679b29-a4c1-4178-bc01-3a24fc7ff965",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-04T17:10:28.233565Z"
+             *               "updated_at": "2026-03-05T04:02:04.231896Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3044,7 +3044,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Gitea",
+             *           "service_definition": "Unifi Access Point",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3317,14 +3317,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-04T17:10:28.243090Z",
-             *           "id": "84118a5c-1740-4e28-906f-5baed4f710b4",
+             *           "created_at": "2026-03-05T04:02:04.245110Z",
+             *           "id": "0f5827f8-fab0-4d98-bbd1-c618c01854de",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-04T17:10:28.243090Z"
+             *           "updated_at": "2026-03-05T04:02:04.245110Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3333,7 +3333,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Gitea",
+             *       "service_definition": "Unifi Access Point",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3636,14 +3636,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-04T17:10:28.233849Z",
-         *       "id": "7ca8c26f-64a0-428f-88fb-d037db52fb1a",
+         *       "created_at": "2026-03-05T04:02:04.232294Z",
+         *       "id": "5fb680b0-ae0f-4368-9fa2-443549dcbd15",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-04T17:10:28.233849Z"
+         *       "updated_at": "2026-03-05T04:02:04.232294Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3825,7 +3825,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Gitea",
+         *           "service_definition": "Unifi Access Point",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4468,14 +4468,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-04T17:10:28.233204Z",
-         *               "id": "2237b69e-6f44-4047-9174-cdac6641874b",
+         *               "created_at": "2026-03-05T04:02:04.231361Z",
+         *               "id": "60ef6b2f-c60c-48a4-9c44-4930ba0680f4",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-04T17:10:28.233204Z"
+         *               "updated_at": "2026-03-05T04:02:04.231361Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4484,7 +4484,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Gitea",
+         *           "service_definition": "Unifi Access Point",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5474,14 +5474,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-04T17:10:28.233759Z",
-         *           "id": "d874fb99-65d8-49ef-884a-7b476b77f0c2",
+         *           "created_at": "2026-03-05T04:02:04.232164Z",
+         *           "id": "bae1d565-6e87-48c0-8af9-43af83cdcca7",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-04T17:10:28.233759Z"
+         *           "updated_at": "2026-03-05T04:02:04.232164Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5490,7 +5490,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Gitea",
+         *       "service_definition": "Unifi Access Point",
          *       "source": {
          *         "type": "Manual"
          *       },

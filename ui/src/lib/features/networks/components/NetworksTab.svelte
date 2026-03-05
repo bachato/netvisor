@@ -212,7 +212,7 @@
 						<UpgradeButton feature="networks" />
 					{:else}
 						{#if isNearNetworkLimit}
-							<UpgradeButton feature="more networks" />
+							<UpgradeButton feature="networks" />
 						{/if}
 						<button class="btn-primary flex items-center" onclick={handleCreateNetwork}
 							><Plus class="h-5 w-5" />{common_create()}</button

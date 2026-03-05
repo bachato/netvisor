@@ -1,278 +1,278 @@
 [
-  {
-    "id": "share_views",
-    "name": "Share Views",
-    "description": "Share live network diagrams with others",
-    "category": "Sharing",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Starter"
-    }
-  },
-  {
-    "id": "onboarding_call",
-    "name": "Onboarding Call",
-    "description": "30 minute onboarding call to ensure you're getting the most out of Scanopy",
-    "category": "Support",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Business"
-    }
-  },
-  {
-    "id": "audit_logs",
-    "name": "Audit Logs",
-    "description": "Track all user actions and data changes for compliance and security",
-    "category": "Enterprise",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": true,
-      "minimum_plan": "Business"
-    }
-  },
-  {
-    "id": "webhooks",
-    "name": "Webhooks",
-    "description": "Push real-time events to external systems when hosts, services, or topology changes",
-    "category": "Integrations",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": true,
-      "minimum_plan": "Business"
-    }
-  },
-  {
-    "id": "remove_created_with",
-    "name": "Remove Watermark",
-    "description": "Remove 'Created using scanopy.net' in bottom right corner of exported images",
-    "category": "Sharing",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Starter"
-    }
-  },
-  {
-    "id": "api_access",
-    "name": "API Access",
-    "description": "Programmatic access to your data in Scanopy via API",
-    "category": "Integrations",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Pro"
-    }
-  },
-  {
-    "id": "custom_sso",
-    "name": "Custom SSO",
-    "description": "Use your own identity provider (Okta, Azure AD, etc.) for single sign-on",
-    "category": "Enterprise",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Enterprise"
-    }
-  },
-  {
-    "id": "managed_deployment",
-    "name": "Managed Deployment",
-    "description": "We deploy, configure, and manage Scanopy for you on a dedicated instance",
-    "category": "Enterprise",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Enterprise"
-    }
-  },
-  {
-    "id": "whitelabeling",
-    "name": "White Labeling",
-    "description": "We deploy Scanopy to a custom domain with your branding",
-    "category": "Enterprise",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Enterprise"
-    }
-  },
-  {
-    "id": "community_support",
-    "name": "Community Support",
-    "description": "Community support via GitHub issues and discussions",
-    "category": "Support",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Free"
-    }
-  },
-  {
-    "id": "email_support",
-    "name": "Email Support",
-    "description": "Access to the Scanopy team via email support tickets",
-    "category": "Support",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Starter"
-    }
-  },
-  {
-    "id": "live_chat_support",
-    "name": "Live Chat Support",
-    "description": "Access to the Scanopy team via live chat",
-    "category": "Support",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Enterprise"
-    }
-  },
-  {
-    "id": "priority_support",
-    "name": "Priority Support",
-    "description": "Prioritized email support with faster response times",
-    "category": "Support",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Business"
-    }
-  },
-  {
-    "id": "embeds",
-    "name": "Embeddable Diagrams",
-    "description": "Embed live network diagrams in wikis, dashboards, or documentation",
-    "category": "Sharing",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Pro"
-    }
-  },
-  {
-    "id": "network_discovery",
-    "name": "Network Discovery",
-    "description": "Automatically discover hosts, services, and connections on your network",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Free"
-    }
-  },
-  {
-    "id": "topology_visualization",
-    "name": "Topology Visualization",
-    "description": "Interactive network topology maps with automatic layout",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Free"
-    }
-  },
-  {
-    "id": "diagram_export",
-    "name": "Diagram Export",
-    "description": "Export network diagrams as high-resolution PNG or SVG images",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Free"
-    }
-  },
-  {
-    "id": "host_inventory",
-    "name": "Host Inventory",
-    "description": "Searchable inventory of all discovered hosts and their details",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Free"
-    }
-  },
-  {
-    "id": "scheduled_discovery",
-    "name": "Scheduled Discovery",
-    "description": "Schedule automatic network discovery scans",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Starter"
-    }
-  },
-  {
-    "id": "daemon_poll",
-    "name": "No Port Forwarding",
-    "description": "Run network scans without opening inbound ports or configuring port forwarding",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Starter"
-    }
-  },
-  {
-    "id": "service_definitions",
-    "name": "200+ Service Definitions",
-    "description": "Auto-detect databases, containers, web servers, and more",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Free"
-    }
-  },
-  {
-    "id": "docker_integration",
-    "name": "Docker Integration",
-    "description": "Automatic discovery of containerized services",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Free"
-    }
-  },
-  {
-    "id": "snmp_integration",
-    "name": "SNMP Integration",
-    "description": "Query network devices for hardware, port, and performance details via SNMP",
-    "category": "Core",
-    "icon": "sparkle",
-    "color": "Gray",
-    "metadata": {
-      "is_coming_soon": false,
-      "minimum_plan": "Free"
-    }
-  }
+	{
+		"id": "share_views",
+		"name": "Shareable Diagrams",
+		"description": "Share live network diagrams with others",
+		"category": "Sharing",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Starter"
+		}
+	},
+	{
+		"id": "onboarding_call",
+		"name": "Onboarding Call",
+		"description": "30 minute onboarding call to ensure you're getting the most out of Scanopy",
+		"category": "Support",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Business"
+		}
+	},
+	{
+		"id": "audit_logs",
+		"name": "Audit Logs",
+		"description": "Track all user actions and data changes for compliance and security",
+		"category": "Enterprise",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": true,
+			"minimum_plan": "Business"
+		}
+	},
+	{
+		"id": "webhooks",
+		"name": "Webhooks",
+		"description": "Push real-time events to external systems when hosts, services, or topology changes",
+		"category": "Integrations",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": true,
+			"minimum_plan": "Business"
+		}
+	},
+	{
+		"id": "remove_created_with",
+		"name": "Remove Watermark",
+		"description": "Remove 'Created using scanopy.net' in bottom right corner of exported images",
+		"category": "Sharing",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Starter"
+		}
+	},
+	{
+		"id": "api_access",
+		"name": "API Access",
+		"description": "Programmatic access to your data in Scanopy via API",
+		"category": "Integrations",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Pro"
+		}
+	},
+	{
+		"id": "custom_sso",
+		"name": "Custom SSO",
+		"description": "Use your own identity provider (Okta, Azure AD, etc.) for single sign-on",
+		"category": "Enterprise",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Enterprise"
+		}
+	},
+	{
+		"id": "managed_deployment",
+		"name": "Managed Deployment",
+		"description": "We deploy, configure, and manage Scanopy for you on a dedicated instance",
+		"category": "Enterprise",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Enterprise"
+		}
+	},
+	{
+		"id": "whitelabeling",
+		"name": "White Labeling",
+		"description": "We deploy Scanopy to a custom domain with your branding",
+		"category": "Enterprise",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Enterprise"
+		}
+	},
+	{
+		"id": "community_support",
+		"name": "Community Support",
+		"description": "Community support via GitHub issues and discussions",
+		"category": "Support",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "email_support",
+		"name": "Email Support",
+		"description": "Access to the Scanopy team via email support tickets",
+		"category": "Support",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Starter"
+		}
+	},
+	{
+		"id": "live_chat_support",
+		"name": "Live Chat Support",
+		"description": "Access to the Scanopy team via live chat",
+		"category": "Support",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Enterprise"
+		}
+	},
+	{
+		"id": "priority_support",
+		"name": "Priority Support",
+		"description": "Prioritized email support with faster response times",
+		"category": "Support",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Business"
+		}
+	},
+	{
+		"id": "embeds",
+		"name": "Embeddable Diagrams",
+		"description": "Embed live network diagrams in wikis, dashboards, or documentation",
+		"category": "Sharing",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Pro"
+		}
+	},
+	{
+		"id": "network_discovery",
+		"name": "Network Discovery",
+		"description": "Automatically discover hosts, services, and connections on your network",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "topology_visualization",
+		"name": "Topology Visualization",
+		"description": "Interactive network topology maps with automatic layout",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "diagram_export",
+		"name": "Diagram Export",
+		"description": "Export network diagrams as high-resolution PNG or SVG images",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "host_inventory",
+		"name": "Host Inventory",
+		"description": "Searchable inventory of all discovered hosts and their details",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "scheduled_discovery",
+		"name": "Scheduled Discovery",
+		"description": "Schedule automatic network discovery scans",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Starter"
+		}
+	},
+	{
+		"id": "daemon_poll",
+		"name": "No Port Forwarding",
+		"description": "Run network scans without opening inbound ports or configuring port forwarding",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Starter"
+		}
+	},
+	{
+		"id": "service_definitions",
+		"name": "200+ Service Definitions",
+		"description": "Auto-detect databases, containers, web servers, and more",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "docker_integration",
+		"name": "Docker Integration",
+		"description": "Automatic discovery of containerized services",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	},
+	{
+		"id": "snmp_integration",
+		"name": "SNMP Integration",
+		"description": "Query network devices for hardware, port, and performance details via SNMP",
+		"category": "Core",
+		"icon": "sparkle",
+		"color": "Gray",
+		"metadata": {
+			"is_coming_soon": false,
+			"minimum_plan": "Free"
+		}
+	}
 ]
