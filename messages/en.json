@@ -708,6 +708,7 @@
 	"onboarding_referralSource_searchEngine": "Search engine (Google, Bing, etc.)",
 	"onboarding_referralSource_selfHosted": "Used the self-hosted version",
 	"onboarding_referralSource_socialMedia": "Social media (X, LinkedIn, etc.)",
+	"onboarding_referralSource_preferNotToSay": "I'd rather not say",
 	"onboarding_referralSource_wordOfMouth": "Word of mouth",
 	"onboarding_tailorSetup": "We'll tailor the setup to your needs",
 	"onboarding_understandContinue": "I understand, continue",
