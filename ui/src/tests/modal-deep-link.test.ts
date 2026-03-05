@@ -14,7 +14,7 @@ const entities: TestEntity[] = [
 ];
 
 function state(name: string | null, id: string | null = null): ModalState {
-	return { name, id, tab: null };
+	return { name, id, tab: null, subEntityId: null };
 }
 
 describe('resolveModalDeepLink', () => {

@@ -41,6 +41,7 @@
 		activeTab = $bindable(''),
 		onTabChange = null,
 		onOpen = null,
+		onSubEntityNavigation = null,
 		instanceKey = $bindable(0),
 		name = undefined,
 		entityId = undefined,
@@ -63,6 +64,7 @@
 		activeTab?: string;
 		onTabChange?: ((tabId: string) => void) | null;
 		onOpen?: (() => void) | null;
+		onSubEntityNavigation?: ((subEntityId: string) => void) | null;
 		instanceKey?: number;
 		name?: string;
 		entityId?: string;
@@ -117,7 +119,12 @@
 			}
 
 			if (name) {
+				// Read subEntityId before openModal clears it
+				const subEntityId = state.name === name ? state.subEntityId : null;
 				openModal(name, { id: entityId, tab: activeTab || undefined });
+				if (subEntityId && onSubEntityNavigation) {
+					onSubEntityNavigation(subEntityId);
+				}
 			}
 		} else if (!isOpen && wasOpen && name && get(modalState).name === name) {
 			// Modal closed (by parent, form submit, etc.) — clear URL params

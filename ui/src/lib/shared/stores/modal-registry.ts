@@ -6,20 +6,25 @@ export interface ModalState {
 	name: string | null;
 	id: string | null;
 	tab: string | null;
+	subEntityId: string | null;
 }
 
-const EMPTY_STATE: ModalState = { name: null, id: null, tab: null };
+const EMPTY_STATE: ModalState = { name: null, id: null, tab: null, subEntityId: null };
 
 export const modalState = writable<ModalState>({ ...EMPTY_STATE });
 
 /**
  * Open a modal by name. Updates the store and URL search params.
  */
-export function openModal(name: string, opts?: { id?: string; tab?: string }): void {
+export function openModal(
+	name: string,
+	opts?: { id?: string; tab?: string; subEntityId?: string }
+): void {
 	const state: ModalState = {
 		name,
 		id: opts?.id ?? null,
-		tab: opts?.tab ?? null
+		tab: opts?.tab ?? null,
+		subEntityId: opts?.subEntityId ?? null
 	};
 	modalState.set(state);
 	syncToUrl(state);
@@ -55,7 +60,8 @@ export function initModalFromUrl(): void {
 	const state: ModalState = {
 		name,
 		id: params.get('id'),
-		tab: params.get('tab')
+		tab: params.get('tab'),
+		subEntityId: params.get('subEntityId')
 	};
 	modalState.set(state);
 }
@@ -80,7 +86,11 @@ export function navigateToEntity(
 		const parentId = data[config.parentIdField] as string | undefined;
 		if (parentConfig?.modalName && parentId) {
 			window.location.hash = parentConfig.tabId;
-			openModal(parentConfig.modalName, { id: parentId, tab: config.modalTab });
+			openModal(parentConfig.modalName, {
+				id: parentId,
+				tab: config.modalTab,
+				subEntityId: entityId
+			});
 		}
 	} else {
 		// Entity has no modal — just navigate to its tab
@@ -132,10 +142,16 @@ function syncToUrl(state: ModalState): void {
 		} else {
 			url.searchParams.delete('tab');
 		}
+		if (state.subEntityId) {
+			url.searchParams.set('subEntityId', state.subEntityId);
+		} else {
+			url.searchParams.delete('subEntityId');
+		}
 	} else {
 		url.searchParams.delete('modal');
 		url.searchParams.delete('id');
 		url.searchParams.delete('tab');
+		url.searchParams.delete('subEntityId');
 	}
 	window.history.replaceState({}, '', url.toString());
 }

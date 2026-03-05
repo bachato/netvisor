@@ -17,6 +17,7 @@
 	import { pushError } from '$lib/shared/stores/feedback';
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import type { Host } from '$lib/features/hosts/types/base';
+	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
 	import { Info, Calendar } from 'lucide-svelte';
@@ -68,6 +69,8 @@
 
 	const organizationQuery = useOrganizationQuery();
 	let org = $derived(organizationQuery.data);
+	const subnetsQuery = useSubnetsQuery();
+	let subnetsData = $derived(subnetsQuery.data ?? []);
 	let hasScheduledDiscovery = $derived.by(() => {
 		if (!org?.plan?.type) return true;
 		return billingPlans.getMetadata(org.plan.type).features.scheduled_discovery;
@@ -363,6 +366,8 @@
 					<DiscoveryDetailsForm
 						{form}
 						{daemons}
+						{hosts}
+						subnets={subnetsData}
 						bind:formData
 						{readOnly}
 						{hasScheduledDiscovery}

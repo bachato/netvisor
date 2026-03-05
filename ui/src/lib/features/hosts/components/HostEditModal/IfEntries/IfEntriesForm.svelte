@@ -15,9 +15,10 @@
 
 	interface Props {
 		ifEntries: IfEntry[];
+		targetEntityId?: string | null;
 	}
 
-	let { ifEntries }: Props = $props();
+	let { ifEntries, targetEntityId = $bindable(null) }: Props = $props();
 
 	// Sort if_entries by if_index
 	let sortedIfEntries = $derived([...ifEntries].sort((a, b) => a.if_index - b.if_index));
@@ -25,7 +26,7 @@
 
 <div class="flex min-h-0 flex-1 flex-col">
 	<div class="min-h-0 flex-1">
-		<ListConfigEditor items={sortedIfEntries}>
+		<ListConfigEditor items={sortedIfEntries} bind:targetEntityId>
 			<svelte:fragment slot="list" let:items let:onEdit let:highlightedIndex>
 				<ListManager
 					label={hosts_ifEntries_title({ count: items.length })}
