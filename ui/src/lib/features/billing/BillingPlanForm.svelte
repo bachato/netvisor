@@ -199,6 +199,14 @@
 			if (!groups.has(category)) groups.set(category, []);
 			groups.get(category)!.push(featureKey);
 		}
+		// Sort features within each category by how many plans enable them (most first)
+		for (const [, features] of groups) {
+			features.sort((a, b) => {
+				const countA = filteredPlans.filter((p) => getFeatureValue(p.type, a)).length;
+				const countB = filteredPlans.filter((p) => getFeatureValue(p.type, b)).length;
+				return countB - countA;
+			});
+		}
 		// Sort categories: Core first, Support/Enterprise/Licensing last
 		const sortedEntries = [...groups.entries()].sort(([a], [b]) => {
 			const order = [
@@ -378,6 +386,7 @@
 				{@const enterprise = isEnterprise(plan)}
 				{@const metadata = billingPlanHelpers.getMetadata(plan.type)}
 				{@const incrementalFeatures = metadata?.incremental_features ?? []}
+				{@const sortedIncrFeatures = sortFeaturesByCategory(incrementalFeatures)}
 				{@const prevTier = metadata?.previous_tier}
 
 				<div
@@ -552,7 +561,19 @@
 							<p class="text-tertiary mb-2 text-xs">Key features:</p>
 						{/if}
 						<ul class="space-y-1.5">
-							{#each sortFeaturesByCategory(incrementalFeatures) as featureKey (featureKey)}
+							{#each sortedIncrFeatures as featureKey, i (featureKey)}
+								{@const category = featureHelpers.getCategory(featureKey)}
+								{@const prevCategory =
+									i > 0 ? featureHelpers.getCategory(sortedIncrFeatures[i - 1]) : null}
+								{#if category !== prevCategory}
+									<li
+										class="text-tertiary text-[10px] font-medium uppercase tracking-wider {i > 0
+											? 'mt-2'
+											: ''}"
+									>
+										{category}
+									</li>
+								{/if}
 								{@const comingSoon = isComingSoon(featureKey)}
 								<li class="flex items-start gap-2 text-sm">
 									<Check
