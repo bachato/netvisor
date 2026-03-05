@@ -479,6 +479,8 @@
 	"discovery_noHistorySessionsSubtitle": "Once a daemon completes a discovery, results will appear here.",
 	"discovery_viewRun": "View Discovery Run: {name}",
 	"home_noDiscoveriesYet": "No discovery results yet. Set up a daemon to start discovering your network.",
+	"home_demoEmbedTitle": "Preview: Shareable Network Map",
+	"home_demoEmbedSubtitle": "This is a live demo of Scanopy's interactive topology view — a visual map of your network you'll have once your first scan completes.",
 	"errors_auth_api_key_required": "API key required",
 	"errors_auth_daemon_key_not_created": "Daemon is trying to register with an API key that has not yet been created",
 	"errors_auth_daemon_required": "Daemon context required",

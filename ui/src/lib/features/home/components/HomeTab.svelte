@@ -15,6 +15,7 @@
 	import { onMount } from 'svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
+	import { home_demoEmbedTitle, home_demoEmbedSubtitle } from '$lib/paraglide/messages';
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -91,7 +92,7 @@
 			<section>
 				<div class="overflow-hidden rounded-lg border border-gray-700">
 					<div class="flex items-center justify-between px-4 pt-3">
-						<h3 class="text-primary text-base font-semibold">Preview: Shareable Network Map</h3>
+						<h3 class="text-primary text-base font-semibold">{home_demoEmbedTitle()}</h3>
 						<div class="flex items-center gap-3">
 							<a
 								href="https://demo.scanopy.net/share/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
@@ -110,8 +111,7 @@
 						</div>
 					</div>
 					<p class="text-secondary px-4 pb-2 text-sm">
-						This is a live demo of Scanopy's topology view — a shareable, embeddable map you'll have
-						once your first scan completes.
+						{home_demoEmbedSubtitle()}
 					</p>
 					<div class="h-[400px] w-full">
 						<iframe
