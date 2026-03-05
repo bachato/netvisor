@@ -1,7 +1,7 @@
 [
 	{
 		"id": "share_views",
-		"name": "Share Views",
+		"name": "Shareable Diagrams",
 		"description": "Share live network diagrams with others",
 		"category": "Sharing",
 		"icon": "sparkle",

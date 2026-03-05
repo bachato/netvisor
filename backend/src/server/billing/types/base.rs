@@ -840,7 +840,7 @@ impl TypeMetadataProvider for BillingPlan {
                 "Explore your network — discover and document up to 25 hosts"
             }
             BillingPlan::Starter { .. } => "Living network documentation that updates itself",
-            BillingPlan::Pro { .. } => "For teams managing multiple networks",
+            BillingPlan::Pro { .. } => "For professionals managing multiple networks",
             BillingPlan::Team { .. } => {
                 "Collaborate on infrastructure documentation with your team"
             }

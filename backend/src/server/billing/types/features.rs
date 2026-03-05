@@ -140,7 +140,7 @@ impl TypeMetadataProvider for Feature {
         match self {
             Feature::AuditLogs => "Audit Logs",
             Feature::Webhooks => "Webhooks",
-            Feature::ShareViews => "Share Views",
+            Feature::ShareViews => "Shareable Diagrams",
             Feature::OnboardingCall => "Onboarding Call",
             Feature::RemoveCreatedWith => "Remove Watermark",
             Feature::CustomSso => "Custom SSO",

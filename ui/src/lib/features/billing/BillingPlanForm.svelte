@@ -566,7 +566,7 @@
 										use:tooltip>{featureHelpers.getName(featureKey)}</span
 									>
 									{#if comingSoon}
-										<Tag label="Soon" color="Gray" />
+										<Tag label="Coming Soon" color="Gray" />
 									{/if}
 								</li>
 							{/each}
