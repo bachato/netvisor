@@ -2,6 +2,7 @@
 //! Run with: cargo test generate_billing_fixtures -- --nocapture
 
 use scanopy::server::billing::plans::get_website_fixture_plans;
+use scanopy::server::billing::types::base::BillingPlan;
 use scanopy::server::billing::types::features::Feature;
 use scanopy::server::discovery::r#impl::types::DiscoveryType;
 use scanopy::server::groups::r#impl::types::GroupType;
@@ -28,12 +29,17 @@ fn write_fixture<T: serde::Serialize>(items: &[T], filename: &str) {
 /// Run with: cargo test generate_billing_fixtures -- --nocapture
 #[test]
 fn generate_billing_fixtures() {
-    // Billing fixtures
+    // Billing fixtures — website plans (curated, for billing modal)
     let plan_metadata: Vec<TypeMetadata> = get_website_fixture_plans()
         .iter()
         .map(|p| p.to_metadata())
         .collect();
     write_fixture(&plan_metadata, "billing-plans.json");
+
+    // All billing plan variants (for metadata store, matches old /api/metadata)
+    let all_plan_metadata: Vec<TypeMetadata> =
+        BillingPlan::iter().map(|p| p.to_metadata()).collect();
+    write_fixture(&all_plan_metadata, "billing-plans-all.json");
 
     let feature_metadata: Vec<TypeMetadata> = Feature::iter().map(|f| f.to_metadata()).collect();
     write_fixture(&feature_metadata, "features.json");

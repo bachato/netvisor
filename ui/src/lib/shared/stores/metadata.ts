@@ -7,7 +7,7 @@ import groupTypesJson from '$lib/data/group-types.json';
 import entitiesJson from '$lib/data/entities.json';
 import portsJson from '$lib/data/ports.json';
 import discoveryTypesJson from '$lib/data/discovery-types.json';
-import billingPlansJson from '$lib/data/billing-plans.json';
+import billingPlansJson from '$lib/data/billing-plans-all.json';
 import featuresJson from '$lib/data/features.json';
 import permissionsJson from '$lib/data/permissions.json';
 import conceptsJson from '$lib/data/concepts.json';
