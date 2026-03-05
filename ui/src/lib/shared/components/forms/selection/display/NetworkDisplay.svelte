@@ -11,13 +11,12 @@
 		getId: (network: Network) => network.id,
 		getLabel: (network: Network) => network.name,
 		getDescription: (network: Network, context: NetworkDisplayContext) => {
-			if (network.snmp_credential_id) {
-				const creds = context?.snmpCredentials ?? [];
-				const cred = creds.find((c) => c.id === network.snmp_credential_id);
-				if (cred) return `SNMP: ${cred.name}`;
-				return 'SNMP Enabled';
-			}
-			return 'No SNMP credential';
+			if (!network.snmp_credential_id) return 'No SNMP credential';
+			const creds = context?.snmpCredentials ?? [];
+			const cred = creds.find((c) => c.id === network.snmp_credential_id);
+			// When credential is found, tag handles display — avoid duplication
+			if (cred) return '';
+			return 'SNMP Enabled';
 		},
 		getIcon: () => entities.getIconComponent('Network'),
 		getIconColor: () => entities.getColorHelper('Network').icon,
@@ -34,7 +33,7 @@
 					}
 				];
 			}
-			return [{ label: 'SNMP', color: entities.getColorHelper('SnmpCredential').color }];
+			return [];
 		},
 		getCategory: () => null
 	};

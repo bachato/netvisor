@@ -15,6 +15,7 @@ import { GroupDisplay } from '$lib/shared/components/forms/selection/display/Gro
 import { NetworkDisplay } from '$lib/shared/components/forms/selection/display/NetworkDisplay.svelte';
 import { SnmpCredentialDisplay } from '$lib/shared/components/forms/selection/display/SnmpCredentialDisplay.svelte';
 import { TopologyDisplay } from '$lib/shared/components/forms/selection/display/TopologyDisplay.svelte';
+import { DaemonApiKeyDisplay } from '$lib/shared/components/forms/selection/display/DaemonApiKeyDisplay.svelte';
 
 export interface EntityUIConfig {
 	tabId: string;
@@ -55,7 +56,11 @@ export const entityUIConfig: Record<EntityDiscriminants, EntityUIConfig | null> 
 	},
 	Subnet: { tabId: 'subnets', modalName: 'subnet-editor', displayComponent: SubnetDisplay },
 	Daemon: { tabId: 'daemons', displayComponent: DaemonDisplay },
-	DaemonApiKey: { tabId: 'daemon-api-keys', modalName: 'daemon-api-key' },
+	DaemonApiKey: {
+		tabId: 'daemon-api-keys',
+		modalName: 'daemon-api-key',
+		displayComponent: DaemonApiKeyDisplay
+	},
 	Group: { tabId: 'groups', modalName: 'group-editor', displayComponent: GroupDisplay },
 	Network: { tabId: 'networks', modalName: 'network-editor', displayComponent: NetworkDisplay },
 	SnmpCredential: {

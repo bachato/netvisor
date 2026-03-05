@@ -32,13 +32,15 @@
 		form: { Field: any; setFieldValue: any };
 		currentServices?: Service[];
 		onServicesChange?: (services: Service[]) => void;
+		targetEntityId?: string | null;
 	}
 
 	let {
 		formData = $bindable(),
 		form,
 		currentServices = [],
-		onServicesChange = () => {}
+		onServicesChange = () => {},
+		targetEntityId = $bindable(null)
 	}: Props = $props();
 
 	// Confirmation dialog state
@@ -156,7 +158,7 @@
 
 <div class="flex min-h-0 flex-1 flex-col">
 	<div class="min-h-0 flex-1">
-		<ListConfigEditor bind:items={formData.ports}>
+		<ListConfigEditor bind:items={formData.ports} bind:targetEntityId>
 			<svelte:fragment slot="list" let:items let:onEdit let:highlightedIndex>
 				<ListManager
 					label={common_ports()}

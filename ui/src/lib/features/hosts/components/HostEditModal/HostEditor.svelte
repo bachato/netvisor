@@ -277,6 +277,13 @@
 	// Tab management
 	let activeTab = $state('details');
 	let furthestReached = $state(0);
+
+	// Sub-entity deep link: when navigating to a specific interface/port/ifEntry
+	let pendingSubEntityId = $state<string | null>(null);
+
+	function handleSubEntityNavigation(subEntityId: string) {
+		pendingSubEntityId = subEntityId;
+	}
 	// Get network for passing to SNMP form
 	let currentNetwork = $derived(networksData.find((n) => n.id === formData.network_id) ?? null);
 
@@ -429,6 +436,7 @@
 	entityId={host?.id}
 	onClose={handleClose}
 	onOpen={handleOpen}
+	onSubEntityNavigation={handleSubEntityNavigation}
 	size="full"
 	showCloseButton={true}
 	{tabs}
@@ -473,6 +481,7 @@
 						{isEditing}
 						currentServices={formData.services}
 						onServicesChange={(services) => (formData.services = services)}
+						bind:targetEntityId={pendingSubEntityId}
 					/>
 				</div>
 			{/if}
@@ -485,6 +494,7 @@
 						{form}
 						currentServices={formData.services}
 						onServicesChange={(services) => (formData.services = services)}
+						bind:targetEntityId={pendingSubEntityId}
 					/>
 				</div>
 			{/if}
@@ -517,7 +527,7 @@
 			<!-- IfEntries Tab -->
 			{#if activeTab === 'if-entries'}
 				<div class="flex h-full flex-col">
-					<IfEntriesForm ifEntries={hostIfEntries} />
+					<IfEntriesForm ifEntries={hostIfEntries} bind:targetEntityId={pendingSubEntityId} />
 				</div>
 			{/if}
 		</div>

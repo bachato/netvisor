@@ -31,6 +31,7 @@
 		currentServices?: Service[];
 		onServicesChange?: (services: Service[]) => void;
 		isEditing?: boolean;
+		targetEntityId?: string | null;
 	}
 
 	let {
@@ -38,7 +39,8 @@
 		form,
 		currentServices = [],
 		onServicesChange = () => {},
-		isEditing = false
+		isEditing = false,
+		targetEntityId = $bindable(null)
 	}: Props = $props();
 
 	// TanStack Query for subnets
@@ -182,7 +184,7 @@
 
 <div class="flex min-h-0 flex-1 flex-col">
 	<div class="min-h-0 flex-1">
-		<ListConfigEditor items={formData.interfaces} onReorder={handleReorder}>
+		<ListConfigEditor items={formData.interfaces} onReorder={handleReorder} bind:targetEntityId>
 			<svelte:fragment
 				slot="list"
 				let:items

@@ -15,14 +15,15 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { X } from 'lucide-svelte';
+	import { ArrowLeft, X } from 'lucide-svelte';
 	import { common_closeModal, common_modal } from '$lib/paraglide/messages';
 	import { get } from 'svelte/store';
 	import {
 		modalState,
 		openModal,
 		closeModal,
-		setModalTab
+		setModalTab,
+		goBack
 	} from '$lib/shared/stores/modal-registry';
 
 	let {
@@ -41,6 +42,7 @@
 		activeTab = $bindable(''),
 		onTabChange = null,
 		onOpen = null,
+		onSubEntityNavigation = null,
 		instanceKey = $bindable(0),
 		name = undefined,
 		entityId = undefined,
@@ -63,6 +65,7 @@
 		activeTab?: string;
 		onTabChange?: ((tabId: string) => void) | null;
 		onOpen?: (() => void) | null;
+		onSubEntityNavigation?: ((subEntityId: string) => void) | null;
 		instanceKey?: number;
 		name?: string;
 		entityId?: string;
@@ -70,6 +73,10 @@
 		children?: Snippet<[number]>;
 		footer?: Snippet;
 	} = $props();
+
+	let showBackButton = $derived(
+		name != null && $modalState.name === name && $modalState.returnUrl != null
+	);
 
 	// Track previous open state to detect open transition
 	let wasOpen = $state(false);
@@ -117,7 +124,12 @@
 			}
 
 			if (name) {
+				// Read subEntityId before openModal clears it
+				const subEntityId = state.name === name ? state.subEntityId : null;
 				openModal(name, { id: entityId, tab: activeTab || undefined });
+				if (subEntityId && onSubEntityNavigation) {
+					onSubEntityNavigation(subEntityId);
+				}
 			}
 		} else if (!isOpen && wasOpen && name && get(modalState).name === name) {
 			// Modal closed (by parent, form submit, etc.) — clear URL params
@@ -212,6 +224,16 @@
 							</h2>
 						{:else}
 							<div class="flex items-center gap-3">
+								{#if showBackButton}
+									<button
+										type="button"
+										onclick={() => goBack()}
+										class="btn-icon"
+										aria-label="Go back"
+									>
+										<ArrowLeft class="h-5 w-5" />
+									</button>
+								{/if}
 								{@render headerIcon?.()}
 								<h2 id="modal-title" class="text-primary text-xl font-semibold">
 									{title}

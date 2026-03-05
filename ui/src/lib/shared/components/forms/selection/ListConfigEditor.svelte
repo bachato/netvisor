@@ -14,6 +14,9 @@
 	export let onChange: (item: TItem, index: number) => void = () => {};
 	export let onItemSelect: (item: TItem, index: number) => void = () => {};
 
+	// Deep-link target: when set, auto-selects the matching item
+	export let targetEntityId: string | null = null;
+
 	// Internal state
 	let selectedIndex: number = -1;
 
@@ -34,6 +37,16 @@
 			selectedIndex = -1;
 		}
 		previousItemsLength = items.length; // eslint-disable-line no-useless-assignment
+	}
+
+	// Auto-select deep-linked sub-entity when targetEntityId is set
+	$: if (targetEntityId && items.length > 0) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const index = items.findIndex((item: any) => item.id === targetEntityId);
+		if (index >= 0) {
+			selectedIndex = index;
+			targetEntityId = null;
+		}
 	}
 
 	// Event handlers

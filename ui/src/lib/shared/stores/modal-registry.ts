@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { EntityDiscriminants } from '$lib/api/entities';
 import { entityUIConfig } from '$lib/shared/entity-ui-config';
 
@@ -6,20 +6,33 @@ export interface ModalState {
 	name: string | null;
 	id: string | null;
 	tab: string | null;
+	subEntityId: string | null;
+	returnUrl: string | null;
 }
 
-const EMPTY_STATE: ModalState = { name: null, id: null, tab: null };
+const EMPTY_STATE: ModalState = {
+	name: null,
+	id: null,
+	tab: null,
+	subEntityId: null,
+	returnUrl: null
+};
 
 export const modalState = writable<ModalState>({ ...EMPTY_STATE });
 
 /**
  * Open a modal by name. Updates the store and URL search params.
  */
-export function openModal(name: string, opts?: { id?: string; tab?: string }): void {
+export function openModal(
+	name: string,
+	opts?: { id?: string; tab?: string; subEntityId?: string; returnUrl?: string }
+): void {
 	const state: ModalState = {
 		name,
 		id: opts?.id ?? null,
-		tab: opts?.tab ?? null
+		tab: opts?.tab ?? null,
+		subEntityId: opts?.subEntityId ?? null,
+		returnUrl: opts?.returnUrl ?? null
 	};
 	modalState.set(state);
 	syncToUrl(state);
@@ -31,6 +44,19 @@ export function openModal(name: string, opts?: { id?: string; tab?: string }): v
 export function closeModal(): void {
 	modalState.set({ ...EMPTY_STATE });
 	syncToUrl(EMPTY_STATE);
+}
+
+/**
+ * Navigate back to the URL captured before navigateToEntity was called.
+ * Closes the current modal and restores the previous URL (which may re-open a previous modal).
+ */
+export function goBack(): void {
+	const current = get(modalState);
+	if (!current.returnUrl) return;
+	const url = current.returnUrl;
+	modalState.set({ ...EMPTY_STATE });
+	window.location.href = url;
+	initModalFromUrl();
 }
 
 /**
@@ -55,7 +81,9 @@ export function initModalFromUrl(): void {
 	const state: ModalState = {
 		name,
 		id: params.get('id'),
-		tab: params.get('tab')
+		tab: params.get('tab'),
+		subEntityId: params.get('subEntityId'),
+		returnUrl: null
 	};
 	modalState.set(state);
 }
@@ -72,15 +100,23 @@ export function navigateToEntity(
 	const config = entityUIConfig[entityType];
 	if (!config) return;
 
+	// Snapshot current URL before navigation so the back button can return here
+	const returnUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+
 	if (config.modalName) {
 		window.location.hash = config.tabId;
-		openModal(config.modalName, { id: entityId });
+		openModal(config.modalName, { id: entityId, returnUrl });
 	} else if (config.parentType && config.parentIdField && data) {
 		const parentConfig = entityUIConfig[config.parentType];
 		const parentId = data[config.parentIdField] as string | undefined;
 		if (parentConfig?.modalName && parentId) {
 			window.location.hash = parentConfig.tabId;
-			openModal(parentConfig.modalName, { id: parentId, tab: config.modalTab });
+			openModal(parentConfig.modalName, {
+				id: parentId,
+				tab: config.modalTab,
+				subEntityId: entityId,
+				returnUrl
+			});
 		}
 	} else {
 		// Entity has no modal — just navigate to its tab
@@ -132,10 +168,16 @@ function syncToUrl(state: ModalState): void {
 		} else {
 			url.searchParams.delete('tab');
 		}
+		if (state.subEntityId) {
+			url.searchParams.set('subEntityId', state.subEntityId);
+		} else {
+			url.searchParams.delete('subEntityId');
+		}
 	} else {
 		url.searchParams.delete('modal');
 		url.searchParams.delete('id');
 		url.searchParams.delete('tab');
+		url.searchParams.delete('subEntityId');
 	}
 	window.history.replaceState({}, '', url.toString());
 }
