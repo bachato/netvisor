@@ -110,13 +110,17 @@
 
 	let recommendedPlan = $derived(contextHighlightPlan ?? baseRecommendedPlan);
 
-	let initialPlanFilter = $derived<'all' | 'commercial' | 'personal'>(
-		contextHighlightPlan
-			? 'all'
-			: useCase === 'company' || useCase === 'msp'
-				? 'commercial'
-				: 'personal'
-	);
+	let initialPlanFilter = $derived.by<'all' | 'commercial' | 'personal'>(() => {
+		if (contextHighlightPlan) {
+			const meta = billingPlanHelpers.getMetadata(contextHighlightPlan);
+			return meta?.is_commercial ? 'commercial' : 'personal';
+		}
+		if (organization?.plan?.type && organization.plan.type !== 'Free') {
+			const meta = billingPlanHelpers.getMetadata(organization.plan.type);
+			return meta?.is_commercial ? 'commercial' : 'personal';
+		}
+		return useCase === 'company' || useCase === 'msp' ? 'commercial' : 'personal';
+	});
 
 	async function handlePlanSelect(plan: BillingPlan) {
 		try {

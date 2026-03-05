@@ -71,7 +71,7 @@
 	let planFilter = $state<PlanFilter>(initialPlanFilter);
 
 	type BillingPeriod = 'monthly' | 'yearly';
-	let billingPeriod = $state<BillingPeriod>('monthly');
+	let billingPeriod = $state<BillingPeriod>('yearly');
 
 	// Filter out personal option when forceCommercial is true
 	let planTypeOptions = $derived(
@@ -837,6 +837,8 @@
 	[data-tooltip] {
 		position: relative;
 		cursor: help;
+		text-decoration: underline dotted;
+		text-underline-offset: 2px;
 	}
 
 	[data-tooltip]:hover::after {
