@@ -15,14 +15,15 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { X } from 'lucide-svelte';
+	import { ArrowLeft, X } from 'lucide-svelte';
 	import { common_closeModal, common_modal } from '$lib/paraglide/messages';
 	import { get } from 'svelte/store';
 	import {
 		modalState,
 		openModal,
 		closeModal,
-		setModalTab
+		setModalTab,
+		goBack
 	} from '$lib/shared/stores/modal-registry';
 
 	let {
@@ -72,6 +73,10 @@
 		children?: Snippet<[number]>;
 		footer?: Snippet;
 	} = $props();
+
+	let showBackButton = $derived(
+		name != null && $modalState.name === name && $modalState.returnUrl != null
+	);
 
 	// Track previous open state to detect open transition
 	let wasOpen = $state(false);
@@ -219,6 +224,16 @@
 							</h2>
 						{:else}
 							<div class="flex items-center gap-3">
+								{#if showBackButton}
+									<button
+										type="button"
+										onclick={() => goBack()}
+										class="btn-icon"
+										aria-label="Go back"
+									>
+										<ArrowLeft class="h-5 w-5" />
+									</button>
+								{/if}
 								{@render headerIcon?.()}
 								<h2 id="modal-title" class="text-primary text-xl font-semibold">
 									{title}
