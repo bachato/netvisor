@@ -645,7 +645,7 @@
 
 	<!-- Full Comparison Grid (expandable) -->
 	{#if showFullComparison}
-		<div class="card mx-4 overflow-auto p-0 lg:mx-10">
+		<div class="card mx-4 overflow-auto p-0 pt-16 lg:mx-10">
 			<!-- Plan Name Headers -->
 			<div
 				class="comparison-row comparison-header-row"
@@ -838,6 +838,7 @@
 		position: relative;
 		cursor: help;
 		text-decoration: underline dotted;
+		text-decoration-color: rgb(107 114 128);
 		text-underline-offset: 2px;
 	}
 
