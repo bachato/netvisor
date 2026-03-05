@@ -1223,7 +1223,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
     }
 
     async fn get_hostname_for_ip(&self, ip: IpAddr) -> Result<Option<String>, Error> {
-        match timeout(Duration::from_millis(800), async {
+        match timeout(Duration::from_millis(2000), async {
             tokio::task::spawn_blocking(move || dns_lookup::lookup_addr(&ip)).await?
         })
         .await
