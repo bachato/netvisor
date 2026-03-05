@@ -1,6 +1,6 @@
 import { get, writable } from 'svelte/store';
 import type { EntityDiscriminants } from '$lib/api/entities';
-import { entityUIConfig } from '$lib/shared/entity-ui-config';
+import { entityUIConfig, TAB_LABELS } from '$lib/shared/entity-ui-config';
 
 export interface ModalState {
 	name: string | null;
@@ -124,10 +124,7 @@ export function navigateToEntity(
 
 	// Snapshot current URL and modal title before navigation so the back button can return here
 	const returnUrl = typeof window !== 'undefined' ? window.location.href : undefined;
-	const returnTitle =
-		typeof document !== 'undefined'
-			? (document.getElementById('modal-title')?.textContent ?? undefined)
-			: undefined;
+	const returnTitle = captureReturnTitle();
 
 	if (config.modalName) {
 		window.location.hash = config.tabId;
@@ -178,6 +175,24 @@ export function resolveModalDeepLink<T extends { id: string }>(
 	}
 
 	return undefined;
+}
+
+/**
+ * Capture a human-readable label for the current view (modal title or tab name).
+ * Used by navigateToEntity so the back button can say "Back to Hosts" or "Back to Host foo".
+ */
+function captureReturnTitle(): string | undefined {
+	if (typeof document === 'undefined') return undefined;
+
+	// If a modal is open, use its title (strip "Edit " prefix)
+	const modalTitle = document.getElementById('modal-title')?.textContent?.trim();
+	if (modalTitle) {
+		return modalTitle.replace(/^Edit /, '') || undefined;
+	}
+
+	// No modal — derive label from current hash (tab ID)
+	const tabId = window.location.hash.replace('#', '');
+	return TAB_LABELS[tabId] || undefined;
 }
 
 function syncToUrl(state: ModalState): void {

@@ -6,7 +6,7 @@
 	import SupportModal from '$lib/features/support/SupportModal.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { modalState, openModal } from '$lib/shared/stores/modal-registry';
-	import { entityUIConfig } from '$lib/shared/entity-ui-config';
+	import { entityUIConfig, TAB_LABELS } from '$lib/shared/entity-ui-config';
 	import type { EntityDiscriminants } from '$lib/api/entities';
 	import type { IconComponent } from '$lib/shared/utils/types';
 	import {
@@ -130,7 +130,7 @@
 	const baseNavConfig: NavConfig = [
 		{
 			id: 'home',
-			label: 'Home',
+			label: TAB_LABELS['home'],
 			icon: Home as IconComponent,
 			component: HomeTab
 		},
@@ -140,21 +140,21 @@
 			items: [
 				{
 					id: entityUIConfig.Topology!.tabId,
-					label: 'Topology',
+					label: TAB_LABELS[entityUIConfig.Topology!.tabId],
 					icon: entities.getIconComponent('Topology'),
 					entityType: 'Topology',
 					component: TopologyTab
 				},
 				{
 					id: entityUIConfig.Group!.tabId,
-					label: 'Groups',
+					label: TAB_LABELS[entityUIConfig.Group!.tabId],
 					icon: entities.getIconComponent('Group'),
 					entityType: 'Group',
 					component: GroupTab
 				},
 				{
 					id: entityUIConfig.Share!.tabId,
-					label: 'Sharing',
+					label: TAB_LABELS[entityUIConfig.Share!.tabId],
 					icon: entities.getIconComponent('Share'),
 					entityType: 'Share',
 					component: ShareTab
@@ -167,33 +167,33 @@
 			items: [
 				{
 					id: 'discovery-sessions',
-					label: 'Sessions',
+					label: TAB_LABELS['discovery-sessions'],
 					icon: entities.getIconComponent('Discovery'),
 					component: DiscoverySessionTab
 				},
 				{
 					id: entityUIConfig.Discovery!.tabId,
-					label: 'Scheduled',
+					label: TAB_LABELS[entityUIConfig.Discovery!.tabId],
 					icon: Calendar as IconComponent,
 					entityType: 'Discovery',
 					component: DiscoveryScheduledTab
 				},
 				{
 					id: 'discovery-history',
-					label: 'History',
+					label: TAB_LABELS['discovery-history'],
 					icon: History as IconComponent,
 					component: DiscoveryHistoryTab
 				},
 				{
 					id: entityUIConfig.Daemon!.tabId,
-					label: 'Daemons',
+					label: TAB_LABELS[entityUIConfig.Daemon!.tabId],
 					icon: entities.getIconComponent('Daemon'),
 					entityType: 'Daemon',
 					component: DaemonTab,
 					children: [
 						{
 							id: entityUIConfig.DaemonApiKey!.tabId,
-							label: 'Api Keys',
+							label: TAB_LABELS[entityUIConfig.DaemonApiKey!.tabId],
 							icon: entities.getIconComponent('DaemonApiKey'),
 							entityType: 'DaemonApiKey',
 							component: ApiKeyTab,
@@ -209,28 +209,28 @@
 			items: [
 				{
 					id: entityUIConfig.Network!.tabId,
-					label: 'Networks',
+					label: TAB_LABELS[entityUIConfig.Network!.tabId],
 					icon: entities.getIconComponent('Network'),
 					entityType: 'Network',
 					component: NetworksTab
 				},
 				{
 					id: entityUIConfig.Subnet!.tabId,
-					label: 'Subnets',
+					label: TAB_LABELS[entityUIConfig.Subnet!.tabId],
 					icon: entities.getIconComponent('Subnet'),
 					entityType: 'Subnet',
 					component: SubnetTab
 				},
 				{
 					id: entityUIConfig.Host!.tabId,
-					label: 'Hosts',
+					label: TAB_LABELS[entityUIConfig.Host!.tabId],
 					icon: entities.getIconComponent('Host'),
 					entityType: 'Host',
 					component: HostTab
 				},
 				{
 					id: entityUIConfig.Service!.tabId,
-					label: 'Services',
+					label: TAB_LABELS[entityUIConfig.Service!.tabId],
 					icon: entities.getIconComponent('Service'),
 					entityType: 'Service',
 					component: ServiceTab
@@ -243,14 +243,14 @@
 			items: [
 				{
 					id: entityUIConfig.Tag!.tabId,
-					label: 'Tags',
+					label: TAB_LABELS[entityUIConfig.Tag!.tabId],
 					icon: entities.getIconComponent('Tag'),
 					entityType: 'Tag',
 					component: TagTab
 				},
 				{
 					id: entityUIConfig.User!.tabId,
-					label: 'Users',
+					label: TAB_LABELS[entityUIConfig.User!.tabId],
 					icon: entities.getIconComponent('User'),
 					entityType: 'User',
 					component: UserTab,
@@ -258,7 +258,7 @@
 				},
 				{
 					id: entityUIConfig.UserApiKey!.tabId,
-					label: 'API Keys',
+					label: TAB_LABELS[entityUIConfig.UserApiKey!.tabId],
 					icon: entities.getIconComponent('UserApiKey'),
 					entityType: 'UserApiKey',
 					component: UserApiKeyTab,
@@ -266,7 +266,7 @@
 				},
 				{
 					id: entityUIConfig.SnmpCredential!.tabId,
-					label: 'SNMP Credentials',
+					label: TAB_LABELS[entityUIConfig.SnmpCredential!.tabId],
 					icon: entities.getIconComponent('SnmpCredential'),
 					entityType: 'SnmpCredential',
 					component: SnmpCredentialsTab

@@ -30,6 +30,27 @@ export interface EntityUIConfig {
 	modalTab?: string;
 }
 
+/** Tab ID → display label. Single source of truth for sidebar and back navigation. */
+export const TAB_LABELS: Record<string, string> = {
+	home: 'Home',
+	topology: 'Topology',
+	groups: 'Groups',
+	shares: 'Sharing',
+	'discovery-sessions': 'Sessions',
+	'discovery-scheduled': 'Scheduled',
+	'discovery-history': 'History',
+	daemons: 'Daemons',
+	'daemon-api-keys': 'API Keys',
+	networks: 'Networks',
+	subnets: 'Subnets',
+	hosts: 'Hosts',
+	services: 'Services',
+	tags: 'Tags',
+	users: 'Users',
+	'api-keys': 'API Keys',
+	'snmp-credentials': 'SNMP Credentials'
+};
+
 export const entityUIConfig: Record<EntityDiscriminants, EntityUIConfig | null> = {
 	Host: { tabId: 'hosts', modalName: 'host-editor', displayComponent: HostDisplay },
 	Service: { tabId: 'services', modalName: 'service-editor', displayComponent: ServiceDisplay },

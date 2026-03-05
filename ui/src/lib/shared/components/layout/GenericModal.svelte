@@ -149,10 +149,10 @@
 		wasOpen = isOpen;
 	});
 
-	// Close this modal when another named modal opens (modal-on-modal)
+	// Close this modal when the registry no longer points to it (modal-on-modal or goBack)
 	$effect(() => {
 		const state = $modalState;
-		if (isOpen && name && state.name && state.name !== name) {
+		if (isOpen && name && state.name !== name) {
 			onClose?.();
 		}
 	});
