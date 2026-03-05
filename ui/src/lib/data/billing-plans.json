@@ -39,10 +39,10 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"incremental_features": [
+				"daemon_poll",
 				"remove_created_with",
 				"share_views",
 				"scheduled_discovery",
-				"daemon_poll",
 				"email_support"
 			],
 			"is_commercial": false,
@@ -100,7 +100,11 @@
 			"included_seats": 1,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			"incremental_features": ["api_access", "embeds"],
+=======
+			"incremental_features": ["embeds", "api_access"],
+>>>>>>> feat/billing-plan-ux
 			"is_commercial": false,
 			"network_cents": null,
 			"previous_tier": "Starter",
@@ -118,6 +122,7 @@
 		}
 	},
 	{
+<<<<<<< HEAD
 		"id": "Team",
 		"name": "Team",
 		"description": "Collaborate on infrastructure documentation with your team",
@@ -174,6 +179,8 @@
 		}
 	},
 	{
+=======
+>>>>>>> feat/billing-plan-ux
 		"id": "Business",
 		"name": "Business",
 		"description": "Manage multi-site and multi-customer documentation with advanced features",
@@ -213,6 +220,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			"incremental_features": ["audit_logs", "webhooks"],
 =======
 			"incremental_features": ["webhooks", "audit_logs"],
@@ -228,6 +236,12 @@
 			"is_commercial": true,
 			"network_cents": 500,
 >>>>>>> feat/actionable-entity-tags
+=======
+			"incremental_features": ["onboarding_call", "audit_logs", "webhooks", "priority_support"],
+			"is_commercial": true,
+			"network_cents": 500,
+			"previous_tier": "Pro",
+>>>>>>> feat/billing-plan-ux
 			"rate": "Month",
 			"seat_cents": 800,
 			"trial_days": 14
@@ -274,9 +288,9 @@
 <<<<<<< HEAD
 			"incremental_features": [
 				"email_support",
-				"scheduled_discovery",
-				"daemon_poll",
 				"remove_created_with",
+				"daemon_poll",
+				"scheduled_discovery",
 				"share_views"
 			],
 			"is_commercial": false,
@@ -335,9 +349,13 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			"incremental_features": ["embeds", "api_access"],
 =======
 			"incremental_features": ["api_access", "embeds"],
+>>>>>>> feat/billing-plan-ux
+=======
+			"incremental_features": ["embeds", "api_access"],
 >>>>>>> feat/billing-plan-ux
 			"is_commercial": false,
 			"network_cents": null,
@@ -356,6 +374,7 @@
 		}
 	},
 	{
+<<<<<<< HEAD
 		"id": "Team",
 		"name": "Team",
 		"description": "Collaborate on infrastructure documentation with your team",
@@ -412,6 +431,8 @@
 		}
 	},
 	{
+=======
+>>>>>>> feat/billing-plan-ux
 		"id": "Business",
 		"name": "Business",
 		"description": "Manage multi-site and multi-customer documentation with advanced features",
@@ -450,6 +471,7 @@
 			"included_seats": 25,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			"incremental_features": ["audit_logs", "webhooks"],
 			"is_commercial": true,
 			"network_cents": 4800,
@@ -458,6 +480,12 @@
 			"is_commercial": true,
 			"network_cents": 4800,
 >>>>>>> audit/onboarding-cro
+=======
+			"incremental_features": ["webhooks", "onboarding_call", "audit_logs", "priority_support"],
+			"is_commercial": true,
+			"network_cents": 4800,
+			"previous_tier": "Pro",
+>>>>>>> feat/billing-plan-ux
 			"rate": "Year",
 			"seat_cents": 7200,
 =======
@@ -512,11 +540,11 @@
 			"incremental_features": [],
 =======
 			"incremental_features": [
+				"docker_integration",
 				"real_time_updates",
 				"community_support",
-				"snmp_integration",
 				"service_definitions",
-				"docker_integration"
+				"snmp_integration"
 			],
 >>>>>>> feat/billing-plan-ux
 			"is_commercial": false,
@@ -575,10 +603,10 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"incremental_features": [
+				"whitelabeling",
 				"custom_sso",
-				"live_chat_support",
 				"managed_deployment",
-				"whitelabeling"
+				"live_chat_support"
 			],
 			"is_commercial": true,
 			"network_cents": null,
@@ -636,10 +664,10 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"incremental_features": [
+				"daemon_poll",
 				"share_views",
 				"embeds",
 				"api_access",
-				"daemon_poll",
 				"scheduled_discovery"
 			],
 			"is_commercial": false,
@@ -698,18 +726,18 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"incremental_features": [
-				"webhooks",
 				"embeds",
-				"email_support",
-				"daemon_poll",
-				"priority_support",
-				"scheduled_discovery",
-				"remove_created_with",
-				"api_access",
-				"share_views",
-				"custom_sso",
+				"audit_logs",
 				"onboarding_call",
-				"audit_logs"
+				"email_support",
+				"custom_sso",
+				"daemon_poll",
+				"remove_created_with",
+				"scheduled_discovery",
+				"share_views",
+				"priority_support",
+				"webhooks",
+				"api_access"
 			],
 			"is_commercial": true,
 			"network_cents": null,
@@ -767,10 +795,10 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"incremental_features": [
-				"live_chat_support",
 				"whitelabeling",
-				"custom_sso",
-				"managed_deployment"
+				"managed_deployment",
+				"live_chat_support",
+				"custom_sso"
 			],
 			"is_commercial": true,
 			"network_cents": null,
@@ -828,11 +856,11 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"incremental_features": [
-				"api_access",
-				"share_views",
 				"embeds",
+				"api_access",
+				"daemon_poll",
 				"scheduled_discovery",
-				"daemon_poll"
+				"share_views"
 			],
 			"is_commercial": false,
 			"network_cents": null,
@@ -890,18 +918,18 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"incremental_features": [
-				"audit_logs",
-				"api_access",
 				"daemon_poll",
-				"remove_created_with",
 				"email_support",
+				"webhooks",
+				"share_views",
+				"api_access",
+				"remove_created_with",
+				"custom_sso",
+				"priority_support",
+				"scheduled_discovery",
 				"embeds",
 				"onboarding_call",
-				"priority_support",
-				"share_views",
-				"scheduled_discovery",
-				"webhooks",
-				"custom_sso"
+				"audit_logs"
 			],
 			"is_commercial": true,
 			"network_cents": null,
@@ -962,11 +990,11 @@
 			"incremental_features": [],
 =======
 			"incremental_features": [
-				"snmp_integration",
 				"docker_integration",
 				"real_time_updates",
+				"community_support",
 				"service_definitions",
-				"community_support"
+				"snmp_integration"
 			],
 >>>>>>> feat/billing-plan-ux
 			"is_commercial": false,

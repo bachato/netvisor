@@ -73,7 +73,13 @@ impl Feature {
         use super::base::{BillingPlan};
 
         let feature_id = self.id();
-        let cloud_tiers: Vec<BillingPlanDiscriminants> = BillingPlan::iter().filter_map(|p| if p.hosting() == Hosting::Cloud { Some(p.discriminant())} else {None}).collect();
+        let cloud_tiers = [
+            BillingPlanDiscriminants::Free,
+            BillingPlanDiscriminants::Starter,
+            BillingPlanDiscriminants::Pro,
+            BillingPlanDiscriminants::Business,
+            BillingPlanDiscriminants::Enterprise,
+        ];
 
         for disc in &cloud_tiers {
             if let Some(plan) = BillingPlan::default_for_discriminant(*disc)

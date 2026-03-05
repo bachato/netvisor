@@ -30,6 +30,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"is_coming_soon": false,
+<<<<<<< HEAD
 			"minimum_plan": "Team"
 =======
 			"is_coming_soon": false
@@ -37,6 +38,9 @@
 =======
 			"is_coming_soon": false
 >>>>>>> feat/actionable-entity-tags
+=======
+			"minimum_plan": "Business"
+>>>>>>> feat/billing-plan-ux
 		}
 	},
 	{
@@ -250,6 +254,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 			"is_coming_soon": false,
+<<<<<<< HEAD
 			"minimum_plan": "Team"
 =======
 			"is_coming_soon": false
@@ -257,6 +262,9 @@
 =======
 			"is_coming_soon": false
 >>>>>>> feat/actionable-entity-tags
+=======
+			"minimum_plan": "Business"
+>>>>>>> feat/billing-plan-ux
 		}
 	},
 	{

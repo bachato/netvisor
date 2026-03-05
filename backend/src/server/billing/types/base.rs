@@ -270,9 +270,16 @@ impl BillingPlan {
     /// Returns the next-lower-tier cloud plan, if this is a cloud plan.
     /// Returns None for Free (no previous) and self-hosted/demo plans.
     pub fn previous_tier(&self) -> Option<BillingPlanDiscriminants> {
-        let cloud_plans: Vec<BillingPlanDiscriminants> = BillingPlan::iter().filter_map(|p| if p.hosting() == Hosting::Cloud {Some(p.discriminant())} else {None}).collect();
-        
-        let idx = cloud_plans.iter().position(|d| *d == self.discriminant())?;
+        let cloud_tiers: Vec<BillingPlanDiscriminants> = vec![
+            BillingPlanDiscriminants::Free,
+            BillingPlanDiscriminants::Starter,
+            BillingPlanDiscriminants::Pro,
+            BillingPlanDiscriminants::Business,
+            BillingPlanDiscriminants::Enterprise,
+        ];
+
+        let my_disc = self.discriminant();
+        let idx = cloud_tiers.iter().position(|d| *d == my_disc)?;
         if idx == 0 {
             return None;
         }
