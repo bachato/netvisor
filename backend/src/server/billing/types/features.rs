@@ -26,17 +26,16 @@ pub enum Feature {
     LiveChatSupport,
     PrioritySupport,
     Embeds,
-    // Core features
     NetworkDiscovery,
     TopologyVisualization,
     DiagramExport,
     HostInventory,
     ScheduledDiscovery,
     DaemonPoll,
-    // Core features
     ServiceDefinitions,
-    DockerIntegration,
-    SnmpIntegration,
+    DockerDiscovery,
+    SnmpDiscovery,
+    CsvExport,
 }
 
 impl HasId for Feature {
@@ -63,8 +62,9 @@ impl HasId for Feature {
             Feature::ScheduledDiscovery => "scheduled_discovery",
             Feature::DaemonPoll => "daemon_poll",
             Feature::ServiceDefinitions => "service_definitions",
-            Feature::DockerIntegration => "docker_integration",
-            Feature::SnmpIntegration => "snmp_integration",
+            Feature::DockerDiscovery => "docker_integration",
+            Feature::SnmpDiscovery => "snmp_integration",
+            Feature::CsvExport => "csv_export",
         }
     }
 }
@@ -112,14 +112,18 @@ impl TypeMetadataProvider for Feature {
     fn category(&self) -> &'static str {
         match self {
             Feature::NetworkDiscovery
-            | Feature::TopologyVisualization
-            | Feature::DiagramExport
-            | Feature::HostInventory
-            | Feature::ScheduledDiscovery
+            | Feature::DockerDiscovery
+            | Feature::SnmpDiscovery
             | Feature::DaemonPoll
             | Feature::ServiceDefinitions
-            | Feature::DockerIntegration
-            | Feature::SnmpIntegration => "Core",
+            | Feature::ScheduledDiscovery => "Discovery",
+
+            Feature::TopologyVisualization
+            | Feature::DiagramExport
+            | Feature::HostInventory
+            | Feature::Embeds
+            | Feature::ShareViews
+            | Feature::RemoveCreatedWith => "Visualization",
 
             Feature::CommunitySupport
             | Feature::EmailSupport
@@ -132,9 +136,7 @@ impl TypeMetadataProvider for Feature {
             | Feature::Whitelabeling
             | Feature::AuditLogs => "Enterprise",
 
-            Feature::Webhooks | Feature::ApiAccess => "Integrations",
-
-            Feature::Embeds | Feature::ShareViews | Feature::RemoveCreatedWith => "Sharing",
+            Feature::CsvExport | Feature::Webhooks | Feature::ApiAccess => "Integrations",
         }
     }
 
@@ -161,8 +163,9 @@ impl TypeMetadataProvider for Feature {
             Feature::ScheduledDiscovery => "Scheduled Discovery",
             Feature::DaemonPoll => "No Port Forwarding",
             Feature::ServiceDefinitions => "200+ Service Definitions",
-            Feature::DockerIntegration => "Docker Integration",
-            Feature::SnmpIntegration => "SNMP Integration",
+            Feature::DockerDiscovery => "Docker Discovery",
+            Feature::SnmpDiscovery => "SNMP Discovery",
+            Feature::CsvExport => "CSV Export",
         }
     }
 
@@ -213,9 +216,12 @@ impl TypeMetadataProvider for Feature {
             Feature::ServiceDefinitions => {
                 "Auto-detect databases, containers, web servers, and more"
             }
-            Feature::DockerIntegration => "Automatic discovery of containerized services",
-            Feature::SnmpIntegration => {
+            Feature::DockerDiscovery => "Automatic discovery of containerized services",
+            Feature::SnmpDiscovery => {
                 "Query network devices for hardware, port, and performance details via SNMP"
+            }
+            Feature::CsvExport => {
+                "Download host, service, and network data as CSV for use in spreadsheets and other tools"
             }
         }
     }

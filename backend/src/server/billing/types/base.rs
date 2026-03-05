@@ -194,6 +194,7 @@ pub struct BillingPlanFeatures {
     pub service_definitions: bool,
     pub docker_integration: bool,
     pub snmp_integration: bool,
+    pub csv_export: bool,
 }
 
 impl BillingPlan {
@@ -444,6 +445,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Free { .. } => BillingPlanFeatures {
                 share_views: false,
@@ -469,6 +471,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Starter { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -494,6 +497,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Pro { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -519,6 +523,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Team { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -544,6 +549,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Business { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -569,6 +575,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Enterprise { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -594,6 +601,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Demo { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -619,6 +627,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::CommercialSelfHosted { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -644,6 +653,7 @@ impl BillingPlan {
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
+                csv_export: true,
             },
         }
     }
@@ -678,6 +688,7 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             service_definitions,
             docker_integration,
             snmp_integration,
+            csv_export,
         } = self;
 
         if share_views {
@@ -765,11 +776,15 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
         }
 
         if docker_integration {
-            features.push(Feature::DockerIntegration)
+            features.push(Feature::DockerDiscovery)
         }
 
         if snmp_integration {
-            features.push(Feature::SnmpIntegration)
+            features.push(Feature::SnmpDiscovery)
+        }
+
+        if csv_export {
+            features.push(Feature::CsvExport)
         }
 
         features

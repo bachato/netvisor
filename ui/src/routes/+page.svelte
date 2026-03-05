@@ -40,7 +40,19 @@
 	let needsPlanSelection = $derived(
 		billingEnabled && organization != null && !isBillingPlanActive(organization)
 	);
-	let showBillingModal = $derived(needsPlanSelection || $modalState.name === 'billing-plan');
+	// Suppresses needsPlanSelection after plan selection, before the org query reactively updates.
+	// Without this, closeModal() clears $modalState but needsPlanSelection keeps showBillingModal true.
+	let planJustActivated = $state(false);
+	let showBillingModal = $derived(
+		(needsPlanSelection && !planJustActivated) || $modalState.name === 'billing-plan'
+	);
+
+	// Reset planJustActivated once org data confirms the plan is active
+	$effect(() => {
+		if (planJustActivated && organization && isBillingPlanActive(organization)) {
+			planJustActivated = false;
+		}
+	});
 
 	let activeTab = $state(initialHash || 'home');
 	let appInitialized = $state(false);
@@ -167,6 +179,7 @@
 		name="billing-plan"
 		dismissible={!needsPlanSelection}
 		onClose={() => {
+			planJustActivated = true;
 			closeModal();
 			if ($reopenSettingsAfterBilling) {
 				reopenSettingsAfterBilling.set(false);

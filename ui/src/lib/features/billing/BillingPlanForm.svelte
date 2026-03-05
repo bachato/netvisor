@@ -331,7 +331,7 @@
 	}
 
 	function sortFeaturesByCategory(features: string[]): string[] {
-		const order = ['Core', 'Sharing', 'Integrations', 'Support', 'Enterprise'];
+		const order = ['Discovery', 'Visualization', 'Integrations', 'Support', 'Enterprise'];
 		return [...features].sort((a, b) => {
 			// Coming-soon features sort to end
 			const soonA = isComingSoon(a) ? 1 : 0;
