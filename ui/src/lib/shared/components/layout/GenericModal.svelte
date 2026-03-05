@@ -124,9 +124,10 @@
 			}
 
 			if (name) {
-				// Read subEntityId before openModal clears it
+				// Read subEntityId and returnUrl before openModal clears them
 				const subEntityId = state.name === name ? state.subEntityId : null;
-				openModal(name, { id: entityId, tab: activeTab || undefined });
+				const returnUrl = state.name === name ? (state.returnUrl ?? undefined) : undefined;
+				openModal(name, { id: entityId, tab: activeTab || undefined, returnUrl });
 				if (subEntityId && onSubEntityNavigation) {
 					onSubEntityNavigation(subEntityId);
 				}

@@ -14,8 +14,7 @@
 			if (!network.snmp_credential_id) return 'No SNMP credential';
 			const creds = context?.snmpCredentials ?? [];
 			const cred = creds.find((c) => c.id === network.snmp_credential_id);
-			// When credential is found, tag handles display — avoid duplication
-			if (cred) return '';
+			if (cred) return `SNMP: ${cred.name}`;
 			return 'SNMP Enabled';
 		},
 		getIcon: () => entities.getIconComponent('Network'),
