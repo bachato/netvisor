@@ -18,6 +18,7 @@
 		discovery_discoveryType,
 		discovery_finishedAt,
 		discovery_noActiveSessions,
+		discovery_noActiveSessionsSubtitle,
 		discovery_notStarted,
 		discovery_startedAt,
 		discovery_unknownDaemon
@@ -100,7 +101,10 @@
 		<Loading />
 	{:else if sessionsList.length === 0}
 		<!-- Empty state -->
-		<EmptyState title={discovery_noActiveSessions()} subtitle="" />
+		<EmptyState
+			title={discovery_noActiveSessions()}
+			subtitle={discovery_noActiveSessionsSubtitle()}
+		/>
 	{:else}
 		<DataControls
 			items={sessionsList}

@@ -6,7 +6,10 @@
 	import { Loader2, X } from 'lucide-svelte';
 	import type { DiscoveryUpdatePayload } from '../../types/api';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
+	import { useHostsQuery } from '$lib/features/hosts/queries';
+	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
+	import { entityRef } from '$lib/shared/components/data/types';
 
 	// Props
 	let {
@@ -21,9 +24,13 @@
 
 	// Queries
 	const daemonsQuery = useDaemonsQuery();
+	const hostsQuery = useHostsQuery({ limit: 0 });
+	const subnetsQuery = useSubnetsQuery();
 
 	// Derived data
 	let daemonsData = $derived(daemonsQuery.data ?? []);
+	let hostsData = $derived(hostsQuery.data?.items ?? []);
+	let subnetsData = $derived(subnetsQuery.data ?? []);
 	let daemon = $derived(daemonsData.find((d) => d.id == session.daemon_id));
 	let isCancelling = $derived(
 		session?.session_id ? $cancellingSessions.get(session.session_id) === true : false
@@ -43,7 +50,20 @@
 		fields: [
 			{
 				label: 'Daemon',
-				value: daemon ? daemon.name : 'Unknown Daemon'
+				value: (() => {
+					if (!daemon) return 'Unknown Daemon';
+					return [
+						{
+							id: daemon.id,
+							label: daemon.name,
+							color: entities.getColorHelper('Daemon').color,
+							entityRef: entityRef('Daemon', daemon.id, daemon, {
+								hosts: hostsData,
+								subnets: subnetsData
+							})
+						}
+					];
+				})()
 			},
 			{
 				label: 'Started',

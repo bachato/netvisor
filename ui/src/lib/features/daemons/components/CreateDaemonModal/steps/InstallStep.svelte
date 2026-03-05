@@ -3,6 +3,7 @@
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
+	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import type { DaemonOS } from '../../../utils';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import OsSelector from '../../OsSelector.svelte';
@@ -32,9 +33,20 @@
 		runCommand: string;
 		dockerCompose: string;
 		hasErrors: boolean;
+		isFirstDaemon?: boolean;
 	}
 
-	let { selectedOS, onOsSelect, runCommand, dockerCompose, hasErrors }: Props = $props();
+	let {
+		selectedOS,
+		onOsSelect,
+		runCommand,
+		dockerCompose,
+		hasErrors,
+		isFirstDaemon = false
+	}: Props = $props();
+
+	const configQuery = useConfigQuery();
+	let hasEmail = $derived(configQuery.data?.has_email_service ?? false);
 
 	type LinuxMethod = 'binary' | 'docker';
 	let linuxMethod: LinuxMethod = $state('binary');
@@ -53,6 +65,13 @@
 <div class="space-y-4">
 	<!-- Hint about Advanced tab -->
 	<InlineInfo title="" body={daemons_advancedHint()} dismissableKey="daemon-wizard-advanced-hint" />
+
+	{#if hasEmail && isFirstDaemon}
+		<InlineInfo
+			title="We'll email you when your daemon connects and your network map is ready."
+			dismissableKey="daemon-install-email-hint"
+		/>
+	{/if}
 
 	{#if hasErrors}
 		<InlineWarning title={daemons_fixValidationErrors()} body={daemons_fixValidationErrorsBody()} />

@@ -9,6 +9,7 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import {
 		common_consolidate,
 		common_containers,
@@ -127,48 +128,44 @@
 					label: common_services(),
 					value: hostServices
 						.filter((sv) => !containerIds.includes(sv.id))
-						.map((sv) => {
-							return {
-								id: sv.id,
-								label: sv.name,
-								color: entities.getColorHelper('Service').color
-							};
-						}),
+						.map((sv) => ({
+							id: sv.id,
+							label: sv.name,
+							color: entities.getColorHelper('Service').color,
+							entityRef: entityRef('Service', sv.id, sv, { interfaceId: null })
+						})),
 					emptyText: hosts_noServicesAssigned()
 				},
 				{
 					label: common_containers(),
 					value: containers
-						.map((c) => {
-							return {
-								id: c.id,
-								label: c.name,
-								color: concepts.getColorHelper('Virtualization').color
-							};
-						})
+						.map((c) => ({
+							id: c.id,
+							label: c.name,
+							color: concepts.getColorHelper('Virtualization').color,
+							entityRef: entityRef('Service', c.id, c, { interfaceId: null })
+						}))
 						.sort((a) => (containerIds.includes(a.id) ? 1 : -1)),
 					emptyText: hosts_noContainers()
 				},
 				{
 					label: common_interfaces(),
-					value: hostInterfaces.map((i) => {
-						return {
-							id: i.id,
-							label: formatInterface(i, isContainerSubnetFn),
-							color: entities.getColorHelper('Interface').color
-						};
-					}),
+					value: hostInterfaces.map((i) => ({
+						id: i.id,
+						label: formatInterface(i, isContainerSubnetFn),
+						color: entities.getColorHelper('Interface').color,
+						entityRef: entityRef('Interface', i.id, i, { subnets: subnetsData })
+					})),
 					emptyText: hosts_noInterfaces()
 				},
 				{
 					label: common_ifEntries(),
-					value: hostIfEntries.map((i) => {
-						return {
-							id: i.id,
-							label: i.if_descr && i.if_descr.length > 0 ? i.if_descr : 'Unnamed ifEntry',
-							color: entities.getColorHelper('IfEntry').color
-						};
-					})
+					value: hostIfEntries.map((i) => ({
+						id: i.id,
+						label: i.if_descr && i.if_descr.length > 0 ? i.if_descr : 'Unnamed ifEntry',
+						color: entities.getColorHelper('IfEntry').color,
+						entityRef: entityRef('IfEntry', i.id, i)
+					}))
 				},
 				{ label: common_tags(), snippet: tagsSnippet }
 			],

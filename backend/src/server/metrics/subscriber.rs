@@ -24,6 +24,7 @@ impl EventSubscriber for MetricsService {
                 Event::Billing(_) => "billing".to_string(),
                 Event::Onboarding(_) => "onboarding".to_string(),
                 Event::Discovery(_) => "discovery".to_string(),
+                Event::Analytics(_) => "analytics".to_string(),
             };
 
             metrics::counter!(

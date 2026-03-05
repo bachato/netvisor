@@ -85,6 +85,7 @@
 		if (!org?.plan?.type) return true;
 		return billingPlans.getMetadata(org.plan.type).features.daemon_poll;
 	});
+	let isFirstDaemon = $derived(!org?.onboarding?.includes('FirstDaemonRegistered'));
 
 	// Network selection
 	let selectedNetworkId = $state('');
@@ -336,6 +337,7 @@
 					{runCommand}
 					{dockerCompose}
 					{hasErrors}
+					{isFirstDaemon}
 				/>
 			{/if}
 

@@ -1,6 +1,7 @@
 <script lang="ts" module>
 	import { isContainerSubnet, getSubnetById } from '$lib/features/subnets/queries';
 	import type { Subnet } from '$lib/features/subnets/types/base';
+	import { entityRef } from '$lib/shared/components/data/types';
 
 	// Context for interface display - needs access to subnets for lookups
 	export interface InterfaceDisplayContext {
@@ -9,15 +10,17 @@
 
 	export const InterfaceDisplay: EntityDisplayComponent<Interface, InterfaceDisplayContext> = {
 		getId: (iface: Interface) => iface.id,
-		getLabel: (iface: Interface) => (iface.name ? iface.name : 'Unnamed Interface'),
-		getDescription: (iface: Interface) => {
-			const parts = [iface.ip_address];
-			if (iface.mac_address) {
-				parts.push(iface.mac_address);
-			} else {
-				parts.push('No MAC');
+		getLabel: (iface: Interface, context?: InterfaceDisplayContext) => {
+			// Align with formatInterface(): "name: IP" or just "IP" (or name-only for containers)
+			const subnetsData = context?.subnets ?? [];
+			const subnet = getSubnetById(subnetsData, iface.subnet_id);
+			if (subnet && isContainerSubnet(subnet)) {
+				return iface.name ?? iface.ip_address;
 			}
-			return parts.join(' • ');
+			return (iface.name ? iface.name + ': ' : '') + iface.ip_address;
+		},
+		getDescription: (iface: Interface) => {
+			return iface.mac_address ?? 'No MAC';
 		},
 		getIcon: () => entities.getIconComponent('Interface'),
 		getIconColor: () => entities.getColorHelper('Interface').icon,
@@ -28,7 +31,8 @@
 			if (subnet && !isContainerSubnet(subnet)) {
 				tags.push({
 					label: subnet.cidr,
-					color: entities.getColorHelper('Subnet').color
+					color: entities.getColorHelper('Subnet').color,
+					entityRef: entityRef('Subnet', subnet.id, subnet)
 				});
 			}
 			return tags;

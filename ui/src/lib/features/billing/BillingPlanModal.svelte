@@ -15,6 +15,9 @@
 	import PlanInquiryModal from '$lib/features/billing/PlanInquiryModal.svelte';
 	import { storeEventForAfterRedirect } from '$lib/shared/utils/analytics';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
+	import { upgradeContext } from '$lib/features/billing/stores';
+	import { useQueryClient } from '@tanstack/svelte-query';
+	import { queryKeys } from '$lib/api/query-client';
 
 	let {
 		isOpen = false,
@@ -78,19 +81,46 @@
 	);
 
 	// Mutations
+	const queryClient = useQueryClient();
 	const checkoutMutation = useCheckoutMutation();
 
 	// Determine initial filter based on use case from onboarding
 	let useCase = $derived($onboardingStore.useCase);
 
-	let initialPlanFilter = $derived<'commercial' | 'personal'>(
-		useCase === 'company' || useCase === 'msp' ? 'commercial' : 'personal'
-	);
-
 	// Recommended plan based on use case
-	let recommendedPlan = $derived<string | null>(
+	let baseRecommendedPlan = $derived<string | null>(
 		useCase === 'company' ? 'Team' : useCase === 'msp' ? 'Business' : null
 	);
+
+	// Feature-contextual plan highlighting from upgrade CTAs
+	let upgradeCtx = $derived($upgradeContext);
+
+	let contextHighlightPlan = $derived.by(() => {
+		if (!upgradeCtx) return null;
+		const feat = upgradeCtx.feature;
+		// Feature-based: look up minimum_plan from feature metadata
+		const featureMeta = featureHelpers.getMetadata(feat);
+		if (featureMeta?.minimum_plan) return featureMeta.minimum_plan;
+		// Resource-based: find first plan with addon pricing
+		if (feat === 'seats') return plansData.find((p) => p.seat_cents)?.type ?? null;
+		if (feat === 'networks') return plansData.find((p) => p.network_cents)?.type ?? null;
+		if (feat === 'hosts') return plansData.find((p) => p.host_cents)?.type ?? null;
+		return null;
+	});
+
+	let recommendedPlan = $derived(contextHighlightPlan ?? baseRecommendedPlan);
+
+	let initialPlanFilter = $derived.by<'all' | 'commercial' | 'personal'>(() => {
+		if (contextHighlightPlan) {
+			const meta = billingPlanHelpers.getMetadata(contextHighlightPlan);
+			return meta?.is_commercial ? 'commercial' : 'personal';
+		}
+		if (organization?.plan?.type && organization.plan.type !== 'Free') {
+			const meta = billingPlanHelpers.getMetadata(organization.plan.type);
+			return meta?.is_commercial ? 'commercial' : 'personal';
+		}
+		return useCase === 'company' || useCase === 'msp' ? 'commercial' : 'personal';
+	});
 
 	async function handlePlanSelect(plan: BillingPlan) {
 		try {
@@ -107,7 +137,10 @@
 				// First-time checkout: redirect to Stripe
 				window.location.href = result;
 			} else {
-				// Plan change: already done via subscription update, close modal
+				// Plan activated directly (Free or trial) — refetch org so needsPlanSelection
+				// becomes false before we close the modal, preventing reactive reopening.
+				await queryClient.invalidateQueries({ queryKey: queryKeys.organizations.current() });
+				upgradeContext.set(null);
 				onClose();
 			}
 		} catch {
@@ -129,7 +162,12 @@
 	{isOpen}
 	title=""
 	{name}
-	onClose={dismissible ? onClose : null}
+	onClose={dismissible
+		? () => {
+				upgradeContext.set(null);
+				onClose();
+			}
+		: null}
 	size="full"
 	preventCloseOnClickOutside={!dismissible}
 	showCloseButton={false}
@@ -155,7 +193,7 @@
 		planType={selectedPlan?.type ?? ''}
 		userEmail={currentUser?.email ?? ''}
 		orgName={organization?.name ?? ''}
-		companySize={$onboardingStore.companySize ?? ''}
+		companySize=""
 		onClose={() => (inquiryModalOpen = false)}
 	/>
 </GenericModal>

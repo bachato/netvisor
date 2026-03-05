@@ -6,6 +6,9 @@
 	import SupportModal from '$lib/features/support/SupportModal.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { modalState, openModal } from '$lib/shared/stores/modal-registry';
+	import { entityUIConfig, TAB_LABELS } from '$lib/shared/entity-ui-config';
+	import type { EntityDiscriminants } from '$lib/api/entities';
+	import { upgradeContext } from '$lib/features/billing/stores';
 	import type { IconComponent } from '$lib/shared/utils/types';
 	import {
 		Menu,
@@ -103,6 +106,7 @@
 		id: string;
 		label: string;
 		icon: IconComponent;
+		entityType?: EntityDiscriminants; // Links this nav item to an entity type via entityUIConfig
 		component?: Component;
 		position?: 'main' | 'bottom';
 		onClick?: () => void | Promise<void>;
@@ -127,7 +131,7 @@
 	const baseNavConfig: NavConfig = [
 		{
 			id: 'home',
-			label: 'Home',
+			label: TAB_LABELS['home'],
 			icon: Home as IconComponent,
 			component: HomeTab
 		},
@@ -136,21 +140,24 @@
 			label: 'Visualize',
 			items: [
 				{
-					id: 'topology',
-					label: 'Topology',
+					id: entityUIConfig.Topology!.tabId,
+					label: TAB_LABELS[entityUIConfig.Topology!.tabId],
 					icon: entities.getIconComponent('Topology'),
+					entityType: 'Topology',
 					component: TopologyTab
 				},
 				{
-					id: 'groups',
-					label: 'Groups',
+					id: entityUIConfig.Group!.tabId,
+					label: TAB_LABELS[entityUIConfig.Group!.tabId],
 					icon: entities.getIconComponent('Group'),
+					entityType: 'Group',
 					component: GroupTab
 				},
 				{
-					id: 'shares',
-					label: 'Sharing',
+					id: entityUIConfig.Share!.tabId,
+					label: TAB_LABELS[entityUIConfig.Share!.tabId],
 					icon: entities.getIconComponent('Share'),
+					entityType: 'Share',
 					component: ShareTab
 				}
 			]
@@ -161,32 +168,35 @@
 			items: [
 				{
 					id: 'discovery-sessions',
-					label: 'Sessions',
+					label: TAB_LABELS['discovery-sessions'],
 					icon: entities.getIconComponent('Discovery'),
 					component: DiscoverySessionTab
 				},
 				{
-					id: 'discovery-scheduled',
-					label: 'Scheduled',
+					id: entityUIConfig.Discovery!.tabId,
+					label: TAB_LABELS[entityUIConfig.Discovery!.tabId],
 					icon: Calendar as IconComponent,
+					entityType: 'Discovery',
 					component: DiscoveryScheduledTab
 				},
 				{
 					id: 'discovery-history',
-					label: 'History',
+					label: TAB_LABELS['discovery-history'],
 					icon: History as IconComponent,
 					component: DiscoveryHistoryTab
 				},
 				{
-					id: 'daemons',
-					label: 'Daemons',
+					id: entityUIConfig.Daemon!.tabId,
+					label: TAB_LABELS[entityUIConfig.Daemon!.tabId],
 					icon: entities.getIconComponent('Daemon'),
+					entityType: 'Daemon',
 					component: DaemonTab,
 					children: [
 						{
-							id: 'daemon-api-keys',
-							label: 'Api Keys',
+							id: entityUIConfig.DaemonApiKey!.tabId,
+							label: TAB_LABELS[entityUIConfig.DaemonApiKey!.tabId],
 							icon: entities.getIconComponent('DaemonApiKey'),
+							entityType: 'DaemonApiKey',
 							component: ApiKeyTab,
 							requiredPermissions: ['Member', 'Admin', 'Owner']
 						}
@@ -199,27 +209,31 @@
 			label: 'Assets',
 			items: [
 				{
-					id: 'networks',
-					label: 'Networks',
+					id: entityUIConfig.Network!.tabId,
+					label: TAB_LABELS[entityUIConfig.Network!.tabId],
 					icon: entities.getIconComponent('Network'),
+					entityType: 'Network',
 					component: NetworksTab
 				},
 				{
-					id: 'subnets',
-					label: 'Subnets',
+					id: entityUIConfig.Subnet!.tabId,
+					label: TAB_LABELS[entityUIConfig.Subnet!.tabId],
 					icon: entities.getIconComponent('Subnet'),
+					entityType: 'Subnet',
 					component: SubnetTab
 				},
 				{
-					id: 'hosts',
-					label: 'Hosts',
+					id: entityUIConfig.Host!.tabId,
+					label: TAB_LABELS[entityUIConfig.Host!.tabId],
 					icon: entities.getIconComponent('Host'),
+					entityType: 'Host',
 					component: HostTab
 				},
 				{
-					id: 'services',
-					label: 'Services',
+					id: entityUIConfig.Service!.tabId,
+					label: TAB_LABELS[entityUIConfig.Service!.tabId],
 					icon: entities.getIconComponent('Service'),
+					entityType: 'Service',
 					component: ServiceTab
 				}
 			]
@@ -229,29 +243,33 @@
 			label: 'Platform',
 			items: [
 				{
-					id: 'tags',
-					label: 'Tags',
+					id: entityUIConfig.Tag!.tabId,
+					label: TAB_LABELS[entityUIConfig.Tag!.tabId],
 					icon: entities.getIconComponent('Tag'),
+					entityType: 'Tag',
 					component: TagTab
 				},
 				{
-					id: 'users',
-					label: 'Users',
+					id: entityUIConfig.User!.tabId,
+					label: TAB_LABELS[entityUIConfig.User!.tabId],
 					icon: entities.getIconComponent('User'),
+					entityType: 'User',
 					component: UserTab,
 					requiredPermissions: ['Admin', 'Owner']
 				},
 				{
-					id: 'api-keys',
-					label: 'API Keys',
+					id: entityUIConfig.UserApiKey!.tabId,
+					label: TAB_LABELS[entityUIConfig.UserApiKey!.tabId],
 					icon: entities.getIconComponent('UserApiKey'),
+					entityType: 'UserApiKey',
 					component: UserApiKeyTab,
 					requiredPermissions: ['Member', 'Admin', 'Owner']
 				},
 				{
-					id: 'snmp-credentials',
-					label: 'SNMP Credentials',
+					id: entityUIConfig.SnmpCredential!.tabId,
+					label: TAB_LABELS[entityUIConfig.SnmpCredential!.tabId],
 					icon: entities.getIconComponent('SnmpCredential'),
+					entityType: 'SnmpCredential',
 					component: SnmpCredentialsTab
 				}
 			]
@@ -619,6 +637,7 @@
 						title={collapsed ? 'Upgrade' : ''}
 						onclick={() => {
 							trackEvent('upgrade_button_clicked', { feature: 'sidebar' });
+							upgradeContext.set(null);
 							openModal('billing-plan');
 						}}
 					>

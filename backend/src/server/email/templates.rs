@@ -422,6 +422,45 @@ pub const PLAN_LIMIT_REACHED_BODY: &str = r#"                    <!-- Main Conte
                     </tr>
 "#;
 
+pub const PAYMENT_FAILED_TITLE: &str = "Payment Failed - Action Required";
+
+pub const PAYMENT_FAILED_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Payment Failed</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your recent payment for Scanopy failed. Please update your payment method to avoid service interruption.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">If you believe this is an error, check with your bank or try a different payment method.</p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td align="center" style="padding: 0 40px 30px 40px;">
+                            <a href="{base_url}/?modal=settings&tab=billing" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Update Payment Method</a>
+                        </td>
+                    </tr>
+"#;
+
+pub const PAYMENT_ACTION_REQUIRED_TITLE: &str = "Payment Requires Authentication";
+
+pub const PAYMENT_ACTION_REQUIRED_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Payment Requires Authentication</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your recent payment for Scanopy requires additional authentication (3D Secure). Please complete the verification to continue your subscription.</p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td align="center" style="padding: 0 40px 30px 40px;">
+                            <a href="{base_url}/?modal=settings&tab=billing" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Complete Verification</a>
+                        </td>
+                    </tr>
+"#;
+
 // ============================================================================
 // Account Change Notification Templates
 // ============================================================================

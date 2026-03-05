@@ -40,6 +40,7 @@ impl EventSubscriber for EmailService {
             ]),
             auth_operations: Some(vec![]),
             discovery_phases: Some(vec![]),
+            analytics_operations: Some(vec![]),
             network_ids: None,
         }
     }

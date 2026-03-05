@@ -12,6 +12,8 @@
 	import type { DockerDiscovery, NetworkDiscovery, SelfReportDiscovery } from '../../types/api';
 	import type { Discovery } from '../../types/base';
 	import type { Daemon } from '$lib/features/daemons/types/base';
+	import type { Host } from '$lib/features/hosts/types/base';
+	import type { Subnet } from '$lib/features/subnets/types/base';
 	import { discoveryTypes } from '$lib/shared/stores/metadata';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { ArrowUpCircle } from 'lucide-svelte';
@@ -37,6 +39,8 @@
 		form: { Field: any; state: { values: { name: string } } };
 		formData: Discovery;
 		daemons?: Daemon[];
+		hosts?: Host[];
+		subnets?: Subnet[];
 		readOnly?: boolean;
 		hasScheduledDiscovery?: boolean;
 		daemonHostId?: string | null;
@@ -47,6 +51,8 @@
 		form,
 		formData = $bindable(),
 		daemons = [],
+		hosts = [],
+		subnets = [],
 		readOnly = false,
 		hasScheduledDiscovery = true,
 		daemonHostId = null,
@@ -150,6 +156,7 @@
 			selectedValue={formData.daemon_id}
 			options={daemons}
 			displayComponent={DaemonDisplay}
+			getOptionContext={() => ({ hosts, subnets })}
 			onSelect={(value) => {
 				const selectedDaemon = daemons.find((d) => d.id === value);
 				if (selectedDaemon) {

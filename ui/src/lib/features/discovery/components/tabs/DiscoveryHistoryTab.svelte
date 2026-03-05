@@ -29,6 +29,7 @@
 		discovery_finishedAt,
 		discovery_historyTitle,
 		discovery_noHistorySessions,
+		discovery_noHistorySessionsSubtitle,
 		discovery_startedAt
 	} from '$lib/paraglide/messages';
 
@@ -53,6 +54,9 @@
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let isLoading = $derived(
 		discoveriesQuery.isPending || daemonsQuery.isPending || hostsQuery.isPending
+	);
+	let historicalDiscoveries = $derived(
+		discoveriesData.filter((d) => d.run_type.type === 'Historical')
 	);
 
 	let showDiscoveryModal = $state(false);
@@ -160,12 +164,15 @@
 
 	{#if isLoading}
 		<Loading />
-	{:else if discoveriesData.length === 0}
+	{:else if historicalDiscoveries.length === 0}
 		<!-- Empty state -->
-		<EmptyState title={discovery_noHistorySessions()} subtitle="" />
+		<EmptyState
+			title={discovery_noHistorySessions()}
+			subtitle={discovery_noHistorySessionsSubtitle()}
+		/>
 	{:else}
 		<DataControls
-			items={discoveriesData.filter((d) => d.run_type.type == 'Historical')}
+			items={historicalDiscoveries}
 			{fields}
 			onBulkDelete={isReadOnly ? undefined : handleBulkDelete}
 			storageKey="scanopy-discovery-historical-table-state"

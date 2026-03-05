@@ -241,11 +241,9 @@ generate-messages:
 	@echo "Messages generated successfully"
 
 generate-fixtures:
-	@echo "Generating billing and feature fixtures from backend..."
+	@echo "Generating metadata fixtures from backend..."
 	cd backend && cargo test generate_billing_fixtures -- --nocapture
-	mv ui/src/lib/data/billing-plans-next.json ui/src/lib/data/billing-plans.json
-	mv ui/src/lib/data/features-next.json ui/src/lib/data/features.json
-	@echo "✅ Generated ui/src/lib/data/billing-plans.json and features.json"
+	@echo "✅ Generated all metadata fixtures in ui/src/lib/data/"
 
 stripe-webhook:
 	stripe listen --forward-to http://localhost:60072/api/billing/webhooks

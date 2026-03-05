@@ -334,8 +334,6 @@ impl AuthService {
                 .map(|s| s.org_name.clone())
                 .unwrap_or_else(|| "My Organization".to_string());
             let use_case = pending_setup.as_ref().and_then(|s| s.use_case.clone());
-            let company_size = pending_setup.as_ref().and_then(|s| s.company_size.clone());
-            let job_title = pending_setup.as_ref().and_then(|s| s.job_title.clone());
             let referral_source = pending_setup
                 .as_ref()
                 .and_then(|s| s.referral_source.clone());
@@ -352,12 +350,6 @@ impl AuthService {
             });
             if let Some(use_case) = use_case {
                 metadata["use_case"] = serde_json::json!(use_case);
-            }
-            if let Some(company_size) = company_size {
-                metadata["company_size"] = serde_json::json!(company_size);
-            }
-            if let Some(job_title) = job_title {
-                metadata["job_title"] = serde_json::json!(job_title);
             }
             if let Some(referral_source) = referral_source {
                 metadata["referral_source"] = serde_json::json!(referral_source);

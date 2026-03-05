@@ -45,9 +45,11 @@ use axum_extra::{TypedHeader, extract::Host, headers::UserAgent};
 use bad_email::is_email_unwanted;
 use chrono::{DateTime, Utc};
 use secrecy::SecretString;
+use serde::Deserialize;
 use std::{net::IpAddr, sync::Arc};
 use tower_sessions::Session;
 use url::Url;
+use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
@@ -84,6 +86,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(setup))
         .routes(routes!(onboarding_step))
         .routes(routes!(onboarding_state))
+        .routes(routes!(update_profile))
         .route("/oidc/providers", get(list_oidc_providers))
         .route("/oidc/{slug}/authorize", get(oidc_authorize))
         .route("/oidc/{slug}/callback", get(oidc_callback))
@@ -338,8 +341,6 @@ async fn setup(
         org_name: request.organization_name.trim().to_string(),
         network,
         use_case: None,              // Will be merged from onboarding step
-        company_size: None,          // Will be merged from onboarding step
-        job_title: None,             // Will be merged from onboarding step
         referral_source: None,       // Will be merged from onboarding step
         referral_source_other: None, // Will be merged from onboarding step
     };
@@ -364,17 +365,6 @@ pub async fn extract_pending_setup(session: &Session) -> Option<PendingSetup> {
         setup.use_case = Some(use_case);
     }
 
-    // Merge in qualification fields from onboarding step
-    if setup.job_title.is_none()
-        && let Ok(Some(job_title)) = session.get::<String>("onboarding_job_title").await
-    {
-        setup.job_title = Some(job_title);
-    }
-    if setup.company_size.is_none()
-        && let Ok(Some(company_size)) = session.get::<String>("onboarding_company_size").await
-    {
-        setup.company_size = Some(company_size);
-    }
     if setup.referral_source.is_none()
         && let Ok(Some(referral_source)) = session.get::<String>("onboarding_referral_source").await
     {
@@ -396,8 +386,6 @@ pub async fn clear_pending_setup(session: &Session) {
     let _ = session.remove::<PendingSetup>("pending_setup").await;
     let _ = session.remove::<String>("onboarding_step").await;
     let _ = session.remove::<String>("onboarding_use_case").await;
-    let _ = session.remove::<String>("onboarding_job_title").await;
-    let _ = session.remove::<String>("onboarding_company_size").await;
     let _ = session.remove::<String>("onboarding_referral_source").await;
     let _ = session
         .remove::<String>("onboarding_referral_source_other")
@@ -433,23 +421,6 @@ async fn onboarding_step(
             })?;
     }
 
-    // Save qualification fields if provided
-    if let Some(job_title) = request.job_title {
-        session
-            .insert("onboarding_job_title", job_title)
-            .await
-            .map_err(|e| {
-                ApiError::internal_error(&format!("Failed to save onboarding job_title: {}", e))
-            })?;
-    }
-    if let Some(company_size) = request.company_size {
-        session
-            .insert("onboarding_company_size", company_size)
-            .await
-            .map_err(|e| {
-                ApiError::internal_error(&format!("Failed to save onboarding company_size: {}", e))
-            })?;
-    }
     if let Some(referral_source) = request.referral_source {
         session
             .insert("onboarding_referral_source", referral_source)
@@ -521,6 +492,54 @@ async fn onboarding_state(
         network,
         network_id,
     })))
+}
+
+/// Request to update user profile (deferred marketing fields)
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ProfileUpdateRequest {
+    pub job_title: Option<String>,
+    pub company_size: Option<String>,
+}
+
+/// Update user profile with deferred marketing fields
+#[utoipa::path(
+    post,
+    path = "/profile",
+    tags = ["auth", "internal"],
+    request_body = ProfileUpdateRequest,
+    responses(
+        (status = 200, description = "Profile updated", body = EmptyApiResponse),
+    )
+)]
+async fn update_profile(
+    auth: Authorized<IsUser>,
+    State(state): State<Arc<AppState>>,
+    Json(request): Json<ProfileUpdateRequest>,
+) -> ApiResult<Json<ApiResponse<()>>> {
+    let org_id = auth.organization_id().unwrap();
+    let authentication: AuthenticatedEntity = auth.into();
+
+    // Publish ProfileCompleted milestone (auto-persisted by OrganizationSubscriber)
+    state
+        .services
+        .event_bus
+        .publish_onboarding(OnboardingEvent {
+            id: Uuid::new_v4(),
+            organization_id: org_id,
+            operation: OnboardingOperation::ProfileCompleted,
+            timestamp: Utc::now(),
+            authentication,
+            metadata: serde_json::json!({
+                "job_title": request.job_title,
+                "company_size": request.company_size,
+            }),
+        })
+        .await
+        .map_err(|e| {
+            ApiError::internal_error(&format!("Failed to publish profile event: {}", e))
+        })?;
+
+    Ok(Json(ApiResponse::success(())))
 }
 
 /// Apply pending setup after user registration: create network, topology, seed data

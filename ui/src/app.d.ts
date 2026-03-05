@@ -42,6 +42,25 @@ declare module '$lib/data/billing-plans.json' {
 	export default data;
 }
 
+declare module '$lib/data/billing-plans-all.json' {
+	interface BillingPlanAllFixture {
+		id: string;
+		name: string;
+		description: string;
+		category: string | null;
+		icon: string;
+		color: string;
+		metadata: {
+			features: Record<string, boolean>;
+			is_commercial: boolean;
+			hosting: string;
+			custom_price: string | null;
+		};
+	}
+	const data: BillingPlanAllFixture[];
+	export default data;
+}
+
 declare module '$lib/data/features.json' {
 	interface FeatureFixture {
 		id: string;

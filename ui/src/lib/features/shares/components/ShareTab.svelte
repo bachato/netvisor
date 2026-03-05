@@ -15,7 +15,7 @@
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState } from '$lib/shared/stores/modal-registry';
+	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import {
 		common_confirmDeleteName,
 		common_created,
@@ -59,19 +59,18 @@
 	let showEditor = $state(false);
 	let editingShare = $state<Share | null>(null);
 
-	// Deep-link: open share editor from URL
+	// Deep-link: open share editor from URL (handles both fresh open and entity switch)
 	$effect(() => {
-		if ($modalState.name === 'share-editor' && !showEditor) {
-			if ($modalState.id) {
-				const share = sharesData.find((e) => e.id === $modalState.id);
-				if (share) {
-					editingShare = share;
-					showEditor = true;
-				}
-			} else {
-				editingShare = null;
-				showEditor = true;
-			}
+		const result = resolveModalDeepLink(
+			$modalState,
+			'share-editor',
+			sharesData,
+			showEditor,
+			editingShare?.id
+		);
+		if (result !== undefined) {
+			editingShare = result;
+			showEditor = true;
 		}
 	});
 
@@ -163,7 +162,7 @@
 			title="Sharing Not Available"
 			subtitle="Upgrade to share live network diagrams with others."
 		>
-			<UpgradeButton feature="sharing" />
+			<UpgradeButton feature="share_views" />
 		</EmptyState>
 	{:else if isLoading}
 		<Loading />

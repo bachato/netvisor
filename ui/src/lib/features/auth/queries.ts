@@ -264,6 +264,32 @@ export function useResendVerificationMutation() {
 	}));
 }
 
+/**
+ * Mutation hook for updating user profile (job title, company size)
+ */
+export function useProfileUpdateMutation() {
+	const queryClient = useQueryClient();
+
+	return createMutation(() => ({
+		mutationFn: async (request: { job_title?: string; company_size?: string }) => {
+			const { data } = await apiClient.POST('/api/auth/profile', {
+				body: request
+			});
+			if (!data?.success) {
+				throw new Error(data?.error || 'Failed to update profile');
+			}
+			return true;
+		},
+		onSuccess: () => {
+			// Refetch organization to pick up ProfileCompleted milestone
+			queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
+		},
+		onError: (error: Error) => {
+			pushError(error.message);
+		}
+	}));
+}
+
 // Helper to check if user is authenticated from query data
 export function isAuthenticated(user: User | null | undefined): boolean {
 	return user !== null && user !== undefined;
@@ -277,8 +303,6 @@ export function useOnboardingStepMutation() {
 		mutationFn: async (params: {
 			step: string;
 			use_case?: string;
-			job_title?: string;
-			company_size?: string;
 			referral_source?: string;
 			referral_source_other?: string;
 		}) => {
@@ -286,8 +310,6 @@ export function useOnboardingStepMutation() {
 				body: {
 					step: params.step,
 					use_case: params.use_case,
-					job_title: params.job_title,
-					company_size: params.company_size,
 					referral_source: params.referral_source,
 					referral_source_other: params.referral_source_other
 				}

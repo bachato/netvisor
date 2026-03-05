@@ -244,7 +244,7 @@ impl PartialSchema for Box<dyn ServiceDefinition> {
             ObjectBuilder::new()
                 .schema_type(SchemaType::new(Type::String))
                 .description(Some(
-                    "Service definition ID - references metadata from /api/metadata",
+                    "Service definition ID - references metadata from static fixtures",
                 ))
                 .build(),
         ))

@@ -3901,7 +3901,8 @@ fn generate_shares(
 
     if let (Some(network), Some(topology)) = (hq_network, hq_topology) {
         shares.push(Share {
-            id: Uuid::new_v4(),
+            // Fixed UUID for demo share — used in onboarding embed
+            id: Uuid::parse_str("a1b2c3d4-e5f6-7890-abcd-ef1234567890").unwrap(),
             created_at: now,
             updated_at: now,
             base: ShareBase {
@@ -3914,8 +3915,8 @@ fn generate_shares(
                 password_hash: None,
                 allowed_domains: None,
                 options: ShareOptions {
-                    show_inspect_panel: true,
-                    show_zoom_controls: true,
+                    show_inspect_panel: false,
+                    show_zoom_controls: false,
                     show_export_button: false,
                 },
             },

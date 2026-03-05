@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
 	import { entities } from '$lib/shared/stores/metadata';
-	import { toColor } from '$lib/shared/utils/styling';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import type { Host } from '$lib/features/hosts/types/base';
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import type { Daemon } from '$lib/features/daemons/types/base';
@@ -17,30 +17,23 @@
 		getDescription: (daemon: Daemon, context: DaemonDisplayContext) => {
 			const hostsData = context?.hosts ?? [];
 			const host = hostsData.find((h) => h.id === daemon.host_id);
-			return host?.description || '';
+			const parts = [];
+			if (host?.description) parts.push(host.description);
+			parts.push('Docker Socket ' + (daemon.capabilities.has_docker_socket ? '✓' : '✘'));
+			return parts.join(' · ');
 		},
 		getIcon: () => entities.getIconComponent('Daemon'),
 		getIconColor: () => entities.getColorHelper('Daemon').icon,
 		getTags: (daemon: Daemon, context: DaemonDisplayContext) => {
 			const subnetsData = context?.subnets ?? [];
-			let tags = [];
-
-			tags.push({
-				label: 'Docker Socket ' + (daemon.capabilities.has_docker_socket ? '✓' : '✘'),
-				color: toColor(daemon.capabilities.has_docker_socket ? 'blue' : 'gray')
-			});
-
-			daemon.capabilities.interfaced_subnet_ids.forEach((s) => {
-				let subnet = subnetsData.find((sub) => sub.id === s);
-				if (subnet) {
-					tags.push({
-						label: subnet.cidr,
-						color: entities.getColorHelper('Subnet').color
-					});
-				}
-			});
-
-			return tags;
+			return daemon.capabilities.interfaced_subnet_ids
+				.map((id) => subnetsData.find((sub) => sub.id === id))
+				.filter(Boolean)
+				.map((subnet) => ({
+					label: subnet!.cidr,
+					color: entities.getColorHelper('Subnet').color,
+					entityRef: entityRef('Subnet', subnet!.id, subnet!)
+				}));
 		},
 		getCategory: () => null
 	};

@@ -37,7 +37,7 @@
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState } from '$lib/shared/stores/modal-registry';
+	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 
 	// Queries
 	const currentUserQuery = useCurrentUserQuery();
@@ -70,23 +70,25 @@
 	let isAtNetworkLimit = $derived(
 		networkLimit !== null && networksData.length >= networkLimit && !canBuyMore
 	);
+	let isNearNetworkLimit = $derived(
+		networkLimit !== null && networksData.length >= networkLimit - 2 && !isAtNetworkLimit
+	);
 
 	let showCreateNetworkModal = $state(false);
 	let editingNetwork = $state<Network | null>(null);
 
-	// Deep-link: open network editor from URL
+	// Deep-link: open network editor from URL (handles both fresh open and entity switch)
 	$effect(() => {
-		if ($modalState.name === 'network-editor' && !showCreateNetworkModal) {
-			if ($modalState.id) {
-				const network = networksData.find((e) => e.id === $modalState.id);
-				if (network) {
-					editingNetwork = network;
-					showCreateNetworkModal = true;
-				}
-			} else {
-				editingNetwork = null;
-				showCreateNetworkModal = true;
-			}
+		const result = resolveModalDeepLink(
+			$modalState,
+			'network-editor',
+			networksData,
+			showCreateNetworkModal,
+			editingNetwork?.id
+		);
+		if (result !== undefined) {
+			editingNetwork = result;
+			showCreateNetworkModal = true;
 		}
 	});
 
@@ -195,14 +197,23 @@
 		<svelte:fragment slot="actions">
 			<div class="flex items-center gap-3">
 				{#if networkLimit !== null}
-					<span class="text-sm {isAtNetworkLimit ? 'text-amber-400' : 'text-tertiary'}">
+					<span
+						class="text-sm {isAtNetworkLimit
+							? 'text-amber-400'
+							: isNearNetworkLimit
+								? 'text-yellow-400'
+								: 'text-tertiary'}"
+					>
 						{networksData.length} / {networkLimit}
 					</span>
 				{/if}
 				{#if canManageNetworks}
 					{#if isAtNetworkLimit}
-						<UpgradeButton feature="more networks" />
+						<UpgradeButton feature="networks" />
 					{:else}
+						{#if isNearNetworkLimit}
+							<UpgradeButton feature="networks" />
+						{/if}
 						<button class="btn-primary flex items-center" onclick={handleCreateNetwork}
 							><Plus class="h-5 w-5" />{common_create()}</button
 						>

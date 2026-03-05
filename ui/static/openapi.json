@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.10\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.10\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.11\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.11\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -289,6 +289,38 @@
         "responses": {
           "200": {
             "description": "Step saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/profile": {
+      "post": {
+        "tags": [
+          "auth",
+          "internal"
+        ],
+        "summary": "Update user profile with deferred marketing fields",
+        "operationId": "update_profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -12000,12 +12032,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.10"
+            "example": "0.14.11"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.14.10"
+          "server_version": "0.14.11"
         }
       },
       "ApiResponse": {
@@ -12079,14 +12111,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-03-02T07:10:08.153238Z",
-              "id": "657a39ad-211e-452a-bb26-c5b18579f364",
+              "created_at": "2026-03-05T04:02:04.250379Z",
+              "id": "66940136-927e-477e-bcd0-9843aa437d04",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-02T07:10:08.153238Z"
+              "updated_at": "2026-03-05T04:02:04.250379Z"
             }
           },
           "error": {
@@ -12886,14 +12918,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-03-02T07:10:08.140150Z",
-                      "id": "73dc6c64-2d21-47b0-a281-6d30cfdabec7",
+                      "created_at": "2026-03-05T04:02:04.231896Z",
+                      "id": "72679b29-a4c1-4178-bc01-3a24fc7ff965",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-03-02T07:10:08.140150Z"
+                      "updated_at": "2026-03-05T04:02:04.231896Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12902,7 +12934,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "PeaNUT",
+                  "service_definition": "Unifi Access Point",
                   "source": {
                     "type": "Manual"
                   },
@@ -13705,14 +13737,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-03-02T07:10:08.149315Z",
-                  "id": "e5d475de-7396-4673-9c64-34e65577ac95",
+                  "created_at": "2026-03-05T04:02:04.245110Z",
+                  "id": "0f5827f8-fab0-4d98-bbd1-c618c01854de",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-02T07:10:08.149315Z"
+                  "updated_at": "2026-03-05T04:02:04.245110Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13721,7 +13753,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "PeaNUT",
+              "service_definition": "Unifi Access Point",
               "source": {
                 "type": "Manual"
               },
@@ -14920,14 +14952,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-03-02T07:10:08.140413Z",
-          "id": "da39a29a-abb8-4190-9330-5fbd9295a703",
+          "created_at": "2026-03-05T04:02:04.232294Z",
+          "id": "5fb680b0-ae0f-4368-9fa2-443549dcbd15",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-03-02T07:10:08.140413Z"
+          "updated_at": "2026-03-05T04:02:04.232294Z"
         }
       },
       "BindingBase": {
@@ -15434,7 +15466,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "PeaNUT",
+              "service_definition": "Unifi Access Point",
               "tags": [],
               "virtualization": null
             }
@@ -17324,14 +17356,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-03-02T07:10:08.139796Z",
-                  "id": "ae0c7ad1-abdf-40c1-8cfa-2f8e6e0e384b",
+                  "created_at": "2026-03-05T04:02:04.231361Z",
+                  "id": "60ef6b2f-c60c-48a4-9c44-4930ba0680f4",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-02T07:10:08.139796Z"
+                  "updated_at": "2026-03-05T04:02:04.231361Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -17340,7 +17372,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "PeaNUT",
+              "service_definition": "Unifi Access Point",
               "source": {
                 "type": "Manual"
               },
@@ -18725,7 +18757,8 @@
           "FirstUserApiKeyCreated",
           "FirstSnmpCredentialCreated",
           "InviteSent",
-          "InviteAccepted"
+          "InviteAccepted",
+          "ProfileCompleted"
         ]
       },
       "OnboardingStateResponse": {
@@ -18781,20 +18814,6 @@
           "step"
         ],
         "properties": {
-          "company_size": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Company size"
-          },
-          "job_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Job title/role"
-          },
           "referral_source": {
             "type": [
               "string",
@@ -18932,7 +18951,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.10"
+            "example": "0.14.11"
           }
         },
         "example": {
@@ -18943,7 +18962,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.14.10"
+          "server_version": "0.14.11"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -19301,14 +19320,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-03-02T07:10:08.132323Z",
-                        "id": "41a96b88-03e5-4e8a-875e-002b9f46bc72",
+                        "created_at": "2026-03-05T04:02:04.219241Z",
+                        "id": "23aa38b8-494b-4996-9272-a0fc268c8f01",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-03-02T07:10:08.132323Z"
+                        "updated_at": "2026-03-05T04:02:04.219241Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -19317,7 +19336,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "PeaNUT",
+                    "service_definition": "Unifi Access Point",
                     "source": {
                       "type": "Manual"
                     },
@@ -19394,14 +19413,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-03-02T07:10:08.148264Z",
-                    "id": "58350e91-aaf6-494e-af70-ace342705915",
+                    "created_at": "2026-03-05T04:02:04.243707Z",
+                    "id": "2ad01715-437a-4116-806b-06f7d63235ab",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-03-02T07:10:08.148264Z"
+                    "updated_at": "2026-03-05T04:02:04.243707Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -19410,7 +19429,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "PeaNUT",
+                "service_definition": "Unifi Access Point",
                 "source": {
                   "type": "Manual"
                 },
@@ -20104,6 +20123,24 @@
           }
         }
       },
+      "ProfileUpdateRequest": {
+        "type": "object",
+        "description": "Request to update user profile (deferred marketing fields)",
+        "properties": {
+          "company_size": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "job_title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "ProvisionDaemonRequest": {
         "type": "object",
         "description": "Request to pre-provision a ServerPoll mode daemon.\nThis creates the daemon record on the server before the daemon is installed.",
@@ -20475,14 +20512,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-03-02T07:10:08.140328Z",
-              "id": "799bf172-b24c-443c-afe9-dd44d61797b3",
+              "created_at": "2026-03-05T04:02:04.232164Z",
+              "id": "bae1d565-6e87-48c0-8af9-43af83cdcca7",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-02T07:10:08.140328Z"
+              "updated_at": "2026-03-05T04:02:04.232164Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20491,7 +20528,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "PeaNUT",
+          "service_definition": "Unifi Access Point",
           "source": {
             "type": "Manual"
           },

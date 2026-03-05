@@ -18,6 +18,7 @@ pub enum Event {
     Billing(BillingEvent),
     Onboarding(OnboardingEvent),
     Discovery(DiscoverySessionEvent),
+    Analytics(AnalyticsEvent),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -27,6 +28,7 @@ pub enum EventOperation {
     BillingOperation(BillingOperation),
     OnboardingOperation(OnboardingOperation),
     DiscoveryOperation(DiscoveryPhase),
+    AnalyticsOperation(AnalyticsOperation),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -46,6 +48,7 @@ impl EventOperation {
             EventOperation::BillingOperation(op) => op.log_level(),
             EventOperation::OnboardingOperation(op) => op.log_level(),
             EventOperation::DiscoveryOperation(phase) => phase.log_level(),
+            EventOperation::AnalyticsOperation(op) => op.log_level(),
         }
     }
 }
@@ -58,6 +61,7 @@ impl Display for EventOperation {
             EventOperation::BillingOperation(op) => op.to_string(),
             EventOperation::OnboardingOperation(op) => op.to_string(),
             EventOperation::DiscoveryOperation(phase) => phase.to_string(),
+            EventOperation::AnalyticsOperation(op) => op.to_string(),
         };
 
         write!(f, "{}", string)
@@ -94,6 +98,12 @@ impl From<DiscoveryPhase> for EventOperation {
     }
 }
 
+impl From<AnalyticsOperation> for EventOperation {
+    fn from(value: AnalyticsOperation) -> Self {
+        Self::AnalyticsOperation(value)
+    }
+}
+
 impl Event {
     pub fn id(&self) -> Uuid {
         match self {
@@ -102,6 +112,7 @@ impl Event {
             Event::Billing(b) => b.id,
             Event::Onboarding(o) => o.id,
             Event::Discovery(d) => d.id,
+            Event::Analytics(a) => a.id,
         }
     }
 
@@ -112,6 +123,7 @@ impl Event {
             Event::Billing(b) => Some(b.organization_id),
             Event::Onboarding(o) => Some(o.organization_id),
             Event::Discovery(_) => None,
+            Event::Analytics(a) => Some(a.organization_id),
         }
     }
 
@@ -122,6 +134,7 @@ impl Event {
             Event::Billing(_) => None,
             Event::Onboarding(_) => None,
             Event::Discovery(d) => Some(d.network_id),
+            Event::Analytics(_) => None,
         }
     }
 
@@ -132,6 +145,7 @@ impl Event {
             Event::Billing(e) => e.metadata.clone(),
             Event::Onboarding(e) => e.metadata.clone(),
             Event::Discovery(d) => d.metadata.clone(),
+            Event::Analytics(a) => a.metadata.clone(),
         }
     }
 
@@ -142,6 +156,7 @@ impl Event {
             Event::Billing(e) => e.authentication.clone(),
             Event::Onboarding(e) => e.authentication.clone(),
             Event::Discovery(d) => d.authentication.clone(),
+            Event::Analytics(a) => a.authentication.clone(),
         }
     }
 
@@ -152,6 +167,7 @@ impl Event {
             Event::Billing(e) => e.operation.clone().into(),
             Event::Onboarding(e) => e.operation.clone().into(),
             Event::Discovery(d) => d.phase.into(),
+            Event::Analytics(a) => a.operation.clone().into(),
         }
     }
 
@@ -216,6 +232,12 @@ impl Event {
                     session_id = %event.session_id
                 )
             }
+            Event::Analytics(event) => {
+                tracing::info!(
+                    organization_id = %event.organization_id,
+                    operation = %event.operation,
+                );
+            }
         }
     }
 }
@@ -228,6 +250,7 @@ impl Display for Event {
             Event::Billing(b) => write!(f, "{b}"),
             Event::Onboarding(o) => write!(f, "{o}"),
             Event::Discovery(d) => write!(f, "{d}"),
+            Event::Analytics(a) => write!(f, "{a}"),
         }
     }
 }
@@ -237,6 +260,7 @@ impl PartialEq for Event {
         match (self, other) {
             (Event::Auth(a1), Event::Auth(a2)) => a1 == a2,
             (Event::Entity(e1), Event::Entity(e2)) => e1 == e2,
+            (Event::Analytics(a1), Event::Analytics(a2)) => a1 == a2,
             _ => false,
         }
     }
@@ -459,6 +483,7 @@ pub enum OnboardingOperation {
     FirstSnmpCredentialCreated,
     InviteSent,
     InviteAccepted,
+    ProfileCompleted,
 }
 
 impl OnboardingOperation {
@@ -538,6 +563,59 @@ impl OnboardingEvent {
 }
 
 impl Display for OnboardingEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{{ id: {}, organization_id: {}, operation: {}, authentication: {} }}",
+            self.id, self.organization_id, self.operation, self.authentication
+        )
+    }
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, strum::Display)]
+#[strum(serialize_all = "snake_case")]
+pub enum AnalyticsOperation {
+    TopologyShareViewed,
+    TopologyEmbedViewed,
+}
+
+impl AnalyticsOperation {
+    fn log_level(&self) -> EventLogLevel {
+        EventLogLevel::Debug
+    }
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct AnalyticsEvent {
+    pub id: Uuid,
+    pub organization_id: Uuid,
+    pub operation: AnalyticsOperation,
+    pub timestamp: DateTime<Utc>,
+    pub authentication: AuthenticatedEntity,
+    pub metadata: serde_json::Value,
+}
+
+impl AnalyticsEvent {
+    pub fn new(
+        id: Uuid,
+        organization_id: Uuid,
+        operation: AnalyticsOperation,
+        timestamp: DateTime<Utc>,
+        authentication: AuthenticatedEntity,
+        metadata: serde_json::Value,
+    ) -> Self {
+        Self {
+            id,
+            organization_id,
+            operation,
+            timestamp,
+            authentication,
+            metadata,
+        }
+    }
+}
+
+impl Display for AnalyticsEvent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

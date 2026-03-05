@@ -22,7 +22,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState } from '$lib/shared/stores/modal-registry';
+	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import {
 		common_confirmDeleteName,
 		common_create,
@@ -68,19 +68,18 @@
 	let showGroupEditor = $state(false);
 	let editingGroup = $state<Group | null>(null);
 
-	// Deep-link: open group editor from URL
+	// Deep-link: open group editor from URL (handles both fresh open and entity switch)
 	$effect(() => {
-		if ($modalState.name === 'group-editor' && !showGroupEditor) {
-			if ($modalState.id) {
-				const group = groupsData.find((e) => e.id === $modalState.id);
-				if (group) {
-					editingGroup = group;
-					showGroupEditor = true;
-				}
-			} else {
-				editingGroup = null;
-				showGroupEditor = true;
-			}
+		const result = resolveModalDeepLink(
+			$modalState,
+			'group-editor',
+			groupsData,
+			showGroupEditor,
+			editingGroup?.id
+		);
+		if (result !== undefined) {
+			editingGroup = result;
+			showGroupEditor = true;
 		}
 	});
 

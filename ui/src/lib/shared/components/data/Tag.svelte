@@ -8,7 +8,8 @@
 		disabled = false,
 		label,
 		badge = '',
-		href = ''
+		href = '',
+		pill = false
 	}: {
 		icon?: IconComponent | null;
 		color?: Color;
@@ -16,6 +17,7 @@
 		label: string;
 		badge?: string;
 		href?: string;
+		pill?: boolean;
 	} = $props();
 
 	// Make colorHelper reactive to color changes
@@ -28,7 +30,7 @@
 	<span
 		class="inline-flex items-center gap-1 {!disabled ? bgColor : 'bg-gray-700/30'} {!disabled
 			? textColor
-			: 'text-tertiary'} rounded px-2 py-0.5 text-xs font-medium"
+			: 'text-tertiary'} {pill ? 'rounded-full' : 'rounded'} px-2 py-0.5 text-xs font-medium"
 	>
 		{#if icon}
 			{@const Icon = icon}

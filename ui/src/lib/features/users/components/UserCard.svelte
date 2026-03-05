@@ -8,6 +8,7 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useDeleteUserMutation } from '$lib/features/users/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import {
 		common_all,
 		common_authentication,
@@ -111,11 +112,15 @@
 									color: entities.getColorHelper('Network').color
 								}
 							]
-						: user.network_ids.map((n) => ({
-								id: n,
-								label: networksData.find((net) => net.id == n)?.name ?? common_unknownNetwork(),
-								color: entities.getColorHelper('Network').color
-							}))
+						: user.network_ids.map((n) => {
+								const network = networksData.find((net) => net.id == n);
+								return {
+									id: n,
+									label: network?.name ?? common_unknownNetwork(),
+									color: entities.getColorHelper('Network').color,
+									...(network ? { entityRef: entityRef('Network', n, network) } : {})
+								};
+							})
 			}
 		],
 		actions:

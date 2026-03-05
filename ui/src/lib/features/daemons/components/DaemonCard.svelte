@@ -6,16 +6,17 @@
 		useRetryDaemonConnectionMutation
 	} from '$lib/features/daemons/queries';
 	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
-	import { concepts, entities } from '$lib/shared/stores/metadata';
+	import { entities } from '$lib/shared/stores/metadata';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
-	import { toColor } from '$lib/shared/utils/styling';
 	import { ArrowBigUp, RefreshCw, Trash2 } from 'lucide-svelte';
 	import { getDaemonStatusTag } from '$lib/features/daemons/utils';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { useApiKeysQuery } from '$lib/features/daemon_api_keys/queries';
+	import { useSnmpCredentialsQuery } from '$lib/features/snmp/queries';
 	import type { TagProps } from '$lib/shared/components/data/types';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import DaemonUpgradeModal from './DaemonUpgradeModal.svelte';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 	import { modalState, openModal, closeModal } from '$lib/shared/stores/modal-registry';
@@ -52,6 +53,7 @@
 	const subnetsQuery = useSubnetsQuery();
 	const sessionsQuery = useActiveSessionsQuery();
 	const apiKeysQuery = useApiKeysQuery();
+	const snmpCredentialsQuery = useSnmpCredentialsQuery();
 
 	// Derived data
 	let networksData = $derived(networksQuery.data ?? []);
@@ -59,6 +61,7 @@
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 	let sessionsData = $derived(sessionsQuery.data ?? []);
 	let apiKeysData = $derived(apiKeysQuery.data ?? []);
+	let snmpCredentialsData = $derived(snmpCredentialsQuery.data ?? []);
 
 	let {
 		daemon,
@@ -111,19 +114,38 @@
 		fields: [
 			{
 				label: 'Network',
-				value: networksData.find((n) => n.id == daemon.network_id)?.name || 'Unknown Network'
+				value: (() => {
+					const network = networksData.find((n) => n.id == daemon.network_id);
+					if (!network) return 'Unknown Network';
+					return [
+						{
+							id: network.id,
+							label: network.name,
+							color: entities.getColorHelper('Network').color,
+							entityRef: entityRef('Network', network.id, network, {
+								snmpCredentials: snmpCredentialsData
+							})
+						}
+					];
+				})()
 			},
 			{
 				label: 'Host',
-				value: host ? host.name : 'Unknown Host'
+				value: (() => {
+					if (!host) return 'Unknown Host';
+					return [
+						{
+							id: host.id,
+							label: host.name,
+							color: entities.getColorHelper('Host').color,
+							entityRef: entityRef('Host', host.id, host)
+						}
+					];
+				})()
 			},
 			{
 				label: 'Version',
 				value: version
-			},
-			{
-				label: 'Created',
-				value: formatTimestamp(daemon.created_at)
 			},
 			{
 				label: 'Last Seen',
@@ -137,7 +159,14 @@
 				? [
 						{
 							label: 'API Key',
-							value: linkedApiKey.name
+							value: [
+								{
+									id: linkedApiKey.id,
+									label: linkedApiKey.name,
+									color: entities.getColorHelper('DaemonApiKey').color,
+									entityRef: entityRef('DaemonApiKey', linkedApiKey.id, linkedApiKey)
+								}
+							]
 						}
 					]
 				: [
@@ -148,41 +177,19 @@
 					]),
 			{
 				label: 'Has Docker Socket',
-				value: [
-					daemon.capabilities.has_docker_socket
-						? {
-								id: daemon.id,
-								label: 'True',
-								color: concepts.getColorHelper('Virtualization').color
-							}
-						: {
-								id: daemon.id,
-								label: 'False',
-								color: toColor('gray')
-							}
-				]
+				value: daemon.capabilities.has_docker_socket ? 'Yes' : 'No'
 			},
 			{
 				label: 'Interfaces With',
-				value:
-					daemon.capabilities.interfaced_subnet_ids.length > 0
-						? daemon.capabilities.interfaced_subnet_ids
-								.map((s) => subnetsData.find((subnet) => subnet.id == s))
-								.filter((s) => s != undefined)
-								.map((s) => {
-									return {
-										id: s.id,
-										label: s.name,
-										color: entities.getColorHelper('Subnet').color
-									};
-								})
-						: [
-								{
-									id: daemon.id,
-									label: 'No subnet interfaces',
-									color: toColor('gray')
-								}
-							],
+				value: daemon.capabilities.interfaced_subnet_ids
+					.map((s) => subnetsData.find((subnet) => subnet.id == s))
+					.filter((s) => s != undefined)
+					.map((s) => ({
+						id: s.id,
+						label: s.name,
+						color: entities.getColorHelper('Subnet').color,
+						entityRef: entityRef('Subnet', s.id, s)
+					})),
 				emptyText: 'No subnet interfaces'
 			},
 			{ label: 'Tags', snippet: tagsSnippet }

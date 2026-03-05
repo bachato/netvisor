@@ -1,6 +1,16 @@
 import { writable, get } from 'svelte/store';
-import { apiClient } from '$lib/api/client';
 import type { components } from '$lib/api/schema';
+import serviceDefinitionsJson from '$lib/data/service-definitions.json';
+import subnetTypesJson from '$lib/data/subnet-types.json';
+import edgeTypesJson from '$lib/data/edge-types.json';
+import groupTypesJson from '$lib/data/group-types.json';
+import entitiesJson from '$lib/data/entities.json';
+import portsJson from '$lib/data/ports.json';
+import discoveryTypesJson from '$lib/data/discovery-types.json';
+import billingPlansJson from '$lib/data/billing-plans-all.json';
+import featuresJson from '$lib/data/features.json';
+import permissionsJson from '$lib/data/permissions.json';
+import conceptsJson from '$lib/data/concepts.json';
 import {
 	createColorHelper,
 	createIconComponent,
@@ -20,30 +30,41 @@ export type TypedTypeMetadata<TMetadata> = Omit<TypeMetadata, 'metadata'> & {
 	metadata: TMetadata;
 };
 
+export interface BillingPlanFeatures {
+	share_views: boolean;
+	remove_created_with: boolean;
+	audit_logs: boolean;
+	webhooks: boolean;
+	api_access: boolean;
+	onboarding_call: boolean;
+	custom_sso: boolean;
+	managed_deployment: boolean;
+	whitelabeling: boolean;
+	live_chat_support: boolean;
+	embeds: boolean;
+	email_support: boolean;
+	community_support: boolean;
+	priority_support: boolean;
+	scheduled_discovery: boolean;
+	daemon_poll: boolean;
+	service_definitions: boolean;
+	docker_integration: boolean;
+	real_time_updates: boolean;
+	snmp_integration: boolean;
+}
+
+export type FeatureId = keyof BillingPlanFeatures;
+
+/** Feature IDs plus resource-based upgrade reasons */
+export type UpgradeFeature = FeatureId | 'seats' | 'networks' | 'hosts' | 'plan_usage';
+
 export interface BillingPlanMetadata {
-	features: {
-		share_views: boolean;
-		remove_created_with: boolean;
-		audit_logs: boolean;
-		api_access: boolean;
-		onboarding_call: boolean;
-		commercial_license: boolean;
-		custom_sso: boolean;
-		dedicated_instance: boolean;
-		on_premise_installation: boolean;
-		whitelabeling: boolean;
-		invoice_billing: boolean;
-		live_chat_support: boolean;
-		embeds: boolean;
-		email_support: boolean;
-		scheduled_discovery: boolean;
-		daemon_poll: boolean;
-	};
+	features: BillingPlanFeatures;
 	is_commercial: boolean;
 	hosting: string;
 	custom_price: string | null;
-	custom_checkout_cta: string | null;
-	custom_checkout_link: string | null;
+	incremental_features: string[];
+	previous_tier: string | null;
 }
 
 export interface ServicedDefinitionMetadata {
@@ -80,8 +101,8 @@ export interface EdgeTypeMetadata {
 export interface GroupTypeMetadata {}
 
 export interface FeatureMetadata {
-	use_null_as_unlimited: boolean;
 	is_coming_soon: boolean;
+	minimum_plan: string | null;
 }
 
 export interface PortTypeMetadata {
@@ -96,7 +117,19 @@ export interface PortTypeMetadata {
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface DiscoveryTypeMetadata {}
 
-export const metadata = writable<MetadataRegistry>();
+export const metadata = writable<MetadataRegistry>({
+	service_definitions: serviceDefinitionsJson,
+	subnet_types: subnetTypesJson,
+	edge_types: edgeTypesJson,
+	group_types: groupTypesJson,
+	entities: entitiesJson,
+	ports: portsJson,
+	discovery_types: discoveryTypesJson,
+	billing_plans: billingPlansJson,
+	features: featuresJson,
+	permissions: permissionsJson,
+	concepts: conceptsJson
+} as unknown as MetadataRegistry);
 
 // Shared color helper functions that work for both TypeMetadata and EntityMetadata
 function createSharedHelpers<T extends keyof MetadataRegistry>(category: T) {
@@ -312,11 +345,4 @@ export function createStaticHelpers<M>(items: StaticMetadataItem[]) {
 			return createColorHelper((item?.color as Color) ?? null);
 		}
 	};
-}
-
-export async function getMetadata() {
-	const { data } = await apiClient.GET('/api/metadata', {});
-	if (data?.success && data.data) {
-		metadata.set(data.data as MetadataRegistry);
-	}
 }

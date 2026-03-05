@@ -8,7 +8,6 @@
 		type Interface,
 		type Port
 	} from '$lib/features/hosts/types/base';
-	import { Link2 } from 'lucide-svelte';
 	import type { EntityDisplayComponent } from '../types';
 	import PortBindingInlineEditor from './PortBindingInlineEditor.svelte';
 
@@ -52,7 +51,7 @@
 				return interfaceFormatted + ' · ' + portFormatted;
 			},
 			getDescription: () => '',
-			getIcon: () => Link2,
+			getIcon: () => entities.getIconComponent('Port'),
 			getIconColor: () => entities.getColorHelper('Port').icon,
 			getTags: () => [],
 			getCategory: (binding: PortBinding, context: PortBindingDisplayContext) => {

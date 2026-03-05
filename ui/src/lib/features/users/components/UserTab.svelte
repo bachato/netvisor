@@ -18,7 +18,7 @@
 	import { useUsersQuery, useBulkDeleteUsersMutation } from '../queries';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState } from '$lib/shared/stores/modal-registry';
+	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import {
 		common_created,
 		common_email,
@@ -71,19 +71,18 @@
 		}
 	});
 
-	// Deep-link: open user editor from URL
+	// Deep-link: open user editor from URL (handles both fresh open and entity switch)
 	$effect(() => {
-		if ($modalState.name === 'user-editor' && !showEditModal) {
-			if ($modalState.id) {
-				const entity = usersData.find((e) => e.id === $modalState.id);
-				if (entity) {
-					editingUser = entity;
-					showEditModal = true;
-				}
-			} else {
-				editingUser = null;
-				showEditModal = true;
-			}
+		const result = resolveModalDeepLink(
+			$modalState,
+			'user-editor',
+			usersData,
+			showEditModal,
+			editingUser?.id
+		);
+		if (result !== undefined) {
+			editingUser = result;
+			showEditModal = true;
 		}
 	});
 
@@ -187,7 +186,7 @@
 				{/if}
 				{#if canInviteUsers}
 					{#if isAtSeatLimit}
-						<UpgradeButton feature="more seats" />
+						<UpgradeButton feature="seats" />
 					{:else}
 						<button class="btn-primary flex items-center" onclick={handleCreateInvite}>
 							<UserPlus class="mr-2 h-5 w-5" />

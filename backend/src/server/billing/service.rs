@@ -36,6 +36,9 @@ use stripe_billing::billing_portal_session::CreateBillingPortalSession;
 use stripe_billing::subscription::CancelSubscription;
 use stripe_billing::subscription::CreateSubscription;
 use stripe_billing::subscription::CreateSubscriptionItems;
+use stripe_billing::subscription::CreateSubscriptionTrialSettings;
+use stripe_billing::subscription::CreateSubscriptionTrialSettingsEndBehavior;
+use stripe_billing::subscription::CreateSubscriptionTrialSettingsEndBehaviorMissingPaymentMethod;
 use stripe_billing::subscription::ListSubscription;
 use stripe_billing::subscription::UpdateSubscription;
 use stripe_billing::subscription::UpdateSubscriptionItems;
@@ -493,6 +496,136 @@ impl BillingService {
             .await?;
 
         Ok(session)
+    }
+
+    /// Activate the Free plan directly without Stripe
+    pub async fn activate_free_plan(
+        &self,
+        organization_id: Uuid,
+        plan: BillingPlan,
+        authentication: AuthenticatedEntity,
+    ) -> Result<String, Error> {
+        let mut organization = self.get_organization(organization_id).await?;
+
+        self.enforce_plan_restrictions(&organization_id, &plan)
+            .await?;
+
+        organization.base.plan = Some(plan);
+        organization.base.plan_status = Some("active".to_string());
+
+        self.organization_service
+            .update(&mut organization, AuthenticatedEntity::System)
+            .await?;
+
+        // Publish PlanSelected onboarding event
+        if organization.not_onboarded(&OnboardingOperation::PlanSelected) {
+            self.event_bus
+                .publish_onboarding(OnboardingEvent {
+                    id: Uuid::new_v4(),
+                    organization_id,
+                    operation: OnboardingOperation::PlanSelected,
+                    timestamp: Utc::now(),
+                    metadata: json!({
+                        "plan": plan.to_string(),
+                        "is_commercial": plan.is_commercial()
+                    }),
+                    authentication: authentication.clone(),
+                })
+                .await?;
+        }
+
+        // Publish CheckoutCompleted billing event
+        self.event_bus
+            .publish_billing(BillingEvent::new(
+                Uuid::new_v4(),
+                organization_id,
+                BillingOperation::CheckoutCompleted,
+                Utc::now(),
+                authentication,
+                json!({
+                    "checkout_status": "completed",
+                    "plan_name": plan.name(),
+                    "is_commercial": plan.is_commercial(),
+                    "has_trial": false,
+                    "org_id": organization_id.to_string(),
+                }),
+            ))
+            .await?;
+
+        tracing::info!(
+            organization_id = %organization_id,
+            plan = %plan.name(),
+            "Free plan activated directly (no Stripe)"
+        );
+
+        Ok("Free plan activated!".to_string())
+    }
+
+    /// Create a trial subscription directly via the Stripe API, skipping Checkout
+    pub async fn create_trial_subscription(
+        &self,
+        organization_id: Uuid,
+        plan: BillingPlan,
+        authentication: AuthenticatedEntity,
+    ) -> Result<String, Error> {
+        let auth_for_event = authentication.clone();
+
+        let (_, customer_id) = self
+            .get_or_create_customer(organization_id, authentication)
+            .await?;
+
+        let base_price = self
+            .get_price_from_lookup_key(plan.stripe_base_price_lookup_key())
+            .await?
+            .ok_or_else(|| anyhow!("Could not find base price for selected plan"))?;
+
+        let subscription = CreateSubscription::new(customer_id)
+            .items(vec![CreateSubscriptionItems {
+                price: Some(base_price.id.to_string()),
+                quantity: Some(1),
+                ..Default::default()
+            }])
+            .trial_period_days(plan.config().trial_days)
+            .trial_settings(CreateSubscriptionTrialSettings::new(
+                CreateSubscriptionTrialSettingsEndBehavior::new(
+                    CreateSubscriptionTrialSettingsEndBehaviorMissingPaymentMethod::Cancel,
+                ),
+            ))
+            .metadata([
+                ("organization_id".to_string(), organization_id.to_string()),
+                ("plan".to_string(), serde_json::to_string(&plan)?),
+            ])
+            .send(&self.stripe)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+
+        tracing::info!(
+            organization_id = %organization_id,
+            plan = %plan.name(),
+            subscription_id = %subscription.id,
+            trial_days = plan.config().trial_days,
+            "Trial subscription created directly (skipped checkout)"
+        );
+
+        // Publish checkout_started event for email automation
+        self.event_bus
+            .publish_billing(BillingEvent::new(
+                Uuid::new_v4(),
+                organization_id,
+                BillingOperation::CheckoutStarted,
+                Utc::now(),
+                auth_for_event,
+                json!({
+                    "checkout_status": "pending",
+                    "plan_name": plan.name(),
+                    "is_commercial": plan.is_commercial(),
+                    "has_trial": true,
+                    "org_id": organization_id.to_string(),
+                }),
+            ))
+            .await?;
+
+        Ok(format!("Your {} trial has started!", plan.name()))
     }
 
     pub async fn update_addon_prices(
@@ -1723,6 +1856,20 @@ impl BillingService {
             ))
             .await?;
 
+        if let Some(ref email_service) = self.email_service {
+            let owners = self
+                .user_service
+                .get_organization_owners(&organization.id)
+                .await?;
+            if let Some(owner) = owners.first()
+                && let Err(e) = email_service
+                    .send_payment_failed_email(owner.base.email.clone())
+                    .await
+            {
+                tracing::warn!(error = %e, "Failed to send payment failed email");
+            }
+        }
+
         Ok(())
     }
 
@@ -1750,6 +1897,20 @@ impl BillingService {
                 json!({ "org_id": organization.id.to_string() }),
             ))
             .await?;
+
+        if let Some(ref email_service) = self.email_service {
+            let owners = self
+                .user_service
+                .get_organization_owners(&organization.id)
+                .await?;
+            if let Some(owner) = owners.first()
+                && let Err(e) = email_service
+                    .send_payment_action_required_email(owner.base.email.clone())
+                    .await
+            {
+                tracing::warn!(error = %e, "Failed to send payment action required email");
+            }
+        }
 
         Ok(())
     }

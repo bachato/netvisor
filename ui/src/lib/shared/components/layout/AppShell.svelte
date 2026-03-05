@@ -269,6 +269,6 @@
 	{@render children()}
 {/if}
 
-{#if configData && configData.needs_cookie_consent}
+{#if configData && configData.needs_cookie_consent && !$page.url.pathname.startsWith('/share/')}
 	<CookieConsent />
 {/if}

@@ -9,6 +9,8 @@
 	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
 	import InfoRow from '$lib/shared/components/data/InfoRow.svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
+	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import { entities } from '$lib/shared/stores/metadata';
 	import type { Color } from '$lib/shared/utils/styling';
 	import {
@@ -134,14 +136,16 @@
 		<InfoRow label={common_ipAddress()}>
 			{#if linkedInterface}
 				<div class="flex flex-wrap items-center gap-1">
-					<Tag
+					<EntityTag
+						entityRef={entityRef('Interface', linkedInterface.id, linkedInterface)}
 						label={linkedInterface.ip_address}
 						icon={entities.getIconComponent('Interface')}
 						color={entities.getColorHelper('Interface').color}
 					/>
 					<span class="text-tertiary text-xs">on</span>
 					{#if linkedSubnet}
-						<Tag
+						<EntityTag
+							entityRef={entityRef('Subnet', linkedSubnet.id, linkedSubnet)}
 							label={linkedSubnet.name
 								? `${linkedSubnet.name} (${linkedSubnet.cidr})`
 								: linkedSubnet.cidr}
@@ -160,7 +164,8 @@
 			{#if ifEntry.neighbor}
 				<div class="flex flex-wrap items-center gap-1">
 					{#if neighborIfEntry}
-						<Tag
+						<EntityTag
+							entityRef={entityRef('IfEntry', neighborIfEntry.id, neighborIfEntry)}
 							label={neighborIfEntry.if_name ||
 								neighborIfEntry.if_descr ||
 								`Index ${neighborIfEntry.if_index}`}
@@ -170,7 +175,8 @@
 						<span class="text-tertiary text-xs">on</span>
 					{/if}
 					{#if neighborHost}
-						<Tag
+						<EntityTag
+							entityRef={entityRef('Host', neighborHost.id, neighborHost)}
 							label={neighborHost.name}
 							icon={entities.getIconComponent('Host')}
 							color={entities.getColorHelper('Host').color}

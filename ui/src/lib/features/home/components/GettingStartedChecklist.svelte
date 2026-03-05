@@ -4,6 +4,7 @@
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { onMount } from 'svelte';
 	import { trackEvent } from '$lib/shared/utils/analytics';
+	import confetti from 'canvas-confetti';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -18,9 +19,23 @@
 	const DISMISS_KEY = 'home-checklist-dismissed';
 
 	let dismissed = $state(false);
+	let showCelebration = $state(false);
+	let celebrationDone = $state(false);
 
 	onMount(() => {
 		dismissed = localStorage.getItem(DISMISS_KEY) === 'true';
+	});
+
+	$effect(() => {
+		if (allComplete && !dismissed && !celebrationDone) {
+			showCelebration = true;
+			confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+			setTimeout(() => {
+				showCelebration = false;
+				celebrationDone = true;
+				localStorage.setItem(DISMISS_KEY, 'true');
+			}, 4000);
+		}
 	});
 
 	interface ChecklistStep {
@@ -48,8 +63,8 @@
 			id: 'discovery',
 			milestone: 'FirstDiscoveryCompleted',
 			prerequisite: 'FirstDaemonRegistered',
-			label: 'Wait for Network Discovery',
-			description: 'Your daemon will automatically discover hosts and services.',
+			label: 'Check Discovery Progress',
+			description: 'See live results as your daemon discovers hosts and services.',
 			action: () => onNavigate('discovery-sessions')
 		},
 		{
@@ -82,7 +97,16 @@
 	}
 </script>
 
-{#if !allComplete && !dismissed}
+{#if showCelebration}
+	<section>
+		<div class="rounded-lg border border-green-600/30 bg-green-900/20 p-6 text-center">
+			<h3 class="text-primary text-base font-semibold">You're all set!</h3>
+			<p class="text-secondary mt-1 text-sm">
+				Your network is mapped. Explore your topology and discover what Scanopy can do.
+			</p>
+		</div>
+	</section>
+{:else if !allComplete && !dismissed}
 	<section>
 		<div class="rounded-lg border border-blue-600/30 bg-blue-900/20 p-4">
 			<div class="mb-3 flex items-center justify-between">

@@ -6,16 +6,26 @@
 	import type { Discovery } from '../../types/base';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
+	import { useHostsQuery } from '$lib/features/hosts/queries';
+	import { useSubnetsQuery } from '$lib/features/subnets/queries';
+	import { useSnmpCredentialsQuery } from '$lib/features/snmp/queries';
 	import { formatDuration, formatTimestamp } from '$lib/shared/utils/formatting';
 	import type { TagProps } from '$lib/shared/components/data/types';
+	import { entityRef } from '$lib/shared/components/data/types';
 
 	// Queries
 	const daemonsQuery = useDaemonsQuery();
 	const networksQuery = useNetworksQuery();
+	const hostsQuery = useHostsQuery({ limit: 0 });
+	const subnetsQuery = useSubnetsQuery();
+	const snmpCredentialsQuery = useSnmpCredentialsQuery();
 
 	// Derived data
 	let daemonsData = $derived(daemonsQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
+	let hostsData = $derived(hostsQuery.data?.items ?? []);
+	let subnetsData = $derived(subnetsQuery.data ?? []);
+	let snmpCredentialsData = $derived(snmpCredentialsQuery.data ?? []);
 
 	let {
 		viewMode,
@@ -58,11 +68,38 @@
 		fields: [
 			{
 				label: 'Network',
-				value: networksData.find((n) => n.id == discovery.network_id)?.name || 'Unknown Network'
+				value: (() => {
+					const network = networksData.find((n) => n.id == discovery.network_id);
+					if (!network) return 'Unknown Network';
+					return [
+						{
+							id: network.id,
+							label: network.name,
+							color: entities.getColorHelper('Network').color,
+							entityRef: entityRef('Network', network.id, network, {
+								snmpCredentials: snmpCredentialsData
+							})
+						}
+					];
+				})()
 			},
 			{
 				label: 'Daemon',
-				value: daemonsData.find((d) => d.id == discovery.daemon_id)?.name || 'Unknown Daemon'
+				value: (() => {
+					const daemon = daemonsData.find((d) => d.id == discovery.daemon_id);
+					if (!daemon) return 'Unknown Daemon';
+					return [
+						{
+							id: daemon.id,
+							label: daemon.name,
+							color: entities.getColorHelper('Daemon').color,
+							entityRef: entityRef('Daemon', daemon.id, daemon, {
+								hosts: hostsData,
+								subnets: subnetsData
+							})
+						}
+					];
+				})()
 			},
 			{
 				label: 'Started',

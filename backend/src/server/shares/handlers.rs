@@ -14,9 +14,13 @@ use uuid::Uuid;
 
 use axum::http::StatusCode;
 
+use chrono::Utc;
+use serde_json::json;
+
 use crate::server::{
     auth::{
         middleware::{
+            auth::AuthenticatedEntity,
             features::{RequireFeature, ShareViewsFeature},
             permissions::{Authorized, Member},
         },
@@ -28,6 +32,7 @@ use crate::server::{
     organizations::r#impl::base::Organization,
     shared::validation::validate_csp_domain,
     shared::{
+        events::types::{AnalyticsEvent, AnalyticsOperation},
         handlers::traits::{CrudHandlers, create_handler, update_handler},
         services::traits::CrudService,
         storage::traits::{Entity, Storage},
@@ -406,6 +411,42 @@ async fn get_share_topology(
         topology: serde_json::to_value(&topology)
             .map_err(|e| ApiError::internal_error(&e.to_string()))?,
     };
+
+    // Track share/embed view via event bus
+    {
+        let org_id = state
+            .services
+            .network_service
+            .storage()
+            .get_by_id(&share.base.network_id)
+            .await
+            .ok()
+            .flatten()
+            .map(|n| n.base.organization_id);
+
+        if let Some(org_id) = org_id {
+            let operation = if query.embed {
+                AnalyticsOperation::TopologyEmbedViewed
+            } else {
+                AnalyticsOperation::TopologyShareViewed
+            };
+            let _ = state
+                .services
+                .event_bus
+                .publish_analytics(AnalyticsEvent::new(
+                    Uuid::new_v4(),
+                    org_id,
+                    operation,
+                    Utc::now(),
+                    AuthenticatedEntity::System,
+                    json!({
+                        "share_id": id.to_string(),
+                        "has_password": share.requires_password(),
+                    }),
+                ))
+                .await;
+        }
+    }
 
     // Build response with appropriate headers
     let mut response = Json(ApiResponse::success(response_data)).into_response();

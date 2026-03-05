@@ -20,7 +20,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
-	import { modalState } from '$lib/shared/stores/modal-registry';
+	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import {
 		common_color,
 		common_confirmDeleteName,
@@ -43,19 +43,18 @@
 	let showTagEditor = $state(false);
 	let editingTag: Tag | null = $state(null);
 
-	// Deep-link: open tag editor from URL
+	// Deep-link: open tag editor from URL (handles both fresh open and entity switch)
 	$effect(() => {
-		if ($modalState.name === 'tag-editor' && !showTagEditor) {
-			if ($modalState.id) {
-				const tag = tags.find((e) => e.id === $modalState.id);
-				if (tag) {
-					editingTag = tag;
-					showTagEditor = true;
-				}
-			} else {
-				editingTag = null;
-				showTagEditor = true;
-			}
+		const result = resolveModalDeepLink(
+			$modalState,
+			'tag-editor',
+			tags,
+			showTagEditor,
+			editingTag?.id
+		);
+		if (result !== undefined) {
+			editingTag = result;
+			showTagEditor = true;
 		}
 	});
 

@@ -15,14 +15,15 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { X } from 'lucide-svelte';
+	import { ArrowLeft, X } from 'lucide-svelte';
 	import { common_closeModal, common_modal } from '$lib/paraglide/messages';
 	import { get } from 'svelte/store';
 	import {
 		modalState,
 		openModal,
 		closeModal,
-		setModalTab
+		setModalTab,
+		goBack
 	} from '$lib/shared/stores/modal-registry';
 
 	let {
@@ -41,6 +42,7 @@
 		activeTab = $bindable(''),
 		onTabChange = null,
 		onOpen = null,
+		onSubEntityNavigation = null,
 		instanceKey = $bindable(0),
 		name = undefined,
 		entityId = undefined,
@@ -63,6 +65,7 @@
 		activeTab?: string;
 		onTabChange?: ((tabId: string) => void) | null;
 		onOpen?: (() => void) | null;
+		onSubEntityNavigation?: ((subEntityId: string) => void) | null;
 		instanceKey?: number;
 		name?: string;
 		entityId?: string;
@@ -70,6 +73,13 @@
 		children?: Snippet<[number]>;
 		footer?: Snippet;
 	} = $props();
+
+	let showBackButton = $derived(
+		name != null && $modalState.name === name && $modalState.returnUrl != null
+	);
+	let returnTitle = $derived(
+		name != null && $modalState.name === name ? $modalState.returnTitle : null
+	);
 
 	// Track previous open state to detect open transition
 	let wasOpen = $state(false);
@@ -117,7 +127,19 @@
 			}
 
 			if (name) {
-				openModal(name, { id: entityId, tab: activeTab || undefined });
+				// Read subEntityId, returnUrl, returnTitle before openModal clears them
+				const subEntityId = state.name === name ? state.subEntityId : null;
+				const returnUrl = state.name === name ? (state.returnUrl ?? undefined) : undefined;
+				const savedReturnTitle = state.name === name ? (state.returnTitle ?? undefined) : undefined;
+				openModal(name, {
+					id: entityId,
+					tab: activeTab || undefined,
+					returnUrl,
+					returnTitle: savedReturnTitle
+				});
+				if (subEntityId && onSubEntityNavigation) {
+					onSubEntityNavigation(subEntityId);
+				}
 			}
 		} else if (!isOpen && wasOpen && name && get(modalState).name === name) {
 			// Modal closed (by parent, form submit, etc.) — clear URL params
@@ -125,6 +147,14 @@
 			closeModal();
 		}
 		wasOpen = isOpen;
+	});
+
+	// Close this modal when the registry no longer points to it (modal-on-modal or goBack)
+	$effect(() => {
+		const state = $modalState;
+		if (isOpen && name && state.name !== name) {
+			onClose?.();
+		}
 	});
 
 	// Size classes
@@ -170,6 +200,19 @@
 		onkeydown={(e) => e.key === 'Escape' && handleClose()}
 		tabindex="-1"
 	>
+		<!-- Floating back button (upper-left of viewport, over backdrop) -->
+		{#if showBackButton}
+			<button
+				type="button"
+				onclick={() => goBack()}
+				class="fixed left-6 top-6 z-50 flex items-center gap-2 rounded-full bg-gray-800/80 py-2 pl-2 pr-4 text-sm text-gray-400 transition-colors hover:bg-gray-700 hover:text-white"
+				aria-label={returnTitle ? `Back to ${returnTitle}` : 'Go back'}
+			>
+				<ArrowLeft class="h-5 w-5" />
+				<span class="max-w-48 truncate">{returnTitle ? `Back to ${returnTitle}` : 'Back'}</span>
+			</button>
+		{/if}
+
 		<!-- Floating close button (absolute positioned, top-right of viewport) -->
 		{#if floatingCloseButton && onClose}
 			<button

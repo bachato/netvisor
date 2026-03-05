@@ -1,6 +1,7 @@
 <script lang="ts" context="module">
 	import type { Host, Interface, Port, Service } from '$lib/features/hosts/types/base';
 	import { entities, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { entityRef } from '$lib/shared/components/data/types';
 
 	// Context provides the host's children (interfaces, ports, services)
 	export interface HostDisplayContext {
@@ -27,7 +28,8 @@
 			const services = context?.services?.filter((s) => s.host_id == host.id) ?? [];
 			return services.map((service) => ({
 				label: serviceDefinitions.getName(service.service_definition),
-				color: entities.getColorHelper('Service').color
+				color: entities.getColorHelper('Service').color,
+				entityRef: entityRef('Service', service.id, service)
 			}));
 		}
 	};

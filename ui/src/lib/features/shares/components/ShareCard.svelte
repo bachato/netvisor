@@ -6,6 +6,7 @@
 	import { useTopologiesQuery } from '$lib/features/topology/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { entities } from '$lib/shared/stores/metadata';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import {
 		common_copied,
 		common_delete,
@@ -84,7 +85,8 @@
 								{
 									id: topology.id,
 									label: topology.name,
-									color: entities.getColorHelper('Topology').color
+									color: entities.getColorHelper('Topology').color,
+									entityRef: entityRef('Topology', topology.id, topology)
 								}
 							]
 						: shares_unknownTopology()
@@ -96,7 +98,8 @@
 								{
 									id: network.id,
 									label: network.name,
-									color: entities.getColorHelper('Network').color
+									color: entities.getColorHelper('Network').color,
+									entityRef: entityRef('Network', network.id, network)
 								}
 							]
 						: common_unknownNetwork()

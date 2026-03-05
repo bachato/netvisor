@@ -8,6 +8,7 @@
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import {
 		common_daemons,
 		common_delete,
@@ -20,6 +21,7 @@
 	import { useSnmpCredentialsQuery } from '$lib/features/snmp/queries';
 	import { uuidv4Sentinel } from '$lib/shared/utils/formatting';
 	import { toColor } from '$lib/shared/utils/styling';
+	import { useHostsQuery } from '$lib/features/hosts/queries';
 
 	interface Props {
 		network: Network;
@@ -46,11 +48,13 @@
 	const daemonsQuery = useDaemonsQuery();
 	const subnetsQuery = useSubnetsQuery();
 	const groupsQuery = useGroupsQuery();
+	const hostsQuery = useHostsQuery({ limit: 0 });
 
 	// Derived data from queries
 	let daemonsData = $derived(daemonsQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 	let groupsData = $derived(groupsQuery.data ?? []);
+	let hostsData = $derived(hostsQuery.data?.items ?? []);
 
 	let networkDaemons = $derived(daemonsData.filter((d) => d.network_id == network.id));
 	let networkSubnets = $derived(subnetsData.filter((s) => s.network_id == network.id));
@@ -77,13 +81,12 @@
 		fields: [
 			{
 				label: common_daemons(),
-				value: networkDaemons.map((d) => {
-					return {
-						id: d.id,
-						label: d.name,
-						color: entities.getColorHelper('Daemon').color
-					};
-				})
+				value: networkDaemons.map((d) => ({
+					id: d.id,
+					label: d.name,
+					color: entities.getColorHelper('Daemon').color,
+					entityRef: entityRef('Daemon', d.id, d, { hosts: hostsData, subnets: subnetsData })
+				}))
 			},
 			{
 				label: common_snmpCredential(),
@@ -92,7 +95,8 @@
 							{
 								id: snmpCredential.id,
 								label: snmpCredential.name,
-								color: entities.getColorHelper('SnmpCredential').color
+								color: entities.getColorHelper('SnmpCredential').color,
+								entityRef: entityRef('SnmpCredential', snmpCredential.id, snmpCredential)
 							}
 						]
 					: [
@@ -105,23 +109,21 @@
 			},
 			{
 				label: common_subnets(),
-				value: networkSubnets.map((s) => {
-					return {
-						id: s.id,
-						label: s.name,
-						color: entities.getColorHelper('Subnet').color
-					};
-				})
+				value: networkSubnets.map((s) => ({
+					id: s.id,
+					label: s.name,
+					color: entities.getColorHelper('Subnet').color,
+					entityRef: entityRef('Subnet', s.id, s)
+				}))
 			},
 			{
 				label: common_groupsLabel(),
-				value: networkGroups.map((g) => {
-					return {
-						id: g.id,
-						label: g.name,
-						color: entities.getColorHelper('Group').color
-					};
-				})
+				value: networkGroups.map((g) => ({
+					id: g.id,
+					label: g.name,
+					color: entities.getColorHelper('Group').color,
+					entityRef: entityRef('Group', g.id, g)
+				}))
 			},
 			{ label: common_tags(), snippet: tagsSnippet }
 		],

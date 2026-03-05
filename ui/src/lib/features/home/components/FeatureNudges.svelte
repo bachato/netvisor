@@ -2,6 +2,7 @@
 	import type { components } from '$lib/api/schema';
 	import FeatureNudge from './FeatureNudge.svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
+	import { upgradeContext } from '$lib/features/billing/stores';
 	import { optionsPanelExpanded } from '$lib/features/topology/queries';
 	import { entities } from '$lib/shared/stores/metadata';
 	import type { IconComponent } from '$lib/shared/utils/types';
@@ -61,7 +62,7 @@
 					onNavigate('tags');
 					openModal('tag-editor');
 				},
-				visible: !has('FirstTagCreated'),
+				visible: has('FirstDiscoveryCompleted') && !has('FirstTagCreated'),
 				icon: entities.getIconComponent('Tag'),
 				iconColor: entities.getColorHelper('Tag').icon
 			},
@@ -111,7 +112,10 @@
 				title: 'Schedule Automatic Scans',
 				description: 'Upgrade to automatically discover network changes on a schedule.',
 				actionLabel: 'View Plans',
-				action: () => openModal('billing-plan'),
+				action: () => {
+					upgradeContext.set(null);
+					openModal('billing-plan');
+				},
 				visible: planType === 'Free',
 				icon: entities.getIconComponent('Discovery'),
 				iconColor: entities.getColorHelper('Discovery').icon
@@ -125,7 +129,7 @@
 					onNavigate('api-keys');
 					openModal('user-api-key');
 				},
-				visible: isProPlus && !has('FirstUserApiKeyCreated'),
+				visible: isProPlus && has('FirstDiscoveryCompleted') && !has('FirstUserApiKeyCreated'),
 				icon: entities.getIconComponent('UserApiKey'),
 				iconColor: entities.getColorHelper('UserApiKey').icon
 			},
@@ -151,7 +155,7 @@
 					onNavigate('topology');
 					openModal('topology-share');
 				},
-				visible: isProPlus,
+				visible: isProPlus && has('FirstTopologyRebuild'),
 				icon: entities.getIconComponent('Share'),
 				iconColor: entities.getColorHelper('Share').icon
 			},

@@ -2,7 +2,6 @@
 	import { entities, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { InterfaceBinding, Service } from '$lib/features/services/types/base';
 	import type { HostFormData, Interface } from '$lib/features/hosts/types/base';
-	import { Link2 } from 'lucide-svelte';
 	import type { EntityDisplayComponent } from '../types';
 	import InterfaceBindingInlineEditor from './InterfaceBindingInlineEditor.svelte';
 
@@ -40,7 +39,7 @@
 			return interfaceFormatted;
 		},
 		getDescription: () => '',
-		getIcon: () => Link2,
+		getIcon: () => entities.getIconComponent('Interface'),
 		getIconColor: () => entities.getColorHelper('Interface').icon,
 		getTags: () => [],
 		getCategory: (binding: InterfaceBinding, context: InterfaceBindingDisplayContext) => {

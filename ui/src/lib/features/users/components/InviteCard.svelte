@@ -2,6 +2,7 @@
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import { UserPlus, UserX } from 'lucide-svelte';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
+	import type { Color } from '$lib/shared/utils/styling';
 	import { formatInviteUrl, useRevokeInviteMutation } from '$lib/features/organizations/queries';
 	import { entities, permissions } from '$lib/shared/stores/metadata';
 	import type { OrganizationInvite } from '$lib/features/organizations/types';
@@ -9,14 +10,12 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import {
 		common_expires,
-		common_notApplicable,
 		common_permissions,
 		common_revoke,
 		common_url,
 		invites_confirmRevoke,
 		invites_createdBy,
 		invites_pendingInvite,
-		invites_sentTo,
 		invites_unknownUser
 	} from '$lib/paraglide/messages';
 
@@ -49,9 +48,10 @@
 
 	// Build card data
 	let cardData = $derived({
-		title: invites_pendingInvite(),
+		title: invite.send_to || invites_pendingInvite(),
 		iconColor: entities.getColorHelper('User').icon,
 		Icon: UserPlus,
+		status: { label: invites_pendingInvite(), color: 'Yellow' as Color },
 		fields: [
 			{
 				label: common_url(),
@@ -64,10 +64,6 @@
 			{
 				label: invites_createdBy(),
 				value: usersData.find((u) => u.id == invite.created_by)?.email || invites_unknownUser()
-			},
-			{
-				label: invites_sentTo(),
-				value: invite.send_to ? invite.send_to : common_notApplicable()
 			},
 			{
 				label: common_expires(),

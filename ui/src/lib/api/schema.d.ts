@@ -129,6 +129,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update user profile with deferred marketing fields */
+        post: operations["update_profile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -2731,7 +2748,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.14.10"
+         *       "server_version": "0.14.11"
          *     }
          */
         ApiMeta: {
@@ -2742,7 +2759,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.14.10
+             * @example 0.14.11
              */
             server_version: string;
         };
@@ -2756,14 +2773,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-02T07:10:08.153238Z",
-             *       "id": "657a39ad-211e-452a-bb26-c5b18579f364",
+             *       "created_at": "2026-03-05T04:02:04.250379Z",
+             *       "id": "66940136-927e-477e-bcd0-9843aa437d04",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-02T07:10:08.153238Z"
+             *       "updated_at": "2026-03-05T04:02:04.250379Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3011,14 +3028,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-02T07:10:08.140150Z",
-             *               "id": "73dc6c64-2d21-47b0-a281-6d30cfdabec7",
+             *               "created_at": "2026-03-05T04:02:04.231896Z",
+             *               "id": "72679b29-a4c1-4178-bc01-3a24fc7ff965",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-02T07:10:08.140150Z"
+             *               "updated_at": "2026-03-05T04:02:04.231896Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3027,7 +3044,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "PeaNUT",
+             *           "service_definition": "Unifi Access Point",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3300,14 +3317,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-02T07:10:08.149315Z",
-             *           "id": "e5d475de-7396-4673-9c64-34e65577ac95",
+             *           "created_at": "2026-03-05T04:02:04.245110Z",
+             *           "id": "0f5827f8-fab0-4d98-bbd1-c618c01854de",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-02T07:10:08.149315Z"
+             *           "updated_at": "2026-03-05T04:02:04.245110Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3316,7 +3333,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "PeaNUT",
+             *       "service_definition": "Unifi Access Point",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3619,14 +3636,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-02T07:10:08.140413Z",
-         *       "id": "da39a29a-abb8-4190-9330-5fbd9295a703",
+         *       "created_at": "2026-03-05T04:02:04.232294Z",
+         *       "id": "5fb680b0-ae0f-4368-9fa2-443549dcbd15",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-02T07:10:08.140413Z"
+         *       "updated_at": "2026-03-05T04:02:04.232294Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3808,7 +3825,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "PeaNUT",
+         *           "service_definition": "Unifi Access Point",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4451,14 +4468,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-02T07:10:08.139796Z",
-         *               "id": "ae0c7ad1-abdf-40c1-8cfa-2f8e6e0e384b",
+         *               "created_at": "2026-03-05T04:02:04.231361Z",
+         *               "id": "60ef6b2f-c60c-48a4-9c44-4930ba0680f4",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-02T07:10:08.139796Z"
+         *               "updated_at": "2026-03-05T04:02:04.231361Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4467,7 +4484,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "PeaNUT",
+         *           "service_definition": "Unifi Access Point",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4959,7 +4976,7 @@ export interface components {
             snmp_version?: string | null;
         };
         /** @enum {string} */
-        OnboardingOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstGroupCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted";
+        OnboardingOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstGroupCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted" | "ProfileCompleted";
         /** @description Response from onboarding state endpoint */
         OnboardingStateResponse: {
             network?: null | components["schemas"]["OnboardingNetworkState"];
@@ -4977,10 +4994,6 @@ export interface components {
         };
         /** @description Request to save onboarding step */
         OnboardingStepRequest: {
-            /** @description Company size */
-            company_size?: string | null;
-            /** @description Job title/role */
-            job_title?: string | null;
             /** @description Referral source (how they heard about Scanopy) */
             referral_source?: string | null;
             /** @description Free-text referral source (when "other" is selected) */
@@ -5021,7 +5034,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.14.10"
+         *       "server_version": "0.14.11"
          *     }
          */
         PaginatedApiMeta: {
@@ -5034,7 +5047,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.14.10
+             * @example 0.14.11
              */
             server_version: string;
         };
@@ -5340,6 +5353,11 @@ export interface components {
             /** @description Auto-derived from number+protocol; optional on create */
             type?: string;
         };
+        /** @description Request to update user profile (deferred marketing fields) */
+        ProfileUpdateRequest: {
+            company_size?: string | null;
+            job_title?: string | null;
+        };
         /**
          * @description Request to pre-provision a ServerPoll mode daemon.
          *     This creates the daemon record on the server before the daemon is installed.
@@ -5456,14 +5474,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-02T07:10:08.140328Z",
-         *           "id": "799bf172-b24c-443c-afe9-dd44d61797b3",
+         *           "created_at": "2026-03-05T04:02:04.232164Z",
+         *           "id": "bae1d565-6e87-48c0-8af9-43af83cdcca7",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-02T07:10:08.140328Z"
+         *           "updated_at": "2026-03-05T04:02:04.232164Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5472,7 +5490,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "PeaNUT",
+         *       "service_definition": "Unifi Access Point",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6302,6 +6320,30 @@ export interface operations {
         };
         responses: {
             /** @description Step saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+        };
+    };
+    update_profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Profile updated */
             200: {
                 headers: {
                     [name: string]: unknown;

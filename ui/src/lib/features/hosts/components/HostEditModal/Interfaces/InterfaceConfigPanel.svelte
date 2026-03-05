@@ -7,7 +7,8 @@
 		macFormat,
 		max
 	} from '$lib/shared/components/forms/validators';
-	import Tag from '$lib/shared/components/data/Tag.svelte';
+	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
@@ -59,7 +60,8 @@
 		<div class="border-b border-gray-600 pb-4">
 			<h3 class="text-primary flex items-center gap-1.5 text-sm font-medium">
 				Interface on
-				<Tag
+				<EntityTag
+					entityRef={entityRef('Subnet', subnet.id, subnet)}
 					label={subnet?.name ? `${subnet.name} (${subnet.cidr})` : subnet.cidr}
 					icon={entities.getIconComponent('Subnet')}
 					color={entities.getColorHelper('Subnet').color}

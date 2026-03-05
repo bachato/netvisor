@@ -162,6 +162,9 @@ impl BrevoService {
             OnboardingOperation::FirstDiscoveryCompleted => {
                 self.handle_first_discovery_completed(event).await?;
             }
+            OnboardingOperation::ProfileCompleted => {
+                self.handle_profile_completed(event).await?;
+            }
             OnboardingOperation::SecondNetworkCreated
             | OnboardingOperation::FirstHostDiscovered
             | OnboardingOperation::FirstTagCreated
@@ -219,6 +222,30 @@ impl BrevoService {
         Ok(())
     }
 
+    async fn handle_profile_completed(&self, event: &OnboardingEvent) -> Result<()> {
+        let email = match &event.authentication {
+            AuthenticatedEntity::User { email, .. } => email.to_string(),
+            _ => return Ok(()),
+        };
+
+        if let Some(title) = event.metadata.get("job_title").and_then(|v| v.as_str()) {
+            let contact_attrs = ContactAttributes::new().with_job_title(title);
+            let _ = self.client.upsert_contact(&email, contact_attrs).await;
+        }
+        if let Some(size) = event.metadata.get("company_size").and_then(|v| v.as_str()) {
+            let company_attrs = CompanyAttributes::new().with_company_size(size);
+            let _ = self
+                .update_company_by_org(event.organization_id, company_attrs)
+                .await;
+        }
+
+        tracing::debug!(
+            organization_id = %event.organization_id,
+            "Updated Brevo: profile completed"
+        );
+        Ok(())
+    }
+
     /// Handle org created - create contact and company, store company ID on org.
     async fn handle_org_created(&self, event: &OnboardingEvent) -> Result<()> {
         let (email, user_id) = match &event.authentication {
@@ -234,16 +261,6 @@ impl BrevoService {
         let use_case = event
             .metadata
             .get("use_case")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        let company_size = event
-            .metadata
-            .get("company_size")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        let job_title = event
-            .metadata
-            .get("job_title")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
         let marketing_opt_in = event
@@ -288,9 +305,6 @@ impl BrevoService {
         if let Some(use_case) = &use_case {
             contact_attrs = contact_attrs.with_use_case(use_case);
         }
-        if let Some(title) = job_title {
-            contact_attrs = contact_attrs.with_job_title(title);
-        }
         if let Some(ref source) = formatted_referral_source {
             contact_attrs = contact_attrs.with_referral_source(source);
         }
@@ -308,9 +322,6 @@ impl BrevoService {
 
         if let Some(use_case) = use_case {
             company_attrs = company_attrs.with_org_type(use_case);
-        }
-        if let Some(size) = company_size {
-            company_attrs = company_attrs.with_company_size(size);
         }
 
         let (_contact_id, company_id) = self

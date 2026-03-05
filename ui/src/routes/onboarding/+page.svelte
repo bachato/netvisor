@@ -122,8 +122,6 @@
 			onboardingStepMutation.mutate({
 				step: currentStep,
 				use_case: useCase ?? undefined,
-				job_title: state.jobTitle ?? undefined,
-				company_size: state.companySize ?? undefined,
 				referral_source: state.referralSource ?? undefined,
 				referral_source_other: state.referralSourceOther ?? undefined
 			});
@@ -252,32 +250,35 @@
 	<!-- Progress Indicator - fixed position above modal (hidden for invite flow) -->
 	{#if !isInviteFlow}
 		<div class="fixed left-1/2 top-2 z-[200] -translate-x-1/2 sm:top-6">
-			<div
-				class="flex items-center gap-2 rounded-full bg-gray-800/90 px-4 py-2 shadow-lg backdrop-blur-sm"
-			>
-				{#if currentStepNumber() > 1}
-					<button
-						type="button"
-						onclick={handleBack}
-						class="text-secondary hover:text-primary -ml-1 flex items-center transition-colors"
-						aria-label="Go back"
-					>
-						<ChevronLeft class="h-4 w-4" />
-					</button>
-				{/if}
-				<span class="text-secondary text-sm">
-					Step {currentStepNumber()} of {totalSteps()}
-				</span>
-				<div class="flex gap-1">
-					<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-					{#each Array(totalSteps()) as _, i (i)}
-						<div
-							class="h-2 w-2 rounded-full transition-colors {i < currentStepNumber()
-								? 'bg-primary-500'
-								: 'bg-gray-600'}"
-						></div>
-					{/each}
+			<div class="flex flex-col items-center gap-1">
+				<div
+					class="flex items-center gap-2 rounded-full bg-gray-800/90 px-4 py-2 shadow-lg backdrop-blur-sm"
+				>
+					{#if currentStepNumber() > 1}
+						<button
+							type="button"
+							onclick={handleBack}
+							class="text-secondary hover:text-primary -ml-1 flex items-center transition-colors"
+							aria-label="Go back"
+						>
+							<ChevronLeft class="h-4 w-4" />
+						</button>
+					{/if}
+					<span class="text-secondary text-sm">
+						Step {currentStepNumber()} of {totalSteps()}
+					</span>
+					<div class="flex gap-1">
+						<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+						{#each Array(totalSteps()) as _, i (i)}
+							<div
+								class="h-2 w-2 rounded-full transition-colors {i < currentStepNumber()
+									? 'bg-primary-500'
+									: 'bg-gray-600'}"
+							></div>
+						{/each}
+					</div>
 				</div>
+				<span class="text-tertiary text-xs">No credit card required</span>
 			</div>
 		</div>
 	{/if}

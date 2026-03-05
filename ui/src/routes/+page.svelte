@@ -5,7 +5,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { discoverySSEManager } from '$lib/features/discovery/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
-	import { getMetadata } from '$lib/shared/stores/metadata';
+
 	import { topologySSEManager } from '$lib/features/topology/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import BillingPlanModal from '$lib/features/billing/BillingPlanModal.svelte';
@@ -40,7 +40,12 @@
 	let needsPlanSelection = $derived(
 		billingEnabled && organization != null && !isBillingPlanActive(organization)
 	);
-	let showBillingModal = $derived(needsPlanSelection || $modalState.name === 'billing-plan');
+	// Suppresses needsPlanSelection after plan selection, before the org query reactively updates.
+	// Without this, closeModal() clears $modalState but needsPlanSelection keeps showBillingModal true.
+	let planJustActivated = $state(false);
+	let showBillingModal = $derived(
+		(needsPlanSelection && !planJustActivated) || $modalState.name === 'billing-plan'
+	);
 
 	let activeTab = $state(initialHash || 'home');
 	let appInitialized = $state(false);
@@ -91,9 +96,6 @@
 	async function initializeApp() {
 		if (dataLoadingStarted) return;
 		dataLoadingStarted = true;
-
-		// Load metadata (static config) - required before components render
-		await getMetadata();
 
 		// Connect SSE managers for real-time updates
 		topologySSEManager.connect();
@@ -167,6 +169,7 @@
 		name="billing-plan"
 		dismissible={!needsPlanSelection}
 		onClose={() => {
+			planJustActivated = true;
 			closeModal();
 			if ($reopenSettingsAfterBilling) {
 				reopenSettingsAfterBilling.set(false);

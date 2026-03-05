@@ -7,6 +7,7 @@
 	import { toColor } from '$lib/shared/utils/styling';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import {
 		common_color,
 		common_delete,
@@ -64,7 +65,8 @@
 			const def = serviceDefinitions.getItem(s.service_definition);
 			return {
 				id: s.id,
-				label: def ? `${s.name} (${def.name})` : s.name
+				label: def ? `${s.name} (${def.name})` : s.name,
+				service: s
 			};
 		})
 	);
@@ -114,13 +116,12 @@
 			},
 			{
 				label: common_services(),
-				value: groupServiceLabels.map(({ id, label }, i) => {
-					return {
-						id: id + i,
-						label,
-						color: entities.getColorString('Service')
-					};
-				}),
+				value: groupServiceLabels.map(({ id, label, service }, i) => ({
+					id: id + i,
+					label,
+					color: entities.getColorString('Service'),
+					entityRef: entityRef('Service', service.id, service, { interfaceId: null })
+				})),
 				emptyText: groups_noServicesInGroup()
 			},
 			{ label: common_tags(), snippet: tagsSnippet }

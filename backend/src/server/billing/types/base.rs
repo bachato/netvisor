@@ -6,9 +6,10 @@ use crate::server::{
     },
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::hash::Hash;
 use stripe_product::price::CreatePriceRecurringInterval;
-use strum::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
+use strum::{Display, EnumDiscriminants, EnumIter, IntoDiscriminant, IntoStaticStr};
 use utoipa::ToSchema;
 
 #[derive(
@@ -36,6 +37,27 @@ pub enum BillingPlan {
     Enterprise(PlanConfig),
     Demo(PlanConfig),
     CommercialSelfHosted(PlanConfig),
+}
+
+impl PartialOrd for BillingPlanDiscriminants {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        fn cloud_tier(d: &BillingPlanDiscriminants) -> Option<u8> {
+            match d {
+                BillingPlanDiscriminants::Free => Some(0),
+                BillingPlanDiscriminants::Starter => Some(1),
+                BillingPlanDiscriminants::Pro => Some(2),
+                BillingPlanDiscriminants::Team => Some(3),
+                BillingPlanDiscriminants::Business => Some(4),
+                BillingPlanDiscriminants::Enterprise => Some(5),
+                _ => None,
+            }
+        }
+        match (cloud_tier(self), cloud_tier(other)) {
+            (Some(a), Some(b)) => Some(a.cmp(&b)),
+            _ if self == other => Some(std::cmp::Ordering::Equal),
+            _ => None,
+        }
+    }
 }
 
 impl PartialEq for BillingPlan {
@@ -72,18 +94,22 @@ impl BillingPlan {
         let mut yearly_config = self.config();
         yearly_config.rate = BillingRate::Year;
 
-        // Round to nearest dollar (100 cents)
-        yearly_config.base_cents =
-            Self::round_to_dollar(yearly_config.base_cents as f32 * 12.0 * (1.0 - discount));
-        yearly_config.seat_cents = yearly_config
-            .seat_cents
-            .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
-        yearly_config.network_cents = yearly_config
-            .network_cents
-            .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
-        yearly_config.host_cents = yearly_config
-            .host_cents
-            .map(|c| Self::round_to_dollar(c as f32 * 12.0 * (1.0 - discount)));
+        // Round discounted monthly base to nearest dollar then subtract 1 cent
+        // so yearly prices end in .99 (e.g. $14.99/mo → $11.99/mo billed yearly).
+        let monthly_base = Self::round_to_99(yearly_config.base_cents as f32 * (1.0 - discount));
+        yearly_config.base_cents = monthly_base * 12;
+        yearly_config.seat_cents = yearly_config.seat_cents.map(|c| {
+            let monthly = Self::round_to_dollar(c as f32 * (1.0 - discount));
+            monthly * 12
+        });
+        yearly_config.network_cents = yearly_config.network_cents.map(|c| {
+            let monthly = Self::round_to_dollar(c as f32 * (1.0 - discount));
+            monthly * 12
+        });
+        yearly_config.host_cents = yearly_config.host_cents.map(|c| {
+            let monthly = Self::round_to_dollar(c as f32 * (1.0 - discount));
+            monthly * 12
+        });
 
         let mut yearly_plan = *self;
         yearly_plan.set_config(yearly_config);
@@ -91,6 +117,11 @@ impl BillingPlan {
     }
     fn round_to_dollar(cents: f32) -> i64 {
         ((cents / 100.0).round() * 100.0) as i64
+    }
+
+    /// Round to nearest dollar, then subtract 1 cent so the price ends in .99.
+    fn round_to_99(cents: f32) -> i64 {
+        Self::round_to_dollar(cents) - 1
     }
 }
 
@@ -154,12 +185,16 @@ pub struct BillingPlanFeatures {
     pub community_support: bool,
     pub priority_support: bool,
     // Core features
+    pub network_discovery: bool,
+    pub topology_visualization: bool,
+    pub diagram_export: bool,
+    pub host_inventory: bool,
     pub scheduled_discovery: bool,
     pub daemon_poll: bool,
     pub service_definitions: bool,
     pub docker_integration: bool,
-    pub real_time_updates: bool,
     pub snmp_integration: bool,
+    pub csv_export: bool,
 }
 
 impl BillingPlan {
@@ -194,7 +229,8 @@ impl BillingPlan {
     pub fn is_commercial(&self) -> bool {
         matches!(
             self,
-            BillingPlan::Team(_)
+            BillingPlan::Pro(_)
+                | BillingPlan::Team(_)
                 | BillingPlan::Business(_)
                 | BillingPlan::Enterprise(_)
                 | BillingPlan::CommercialSelfHosted(_)
@@ -238,6 +274,104 @@ impl BillingPlan {
             BillingPlan::CommercialSelfHosted(_) => Hosting::SelfHosted,
             BillingPlan::Enterprise(_) => Hosting::Managed,
             _ => Hosting::Cloud, // Free, Starter, Pro, Team, Business, Demo
+        }
+    }
+
+    /// Returns the next-lower-tier cloud plan, if this is a cloud plan.
+    /// Returns None for Free (no previous) and self-hosted/demo plans.
+    pub fn previous_tier(&self) -> Option<BillingPlanDiscriminants> {
+        let cloud_tiers: Vec<BillingPlanDiscriminants> = vec![
+            BillingPlanDiscriminants::Free,
+            BillingPlanDiscriminants::Starter,
+            BillingPlanDiscriminants::Pro,
+            BillingPlanDiscriminants::Business,
+            BillingPlanDiscriminants::Enterprise,
+        ];
+
+        let my_disc = self.discriminant();
+        let idx = cloud_tiers.iter().position(|d| *d == my_disc)?;
+        if idx == 0 {
+            return None;
+        }
+        Some(cloud_tiers[idx - 1])
+    }
+
+    /// Returns feature IDs added by this plan over its previous tier.
+    /// For Free: returns all enabled features (it's the baseline).
+    /// For self-hosted plans with no previous tier: returns all enabled non-universal features.
+    /// For cloud plans: returns features new vs the previous tier.
+    pub fn incremental_features(&self) -> Vec<&'static str> {
+        let enabled = self.enabled_feature_ids();
+
+        match self.previous_tier() {
+            Some(prev_disc) => {
+                let prev_plan = Self::default_for_discriminant(prev_disc);
+                match prev_plan {
+                    Some(plan) => {
+                        let prev_features = plan.enabled_feature_ids();
+                        enabled.difference(&prev_features).copied().collect()
+                    }
+                    None => enabled.into_iter().collect(),
+                }
+            }
+            None if self.is_free() => {
+                // Free plan: show all enabled features (it's the baseline)
+                enabled.into_iter().collect()
+            }
+            None => {
+                // Self-hosted/other plans: show features beyond universal (Free) baseline
+                let universal = Self::universal_feature_ids();
+                enabled.difference(&universal).copied().collect()
+            }
+        }
+    }
+
+    /// Returns set of feature IDs where the feature is enabled on this plan.
+    pub fn enabled_feature_ids(&self) -> HashSet<&'static str> {
+        let features = self.features();
+        let json = serde_json::to_value(&features).unwrap();
+        let obj = json.as_object().unwrap();
+        obj.iter()
+            .filter(|(_, v)| v.as_bool().unwrap_or(false))
+            .map(|(k, _)| {
+                // Leak the key string so we get &'static str
+                // This is fine since these are a small fixed set called infrequently
+                let s: &'static str = Box::leak(k.clone().into_boxed_str());
+                s
+            })
+            .collect()
+    }
+
+    /// Features that are universal across all plans (present on Free).
+    fn universal_feature_ids() -> HashSet<&'static str> {
+        use crate::server::billing::plans::get_free_plan;
+        get_free_plan().enabled_feature_ids()
+    }
+
+    /// Whether the feature identified by `feature_id` is enabled on this plan.
+    pub fn has_feature(&self, feature_id: &str) -> bool {
+        let features = self.features();
+        let json = serde_json::to_value(&features).unwrap();
+        json.get(feature_id)
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    }
+
+    /// Build a default plan instance for a given discriminant (monthly, default config).
+    pub fn default_for_discriminant(disc: BillingPlanDiscriminants) -> Option<BillingPlan> {
+        use crate::server::billing::plans::*;
+
+        match disc {
+            BillingPlanDiscriminants::Free => Some(get_free_plan()),
+            BillingPlanDiscriminants::Community => Some(get_community_plan()),
+            BillingPlanDiscriminants::Enterprise => Some(get_enterprise_plan()),
+            BillingPlanDiscriminants::CommercialSelfHosted => {
+                Some(get_commercial_self_hosted_plan())
+            }
+            // For purchasable plans, find them from the default list
+            _ => get_purchasable_plans()
+                .into_iter()
+                .find(|p| p.discriminant() == disc),
         }
     }
 
@@ -302,12 +436,16 @@ impl BillingPlan {
                 email_support: false,
                 community_support: true,
                 priority_support: false,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Free { .. } => BillingPlanFeatures {
                 share_views: false,
@@ -324,12 +462,16 @@ impl BillingPlan {
                 email_support: false,
                 community_support: true,
                 priority_support: false,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: false,
                 daemon_poll: false,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Starter { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -346,12 +488,16 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: false,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Pro { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -368,12 +514,16 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: false,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Team { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -390,12 +540,16 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Business { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -412,12 +566,16 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Enterprise { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -434,12 +592,16 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::Demo { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -456,12 +618,16 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
             BillingPlan::CommercialSelfHosted { .. } => BillingPlanFeatures {
                 share_views: true,
@@ -478,12 +644,16 @@ impl BillingPlan {
                 email_support: true,
                 community_support: true,
                 priority_support: true,
+                network_discovery: true,
+                topology_visualization: true,
+                diagram_export: true,
+                host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
-                real_time_updates: true,
                 snmp_integration: true,
+                csv_export: true,
             },
         }
     }
@@ -509,12 +679,16 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             email_support,
             priority_support,
             community_support,
+            network_discovery,
+            topology_visualization,
+            diagram_export,
+            host_inventory,
             scheduled_discovery,
             daemon_poll,
             service_definitions,
             docker_integration,
-            real_time_updates,
             snmp_integration,
+            csv_export,
         } = self;
 
         if share_views {
@@ -573,6 +747,22 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             features.push(Feature::RemoveCreatedWith)
         }
 
+        if network_discovery {
+            features.push(Feature::NetworkDiscovery)
+        }
+
+        if topology_visualization {
+            features.push(Feature::TopologyVisualization)
+        }
+
+        if diagram_export {
+            features.push(Feature::DiagramExport)
+        }
+
+        if host_inventory {
+            features.push(Feature::HostInventory)
+        }
+
         if scheduled_discovery {
             features.push(Feature::ScheduledDiscovery)
         }
@@ -586,15 +776,15 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
         }
 
         if docker_integration {
-            features.push(Feature::DockerIntegration)
-        }
-
-        if real_time_updates {
-            features.push(Feature::RealTimeUpdates)
+            features.push(Feature::DockerDiscovery)
         }
 
         if snmp_integration {
-            features.push(Feature::SnmpIntegration)
+            features.push(Feature::SnmpDiscovery)
+        }
+
+        if csv_export {
+            features.push(Feature::CsvExport)
         }
 
         features
@@ -658,18 +848,14 @@ impl TypeMetadataProvider for BillingPlan {
                 "Community plan for individuals self-hosting Scanopy - full control over configuration and integrations"
             }
             BillingPlan::Free { .. } => {
-                "Get started with Scanopy — manual discovery for up to 25 hosts"
+                "Explore your network — discover and document up to 25 hosts"
             }
-            BillingPlan::Starter { .. } => {
-                "Automatically create living documentation of your network"
-            }
-            BillingPlan::Pro { .. } => "Visualize multiple networks and share network diagrams",
+            BillingPlan::Starter { .. } => "Living network documentation that updates itself",
+            BillingPlan::Pro { .. } => "For professionals managing multiple networks",
             BillingPlan::Team { .. } => {
                 "Collaborate on infrastructure documentation with your team"
             }
-            BillingPlan::Business { .. } => {
-                "Manage multi-site and multi-customer documentation with advanced features"
-            }
+            BillingPlan::Business { .. } => "For MSPs and multi-site IT teams",
             BillingPlan::Enterprise { .. } => {
                 "Fully managed Scanopy with dedicated support and custom deployment"
             }
@@ -682,6 +868,10 @@ impl TypeMetadataProvider for BillingPlan {
 
     fn metadata(&self) -> serde_json::Value {
         let config = self.config();
+        let previous_tier = self
+            .previous_tier()
+            .and_then(BillingPlan::default_for_discriminant)
+            .map(|p| p.id());
 
         serde_json::json!({
             // Pricing information
@@ -698,7 +888,10 @@ impl TypeMetadataProvider for BillingPlan {
             "features": self.features(),
             "is_commercial": self.is_commercial(),
             "hosting": self.hosting(),
-            "custom_price": self.custom_price()
+            "custom_price": self.custom_price(),
+            // Tier relationship
+            "incremental_features": self.incremental_features(),
+            "previous_tier": previous_tier
         })
     }
 }

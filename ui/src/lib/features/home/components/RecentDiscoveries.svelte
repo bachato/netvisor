@@ -3,6 +3,7 @@
 	import type { Daemon } from '$lib/features/daemons/types/base';
 	import type { components } from '$lib/api/schema';
 	import HomeDiscoveryDisplay from './HomeDiscoveryDisplay.svelte';
+	import { home_noDiscoveriesYet } from '$lib/paraglide/messages';
 
 	type NetworkSummary = components['schemas']['NetworkSummary'];
 
@@ -22,7 +23,7 @@
 <section>
 	<h3 class="text-primary mb-3 text-base font-semibold">Recent Discoveries</h3>
 	{#if discoveries.length === 0}
-		<p class="text-tertiary text-sm">No discovery results yet.</p>
+		<p class="text-tertiary text-sm">{home_noDiscoveriesYet()}</p>
 	{:else}
 		<div class="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-4">
 			{#each discoveries as discovery (discovery.id)}

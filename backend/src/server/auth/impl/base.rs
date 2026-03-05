@@ -52,12 +52,6 @@ pub struct PendingSetup {
     /// Use case selection (homelab, company, msp)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub use_case: Option<String>,
-    /// Company size selection
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub company_size: Option<String>,
-    /// Job title
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub job_title: Option<String>,
     /// How they heard about Scanopy
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub referral_source: Option<String>,

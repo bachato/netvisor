@@ -1,6 +1,7 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
-	import { entities } from '$lib/shared/stores/metadata';
+	import { entities, permissions } from '$lib/shared/stores/metadata';
+	import { entityRef } from '$lib/shared/components/data/types';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { Edit, Trash2 } from 'lucide-svelte';
 	import type { UserApiKey } from '../queries';
@@ -28,11 +29,20 @@
 		onSelectionChange?: (selected: boolean) => void;
 	} = $props();
 
-	// Get network names
-	let networkNames = $derived(
+	// Get network items for interactive tags
+	let networkItems = $derived(
 		(apiKey.network_ids ?? [])
-			.map((id) => networksData.find((n) => n.id === id)?.name)
-			.filter((name): name is string => !!name)
+			.map((id) => {
+				const network = networksData.find((n) => n.id === id);
+				if (!network) return null;
+				return {
+					id: network.id,
+					label: network.name,
+					color: entities.getColorHelper('Network').color,
+					entityRef: entityRef('Network', network.id, network)
+				};
+			})
+			.filter((item): item is NonNullable<typeof item> => item !== null)
 	);
 
 	// Build card data
@@ -43,11 +53,17 @@
 		fields: [
 			{
 				label: 'Permissions',
-				value: apiKey.permissions
+				value: [
+					{
+						id: apiKey.id,
+						label: permissions.getName(apiKey.permissions ?? null),
+						color: permissions.getColorHelper(apiKey.permissions ?? null).color
+					}
+				]
 			},
 			{
 				label: 'Networks',
-				value: networkNames.length > 0 ? networkNames.join(', ') : 'All networks'
+				value: networkItems.length > 0 ? networkItems : 'All networks'
 			},
 			{
 				label: 'Created',

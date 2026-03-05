@@ -184,7 +184,7 @@
 			title="API Access Not Available"
 			subtitle="Your current plan does not include API access. Upgrade to a plan with API access to create and manage API keys."
 		>
-			<UpgradeButton feature="API access" />
+			<UpgradeButton feature="api_access" />
 		</EmptyState>
 	{:else if isLoading}
 		<Loading />

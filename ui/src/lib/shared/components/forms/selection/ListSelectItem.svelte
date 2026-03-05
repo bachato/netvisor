@@ -3,11 +3,13 @@
 <script lang="ts" generics="T, C">
 	import { onMount } from 'svelte';
 	import Tag from '../../data/Tag.svelte';
+	import EntityTag from '../../data/EntityTag.svelte';
 	import type { EntityDisplayComponent } from './types';
 
 	export let item: T;
 	export let displayComponent: EntityDisplayComponent<T, C>;
 	export let context: C;
+	export let staticTags: boolean = false;
 
 	$: icon = displayComponent.getIcon?.(item, context);
 	$: tags = displayComponent.getTags?.(item, context) || [];
@@ -109,12 +111,21 @@
 			{#if tags.length > 0}
 				<div class="flex flex-shrink-0 items-center gap-1">
 					{#each visibleTags as tag, i (`${tag.label}-${i}`)}
-						<Tag
-							label={tag.label}
-							color={tag.color}
-							icon={tag.icon ?? null}
-							href={tag.href ?? ''}
-						/>
+						{#if !staticTags && tag.entityRef}
+							<EntityTag
+								entityRef={tag.entityRef}
+								label={tag.label}
+								color={tag.color}
+								icon={tag.icon ?? null}
+							/>
+						{:else}
+							<Tag
+								label={tag.label}
+								color={tag.color}
+								icon={tag.icon ?? null}
+								href={tag.href ?? ''}
+							/>
+						{/if}
 					{/each}
 					{#if hiddenCount > 0}
 						<span class="text-tertiary whitespace-nowrap text-xs">+{hiddenCount} more</span>

@@ -250,7 +250,7 @@
 		<div class="flex min-w-0 flex-1 items-center gap-3">
 			{#if selectedItem}
 				{@const context = getOptionContext(selectedItem, 0)}
-				<ListSelectItem {context} item={selectedItem} {displayComponent} />
+				<ListSelectItem {context} item={selectedItem} {displayComponent} staticTags={true} />
 			{:else}
 				<span class="text-secondary"
 					>{options.length == 0
@@ -343,7 +343,7 @@
 									: 'hover:bg-gray-600'}
                        {!isLastInGroup || !isLastGroup ? 'border-b border-gray-600' : ''}"
 							>
-								<ListSelectItem {context} item={option} {displayComponent} />
+								<ListSelectItem {context} item={option} {displayComponent} staticTags={true} />
 							</button>
 						{/each}
 					{/if}

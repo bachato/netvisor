@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { CardAction, CardField, TagProps } from './types';
 	import Tag from './Tag.svelte';
+	import EntityTag from './EntityTag.svelte';
 	import type { Snippet } from 'svelte';
 	import { type IconComponent } from '$lib/shared/utils/types';
 
@@ -138,13 +139,24 @@
 									{#if field.value.length > 0}
 										<div class="flex flex-wrap gap-1">
 											{#each field.value.slice(0, MAX_ITEMS_IN_LIST_VIEW) as item (item.id)}
-												<Tag
-													icon={item.icon}
-													disabled={item.disabled}
-													color={field.color || item.color}
-													badge={item.badge}
-													label={item.label}
-												/>
+												{#if item.entityRef}
+													<EntityTag
+														entityRef={item.entityRef}
+														icon={item.icon}
+														disabled={item.disabled}
+														color={field.color || item.color}
+														badge={item.badge}
+														label={item.label}
+													/>
+												{:else}
+													<Tag
+														icon={item.icon}
+														disabled={item.disabled}
+														color={field.color || item.color}
+														badge={item.badge}
+														label={item.label}
+													/>
+												{/if}
 											{/each}
 										</div>
 										{#if field.value.length > MAX_ITEMS_IN_LIST_VIEW}
@@ -180,13 +192,24 @@
 									<span class="text-secondary">{field.label}:</span>
 									{#if field.value.length > 0}
 										{#each field.value as item (item.id)}
-											<Tag
-												icon={item.icon}
-												disabled={item.disabled}
-												color={field.color || item.color}
-												badge={item.badge}
-												label={item.label}
-											/>
+											{#if item.entityRef}
+												<EntityTag
+													entityRef={item.entityRef}
+													icon={item.icon}
+													disabled={item.disabled}
+													color={field.color || item.color}
+													badge={item.badge}
+													label={item.label}
+												/>
+											{:else}
+												<Tag
+													icon={item.icon}
+													disabled={item.disabled}
+													color={field.color || item.color}
+													badge={item.badge}
+													label={item.label}
+												/>
+											{/if}
 										{/each}
 									{:else}
 										<span class="text-muted"

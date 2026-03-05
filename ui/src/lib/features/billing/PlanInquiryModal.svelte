@@ -133,7 +133,8 @@
 			</div>
 			<h3 class="text-primary mb-2 text-xl font-semibold">Thank you!</h3>
 			<p class="text-secondary mb-6">
-				We've received your inquiry about the {planName} plan. We'll be in touch soon.
+				We've received your inquiry about the {planName} plan. We'll be in touch within one business
+				day.
 			</p>
 			<button type="button" onclick={handleClose} class="btn-primary">Close</button>
 		</div>

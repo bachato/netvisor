@@ -6,9 +6,6 @@ export interface OnboardingState {
 	organizationName: string;
 	network: NetworkSetup;
 	populateSeedData: boolean;
-	// CRM qualification data (company/msp only, not persisted to DB)
-	jobTitle: string | null;
-	companySize: string | null;
 	// Referral source (Cloud only, not persisted to DB)
 	referralSource: string | null;
 	referralSourceOther: string | null;
@@ -19,26 +16,24 @@ const STORAGE_KEY = 'scanopy_onboarding';
 // Fields to persist to localStorage (for billing page autofill)
 interface PersistedState {
 	useCase: UseCase | null;
-	companySize: string | null;
 }
 
 function loadPersistedState(): PersistedState {
 	if (typeof window === 'undefined') {
-		return { useCase: null, companySize: null };
+		return { useCase: null };
 	}
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
 		if (stored) {
 			const parsed = JSON.parse(stored);
 			return {
-				useCase: parsed.useCase ?? null,
-				companySize: parsed.companySize ?? null
+				useCase: parsed.useCase ?? null
 			};
 		}
 	} catch {
 		// Ignore localStorage errors
 	}
-	return { useCase: null, companySize: null };
+	return { useCase: null };
 }
 
 function savePersistedState(state: PersistedState): void {
@@ -57,8 +52,6 @@ const initialState: OnboardingState = {
 	organizationName: '',
 	network: { name: '' },
 	populateSeedData: true,
-	jobTitle: null,
-	companySize: persisted.companySize,
 	referralSource: null,
 	referralSourceOther: null
 };
@@ -71,8 +64,7 @@ function createOnboardingStore() {
 		update((state) => {
 			const newState = updater(state);
 			savePersistedState({
-				useCase: newState.useCase,
-				companySize: newState.companySize
+				useCase: newState.useCase
 			});
 			return newState;
 		});
@@ -80,14 +72,12 @@ function createOnboardingStore() {
 
 	return {
 		subscribe,
-		// Reset clears most state but preserves useCase and companySize for billing page
+		// Reset clears most state but preserves useCase for billing page
 		reset: () =>
 			updateAndPersist((state) => ({
 				...initialState,
 				network: { name: '' },
-				useCase: state.useCase, // Preserve for billing page
-				companySize: state.companySize, // Preserve for billing page
-				jobTitle: null
+				useCase: state.useCase // Preserve for billing page
 			})),
 
 		setUseCase: (useCase: UseCase) =>
@@ -118,18 +108,6 @@ function createOnboardingStore() {
 			update((state) => ({
 				...state,
 				populateSeedData: populate
-			})),
-
-		setJobTitle: (jobTitle: string | null) =>
-			update((state) => ({
-				...state,
-				jobTitle
-			})),
-
-		setCompanySize: (companySize: string | null) =>
-			updateAndPersist((state) => ({
-				...state,
-				companySize
 			})),
 
 		setReferralSource: (referralSource: string | null, referralSourceOther: string | null) =>

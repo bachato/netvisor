@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { CheckCircle, AlertCircle, CreditCard, AlertTriangle } from 'lucide-svelte';
-	import { reopenSettingsAfterBilling } from '$lib/features/billing/stores';
+	import { reopenSettingsAfterBilling, upgradeContext } from '$lib/features/billing/stores';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
@@ -170,7 +170,10 @@
 								<AlertTriangle class="h-5 w-5 text-amber-500" />
 								<div>
 									<p class="text-primary text-sm font-medium">
-										Trial ends in {trialDaysLeft} days
+										Trial ends in {trialDaysLeft} days ({trialEndDate?.toLocaleDateString(
+											undefined,
+											{ month: 'long', day: 'numeric', year: 'numeric' }
+										)})
 									</p>
 									<p class="text-secondary mt-1 text-xs">
 										Add a payment method to continue after the trial
@@ -376,6 +379,7 @@
 						</div>
 						<button
 							onclick={() => {
+								upgradeContext.set(null);
 								openModal('billing-plan');
 								reopenSettingsAfterBilling.set(true);
 								onClose();

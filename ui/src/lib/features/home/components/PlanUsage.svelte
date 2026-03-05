@@ -62,7 +62,9 @@
 		return list;
 	});
 
-	let showUpgrade = $derived(hasLimits && isOwner && rows.some((r) => r.pct >= 1 && !r.hasOverage));
+	let showUpgrade = $derived(
+		hasLimits && isOwner && rows.some((r) => r.pct >= 0.8 && !r.hasOverage)
+	);
 
 	function barColor(row: UsageRow): string {
 		if (row.hasOverage) return 'bg-blue-500';
@@ -82,7 +84,7 @@
 		<div class="mb-3 flex items-center justify-between">
 			<h3 class="text-primary text-base font-semibold">Plan Usage</h3>
 			{#if showUpgrade}
-				<UpgradeButton feature="home_plan_usage" />
+				<UpgradeButton feature="plan_usage" />
 			{/if}
 		</div>
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

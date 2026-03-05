@@ -4,7 +4,6 @@ use crate::server::config::{__path_get_public_config, get_public_config};
 use crate::server::github::handlers::{__path_get_stars, get_stars};
 use crate::server::openapi::create_docs_router;
 use crate::server::shared::types::api::ApiResponse;
-use crate::server::shared::types::metadata::{__path_get_metadata_registry, get_metadata_registry};
 use crate::server::{
     auth::handlers as auth_handlers, billing::handlers as billing_handlers,
     bindings::handlers as binding_handlers, config::AppState,
@@ -127,7 +126,6 @@ pub fn create_public_share_routes() -> OpenApiRouter<Arc<AppState>> {
 /// Creates the OpenApiRouter with cacheable routes.
 fn create_cacheable_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
-        .routes(utoipa_axum::routes!(get_metadata_registry))
         .routes(utoipa_axum::routes!(get_public_config))
         .routes(utoipa_axum::routes!(get_stars))
 }
