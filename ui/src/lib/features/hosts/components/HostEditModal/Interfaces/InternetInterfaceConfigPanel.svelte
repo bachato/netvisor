@@ -107,7 +107,7 @@
 					type="text"
 					id="interface_ip_{iface.id}"
 					class="input-field w-full"
-					placeholder="192.168.1.100 or 2001:db8::1"
+					placeholder={subnet.cidr.includes(':') ? '2001:db8::1' : '192.168.1.100'}
 					value={ipAddress}
 					oninput={handleIpChange}
 				/>
