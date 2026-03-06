@@ -4,6 +4,7 @@
 	import TopologyOptionsPanel from './panel/TopologyOptionsPanel.svelte';
 	import { Edit, Globe, Lock, Plus, Radio, RefreshCcw, Share2, Trash2 } from 'lucide-svelte';
 	import ExportButton from './ExportButton.svelte';
+	import ExportModal from './ExportModal.svelte';
 	import ShareModal from '$lib/features/shares/components/ShareModal.svelte';
 	import { SvelteFlowProvider } from '@xyflow/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -136,6 +137,7 @@
 
 	let isRefreshConflictsOpen = $state(false);
 	let isShareModalOpen = $state(false);
+	let isExportModalOpen = $state(false);
 
 	// Deep-link: open share modal from modal registry
 	$effect(() => {
@@ -333,7 +335,7 @@
 		<div class="card card-static flex items-center justify-evenly gap-4 px-4 py-2">
 			{#if currentTopology}
 				<div class="flex items-center gap-4 py-2">
-					<ExportButton topologyId={currentTopology.id} />
+					<ExportButton onclick={() => (isExportModalOpen = true)} />
 					{#if !isReadOnly}
 						<button class="btn-secondary" onclick={() => openModal('topology-share')}>
 							<Share2 class="my-1 h-5 w-5" />
@@ -485,6 +487,10 @@
 			</div>
 		{/if}
 	</div>
+
+	{#if currentTopology}
+		<ExportModal topologyId={currentTopology.id} bind:isOpen={isExportModalOpen} />
+	{/if}
 </SvelteFlowProvider>
 
 <TopologyModal

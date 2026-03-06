@@ -6,6 +6,7 @@
 	import { writable } from 'svelte/store';
 	import ReadOnlyInspectorPanel from './ReadOnlyInspectorPanel.svelte';
 	import ExportButton from '$lib/features/topology/components/ExportButton.svelte';
+	import ExportModal from '$lib/features/topology/components/ExportModal.svelte';
 	import { Share2 } from 'lucide-svelte';
 
 	export let topology: Topology;
@@ -14,6 +15,8 @@
 	export let showExport: boolean = false;
 	export let isEmbed: boolean = false;
 	export let shareName: string = '';
+
+	let isExportModalOpen = false;
 
 	// Create a context store for the topology so child components (inspectors) can access it
 	const topologyContext = writable<Topology>(topology);
@@ -61,7 +64,7 @@
 				</div>
 				<div class="flex items-center gap-4">
 					{#if showExport}
-						<ExportButton topologyId={topology.id} isShareView={true} />
+						<ExportButton onclick={() => (isExportModalOpen = true)} />
 					{/if}
 				</div>
 			</header>
@@ -84,4 +87,8 @@
 			/>
 		</div>
 	</div>
+
+	{#if showExport}
+		<ExportModal topologyId={topology.id} bind:isOpen={isExportModalOpen} isShareView={true} />
+	{/if}
 </SvelteFlowProvider>
