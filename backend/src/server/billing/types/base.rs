@@ -187,7 +187,10 @@ pub struct BillingPlanFeatures {
     // Core features
     pub network_discovery: bool,
     pub topology_visualization: bool,
-    pub diagram_export: bool,
+    pub png_export: bool,
+    pub svg_export: bool,
+    pub mermaid_export: bool,
+    pub confluence_export: bool,
     pub host_inventory: bool,
     pub scheduled_discovery: bool,
     pub daemon_poll: bool,
@@ -438,7 +441,10 @@ impl BillingPlan {
                 priority_support: false,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: false,
                 host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
@@ -464,7 +470,10 @@ impl BillingPlan {
                 priority_support: false,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: false,
+                mermaid_export: false,
+                confluence_export: false,
                 host_inventory: true,
                 scheduled_discovery: false,
                 daemon_poll: false,
@@ -490,7 +499,10 @@ impl BillingPlan {
                 priority_support: false,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: false,
+                confluence_export: false,
                 host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
@@ -516,7 +528,10 @@ impl BillingPlan {
                 priority_support: false,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: false,
                 host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
@@ -542,7 +557,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
@@ -568,7 +586,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
@@ -594,7 +615,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
@@ -620,7 +644,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
@@ -646,7 +673,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 host_inventory: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
@@ -681,7 +711,10 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             community_support,
             network_discovery,
             topology_visualization,
-            diagram_export,
+            png_export,
+            svg_export,
+            mermaid_export,
+            confluence_export,
             host_inventory,
             scheduled_discovery,
             daemon_poll,
@@ -755,8 +788,20 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             features.push(Feature::TopologyVisualization)
         }
 
-        if diagram_export {
-            features.push(Feature::DiagramExport)
+        if png_export {
+            features.push(Feature::PngExport)
+        }
+
+        if svg_export {
+            features.push(Feature::SvgExport)
+        }
+
+        if mermaid_export {
+            features.push(Feature::MermaidExport)
+        }
+
+        if confluence_export {
+            features.push(Feature::ConfluenceExport)
         }
 
         if host_inventory {

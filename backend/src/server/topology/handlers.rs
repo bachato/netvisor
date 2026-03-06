@@ -25,9 +25,11 @@ use crate::server::{
     },
 };
 use axum::{
+    body::Body,
     extract::{Path, State},
+    http::{HeaderMap, HeaderValue, header},
     response::{
-        Json, Sse,
+        IntoResponse, Json, Sse,
         sse::{Event, KeepAlive},
     },
     routing::get,
@@ -56,6 +58,8 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
             generated::delete
         ))
         .routes(routes!(generated::export_csv))
+        .routes(routes!(export_mermaid))
+        .routes(routes!(export_confluence))
         .routes(routes!(refresh))
         .routes(routes!(rebuild))
         .routes(routes!(update_node_position))
@@ -737,6 +741,100 @@ async fn unlock(
             id
         )))
     }
+}
+
+/// Export topology as Mermaid flowchart
+#[utoipa::path(
+    get,
+    path = "/{id}/export/mermaid",
+    tags = [Topology::ENTITY_NAME_PLURAL, "internal"],
+    params(("id" = Uuid, Path, description = "Topology ID")),
+    responses(
+        (status = 200, description = "Mermaid flowchart export", content_type = "text/plain"),
+        (status = 403, description = "Access denied", body = ApiErrorResponse),
+        (status = 404, description = "Topology not found", body = ApiErrorResponse),
+    ),
+     security(("user_api_key" = []), ("session" = []))
+)]
+async fn export_mermaid(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Viewer>,
+    Path(id): Path<Uuid>,
+) -> ApiResult<impl IntoResponse> {
+    let network_ids = auth.network_ids();
+
+    let service = Topology::get_service(&state);
+    let topology = service
+        .get_by_id(&id)
+        .await?
+        .ok_or_else(|| ApiError::not_found(format!("Topology {} not found", id)))?;
+
+    if !network_ids.contains(&topology.base.network_id) {
+        return Err(ApiError::forbidden(
+            "You don't have access to this topology",
+        ));
+    }
+
+    let content = crate::server::topology::types::export::topology_to_mermaid(&topology);
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("text/plain; charset=utf-8"),
+    );
+    headers.insert(
+        header::CONTENT_DISPOSITION,
+        HeaderValue::from_static("attachment; filename=\"topology.mmd\""),
+    );
+
+    Ok((headers, Body::from(content)))
+}
+
+/// Export topology as Confluence wiki markup
+#[utoipa::path(
+    get,
+    path = "/{id}/export/confluence",
+    tags = [Topology::ENTITY_NAME_PLURAL, "internal"],
+    params(("id" = Uuid, Path, description = "Topology ID")),
+    responses(
+        (status = 200, description = "Confluence wiki markup export", content_type = "text/plain"),
+        (status = 403, description = "Access denied", body = ApiErrorResponse),
+        (status = 404, description = "Topology not found", body = ApiErrorResponse),
+    ),
+     security(("user_api_key" = []), ("session" = []))
+)]
+async fn export_confluence(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Viewer>,
+    Path(id): Path<Uuid>,
+) -> ApiResult<impl IntoResponse> {
+    let network_ids = auth.network_ids();
+
+    let service = Topology::get_service(&state);
+    let topology = service
+        .get_by_id(&id)
+        .await?
+        .ok_or_else(|| ApiError::not_found(format!("Topology {} not found", id)))?;
+
+    if !network_ids.contains(&topology.base.network_id) {
+        return Err(ApiError::forbidden(
+            "You don't have access to this topology",
+        ));
+    }
+
+    let content = crate::server::topology::types::export::topology_to_confluence(&topology);
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("text/plain; charset=utf-8"),
+    );
+    headers.insert(
+        header::CONTENT_DISPOSITION,
+        HeaderValue::from_static("attachment; filename=\"topology.txt\""),
+    );
+
+    Ok((headers, Body::from(content)))
 }
 
 async fn staleness_stream(

@@ -333,7 +333,7 @@
 		<div class="card card-static flex items-center justify-evenly gap-4 px-4 py-2">
 			{#if currentTopology}
 				<div class="flex items-center gap-4 py-2">
-					<ExportButton />
+					<ExportButton topologyId={currentTopology.id} />
 					{#if !isReadOnly}
 						<button class="btn-secondary" onclick={() => openModal('topology-share')}>
 							<Share2 class="my-1 h-5 w-5" />

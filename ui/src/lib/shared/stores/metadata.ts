@@ -51,6 +51,10 @@ export interface BillingPlanFeatures {
 	docker_integration: boolean;
 	real_time_updates: boolean;
 	snmp_integration: boolean;
+	png_export: boolean;
+	svg_export: boolean;
+	mermaid_export: boolean;
+	confluence_export: boolean;
 }
 
 export type FeatureId = keyof BillingPlanFeatures;

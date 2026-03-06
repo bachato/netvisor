@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { toPng } from 'html-to-image';
+	import { toPng, toSvg } from 'html-to-image';
 	import { useSvelteFlow, type Node } from '@xyflow/svelte';
-	import { Download } from 'lucide-svelte';
+	import { ChevronDown, Download } from 'lucide-svelte';
 	import { pushError, pushSuccess } from '$lib/shared/stores/feedback';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
@@ -10,10 +10,18 @@
 		topology_createdUsing,
 		topology_exportComplete,
 		topology_exportFailed,
+		topology_exportPng,
+		topology_exportSvg,
+		topology_exportMermaid,
+		topology_exportConfluence,
 		topology_flowNotFound,
 		topology_noNodesToExport
 	} from '$lib/paraglide/messages';
 	import { trackEvent } from '$lib/shared/utils/analytics';
+	import { downloadTopologyExport } from '$lib/shared/utils/csvExport';
+	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
+
+	let { topologyId }: { topologyId: string } = $props();
 
 	const { getNodes, getEdges, getViewport, setViewport } = useSvelteFlow();
 
@@ -29,13 +37,23 @@
 		}
 	});
 
-	function downloadImage(dataUrl: string) {
-		const link = document.createElement('a');
-		link.download = `scanopy-topology-${new Date().toISOString().split('T')[0]}.png`;
-		link.href = dataUrl;
-		link.click();
-		pushSuccess(topology_exportComplete());
-	}
+	let hasSvgExport = $derived(
+		organization?.plan ? billingPlans.getMetadata(organization.plan.type).features.svg_export : true
+	);
+
+	let hasMermaidExport = $derived(
+		organization?.plan
+			? billingPlans.getMetadata(organization.plan.type).features.mermaid_export
+			: true
+	);
+
+	let hasConfluenceExport = $derived(
+		organization?.plan
+			? billingPlans.getMetadata(organization.plan.type).features.confluence_export
+			: true
+	);
+
+	let isOpen = $state(false);
 
 	function getAbsolutePosition(node: Node, nodes: Node[]) {
 		if (node.parentId) {
@@ -50,24 +68,21 @@
 		return { x: node.position.x, y: node.position.y };
 	}
 
-	async function handleClick() {
+	function calculateExportBounds() {
 		const nodes = getNodes();
 		const edges = getEdges();
 
 		if (nodes.length === 0) {
 			pushError(topology_noNodesToExport());
-			return;
+			return null;
 		}
 
-		const originalViewport = getViewport();
 		const flowElement = document.querySelector('.svelte-flow') as HTMLElement;
-
 		if (!flowElement) {
 			pushError(topology_flowNotFound());
-			return;
+			return null;
 		}
 
-		// Separate nodes by type
 		const childNodes = nodes.filter((n) => n.parentId);
 		const parentNodes = nodes.filter((n) => !n.parentId);
 		const parentIdsWithChildren = new Set(childNodes.map((n) => n.parentId));
@@ -78,32 +93,27 @@
 			maxX = -Infinity,
 			maxY = -Infinity;
 
-		// Calculate bounds from child nodes (absolute positions)
 		childNodes.forEach((child) => {
 			const absPos = getAbsolutePosition(child, nodes);
 			const width = child.measured?.width || child.width || 150;
 			const height = child.measured?.height || child.height || 50;
-
 			minX = Math.min(minX, absPos.x);
 			minY = Math.min(minY, absPos.y);
 			maxX = Math.max(maxX, absPos.x + width);
 			maxY = Math.max(maxY, absPos.y + height);
 		});
 
-		// Include standalone nodes
 		standaloneNodes.forEach((node) => {
 			const x = node.position.x;
 			const y = node.position.y;
 			const width = node.measured?.width || node.width || 150;
 			const height = node.measured?.height || node.height || 50;
-
 			minX = Math.min(minX, x);
 			minY = Math.min(minY, y);
 			maxX = Math.max(maxX, x + width);
 			maxY = Math.max(maxY, y + height);
 		});
 
-		// Add small margin for parent container borders
 		const parentBorderMargin = 20;
 		parentNodes
 			.filter((n) => parentIdsWithChildren.has(n.id))
@@ -112,25 +122,20 @@
 				minY = Math.min(minY, parent.position.y - parentBorderMargin);
 			});
 
-		// Include edge bounds using ABSOLUTE positions
 		edges.forEach((edge) => {
 			const sourceNode = nodes.find((n) => n.id === edge.source);
 			const targetNode = nodes.find((n) => n.id === edge.target);
-
 			if (sourceNode && targetNode) {
 				const sourcePos = getAbsolutePosition(sourceNode, nodes);
 				const targetPos = getAbsolutePosition(targetNode, nodes);
-
-				const sourceWidth = sourceNode.measured?.width || sourceNode.width || 150;
-				const sourceHeight = sourceNode.measured?.height || sourceNode.height || 50;
-				const targetWidth = targetNode.measured?.width || targetNode.width || 150;
-				const targetHeight = targetNode.measured?.height || targetNode.height || 50;
-
-				const sourceCenterX = sourcePos.x + sourceWidth / 2;
-				const sourceCenterY = sourcePos.y + sourceHeight / 2;
-				const targetCenterX = targetPos.x + targetWidth / 2;
-				const targetCenterY = targetPos.y + targetHeight / 2;
-
+				const sourceCenterX =
+					sourcePos.x + (sourceNode.measured?.width || sourceNode.width || 150) / 2;
+				const sourceCenterY =
+					sourcePos.y + (sourceNode.measured?.height || sourceNode.height || 50) / 2;
+				const targetCenterX =
+					targetPos.x + (targetNode.measured?.width || targetNode.width || 150) / 2;
+				const targetCenterY =
+					targetPos.y + (targetNode.measured?.height || targetNode.height || 50) / 2;
 				minX = Math.min(minX, sourceCenterX, targetCenterX);
 				minY = Math.min(minY, sourceCenterY, targetCenterY);
 				maxX = Math.max(maxX, sourceCenterX, targetCenterX);
@@ -138,7 +143,6 @@
 			}
 		});
 
-		// Add margin for labels and edge curves
 		const edgeMargin = 150;
 		minX -= edgeMargin;
 		minY -= edgeMargin;
@@ -147,19 +151,23 @@
 
 		const boundsWidth = maxX - minX;
 		const boundsHeight = maxY - minY;
-
 		const targetZoom = 0.75;
 		const imageWidth = Math.round(boundsWidth * targetZoom);
 		const imageHeight = Math.round(boundsHeight * targetZoom);
-
 		const boundsCenterX = minX + boundsWidth / 2;
 		const boundsCenterY = minY + boundsHeight / 2;
-
 		const x = imageWidth / 2 - boundsCenterX * targetZoom;
 		const y = imageHeight / 2 - boundsCenterY * targetZoom;
 
-		const newViewport = { x, y, zoom: targetZoom };
+		return { flowElement, imageWidth, imageHeight, viewport: { x, y, zoom: targetZoom } };
+	}
 
+	async function captureImage(format: 'png' | 'svg') {
+		const bounds = calculateExportBounds();
+		if (!bounds) return;
+
+		const { flowElement, imageWidth, imageHeight, viewport: newViewport } = bounds;
+		const originalViewport = getViewport();
 		const originalWidth = flowElement.style.width;
 		const originalHeight = flowElement.style.height;
 
@@ -201,13 +209,12 @@
 			watermark.appendChild(text);
 			flowElement.appendChild(watermark);
 
-			// Wait for logo to load
 			await new Promise<void>((resolve) => {
 				if (logo.complete) {
 					resolve();
 				} else {
 					logo.onload = () => resolve();
-					logo.onerror = () => resolve(); // Continue even if logo fails
+					logo.onerror = () => resolve();
 				}
 			});
 		}
@@ -215,13 +222,17 @@
 		await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
 		try {
-			const dataUrl = await toPng(flowElement, {
-				width: imageWidth,
-				height: imageHeight,
-				pixelRatio: 2
-			});
-			downloadImage(dataUrl);
-			trackEvent('topology_exported', { format: 'png' });
+			const options = { width: imageWidth, height: imageHeight, pixelRatio: 2 };
+			const dataUrl =
+				format === 'svg' ? await toSvg(flowElement, options) : await toPng(flowElement, options);
+
+			const link = document.createElement('a');
+			const date = new Date().toISOString().split('T')[0];
+			link.download = `scanopy-topology-${date}.${format}`;
+			link.href = dataUrl;
+			link.click();
+			pushSuccess(topology_exportComplete());
+			trackEvent('topology_exported', { format });
 		} catch (err) {
 			console.error('Export failed:', err);
 			pushError(topology_exportFailed());
@@ -234,8 +245,107 @@
 			setTimeout(() => setViewport(originalViewport, { duration: 0 }), 50);
 		}
 	}
+
+	async function handlePngExport() {
+		isOpen = false;
+		await captureImage('png');
+	}
+
+	async function handleSvgExport() {
+		isOpen = false;
+		await captureImage('svg');
+	}
+
+	async function handleMermaidExport() {
+		isOpen = false;
+		try {
+			await downloadTopologyExport(topologyId, 'mermaid');
+			pushSuccess(topology_exportComplete());
+			trackEvent('topology_exported', { format: 'mermaid' });
+		} catch {
+			pushError(topology_exportFailed());
+		}
+	}
+
+	async function handleConfluenceExport() {
+		isOpen = false;
+		try {
+			await downloadTopologyExport(topologyId, 'confluence');
+			pushSuccess(topology_exportComplete());
+			trackEvent('topology_exported', { format: 'confluence' });
+		} catch {
+			pushError(topology_exportFailed());
+		}
+	}
+
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		if (!target.closest('.export-dropdown')) {
+			isOpen = false;
+		}
+	}
 </script>
 
-<button class="btn-secondary" onclick={handleClick}>
-	<Download class="my-1 h-5 w-5" />
-</button>
+<svelte:document onclick={handleClickOutside} />
+
+<div class="export-dropdown relative">
+	<button class="btn-secondary flex items-center gap-1" onclick={() => (isOpen = !isOpen)}>
+		<Download class="my-1 h-5 w-5" />
+		<ChevronDown class="h-3 w-3" />
+	</button>
+
+	{#if isOpen}
+		<div
+			class="absolute left-0 top-full z-50 mt-1 min-w-48 rounded-lg border border-zinc-700 bg-zinc-800 py-1 shadow-lg"
+		>
+			<button
+				class="flex w-full items-center px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-700"
+				onclick={handlePngExport}
+			>
+				{topology_exportPng()}
+			</button>
+
+			{#if hasSvgExport}
+				<button
+					class="flex w-full items-center px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-700"
+					onclick={handleSvgExport}
+				>
+					{topology_exportSvg()}
+				</button>
+			{:else}
+				<div class="flex w-full items-center justify-between px-3 py-2 text-sm text-zinc-400">
+					<span>{topology_exportSvg()}</span>
+					<UpgradeButton feature="svg_export" />
+				</div>
+			{/if}
+
+			{#if hasMermaidExport}
+				<button
+					class="flex w-full items-center px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-700"
+					onclick={handleMermaidExport}
+				>
+					{topology_exportMermaid()}
+				</button>
+			{:else}
+				<div class="flex w-full items-center justify-between px-3 py-2 text-sm text-zinc-400">
+					<span>{topology_exportMermaid()}</span>
+					<UpgradeButton feature="mermaid_export" />
+				</div>
+			{/if}
+
+			{#if hasConfluenceExport}
+				<button
+					class="flex w-full items-center px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-700"
+					onclick={handleConfluenceExport}
+				>
+					{topology_exportConfluence()}
+				</button>
+			{:else}
+				<div class="flex w-full items-center justify-between px-3 py-2 text-sm text-zinc-400">
+					<span>{topology_exportConfluence()}</span>
+					<UpgradeButton feature="confluence_export" />
+				</div>
+			{/if}
+		</div>
+	{/if}
+</div>

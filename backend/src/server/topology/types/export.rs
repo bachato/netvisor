@@ -1,0 +1,272 @@
+use super::base::Topology;
+use super::edges::EdgeType;
+use super::nodes::NodeType;
+use std::collections::HashMap;
+use std::fmt::Write;
+use uuid::Uuid;
+
+fn short_id(id: &Uuid) -> String {
+    id.to_string().replace('-', "")[..8].to_string()
+}
+
+fn mermaid_escape(s: &str) -> String {
+    s.replace('"', "&quot;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('[', "&#91;")
+        .replace(']', "&#93;")
+}
+
+fn edge_type_name(edge_type: &EdgeType) -> &'static str {
+    match edge_type {
+        EdgeType::Interface { .. } => "Interface",
+        EdgeType::HostVirtualization { .. } => "Host Virtualization",
+        EdgeType::ServiceVirtualization { .. } => "Service Virtualization",
+        EdgeType::RequestPath { .. } => "Request Path",
+        EdgeType::HubAndSpoke { .. } => "Hub & Spoke",
+        EdgeType::PhysicalLink { .. } => "Physical Link",
+    }
+}
+
+pub fn topology_to_mermaid(topology: &Topology) -> String {
+    let mut output = String::new();
+    writeln!(output, "flowchart TD").unwrap();
+
+    // Build lookup maps
+    let subnets: HashMap<Uuid, _> = topology.base.subnets.iter().map(|s| (s.id, s)).collect();
+    let hosts: HashMap<Uuid, _> = topology.base.hosts.iter().map(|h| (h.id, h)).collect();
+    let interfaces: HashMap<Uuid, _> = topology.base.interfaces.iter().map(|i| (i.id, i)).collect();
+
+    // Group InterfaceNodes by subnet_id
+    let mut nodes_by_subnet: HashMap<Uuid, Vec<_>> = HashMap::new();
+    for node in &topology.base.nodes {
+        if let NodeType::InterfaceNode { subnet_id, .. } = &node.node_type {
+            nodes_by_subnet.entry(*subnet_id).or_default().push(node);
+        }
+    }
+
+    // Generate subgraphs for each subnet
+    for (subnet_id, nodes) in &nodes_by_subnet {
+        if let Some(subnet) = subnets.get(subnet_id) {
+            let sub_label = format!(
+                "{} - {}",
+                mermaid_escape(&subnet.base.name),
+                subnet.base.cidr
+            );
+            writeln!(
+                output,
+                "    subgraph sub_{}[\"{}\"]",
+                short_id(subnet_id),
+                sub_label
+            )
+            .unwrap();
+
+            for node in nodes {
+                if let NodeType::InterfaceNode {
+                    host_id,
+                    interface_id,
+                    ..
+                } = &node.node_type
+                {
+                    let host_name = hosts
+                        .get(host_id)
+                        .map(|h| h.base.name.as_str())
+                        .unwrap_or("Unknown Host");
+
+                    let ip = interface_id
+                        .and_then(|iid| interfaces.get(&iid))
+                        .map(|i| i.base.ip_address.to_string())
+                        .unwrap_or_default();
+
+                    let label = if ip.is_empty() {
+                        mermaid_escape(host_name)
+                    } else {
+                        format!("{}<br/>{}", mermaid_escape(host_name), ip)
+                    };
+
+                    writeln!(output, "        n_{}[\"{}\"]", short_id(&node.id), label).unwrap();
+                }
+            }
+
+            writeln!(output, "    end").unwrap();
+        }
+    }
+
+    // Generate edges
+    for edge in &topology.base.edges {
+        let arrow = match &edge.edge_type {
+            EdgeType::RequestPath { .. } | EdgeType::HubAndSpoke { .. } => "-->",
+            EdgeType::Interface { .. } | EdgeType::PhysicalLink { .. } => "---",
+            EdgeType::HostVirtualization { .. } | EdgeType::ServiceVirtualization { .. } => "-.->",
+        };
+
+        let label_str = edge
+            .label
+            .as_ref()
+            .map(|l| format!("|{}|", mermaid_escape(l)))
+            .unwrap_or_default();
+
+        writeln!(
+            output,
+            "    n_{} {}{} n_{}",
+            short_id(&edge.source),
+            arrow,
+            label_str,
+            short_id(&edge.target)
+        )
+        .unwrap();
+    }
+
+    output
+}
+
+pub fn topology_to_confluence(topology: &Topology) -> String {
+    let mut output = String::new();
+
+    // Header
+    writeln!(output, "h1. Network Topology: {}", topology.base.name).unwrap();
+    writeln!(output).unwrap();
+
+    // Subnets table
+    writeln!(output, "h2. Subnets").unwrap();
+    writeln!(output).unwrap();
+    writeln!(output, "|| Name || CIDR || Type || Description ||").unwrap();
+    for subnet in &topology.base.subnets {
+        let description = subnet.base.description.as_deref().unwrap_or("");
+        writeln!(
+            output,
+            "| {} | {} | {:?} | {} |",
+            subnet.base.name, subnet.base.cidr, subnet.base.subnet_type, description
+        )
+        .unwrap();
+    }
+    writeln!(output).unwrap();
+
+    // Build lookup maps for hosts table
+    let mut interfaces_by_host: HashMap<Uuid, Vec<String>> = HashMap::new();
+    for iface in &topology.base.interfaces {
+        interfaces_by_host
+            .entry(iface.base.host_id)
+            .or_default()
+            .push(iface.base.ip_address.to_string());
+    }
+
+    let mut services_by_host: HashMap<Uuid, Vec<String>> = HashMap::new();
+    for svc in &topology.base.services {
+        services_by_host
+            .entry(svc.base.host_id)
+            .or_default()
+            .push(svc.base.name.clone());
+    }
+
+    // Hosts table
+    writeln!(output, "h2. Hosts").unwrap();
+    writeln!(output).unwrap();
+    writeln!(output, "|| Name || Hostname || IP Addresses || Services ||").unwrap();
+    for host in &topology.base.hosts {
+        let hostname = host.base.hostname.as_deref().unwrap_or("");
+        let ips = interfaces_by_host
+            .get(&host.id)
+            .map(|v| v.join(", "))
+            .unwrap_or_default();
+        let services = services_by_host
+            .get(&host.id)
+            .map(|v| v.join(", "))
+            .unwrap_or_default();
+
+        writeln!(
+            output,
+            "| {} | {} | {} | {} |",
+            host.base.name, hostname, ips, services
+        )
+        .unwrap();
+    }
+    writeln!(output).unwrap();
+
+    // Connections
+    writeln!(output, "h2. Connections").unwrap();
+    writeln!(output).unwrap();
+
+    // Build node_id -> host name map
+    let hosts_map: HashMap<Uuid, &str> = topology
+        .base
+        .hosts
+        .iter()
+        .map(|h| (h.id, h.base.name.as_str()))
+        .collect();
+    let nodes_map: HashMap<Uuid, _> = topology.base.nodes.iter().map(|n| (n.id, n)).collect();
+
+    for edge in &topology.base.edges {
+        let source_host = nodes_map
+            .get(&edge.source)
+            .and_then(|n| match &n.node_type {
+                NodeType::InterfaceNode { host_id, .. } => hosts_map.get(host_id).copied(),
+                NodeType::SubnetNode { .. } => n.header.as_deref(),
+            })
+            .unwrap_or("Unknown");
+
+        let target_host = nodes_map
+            .get(&edge.target)
+            .and_then(|n| match &n.node_type {
+                NodeType::InterfaceNode { host_id, .. } => hosts_map.get(host_id).copied(),
+                NodeType::SubnetNode { .. } => n.header.as_deref(),
+            })
+            .unwrap_or("Unknown");
+
+        let type_name = edge_type_name(&edge.edge_type);
+
+        writeln!(
+            output,
+            "* {} -> {} ({})",
+            source_host, target_host, type_name
+        )
+        .unwrap();
+    }
+
+    output
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::server::topology::types::base::TopologyBase;
+
+    #[test]
+    fn test_mermaid_empty_topology() {
+        let topology = Topology {
+            base: TopologyBase::new("Test Topology".to_string(), Uuid::new_v4()),
+            ..Default::default()
+        };
+
+        let result = topology_to_mermaid(&topology);
+        assert!(result.contains("flowchart TD"));
+    }
+
+    #[test]
+    fn test_confluence_empty_topology() {
+        let topology = Topology {
+            base: TopologyBase::new("Test Topology".to_string(), Uuid::new_v4()),
+            ..Default::default()
+        };
+
+        let result = topology_to_confluence(&topology);
+        assert!(result.contains("h1. Network Topology: Test Topology"));
+        assert!(result.contains("|| Name || CIDR || Type || Description ||"));
+        assert!(result.contains("|| Name || Hostname || IP Addresses || Services ||"));
+    }
+
+    #[test]
+    fn test_mermaid_escape_special_chars() {
+        assert_eq!(mermaid_escape("test\"value"), "test&quot;value");
+        assert_eq!(mermaid_escape("test<value>"), "test&lt;value&gt;");
+        assert_eq!(mermaid_escape("test[value]"), "test&#91;value&#93;");
+    }
+
+    #[test]
+    fn test_short_id_format() {
+        let id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
+        let result = short_id(&id);
+        assert_eq!(result.len(), 8);
+        assert_eq!(result, "550e8400");
+    }
+}
