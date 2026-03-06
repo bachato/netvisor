@@ -312,10 +312,10 @@
 </script>
 
 <GenericModal title={topology_export()} {isOpen} onClose={() => (isOpen = false)} size="sm">
-	<div class="flex flex-col gap-1">
+	<div class="p-6">
 		<!-- Export Theme Toggle -->
-		<div class="mb-2 flex items-center justify-between px-3">
-			<span class="text-tertiary text-xs font-medium">{topology_exportTheme()}</span>
+		<div class="mb-4 flex items-center justify-between">
+			<span class="text-secondary text-sm font-medium">{topology_exportTheme()}</span>
 			<div class="flex gap-1">
 				<button
 					class="btn-secondary gap-1 !px-2.5 !py-1 !text-xs {exportTheme === 'light'
@@ -337,96 +337,101 @@
 				</button>
 			</div>
 		</div>
-		<button
-			class="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-			onclick={() => captureImage('png')}
-		>
-			<Image class="text-tertiary h-5 w-5 flex-shrink-0" />
-			<div>
-				<div class="text-secondary text-sm font-medium">{topology_exportPng()}</div>
-				<div class="text-tertiary text-xs">{topology_exportPngDesc()}</div>
-			</div>
-		</button>
 
-		{#if hasSvgExport}
-			<button
-				class="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-				onclick={() => captureImage('svg')}
-			>
-				<FileImage class="text-tertiary h-5 w-5 flex-shrink-0" />
-				<div>
-					<div class="text-secondary text-sm font-medium">{topology_exportSvg()}</div>
-					<div class="text-tertiary text-xs">{topology_exportSvgDesc()}</div>
-				</div>
-			</button>
-		{:else if !isShareView}
-			<button
-				class="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-				onclick={() => handleUpgrade('svg_export')}
-			>
-				<FileImage class="text-muted h-5 w-5 flex-shrink-0" />
-				<div class="flex-1">
-					<div class="text-tertiary flex items-center gap-2 text-sm font-medium">
-						{topology_exportSvg()}
-						<UpgradeBadge feature="svg_export" />
-					</div>
-					<div class="text-muted text-xs">{topology_exportSvgDesc()}</div>
-				</div>
-			</button>
-		{/if}
+		<p class="text-secondary mb-4 text-sm">Choose an export format:</p>
 
-		{#if hasMermaidExport}
+		<div class="space-y-3">
 			<button
-				class="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-				onclick={handleMermaidExport}
+				class="card flex w-full items-start gap-4 p-4 text-left transition-colors hover:border-blue-500/50 disabled:opacity-50"
+				onclick={() => captureImage('png')}
 			>
-				<FileCode class="text-tertiary h-5 w-5 flex-shrink-0" />
+				<Image class="text-tertiary h-6 w-6 shrink-0" />
 				<div>
-					<div class="text-secondary text-sm font-medium">{topology_exportMermaid()}</div>
-					<div class="text-tertiary text-xs">{topology_exportMermaidDesc()}</div>
+					<div class="text-primary font-medium">{topology_exportPng()}</div>
+					<div class="text-tertiary text-sm">{topology_exportPngDesc()}</div>
 				</div>
 			</button>
-		{:else if !isShareView}
-			<button
-				class="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-				onclick={() => handleUpgrade('mermaid_export')}
-			>
-				<FileCode class="text-muted h-5 w-5 flex-shrink-0" />
-				<div class="flex-1">
-					<div class="text-tertiary flex items-center gap-2 text-sm font-medium">
-						{topology_exportMermaid()}
-						<UpgradeBadge feature="mermaid_export" />
-					</div>
-					<div class="text-muted text-xs">{topology_exportMermaidDesc()}</div>
-				</div>
-			</button>
-		{/if}
 
-		{#if hasConfluenceExport}
-			<button
-				class="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-				onclick={handleConfluenceExport}
-			>
-				<FileText class="text-tertiary h-5 w-5 flex-shrink-0" />
-				<div>
-					<div class="text-secondary text-sm font-medium">{topology_exportConfluence()}</div>
-					<div class="text-tertiary text-xs">{topology_exportConfluenceDesc()}</div>
-				</div>
-			</button>
-		{:else if !isShareView}
-			<button
-				class="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-				onclick={() => handleUpgrade('confluence_export')}
-			>
-				<FileText class="text-muted h-5 w-5 flex-shrink-0" />
-				<div class="flex-1">
-					<div class="text-tertiary flex items-center gap-2 text-sm font-medium">
-						{topology_exportConfluence()}
-						<UpgradeBadge feature="confluence_export" />
+			{#if hasSvgExport}
+				<button
+					class="card flex w-full items-start gap-4 p-4 text-left transition-colors hover:border-blue-500/50 disabled:opacity-50"
+					onclick={() => captureImage('svg')}
+				>
+					<FileImage class="text-tertiary h-6 w-6 shrink-0" />
+					<div>
+						<div class="text-primary font-medium">{topology_exportSvg()}</div>
+						<div class="text-tertiary text-sm">{topology_exportSvgDesc()}</div>
 					</div>
-					<div class="text-muted text-xs">{topology_exportConfluenceDesc()}</div>
-				</div>
-			</button>
-		{/if}
+				</button>
+			{:else if !isShareView}
+				<button
+					class="card flex w-full items-start gap-4 p-4 text-left transition-colors hover:border-blue-500/50 disabled:opacity-50"
+					onclick={() => handleUpgrade('svg_export')}
+				>
+					<FileImage class="text-muted h-6 w-6 shrink-0" />
+					<div class="flex-1">
+						<div class="text-tertiary flex items-center gap-2 font-medium">
+							{topology_exportSvg()}
+							<UpgradeBadge feature="svg_export" />
+						</div>
+						<div class="text-muted text-sm">{topology_exportSvgDesc()}</div>
+					</div>
+				</button>
+			{/if}
+
+			{#if hasMermaidExport}
+				<button
+					class="card flex w-full items-start gap-4 p-4 text-left transition-colors hover:border-blue-500/50 disabled:opacity-50"
+					onclick={handleMermaidExport}
+				>
+					<FileCode class="text-tertiary h-6 w-6 shrink-0" />
+					<div>
+						<div class="text-primary font-medium">{topology_exportMermaid()}</div>
+						<div class="text-tertiary text-sm">{topology_exportMermaidDesc()}</div>
+					</div>
+				</button>
+			{:else if !isShareView}
+				<button
+					class="card flex w-full items-start gap-4 p-4 text-left transition-colors hover:border-blue-500/50 disabled:opacity-50"
+					onclick={() => handleUpgrade('mermaid_export')}
+				>
+					<FileCode class="text-muted h-6 w-6 shrink-0" />
+					<div class="flex-1">
+						<div class="text-tertiary flex items-center gap-2 font-medium">
+							{topology_exportMermaid()}
+							<UpgradeBadge feature="mermaid_export" />
+						</div>
+						<div class="text-muted text-sm">{topology_exportMermaidDesc()}</div>
+					</div>
+				</button>
+			{/if}
+
+			{#if hasConfluenceExport}
+				<button
+					class="card flex w-full items-start gap-4 p-4 text-left transition-colors hover:border-blue-500/50 disabled:opacity-50"
+					onclick={handleConfluenceExport}
+				>
+					<FileText class="text-tertiary h-6 w-6 shrink-0" />
+					<div>
+						<div class="text-primary font-medium">{topology_exportConfluence()}</div>
+						<div class="text-tertiary text-sm">{topology_exportConfluenceDesc()}</div>
+					</div>
+				</button>
+			{:else if !isShareView}
+				<button
+					class="card flex w-full items-start gap-4 p-4 text-left transition-colors hover:border-blue-500/50 disabled:opacity-50"
+					onclick={() => handleUpgrade('confluence_export')}
+				>
+					<FileText class="text-muted h-6 w-6 shrink-0" />
+					<div class="flex-1">
+						<div class="text-tertiary flex items-center gap-2 font-medium">
+							{topology_exportConfluence()}
+							<UpgradeBadge feature="confluence_export" />
+						</div>
+						<div class="text-muted text-sm">{topology_exportConfluenceDesc()}</div>
+					</div>
+				</button>
+			{/if}
+		</div>
 	</div>
 </GenericModal>

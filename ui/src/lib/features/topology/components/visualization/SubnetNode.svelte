@@ -8,7 +8,7 @@
 		type ResizeDragEvent,
 		type ResizeParams
 	} from '@xyflow/svelte';
-	import { createColorHelper, twColorToRgba } from '$lib/shared/utils/styling';
+	import { createColorHelper } from '$lib/shared/utils/styling';
 	import { subnetTypes } from '$lib/shared/stores/metadata';
 	import { isContainerSubnet } from '$lib/features/subnets/queries';
 	import {
@@ -195,12 +195,13 @@
 		>
 			<!-- Infrastructure background area with gradient centered at infra_width -->
 			{#if hasInfra}
+				{@const grayRgb = grayColorHelper.rgb.replace('rgb(', '').replace(')', '')}
 				<div
 					style={`position: absolute; top: 0; left: 0; width: ${infra_width + 20}px; height: 100%; border-radius: 0.75rem 0 0 0.75rem; pointer-events: none;
-						background: linear-gradient(to right, 
-							${twColorToRgba(grayColorHelper.bg, 0.2)} 0%, 
-							${twColorToRgba(grayColorHelper.bg, 0.2)} ${((infra_width - 20) / (infra_width + 20)) * 100}%, 
-							${twColorToRgba(grayColorHelper.bg, 0)} 100%);`}
+						background: linear-gradient(to right,
+							rgba(${grayRgb}, 0.2) 0%,
+							rgba(${grayRgb}, 0.2) ${((infra_width - 20) / (infra_width + 20)) * 100}%,
+							rgba(${grayRgb}, 0) 100%);`}
 				>
 					<!-- Infrastructure title -->
 					<div

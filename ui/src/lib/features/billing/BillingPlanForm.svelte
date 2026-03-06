@@ -662,7 +662,7 @@
 	<div class="flex justify-center px-4">
 		<button
 			type="button"
-			class="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+			class="text-link hover:text-primary flex items-center gap-2 text-sm transition-colors"
 			onclick={() => (showFullComparison = !showFullComparison)}
 		>
 			{showFullComparison ? 'Hide' : 'Compare all features'}
