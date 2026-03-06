@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-svelte';
+	import ProgressTrack from '$lib/shared/components/data/ProgressTrack.svelte';
 	import type { DiscoveryUpdatePayload } from '../../types/api';
 	import { formatDuration, formatTimestamp } from '$lib/shared/utils/formatting';
 	import { useSubnetsQuery, getSubnetById } from '$lib/features/subnets/queries';
@@ -98,9 +99,7 @@
 					<div class="text-secondary text-sm">
 						{payload.progress}%
 					</div>
-					<div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-700">
-						<div class="h-full bg-blue-500 transition-all" style="width: {payload.progress}%"></div>
-					</div>
+					<ProgressTrack progress={payload.progress} class="flex-1" />
 				</div>
 			</div>
 		{/if}

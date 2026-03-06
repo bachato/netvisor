@@ -133,13 +133,13 @@
 				{#if demoMode}
 					<div class="mb-6">
 						<InlineInfo title={auth_demoModeTitle()} body={auth_demoModeBody()} />
-						<div class="mt-3 rounded-md bg-gray-800 p-3 font-mono text-sm">
+						<div class="card mt-3 !rounded-md !p-3 font-mono text-sm">
 							<div class="text-secondary">
-								<span class="text-gray-400">{common_demoEmail()}</span>
+								<span class="text-tertiary">{common_demoEmail()}</span>
 								<span class="text-primary ml-2">demo@scanopy.net</span>
 							</div>
 							<div class="text-secondary mt-1">
-								<span class="text-gray-400">{common_demoPassword()}</span>
+								<span class="text-tertiary">{common_demoPassword()}</span>
 								<span class="text-primary ml-2">password123</span>
 							</div>
 						</div>
@@ -248,12 +248,12 @@
 
 					{#if enablePasswordReset && !demoMode}
 						<div class="text-center">
-							<p class="text-sm text-gray-400">
+							<p class="text-tertiary text-sm">
 								{auth_forgotYourPassword()}
 								<button
 									type="button"
 									onclick={onSwitchToForgot}
-									class="font-medium text-blue-400 hover:text-blue-300"
+									class="text-link font-medium hover:underline"
 								>
 									{auth_resetPassword()}
 								</button>
@@ -265,12 +265,12 @@
 				<!-- Register Link (visible in both OIDC-only and normal mode) -->
 				{#if onSwitchToRegister && !disableRegistration && !demoMode}
 					<div class="text-center">
-						<p class="text-sm text-gray-400">
+						<p class="text-tertiary text-sm">
 							{auth_dontHaveAccount()}
 							<button
 								type="button"
 								onclick={onSwitchToRegister}
-								class="font-medium text-blue-400 hover:text-blue-300"
+								class="text-link font-medium hover:underline"
 							>
 								{auth_registerHere()}
 							</button>

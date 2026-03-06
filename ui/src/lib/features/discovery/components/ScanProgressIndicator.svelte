@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { useActiveSessionsQuery, discoverySSEManager } from '../queries';
 	import { Loader2, SatelliteDish } from 'lucide-svelte';
+	import ProgressTrack from '$lib/shared/components/data/ProgressTrack.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
 
 	// Defer query until browser is idle to avoid blocking critical rendering path
@@ -122,13 +123,8 @@
 				</span>
 			</div>
 			<div class="flex items-center gap-2">
-				<div class="h-1.5 w-16 overflow-hidden rounded-full bg-gray-700">
-					<div
-						class="h-full bg-emerald-500 transition-all duration-300 ease-out"
-						style="width: {scanProgress}%"
-					></div>
-				</div>
-				<span class="text-xs font-medium text-gray-300">{scanProgress}%</span>
+				<ProgressTrack progress={scanProgress} color="bg-emerald-500" size="sm" class="w-16" />
+				<span class="text-secondary text-xs font-medium">{scanProgress}%</span>
 			</div>
 		{:else}
 			<!-- Waiting for daemon to connect -->

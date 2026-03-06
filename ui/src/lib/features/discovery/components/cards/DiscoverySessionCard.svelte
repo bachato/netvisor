@@ -1,5 +1,6 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
+	import ProgressTrack from '$lib/shared/components/data/ProgressTrack.svelte';
 	import AnimatedProgressBar from './AnimatedProgressBar.svelte';
 	import { cancellingSessions } from '$lib/features/discovery/queries';
 	import { entities } from '$lib/shared/stores/metadata';
@@ -107,9 +108,9 @@
 			</div>
 
 			<div class="flex items-center gap-2">
-				<div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-700">
+				<ProgressTrack class="flex-1">
 					<AnimatedProgressBar progress={session.progress} />
-				</div>
+				</ProgressTrack>
 				<span class="text-secondary text-xs">{session.progress}%</span>
 			</div>
 		</div>

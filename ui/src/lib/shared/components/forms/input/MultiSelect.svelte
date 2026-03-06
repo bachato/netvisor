@@ -33,7 +33,7 @@
 		multiple
 		value={field.state.value ?? []}
 		onchange={handleChange}
-		class="text-primary w-full rounded-md border border-gray-600 bg-gray-700 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+		class="select-trigger text-primary w-full rounded-md px-2 py-1.5 text-xs"
 	>
 		{#each options as option (option?.id ?? option.value)}
 			<option value={option.value} selected={(field.state.value ?? []).includes(option.value)}>

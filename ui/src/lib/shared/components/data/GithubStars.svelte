@@ -47,7 +47,7 @@
 		href="https://github.com/scanopy/scanopy"
 		target="_blank"
 		rel="noopener noreferrer"
-		class="card inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-gray-300 transition-all hover:border-gray-600 hover:bg-gray-700/80 {className}"
+		class="card text-secondary inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all {className}"
 	>
 		<Github class="h-4 w-4" />
 		<span class="flex items-center gap-1">

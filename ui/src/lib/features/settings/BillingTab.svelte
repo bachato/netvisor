@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { CheckCircle, AlertCircle, CreditCard, AlertTriangle } from 'lucide-svelte';
+	import ProgressTrack from '$lib/shared/components/data/ProgressTrack.svelte';
 	import { reopenSettingsAfterBilling, upgradeContext } from '$lib/features/billing/stores';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
@@ -325,18 +326,13 @@
 											{/if}
 										</div>
 										{#if hostCount > 0}
-											<div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
-												<div
-													class="h-full rounded-full transition-all {hostCount >=
-													(org.plan.included_hosts ?? 0)
-														? 'bg-amber-500'
-														: 'bg-blue-500'}"
-													style="width: {Math.min(
-														100,
-														(hostCount / (org.plan.included_hosts || 1)) * 100
-													)}%"
-												></div>
-											</div>
+											<ProgressTrack
+												class="mt-2 w-full"
+												progress={Math.min(100, (hostCount / (org.plan.included_hosts || 1)) * 100)}
+												color={hostCount >= (org.plan.included_hosts ?? 0)
+													? 'bg-amber-500'
+													: 'bg-blue-500'}
+											/>
 										{/if}
 									</div>
 								{/if}

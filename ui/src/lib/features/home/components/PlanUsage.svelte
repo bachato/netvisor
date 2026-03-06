@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { components } from '$lib/api/schema';
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
+	import ProgressTrack from '$lib/shared/components/data/ProgressTrack.svelte';
 
 	type PlanUsage = components['schemas']['PlanUsage'];
 	type BillingPlan = components['schemas']['BillingPlan'];
@@ -94,8 +95,8 @@
 						<span class="text-secondary">{row.label}</span>
 						<span class={textColor(row)}>{row.current} / {row.limit}</span>
 					</div>
-					<div class="h-2 overflow-hidden rounded-full bg-gray-700">
-						{#if row.hasOverage && row.pct > 1}
+					{#if row.hasOverage && row.pct > 1}
+						<ProgressTrack>
 							<div class="flex h-full">
 								<div
 									class="h-full rounded-l-full bg-blue-500"
@@ -106,13 +107,10 @@
 									style="width: {((row.pct - 1) / row.pct) * 100}%"
 								></div>
 							</div>
-						{:else}
-							<div
-								class="h-full rounded-full transition-all {barColor(row)}"
-								style="width: {Math.min(row.pct * 100, 100)}%"
-							></div>
-						{/if}
-					</div>
+						</ProgressTrack>
+					{:else}
+						<ProgressTrack progress={Math.min(row.pct * 100, 100)} color={barColor(row)} />
+					{/if}
 				</div>
 			{/each}
 		</div>

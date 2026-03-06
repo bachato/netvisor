@@ -565,7 +565,7 @@
 											<button
 												onclick={() => handleItemClick(item)}
 												class="{baseClasses} {activeTab === item.id
-													? 'text-primary border border-blue-600 bg-blue-700'
+													? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 													: inactiveButtonClass}"
 												style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 												title={collapsed ? item.label : ''}
@@ -583,7 +583,7 @@
 															<button
 																onclick={() => handleItemClick(child)}
 																class="{baseClasses} {activeTab === child.id
-																	? 'text-primary border border-blue-600 bg-blue-700'
+																	? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 																	: inactiveButtonClass}"
 																style="height: 2.25rem; padding: 0.375rem 0.75rem;"
 																title={collapsed ? child.label : ''}
@@ -609,7 +609,7 @@
 								onclick={() => handleItemClick(configItem)}
 								class="{baseClasses} {activeTab === configItem.id ||
 								(configItem.id === 'settings' && showSettings)
-									? 'text-primary border border-blue-600 bg-blue-700'
+									? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 									: inactiveButtonClass}"
 								style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 								title={collapsed ? configItem.label : ''}
@@ -655,7 +655,7 @@
 							onclick={() => handleItemClick(item)}
 							class="{baseClasses} {activeTab === item.id ||
 							(item.id === 'settings' && showSettings)
-								? 'text-primary border border-blue-600 bg-blue-700'
+								? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 								: inactiveButtonClass}"
 							style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 							title={collapsed ? item.label : ''}

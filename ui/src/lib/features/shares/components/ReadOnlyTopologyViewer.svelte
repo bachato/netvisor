@@ -56,7 +56,8 @@
 	<div class="flex h-full w-full flex-col">
 		{#if shareName}
 			<header
-				class="flex flex-shrink-0 items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3"
+				class="flex flex-shrink-0 items-center justify-between border-b px-4 py-3"
+				style="border-color: var(--color-border); background: var(--color-bg-elevated)"
 			>
 				<div class="flex items-center gap-3">
 					<Share2 class="text-info h-8 w-8" />

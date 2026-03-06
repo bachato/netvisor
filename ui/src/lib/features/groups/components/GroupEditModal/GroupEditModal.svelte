@@ -3,6 +3,7 @@
 	import { submitForm, validateForm } from '$lib/shared/components/forms/form-context';
 	import { required, max } from '$lib/shared/components/forms/validators';
 	import { Info, Palette } from 'lucide-svelte';
+	import SectionPanel from '$lib/shared/components/layout/SectionPanel.svelte';
 	import { createEmptyGroupFormData } from '../../queries';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import type { Group, EdgeStyle } from '../../types/base';
@@ -397,7 +398,7 @@
 			<!-- Bindings Tab -->
 			{#if activeTab === 'bindings'}
 				<div class="p-6">
-					<div class="rounded-lg bg-gray-800/50 p-4">
+					<SectionPanel>
 						<ListManager
 							label={groups_serviceBindings()}
 							helpText={groups_serviceBindingsHelp()}
@@ -417,14 +418,14 @@
 							onMoveUp={(index) => handleServiceBindingsReorder(index, index - 1)}
 							onMoveDown={(index) => handleServiceBindingsReorder(index, index + 1)}
 						/>
-					</div>
+					</SectionPanel>
 				</div>
 			{/if}
 
 			<!-- Edge Style Tab -->
 			{#if activeTab === 'edge-style'}
 				<div class="p-6">
-					<div class="rounded-lg bg-gray-800/50 p-4">
+					<SectionPanel>
 						<EdgeStyleForm
 							formData={edgeStyleFormData}
 							showCollapseToggle={false}
@@ -437,7 +438,7 @@
 								form.setFieldValue('edge_style', style);
 							}}
 						/>
-					</div>
+					</SectionPanel>
 				</div>
 			{/if}
 		</div>

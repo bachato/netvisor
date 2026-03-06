@@ -165,9 +165,9 @@
 					<button
 						type="button"
 						onclick={() => handleEdgeStyleChange(option.value)}
-						class="flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all hover:bg-gray-700/30"
-						class:border-gray-600={formData.edge_style !== option.value}
-						class:bg-gray-700-20={formData.edge_style !== option.value}
+						class="flex list-item w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all"
+						class:border-gray-300={formData.edge_style !== option.value}
+						class:dark:border-gray-600={formData.edge_style !== option.value}
 						class:border-blue-500={formData.edge_style === option.value}
 						class:bg-blue-900-20={formData.edge_style === option.value}
 						class:ring-1={formData.edge_style === option.value}

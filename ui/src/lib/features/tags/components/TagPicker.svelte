@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { X, Plus } from 'lucide-svelte';
+	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import { useTagsQuery, useCreateTagMutation } from '$lib/features/tags/queries';
 	import { createDefaultTag } from '$lib/features/tags/types/base';
 	import { createColorHelper, AVAILABLE_COLORS, type Color } from '$lib/shared/utils/styling';
@@ -165,38 +166,15 @@
 			<div class="flex shrink-0 items-center overflow-x-auto">
 				{#each selectedTagIds as tagId (tagId)}
 					{@const tag = getTag(tagId)}
-					{#if tag}
-						{@const colorHelper = createColorHelper(tag.color)}
-						<span
-							class="mx-1 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium {colorHelper.bg} {colorHelper.text}"
-						>
-							{tag.name}
-							{#if !disabled}
-								<button
-									type="button"
-									onclick={() => removeTag(tagId)}
-									class="rounded-full p-0.5 transition-colors hover:bg-white/20"
-								>
-									<X class="h-3 w-3" />
-								</button>
-							{/if}
-						</span>
-					{:else}
-						<span
-							class="inline-flex shrink-0 items-center gap-1 rounded-full bg-gray-600 px-2 py-0.5 text-xs font-medium text-gray-300"
-						>
-							Unknown tag
-							{#if !disabled}
-								<button
-									type="button"
-									onclick={() => removeTag(tagId)}
-									class="rounded-full p-0.5 transition-colors hover:bg-white/20"
-								>
-									<X class="h-3 w-3" />
-								</button>
-							{/if}
-						</span>
-					{/if}
+					<span class="mx-1 shrink-0">
+						<Tag
+							label={tag?.name}
+							color={tag?.color}
+							pill={true}
+							removable={!disabled}
+							onRemove={() => removeTag(tagId)}
+						/>
+					</span>
 				{/each}
 			</div>
 
@@ -218,13 +196,14 @@
 		<!-- Dropdown -->
 		{#if showDropdown}
 			<div
-				class="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-md border border-gray-600 bg-gray-700 shadow-lg"
+				class="select-dropdown absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-md shadow-lg"
 			>
 				<!-- Create new tag option -->
 				{#if showCreateOption}
 					<button
 						type="button"
-						class="flex w-full items-center gap-2 border-b border-gray-600 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-600"
+						class="select-option flex w-full items-center gap-2 border-b px-3 py-2 text-left text-sm transition-colors"
+						style="border-color: var(--color-border)"
 						onmousedown={handleCreateTag}
 						disabled={isCreating}
 					>
@@ -240,7 +219,7 @@
 					{@const colorHelper = createColorHelper(tag.color)}
 					<button
 						type="button"
-						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-600"
+						class="select-option flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
 						onmousedown={() => addTag(tag.id)}
 					>
 						<span class="h-3 w-3 shrink-0 rounded-full" style="background-color: {colorHelper.rgb};"

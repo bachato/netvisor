@@ -466,7 +466,7 @@
 					{/if}
 
 					<!-- CTA Button -->
-					<div class="border-gray-700 py-4">
+					<div class="py-4" style="border-color: var(--color-border)">
 						{#if enterprise && onPlanInquiry}
 							<button
 								type="button"
@@ -522,7 +522,7 @@
 					</div>
 
 					<!-- Included Resources with Stepper Controls -->
-					<div class="space-y-2 border-b border-gray-700 pb-4">
+					<div class="space-y-2 border-b pb-4" style="border-color: var(--color-border)">
 						<!-- Seats -->
 						<div class="flex items-center justify-between text-sm">
 							<div class="flex flex-col">
@@ -788,8 +788,8 @@
 		width: 1.5rem;
 		height: 1.5rem;
 		border-radius: 0.25rem;
-		border: 1px solid rgb(75 85 99);
-		color: rgb(209 213 219);
+		border: 1px solid var(--color-border-input);
+		color: var(--color-text-secondary);
 		background: transparent;
 		cursor: pointer;
 		transition:
@@ -798,8 +798,8 @@
 	}
 
 	.stepper-btn:hover:not(:disabled) {
-		background: rgb(55 65 81);
-		border-color: rgb(107 114 128);
+		background: var(--color-bg-surface-hover);
+		border-color: var(--color-border-input);
 	}
 
 	.stepper-btn:disabled {
@@ -812,20 +812,20 @@
 	/* ============================================ */
 
 	.comparison-header-row {
-		background: rgb(31 41 55);
+		background: var(--color-bg-surface);
 		position: sticky;
 		top: 0;
 		z-index: 11;
 	}
 
 	.comparison-category-row {
-		border-bottom: 1px solid rgb(55 65 81);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.comparison-row {
 		display: grid;
 		min-width: 500px;
-		border-bottom: 1px solid rgb(55 65 81);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.comparison-row:last-child {
@@ -834,15 +834,15 @@
 
 	.comparison-label-cell {
 		padding: 0.5rem;
-		color: rgb(156 163 175);
+		color: var(--color-text-tertiary);
 		text-align: left;
 		display: flex;
 		align-items: center;
 		position: sticky;
 		left: 0;
 		z-index: 10;
-		background: rgb(31 41 55);
-		border-right: 1px solid rgb(55 65 81);
+		background: var(--color-bg-surface);
+		border-right: 1px solid var(--color-border);
 	}
 
 	.comparison-value-cell {
@@ -851,7 +851,7 @@
 		align-items: center;
 		justify-content: center;
 		text-align: center;
-		border-right: 1px solid rgb(55 65 81);
+		border-right: 1px solid var(--color-border);
 	}
 
 	.comparison-value-cell:last-child {
@@ -870,7 +870,7 @@
 		position: relative;
 		cursor: help;
 		text-decoration: underline dotted;
-		text-decoration-color: rgb(107 114 128);
+		text-decoration-color: var(--color-border-input);
 		text-underline-offset: 2px;
 	}
 </style>
