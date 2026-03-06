@@ -553,4 +553,109 @@ mod tests {
         assert_eq!(result[0].base.subnet_type, SubnetType::Lan);
         assert_eq!(result[1].base.subnet_type, SubnetType::IpVlan);
     }
+
+    /// Integration test: exercises real Docker API + real host interfaces.
+    /// Requires Docker running with a macvlan network overlapping the host LAN CIDR.
+    /// Run with: cargo test --lib -- daemon::utils::base::tests::real_docker --ignored
+    #[tokio::test]
+    #[ignore]
+    async fn real_docker_macvlan_overlap_preserves_lan() {
+        let utils = create_system_utils();
+        let daemon_id = Uuid::nil();
+        let network_id = Uuid::nil();
+
+        // Get host subnets from real interfaces
+        let (_, host_subnets, _) = utils
+            .get_own_interfaces(
+                crate::server::discovery::r#impl::types::DiscoveryType::SelfReport {
+                    host_id: Uuid::nil(),
+                },
+                daemon_id,
+                network_id,
+                &[],
+            )
+            .await
+            .expect("Failed to get own interfaces");
+
+        // Get Docker subnets from real Docker daemon
+        let docker_client = utils
+            .new_local_docker_client(Ok(None), Ok(None))
+            .await
+            .expect("Docker not available — start Docker and create macvlan-lan-overlap network");
+
+        let docker_subnets = utils
+            .get_subnets_from_docker_networks(
+                daemon_id,
+                network_id,
+                &docker_client,
+                crate::server::discovery::r#impl::types::DiscoveryType::SelfReport {
+                    host_id: Uuid::nil(),
+                },
+            )
+            .await
+            .expect("Failed to get Docker networks");
+
+        // Find our LAN CIDR from host subnets
+        let lan_cidrs: Vec<_> = host_subnets.iter().map(|s| s.base.cidr).collect();
+        println!("Host subnet CIDRs: {:?}", lan_cidrs);
+
+        // Verify Docker has at least one macvlan overlapping a host CIDR
+        let overlapping_docker: Vec<_> = docker_subnets
+            .iter()
+            .filter(|s| {
+                lan_cidrs.contains(&s.base.cidr) && s.base.subnet_type != SubnetType::DockerBridge
+            })
+            .collect();
+        println!(
+            "Docker subnets overlapping host CIDRs: {:?}",
+            overlapping_docker
+                .iter()
+                .map(|s| format!("{} ({:?})", s.base.cidr, s.base.subnet_type))
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            !overlapping_docker.is_empty(),
+            "No Docker macvlan/ipvlan overlapping host CIDRs found. \
+             Create one with: docker network create -d macvlan --subnet=<your-lan-cidr> macvlan-lan-overlap"
+        );
+
+        // THE FIX: merge should keep the host subnet, drop the Docker duplicate
+        let merged = merge_host_and_docker_subnets(host_subnets.clone(), docker_subnets.clone());
+
+        // Every host subnet CIDR must survive
+        for host_subnet in &host_subnets {
+            assert!(
+                merged.iter().any(|s| s.base.cidr == host_subnet.base.cidr),
+                "Host subnet {} was incorrectly filtered out!",
+                host_subnet.base.cidr
+            );
+        }
+
+        // No DockerBridge subnets should survive
+        assert!(
+            !merged
+                .iter()
+                .any(|s| s.base.subnet_type == SubnetType::DockerBridge),
+            "DockerBridge subnets should be filtered out"
+        );
+
+        // The overlapping Docker macvlan should NOT appear as a separate entry
+        // (host subnet with that CIDR already covers it)
+        let merged_cidrs: Vec<_> = merged.iter().map(|s| s.base.cidr).collect();
+        for ds in &overlapping_docker {
+            let count = merged_cidrs.iter().filter(|c| **c == ds.base.cidr).count();
+            assert_eq!(
+                count, 1,
+                "CIDR {} appears {} times — should appear exactly once (host version only)",
+                ds.base.cidr, count
+            );
+        }
+
+        println!(
+            "PASS: {} host subnets preserved, {} docker subnets filtered, {} total merged",
+            host_subnets.len(),
+            docker_subnets.len() - (merged.len() - host_subnets.len()),
+            merged.len()
+        );
+    }
 }
