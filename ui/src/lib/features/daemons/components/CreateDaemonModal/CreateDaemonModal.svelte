@@ -6,7 +6,14 @@
 	import type { ModalTab } from '$lib/shared/components/layout/GenericModal.svelte';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { entities } from '$lib/shared/stores/metadata';
-	import { SatelliteDish, Settings, KeyRound, Terminal, SlidersHorizontal } from 'lucide-svelte';
+	import {
+		SatelliteDish,
+		Settings,
+		KeyRound,
+		Terminal,
+		SlidersHorizontal,
+		Loader2
+	} from 'lucide-svelte';
 	import {
 		createEmptyApiKeyFormData,
 		useCreateApiKeyMutation
@@ -103,6 +110,9 @@
 	let key = $derived(onboardingMode ? provisionalApiKey : keyState);
 	let keySet = $derived(!!key);
 
+	// Auto-generation state (for first daemon flow)
+	let isAutoGenerating = $state(false);
+
 	// OS selection
 	let selectedOS: DaemonOS = $state(detectOS());
 
@@ -144,7 +154,11 @@
 	});
 
 	// --- Tab / wizard state ---
-	const mainFlow = ['configure', 'api-key', 'install'] as const;
+	let mainFlow = $derived(
+		isFirstDaemon
+			? (['configure', 'install'] as const)
+			: (['configure', 'api-key', 'install'] as const)
+	);
 
 	let activeTab = $state('configure');
 	let previousMainTab = $state('configure');
@@ -152,20 +166,34 @@
 
 	let tabs: ModalTab[] = $derived([
 		{ id: 'configure', label: common_configure(), icon: Settings },
-		{ id: 'api-key', label: common_apiKey(), icon: KeyRound, disabled: furthestReached < 1 },
-		{ id: 'install', label: common_install(), icon: Terminal, disabled: furthestReached < 2 },
+		...(isFirstDaemon
+			? []
+			: [
+					{
+						id: 'api-key',
+						label: common_apiKey(),
+						icon: KeyRound,
+						disabled: furthestReached < 1
+					}
+				]),
+		{
+			id: 'install',
+			label: common_install(),
+			icon: Terminal,
+			disabled: furthestReached < (isFirstDaemon ? 1 : 2)
+		},
 		{
 			id: 'advanced',
 			label: common_advanced(),
 			icon: SlidersHorizontal,
-			disabled: furthestReached < 2
+			disabled: furthestReached < (isFirstDaemon ? 1 : 2)
 		}
 	]);
 
 	let isOnAdvanced = $derived(activeTab === 'advanced');
 
 	function nextTab() {
-		const idx = mainFlow.indexOf(activeTab as (typeof mainFlow)[number]);
+		const idx = (mainFlow as readonly string[]).indexOf(activeTab);
 		if (idx >= 0 && idx < mainFlow.length - 1) {
 			activeTab = mainFlow[idx + 1];
 		}
@@ -176,7 +204,7 @@
 			activeTab = previousMainTab;
 			return;
 		}
-		const idx = mainFlow.indexOf(activeTab as (typeof mainFlow)[number]);
+		const idx = (mainFlow as readonly string[]).indexOf(activeTab);
 		if (idx > 0) {
 			activeTab = mainFlow[idx - 1];
 		}
@@ -243,10 +271,20 @@
 	async function handleNext() {
 		if (activeTab === 'configure') {
 			const isValid = await validateForm(form);
-			if (isValid) {
-				if (furthestReached < 1) furthestReached = 1;
-				nextTab();
+			if (!isValid) return;
+
+			if (isFirstDaemon && !key) {
+				isAutoGenerating = true;
+				try {
+					await handleCreateNewApiKey();
+				} finally {
+					isAutoGenerating = false;
+				}
+				if (!keyState) return; // generation failed
 			}
+
+			if (furthestReached < 1) furthestReached = 1;
+			nextTab();
 		} else if (activeTab === 'api-key') {
 			if (!key) {
 				pushError(daemons_generateKeyToContinue());
@@ -259,6 +297,7 @@
 
 	function handleOnClose() {
 		keyState = null;
+		isAutoGenerating = false;
 		activeTab = 'configure';
 		previousMainTab = 'configure';
 		furthestReached = 0;
@@ -362,8 +401,17 @@
 			{:else}
 				<div class="flex items-center justify-end gap-3">
 					{#if activeTab === 'configure'}
-						<button type="button" class="btn-primary" onclick={handleNext}>
-							{common_next()}
+						<button
+							type="button"
+							class="btn-primary"
+							onclick={handleNext}
+							disabled={isAutoGenerating}
+						>
+							{#if isAutoGenerating}
+								<Loader2 class="h-4 w-4 animate-spin" />
+							{:else}
+								{common_next()}
+							{/if}
 						</button>
 					{:else if activeTab === 'api-key'}
 						<button type="button" class="btn-secondary" onclick={previousTab}>
