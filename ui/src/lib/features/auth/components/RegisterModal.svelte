@@ -24,6 +24,7 @@
 		auth_creatingAccount,
 		auth_emailAlreadyInUse,
 		auth_enterYourEmail,
+		auth_passwordLoginDisabledNoProviders,
 		auth_scanopyLogo,
 		auth_signInInstead,
 		auth_signUpForUpdates,
@@ -62,13 +63,14 @@
 	const configQuery = useConfigQuery();
 	let configData = $derived(configQuery.data);
 
+	let disablePasswordLogin = $derived(configData?.disable_password_login ?? false);
 	let oidcProviders = $derived(configData?.oidc_providers ?? []);
 	let hasOidcProviders = $derived(oidcProviders.length > 0);
 	let enableEmailOptIn = $derived(configData?.has_email_opt_in ?? false);
 	let enableTermsCheckbox = $derived(configData?.billing_enabled ?? false);
 
 	$effect(() => {
-		if (!hasOidcProviders && subStep === 'method') {
+		if (!hasOidcProviders && !disablePasswordLogin && subStep === 'method') {
 			subStep = 'email';
 		}
 	});
@@ -213,64 +215,77 @@
 			{#if subStep === 'method'}
 				<!-- Sub-step: Choose method (OIDC-first) -->
 				<div class="space-y-4">
-					{#if enableTermsCheckbox || enableEmailOptIn}
-						<div class="flex flex-col gap-2">
-							{#if enableTermsCheckbox}
-								<form.Field name="terms_accepted">
-									{#snippet children(field)}
-										<Checkbox label={auth_termsAndPrivacy()} helpText="" {field} id="terms" />
-									{/snippet}
-								</form.Field>
-							{/if}
-							{#if enableEmailOptIn}
-								<form.Field name="subscribed">
-									{#snippet children(field)}
-										<Checkbox {field} label={auth_signUpForUpdates()} id="subscribe" helpText="" />
-									{/snippet}
-								</form.Field>
-							{/if}
-						</div>
+					{#if disablePasswordLogin && !hasOidcProviders}
+						<InlineDanger title={auth_passwordLoginDisabledNoProviders()} />
+					{:else}
+						{#if enableTermsCheckbox || enableEmailOptIn}
+							<div class="flex flex-col gap-2">
+								{#if enableTermsCheckbox}
+									<form.Field name="terms_accepted">
+										{#snippet children(field)}
+											<Checkbox label={auth_termsAndPrivacy()} helpText="" {field} id="terms" />
+										{/snippet}
+									</form.Field>
+								{/if}
+								{#if enableEmailOptIn}
+									<form.Field name="subscribed">
+										{#snippet children(field)}
+											<Checkbox
+												{field}
+												label={auth_signUpForUpdates()}
+												id="subscribe"
+												helpText=""
+											/>
+										{/snippet}
+									</form.Field>
+								{/if}
+							</div>
+						{/if}
+
+						<form.Subscribe selector={(state) => state.values.terms_accepted}>
+							{#snippet children(termsAccepted)}
+								{#if hasOidcProviders}
+									<div class="space-y-2">
+										{#each oidcProviders as provider (provider.slug)}
+											<button
+												onclick={() => handleOidcRegister(provider.slug)}
+												disabled={enableTermsCheckbox && !termsAccepted}
+												type="button"
+												class="btn-primary flex w-full items-center justify-center gap-3"
+											>
+												{#if provider.logo}
+													<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
+												{/if}
+												{auth_createAccountWith({ provider: provider.name })}
+											</button>
+										{/each}
+									</div>
+
+									{#if !disablePasswordLogin}
+										<div class="relative">
+											<div class="absolute inset-0 flex items-center">
+												<div class="w-full border-t border-gray-600"></div>
+											</div>
+											<div class="relative flex justify-center text-sm">
+												<span class="bg-gray-900 px-2 text-gray-400">{common_or()}</span>
+											</div>
+										</div>
+									{/if}
+								{/if}
+
+								{#if !disablePasswordLogin}
+									<button
+										type="button"
+										onclick={() => (subStep = 'email')}
+										disabled={enableTermsCheckbox && !termsAccepted}
+										class="btn-primary w-full"
+									>
+										{auth_continueWithEmail()}
+									</button>
+								{/if}
+							{/snippet}
+						</form.Subscribe>
 					{/if}
-
-					<form.Subscribe selector={(state) => state.values.terms_accepted}>
-						{#snippet children(termsAccepted)}
-							{#if hasOidcProviders}
-								<div class="space-y-2">
-									{#each oidcProviders as provider (provider.slug)}
-										<button
-											onclick={() => handleOidcRegister(provider.slug)}
-											disabled={enableTermsCheckbox && !termsAccepted}
-											type="button"
-											class="btn-primary flex w-full items-center justify-center gap-3"
-										>
-											{#if provider.logo}
-												<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
-											{/if}
-											{auth_createAccountWith({ provider: provider.name })}
-										</button>
-									{/each}
-								</div>
-
-								<div class="relative">
-									<div class="absolute inset-0 flex items-center">
-										<div class="w-full border-t border-gray-600"></div>
-									</div>
-									<div class="relative flex justify-center text-sm">
-										<span class="bg-gray-900 px-2 text-gray-400">{common_or()}</span>
-									</div>
-								</div>
-							{/if}
-
-							<button
-								type="button"
-								onclick={() => (subStep = 'email')}
-								disabled={enableTermsCheckbox && !termsAccepted}
-								class="btn-primary w-full"
-							>
-								{auth_continueWithEmail()}
-							</button>
-						{/snippet}
-					</form.Subscribe>
 				</div>
 			{:else if subStep === 'email'}
 				<!-- Sub-step: Email -->

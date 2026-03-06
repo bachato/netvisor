@@ -53,6 +53,10 @@ pub struct ServerCli {
     #[arg(long, num_args = 0..=1, default_missing_value = "true")]
     disable_registration: Option<bool>,
 
+    /// Disable email/password login (use when OIDC is configured)
+    #[arg(long, num_args = 0..=1, default_missing_value = "true")]
+    disable_password_login: Option<bool>,
+
     /// OIDC redirect url
     #[arg(long)]
     stripe_secret: Option<String>,
@@ -110,6 +114,7 @@ pub struct ServerConfig {
     pub integrated_daemon_url: Option<String>,
     pub use_secure_session_cookies: bool,
     pub disable_registration: bool,
+    pub disable_password_login: bool,
     pub client_ip_source: Option<String>,
     pub smtp_username: Option<String>,
     pub smtp_password: Option<String>,
@@ -153,6 +158,7 @@ pub enum DeploymentType {
 pub struct PublicConfigResponse {
     pub server_port: u16,
     pub disable_registration: bool,
+    pub disable_password_login: bool,
     pub oidc_providers: Vec<OidcProviderMetadata>,
     pub billing_enabled: bool,
     pub has_integrated_daemon: bool,
@@ -176,6 +182,7 @@ impl Default for ServerConfig {
             use_secure_session_cookies: false,
             integrated_daemon_url: None,
             disable_registration: false,
+            disable_password_login: false,
             stripe_key: None,
             stripe_secret: None,
             stripe_webhook_secret: None,
@@ -252,6 +259,9 @@ impl ServerConfig {
         }
         if let Some(disable_registration) = cli_args.disable_registration {
             figment = figment.merge(("disable_registration", disable_registration));
+        }
+        if let Some(disable_password_login) = cli_args.disable_password_login {
+            figment = figment.merge(("disable_password_login", disable_password_login));
         }
         if let Some(metrics_token) = cli_args.metrics_token {
             figment = figment.merge(("metrics_token", metrics_token));
@@ -373,6 +383,7 @@ pub async fn get_public_config(State(state): State<Arc<AppState>>) -> impl IntoR
         Json(ApiResponse::success(PublicConfigResponse {
             server_port: state.config.server_port,
             disable_registration: state.config.disable_registration,
+            disable_password_login: state.config.disable_password_login,
             oidc_providers,
             billing_enabled: state.config.stripe_secret.is_some(),
             has_integrated_daemon: state.config.integrated_daemon_url.is_some(),

@@ -392,6 +392,12 @@ async fn main() -> anyhow::Result<()> {
     if state.services.oidc_service.is_some() {
         tracing::info!(target: LOG_TARGET, "  OIDC:            enabled");
     }
+    if state.config.disable_password_login {
+        tracing::info!(target: LOG_TARGET, "  Password login:  disabled");
+        if state.services.oidc_service.is_none() {
+            tracing::warn!(target: LOG_TARGET, "  Password login is disabled but no OIDC providers are configured!");
+        }
+    }
     if state.config.use_secure_session_cookies {
         tracing::info!(target: LOG_TARGET, "  Secure cookies:  enabled (HTTPS)");
     }
