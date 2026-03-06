@@ -1448,10 +1448,10 @@ impl DaemonService {
     // ========================================================================
 
     /// Check all active daemons for inactivity (no completed discovery in 30 days)
-    /// and put them on standby, sending notification emails.
+    /// and put them on standby, sending notification emails if email service is available.
     pub async fn check_daemon_inactivity(
         &self,
-        email_service: &crate::server::email::traits::EmailService,
+        email_service: Option<&crate::server::email::traits::EmailService>,
     ) -> Result<()> {
         let cutoff = Utc::now() - chrono::Duration::days(30);
 
@@ -1492,8 +1492,11 @@ impl DaemonService {
                     "Set daemon to standby (inactive for 30+ days)"
                 );
 
-                // Send notification emails
-                if let Err(e) = self.send_standby_notification(&daemon, email_service).await {
+                // Send notification emails if email service is available
+                if let Some(email_service) = email_service
+                    && let Err(e) =
+                        self.send_standby_notification(&daemon, email_service).await
+                {
                     tracing::warn!(
                         daemon_id = %daemon.id,
                         error = %e,

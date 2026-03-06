@@ -143,18 +143,17 @@ async fn main() -> anyhow::Result<()> {
     let inactivity_state = state.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(24 * 60 * 60));
-        interval.tick().await; // Skip immediate tick
         loop {
             interval.tick().await;
-            if let Some(ref email_service) = inactivity_state.services.email_service {
-                if let Err(e) = inactivity_state
-                    .services
-                    .daemon_service
-                    .check_daemon_inactivity(email_service)
-                    .await
-                {
-                    tracing::error!(error = %e, "Failed to check daemon inactivity");
-                }
+            if let Err(e) = inactivity_state
+                .services
+                .daemon_service
+                .check_daemon_inactivity(
+                    inactivity_state.services.email_service.as_deref(),
+                )
+                .await
+            {
+                tracing::error!(error = %e, "Failed to check daemon inactivity");
             }
         }
     });
