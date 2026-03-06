@@ -23,8 +23,10 @@
 		buildDockerCompose,
 		constructDaemonUrl,
 		detectOS,
+		slugifyNetworkName,
 		type DaemonOS
 	} from '../../utils';
+	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import ConfigureStep from './steps/ConfigureStep.svelte';
 	import ApiKeyStep from './steps/ApiKeyStep.svelte';
 	import InstallStep from './steps/InstallStep.svelte';
@@ -68,8 +70,13 @@
 	});
 	let isFirstDaemon = $derived(!org?.onboarding?.includes('FirstDaemonRegistered'));
 
+	// Networks
+	const networksQuery = useNetworksQuery();
+	let networksData = $derived(networksQuery.data ?? []);
+
 	// Network selection
 	let selectedNetworkId = $state('');
+	let nameManuallyEdited = $state(false);
 
 	// API key state
 	let keyState = $state<string | null>(null);
@@ -81,6 +88,22 @@
 
 	// OS selection
 	let selectedOS: DaemonOS = $state(detectOS());
+
+	function getDefaultDaemonName(networkId: string): string {
+		const network = networksData.find((n) => n.id === networkId);
+		if (network) {
+			const slug = slugifyNetworkName(network.name);
+			if (slug) return `scanopy-daemon-${slug}`;
+		}
+		return 'scanopy-daemon';
+	}
+
+	$effect(() => {
+		if (selectedNetworkId && !nameManuallyEdited) {
+			const defaultName = getDefaultDaemonName(selectedNetworkId);
+			form.setFieldValue('name', defaultName);
+		}
+	});
 
 	// TanStack Form
 	const form = createForm(() => ({
@@ -269,6 +292,7 @@
 		trackEvent('daemon_wizard_closed');
 		keyState = null;
 		isAutoGenerating = false;
+		nameManuallyEdited = false;
 		activeTab = 'configure';
 		previousMainTab = 'configure';
 		furthestReached = 0;
@@ -277,6 +301,7 @@
 
 	function handleOpen() {
 		trackEvent('daemon_wizard_opened');
+		nameManuallyEdited = false;
 		activeTab = 'configure';
 		furthestReached = 0;
 		previousMainTab = 'configure';
@@ -310,6 +335,7 @@
 					{formValues}
 					{selectedNetworkId}
 					onNetworkChange={(id) => (selectedNetworkId = id)}
+					onNameInput={() => (nameManuallyEdited = true)}
 					{hasDaemonPoll}
 					{keySet}
 				/>

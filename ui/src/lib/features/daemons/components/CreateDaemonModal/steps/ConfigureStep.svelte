@@ -35,12 +35,20 @@
 		formValues: Record<string, string | number | boolean>;
 		selectedNetworkId: string;
 		onNetworkChange: (id: string) => void;
+		onNameInput?: () => void;
 		hasDaemonPoll: boolean;
 		keySet: boolean;
 	}
 
-	let { form, formValues, selectedNetworkId, onNetworkChange, hasDaemonPoll, keySet }: Props =
-		$props();
+	let {
+		form,
+		formValues,
+		selectedNetworkId,
+		onNetworkChange,
+		onNameInput,
+		hasDaemonPoll,
+		keySet
+	}: Props = $props();
 
 	// Get validators for a field
 	function getValidators(fieldId: string) {
@@ -90,17 +98,19 @@
 	/>
 
 	<!-- Name -->
-	<form.Field name={nameDef.id} validators={getValidators(nameDef.id)}>
-		{#snippet children(field: AnyFieldApi)}
-			<TextInput
-				label={common_name()}
-				{field}
-				id={nameDef.id}
-				placeholder={daemons_config_namePlaceholder()}
-				required={true}
-			/>
-		{/snippet}
-	</form.Field>
+	<div oninput={() => onNameInput?.()}>
+		<form.Field name={nameDef.id} validators={getValidators(nameDef.id)}>
+			{#snippet children(field: AnyFieldApi)}
+				<TextInput
+					label={common_name()}
+					{field}
+					id={nameDef.id}
+					placeholder={daemons_config_namePlaceholder()}
+					required={true}
+				/>
+			{/snippet}
+		</form.Field>
+	</div>
 
 	<!-- Mode -->
 	<form.Field name={modeDef.id}>

@@ -32,6 +32,14 @@ export function getDaemonStatusTag(daemon: Daemon): TagProps {
 
 export type DaemonOS = 'linux' | 'macos' | 'windows' | 'freebsd' | 'openbsd';
 
+export function slugifyNetworkName(name: string): string {
+	return name
+		.toLowerCase()
+		.replace(/[^a-z0-9-]/g, '-')
+		.replace(/-+/g, '-')
+		.replace(/^-|-$/g, '');
+}
+
 export function detectOS(): DaemonOS {
 	if (typeof navigator === 'undefined') return 'linux';
 	const ua = navigator.userAgent.toLowerCase();
