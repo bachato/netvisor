@@ -86,6 +86,9 @@
 		defaultValues: {
 			referralSource: '',
 			referralSourceOther: ''
+		},
+		onSubmit: () => {
+			submitAndProceed();
 		}
 	}));
 
@@ -135,7 +138,7 @@
 		}
 	}
 
-	function handleContinue() {
+	function submitAndProceed() {
 		if (!selectedUseCase) return;
 		saveFields();
 		const values = form.state.values;
@@ -148,11 +151,16 @@
 		onNext();
 	}
 
-	let canProceed = $derived(
-		selectedUseCase !== null &&
-			!showLicenseWarning &&
-			!(referralSourceValue === 'other' && !form.state.values.referralSourceOther.trim())
-	);
+	function handleContinue() {
+		if (!selectedUseCase) return;
+		if (showCloudFields) {
+			form.handleSubmit();
+		} else {
+			submitAndProceed();
+		}
+	}
+
+	let canProceed = $derived(selectedUseCase !== null && !showLicenseWarning);
 </script>
 
 <GenericModal
@@ -207,19 +215,27 @@
 					<!-- Referral Source (all use cases on Cloud) -->
 					{#if selectedUseCase}
 						<div class="card card-static">
-							<form.Field name="referralSource">
+							<form.Field
+								name="referralSource"
+								validators={{
+									onChange: ({ value }) => required(value)
+								}}
+							>
 								{#snippet children(field)}
 									<SelectInput
 										label={onboarding_howDidYouHear()}
 										id="referral-source"
 										{field}
 										options={referralSourceOptions}
+										required={true}
 									/>
 									{#if referralSourceValue === 'other'}
 										<div class="mt-3">
 											<form.Field
 												name="referralSourceOther"
 												validators={{
+													onChange: ({ value }) =>
+														referralSourceValue === 'other' ? required(value) : undefined,
 													onBlur: ({ value }) =>
 														referralSourceValue === 'other' ? required(value) : undefined
 												}}
