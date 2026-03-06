@@ -213,19 +213,14 @@
 					<!-- Referral Source (all use cases on Cloud) -->
 					{#if selectedUseCase}
 						<div class="card card-static">
-							<form.Field
-								name="referralSource"
-								validators={{
-									onBlur: ({ value }) => required(value)
-								}}
-							>
+							<form.Field name="referralSource">
 								{#snippet children(field)}
 									<SelectInput
 										label={onboarding_howDidYouHear()}
 										id="referral-source"
 										{field}
 										options={referralSourceOptions}
-										required={true}
+										required={false}
 									/>
 									{#if referralSourceValue === 'other'}
 										<div class="mt-3">
