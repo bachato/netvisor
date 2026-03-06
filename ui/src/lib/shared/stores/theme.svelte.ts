@@ -4,13 +4,15 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
 
 let themeMode = $state<ThemeMode>('system');
+let systemPrefersDark = $state(
+	typeof window !== 'undefined'
+		? window.matchMedia('(prefers-color-scheme: dark)').matches
+		: true
+);
 
-function getSystemTheme(): ResolvedTheme {
-	if (typeof window === 'undefined') return 'dark';
-	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-let resolvedTheme = $derived<ResolvedTheme>(themeMode === 'system' ? getSystemTheme() : themeMode);
+let resolvedTheme = $derived<ResolvedTheme>(
+	themeMode === 'system' ? (systemPrefersDark ? 'dark' : 'light') : themeMode
+);
 
 // Initialize from localStorage and set up listeners (browser only)
 if (typeof window !== 'undefined') {
@@ -19,12 +21,9 @@ if (typeof window !== 'undefined') {
 		themeMode = stored;
 	}
 
-	// Re-evaluate when OS preference changes
-	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-		// Trigger reactivity by re-assigning when in system mode
-		if (themeMode === 'system') {
-			themeMode = 'system';
-		}
+	// Update reactive state when OS preference changes
+	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+		systemPrefersDark = e.matches;
 	});
 
 	// Apply theme to DOM whenever resolvedTheme changes
