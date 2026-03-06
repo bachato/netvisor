@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { createForm } from '@tanstack/svelte-form';
 	import { validateForm } from '$lib/shared/components/forms/form-context';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
@@ -101,7 +102,7 @@
 	$effect(() => {
 		if (selectedNetworkId && !nameManuallyEdited) {
 			const defaultName = getDefaultDaemonName(selectedNetworkId);
-			form.setFieldValue('name', defaultName);
+			untrack(() => form.setFieldValue('name', defaultName));
 		}
 	});
 
