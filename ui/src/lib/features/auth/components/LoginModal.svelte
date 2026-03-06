@@ -122,9 +122,11 @@
 		}}
 		class="flex min-h-0 flex-1 flex-col"
 	>
-		<div class="flex-1 overflow-auto p-6">
+		<div class={disablePasswordLogin && hasOidcProviders ? 'p-0' : 'flex-1 overflow-auto p-6'}>
 			{#if disablePasswordLogin && !hasOidcProviders}
-				<InlineDanger title={auth_passwordLoginDisabledNoProviders()} />
+				<div class="p-6">
+					<InlineDanger title={auth_passwordLoginDisabledNoProviders()} />
+				</div>
 			{:else if disablePasswordLogin && hasOidcProviders}
 				<!-- OIDC-only mode: no email form needed -->
 			{:else}
