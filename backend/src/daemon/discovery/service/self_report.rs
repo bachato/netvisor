@@ -128,9 +128,14 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<SelfReportDiscovery> {
             Vec::new()
         };
 
-        // Merge host and Docker subnets — host subnets always win on CIDR overlap,
-        // and DockerBridge subnets are filtered (handled by Docker discovery)
-        let subnets_to_create = merge_host_and_docker_subnets(subnets, docker_subnets);
+        // Merge host and Docker subnets — host subnets always win on CIDR overlap
+        let merged = merge_host_and_docker_subnets(subnets, docker_subnets);
+
+        // Filter out DockerBridge subnets — those are handled by Docker discovery
+        let subnets_to_create: Vec<Subnet> = merged
+            .into_iter()
+            .filter(|s| !s.is_docker_bridge_subnet())
+            .collect();
 
         tracing::info!(
             subnet_count = subnets_to_create.len(),

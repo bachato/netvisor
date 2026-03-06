@@ -258,8 +258,8 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
             .get_subnets_from_docker_networks(daemon_id, network_id, docker, self.discovery_type())
             .await?;
 
-        // Merge host and Docker subnets — host subnets take precedence on CIDR overlap,
-        // and DockerBridge subnets are filtered (self-report handles physical subnets)
+        // Merge host and Docker subnets — host subnets take precedence on CIDR overlap
+        // DockerBridge subnets are kept here since Docker discovery owns them
         let subnets = merge_host_and_docker_subnets(host_subnets, docker_subnets);
 
         let subnet_futures = subnets

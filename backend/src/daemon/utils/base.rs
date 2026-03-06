@@ -3,7 +3,7 @@ use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
 use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::entities::{DiscoveryMetadata, EntitySource};
 use crate::server::subnets::r#impl::base::{Subnet, SubnetBase};
-use crate::server::subnets::r#impl::types::{SubnetType, SubnetTypeDiscriminants};
+use crate::server::subnets::r#impl::types::SubnetType;
 use anyhow::Error;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -19,7 +19,6 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Duration;
-use strum::IntoDiscriminant;
 use uuid::Uuid;
 
 pub const SCAN_TIMEOUT: Duration = Duration::from_millis(800);
@@ -444,7 +443,9 @@ pub trait DaemonUtils {
 /// Merge host (physical) and Docker subnets, giving host subnets precedence.
 /// - Host subnets are always kept
 /// - Docker subnets with CIDRs matching host subnets are dropped (host wins)
-/// - DockerBridge subnets are dropped (handled by Docker discovery)
+///
+/// Callers that don't want DockerBridge subnets (e.g., self-report) should
+/// filter them separately after calling this function.
 pub fn merge_host_and_docker_subnets(
     host_subnets: Vec<Subnet>,
     docker_subnets: Vec<Subnet>,
@@ -455,18 +456,13 @@ pub fn merge_host_and_docker_subnets(
         .into_iter()
         .filter(|s| {
             let dominated_by_host = host_cidrs.contains(&s.base.cidr);
-            let is_docker_bridge =
-                s.base.subnet_type.discriminant() == SubnetTypeDiscriminants::DockerBridge;
-            let keep = !dominated_by_host && !is_docker_bridge;
-            if !keep {
+            if dominated_by_host {
                 tracing::debug!(
                     cidr = %s.base.cidr,
-                    dominated_by_host,
-                    is_docker_bridge,
                     "Filtering out Docker subnet (host takes precedence)"
                 );
             }
-            keep
+            !dominated_by_host
         })
         .collect();
 
@@ -522,12 +518,13 @@ mod tests {
     }
 
     #[test]
-    fn docker_bridge_always_filtered() {
+    fn docker_bridge_kept_when_no_overlap() {
         let host = vec![];
         let docker = vec![make_subnet("172.17.0.0/16", SubnetType::DockerBridge)];
 
         let result = merge_host_and_docker_subnets(host, docker);
-        assert!(result.is_empty());
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].base.subnet_type, SubnetType::DockerBridge);
     }
 
     #[test]
@@ -540,7 +537,7 @@ mod tests {
     }
 
     #[test]
-    fn mixed_keeps_physical_and_non_overlapping_non_bridge() {
+    fn mixed_filters_only_overlapping_docker() {
         let host = vec![make_subnet("192.168.1.0/24", SubnetType::Lan)];
         let docker = vec![
             make_subnet("192.168.1.0/24", SubnetType::MacVlan),
@@ -549,8 +546,10 @@ mod tests {
         ];
 
         let result = merge_host_and_docker_subnets(host, docker);
-        assert_eq!(result.len(), 2);
+        // MacVlan dropped (overlaps host), Bridge + IpVlan kept (no overlap)
+        assert_eq!(result.len(), 3);
         assert_eq!(result[0].base.subnet_type, SubnetType::Lan);
-        assert_eq!(result[1].base.subnet_type, SubnetType::IpVlan);
+        assert_eq!(result[1].base.subnet_type, SubnetType::DockerBridge);
+        assert_eq!(result[2].base.subnet_type, SubnetType::IpVlan);
     }
 }
