@@ -286,8 +286,8 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: #1f2937;
-		border-top: 1px solid #374151;
+		background: var(--color-bg-elevated);
+		border-top: 1px solid var(--color-border);
 		padding: 1.25rem;
 		z-index: 9999;
 	}
@@ -300,7 +300,7 @@
 		transform: translate(-50%, -50%);
 		max-width: 500px;
 		width: calc(100% - 2rem);
-		border: 1px solid #374151;
+		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
 		max-height: 90vh;
 		overflow-y: auto;
@@ -327,14 +327,14 @@
 	}
 
 	.title {
-		color: white;
+		color: var(--color-text-primary);
 		font-size: 1rem;
 		font-weight: 600;
 		margin: 0 0 0.25rem 0;
 	}
 
 	.description {
-		color: #9ca3af;
+		color: var(--color-text-secondary);
 		font-size: 0.875rem;
 		margin: 0;
 	}
@@ -342,12 +342,22 @@
 	/* :global() needed because links come from @html i18n content */
 	.description :global(a),
 	.settings-description :global(a) {
-		color: #60a5fa;
+		color: #2563eb;
 		text-decoration: underline;
+	}
+
+	:global(.dark) .description :global(a),
+	:global(.dark) .settings-description :global(a) {
+		color: #60a5fa;
 	}
 
 	.description :global(a:hover),
 	.settings-description :global(a:hover) {
+		color: #1d4ed8;
+	}
+
+	:global(.dark) .description :global(a:hover),
+	:global(.dark) .settings-description :global(a:hover) {
 		color: #93c5fd;
 	}
 
@@ -383,25 +393,25 @@
 
 	.btn-secondary {
 		background: transparent;
-		color: #9ca3af;
-		border: 1px solid #374151;
+		color: var(--color-text-secondary);
+		border: 1px solid var(--color-border);
 	}
 
 	.btn-secondary:hover {
-		background: #374151;
-		border-color: #4b5563;
-		color: #e5e7eb;
+		background: var(--color-bg-surface-hover);
+		border-color: var(--color-border-input);
+		color: var(--color-text-primary);
 	}
 
 	.btn-link {
 		background: transparent;
-		color: #9ca3af;
+		color: var(--color-text-secondary);
 		border: 1px solid transparent;
 		text-decoration: underline;
 	}
 
 	.btn-link:hover {
-		color: #e5e7eb;
+		color: var(--color-text-primary);
 	}
 
 	/* Settings panel styles */
@@ -420,7 +430,7 @@
 	.close-btn {
 		background: transparent;
 		border: none;
-		color: #9ca3af;
+		color: var(--color-text-secondary);
 		cursor: pointer;
 		padding: 0.25rem;
 		display: flex;
@@ -430,12 +440,12 @@
 	}
 
 	.close-btn:hover {
-		color: white;
-		background: #374151;
+		color: var(--color-text-primary);
+		background: var(--color-bg-surface-hover);
 	}
 
 	.settings-description {
-		color: #9ca3af;
+		color: var(--color-text-secondary);
 		font-size: 0.875rem;
 		margin: 0;
 	}
@@ -448,8 +458,8 @@
 	}
 
 	.cookie-option {
-		background: #111827;
-		border: 1px solid #374151;
+		background: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
 		border-radius: 0.375rem;
 		padding: 1rem;
 	}
@@ -477,9 +487,9 @@
 	.checkbox {
 		width: 1.25rem;
 		height: 1.25rem;
-		border: 1px solid #4b5563;
+		border: 1px solid var(--color-border-input);
 		border-radius: 0.25rem;
-		background: #374151;
+		background: var(--color-bg-input);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -509,24 +519,24 @@
 	}
 
 	.option-label:hover .checkbox:not(.disabled) {
-		border-color: #6b7280;
+		border-color: var(--color-text-tertiary);
 	}
 
 	.option-title {
-		color: white;
+		color: var(--color-text-primary);
 		font-weight: 500;
 		font-size: 0.9375rem;
 	}
 
 	.always-on {
-		color: #6b7280;
+		color: var(--color-text-tertiary);
 		font-size: 0.75rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
 
 	.option-description {
-		color: #9ca3af;
+		color: var(--color-text-secondary);
 		font-size: 0.8125rem;
 		margin: 0;
 		line-height: 1.4;
@@ -538,7 +548,7 @@
 		justify-content: flex-end;
 		flex-wrap: wrap;
 		padding-top: 0.5rem;
-		border-top: 1px solid #374151;
+		border-top: 1px solid var(--color-border);
 	}
 
 	/* Toggle button */
@@ -549,14 +559,14 @@
 		width: 3rem;
 		height: 3rem;
 		border-radius: 50%;
-		background: #1f2937;
-		border: 1px solid #374151;
-		color: #9ca3af;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 		z-index: 9999;
 		transition:
 			background-color 150ms,
@@ -564,7 +574,7 @@
 	}
 
 	.toggle:hover {
-		background: #374151;
-		color: white;
+		background: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
 	}
 </style>

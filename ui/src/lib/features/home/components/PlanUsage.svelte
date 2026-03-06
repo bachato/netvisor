@@ -75,7 +75,7 @@
 
 	function textColor(row: UsageRow): string {
 		if (row.hasOverage) return 'text-secondary';
-		if (row.pct >= 0.8) return 'text-yellow-400';
+		if (row.pct >= 0.8) return 'text-yellow-600 dark:text-yellow-400';
 		return 'text-secondary';
 	}
 </script>

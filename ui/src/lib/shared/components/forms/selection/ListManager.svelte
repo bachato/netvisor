@@ -375,8 +375,7 @@
 		</div>
 	{:else if computedEmptyMessage}
 		<div
-			class="text-secondary rounded-lg border border-dashed py-4 text-center text-sm"
-			style="border-color: var(--color-border)"
+			class="text-secondary rounded-lg border border-dashed border-gray-400 py-4 text-center text-sm dark:border-gray-500"
 		>
 			{computedEmptyMessage}
 		</div>
