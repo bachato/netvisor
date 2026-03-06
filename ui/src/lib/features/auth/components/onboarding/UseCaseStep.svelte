@@ -190,13 +190,13 @@
 							type="button"
 							class="card flex items-center gap-4 p-4 text-left transition-all {isSelected
 								? `ring-2 ${useCaseConfig.colors.ring}`
-								: 'hover:bg-gray-800'}"
+								: 'hover:bg-gray-100 dark:hover:bg-gray-800'}"
 							onclick={() => selectUseCase(useCaseId)}
 						>
 							<div
 								class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg {isSelected
 									? `${useCaseConfig.colors.bg} ${useCaseConfig.colors.text}`
-									: 'bg-gray-700 text-gray-400'}"
+									: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}"
 							>
 								<Icon class="h-5 w-5" />
 							</div>

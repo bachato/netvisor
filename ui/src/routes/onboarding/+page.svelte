@@ -252,7 +252,7 @@
 		<div class="fixed left-1/2 top-2 z-[200] -translate-x-1/2 sm:top-6">
 			<div class="flex flex-col items-center gap-1">
 				<div
-					class="flex items-center gap-2 rounded-full bg-gray-800/90 px-4 py-2 shadow-lg backdrop-blur-sm"
+					class="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-lg backdrop-blur-sm dark:bg-gray-800/90"
 				>
 					{#if currentStepNumber() > 1}
 						<button
@@ -273,7 +273,7 @@
 							<div
 								class="h-2 w-2 rounded-full transition-colors {i < currentStepNumber()
 									? 'bg-primary-500'
-									: 'bg-gray-600'}"
+									: 'bg-gray-300 dark:bg-gray-600'}"
 							></div>
 						{/each}
 					</div>

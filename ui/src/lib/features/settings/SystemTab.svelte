@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Monitor, Sun, Moon } from 'lucide-svelte';
-	import { themeStore } from '$lib/shared/stores/theme';
+	import { themeStore } from '$lib/shared/stores/theme.svelte';
 	import {
 		common_system,
 		common_theme,

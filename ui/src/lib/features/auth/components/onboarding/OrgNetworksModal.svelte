@@ -191,7 +191,7 @@
 											toggleSnmpEnabled(e.currentTarget.checked);
 											field.handleChange(e.currentTarget.checked);
 										}}
-										class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-1 focus:ring-blue-500"
+										class="checkbox-card h-4 w-4 focus:ring-1 focus:ring-blue-500"
 									/>
 									<label for="snmp-enabled" class="text-secondary flex items-center gap-2 text-sm">
 										{snmp_enableForNetwork()}

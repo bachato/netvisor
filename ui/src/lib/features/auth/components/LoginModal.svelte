@@ -223,7 +223,7 @@
 					{#if hasOidcProviders && !demoMode}
 						<div class="relative">
 							<div class="absolute inset-0 flex items-center">
-								<div class="w-full border-t border-gray-600"></div>
+								<div class="w-full border-t" style="border-color: var(--color-border)"></div>
 							</div>
 							<div class="relative flex justify-center text-sm">
 								<span class="text-tertiary bg-[var(--color-bg-elevated)] px-2">{common_or()}</span>

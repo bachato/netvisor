@@ -264,7 +264,10 @@
 									{#if !disablePasswordLogin}
 										<div class="relative">
 											<div class="absolute inset-0 flex items-center">
-												<div class="w-full border-t border-gray-600"></div>
+												<div
+													class="w-full border-t"
+													style="border-color: var(--color-border)"
+												></div>
 											</div>
 											<div class="relative flex justify-center text-sm">
 												<span class="text-tertiary bg-[var(--color-bg-elevated)] px-2"
@@ -327,7 +330,7 @@
 			{:else}
 				<!-- Sub-step: Password -->
 				<div class="space-y-6">
-					<div class="flex items-center justify-between rounded-lg bg-gray-800 px-4 py-3">
+					<div class="card card-static flex items-center justify-between !rounded-lg !px-4 !py-3">
 						<span class="text-secondary text-sm">{emailValue}</span>
 						<button
 							type="button"

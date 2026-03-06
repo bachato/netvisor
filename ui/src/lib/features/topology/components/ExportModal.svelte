@@ -23,7 +23,7 @@
 		topology_flowNotFound,
 		topology_noNodesToExport
 	} from '$lib/paraglide/messages';
-	import { getResolvedTheme } from '$lib/shared/stores/theme';
+	import { getResolvedTheme } from '$lib/shared/stores/theme.svelte';
 	import { common_light, common_dark } from '$lib/paraglide/messages';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { downloadTopologyExport } from '$lib/shared/utils/csvExport';

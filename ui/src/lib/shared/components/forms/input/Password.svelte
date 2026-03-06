@@ -71,21 +71,21 @@
 
 		<!-- Password Requirements -->
 		{#if value}
-			<div class="space-y-1 rounded-md bg-gray-700 p-3">
-				<p class="text-xs font-medium text-gray-300">{common_passwordRequirements()}</p>
-				<p class="text-xs {passwordLongEnough ? 'text-green-400' : 'text-gray-400'}">
+			<div class="space-y-1 rounded-md p-3" style="background: var(--color-bg-surface)">
+				<p class="text-secondary text-xs font-medium">{common_passwordRequirements()}</p>
+				<p class="text-xs {passwordLongEnough ? 'text-success' : 'text-tertiary'}">
 					{passwordLongEnough ? '✓' : '○'}
 					{common_passwordMinChars()}
 				</p>
-				<p class="text-xs {hasUppercase ? 'text-green-400' : 'text-gray-400'}">
+				<p class="text-xs {hasUppercase ? 'text-success' : 'text-tertiary'}">
 					{hasUppercase ? '✓' : '○'}
 					{common_passwordContainsUppercase()}
 				</p>
-				<p class="text-xs {hasLowercase ? 'text-green-400' : 'text-gray-400'}">
+				<p class="text-xs {hasLowercase ? 'text-success' : 'text-tertiary'}">
 					{hasLowercase ? '✓' : '○'}
 					{common_passwordContainsLowercase()}
 				</p>
-				<p class="text-xs {hasNumber ? 'text-green-400' : 'text-gray-400'}">
+				<p class="text-xs {hasNumber ? 'text-success' : 'text-tertiary'}">
 					{hasNumber ? '✓' : '○'}
 					{common_passwordContainsNumber()}
 				</p>
