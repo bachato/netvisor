@@ -70,7 +70,13 @@
 	let enableTermsCheckbox = $derived(configData?.billing_enabled ?? false);
 
 	$effect(() => {
-		if (!hasOidcProviders && !disablePasswordLogin && subStep === 'method') {
+		if (
+			configData &&
+			!hasOidcProviders &&
+			!disablePasswordLogin &&
+			!enableTermsCheckbox &&
+			subStep === 'method'
+		) {
 			subStep = 'email';
 		}
 	});
