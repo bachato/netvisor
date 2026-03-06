@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { themeStore } from '$lib/shared/stores/theme.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		useVerifyEmailMutation,
@@ -69,10 +70,12 @@
 	<!-- Background image with overlay -->
 	<div class="absolute inset-0 z-0">
 		<div
-			class="h-full w-full bg-cover bg-center bg-no-repeat blur-sm"
-			style="background-image: url('/images/diagram.png')"
+			class="h-full w-full bg-cover bg-center bg-no-repeat blur-[2px]"
+			style="background-image: url('/images/background-{themeStore.resolvedTheme}.png')"
 		></div>
-		<div class="absolute inset-0 bg-black/60"></div>
+		<div
+			class="absolute inset-0 {themeStore.resolvedTheme === 'dark' ? 'bg-black/30' : 'bg-white/15'}"
+		></div>
 	</div>
 
 	<!-- Spacer to push modal down -->

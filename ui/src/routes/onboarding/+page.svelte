@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { themeStore } from '$lib/shared/stores/theme.svelte';
 	import { ChevronLeft } from 'lucide-svelte';
 	import Toast from '$lib/shared/components/feedback/Toast.svelte';
 	import OrgNetworksModal from '$lib/features/auth/components/onboarding/OrgNetworksModal.svelte';
@@ -241,10 +242,12 @@
 	<!-- Background image with overlay -->
 	<div class="absolute inset-0 z-0">
 		<div
-			class="h-full w-full bg-cover bg-center bg-no-repeat blur-sm"
-			style="background-image: url('/images/diagram.png')"
+			class="h-full w-full bg-cover bg-center bg-no-repeat blur-[2px]"
+			style="background-image: url('/images/background-{themeStore.resolvedTheme}.png')"
 		></div>
-		<div class="absolute inset-0 bg-black/60"></div>
+		<div
+			class="absolute inset-0 {themeStore.resolvedTheme === 'dark' ? 'bg-black/30' : 'bg-white/15'}"
+		></div>
 	</div>
 
 	<!-- Progress Indicator - fixed position above modal (hidden for invite flow) -->
