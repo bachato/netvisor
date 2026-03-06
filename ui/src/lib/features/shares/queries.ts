@@ -219,21 +219,23 @@ export async function getPublicShareTopology(
 /**
  * Generate share URL
  */
-export function generateShareUrl(shareId: string): string {
+export function generateShareUrl(shareId: string, theme?: 'light' | 'dark'): string {
+	const suffix = theme ? `?theme=${theme}` : '';
 	if (typeof window !== 'undefined') {
-		return `${window.location.origin}/share/${shareId}`;
+		return `${window.location.origin}/share/${shareId}${suffix}`;
 	}
-	return `/share/${shareId}`;
+	return `/share/${shareId}${suffix}`;
 }
 
 /**
  * Generate embed URL for a share
  */
-export function generateEmbedUrl(shareId: string): string {
+export function generateEmbedUrl(shareId: string, theme?: 'light' | 'dark'): string {
+	const suffix = theme ? `?theme=${theme}` : '';
 	if (typeof window !== 'undefined') {
-		return `${window.location.origin}/share/${shareId}/embed`;
+		return `${window.location.origin}/share/${shareId}/embed${suffix}`;
 	}
-	return `/share/${shareId}/embed`;
+	return `/share/${shareId}/embed${suffix}`;
 }
 
 /**
@@ -242,12 +244,14 @@ export function generateEmbedUrl(shareId: string): string {
 export function generateEmbedCode(
 	shareId: string,
 	width: string | number = '100%',
-	height: string | number = '600px'
+	height: string | number = '600px',
+	theme?: 'light' | 'dark'
 ): string {
-	const embedUrl = generateEmbedUrl(shareId);
+	const embedUrl = generateEmbedUrl(shareId, theme);
 	const widthStr = typeof width === 'number' ? `${width}px` : width;
 	const heightStr = typeof height === 'number' ? `${height}px` : height;
-	return `<iframe src="${embedUrl}" width="${widthStr}" height="${heightStr}" frameborder="0" style="border: 1px solid #374151; border-radius: 8px;"></iframe>`;
+	const borderColor = theme === 'light' ? '#e2e8f0' : '#374151';
+	return `<iframe src="${embedUrl}" width="${widthStr}" height="${heightStr}" frameborder="0" style="border: 1px solid ${borderColor}; border-radius: 8px;"></iframe>`;
 }
 
 /**
