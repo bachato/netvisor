@@ -166,6 +166,13 @@ impl BillingRate {
             BillingRate::Year => CreatePriceRecurringInterval::Year,
         }
     }
+
+    pub fn billing_period(&self) -> &'static str {
+        match self {
+            BillingRate::Month => "Monthly",
+            BillingRate::Year => "Yearly",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

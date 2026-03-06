@@ -7,7 +7,7 @@ use crate::server::billing::types::base::BillingPlan;
 use crate::server::billing::types::features::Feature;
 use crate::server::daemons::service::DaemonService;
 use crate::server::discovery::service::DiscoveryService;
-use crate::server::email::traits::EmailService;
+use crate::server::email::traits::{EmailService, format_plan_price};
 use crate::server::hosts::r#impl::base::Host;
 use crate::server::hosts::service::HostService;
 use crate::server::invites::service::InviteService;
@@ -1060,6 +1060,8 @@ impl BillingService {
                                 owner.base.email.clone(),
                                 plan.name(),
                                 trial_days,
+                                plan.config().rate.billing_period(),
+                                &format_plan_price(&plan),
                             )
                             .await
                     {
@@ -1091,7 +1093,12 @@ impl BillingService {
 
                     if let Some(ref email_service) = self.email_service
                         && let Err(e) = email_service
-                            .send_trial_converted_email(owner.base.email.clone(), plan.name())
+                            .send_trial_converted_email(
+                                owner.base.email.clone(),
+                                plan.name(),
+                                plan.config().rate.billing_period(),
+                                &format_plan_price(&plan),
+                            )
                             .await
                     {
                         tracing::warn!(error = %e, "Failed to send trial_converted email");
@@ -1262,6 +1269,8 @@ impl BillingService {
                         owner.base.email.clone(),
                         plan.name(),
                         organization.base.has_payment_method,
+                        plan.config().rate.billing_period(),
+                        &format_plan_price(&plan),
                     )
                     .await
             {
@@ -1456,12 +1465,15 @@ impl BillingService {
             .get_organization_owners(&organization.id)
             .await?;
 
-        let cancelled_plan_name = organization
-            .base
-            .plan
+        let cancelled_plan = organization.base.plan;
+        let cancelled_plan_name = cancelled_plan
             .as_ref()
             .map(|p| p.name().to_string())
             .unwrap_or_default();
+        let cancelled_billing_period = cancelled_plan
+            .as_ref()
+            .map(|p| p.config().rate.billing_period())
+            .unwrap_or("Monthly");
 
         if let Some(owner) = owners.first() {
             let authentication: AuthenticatedEntity = owner.clone().into();
@@ -1516,7 +1528,11 @@ impl BillingService {
 
                 if let Some(ref email_service) = self.email_service
                     && let Err(e) = email_service
-                        .send_trial_expired_email(owner.base.email.clone(), plan_name)
+                        .send_trial_expired_email(
+                            owner.base.email.clone(),
+                            plan_name,
+                            cancelled_billing_period,
+                        )
                         .await
                 {
                     tracing::warn!(error = %e, "Failed to send trial_expired email");

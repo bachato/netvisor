@@ -104,8 +104,11 @@ pub trait EmailProvider: Send + Sync {
         to: EmailAddress,
         plan_name: &str,
         trial_days: u32,
+        billing_period: &str,
+        base_price: &str,
     ) -> Result<(), Error> {
-        let (subject, body) = self.build_trial_started_email(plan_name, trial_days);
+        let (subject, body) =
+            self.build_trial_started_email(plan_name, trial_days, billing_period, base_price);
         self.send_billing_email(to, subject, body).await
     }
 
@@ -114,11 +117,13 @@ pub trait EmailProvider: Send + Sync {
         to: EmailAddress,
         plan_name: &str,
         has_payment: bool,
+        billing_period: &str,
+        base_price: &str,
     ) -> Result<(), Error> {
         let (subject, body) = if has_payment {
-            self.build_trial_ending_email_has_payment(plan_name)
+            self.build_trial_ending_email_has_payment(plan_name, billing_period, base_price)
         } else {
-            self.build_trial_ending_email_no_payment(plan_name)
+            self.build_trial_ending_email_no_payment(plan_name, billing_period, base_price)
         };
         self.send_billing_email(to, subject, body).await
     }
@@ -127,8 +132,9 @@ pub trait EmailProvider: Send + Sync {
         &self,
         to: EmailAddress,
         plan_name: &str,
+        billing_period: &str,
     ) -> Result<(), Error> {
-        let (subject, body) = self.build_trial_expired_email(plan_name);
+        let (subject, body) = self.build_trial_expired_email(plan_name, billing_period);
         self.send_billing_email(to, subject, body).await
     }
 
@@ -146,28 +152,59 @@ pub trait EmailProvider: Send + Sync {
         self.send_billing_email(to, subject, body).await
     }
 
-    fn build_trial_started_email(&self, plan_name: &str, trial_days: u32) -> (String, String) {
+    fn build_trial_started_email(
+        &self,
+        plan_name: &str,
+        trial_days: u32,
+        billing_period: &str,
+        base_price: &str,
+    ) -> (String, String) {
         let body = self.build_email(
             TRIAL_STARTED_BODY
                 .replace("{plan_name}", plan_name)
-                .replace("{trial_days}", &trial_days.to_string()),
+                .replace("{trial_days}", &trial_days.to_string())
+                .replace("{billing_period}", billing_period)
+                .replace("{base_price}", base_price),
         );
         (TRIAL_STARTED_TITLE.to_string(), body)
     }
 
-    fn build_trial_ending_email_no_payment(&self, plan_name: &str) -> (String, String) {
-        let body = self.build_email(TRIAL_ENDING_BODY_NO_PAYMENT.replace("{plan_name}", plan_name));
+    fn build_trial_ending_email_no_payment(
+        &self,
+        plan_name: &str,
+        billing_period: &str,
+        base_price: &str,
+    ) -> (String, String) {
+        let body = self.build_email(
+            TRIAL_ENDING_BODY_NO_PAYMENT
+                .replace("{plan_name}", plan_name)
+                .replace("{billing_period}", billing_period)
+                .replace("{base_price}", base_price),
+        );
         (TRIAL_ENDING_TITLE.to_string(), body)
     }
 
-    fn build_trial_ending_email_has_payment(&self, plan_name: &str) -> (String, String) {
-        let body =
-            self.build_email(TRIAL_ENDING_BODY_HAS_PAYMENT.replace("{plan_name}", plan_name));
+    fn build_trial_ending_email_has_payment(
+        &self,
+        plan_name: &str,
+        billing_period: &str,
+        base_price: &str,
+    ) -> (String, String) {
+        let body = self.build_email(
+            TRIAL_ENDING_BODY_HAS_PAYMENT
+                .replace("{plan_name}", plan_name)
+                .replace("{billing_period}", billing_period)
+                .replace("{base_price}", base_price),
+        );
         (TRIAL_ENDING_TITLE.to_string(), body)
     }
 
-    fn build_trial_expired_email(&self, plan_name: &str) -> (String, String) {
-        let body = self.build_email(TRIAL_EXPIRED_BODY.replace("{plan_name}", plan_name));
+    fn build_trial_expired_email(&self, plan_name: &str, billing_period: &str) -> (String, String) {
+        let body = self.build_email(
+            TRIAL_EXPIRED_BODY
+                .replace("{plan_name}", plan_name)
+                .replace("{billing_period}", billing_period),
+        );
         (TRIAL_EXPIRED_TITLE.to_string(), body)
     }
 
@@ -216,8 +253,18 @@ pub trait EmailProvider: Send + Sync {
         (DAEMON_STANDBY_TITLE.to_string(), body)
     }
 
-    fn build_trial_converted_email(&self, plan_name: &str) -> (String, String) {
-        let body = self.build_email(TRIAL_CONVERTED_BODY.replace("{plan_name}", plan_name));
+    fn build_trial_converted_email(
+        &self,
+        plan_name: &str,
+        billing_period: &str,
+        base_price: &str,
+    ) -> (String, String) {
+        let body = self.build_email(
+            TRIAL_CONVERTED_BODY
+                .replace("{plan_name}", plan_name)
+                .replace("{billing_period}", billing_period)
+                .replace("{base_price}", base_price),
+        );
         (TRIAL_CONVERTED_TITLE.to_string(), body)
     }
 
@@ -516,10 +563,15 @@ impl EmailService {
         to: EmailAddress,
         plan_name: &str,
         trial_days: u32,
+        billing_period: &str,
+        base_price: &str,
     ) -> Result<()> {
-        let (subject, body) = self
-            .provider
-            .build_trial_started_email(plan_name, trial_days);
+        let (subject, body) = self.provider.build_trial_started_email(
+            plan_name,
+            trial_days,
+            billing_period,
+            base_price,
+        );
         let body = body.replace("{base_url}", &self.public_url);
         self.provider.send_billing_email(to, subject, body).await
     }
@@ -529,19 +581,32 @@ impl EmailService {
         to: EmailAddress,
         plan_name: &str,
         has_payment: bool,
+        billing_period: &str,
+        base_price: &str,
     ) -> Result<()> {
         let (subject, body) = if has_payment {
-            self.provider
-                .build_trial_ending_email_has_payment(plan_name)
+            self.provider.build_trial_ending_email_has_payment(
+                plan_name,
+                billing_period,
+                base_price,
+            )
         } else {
-            self.provider.build_trial_ending_email_no_payment(plan_name)
+            self.provider
+                .build_trial_ending_email_no_payment(plan_name, billing_period, base_price)
         };
         let body = body.replace("{base_url}", &self.public_url);
         self.provider.send_billing_email(to, subject, body).await
     }
 
-    pub async fn send_trial_expired_email(&self, to: EmailAddress, plan_name: &str) -> Result<()> {
-        let (subject, body) = self.provider.build_trial_expired_email(plan_name);
+    pub async fn send_trial_expired_email(
+        &self,
+        to: EmailAddress,
+        plan_name: &str,
+        billing_period: &str,
+    ) -> Result<()> {
+        let (subject, body) = self
+            .provider
+            .build_trial_expired_email(plan_name, billing_period);
         let body = body.replace("{base_url}", &self.public_url);
         self.provider.send_billing_email(to, subject, body).await
     }
@@ -574,8 +639,12 @@ impl EmailService {
         &self,
         to: EmailAddress,
         plan_name: &str,
+        billing_period: &str,
+        base_price: &str,
     ) -> Result<()> {
-        let (subject, body) = self.provider.build_trial_converted_email(plan_name);
+        let (subject, body) =
+            self.provider
+                .build_trial_converted_email(plan_name, billing_period, base_price);
         let body = body.replace("{base_url}", &self.public_url);
         self.provider.send_billing_email(to, subject, body).await
     }
@@ -918,6 +987,18 @@ impl EmailService {
             .first()
             .ok_or_else(|| anyhow::anyhow!("No owner found for organization {}", org_id))?;
         Ok(owner.base.email.clone())
+    }
+}
+
+use crate::server::billing::types::base::{BillingPlan, BillingRate};
+
+/// Format a plan's base price for display in emails (e.g. "$14.99/mo")
+pub fn format_plan_price(plan: &BillingPlan) -> String {
+    let config = plan.config();
+    let amount = format_cents(config.base_cents, "usd");
+    match config.rate {
+        BillingRate::Month => format!("{}/mo", amount),
+        BillingRate::Year => format!("{}/yr", amount),
     }
 }
 

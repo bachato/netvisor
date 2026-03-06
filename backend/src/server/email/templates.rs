@@ -126,10 +126,11 @@ pub const TRIAL_STARTED_TITLE: &str = "Welcome to Scanopy - Your Trial Has Start
 pub const TRIAL_STARTED_BODY: &str = r#"                    <!-- Main Content -->
                     <tr>
                         <td style="padding: 0 40px 20px 40px;">
-                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Welcome to Scanopy {plan_name}!</h1>
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Welcome to Scanopy {plan_name} {billing_period}!</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your trial of the {plan_name} plan has started. You have full access to all features for the next {trial_days} days.</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">No credit card is required during the trial. Add a payment method anytime from your Settings page to continue after the trial ends.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your trial of the {plan_name} {billing_period} plan has started. You have full access to all features for the next {trial_days} days.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">After your trial, you'll be billed {base_price}*. No credit card is required during the trial — add a payment method anytime from your Settings page to continue after the trial ends.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 12px; line-height: 18px; color: #9ca3af;">*Price excludes applicable taxes. Additional usage beyond included seats, networks, or hosts is billed separately.</p>
                         </td>
                     </tr>
 
@@ -148,8 +149,9 @@ pub const TRIAL_ENDING_BODY_NO_PAYMENT: &str = r#"                    <!-- Main 
                         <td style="padding: 0 40px 20px 40px;">
                             <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Your Trial Ends Soon</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} trial ends in 3 days. To keep all your features and data, add a payment method before the trial expires.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} {billing_period} trial ends in 3 days. To keep all your features and data, add a payment method ({base_price}*) before the trial expires.</p>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">If no payment method is added, your account will be downgraded to the Free plan, which includes up to 25 hosts with manual discovery only.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 12px; line-height: 18px; color: #9ca3af;">*Price excludes applicable taxes. Additional usage beyond included seats, networks, or hosts is billed separately.</p>
                         </td>
                     </tr>
 
@@ -166,7 +168,8 @@ pub const TRIAL_ENDING_BODY_HAS_PAYMENT: &str = r#"                    <!-- Main
                         <td style="padding: 0 40px 20px 40px;">
                             <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Your Trial Ends Soon</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} trial ends in 3 days. The payment method you've added will be automatically billed at the end of the trial period.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} {billing_period} trial ends in 3 days. You'll be billed {base_price}* for your {plan_name} {billing_period} plan at the end of the trial period.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 12px; line-height: 18px; color: #9ca3af;">*Price excludes applicable taxes. Additional usage beyond included seats, networks, or hosts is billed separately.</p>
                         </td>
                     </tr>
 
@@ -185,7 +188,7 @@ pub const TRIAL_EXPIRED_BODY: &str = r#"                    <!-- Main Content --
                         <td style="padding: 0 40px 20px 40px;">
                             <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Your Trial Has Ended</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} trial has ended and your account has been moved to the Free plan.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} {billing_period} trial has ended and your account has been moved to the Free plan.</p>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">You can still use Scanopy with up to 25 hosts and manual discovery. Upgrade anytime to restore scheduled discovery and higher limits.</p>
                         </td>
                     </tr>
@@ -256,7 +259,8 @@ pub const TRIAL_CONVERTED_BODY: &str = r#"                    <!-- Main Content 
                         <td style="padding: 0 40px 20px 40px;">
                             <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Your Subscription is Active!</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} trial has ended and your subscription is now active. You'll be billed automatically going forward.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} {billing_period} trial has ended and your subscription is now active. You'll be billed {base_price}* going forward.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 12px; line-height: 18px; color: #9ca3af;">*Price excludes applicable taxes. Additional usage beyond included seats, networks, or hosts is billed separately.</p>
                         </td>
                     </tr>
 
