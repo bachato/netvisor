@@ -113,12 +113,14 @@
 				<h3 class="text-primary text-base font-semibold">Getting Started</h3>
 				<div class="flex items-center gap-3">
 					<span class="text-tertiary text-sm">{completedCount} of {steps.length} complete</span>
-					<button
-						onclick={dismiss}
-						class="text-tertiary hover:text-secondary text-sm transition-colors"
-					>
-						Dismiss
-					</button>
+					{#if completedCount > 0}
+						<button
+							onclick={dismiss}
+							class="text-tertiary hover:text-secondary text-sm transition-colors"
+						>
+							Dismiss
+						</button>
+					{/if}
 				</div>
 			</div>
 

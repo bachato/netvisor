@@ -467,7 +467,7 @@ impl BillingPlan {
                 diagram_export: true,
                 host_inventory: true,
                 scheduled_discovery: false,
-                daemon_poll: false,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,

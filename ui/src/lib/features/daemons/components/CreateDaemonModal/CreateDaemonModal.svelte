@@ -5,6 +5,7 @@
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import type { ModalTab } from '$lib/shared/components/layout/GenericModal.svelte';
 	import { pushError } from '$lib/shared/stores/feedback';
+	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { SatelliteDish, Settings, KeyRound, Terminal, SlidersHorizontal } from 'lucide-svelte';
 	import {
@@ -244,6 +245,7 @@
 		if (activeTab === 'configure') {
 			const isValid = await validateForm(form);
 			if (isValid) {
+				trackEvent('daemon_wizard_step_completed', { step: 'configure' });
 				if (furthestReached < 1) furthestReached = 1;
 				nextTab();
 			}
@@ -252,12 +254,14 @@
 				pushError(daemons_generateKeyToContinue());
 				return;
 			}
+			trackEvent('daemon_wizard_step_completed', { step: 'api-key' });
 			if (furthestReached < 2) furthestReached = 2;
 			nextTab();
 		}
 	}
 
 	function handleOnClose() {
+		trackEvent('daemon_wizard_closed');
 		keyState = null;
 		activeTab = 'configure';
 		previousMainTab = 'configure';
@@ -267,6 +271,7 @@
 
 	// --- Onboarding: skip to install when provisionalApiKey provided ---
 	function handleOpen() {
+		trackEvent('daemon_wizard_opened');
 		if (onboardingMode && provisionalApiKey) {
 			activeTab = 'install';
 			furthestReached = 2;

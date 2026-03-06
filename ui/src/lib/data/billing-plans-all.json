@@ -71,7 +71,7 @@
 				"community_support": true,
 				"csv_export": true,
 				"custom_sso": false,
-				"daemon_poll": false,
+				"daemon_poll": true,
 				"diagram_export": true,
 				"docker_integration": true,
 				"email_support": false,
@@ -97,6 +97,7 @@
 			"included_networks": null,
 			"included_seats": null,
 			"incremental_features": [
+				"daemon_poll",
 				"host_inventory",
 				"service_definitions",
 				"diagram_export",
@@ -160,8 +161,7 @@
 				"email_support",
 				"scheduled_discovery",
 				"share_views",
-				"remove_created_with",
-				"daemon_poll"
+				"remove_created_with"
 			],
 			"is_commercial": false,
 			"network_cents": null,
