@@ -264,8 +264,7 @@
 				<button
 					type="button"
 					onclick={handleAddClick}
-					class="text-tertiary hover:text-secondary inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed transition-colors"
-					style="border-color: var(--color-border-input)"
+					class="text-tertiary hover:text-secondary inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-gray-400 transition-colors dark:border-gray-500"
 				>
 					<Plus class="h-3 w-3" />
 				</button>

@@ -18,7 +18,7 @@
 	{body}
 	{dismissableKey}
 	Icon={AlertTriangle}
-	borderColor="border-red-600/30"
-	bgColor="bg-red-900/20"
+	borderColor="border-red-200 dark:border-red-600/30"
+	bgColor="bg-red-50 dark:bg-red-900/20"
 	textColor="text-danger"
 />

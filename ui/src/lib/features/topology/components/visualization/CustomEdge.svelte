@@ -154,12 +154,14 @@
 		let strokeColor = edgeColorHelper.rgb;
 		let dashArray = '';
 
+		const isDark =
+			typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 		if (useMultiColorDash && isSelected) {
 			// Group edge currently selected
-			strokeColor = 'rgba(0, 0, 0, 0.4)';
+			strokeColor = isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.6)';
 		} else if (useMultiColorDash && !isSelected) {
 			// Other group edges, subtler highlight
-			strokeColor = 'rgba(0, 0, 0, 0.15)';
+			strokeColor = isDark ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.4)';
 		} else if (!isGroupEdge && edgeTypeMetadata?.is_dashed) {
 			dashArray = 'stroke-dasharray: 5 5;';
 		}
@@ -307,16 +309,16 @@
 			position={{ x: sourceX, y: sourceY }}
 			class={{}}
 			style={!reconnecting
-				? `background: ${edgeColorHelper.rgb}; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;`
-				: 'background: transparent; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;'}
+				? `background: ${edgeColorHelper.rgb}; border: 2px solid var(--color-border); border-radius: 100%; width: 12px; height: 12px;`
+				: 'background: transparent; border: 2px solid var(--color-border); border-radius: 100%; width: 12px; height: 12px;'}
 		/>
 		<EdgeReconnectAnchor
 			bind:reconnecting
 			type="target"
 			position={{ x: targetX, y: targetY }}
 			style={!reconnecting
-				? `background: ${edgeColorHelper.rgb}; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;`
-				: 'background: transparent; border: 2px solid #374151; border-radius: 100%; width: 12px; height: 12px;'}
+				? `background: ${edgeColorHelper.rgb}; border: 2px solid var(--color-border); border-radius: 100%; width: 12px; height: 12px;`
+				: 'background: transparent; border: 2px solid var(--color-border); border-radius: 100%; width: 12px; height: 12px;'}
 		/>
 	{/if}
 
@@ -349,7 +351,7 @@
 			>
 				<div
 					class="card text-secondary nopan"
-					style="font-size: 12px; font-weight: 500; padding: 0.5rem 0.75rem; border-color: rgb(55 65 81); cursor: {isDragging
+					style="font-size: 12px; font-weight: 500; padding: 0.5rem 0.75rem; border-color: var(--color-border); cursor: {isDragging
 						? 'grabbing'
 						: 'grab'}; pointer-events: auto; opacity: {labelOpacity}; transition: opacity 0.2s ease-in-out;"
 					draggable="true"
