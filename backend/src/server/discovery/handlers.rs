@@ -1,5 +1,8 @@
 use crate::server::{
-    auth::middleware::permissions::{Authorized, IsDaemon, Member, Viewer},
+    auth::middleware::{
+        auth::AuthenticatedEntity,
+        permissions::{Authorized, IsDaemon, Member, Viewer},
+    },
     config::AppState,
     daemons::r#impl::api::DiscoveryUpdatePayload,
     discovery::r#impl::{
@@ -250,6 +253,26 @@ async fn start_session(
         return Err(ApiError::entity_access_denied::<Network>(
             discovery.base.network_id,
         ));
+    }
+
+    // Auto-wake daemon if on standby
+    if let Some(mut daemon) = state
+        .services
+        .daemon_service
+        .get_by_id(&discovery.base.daemon_id)
+        .await?
+        && daemon.base.standby
+    {
+        daemon.base.standby = false;
+        state
+            .services
+            .daemon_service
+            .update(&mut daemon, AuthenticatedEntity::System)
+            .await?;
+        tracing::info!(
+            daemon_id = %daemon.id,
+            "Cleared daemon standby (discovery session started)"
+        );
     }
 
     // Update last_run BEFORE moving any fields

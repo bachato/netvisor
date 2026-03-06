@@ -139,6 +139,26 @@ async fn main() -> anyhow::Result<()> {
         daemon_service.start_polling_loop().await;
     });
 
+    // Check for inactive daemons and put them on standby (daily)
+    let inactivity_state = state.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(24 * 60 * 60));
+        interval.tick().await; // Skip immediate tick
+        loop {
+            interval.tick().await;
+            if let Some(ref email_service) = inactivity_state.services.email_service {
+                if let Err(e) = inactivity_state
+                    .services
+                    .daemon_service
+                    .check_daemon_inactivity(email_service)
+                    .await
+                {
+                    tracing::error!(error = %e, "Failed to check daemon inactivity");
+                }
+            }
+        }
+    });
+
     tracing::info!(target: LOG_TARGET, "  Background tasks started");
 
     let (base_router, _openapi) = create_router(state.clone());

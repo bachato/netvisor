@@ -5,7 +5,6 @@ use crate::server::billing::plans::get_free_plan;
 use crate::server::billing::types::api::ChangePlanPreview;
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::billing::types::features::Feature;
-use crate::server::daemons::r#impl::base::DaemonMode;
 use crate::server::daemons::service::DaemonService;
 use crate::server::discovery::service::DiscoveryService;
 use crate::server::email::traits::EmailService;
@@ -2013,42 +2012,13 @@ impl BillingService {
             networks.iter().map(|n| n.id).collect()
         };
 
-        // 2. Set standby on DaemonPoll daemons if plan doesn't support it
+        // 2. Collect daemon host IDs (used to protect daemon hosts from deletion)
         let daemon_filter =
             StorableFilter::<crate::server::daemons::r#impl::base::Daemon>::new_from_network_ids(
                 &network_ids,
             );
         let daemons = self.daemon_service.get_all(daemon_filter).await?;
         let daemon_host_ids: Vec<Uuid> = daemons.iter().map(|d| d.base.host_id).collect();
-
-        if !features.daemon_poll {
-            for mut daemon in daemons {
-                if daemon.base.mode == DaemonMode::DaemonPoll && !daemon.base.standby {
-                    daemon.base.standby = true;
-                    self.daemon_service
-                        .update(&mut daemon, AuthenticatedEntity::System)
-                        .await?;
-                    tracing::info!(
-                        daemon_id = %daemon.id,
-                        "Set daemon to standby (plan lacks daemon_poll)"
-                    );
-                }
-            }
-        } else {
-            // Plan supports daemon_poll — clear standby on any daemons that were previously restricted
-            for mut daemon in daemons {
-                if daemon.base.standby {
-                    daemon.base.standby = false;
-                    self.daemon_service
-                        .update(&mut daemon, AuthenticatedEntity::System)
-                        .await?;
-                    tracing::info!(
-                        daemon_id = %daemon.id,
-                        "Cleared daemon standby (plan supports daemon_poll)"
-                    );
-                }
-            }
-        }
 
         // 3. Convert scheduled discoveries to ad-hoc if plan doesn't support it
         if !features.scheduled_discovery {
