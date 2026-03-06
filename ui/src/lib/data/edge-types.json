@@ -1,104 +1,104 @@
 [
-	{
-		"id": "Interface",
-		"name": "Host Interface",
-		"description": null,
-		"category": null,
-		"icon": "server",
-		"color": "Blue",
-		"metadata": {
-			"edge_style": "SmoothStep",
-			"has_end_marker": false,
-			"has_start_marker": false,
-			"is_dashed": true,
-			"is_group_edge": false,
-			"is_host_edge": true,
-			"is_physical_edge": false
-		}
-	},
-	{
-		"id": "HostVirtualization",
-		"name": "Virtualized Host",
-		"description": null,
-		"category": null,
-		"icon": "boxes",
-		"color": "Indigo",
-		"metadata": {
-			"edge_style": "Straight",
-			"has_end_marker": false,
-			"has_start_marker": false,
-			"is_dashed": true,
-			"is_group_edge": false,
-			"is_host_edge": false,
-			"is_physical_edge": false
-		}
-	},
-	{
-		"id": "ServiceVirtualization",
-		"name": "Virtualized Service",
-		"description": null,
-		"category": null,
-		"icon": "boxes",
-		"color": "Indigo",
-		"metadata": {
-			"edge_style": "SmoothStep",
-			"has_end_marker": false,
-			"has_start_marker": false,
-			"is_dashed": true,
-			"is_group_edge": false,
-			"is_host_edge": true,
-			"is_physical_edge": false
-		}
-	},
-	{
-		"id": "RequestPath",
-		"name": "SmoothStep",
-		"description": null,
-		"category": null,
-		"icon": "route",
-		"color": "Rose",
-		"metadata": {
-			"edge_style": "SmoothStep",
-			"has_end_marker": true,
-			"has_start_marker": false,
-			"is_dashed": false,
-			"is_group_edge": true,
-			"is_host_edge": false,
-			"is_physical_edge": false
-		}
-	},
-	{
-		"id": "HubAndSpoke",
-		"name": "Hub and Spoke",
-		"description": null,
-		"category": null,
-		"icon": "sun",
-		"color": "Rose",
-		"metadata": {
-			"edge_style": "SmoothStep",
-			"has_end_marker": true,
-			"has_start_marker": false,
-			"is_dashed": false,
-			"is_group_edge": true,
-			"is_host_edge": false,
-			"is_physical_edge": false
-		}
-	},
-	{
-		"id": "PhysicalLink",
-		"name": "Physical Link",
-		"description": null,
-		"category": null,
-		"icon": "cable",
-		"color": "Teal",
-		"metadata": {
-			"edge_style": "SmoothStep",
-			"has_end_marker": false,
-			"has_start_marker": false,
-			"is_dashed": false,
-			"is_group_edge": false,
-			"is_host_edge": false,
-			"is_physical_edge": true
-		}
-	}
+  {
+    "id": "Interface",
+    "name": "Host Interface",
+    "description": null,
+    "category": null,
+    "icon": "server",
+    "color": "Blue",
+    "metadata": {
+      "edge_style": "SmoothStep",
+      "has_end_marker": false,
+      "has_start_marker": false,
+      "is_dashed": true,
+      "is_group_edge": false,
+      "is_host_edge": true,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "HostVirtualization",
+    "name": "Virtualized Host",
+    "description": null,
+    "category": null,
+    "icon": "boxes",
+    "color": "Indigo",
+    "metadata": {
+      "edge_style": "Straight",
+      "has_end_marker": false,
+      "has_start_marker": false,
+      "is_dashed": true,
+      "is_group_edge": false,
+      "is_host_edge": false,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "ServiceVirtualization",
+    "name": "Virtualized Service",
+    "description": null,
+    "category": null,
+    "icon": "boxes",
+    "color": "Indigo",
+    "metadata": {
+      "edge_style": "SmoothStep",
+      "has_end_marker": false,
+      "has_start_marker": false,
+      "is_dashed": true,
+      "is_group_edge": false,
+      "is_host_edge": true,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "RequestPath",
+    "name": "SmoothStep",
+    "description": null,
+    "category": null,
+    "icon": "route",
+    "color": "Rose",
+    "metadata": {
+      "edge_style": "SmoothStep",
+      "has_end_marker": true,
+      "has_start_marker": false,
+      "is_dashed": false,
+      "is_group_edge": true,
+      "is_host_edge": false,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "HubAndSpoke",
+    "name": "Hub and Spoke",
+    "description": null,
+    "category": null,
+    "icon": "sun",
+    "color": "Rose",
+    "metadata": {
+      "edge_style": "SmoothStep",
+      "has_end_marker": true,
+      "has_start_marker": false,
+      "is_dashed": false,
+      "is_group_edge": true,
+      "is_host_edge": false,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "PhysicalLink",
+    "name": "Physical Link",
+    "description": null,
+    "category": null,
+    "icon": "cable",
+    "color": "Teal",
+    "metadata": {
+      "edge_style": "SmoothStep",
+      "has_end_marker": false,
+      "has_start_marker": false,
+      "is_dashed": false,
+      "is_group_edge": false,
+      "is_host_edge": false,
+      "is_physical_edge": true
+    }
+  }
 ]
