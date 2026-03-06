@@ -34,7 +34,7 @@
 	}
 </script>
 
-<div class={expanded ? 'border-t border-gray-700 pt-1' : ''}>
+<div>
 	{#if expandable}
 		<div class={`flex items-center justify-between  ${expanded ? 'mb-1' : ''}`}>
 			<button

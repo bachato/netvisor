@@ -5,12 +5,10 @@ export type ResolvedTheme = 'light' | 'dark';
 
 let themeMode = $state<ThemeMode>('system');
 let systemPrefersDark = $state(
-	typeof window !== 'undefined'
-		? window.matchMedia('(prefers-color-scheme: dark)').matches
-		: true
+	typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)').matches : true
 );
 
-let resolvedTheme = $derived<ResolvedTheme>(
+const resolvedTheme = $derived<ResolvedTheme>(
 	themeMode === 'system' ? (systemPrefersDark ? 'dark' : 'light') : themeMode
 );
 

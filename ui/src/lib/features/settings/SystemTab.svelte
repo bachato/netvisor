@@ -41,7 +41,7 @@
 	</div>
 
 	<div class="flex flex-col gap-2">
-		{#each options as option}
+		{#each options as option (option.id)}
 			<button
 				class="list-item-hover flex list-item items-center gap-4 text-left {themeStore.themeMode ===
 				option.id

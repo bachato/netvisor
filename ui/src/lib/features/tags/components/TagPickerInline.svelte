@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { X, Plus } from 'lucide-svelte';
+	import { Plus } from 'lucide-svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import {
 		useTagsQuery,
@@ -14,12 +14,7 @@
 	import { permissions } from '$lib/shared/stores/metadata';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { onMount } from 'svelte';
-	import {
-		common_creating,
-		common_unknown,
-		tags_addTag,
-		tags_createTagQuoted
-	} from '$lib/paraglide/messages';
+	import { common_creating, tags_addTag, tags_createTagQuoted } from '$lib/paraglide/messages';
 
 	/**
 	 * Compact inline tag picker for use in cards and bulk actions.

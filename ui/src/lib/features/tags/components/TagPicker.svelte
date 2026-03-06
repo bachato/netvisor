@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { X, Plus } from 'lucide-svelte';
+	import { Plus } from 'lucide-svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import { useTagsQuery, useCreateTagMutation } from '$lib/features/tags/queries';
 	import { createDefaultTag } from '$lib/features/tags/types/base';
