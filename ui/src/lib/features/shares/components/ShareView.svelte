@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import {
 		getPublicShareMetadata,
 		getPublicShareTopology,
@@ -25,8 +25,30 @@
 	let error: string | null = $state(null);
 	let passwordVerified = $state(false);
 
+	// Apply theme override from query parameter (already handled by app.html flash script,
+	// but we also lock it so the theme store doesn't override it during the session)
+	let themeOverride: string | null = null;
 	onMount(async () => {
+		const params = new URLSearchParams(window.location.search);
+		const t = params.get('theme');
+		if (t === 'light' || t === 'dark') {
+			themeOverride = t;
+			document.documentElement.classList.toggle('dark', t === 'dark');
+			document.documentElement.style.colorScheme = t;
+		}
 		await loadShare();
+	});
+
+	onDestroy(() => {
+		// Restore user's theme preference when navigating away
+		if (themeOverride && typeof window !== 'undefined') {
+			const stored = localStorage.getItem('scanopy-theme') || 'system';
+			const isDark =
+				stored === 'dark' ||
+				(stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+			document.documentElement.classList.toggle('dark', isDark);
+			document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+		}
 	});
 
 	async function loadShare() {
@@ -130,7 +152,7 @@
 				: 'min-h-screen'} flex-col items-center justify-center gap-2 p-4 text-center"
 		>
 			<AlertTriangle class="h-8 w-8 text-yellow-500" />
-			<p class="text-sm text-gray-400">{error}</p>
+			<p class="text-secondary text-sm">{error}</p>
 		</div>
 	{:else if topologyData}
 		<div class={isEmbed ? 'h-full' : 'h-screen'}>

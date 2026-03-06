@@ -11,7 +11,9 @@
 		<title>Scanopy</title>
 		<script>
 			(function () {
-				var t = localStorage.getItem('scanopy-theme') || 'system';
+				var p = new URLSearchParams(location.search).get('theme');
+				var t =
+					p === 'light' || p === 'dark' ? p : localStorage.getItem('scanopy-theme') || 'system';
 				var d =
 					t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
 				document.documentElement.classList.toggle('dark', d);
