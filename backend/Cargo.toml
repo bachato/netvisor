@@ -124,7 +124,7 @@ inventory = "0.3.21"
 # === OpenAPI Documentation ===
 utoipa = { version = "5", features = ["axum_extras", "chrono", "uuid"] }
 utoipa-axum = "0.2"
-utoipa-scalar = { version = "0.3", features = ["axum"] }
+
 
 # === Utilities ===
 fastrand = "2.3.0"

@@ -19,7 +19,10 @@ impl ServiceDefinition for Grafana {
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {
-        Pattern::Endpoint(PortType::Http, "/", "grafana.com", None)
+        Pattern::AnyOf(vec!(
+            Pattern::Endpoint(PortType::Http, "/", "grafana.com", None),
+            Pattern::Endpoint(PortType::Http3000, "/", "grafana.com", None)
+        ))
     }
 
     fn logo_url(&self) -> &'static str {
