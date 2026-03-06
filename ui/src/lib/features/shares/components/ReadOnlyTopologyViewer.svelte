@@ -61,7 +61,7 @@
 				</div>
 				<div class="flex items-center gap-4">
 					{#if showExport}
-						<ExportButton topologyId={topology.id} />
+						<ExportButton topologyId={topology.id} isShareView={true} />
 					{/if}
 				</div>
 			</header>

@@ -74,7 +74,7 @@ export async function downloadTopologyExport(
 	format: 'mermaid' | 'confluence'
 ): Promise<void> {
 	const baseUrl = getServerUrl();
-	const url = new URL(`/api/v1/topologies/${topologyId}/export/${format}`, baseUrl);
+	const url = new URL(`/api/v1/topology/${topologyId}/export/${format}`, baseUrl);
 
 	const response = await fetch(url.toString(), {
 		method: 'GET',
