@@ -885,7 +885,9 @@ impl TypeMetadataProvider for BillingPlan {
             BillingPlan::Team { .. } => {
                 "Collaborate on infrastructure documentation with your team"
             }
-            BillingPlan::Business { .. } => "For MSPs and multi-site IT teams who need advanced features",
+            BillingPlan::Business { .. } => {
+                "For MSPs and multi-site IT teams who need advanced features"
+            }
             BillingPlan::Enterprise { .. } => {
                 "Fully managed Scanopy deployment with dedicated support"
             }

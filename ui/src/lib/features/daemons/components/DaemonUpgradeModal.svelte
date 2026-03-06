@@ -123,7 +123,7 @@ docker compose up -d`;
 									<summary class="cursor-pointer hover:text-blue-400"
 										>{daemons_upgradeMultipleDaemons()}</summary
 									>
-									<div class="mt-2 text-xs space-y-2">
+									<div class="mt-2 space-y-2 text-xs">
 										<p>{daemons_upgradeMultipleDaemonsBody()}</p>
 										<CodeContainer
 											language="bash"
@@ -186,7 +186,7 @@ docker compose up -d`;
 								<summary class="cursor-pointer hover:text-blue-400"
 									>{daemons_upgradeMultipleDaemons()}</summary
 								>
-								<div class="mt-2 text-xs space-y-2">
+								<div class="mt-2 space-y-2 text-xs">
 									<p>{daemons_upgradeMultipleDaemonsBody()}</p>
 									<CodeContainer language="bash" expandable={false} code={macosConfigListCommand} />
 									<DocsHint
@@ -224,8 +224,8 @@ docker compose up -d`;
 							<details class="text-tertiary text-sm">
 								<summary class="cursor-pointer hover:text-blue-400"
 									>{daemons_upgradeMultipleDaemons()}</summary
-								>							
-								<div class="mt-2 text-xs space-y-2">
+								>
+								<div class="mt-2 space-y-2 text-xs">
 									<p>{daemons_upgradeMultipleDaemonsBody()}</p>
 									<CodeContainer
 										language="powershell"

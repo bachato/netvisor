@@ -7,14 +7,7 @@
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { entities } from '$lib/shared/stores/metadata';
-	import {
-		SatelliteDish,
-		Settings,
-		KeyRound,
-		Terminal,
-		SlidersHorizontal,
-		Loader2
-	} from 'lucide-svelte';
+	import { Settings, KeyRound, Terminal, SlidersHorizontal, Loader2 } from 'lucide-svelte';
 	import {
 		createEmptyApiKeyFormData,
 		useCreateApiKeyMutation
@@ -24,7 +17,6 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
-	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import {
 		buildDefaultValues,
 		buildRunCommand,
@@ -48,7 +40,7 @@
 		common_next,
 		daemons_createDaemon,
 		daemons_enterApiKey,
-		daemons_generateKeyToContinue,
+		daemons_generateKeyToContinue
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -57,14 +49,9 @@
 		name?: string;
 	}
 
-	let {
-		isOpen = false,
-		onClose,
-		name = undefined
-	}: Props = $props();
+	let { isOpen = false, onClose, name = undefined }: Props = $props();
 
 	// Queries & mutations
-	const networksQuery = useNetworksQuery();
 	const configQuery = useConfigQuery();
 	const currentUserQuery = useCurrentUserQuery();
 	const organizationQuery = useOrganizationQuery();
@@ -72,7 +59,6 @@
 	const provisionDaemonMutation = useProvisionDaemonMutation();
 
 	// Derived data
-	let networksData = $derived(networksQuery.data ?? []);
 	let serverUrl = $derived(configQuery.data?.public_url ?? '');
 	let currentUserId = $derived(currentUserQuery.data?.id ?? null);
 	let org = $derived(organizationQuery.data);
@@ -255,7 +241,7 @@
 			if (!isValid) return;
 
 			trackEvent('daemon_wizard_step_completed', { step: 'configure' });
-			
+
 			if (isFirstDaemon && !key) {
 				isAutoGenerating = true;
 				try {
@@ -308,7 +294,7 @@
 	fixedHeight={true}
 	onClose={handleOnClose}
 	onOpen={handleOpen}
-	tabs={tabs}
+	{tabs}
 	{activeTab}
 	onTabChange={handleTabChange}
 >
@@ -359,40 +345,40 @@
 
 		<!-- Footer -->
 		<div class="modal-footer">
-				<div class="flex items-center justify-end gap-3">
-					{#if activeTab === 'configure'}
-						<button
-							type="button"
-							class="btn-primary"
-							onclick={handleNext}
-							disabled={isAutoGenerating}
-						>
-							{#if isAutoGenerating}
-								<Loader2 class="h-4 w-4 animate-spin" />
-							{:else}
-								{common_next()}
-							{/if}
-						</button>
-					{:else if activeTab === 'api-key'}
-						<button type="button" class="btn-secondary" onclick={previousTab}>
-							{common_back()}
-						</button>
-						<button type="button" class="btn-primary" onclick={handleNext} disabled={!key}>
+			<div class="flex items-center justify-end gap-3">
+				{#if activeTab === 'configure'}
+					<button
+						type="button"
+						class="btn-primary"
+						onclick={handleNext}
+						disabled={isAutoGenerating}
+					>
+						{#if isAutoGenerating}
+							<Loader2 class="h-4 w-4 animate-spin" />
+						{:else}
 							{common_next()}
-						</button>
-					{:else if activeTab === 'install'}
-						<button type="button" class="btn-secondary" onclick={previousTab}>
-							{common_back()}
-						</button>
-						<button type="button" class="btn-secondary" onclick={handleOnClose}>
-							{common_close()}
-						</button>
-					{:else if activeTab === 'advanced'}
-						<button type="button" class="btn-secondary" onclick={previousTab}>
-							{common_back()}
-						</button>
-					{/if}
-				</div>
+						{/if}
+					</button>
+				{:else if activeTab === 'api-key'}
+					<button type="button" class="btn-secondary" onclick={previousTab}>
+						{common_back()}
+					</button>
+					<button type="button" class="btn-primary" onclick={handleNext} disabled={!key}>
+						{common_next()}
+					</button>
+				{:else if activeTab === 'install'}
+					<button type="button" class="btn-secondary" onclick={previousTab}>
+						{common_back()}
+					</button>
+					<button type="button" class="btn-secondary" onclick={handleOnClose}>
+						{common_close()}
+					</button>
+				{:else if activeTab === 'advanced'}
+					<button type="button" class="btn-secondary" onclick={previousTab}>
+						{common_back()}
+					</button>
+				{/if}
+			</div>
 		</div>
 	</div>
 </GenericModal>

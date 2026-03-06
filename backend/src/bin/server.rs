@@ -148,9 +148,7 @@ async fn main() -> anyhow::Result<()> {
             if let Err(e) = inactivity_state
                 .services
                 .daemon_service
-                .check_daemon_inactivity(
-                    inactivity_state.services.email_service.as_deref(),
-                )
+                .check_daemon_inactivity(inactivity_state.services.email_service.as_deref())
                 .await
             {
                 tracing::error!(error = %e, "Failed to check daemon inactivity");

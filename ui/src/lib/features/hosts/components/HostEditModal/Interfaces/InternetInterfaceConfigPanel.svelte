@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Interface } from '$lib/features/hosts/types/base';
+	import { untrack } from 'svelte';
 	import {
 		ipAddressFormat,
 		ipAddressInCidrFormat,
@@ -23,16 +24,16 @@
 
 	let { iface, subnet, onChange = () => {} }: Props = $props();
 
-	// Local state for form fields
-	let ipAddress = $state(iface.ip_address || '');
-	let name = $state(iface.name || '');
+	// Local state for form fields (untrack: $effect below handles prop changes)
+	let ipAddress = $state(untrack(() => iface.ip_address || ''));
+	let name = $state(untrack(() => iface.name || ''));
 
 	// Error states
 	let ipError = $state<string | undefined>(undefined);
 	let nameError = $state<string | undefined>(undefined);
 
 	// Track current interface ID to reset when interface changes
-	let currentInterfaceId = $state(iface.id);
+	let currentInterfaceId = $state(untrack(() => iface.id));
 
 	// Reset fields when interface changes
 	$effect(() => {

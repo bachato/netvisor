@@ -1494,8 +1494,7 @@ impl DaemonService {
 
                 // Send notification emails if email service is available
                 if let Some(email_service) = email_service
-                    && let Err(e) =
-                        self.send_standby_notification(&daemon, email_service).await
+                    && let Err(e) = self.send_standby_notification(&daemon, email_service).await
                 {
                     tracing::warn!(
                         daemon_id = %daemon.id,
@@ -1535,7 +1534,12 @@ impl DaemonService {
             .first()
             .ok_or_else(|| anyhow::anyhow!("No owner found for organization {}", org_id))?;
         email_service
-            .send_daemon_standby_email(owner.base.email.clone(), daemon_name, network_name, is_daemon_poll)
+            .send_daemon_standby_email(
+                owner.base.email.clone(),
+                daemon_name,
+                network_name,
+                is_daemon_poll,
+            )
             .await?;
 
         // Also send to daemon installer if different from owner
@@ -1546,7 +1550,12 @@ impl DaemonService {
                 .await?
         {
             email_service
-                .send_daemon_standby_email(user.base.email, daemon_name, network_name, is_daemon_poll)
+                .send_daemon_standby_email(
+                    user.base.email,
+                    daemon_name,
+                    network_name,
+                    is_daemon_poll,
+                )
                 .await?;
         }
 

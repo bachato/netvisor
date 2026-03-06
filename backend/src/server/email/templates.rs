@@ -186,7 +186,7 @@ pub const TRIAL_EXPIRED_BODY: &str = r#"                    <!-- Main Content --
                             <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Your Trial Has Ended</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your {plan_name} trial has ended and your account has been moved to the Free plan.</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">You can still use Scanopy with up to 25 hosts and manual discovery. Upgrade anytime to restore scheduled discovery, DaemonPoll mode, and higher limits.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">You can still use Scanopy with up to 25 hosts and manual discovery. Upgrade anytime to restore scheduled discovery and higher limits.</p>
                         </td>
                     </tr>
 

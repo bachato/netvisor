@@ -37,6 +37,7 @@
 	<div class="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-4">
 		{#each daemons as daemon (daemon.id)}
 			{@const clickable = hasIssue(daemon)}
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 			<div
 				class="card card-static"
 				class:cursor-pointer={clickable}

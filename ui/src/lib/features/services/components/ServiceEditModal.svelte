@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { createForm } from '@tanstack/svelte-form';
 	import { validateForm } from '$lib/shared/components/forms/form-context';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
@@ -56,7 +57,7 @@
 	let { service, host, isOpen = false, onUpdate, onClose, name = undefined }: Props = $props();
 
 	let loading = $state(false);
-	let formData = $state(service);
+	let formData = $state(untrack(() => service));
 
 	// Hydrate host to form data for ServiceConfigPanel
 	let hostFormData = $derived(hydrateHostToFormData(host));

@@ -6,7 +6,10 @@
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
-	import { daemons_docsConfigOptions, daemons_docsConfigOptionsLinkText } from '$lib/paraglide/messages';
+	import {
+		daemons_docsConfigOptions,
+		daemons_docsConfigOptionsLinkText
+	} from '$lib/paraglide/messages';
 	import { fieldDefs, sectionDefs } from '../../../config';
 
 	interface Props {

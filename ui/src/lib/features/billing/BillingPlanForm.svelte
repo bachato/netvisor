@@ -6,6 +6,7 @@
 	 * and expandable full comparison grid. Responsive: 1 col mobile, 2 col tablet,
 	 * auto-fit desktop.
 	 */
+	import { untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { Check, X, ChevronDown, ChevronUp, Loader2, Minus, Plus } from 'lucide-svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
@@ -69,7 +70,7 @@
 	let showFullComparison = $state(false);
 
 	type PlanFilter = 'all' | 'personal' | 'commercial';
-	let planFilter = $state<PlanFilter>(initialPlanFilter);
+	let planFilter = $state<PlanFilter>(untrack(() => initialPlanFilter));
 
 	type BillingPeriod = 'monthly' | 'yearly';
 	let billingPeriod = $state<BillingPeriod>('yearly');
@@ -160,7 +161,7 @@
 	}
 
 	// Reset extras when billing period changes
-	let prevBillingPeriod = $state(billingPeriod);
+	let prevBillingPeriod = $state(untrack(() => billingPeriod));
 	$effect(() => {
 		if (billingPeriod !== prevBillingPeriod) {
 			prevBillingPeriod = billingPeriod;
@@ -445,8 +446,16 @@
 								{/if}
 							</div>
 						{/if}
-						<div class={`text-tertiary text-xs ${showBilledYearly(plan) ? "opacity-100" : "opacity-0"}`}>billed yearly</div>
-						<div class={`text-xs font-medium text-success ${hasTrial(plan) && !hasCustomPrice(plan) ? "opacity-100" : "opacity-0"}`}>{plan.trial_days}-day free trial</div>
+						<div
+							class={`text-tertiary text-xs ${showBilledYearly(plan) ? 'opacity-100' : 'opacity-0'}`}
+						>
+							billed yearly
+						</div>
+						<div
+							class={`text-xs font-medium text-success ${hasTrial(plan) && !hasCustomPrice(plan) ? 'opacity-100' : 'opacity-0'}`}
+						>
+							{plan.trial_days}-day free trial
+						</div>
 					</div>
 
 					<!-- Description -->

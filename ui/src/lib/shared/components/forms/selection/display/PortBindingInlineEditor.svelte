@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { formatInterface } from '$lib/features/hosts/queries';
 	import { ALL_INTERFACES, type HostFormData } from '$lib/features/hosts/types/base';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
@@ -151,9 +152,9 @@
 	// Local state for select values - use sentinel for ALL_INTERFACES
 	const ALL_INTERFACES_SENTINEL = '__ALL_INTERFACES__';
 	let selectedInterface = $state(
-		binding.interface_id === null ? ALL_INTERFACES_SENTINEL : binding.interface_id
+		untrack(() => (binding.interface_id === null ? ALL_INTERFACES_SENTINEL : binding.interface_id))
 	);
-	let selectedPort = $state(binding.port_id ?? '');
+	let selectedPort = $state(untrack(() => binding.port_id ?? ''));
 
 	// Sync local state when binding changes externally
 	$effect(() => {

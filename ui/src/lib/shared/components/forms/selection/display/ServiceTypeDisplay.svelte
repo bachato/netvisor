@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 	import type { ServicedDefinitionMetadata, TypedTypeMetadata } from '$lib/shared/stores/metadata';
 
 	type ServiceType = TypedTypeMetadata<ServicedDefinitionMetadata>;
@@ -13,7 +13,7 @@
 		getTags: (serviceType: ServiceType) => [
 			{
 				label: serviceType.category ?? '',
-				color: serviceType.color
+				color: serviceType.color ?? undefined
 			}
 		],
 		getCategory: (serviceType: ServiceType) => serviceType.category ?? ''

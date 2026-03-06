@@ -240,18 +240,6 @@
 		}
 	},
 	{
-		"id": "host_inventory",
-		"name": "Host Inventory",
-		"description": "Searchable inventory of all discovered hosts and their details",
-		"category": "Visualization",
-		"icon": "sparkle",
-		"color": "Gray",
-		"metadata": {
-			"is_coming_soon": false,
-			"minimum_plan": "Free"
-		}
-	},
-	{
 		"id": "scheduled_discovery",
 		"name": "Scheduled Discovery",
 		"description": "Schedule automatic network discovery scans",
@@ -272,7 +260,7 @@
 		"color": "Gray",
 		"metadata": {
 			"is_coming_soon": false,
-			"minimum_plan": "Starter"
+			"minimum_plan": "Free"
 		}
 	},
 	{

@@ -19,11 +19,35 @@ import {
 	type ColorStyle
 } from '../utils/styling';
 
-// Base types from OpenAPI schema
-export type TypeMetadata = components['schemas']['TypeMetadata'];
-export type EntityMetadata = components['schemas']['EntityMetadata'];
-export type MetadataRegistry = components['schemas']['MetadataRegistry'];
 export type Color = components['schemas']['Color'];
+
+// Base metadata types (not in OpenAPI schema — defined from static fixture shape)
+export interface EntityMetadata {
+	id: string;
+	color: Color | null;
+	icon: string | null;
+}
+
+export interface TypeMetadata extends EntityMetadata {
+	name: string | null;
+	description: string | null;
+	category: string | null;
+	metadata: unknown;
+}
+
+export interface MetadataRegistry {
+	service_definitions: TypeMetadata[];
+	subnet_types: TypeMetadata[];
+	edge_types: TypeMetadata[];
+	group_types: TypeMetadata[];
+	entities: EntityMetadata[];
+	ports: TypeMetadata[];
+	discovery_types: TypeMetadata[];
+	billing_plans: TypeMetadata[];
+	features: TypeMetadata[];
+	permissions: TypeMetadata[];
+	concepts: EntityMetadata[];
+}
 
 // Utility type to add proper typing to the metadata field
 export type TypedTypeMetadata<TMetadata> = Omit<TypeMetadata, 'metadata'> & {
@@ -140,13 +164,13 @@ function createSharedHelpers<T extends keyof MetadataRegistry>(category: T) {
 	return {
 		getColorString: (id: string | null): Color => {
 			const $registry = get(metadata);
-			const item = $registry?.[category]?.find((item) => item.id === id);
+			const item = $registry?.[category]?.find((i: EntityMetadata) => i.id === id);
 			return item?.color || 'Gray';
 		},
 
 		getColorHelper: (id: string | null): ColorStyle => {
 			const $registry = get(metadata);
-			const item = $registry?.[category]?.find((item) => item.id === id);
+			const item = $registry?.[category]?.find((i: EntityMetadata) => i.id === id);
 			const baseColor = item?.color || null;
 			return createColorHelper(baseColor);
 		},

@@ -1,13 +1,17 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
 
 	let { progress }: { progress: number } = $props();
 
-	const animatedProgress = tweened(progress, {
-		duration: 500,
-		easing: cubicOut
-	});
+	const animatedProgress = tweened(
+		untrack(() => progress),
+		{
+			duration: 500,
+			easing: cubicOut
+		}
+	);
 
 	$effect(() => {
 		animatedProgress.set(progress);

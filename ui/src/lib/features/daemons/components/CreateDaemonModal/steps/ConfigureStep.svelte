@@ -17,8 +17,6 @@
 	import {
 		common_name,
 		common_port,
-		daemons_activateAfterCreation,
-		daemons_activateAfterCreationBody,
 		daemons_config_daemonUrl,
 		daemons_config_daemonUrlHelpNoPort,
 		daemons_config_mode,
@@ -41,14 +39,8 @@
 		keySet: boolean;
 	}
 
-	let {
-		form,
-		formValues,
-		selectedNetworkId,
-		onNetworkChange,
-		hasDaemonPoll,
-		keySet,
-	}: Props = $props();
+	let { form, formValues, selectedNetworkId, onNetworkChange, hasDaemonPoll, keySet }: Props =
+		$props();
 
 	// Get validators for a field
 	function getValidators(fieldId: string) {

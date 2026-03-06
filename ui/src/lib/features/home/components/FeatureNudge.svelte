@@ -27,7 +27,7 @@
 	} = $props();
 
 	let dismissed = $state(false);
-	const dismissKey = `nudge-dismissed:${id}`;
+	let dismissKey = $derived(`nudge-dismissed:${id}`);
 
 	onMount(() => {
 		dismissed = localStorage.getItem(dismissKey) === 'true';

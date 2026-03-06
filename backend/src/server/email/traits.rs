@@ -625,9 +625,9 @@ impl EmailService {
         network_name: &str,
         is_daemon_poll: bool,
     ) -> Result<()> {
-        let (subject, body) = self
-            .provider
-            .build_daemon_standby_email(daemon_name, network_name, is_daemon_poll);
+        let (subject, body) =
+            self.provider
+                .build_daemon_standby_email(daemon_name, network_name, is_daemon_poll);
         let body = body.replace("{base_url}", &self.public_url);
         self.provider.send_billing_email(to, subject, body).await
     }

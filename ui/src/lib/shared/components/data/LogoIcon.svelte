@@ -14,7 +14,7 @@
 	} = $props();
 
 	let background_padding = 1;
-	size = useWhiteBackground ? size : size - 2 * background_padding;
+	let effectiveSize = $derived(useWhiteBackground ? size : size - 2 * background_padding);
 
 	const fallbackIcon =
 		'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiLz4KPHA=';
@@ -32,13 +32,13 @@
 	);
 </script>
 
-<div class={containerClasses} style="width: {size}px; height: {size}px;">
+<div class={containerClasses} style="width: {effectiveSize}px; height: {effectiveSize}px;">
 	<img
 		bind:this={imgElement}
 		src={iconUrl}
 		alt="{iconName} icon"
-		width={size}
-		height={size}
+		width={effectiveSize}
+		height={effectiveSize}
 		class="block max-h-full max-w-full"
 		onerror={handleError}
 	/>
