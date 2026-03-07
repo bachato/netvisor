@@ -15,37 +15,13 @@
     "id": "daemon_url",
     "cliFlag": "--daemon-url",
     "envVar": "SCANOPY_DAEMON_URL",
-    "helpText": "Base URL where server can reach daemon (without port). Port is specified separately"
+    "helpText": "Base URL where server can reach daemon"
   },
   {
     "id": "daemon_port",
     "cliFlag": "--daemon-port",
     "envVar": "SCANOPY_DAEMON_PORT",
-    "helpText": "Port the daemon listens on. Combined with daemon URL for server to connect"
-  },
-  {
-    "id": "bind_address",
-    "cliFlag": "--bind-address",
-    "envVar": "SCANOPY_BIND_ADDRESS",
-    "helpText": "IP address to bind daemon to"
-  },
-  {
-    "id": "allow_self_signed_certs",
-    "cliFlag": "--allow-self-signed-certs",
-    "envVar": "SCANOPY_ALLOW_SELF_SIGNED_CERTS",
-    "helpText": "Allow self-signed certs for daemon -> server connections"
-  },
-  {
-    "id": "log_level",
-    "cliFlag": "--log-level",
-    "envVar": "SCANOPY_LOG_LEVEL",
-    "helpText": "Logging verbosity"
-  },
-  {
-    "id": "heartbeat_interval",
-    "cliFlag": "--heartbeat-interval",
-    "envVar": "SCANOPY_HEARTBEAT_INTERVAL",
-    "helpText": "Seconds between heartbeat updates to the server"
+    "helpText": "Port the daemon listens on."
   },
   {
     "id": "docker_proxy",
@@ -102,21 +78,45 @@
     "helpText": "Maximum ARP packets per second (default: 50, go more conservative for networks with enterprise switches)"
   },
   {
-    "id": "accept_invalid_scan_certs",
-    "cliFlag": "--accept-invalid-scan-certs",
-    "envVar": "SCANOPY_ACCEPT_INVALID_SCAN_CERTS",
-    "helpText": "Accept invalid TLS certificates when scanning endpoints. Defaults to true since scanners probe arbitrary internal services"
-  },
-  {
     "id": "use_npcap_arp",
     "cliFlag": "--use-npcap-arp",
     "envVar": "SCANOPY_USE_NPCAP_ARP",
     "helpText": "Enable faster ARP scanning on Windows by using broadcast ARP via Npcap instead of native SendARP, which doesn't support broadcast. **Requires Npcap installation**. Ignored on Linux/macOS"
   },
   {
+    "id": "accept_invalid_scan_certs",
+    "cliFlag": "--accept-invalid-scan-certs",
+    "envVar": "SCANOPY_ACCEPT_INVALID_SCAN_CERTS",
+    "helpText": "Accept invalid TLS certificates when scanning endpoints. Enabled by default since scanners probe arbitrary internal services."
+  },
+  {
     "id": "concurrent_scans",
     "cliFlag": "--concurrent-scans",
     "envVar": "SCANOPY_CONCURRENT_SCANS",
     "helpText": "Maximum parallel host scans"
+  },
+  {
+    "id": "bind_address",
+    "cliFlag": "--bind-address",
+    "envVar": "SCANOPY_BIND_ADDRESS",
+    "helpText": "IP address to bind daemon to"
+  },
+  {
+    "id": "allow_self_signed_certs",
+    "cliFlag": "--allow-self-signed-certs",
+    "envVar": "SCANOPY_ALLOW_SELF_SIGNED_CERTS",
+    "helpText": "Allow self-signed certs for daemon -> server connections"
+  },
+  {
+    "id": "log_level",
+    "cliFlag": "--log-level",
+    "envVar": "SCANOPY_LOG_LEVEL",
+    "helpText": "Logging verbosity"
+  },
+  {
+    "id": "heartbeat_interval",
+    "cliFlag": "--heartbeat-interval",
+    "envVar": "SCANOPY_HEARTBEAT_INTERVAL",
+    "helpText": "Seconds between heartbeat updates to the server"
   }
 ]
