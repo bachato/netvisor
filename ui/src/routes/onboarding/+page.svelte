@@ -22,6 +22,7 @@
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { auth_emailAlreadyInUse } from '$lib/paraglide/messages';
+	import { useConfigQuery, isCloud } from '$lib/shared/stores/config-query';
 
 	// Show OIDC error from redirect if present
 	onMount(() => {
@@ -47,6 +48,9 @@
 	const registerMutation = useRegisterMutation();
 	const onboardingStepMutation = useOnboardingStepMutation();
 	const onboardingStateQuery = useOnboardingStateQuery();
+
+	const onboardingConfigQuery = useConfigQuery();
+	let onboardingConfigData = $derived(onboardingConfigQuery.data);
 
 	// URL params for invite flow
 	let orgName = $derived($page.url.searchParams.get('org_name'));
@@ -281,7 +285,9 @@
 						{/each}
 					</div>
 				</div>
-				<span class="text-tertiary text-xs">No credit card required</span>
+				{#if onboardingConfigData && isCloud(onboardingConfigData)}
+					<span class="text-tertiary text-xs">No credit card required</span>
+				{/if}
 			</div>
 		</div>
 	{/if}
