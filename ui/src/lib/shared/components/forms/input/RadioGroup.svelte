@@ -33,7 +33,7 @@
 							checked={field.state.value === option.value}
 							{disabled}
 							onchange={() => field.handleChange(option.value)}
-							class="h-4 w-4 border-gray-600 bg-gray-700 text-blue-600 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+							class="checkbox-card h-4 w-4 disabled:cursor-not-allowed disabled:opacity-50"
 						/>
 						<span class="text-primary text-sm">{option.label}</span>
 					</div>

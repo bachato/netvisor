@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 	import { entities } from '$lib/shared/stores/metadata';
 	import { toColor } from '$lib/shared/utils/styling';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';

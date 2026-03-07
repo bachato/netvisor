@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
+	import SectionPanel from '$lib/shared/components/layout/SectionPanel.svelte';
 	import { SubnetDisplay } from '$lib/shared/components/forms/selection/display/SubnetDisplay.svelte';
 	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
 	import type { Discovery } from '../../types/base';
@@ -169,7 +170,7 @@
 				/>
 			{/snippet}
 		</form.Field>
-		<div class="rounded-lg bg-gray-800/50 p-4">
+		<SectionPanel>
 			<ListManager
 				label={discovery_targetSubnets()}
 				helpText={discovery_targetSubnetsHelp()}
@@ -185,7 +186,7 @@
 				onAdd={handleAddSubnet}
 				onRemove={handleRemoveSubnet}
 			/>
-		</div>
+		</SectionPanel>
 		{#if nonInterfacedSubnets.length > 0}
 			<InlineWarning
 				title={discovery_nonInterfacedSubnet()}

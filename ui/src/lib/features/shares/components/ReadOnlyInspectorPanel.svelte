@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import { getContext, setContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { Node, Edge } from '@xyflow/svelte';
 	import { ChevronLeft, ChevronRight, Info } from 'lucide-svelte';
 	import InspectorNode from '$lib/features/topology/components/panel/inspectors/InspectorNode.svelte';
 	import InspectorEdge from '$lib/features/topology/components/panel/inspectors/InspectorEdge.svelte';
+
+	setContext('staticTags', true);
 
 	// Get selected node/edge from context (set by ReadOnlyTopologyViewer)
 	const selectedNode = getContext<Writable<Node | null>>('selectedNode');

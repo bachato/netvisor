@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { themeStore } from '$lib/shared/stores/theme.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		useVerifyEmailMutation,
@@ -65,14 +66,16 @@
 	}
 </script>
 
-<div class="relative flex min-h-screen flex-col items-center bg-gray-900 p-4">
+<div class="relative flex min-h-screen flex-col items-center bg-[var(--color-bg-elevated)] p-4">
 	<!-- Background image with overlay -->
 	<div class="absolute inset-0 z-0">
 		<div
-			class="h-full w-full bg-cover bg-center bg-no-repeat blur-sm"
-			style="background-image: url('/images/diagram.png')"
+			class="h-full w-full bg-cover bg-center bg-no-repeat blur-[2px]"
+			style="background-image: url('/images/background-{themeStore.resolvedTheme}.png')"
 		></div>
-		<div class="absolute inset-0 bg-black/60"></div>
+		<div
+			class="absolute inset-0 {themeStore.resolvedTheme === 'dark' ? 'bg-black/30' : 'bg-white/15'}"
+		></div>
 	</div>
 
 	<!-- Spacer to push modal down -->
@@ -92,18 +95,18 @@
 
 				{#if status === 'verifying'}
 					<div class="p-6 text-center">
-						<h2 class="mb-2 text-xl font-semibold text-gray-100">Verifying your email...</h2>
-						<p class="text-gray-400">Please wait while we verify your email address.</p>
+						<h2 class="text-primary mb-2 text-xl font-semibold">Verifying your email...</h2>
+						<p class="text-tertiary">Please wait while we verify your email address.</p>
 					</div>
 				{:else if status === 'success'}
 					<div class="p-6 text-center">
-						<h2 class="mb-2 text-xl font-semibold text-gray-100">Email Verified!</h2>
-						<p class="text-gray-400">Your email has been verified. Redirecting you now...</p>
+						<h2 class="text-primary mb-2 text-xl font-semibold">Email Verified!</h2>
+						<p class="text-tertiary">Your email has been verified. Redirecting you now...</p>
 					</div>
 				{:else if status === 'error'}
 					<div class="p-6 text-center">
-						<h2 class="mb-2 text-xl font-semibold text-gray-100">Verification Failed</h2>
-						<p class="mb-4 text-gray-400">{errorMessage}</p>
+						<h2 class="text-primary mb-2 text-xl font-semibold">Verification Failed</h2>
+						<p class="text-tertiary mb-4">{errorMessage}</p>
 						{#if email}
 							<button
 								type="button"
@@ -114,20 +117,20 @@
 								{isResending ? 'Sending...' : 'Resend Verification Email'}
 							</button>
 						{:else}
-							<p class="text-sm text-gray-500">
+							<p class="text-muted text-sm">
 								Please try registering again or contact support if the problem persists.
 							</p>
 						{/if}
 					</div>
 				{:else if status === 'pending'}
 					<div class="p-6 text-center">
-						<h2 class="mb-2 text-xl font-semibold text-gray-100">Check Your Email</h2>
-						<p class="mb-4 text-gray-400">
-							We sent a verification link to <span class="font-medium text-gray-200">{email}</span>.
-							Click the link to verify your account.
+						<h2 class="text-primary mb-2 text-xl font-semibold">Check Your Email</h2>
+						<p class="text-tertiary mb-4">
+							We sent a verification link to <span class="text-secondary font-medium">{email}</span
+							>. Click the link to verify your account.
 						</p>
 						<div class="space-y-3">
-							<p class="text-sm text-gray-500">Didn't receive the email?</p>
+							<p class="text-muted text-sm">Didn't receive the email?</p>
 							<button
 								type="button"
 								class="btn-secondary w-full"
@@ -140,8 +143,8 @@
 					</div>
 				{:else}
 					<div class="p-6 text-center">
-						<h2 class="mb-2 text-xl font-semibold text-gray-100">No Verification Token</h2>
-						<p class="mb-4 text-gray-400">
+						<h2 class="text-primary mb-2 text-xl font-semibold">No Verification Token</h2>
+						<p class="text-tertiary mb-4">
 							Please use the verification link sent to your email, or go back to login.
 						</p>
 						<button type="button" class="btn-secondary w-full" onclick={handleBackToLogin}>

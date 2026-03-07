@@ -28,8 +28,10 @@ pub enum Feature {
     Embeds,
     NetworkDiscovery,
     TopologyVisualization,
-    DiagramExport,
-    HostInventory,
+    PngExport,
+    SvgExport,
+    MermaidExport,
+    ConfluenceExport,
     ScheduledDiscovery,
     DaemonPoll,
     ServiceDefinitions,
@@ -57,8 +59,10 @@ impl HasId for Feature {
             Feature::ApiAccess => "api_access",
             Feature::NetworkDiscovery => "network_discovery",
             Feature::TopologyVisualization => "topology_visualization",
-            Feature::DiagramExport => "diagram_export",
-            Feature::HostInventory => "host_inventory",
+            Feature::PngExport => "png_export",
+            Feature::SvgExport => "svg_export",
+            Feature::MermaidExport => "mermaid_export",
+            Feature::ConfluenceExport => "confluence_export",
             Feature::ScheduledDiscovery => "scheduled_discovery",
             Feature::DaemonPoll => "daemon_poll",
             Feature::ServiceDefinitions => "service_definitions",
@@ -119,8 +123,10 @@ impl TypeMetadataProvider for Feature {
             | Feature::ScheduledDiscovery => "Discovery",
 
             Feature::TopologyVisualization
-            | Feature::DiagramExport
-            | Feature::HostInventory
+            | Feature::PngExport
+            | Feature::SvgExport
+            | Feature::MermaidExport
+            | Feature::ConfluenceExport
             | Feature::Embeds
             | Feature::ShareViews
             | Feature::RemoveCreatedWith => "Visualization",
@@ -158,8 +164,10 @@ impl TypeMetadataProvider for Feature {
             Feature::PrioritySupport => "Priority Support",
             Feature::NetworkDiscovery => "Network Discovery",
             Feature::TopologyVisualization => "Topology Visualization",
-            Feature::DiagramExport => "Diagram Export",
-            Feature::HostInventory => "Host Inventory",
+            Feature::PngExport => "PNG Export",
+            Feature::SvgExport => "SVG Export",
+            Feature::MermaidExport => "Mermaid Export",
+            Feature::ConfluenceExport => "Confluence Export",
             Feature::ScheduledDiscovery => "Scheduled Discovery",
             Feature::DaemonPoll => "No Port Forwarding",
             Feature::ServiceDefinitions => "200+ Service Definitions",
@@ -203,9 +211,13 @@ impl TypeMetadataProvider for Feature {
             Feature::TopologyVisualization => {
                 "Interactive network topology maps with automatic layout"
             }
-            Feature::DiagramExport => "Export network diagrams as high-resolution PNG images",
-            Feature::HostInventory => {
-                "Searchable inventory of all discovered hosts and their details"
+            Feature::PngExport => "Export network diagrams as high-resolution PNG images",
+            Feature::SvgExport => "Export network diagrams as scalable SVG vector images",
+            Feature::MermaidExport => {
+                "Export topology as Mermaid flowchart for use in documentation and wikis"
+            }
+            Feature::ConfluenceExport => {
+                "Export topology as Confluence wiki markup tables for team documentation"
             }
             Feature::ScheduledDiscovery => "Schedule automatic network discovery scans",
             Feature::DaemonPoll => {

@@ -5,10 +5,9 @@ use crate::server::billing::plans::get_free_plan;
 use crate::server::billing::types::api::ChangePlanPreview;
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::billing::types::features::Feature;
-use crate::server::daemons::r#impl::base::DaemonMode;
 use crate::server::daemons::service::DaemonService;
 use crate::server::discovery::service::DiscoveryService;
-use crate::server::email::traits::EmailService;
+use crate::server::email::traits::{EmailService, format_plan_price};
 use crate::server::hosts::r#impl::base::Host;
 use crate::server::hosts::service::HostService;
 use crate::server::invites::service::InviteService;
@@ -1061,6 +1060,8 @@ impl BillingService {
                                 owner.base.email.clone(),
                                 plan.name(),
                                 trial_days,
+                                plan.config().rate.billing_period(),
+                                &format_plan_price(&plan),
                             )
                             .await
                     {
@@ -1092,7 +1093,12 @@ impl BillingService {
 
                     if let Some(ref email_service) = self.email_service
                         && let Err(e) = email_service
-                            .send_trial_converted_email(owner.base.email.clone(), plan.name())
+                            .send_trial_converted_email(
+                                owner.base.email.clone(),
+                                plan.name(),
+                                plan.config().rate.billing_period(),
+                                &format_plan_price(&plan),
+                            )
                             .await
                     {
                         tracing::warn!(error = %e, "Failed to send trial_converted email");
@@ -1263,6 +1269,8 @@ impl BillingService {
                         owner.base.email.clone(),
                         plan.name(),
                         organization.base.has_payment_method,
+                        plan.config().rate.billing_period(),
+                        &format_plan_price(&plan),
                     )
                     .await
             {
@@ -1457,12 +1465,15 @@ impl BillingService {
             .get_organization_owners(&organization.id)
             .await?;
 
-        let cancelled_plan_name = organization
-            .base
-            .plan
+        let cancelled_plan = organization.base.plan;
+        let cancelled_plan_name = cancelled_plan
             .as_ref()
             .map(|p| p.name().to_string())
             .unwrap_or_default();
+        let cancelled_billing_period = cancelled_plan
+            .as_ref()
+            .map(|p| p.config().rate.billing_period())
+            .unwrap_or("Monthly");
 
         if let Some(owner) = owners.first() {
             let authentication: AuthenticatedEntity = owner.clone().into();
@@ -1517,7 +1528,11 @@ impl BillingService {
 
                 if let Some(ref email_service) = self.email_service
                     && let Err(e) = email_service
-                        .send_trial_expired_email(owner.base.email.clone(), plan_name)
+                        .send_trial_expired_email(
+                            owner.base.email.clone(),
+                            plan_name,
+                            cancelled_billing_period,
+                        )
                         .await
                 {
                     tracing::warn!(error = %e, "Failed to send trial_expired email");
@@ -2013,42 +2028,13 @@ impl BillingService {
             networks.iter().map(|n| n.id).collect()
         };
 
-        // 2. Set standby on DaemonPoll daemons if plan doesn't support it
+        // 2. Collect daemon host IDs (used to protect daemon hosts from deletion)
         let daemon_filter =
             StorableFilter::<crate::server::daemons::r#impl::base::Daemon>::new_from_network_ids(
                 &network_ids,
             );
         let daemons = self.daemon_service.get_all(daemon_filter).await?;
         let daemon_host_ids: Vec<Uuid> = daemons.iter().map(|d| d.base.host_id).collect();
-
-        if !features.daemon_poll {
-            for mut daemon in daemons {
-                if daemon.base.mode == DaemonMode::DaemonPoll && !daemon.base.standby {
-                    daemon.base.standby = true;
-                    self.daemon_service
-                        .update(&mut daemon, AuthenticatedEntity::System)
-                        .await?;
-                    tracing::info!(
-                        daemon_id = %daemon.id,
-                        "Set daemon to standby (plan lacks daemon_poll)"
-                    );
-                }
-            }
-        } else {
-            // Plan supports daemon_poll — clear standby on any daemons that were previously restricted
-            for mut daemon in daemons {
-                if daemon.base.standby {
-                    daemon.base.standby = false;
-                    self.daemon_service
-                        .update(&mut daemon, AuthenticatedEntity::System)
-                        .await?;
-                    tracing::info!(
-                        daemon_id = %daemon.id,
-                        "Cleared daemon standby (plan supports daemon_poll)"
-                    );
-                }
-            }
-        }
 
         // 3. Convert scheduled discoveries to ad-hoc if plan doesn't support it
         if !features.scheduled_discovery {

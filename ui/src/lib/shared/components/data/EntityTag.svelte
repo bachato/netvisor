@@ -65,6 +65,7 @@
 	function handleClick(e: MouseEvent) {
 		e.stopPropagation();
 		e.preventDefault();
+		if (disabled) return;
 		isHovered = false;
 		navigateToEntity(entityRef.entityType, entityRef.entityId, entityRef.data);
 	}
@@ -72,7 +73,7 @@
 
 <div
 	bind:this={triggerEl}
-	class="inline-flex flex-shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full brightness-100 transition-all hover:brightness-125"
+	class="inline-flex flex-shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125"
 	onmouseenter={handleMouseEnter}
 	onmouseleave={handleMouseLeave}
 	onclick={handleClick}

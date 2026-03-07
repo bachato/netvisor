@@ -120,8 +120,8 @@
 	<div
 		use:portal
 		bind:this={popoverEl}
-		class="fixed z-[9999] rounded-lg border border-gray-600 bg-gray-800 p-2 shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
-		style="top: {position.top}px; left: {position.left}px; min-width: 200px; max-width: 350px;"
+		class="fixed z-[9999] rounded-lg border p-2 shadow-[0_4px_24px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+		style="border-color: var(--color-border); background: var(--color-bg-elevated); top: {position.top}px; left: {position.left}px; min-width: 200px; max-width: 350px;"
 		role="tooltip"
 		onmouseenter={onMouseEnter}
 		onmouseleave={onMouseLeave}

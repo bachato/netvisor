@@ -1,7 +1,7 @@
 <!-- T: Item type, C: type of context passed to item -->
 <!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
 <script lang="ts" generics="T, C">
-	import { onMount } from 'svelte';
+	import { onMount, getContext } from 'svelte';
 	import Tag from '../../data/Tag.svelte';
 	import EntityTag from '../../data/EntityTag.svelte';
 	import type { EntityDisplayComponent } from './types';
@@ -10,6 +10,8 @@
 	export let displayComponent: EntityDisplayComponent<T, C>;
 	export let context: C;
 	export let staticTags: boolean = false;
+
+	const staticTagsContext = getContext<boolean>('staticTags') ?? false;
 
 	$: icon = displayComponent.getIcon?.(item, context);
 	$: tags = displayComponent.getTags?.(item, context) || [];
@@ -111,7 +113,7 @@
 			{#if tags.length > 0}
 				<div class="flex flex-shrink-0 items-center gap-1">
 					{#each visibleTags as tag, i (`${tag.label}-${i}`)}
-						{#if !staticTags && tag.entityRef}
+						{#if !staticTags && !staticTagsContext && tag.entityRef}
 							<EntityTag
 								entityRef={tag.entityRef}
 								label={tag.label}

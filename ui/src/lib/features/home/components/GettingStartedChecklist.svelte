@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { components } from '$lib/api/schema';
 	import { Check, Circle } from 'lucide-svelte';
+	import SectionPanel from '$lib/shared/components/layout/SectionPanel.svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { onMount } from 'svelte';
 	import { trackEvent } from '$lib/shared/utils/analytics';
@@ -99,7 +100,9 @@
 
 {#if showCelebration}
 	<section>
-		<div class="rounded-lg border border-green-600/30 bg-green-900/20 p-6 text-center">
+		<div
+			class="rounded-lg border border-green-300 bg-green-50 p-6 text-center dark:border-green-600/30 dark:bg-green-900/20"
+		>
 			<h3 class="text-primary text-base font-semibold">You're all set!</h3>
 			<p class="text-secondary mt-1 text-sm">
 				Your network is mapped. Explore your topology and discover what Scanopy can do.
@@ -108,17 +111,19 @@
 	</section>
 {:else if !allComplete && !dismissed}
 	<section>
-		<div class="rounded-lg border border-blue-600/30 bg-blue-900/20 p-4">
+		<SectionPanel>
 			<div class="mb-3 flex items-center justify-between">
 				<h3 class="text-primary text-base font-semibold">Getting Started</h3>
 				<div class="flex items-center gap-3">
 					<span class="text-tertiary text-sm">{completedCount} of {steps.length} complete</span>
-					<button
-						onclick={dismiss}
-						class="text-tertiary hover:text-secondary text-sm transition-colors"
-					>
-						Dismiss
-					</button>
+					{#if completedCount > 0}
+						<button
+							onclick={dismiss}
+							class="text-tertiary hover:text-secondary text-sm transition-colors"
+						>
+							Dismiss
+						</button>
+					{/if}
 				</div>
 			</div>
 
@@ -129,7 +134,7 @@
 					<button
 						class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors {!complete &&
 						enabled
-							? 'bg-gray-800/50 hover:bg-gray-700/50'
+							? 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50'
 							: ''} {!enabled ? 'opacity-50' : ''}"
 						disabled={complete || !enabled}
 						onclick={() => step.action()}
@@ -139,7 +144,7 @@
 								<Check class="h-5 w-5 flex-shrink-0 text-green-400" />
 							{:else}
 								<Circle
-									class="h-5 w-5 flex-shrink-0 {enabled ? 'text-tertiary' : 'text-gray-600'}"
+									class="h-5 w-5 flex-shrink-0 {enabled ? 'text-tertiary' : 'text-disabled'}"
 								/>
 							{/if}
 							<div>
@@ -147,7 +152,7 @@
 									class="text-sm font-medium"
 									class:text-primary={!complete && enabled}
 									class:text-tertiary={complete}
-									class:text-gray-500={!complete && !enabled}
+									class:text-disabled={!complete && !enabled}
 									class:line-through={complete}
 								>
 									{step.label}
@@ -160,6 +165,6 @@
 					</button>
 				{/each}
 			</div>
-		</div>
+		</SectionPanel>
 	</section>
 {/if}

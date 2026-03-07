@@ -67,6 +67,7 @@ export const fieldDefs: FieldDef[] = [
 		envVar: 'SCANOPY_NAME',
 		helpText: () => m.daemons_config_nameHelp(),
 		placeholder: () => m.daemons_config_namePlaceholder(),
+		defaultValue: 'scanopy-daemon',
 		validators: [required, max(100)],
 		required: true
 	},
@@ -74,7 +75,7 @@ export const fieldDefs: FieldDef[] = [
 		id: 'mode',
 		label: () => m.daemons_config_mode(),
 		type: 'select',
-		defaultValue: 'server_poll',
+		defaultValue: 'daemon_poll',
 		cliFlag: '--mode',
 		envVar: 'SCANOPY_MODE',
 		helpText: () => m.daemons_config_modeHelp(),
@@ -307,8 +308,8 @@ export const sectionDefs: Record<
 	'Docker Discovery': {
 		description: () => m.daemons_config_sectionDockerDiscoveryDesc(),
 		docsHint: {
-			text: () => m.common_docsLink(),
-			href: 'https://scanopy.net/docs/docker-proxy/',
+			text: () => m.daemons_docsDockerProxy(),
+			href: 'https://scanopy.net/docs/guides/docker-proxy/',
 			linkText: () => m.daemons_docsDockerProxyLinkText()
 		}
 	},

@@ -17,6 +17,7 @@ export type DeploymentType = 'cloud' | 'commercial' | 'community';
 export interface PublicServerConfig {
 	server_port: number;
 	disable_registration: boolean;
+	disable_password_login: boolean;
 	oidc_providers: OidcProviderMetadata[];
 	billing_enabled: boolean;
 	has_integrated_daemon: boolean;

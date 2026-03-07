@@ -8,7 +8,7 @@
 		type ResizeDragEvent,
 		type ResizeParams
 	} from '@xyflow/svelte';
-	import { createColorHelper, twColorToRgba } from '$lib/shared/utils/styling';
+	import { createColorHelper } from '$lib/shared/utils/styling';
 	import { subnetTypes } from '$lib/shared/stores/metadata';
 	import { isContainerSubnet } from '$lib/features/subnets/queries';
 	import {
@@ -191,16 +191,16 @@
 		<!-- Main container -->
 		<div
 			class="rounded-xl text-center text-sm font-semibold shadow-lg transition-all duration-200"
-			style="background: #1a1d29; width: 100%; height: 100%; position: relative; overflow: hidden; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
+			style="background: var(--color-topology-node-bg); width: 100%; height: 100%; position: relative; overflow: hidden; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
 		>
 			<!-- Infrastructure background area with gradient centered at infra_width -->
 			{#if hasInfra}
 				<div
 					style={`position: absolute; top: 0; left: 0; width: ${infra_width + 20}px; height: 100%; border-radius: 0.75rem 0 0 0.75rem; pointer-events: none;
-						background: linear-gradient(to right, 
-							${twColorToRgba(grayColorHelper.bg, 0.2)} 0%, 
-							${twColorToRgba(grayColorHelper.bg, 0.2)} ${((infra_width - 20) / (infra_width + 20)) * 100}%, 
-							${twColorToRgba(grayColorHelper.bg, 0)} 100%);`}
+						background: linear-gradient(to right,
+							var(--color-topology-zone) 0%,
+							var(--color-topology-zone) ${((infra_width - 20) / (infra_width + 20)) * 100}%,
+							transparent 100%);`}
 				>
 					<!-- Infrastructure title -->
 					<div

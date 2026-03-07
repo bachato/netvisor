@@ -144,6 +144,10 @@ impl<T: Storable> StorableFilter<T> {
             .standby(false)
     }
 
+    pub fn new_for_active_daemons() -> Self {
+        Self::new().standby(false)
+    }
+
     /// Qualify a column name with the table name.
     fn qualify_column(&self, column: &str) -> String {
         format!("{}.{}", T::table_name(), column)
@@ -492,6 +496,14 @@ impl<T: Storable> StorableFilter<T> {
 
     pub fn expires_before(mut self, timestamp: DateTime<Utc>) -> Self {
         let col = self.qualify_column("expires_at");
+        self.conditions
+            .push(format!("{} < ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::Timestamp(timestamp));
+        self
+    }
+
+    pub fn created_before(mut self, timestamp: DateTime<Utc>) -> Self {
+        let col = self.qualify_column("created_at");
         self.conditions
             .push(format!("{} < ${}", col, self.values.len() + 1));
         self.values.push(SqlValue::Timestamp(timestamp));

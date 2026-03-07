@@ -166,6 +166,13 @@ impl BillingRate {
             BillingRate::Year => CreatePriceRecurringInterval::Year,
         }
     }
+
+    pub fn billing_period(&self) -> &'static str {
+        match self {
+            BillingRate::Month => "Monthly",
+            BillingRate::Year => "Yearly",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -187,8 +194,10 @@ pub struct BillingPlanFeatures {
     // Core features
     pub network_discovery: bool,
     pub topology_visualization: bool,
-    pub diagram_export: bool,
-    pub host_inventory: bool,
+    pub png_export: bool,
+    pub svg_export: bool,
+    pub mermaid_export: bool,
+    pub confluence_export: bool,
     pub scheduled_discovery: bool,
     pub daemon_poll: bool,
     pub service_definitions: bool,
@@ -438,8 +447,10 @@ impl BillingPlan {
                 priority_support: false,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: false,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -464,10 +475,12 @@ impl BillingPlan {
                 priority_support: false,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: false,
+                mermaid_export: false,
+                confluence_export: false,
                 scheduled_discovery: false,
-                daemon_poll: false,
+                daemon_poll: true,
                 service_definitions: true,
                 docker_integration: true,
                 snmp_integration: true,
@@ -490,8 +503,10 @@ impl BillingPlan {
                 priority_support: false,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: false,
+                confluence_export: false,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -516,8 +531,10 @@ impl BillingPlan {
                 priority_support: false,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: false,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -542,8 +559,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -568,8 +587,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -594,8 +615,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -620,8 +643,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -646,8 +671,10 @@ impl BillingPlan {
                 priority_support: true,
                 network_discovery: true,
                 topology_visualization: true,
-                diagram_export: true,
-                host_inventory: true,
+                png_export: true,
+                svg_export: true,
+                mermaid_export: true,
+                confluence_export: true,
                 scheduled_discovery: true,
                 daemon_poll: true,
                 service_definitions: true,
@@ -681,8 +708,10 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             community_support,
             network_discovery,
             topology_visualization,
-            diagram_export,
-            host_inventory,
+            png_export,
+            svg_export,
+            mermaid_export,
+            confluence_export,
             scheduled_discovery,
             daemon_poll,
             service_definitions,
@@ -755,12 +784,20 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             features.push(Feature::TopologyVisualization)
         }
 
-        if diagram_export {
-            features.push(Feature::DiagramExport)
+        if png_export {
+            features.push(Feature::PngExport)
         }
 
-        if host_inventory {
-            features.push(Feature::HostInventory)
+        if svg_export {
+            features.push(Feature::SvgExport)
+        }
+
+        if mermaid_export {
+            features.push(Feature::MermaidExport)
+        }
+
+        if confluence_export {
+            features.push(Feature::ConfluenceExport)
         }
 
         if scheduled_discovery {
@@ -848,16 +885,18 @@ impl TypeMetadataProvider for BillingPlan {
                 "Community plan for individuals self-hosting Scanopy - full control over configuration and integrations"
             }
             BillingPlan::Free { .. } => {
-                "Explore your network — discover and document up to 25 hosts"
+                "Explore your network: discover and document up to 25 hosts"
             }
             BillingPlan::Starter { .. } => "Living network documentation that updates itself",
             BillingPlan::Pro { .. } => "For professionals managing multiple networks",
             BillingPlan::Team { .. } => {
                 "Collaborate on infrastructure documentation with your team"
             }
-            BillingPlan::Business { .. } => "For MSPs and multi-site IT teams",
+            BillingPlan::Business { .. } => {
+                "For MSPs and multi-site IT teams who need advanced features"
+            }
             BillingPlan::Enterprise { .. } => {
-                "Fully managed Scanopy with dedicated support and custom deployment"
+                "Fully managed Scanopy deployment with dedicated support"
             }
             BillingPlan::Demo { .. } => "Demo mode",
             BillingPlan::CommercialSelfHosted { .. } => {

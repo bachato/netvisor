@@ -168,13 +168,13 @@
 				onClose();
 			}
 		: null}
-	size="full"
+	size="max"
 	preventCloseOnClickOutside={!dismissible}
 	showCloseButton={false}
 	floatingCloseButton={dismissible}
 	borderless={true}
 >
-	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto p-2">
+	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
 		<BillingPlanForm
 			plans={plansData}
 			{billingPlanHelpers}

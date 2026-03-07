@@ -65,6 +65,8 @@ pub enum HostOrderField {
     /// Sort by virtualizing service name. Requires JOIN to services table.
     VirtualizedBy,
     NetworkId,
+    /// Sort by primary interface IP address. Requires JOIN to interfaces table.
+    InterfaceIp,
 }
 
 impl OrderField for HostOrderField {
@@ -76,6 +78,7 @@ impl OrderField for HostOrderField {
             Self::UpdatedAt => "hosts.updated_at",
             Self::NetworkId => "hosts.network_id",
             Self::VirtualizedBy => "COALESCE(virt_service.name, '')",
+            Self::InterfaceIp => "primary_interface.ip_address",
         }
     }
 
@@ -84,6 +87,13 @@ impl OrderField for HostOrderField {
             Self::VirtualizedBy => Some(
                 "LEFT JOIN services AS virt_service ON \
                  (hosts.virtualization->'details'->>'service_id')::uuid = virt_service.id",
+            ),
+            Self::InterfaceIp => Some(
+                "LEFT JOIN (\
+                    SELECT DISTINCT ON (host_id) host_id, ip_address \
+                    FROM interfaces \
+                    ORDER BY host_id, position ASC\
+                ) AS primary_interface ON hosts.id = primary_interface.host_id",
             ),
             _ => None,
         }

@@ -552,26 +552,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/metadata": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get metadata registry
-         * @description Returns metadata about all entity types, service definitions, and other system metadata.
-         */
-        get: operations["get_metadata_registry"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/daemon": {
         parameters: {
             query?: never;
@@ -2485,6 +2465,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/topology/{id}/export/confluence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export topology as Confluence wiki markup */
+        get: operations["export_confluence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topology/{id}/export/mermaid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export topology as Mermaid flowchart */
+        get: operations["export_mermaid"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/topology/{id}/lock": {
         parameters: {
             query?: never;
@@ -2748,7 +2762,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.14.11"
+         *       "server_version": "0.14.13"
          *     }
          */
         ApiMeta: {
@@ -2759,7 +2773,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.14.11
+             * @example 0.14.13
              */
             server_version: string;
         };
@@ -2773,14 +2787,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-05T04:02:04.250379Z",
-             *       "id": "66940136-927e-477e-bcd0-9843aa437d04",
+             *       "created_at": "2026-03-06T03:44:42.652404Z",
+             *       "id": "3a5bf462-8f34-4536-84e0-024c2dceafe7",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-05T04:02:04.250379Z"
+             *       "updated_at": "2026-03-06T03:44:42.652404Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3028,14 +3042,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-05T04:02:04.231896Z",
-             *               "id": "72679b29-a4c1-4178-bc01-3a24fc7ff965",
+             *               "created_at": "2026-03-06T03:44:42.634468Z",
+             *               "id": "a00faadb-2961-4ec1-934d-595ead58489f",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-05T04:02:04.231896Z"
+             *               "updated_at": "2026-03-06T03:44:42.634468Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3044,7 +3058,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Unifi Access Point",
+             *           "service_definition": "NTP Server",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3143,24 +3157,6 @@ export interface components {
                 readonly id: string;
                 /** Format: date-time */
                 readonly updated_at: string;
-            };
-            error?: string | null;
-            meta: components["schemas"]["ApiMeta"];
-            success: boolean;
-        };
-        ApiResponse_MetadataRegistry: {
-            data?: {
-                billing_plans: components["schemas"]["TypeMetadata"][];
-                concepts: components["schemas"]["EntityMetadata"][];
-                discovery_types: components["schemas"]["TypeMetadata"][];
-                edge_types: components["schemas"]["TypeMetadata"][];
-                entities: components["schemas"]["EntityMetadata"][];
-                features: components["schemas"]["TypeMetadata"][];
-                group_types: components["schemas"]["TypeMetadata"][];
-                permissions: components["schemas"]["TypeMetadata"][];
-                ports: components["schemas"]["TypeMetadata"][];
-                service_definitions: components["schemas"]["TypeMetadata"][];
-                subnet_types: components["schemas"]["TypeMetadata"][];
             };
             error?: string | null;
             meta: components["schemas"]["ApiMeta"];
@@ -3270,6 +3266,7 @@ export interface components {
             data?: {
                 billing_enabled: boolean;
                 deployment_type: components["schemas"]["DeploymentType"];
+                disable_password_login: boolean;
                 disable_registration: boolean;
                 has_email_opt_in: boolean;
                 has_email_service: boolean;
@@ -3317,14 +3314,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-05T04:02:04.245110Z",
-             *           "id": "0f5827f8-fab0-4d98-bbd1-c618c01854de",
+             *           "created_at": "2026-03-06T03:44:42.647360Z",
+             *           "id": "cc999907-1595-4ed7-a7c1-f567cb1e089d",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-05T04:02:04.245110Z"
+             *           "updated_at": "2026-03-06T03:44:42.647360Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3333,7 +3330,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Unifi Access Point",
+             *       "service_definition": "NTP Server",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3636,14 +3633,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-05T04:02:04.232294Z",
-         *       "id": "5fb680b0-ae0f-4368-9fa2-443549dcbd15",
+         *       "created_at": "2026-03-06T03:44:42.634670Z",
+         *       "id": "d1830da5-bb9c-41be-a76a-94d0d95b0a08",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-05T04:02:04.232294Z"
+         *       "updated_at": "2026-03-06T03:44:42.634670Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3825,7 +3822,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Unifi Access Point",
+         *           "service_definition": "NTP Server",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -3948,7 +3945,7 @@ export interface components {
             name: string;
             /** Format: uuid */
             network_id: string;
-            /** @description Whether the daemon is on standby due to plan restrictions (DaemonPoll on Free plan). */
+            /** @description Whether the daemon is on standby due to inactivity (no discovery in 30 days). */
             readonly standby?: boolean;
             tags: string[];
             readonly url: string;
@@ -4257,11 +4254,6 @@ export interface components {
         };
         /** @enum {string} */
         EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "IfEntry" | "SnmpCredential" | "Subnet" | "Group" | "Topology" | "Unknown";
-        EntityMetadata: {
-            color: components["schemas"]["Color"];
-            icon: string;
-            id: string;
-        };
         EntitySource: {
             /** @enum {string} */
             type: "Manual";
@@ -4396,7 +4388,7 @@ export interface components {
          * @description Fields that hosts can be ordered/grouped by.
          * @enum {string}
          */
-        HostOrderField: "created_at" | "name" | "hostname" | "updated_at" | "virtualized_by" | "network_id";
+        HostOrderField: "created_at" | "name" | "hostname" | "updated_at" | "virtualized_by" | "network_id" | "interface_ip";
         /**
          * @description Response type for host endpoints.
          *     Includes children (interfaces, ports, services, if_entries).
@@ -4468,14 +4460,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-05T04:02:04.231361Z",
-         *               "id": "60ef6b2f-c60c-48a4-9c44-4930ba0680f4",
+         *               "created_at": "2026-03-06T03:44:42.634203Z",
+         *               "id": "9ad158ed-8abc-4369-9b2b-151cf2d399f3",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-05T04:02:04.231361Z"
+         *               "updated_at": "2026-03-06T03:44:42.634203Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4484,7 +4476,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Unifi Access Point",
+         *           "service_definition": "NTP Server",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4842,19 +4834,6 @@ export interface components {
             /** @enum {string} */
             type: "container";
         };
-        MetadataRegistry: {
-            billing_plans: components["schemas"]["TypeMetadata"][];
-            concepts: components["schemas"]["EntityMetadata"][];
-            discovery_types: components["schemas"]["TypeMetadata"][];
-            edge_types: components["schemas"]["TypeMetadata"][];
-            entities: components["schemas"]["EntityMetadata"][];
-            features: components["schemas"]["TypeMetadata"][];
-            group_types: components["schemas"]["TypeMetadata"][];
-            permissions: components["schemas"]["TypeMetadata"][];
-            ports: components["schemas"]["TypeMetadata"][];
-            service_definitions: components["schemas"]["TypeMetadata"][];
-            subnet_types: components["schemas"]["TypeMetadata"][];
-        };
         /**
          * @description Resolved LLDP/CDP neighbor connection.
          *
@@ -5034,7 +5013,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.14.11"
+         *       "server_version": "0.14.13"
          *     }
          */
         PaginatedApiMeta: {
@@ -5047,7 +5026,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.14.11
+             * @example 0.14.13
              */
             server_version: string;
         };
@@ -5395,6 +5374,7 @@ export interface components {
         PublicConfigResponse: {
             billing_enabled: boolean;
             deployment_type: components["schemas"]["DeploymentType"];
+            disable_password_login: boolean;
             disable_registration: boolean;
             has_email_opt_in: boolean;
             has_email_service: boolean;
@@ -5474,14 +5454,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-05T04:02:04.232164Z",
-         *           "id": "bae1d565-6e87-48c0-8af9-43af83cdcca7",
+         *           "created_at": "2026-03-06T03:44:42.634603Z",
+         *           "id": "663c61e0-39fc-4e21-a4ba-01a25a0667d3",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-05T04:02:04.232164Z"
+         *           "updated_at": "2026-03-06T03:44:42.634603Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5490,7 +5470,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Unifi Access Point",
+         *       "service_definition": "NTP Server",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -5935,15 +5915,6 @@ export interface components {
         };
         /** @enum {string} */
         TransportProtocol: "Udp" | "Tcp";
-        TypeMetadata: {
-            category: string | null;
-            color: components["schemas"]["Color"];
-            description: string | null;
-            icon: string | null;
-            id: string;
-            metadata: unknown;
-            name: string | null;
-        };
         /**
          * @description Request type for updating a host with its children.
          *     Uses the same input types as CreateHostRequest.
@@ -7105,26 +7076,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_u32"];
-                };
-            };
-        };
-    };
-    get_metadata_registry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Metadata registry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponse_MetadataRegistry"];
                 };
             };
         };
@@ -11999,6 +11950,88 @@ export interface operations {
                 };
             };
             /** @description Topology or edge not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    export_confluence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Topology ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Confluence wiki markup export */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": unknown;
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Topology not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    export_mermaid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Topology ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mermaid flowchart export */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": unknown;
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Topology not found */
             404: {
                 headers: {
                     [name: string]: unknown;

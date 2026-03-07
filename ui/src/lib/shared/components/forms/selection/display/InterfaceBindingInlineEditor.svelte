@@ -110,7 +110,10 @@
 					</div>
 				{:else if host.interfaces && host.interfaces.length === 1}
 					<!-- Single interface - show as read-only -->
-					<div class="text-secondary rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm">
+					<div
+						class="text-secondary rounded px-2 py-1 text-sm"
+						style="border: 1px solid var(--color-border-input); background: var(--color-bg-input)"
+					>
 						{iface ? formatInterface(iface, isContainerSubnetFn) : 'Unknown Interface'}
 					</div>
 				{:else if host.interfaces.length > 0}

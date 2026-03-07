@@ -112,6 +112,13 @@ async fn check_email(
     State(state): State<Arc<AppState>>,
     Json(request): Json<CheckEmailRequest>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
+    if state.config.disable_password_login {
+        return Err(ApiError::coded(
+            StatusCode::FORBIDDEN,
+            ErrorCode::AuthPasswordLoginDisabled,
+        ));
+    }
+
     let existing = state
         .services
         .user_service
@@ -155,8 +162,18 @@ async fn register(
         ));
     }
 
+    if state.config.disable_password_login {
+        return Err(ApiError::coded(
+            StatusCode::FORBIDDEN,
+            ErrorCode::AuthPasswordLoginDisabled,
+        ));
+    }
+
     if state.config.disable_registration {
-        return Err(ApiError::forbidden("User registration is disabled"));
+        return Err(ApiError::coded(
+            StatusCode::FORBIDDEN,
+            ErrorCode::AuthRegistrationDisabled,
+        ));
     }
 
     // Honeypot: hidden "website" field filled = likely bot
@@ -702,6 +719,13 @@ async fn login(
     session: Session,
     Json(request): Json<LoginRequest>,
 ) -> ApiResult<Json<ApiResponse<User>>> {
+    if state.config.disable_password_login {
+        return Err(ApiError::coded(
+            StatusCode::FORBIDDEN,
+            ErrorCode::AuthPasswordLoginDisabled,
+        ));
+    }
+
     let user_agent = user_agent.map(|u| u.to_string());
 
     let user = state
@@ -1066,7 +1090,10 @@ async fn oidc_authorize(
             }
 
             if state.config.disable_registration {
-                return Err(ApiError::forbidden("User registration is disabled"));
+                return Err(ApiError::coded(
+                    StatusCode::FORBIDDEN,
+                    ErrorCode::AuthRegistrationDisabled,
+                ));
             }
 
             let terms_accepted = params.terms_accepted.unwrap_or(false);

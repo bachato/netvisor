@@ -241,8 +241,7 @@
 		bind:this={triggerElement}
 		type="button"
 		onclick={handleToggle}
-		class="text-primary flex w-full items-center justify-between rounded-md border border-gray-600
-           bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+		class="select-trigger text-primary flex w-full items-center justify-between rounded-md px-3 py-2
            {error ? 'border-red-500' : ''}
            {disabled || options.length == 0 ? 'cursor-not-allowed opacity-50' : ''}"
 		disabled={disabled || options.length == 0}
@@ -278,19 +277,22 @@
 	<div
 		bind:this={dropdownElement}
 		use:portal
-		class="fixed z-[9999] max-h-96 overflow-hidden scroll-smooth rounded-md border border-gray-600 bg-gray-700 shadow-lg"
+		class="select-dropdown fixed z-[9999] max-h-96 overflow-hidden scroll-smooth rounded-md shadow-lg"
 		style="top: {dropdownPosition.top}px; left: {dropdownPosition.left}px; width: {dropdownPosition.width}px;
            {openUpward ? 'transform: translateY(-100%);' : ''}"
 	>
 		<!-- Search Input -->
 		{#if showSearch}
-			<div class="sticky top-0 border-b border-gray-600 bg-gray-700 p-2">
+			<div
+				class="sticky top-0 border-b p-2"
+				style="border-color: var(--color-border); background: var(--color-bg-input)"
+			>
 				<input
 					bind:this={inputElement}
 					bind:value={filterText}
 					type="text"
 					placeholder={common_typeToFilter()}
-					class="text-primary w-full rounded border border-gray-600 bg-gray-800 px-2 py-1 text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					class="input-field text-primary w-full rounded px-2 py-1 text-sm"
 					onkeydown={handleInputKeydown}
 					onclick={(e) => e.stopPropagation()}
 				/>
@@ -309,7 +311,8 @@
 						<!-- Category Header -->
 						{#if group.category !== null}
 							<div
-								class="text-secondary sticky top-0 border-b border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide"
+								class="text-secondary sticky top-0 border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide"
+								style="border-color: var(--color-border); background: var(--color-bg-surface)"
 							>
 								{group.category}
 							</div>
@@ -335,13 +338,14 @@
 										handleSelect(displayComponent.getId(option));
 									}
 								}}
-								class="w-full px-3 py-3 text-left transition-colors
+								class="select-option w-full px-3 py-3 text-left transition-colors
                        {isDisabled
 									? isClickableDisabled
-										? 'cursor-pointer hover:bg-gray-600'
+										? 'cursor-pointer'
 										: 'cursor-not-allowed opacity-60'
-									: 'hover:bg-gray-600'}
-                       {!isLastInGroup || !isLastGroup ? 'border-b border-gray-600' : ''}"
+									: ''}
+                       {!isLastInGroup || !isLastGroup ? 'border-b' : ''}"
+								style={!isLastInGroup || !isLastGroup ? 'border-color: var(--color-border)' : ''}
 							>
 								<ListSelectItem {context} item={option} {displayComponent} staticTags={true} />
 							</button>

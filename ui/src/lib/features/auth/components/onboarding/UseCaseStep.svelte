@@ -9,6 +9,8 @@
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
+	import { required } from '$lib/shared/components/forms/validators';
+	import { validateForm } from '$lib/shared/components/forms/form-context';
 	import {
 		auth_scanopyLogo,
 		common_continue,
@@ -27,6 +29,7 @@
 		onboarding_referralSource_searchEngine,
 		onboarding_referralSource_selfHosted,
 		onboarding_referralSource_socialMedia,
+		onboarding_referralSource_preferNotToSay,
 		onboarding_referralSource_wordOfMouth,
 		onboarding_tailorSetup,
 		onboarding_understandContinue
@@ -62,7 +65,8 @@
 		{ value: 'social_media', label: onboarding_referralSource_socialMedia() },
 		{ value: 'word_of_mouth', label: onboarding_referralSource_wordOfMouth() },
 		{ value: 'self_hosted', label: onboarding_referralSource_selfHosted() },
-		{ value: 'other', label: common_other() }
+		{ value: 'other', label: common_other() },
+		{ value: 'prefer_not_to_say', label: onboarding_referralSource_preferNotToSay() }
 	];
 
 	// Icons for each use case (kept separate from types for flexibility)
@@ -132,7 +136,7 @@
 		}
 	}
 
-	function handleContinue() {
+	function submitAndProceed() {
 		if (!selectedUseCase) return;
 		saveFields();
 		const values = form.state.values;
@@ -143,6 +147,15 @@
 		});
 		onboardingStore.setUseCase(selectedUseCase);
 		onNext();
+	}
+
+	async function handleContinue() {
+		if (!selectedUseCase) return;
+		if (showCloudFields) {
+			const isValid = await validateForm(form);
+			if (!isValid) return;
+		}
+		submitAndProceed();
 	}
 
 	let canProceed = $derived(selectedUseCase !== null && !showLicenseWarning);
@@ -177,13 +190,13 @@
 							type="button"
 							class="card flex items-center gap-4 p-4 text-left transition-all {isSelected
 								? `ring-2 ${useCaseConfig.colors.ring}`
-								: 'hover:bg-gray-800'}"
+								: 'hover:bg-gray-100 dark:hover:bg-gray-800'}"
 							onclick={() => selectUseCase(useCaseId)}
 						>
 							<div
 								class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg {isSelected
 									? `${useCaseConfig.colors.bg} ${useCaseConfig.colors.text}`
-									: 'bg-gray-700 text-gray-400'}"
+									: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}"
 							>
 								<Icon class="h-5 w-5" />
 							</div>
@@ -207,15 +220,23 @@
 										id="referral-source"
 										{field}
 										options={referralSourceOptions}
+										required={false}
 									/>
 									{#if referralSourceValue === 'other'}
 										<div class="mt-3">
-											<form.Field name="referralSourceOther">
+											<form.Field
+												name="referralSourceOther"
+												validators={{
+													onBlur: ({ value }) =>
+														referralSourceValue === 'other' ? required(value) : undefined
+												}}
+											>
 												{#snippet children(otherField)}
 													<TextInput
 														label=""
 														id="referral-source-other"
 														field={otherField}
+														required={true}
 														placeholder={onboarding_referralSource_otherPlaceholder()}
 													/>
 												{/snippet}
@@ -251,11 +272,14 @@
 
 		<div class="modal-footer">
 			<div class="flex w-full flex-col gap-4">
-				<div class="flex justify-end">
-					<button type="button" class="btn-primary" disabled={!canProceed} onclick={handleContinue}>
-						{common_continue()}
-					</button>
-				</div>
+				<button
+					type="button"
+					class="btn-primary w-full"
+					disabled={!canProceed}
+					onclick={handleContinue}
+				>
+					{common_continue()}
+				</button>
 
 				{#if onSwitchToLogin}
 					<p class="text-secondary text-center text-sm">

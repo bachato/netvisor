@@ -19,7 +19,7 @@
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
 	);
 
-	let nodeData = node.data as InterfaceNode;
+	let nodeData = $derived(node.data as InterfaceNode);
 
 	let host = $derived(topology ? topology.hosts.find((h) => h.id == nodeData.host_id) : null);
 

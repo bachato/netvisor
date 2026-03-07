@@ -54,7 +54,7 @@
 		centerTitle?: boolean;
 		isOpen?: boolean;
 		onClose?: (() => void) | null;
-		size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+		size?: 'sm' | 'md' | 'lg' | 'xl' | 'full' | 'max';
 		preventCloseOnClickOutside?: boolean;
 		showCloseButton?: boolean;
 		showBackdrop?: boolean;
@@ -163,7 +163,8 @@
 		md: 'max-w-lg',
 		lg: 'max-w-2xl',
 		xl: 'max-w-4xl',
-		full: 'max-w-7xl'
+		full: 'max-w-7xl',
+		max: 'max-w-none w-full'
 	};
 
 	function handleClose() {
@@ -205,7 +206,7 @@
 			<button
 				type="button"
 				onclick={() => goBack()}
-				class="fixed left-6 top-6 z-50 flex items-center gap-2 rounded-full bg-gray-800/80 py-2 pl-2 pr-4 text-sm text-gray-400 transition-colors hover:bg-gray-700 hover:text-white"
+				class="fixed left-6 top-6 z-50 flex items-center gap-2 rounded-full bg-white/80 py-2 pl-2 pr-4 text-sm text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-800/80 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
 				aria-label={returnTitle ? `Back to ${returnTitle}` : 'Go back'}
 			>
 				<ArrowLeft class="h-5 w-5" />
@@ -218,7 +219,7 @@
 			<button
 				type="button"
 				onclick={handleClose}
-				class="fixed right-6 top-6 z-50 rounded-full bg-gray-800/80 p-2 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white"
+				class="fixed right-6 top-6 z-50 rounded-full bg-white/80 p-2 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-800/80 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
 				aria-label={common_closeModal()}
 			>
 				<X class="h-5 w-5" />

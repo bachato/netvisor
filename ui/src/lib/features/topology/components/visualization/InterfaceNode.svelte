@@ -71,10 +71,10 @@
 		selectedEdgeContext ? $selectedEdgeContext : $globalSelectedEdge
 	) as Edge | null;
 
-	let nodeData = data as InterfaceNodeType;
+	let nodeData = $derived(data as InterfaceNodeType);
 
-	height = height ? height : 0;
-	width = width ? width : 0;
+	let effectiveHeight = $derived(height ? height : 0);
+	let effectiveWidth = $derived(width ? width : 0);
 
 	let host = $derived(topology ? topology.hosts.find((h) => h.id == nodeData.host_id) : undefined);
 
@@ -200,7 +200,7 @@
 {#if nodeRenderData}
 	<div
 		class={cardClass}
-		style={`width: ${width}px; height: ${height}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${tagHoverRingStyle}`}
+		style={`width: ${effectiveWidth}px; height: ${effectiveHeight}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${tagHoverRingStyle}`}
 	>
 		<!-- Rest of component stays the same -->
 		<!-- Header section with gradient transition to body -->

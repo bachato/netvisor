@@ -90,7 +90,7 @@
 		<!-- Demo Topology Embed — shown before first topology rebuild -->
 		{#if !has('FirstDiscoveryCompleted') && !demoTopologyDismissed}
 			<section>
-				<div class="overflow-hidden rounded-lg border border-gray-700">
+				<div class="card card-static overflow-hidden !p-0">
 					<div class="flex items-center justify-between px-4 pt-3">
 						<h3 class="text-primary text-base font-semibold">{home_demoEmbedTitle()}</h3>
 						<div class="flex items-center gap-3">

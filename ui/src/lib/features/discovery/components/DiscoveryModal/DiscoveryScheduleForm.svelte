@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Discovery } from '../../types/base';
+	import SectionPanel from '$lib/shared/components/layout/SectionPanel.svelte';
 	import { generateDayTimeCronSchedule } from '../../queries';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
@@ -251,10 +252,10 @@
 	</div>
 {:else}
 	<!-- Ad-hoc info box (safety fallback if rendered in AdHoc mode) -->
-	<div class="rounded-lg bg-gray-800/50 p-4">
+	<SectionPanel>
 		<div class="flex items-start gap-3">
 			<svg
-				class="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-400"
+				class="text-tertiary mt-0.5 h-5 w-5 flex-shrink-0"
 				fill="none"
 				stroke="currentColor"
 				viewBox="0 0 24 24"
@@ -273,5 +274,5 @@
 				</p>
 			</div>
 		</div>
-	</div>
+	</SectionPanel>
 {/if}

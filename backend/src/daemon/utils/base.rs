@@ -14,7 +14,7 @@ use local_ip_address::local_ip;
 use mac_address::MacAddress;
 use net_route::Handle;
 use pnet::ipnetwork::IpNetwork;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -440,6 +440,35 @@ pub trait DaemonUtils {
     }
 }
 
+/// Merge host (physical) and Docker subnets, giving host subnets precedence.
+/// - Host subnets are always kept
+/// - Docker subnets with CIDRs matching host subnets are dropped (host wins)
+///
+/// Callers that don't want DockerBridge subnets (e.g., self-report) should
+/// filter them separately after calling this function.
+pub fn merge_host_and_docker_subnets(
+    host_subnets: Vec<Subnet>,
+    docker_subnets: Vec<Subnet>,
+) -> Vec<Subnet> {
+    let host_cidrs: HashSet<IpCidr> = host_subnets.iter().map(|s| s.base.cidr).collect();
+
+    let filtered_docker: Vec<Subnet> = docker_subnets
+        .into_iter()
+        .filter(|s| {
+            let dominated_by_host = host_cidrs.contains(&s.base.cidr);
+            if dominated_by_host {
+                tracing::debug!(
+                    cidr = %s.base.cidr,
+                    "Filtering out Docker subnet (host takes precedence)"
+                );
+            }
+            !dominated_by_host
+        })
+        .collect();
+
+    [host_subnets, filtered_docker].concat()
+}
+
 #[cfg(target_os = "linux")]
 use crate::daemon::utils::linux::LinuxDaemonUtils;
 #[cfg(target_os = "linux")]
@@ -457,4 +486,70 @@ pub type PlatformDaemonUtils = WindowsDaemonUtils;
 
 pub fn create_system_utils() -> PlatformDaemonUtils {
     PlatformDaemonUtils::new()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::server::shared::storage::traits::Storable;
+    use crate::server::shared::types::entities::EntitySource;
+    use std::str::FromStr;
+
+    fn make_subnet(cidr: &str, subnet_type: SubnetType) -> Subnet {
+        Subnet::new(SubnetBase {
+            cidr: IpCidr::from_str(cidr).unwrap(),
+            network_id: Uuid::nil(),
+            name: String::new(),
+            description: None,
+            subnet_type,
+            source: EntitySource::Manual,
+            tags: Vec::new(),
+        })
+    }
+
+    #[test]
+    fn macvlan_overlap_keeps_physical_only() {
+        let host = vec![make_subnet("192.168.1.0/24", SubnetType::Lan)];
+        let docker = vec![make_subnet("192.168.1.0/24", SubnetType::MacVlan)];
+
+        let result = merge_host_and_docker_subnets(host, docker);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].base.subnet_type, SubnetType::Lan);
+    }
+
+    #[test]
+    fn docker_bridge_kept_when_no_overlap() {
+        let host = vec![];
+        let docker = vec![make_subnet("172.17.0.0/16", SubnetType::DockerBridge)];
+
+        let result = merge_host_and_docker_subnets(host, docker);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].base.subnet_type, SubnetType::DockerBridge);
+    }
+
+    #[test]
+    fn no_overlap_keeps_both() {
+        let host = vec![make_subnet("192.168.1.0/24", SubnetType::Lan)];
+        let docker = vec![make_subnet("10.0.0.0/8", SubnetType::IpVlan)];
+
+        let result = merge_host_and_docker_subnets(host, docker);
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn mixed_filters_only_overlapping_docker() {
+        let host = vec![make_subnet("192.168.1.0/24", SubnetType::Lan)];
+        let docker = vec![
+            make_subnet("192.168.1.0/24", SubnetType::MacVlan),
+            make_subnet("172.17.0.0/16", SubnetType::DockerBridge),
+            make_subnet("10.0.0.0/8", SubnetType::IpVlan),
+        ];
+
+        let result = merge_host_and_docker_subnets(host, docker);
+        // MacVlan dropped (overlaps host), Bridge + IpVlan kept (no overlap)
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].base.subnet_type, SubnetType::Lan);
+        assert_eq!(result[1].base.subnet_type, SubnetType::DockerBridge);
+        assert_eq!(result[2].base.subnet_type, SubnetType::IpVlan);
+    }
 }

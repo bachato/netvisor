@@ -20,14 +20,14 @@
 			type="button"
 			onclick={() => onchange(option.value)}
 			class="rounded-full px-3 py-1.5 text-sm font-medium transition-all {selected === option.value
-				? 'bg-gray-700 text-white'
-				: 'text-gray-400 hover:text-gray-300'}"
+				? 'bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-white'
+				: 'text-tertiary hover:text-secondary'}"
 		>
 			<span>{option.label}</span>
 			{#if option.badge}
 				<span
 					class="ml-1 text-xs font-semibold {selected === option.value
-						? 'text-green-300'
+						? 'text-green-700 dark:text-green-300'
 						: 'text-success'}">{option.badge}</span
 				>
 			{/if}

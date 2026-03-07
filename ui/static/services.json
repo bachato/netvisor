@@ -1,5 +1,14 @@
 [
   {
+    "category": "Virtualization",
+    "color": "Indigo",
+    "description": "Docker",
+    "discovery_pattern": "No match pattern provided",
+    "logo_needs_white_background": false,
+    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
+    "name": "Docker"
+  },
+  {
     "category": "Media",
     "color": "Blue",
     "description": "User invitation and management system for Jellyfin, Plex, Emby etc",
@@ -660,7 +669,7 @@
     "category": "Monitoring",
     "color": "Orange",
     "description": "Analytics and monitoring visualization platform",
-    "discovery_pattern": "Endpoint response body from <ip>:80/ contains \"grafana.com\"",
+    "discovery_pattern": "Any of: (Endpoint response body from <ip>:80/login contains \"app-grafana\", Endpoint response body from <ip>:3000/login contains \"app-grafana\", Endpoint response body from <ip>:80/ contains \"grafana.com\", Endpoint response body from <ip>:3000/ contains \"grafana.com\")",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/grafana.svg",
     "name": "Grafana"
@@ -2077,14 +2086,5 @@
     "logo_needs_white_background": false,
     "logo_url": "",
     "name": "DHCP Server"
-  },
-  {
-    "category": "Virtualization",
-    "color": "Indigo",
-    "description": "Docker",
-    "discovery_pattern": "No match pattern provided",
-    "logo_needs_white_background": false,
-    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
-    "name": "Docker"
   }
 ]

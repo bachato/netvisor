@@ -6,6 +6,7 @@
 	 * and expandable full comparison grid. Responsive: 1 col mobile, 2 col tablet,
 	 * auto-fit desktop.
 	 */
+	import { untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { Check, X, ChevronDown, ChevronUp, Loader2, Minus, Plus } from 'lucide-svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
@@ -69,7 +70,7 @@
 	let showFullComparison = $state(false);
 
 	type PlanFilter = 'all' | 'personal' | 'commercial';
-	let planFilter = $state<PlanFilter>(initialPlanFilter);
+	let planFilter = $state<PlanFilter>(untrack(() => initialPlanFilter));
 
 	type BillingPeriod = 'monthly' | 'yearly';
 	let billingPeriod = $state<BillingPeriod>('yearly');
@@ -160,7 +161,7 @@
 	}
 
 	// Reset extras when billing period changes
-	let prevBillingPeriod = $state(billingPeriod);
+	let prevBillingPeriod = $state(untrack(() => billingPeriod));
 	$effect(() => {
 		if (billingPeriod !== prevBillingPeriod) {
 			prevBillingPeriod = billingPeriod;
@@ -258,8 +259,7 @@
 	function formatSeatAddonPricing(plan: BillingPlan): string {
 		if (plan.seat_cents) {
 			const monthly = plan.rate === 'Year' ? plan.seat_cents / 12 : plan.seat_cents;
-			const included = plan.included_seats != null ? `${plan.included_seats} included, ` : '';
-			return `${included}+$${monthly / 100} / seat / mo`;
+			return `+$${monthly / 100} / seat / mo`;
 		}
 		return '';
 	}
@@ -267,8 +267,7 @@
 	function formatNetworkAddonPricing(plan: BillingPlan): string {
 		if (plan.network_cents) {
 			const monthly = plan.rate === 'Year' ? plan.network_cents / 12 : plan.network_cents;
-			const included = plan.included_networks != null ? `${plan.included_networks} included, ` : '';
-			return `${included}+$${monthly / 100} / network / mo`;
+			return `+$${monthly / 100} / network / mo`;
 		}
 		return '';
 	}
@@ -276,8 +275,7 @@
 	function formatHostAddonPricing(plan: BillingPlan): string {
 		if (plan.host_cents) {
 			const monthly = plan.rate === 'Year' ? plan.host_cents / 12 : plan.host_cents;
-			const included = plan.included_hosts != null ? `${plan.included_hosts} included, ` : '';
-			return `${included}+$${monthly / 100} / host / mo`;
+			return `+$${monthly / 100} / host / mo`;
 		}
 		return '';
 	}
@@ -354,7 +352,7 @@
 
 <div class="space-y-6 {className}">
 	<!-- Header with Toggles -->
-	<div class="flex flex-wrap items-stretch justify-center gap-3 px-4 lg:gap-6 lg:px-10">
+	<div class="flex flex-wrap items-stretch justify-center gap-3 lg:gap-6 lg:px-10">
 		{#if showGithubStars}
 			<!-- <GithubStars /> -->
 		{/if}
@@ -448,12 +446,16 @@
 								{/if}
 							</div>
 						{/if}
-						{#if showBilledYearly(plan)}
-							<div class="text-tertiary text-xs">billed yearly</div>
-						{/if}
-						{#if hasTrial(plan) && !hasCustomPrice(plan)}
-							<div class="text-xs font-medium text-success">{plan.trial_days}-day free trial</div>
-						{/if}
+						<div
+							class={`text-tertiary text-xs ${showBilledYearly(plan) ? 'opacity-100' : 'opacity-0'}`}
+						>
+							billed yearly
+						</div>
+						<div
+							class={`text-xs font-medium text-success ${hasTrial(plan) && !hasCustomPrice(plan) ? 'opacity-100' : 'opacity-0'}`}
+						>
+							{plan.trial_days}-day free trial
+						</div>
 					</div>
 
 					<!-- Description -->
@@ -463,8 +465,64 @@
 						</p>
 					{/if}
 
+					<!-- CTA Button -->
+					<div class="py-4" style="border-color: var(--color-border)">
+						{#if enterprise && onPlanInquiry}
+							<button
+								type="button"
+								onclick={() => onPlanInquiry(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								Request Information
+							</button>
+						{:else if hosting === 'Cloud'}
+							<button
+								type="button"
+								onclick={() => handlePlanSelect(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								{#if loadingPlanType === plan.type}
+									<Loader2 class="mx-auto h-4 w-4 animate-spin" />
+								{:else}
+									{trial ? `Start ${plan.trial_days}-day free trial` : 'Get Started'}
+								{/if}
+							</button>
+						{:else if hosting === 'SelfHosted'}
+							{#if commercial && onPlanInquiry}
+								<button
+									type="button"
+									onclick={() => onPlanInquiry(plan)}
+									disabled={loadingPlanType !== null}
+									class="btn-primary w-full text-sm"
+								>
+									Contact Us
+								</button>
+							{:else}
+								<a
+									href="https://github.com/scanopy/scanopy"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="btn-secondary inline-block w-full text-center text-sm"
+								>
+									View on GitHub
+								</a>
+							{/if}
+						{:else if commercial && onPlanInquiry}
+							<button
+								type="button"
+								onclick={() => onPlanInquiry(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								Contact Us
+							</button>
+						{/if}
+					</div>
+
 					<!-- Included Resources with Stepper Controls -->
-					<div class="space-y-2 border-b border-gray-700 pb-4">
+					<div class="space-y-2 border-b pb-4" style="border-color: var(--color-border)">
 						<!-- Seats -->
 						<div class="flex items-center justify-between text-sm">
 							<div class="flex flex-col">
@@ -595,62 +653,6 @@
 							{/each}
 						</ul>
 					</div>
-
-					<!-- CTA Button -->
-					<div class="border-t border-gray-700 pt-4">
-						{#if enterprise && onPlanInquiry}
-							<button
-								type="button"
-								onclick={() => onPlanInquiry(plan)}
-								disabled={loadingPlanType !== null}
-								class="btn-primary w-full text-sm"
-							>
-								Request Information
-							</button>
-						{:else if hosting === 'Cloud'}
-							<button
-								type="button"
-								onclick={() => handlePlanSelect(plan)}
-								disabled={loadingPlanType !== null}
-								class="btn-primary w-full text-sm"
-							>
-								{#if loadingPlanType === plan.type}
-									<Loader2 class="mx-auto h-4 w-4 animate-spin" />
-								{:else}
-									{trial ? `Start ${plan.trial_days}-day free trial` : 'Get Started'}
-								{/if}
-							</button>
-						{:else if hosting === 'SelfHosted'}
-							{#if commercial && onPlanInquiry}
-								<button
-									type="button"
-									onclick={() => onPlanInquiry(plan)}
-									disabled={loadingPlanType !== null}
-									class="btn-primary w-full text-sm"
-								>
-									Contact Us
-								</button>
-							{:else}
-								<a
-									href="https://github.com/scanopy/scanopy"
-									target="_blank"
-									rel="noopener noreferrer"
-									class="btn-secondary inline-block w-full text-center text-sm"
-								>
-									View on GitHub
-								</a>
-							{/if}
-						{:else if commercial && onPlanInquiry}
-							<button
-								type="button"
-								onclick={() => onPlanInquiry(plan)}
-								disabled={loadingPlanType !== null}
-								class="btn-primary w-full text-sm"
-							>
-								Contact Us
-							</button>
-						{/if}
-					</div>
 				</div>
 			{/each}
 		</div>
@@ -660,7 +662,7 @@
 	<div class="flex justify-center px-4">
 		<button
 			type="button"
-			class="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+			class="text-link hover:text-primary flex items-center gap-2 text-sm transition-colors"
 			onclick={() => (showFullComparison = !showFullComparison)}
 		>
 			{showFullComparison ? 'Hide' : 'Compare all features'}
@@ -786,8 +788,8 @@
 		width: 1.5rem;
 		height: 1.5rem;
 		border-radius: 0.25rem;
-		border: 1px solid rgb(75 85 99);
-		color: rgb(209 213 219);
+		border: 1px solid var(--color-border-input);
+		color: var(--color-text-secondary);
 		background: transparent;
 		cursor: pointer;
 		transition:
@@ -796,8 +798,8 @@
 	}
 
 	.stepper-btn:hover:not(:disabled) {
-		background: rgb(55 65 81);
-		border-color: rgb(107 114 128);
+		background: var(--color-bg-surface-hover);
+		border-color: var(--color-border-input);
 	}
 
 	.stepper-btn:disabled {
@@ -810,20 +812,20 @@
 	/* ============================================ */
 
 	.comparison-header-row {
-		background: rgb(31 41 55);
+		background: var(--color-bg-surface);
 		position: sticky;
 		top: 0;
 		z-index: 11;
 	}
 
 	.comparison-category-row {
-		border-bottom: 1px solid rgb(55 65 81);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.comparison-row {
 		display: grid;
 		min-width: 500px;
-		border-bottom: 1px solid rgb(55 65 81);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.comparison-row:last-child {
@@ -832,15 +834,15 @@
 
 	.comparison-label-cell {
 		padding: 0.5rem;
-		color: rgb(156 163 175);
+		color: var(--color-text-tertiary);
 		text-align: left;
 		display: flex;
 		align-items: center;
 		position: sticky;
 		left: 0;
 		z-index: 10;
-		background: rgb(31 41 55);
-		border-right: 1px solid rgb(55 65 81);
+		background: var(--color-bg-surface);
+		border-right: 1px solid var(--color-border);
 	}
 
 	.comparison-value-cell {
@@ -849,7 +851,7 @@
 		align-items: center;
 		justify-content: center;
 		text-align: center;
-		border-right: 1px solid rgb(55 65 81);
+		border-right: 1px solid var(--color-border);
 	}
 
 	.comparison-value-cell:last-child {
@@ -868,7 +870,7 @@
 		position: relative;
 		cursor: help;
 		text-decoration: underline dotted;
-		text-decoration-color: rgb(107 114 128);
+		text-decoration-color: var(--color-border-input);
 		text-underline-offset: 2px;
 	}
 </style>

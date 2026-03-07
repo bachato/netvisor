@@ -78,15 +78,15 @@
 		<div class="flex items-center gap-3">
 			<!-- Color indicator -->
 			<div
-				class="h-8 w-8 rounded-lg border-2 border-white ring-2 ring-white ring-offset-2 ring-offset-gray-800"
-				style="background-color: {selectedColorHelper.rgb};"
+				class="h-8 w-8 rounded-lg border-2 border-white ring-2 ring-white ring-offset-2"
+				style="background-color: {selectedColorHelper.rgb}; --tw-ring-offset-color: var(--color-bg-surface);"
 				aria-label="Selected color: {formData.color}"
 			></div>
 
 			<!-- Edge style label -->
 			<div class="flex flex-col">
-				<span class="text-sm font-medium text-gray-200">{selectedEdgeStyleLabel}</span>
-				<span class="text-xs capitalize text-gray-400">{formData.color}</span>
+				<span class="text-primary text-sm font-medium">{selectedEdgeStyleLabel}</span>
+				<span class="text-tertiary text-xs capitalize">{formData.color}</span>
 			</div>
 		</div>
 
@@ -107,7 +107,7 @@
 		{#if showCollapseToggle}
 			<!-- Header with collapse button -->
 			<div class="flex items-center justify-between">
-				<div class="block text-sm font-medium text-gray-200">{groups_editEdgeStyle()}</div>
+				<div class="text-primary block text-sm font-medium">{groups_editEdgeStyle()}</div>
 				<button type="button" onclick={() => (collapsed = true)} class="btn-secondary text-xs">
 					{common_done()}
 				</button>
@@ -116,8 +116,8 @@
 
 		<!-- Edge Color Section -->
 		<div class="space-y-3">
-			<div class="block text-sm font-medium text-gray-200">{groups_edgeColor()}</div>
-			<p class="text-xs text-gray-400">{groups_edgeColorHelp()}</p>
+			<div class="text-primary block text-sm font-medium">{groups_edgeColor()}</div>
+			<p class="text-tertiary text-xs">{groups_edgeColorHelp()}</p>
 
 			<div class="grid grid-cols-7 gap-2">
 				{#each AVAILABLE_COLORS as color (color)}
@@ -126,13 +126,13 @@
 						type="button"
 						onclick={() => handleColorChange(color)}
 						class="group relative aspect-square w-full rounded-lg border-2 transition-all hover:scale-110"
-						class:border-gray-500={formData.color !== color}
+						class:border-gray-300={formData.color !== color}
+						class:dark:border-gray-500={formData.color !== color}
 						class:border-white={formData.color === color}
 						class:ring-2={formData.color === color}
 						class:ring-white={formData.color === color}
 						class:ring-offset-2={formData.color === color}
-						class:ring-offset-gray-800={formData.color === color}
-						style="background-color: {colorHelper.rgb};"
+						style="background-color: {colorHelper.rgb}; --tw-ring-offset-color: var(--color-bg-surface);"
 						aria-label={`Select ${color} color`}
 					>
 						{#if formData.color === color}
@@ -157,17 +157,17 @@
 
 		<!-- Edge Style Section -->
 		<div class="space-y-3">
-			<div class="block text-sm font-medium text-gray-200">{groups_edgeStyleLabel()}</div>
-			<p class="text-xs text-gray-400">{groups_edgeStyleHelp()}</p>
+			<div class="text-primary block text-sm font-medium">{groups_edgeStyleLabel()}</div>
+			<p class="text-tertiary text-xs">{groups_edgeStyleHelp()}</p>
 
 			<div class="space-y-2">
 				{#each edgeStyleOptions as option (option.value)}
 					<button
 						type="button"
 						onclick={() => handleEdgeStyleChange(option.value)}
-						class="flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all hover:bg-gray-700/30"
-						class:border-gray-600={formData.edge_style !== option.value}
-						class:bg-gray-700-20={formData.edge_style !== option.value}
+						class="flex list-item w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all"
+						class:border-gray-300={formData.edge_style !== option.value}
+						class:dark:border-gray-600={formData.edge_style !== option.value}
 						class:border-blue-500={formData.edge_style === option.value}
 						class:bg-blue-900-20={formData.edge_style === option.value}
 						class:ring-1={formData.edge_style === option.value}
@@ -175,7 +175,8 @@
 					>
 						<div
 							class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all"
-							class:border-gray-500={formData.edge_style !== option.value}
+							class:border-gray-300={formData.edge_style !== option.value}
+							class:dark:border-gray-500={formData.edge_style !== option.value}
 							class:border-blue-500={formData.edge_style === option.value}
 							class:bg-blue-500={formData.edge_style === option.value}
 						>
@@ -185,8 +186,9 @@
 						</div>
 						<span
 							class="text-sm font-medium transition-colors"
-							class:text-gray-300={formData.edge_style !== option.value}
-							class:text-blue-400={formData.edge_style === option.value}
+							class:text-secondary={formData.edge_style !== option.value}
+							class:text-blue-600={formData.edge_style === option.value}
+							class:dark:text-blue-400={formData.edge_style === option.value}
 						>
 							{option.label}
 						</span>

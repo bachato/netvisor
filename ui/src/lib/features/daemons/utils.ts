@@ -5,7 +5,7 @@ import type { TagProps } from '$lib/shared/components/data/types';
 import { toColor } from '$lib/shared/utils/styling';
 import { CircleHelp } from 'lucide-svelte';
 
-export const DAEMON_STATUS_DOCS_URL = 'https://scanopy.net/docs/daemon-status';
+export const DAEMON_STATUS_DOCS_URL = 'https://scanopy.net/docs/reference/daemon-status/';
 
 /**
  * Returns the highest-priority status tag for a daemon.
@@ -31,6 +31,14 @@ export function getDaemonStatusTag(daemon: Daemon): TagProps {
 }
 
 export type DaemonOS = 'linux' | 'macos' | 'windows' | 'freebsd' | 'openbsd';
+
+export function slugifyNetworkName(name: string): string {
+	return name
+		.toLowerCase()
+		.replace(/[^a-z0-9-]/g, '-')
+		.replace(/-+/g, '-')
+		.replace(/^-|-$/g, '');
+}
 
 export function detectOS(): DaemonOS {
 	if (typeof navigator === 'undefined') return 'linux';

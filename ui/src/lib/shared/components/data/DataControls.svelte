@@ -977,7 +977,7 @@
 
 	<!-- Sticky Controls Bar -->
 	<div
-		class="sticky top-0 z-20 -mx-8 border-b bg-[#1a1d29] px-8 pb-4 {isStuck
+		class="sticky top-0 z-20 -mx-8 border-b bg-[var(--color-bg-body)] px-8 pb-4 {isStuck
 			? 'border-gray-700 pt-4 shadow-lg'
 			: 'border-transparent'}"
 	>
@@ -1123,7 +1123,7 @@
 
 		<!-- Filter Panel (inside sticky wrapper) -->
 		{#if showFilters}
-			<div class="mt-4 rounded-lg border border-gray-700 bg-gray-800/70 p-5">
+			<div class="card mt-4 !rounded-lg !p-5">
 				<div class="flex items-center justify-between">
 					<h3 class="text-primary text-sm font-semibold">{common_filters()}</h3>
 					{#if hasActiveFilters}
@@ -1150,7 +1150,7 @@
 											type="checkbox"
 											checked={filter?.showTrue}
 											onchange={() => toggleBooleanFilter(fieldKey, 'showTrue')}
-											class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
+											class="checkbox-card h-4 w-4 rounded"
 										/>
 										<span class="text-secondary text-sm">{common_showTrue()}</span>
 									</label>
@@ -1159,7 +1159,7 @@
 											type="checkbox"
 											checked={filter?.showFalse}
 											onchange={() => toggleBooleanFilter(fieldKey, 'showFalse')}
-											class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
+											class="checkbox-card h-4 w-4 rounded"
 										/>
 										<span class="text-secondary text-sm">{common_showFalse()}</span>
 									</label>
@@ -1197,7 +1197,7 @@
 													type="checkbox"
 													checked={filter?.values.has(value)}
 													onchange={() => toggleStringFilter(fieldKey, value)}
-													class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
+													class="checkbox-card h-4 w-4 rounded"
 												/>
 												<span class="text-secondary truncate text-sm" title={value}>{value}</span>
 											</label>

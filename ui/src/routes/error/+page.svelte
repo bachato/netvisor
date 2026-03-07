@@ -11,7 +11,7 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-900 p-8">
+<div class="flex min-h-screen items-center justify-center bg-[var(--color-bg-elevated)] p-8">
 	<div class="w-full max-w-md">
 		<div class="rounded-lg border border-red-600/30 bg-red-900/20 p-8 shadow-lg">
 			<div class="mb-6 flex items-center gap-3">

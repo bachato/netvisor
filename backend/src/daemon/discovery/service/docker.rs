@@ -6,7 +6,6 @@ use bollard::{
     query_parameters::{InspectContainerOptions, ListContainersOptions, ListNetworksOptions},
     secret::{ContainerInspectResponse, ContainerSummary, PortTypeEnum},
 };
-use cidr::IpCidr;
 use futures::future::try_join_all;
 use futures::stream::{self, StreamExt};
 use mac_address::MacAddress;
@@ -19,7 +18,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::daemon::discovery::service::base::RunsDiscovery;
 use crate::daemon::discovery::types::base::DiscoverySessionUpdate;
-use crate::daemon::utils::base::DaemonUtils;
+use crate::daemon::utils::base::{DaemonUtils, merge_host_and_docker_subnets};
 use crate::daemon::utils::scanner::scan_endpoints;
 use crate::server::bindings::r#impl::base::{Binding, BindingDiscriminants};
 use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback};
@@ -259,18 +258,9 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<DockerScanDiscovery> {
             .get_subnets_from_docker_networks(daemon_id, network_id, docker, self.discovery_type())
             .await?;
 
-        // Extract host CIDRs - host interfaces take precedence over Docker networks
-        let host_cidrs: std::collections::HashSet<IpCidr> =
-            host_subnets.iter().map(|s| s.base.cidr).collect();
-
-        // Filter out Docker subnets that overlap with host interface CIDRs
-        // Host interfaces determine the correct subnet type (e.g., br0 on Unraid is LAN, not DockerBridge)
-        let filtered_docker_subnets: Vec<Subnet> = docker_subnets
-            .into_iter()
-            .filter(|s| !host_cidrs.contains(&s.base.cidr))
-            .collect();
-
-        let subnets: Vec<Subnet> = [host_subnets, filtered_docker_subnets].concat();
+        // Merge host and Docker subnets — host subnets take precedence on CIDR overlap
+        // DockerBridge subnets are kept here since Docker discovery owns them
+        let subnets = merge_host_and_docker_subnets(host_subnets, docker_subnets);
 
         let subnet_futures = subnets
             .iter()

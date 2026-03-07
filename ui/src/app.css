@@ -5,6 +5,54 @@
 @reference "tailwindcss";
 
 @layer base {
+	:root {
+		--color-bg-body: #ffffff;
+		--color-bg-sidebar: #f8fafc;
+		--color-bg-surface: #ffffff;
+		--color-bg-surface-hover: #f1f5f9;
+		--color-bg-elevated: #ffffff;
+		--color-bg-input: #ffffff;
+		--color-border: #e2e8f0;
+		--color-border-input: #cbd5e1;
+		--color-text-primary: #0f172a;
+		--color-text-secondary: #334155;
+		--color-text-tertiary: #64748b;
+		--color-text-muted: #94a3b8;
+		--color-text-disabled: #cbd5e1;
+		--color-scrollbar-thumb: #cbd5e1;
+		--color-scrollbar-thumb-hover: #94a3b8;
+		--color-glass-bg: rgba(0, 0, 0, 0.03);
+		--color-glass-border: rgba(0, 0, 0, 0.08);
+		--gradient-text: linear-gradient(135deg, #334155 0%, #64748b 50%, #94a3b8 100%);
+		--color-topology-bg: #f8fafc;
+		--color-topology-node-bg: #ffffff;
+		--color-topology-zone: rgba(229, 231, 235, 0.2);
+	}
+
+	.dark {
+		--color-bg-body: #1a1d29;
+		--color-bg-sidebar: #15131e;
+		--color-bg-surface: rgba(31, 41, 55, 0.7);
+		--color-bg-surface-hover: rgba(55, 65, 81, 0.5);
+		--color-bg-elevated: #111827;
+		--color-bg-input: rgba(55, 65, 81, 0.5);
+		--color-border: #374151;
+		--color-border-input: #4b5563;
+		--color-text-primary: #ffffff;
+		--color-text-secondary: #d1d5db;
+		--color-text-tertiary: #9ca3af;
+		--color-text-muted: #6b7280;
+		--color-text-disabled: #4b5563;
+		--color-scrollbar-thumb: #374151;
+		--color-scrollbar-thumb-hover: #4b5563;
+		--color-glass-bg: rgba(255, 255, 255, 0.03);
+		--color-glass-border: rgba(255, 255, 255, 0.08);
+		--gradient-text: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 50%, #64748b 100%);
+		--color-topology-bg: #15131e;
+		--color-topology-node-bg: #1a1d29;
+		--color-topology-zone: rgba(17, 24, 39, 0.2);
+	}
+
 	html {
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	}
@@ -12,7 +60,7 @@
 	body {
 		margin: 0;
 		padding: 0;
-		background: #1a1d29;
+		background: var(--color-bg-body);
 		min-height: 100vh;
 	}
 }
@@ -30,57 +78,57 @@
 
 	/* Secondary action button - outlined, less prominent */
 	.btn-secondary {
-		@apply bg-transparent hover:bg-gray-800;
-		@apply border border-gray-700 hover:border-gray-600;
-		@apply rounded-md px-4 py-2 font-medium text-gray-400 hover:text-gray-200;
+		@apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
+		@apply border border-gray-300 hover:border-gray-400 dark:border-gray-700 dark:hover:border-gray-600;
+		@apply rounded-md px-4 py-2 font-medium text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center gap-2;
-		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-gray-700 disabled:hover:bg-transparent disabled:hover:text-gray-400;
+		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-600 dark:disabled:hover:border-gray-700 dark:disabled:hover:text-gray-400;
 	}
 
 	/* Destructive action button - for dangerous operations */
 	.btn-danger {
-		@apply bg-red-950/40 hover:bg-red-950/60;
-		@apply border border-red-800/50 hover:border-red-700;
-		@apply rounded-md px-4 py-2 font-medium text-red-400 hover:text-red-300;
+		@apply bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950/60;
+		@apply border border-red-300 hover:border-red-400 dark:border-red-800/50 dark:hover:border-red-700;
+		@apply rounded-md px-4 py-2 font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center gap-2;
-		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-red-800/50 disabled:hover:bg-red-950/40 disabled:hover:text-red-400;
+		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-red-300 disabled:hover:bg-red-50 disabled:hover:text-red-600 dark:disabled:hover:border-red-800/50 dark:disabled:hover:bg-red-950/40 dark:disabled:hover:text-red-400;
 	}
 
 	/* Success/confirmation action button - for positive operations */
 	.btn-success {
-		@apply bg-green-950/40 hover:bg-green-950/60;
-		@apply border border-green-800/50 hover:border-green-700;
-		@apply rounded-md px-4 py-2 font-medium text-green-400 hover:text-green-300;
+		@apply bg-green-50 hover:bg-green-100 dark:bg-green-950/40 dark:hover:bg-green-950/60;
+		@apply border border-green-300 hover:border-green-400 dark:border-green-800/50 dark:hover:border-green-700;
+		@apply rounded-md px-4 py-2 font-medium text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center gap-2;
-		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-green-800/50 disabled:hover:bg-green-950/40 disabled:hover:text-green-400;
+		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-green-300 disabled:hover:bg-green-50 disabled:hover:text-green-600 dark:disabled:hover:border-green-800/50 dark:disabled:hover:bg-green-950/40 dark:disabled:hover:text-green-400;
 	}
 
 	/* Warning action button - mirrors btn-danger pattern for yellow/warning states */
 	.btn-warning {
-		@apply bg-yellow-950/40 hover:bg-yellow-950/60;
-		@apply border border-yellow-800/50 hover:border-yellow-700;
-		@apply rounded-md px-4 py-2 font-medium text-yellow-400 hover:text-yellow-300;
+		@apply bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/40 dark:hover:bg-yellow-950/60;
+		@apply border border-yellow-300 hover:border-yellow-400 dark:border-yellow-800/50 dark:hover:border-yellow-700;
+		@apply rounded-md px-4 py-2 font-medium text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center gap-2;
-		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-yellow-800/50 disabled:hover:bg-yellow-950/40 disabled:hover:text-yellow-400;
+		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-yellow-300 disabled:hover:bg-yellow-50 disabled:hover:text-yellow-600 dark:disabled:hover:border-yellow-800/50 dark:disabled:hover:bg-yellow-950/40 dark:disabled:hover:text-yellow-400;
 	}
 
 	/* Info action button - mirrors btn-primary pattern for blue/info states */
 	.btn-info {
-		@apply bg-blue-950/40 hover:bg-blue-950/60;
-		@apply border border-blue-800/50 hover:border-blue-700;
-		@apply rounded-md px-4 py-2 font-medium text-blue-400 hover:text-blue-300;
+		@apply bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-950/60;
+		@apply border border-blue-300 hover:border-blue-400 dark:border-blue-800/50 dark:hover:border-blue-700;
+		@apply rounded-md px-4 py-2 font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center gap-2;
-		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-blue-800/50 disabled:hover:bg-blue-950/40 disabled:hover:text-blue-400;
+		@apply disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-blue-300 disabled:hover:bg-blue-50 disabled:hover:text-blue-600 dark:disabled:hover:border-blue-800/50 dark:disabled:hover:bg-blue-950/40 dark:disabled:hover:text-blue-400;
 	}
 
 	/* Icon buttons - minimal style for icon-only actions */
 	.btn-icon {
-		@apply text-tertiary hover:text-secondary rounded p-2 hover:bg-gray-800;
+		@apply text-tertiary hover:text-secondary rounded p-2 hover:bg-gray-100 dark:hover:bg-gray-800;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center;
 		@apply disabled:hover:text-tertiary disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent;
@@ -88,7 +136,7 @@
 
 	/* Icon button - danger variant */
 	.btn-icon-danger {
-		@apply text-tertiary rounded p-2 hover:text-red-400;
+		@apply text-tertiary rounded p-2 hover:text-red-600 dark:hover:text-red-400;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center;
 		@apply disabled:hover:text-tertiary disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent;
@@ -96,32 +144,36 @@
 
 	/* Icon button - info variant */
 	.btn-icon-info {
-		@apply rounded p-2 text-blue-400 hover:text-blue-300;
+		@apply rounded p-2 text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center;
-		@apply disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-blue-400;
+		@apply disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-blue-600 dark:disabled:hover:text-blue-400;
 	}
 
 	/* Icon button - success variant */
 	.btn-icon-success {
-		@apply rounded p-2 text-green-400 hover:text-green-300;
+		@apply rounded p-2 text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300;
 		@apply transition-colors duration-150;
 		@apply inline-flex items-center justify-center;
-		@apply disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-green-400;
+		@apply disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-green-600 dark:disabled:hover:text-green-400;
 	}
 
 	/* Card component */
 	.card {
-		@apply border border-gray-700 bg-gray-800/70 backdrop-blur-sm;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-surface);
+		@apply backdrop-blur-sm;
 		@apply rounded-2xl p-6 shadow-xl transition-all duration-300 ease-in-out;
 	}
 
 	.card:not(.card-static):not(.card-selected) {
-		@apply hover:ring-1 hover:ring-gray-700;
+		@apply hover:ring-1;
+		--tw-ring-color: var(--color-border);
 	}
 
 	.card-focused {
-		@apply bg-gray-700/50 hover:ring-gray-700;
+		background: var(--color-bg-surface-hover);
+		--tw-ring-color: var(--color-border);
 	}
 
 	.card-selected {
@@ -130,29 +182,33 @@
 	}
 
 	.checkbox-card {
-		@apply cursor-pointer rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500;
+		@apply cursor-pointer rounded text-blue-600 focus:ring-2 focus:ring-blue-500;
+		@apply border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-700;
 	}
 	/* Card dividers/borders */
 	.card-divider-h {
-		@apply border-t border-gray-700;
+		border-top: 1px solid var(--color-border);
 	}
 
 	.card-divider-v {
-		@apply border-r border-gray-700;
+		border-right: 1px solid var(--color-border);
 	}
 
 	/* Sidebar component */
 	.sidebar {
-		@apply fixed left-0 top-0 z-10 flex h-screen w-64 flex-col border-r border-gray-700;
-		background-color: #15131e;
+		@apply fixed left-0 top-0 z-10 flex h-screen w-64 flex-col;
+		border-right: 1px solid var(--color-border);
+		background-color: var(--color-bg-sidebar);
 	}
 
 	.sidebar-section {
-		@apply border-b border-gray-700 p-6;
+		@apply p-6;
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.sidebar-footer {
-		@apply border-t border-gray-700 p-4;
+		@apply p-4;
+		border-top: 1px solid var(--color-border);
 	}
 
 	/* Modal components */
@@ -164,11 +220,14 @@
 	}
 
 	.modal-container {
-		@apply w-full rounded-lg border border-gray-700 bg-gray-900 shadow-2xl;
+		@apply w-full rounded-lg shadow-2xl;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-elevated);
 	}
 
 	.modal-header {
-		@apply flex shrink-0 items-center justify-between border-b border-gray-700 p-6;
+		@apply flex shrink-0 items-center justify-between p-6;
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.modal-content {
@@ -176,15 +235,23 @@
 	}
 
 	.modal-footer {
-		@apply shrink-0 border-t border-gray-700 p-6;
+		@apply shrink-0 p-6;
+		border-top: 1px solid var(--color-border);
 	}
 
 	/* Form inputs */
 	.input-field {
-		@apply w-full rounded-md border border-gray-600 bg-gray-700/50 px-3 py-2 text-white;
-		@apply placeholder-gray-400 transition-colors duration-150;
+		@apply w-full rounded-md px-3 py-2;
+		border: 1px solid var(--color-border-input);
+		background: var(--color-bg-input);
+		color: var(--color-text-primary);
+		@apply transition-colors duration-150;
 		@apply focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500;
 		@apply disabled:cursor-not-allowed disabled:opacity-50;
+	}
+
+	.input-field::placeholder {
+		color: var(--color-text-muted);
 	}
 
 	.input-field-error {
@@ -193,18 +260,31 @@
 
 	/* Secondary input/select - transparent style for toolbars, matches btn-secondary */
 	.input-secondary {
-		@apply h-[42px] bg-transparent hover:bg-gray-800;
-		@apply border border-gray-700 hover:border-gray-600;
-		@apply rounded-md px-4 py-2 font-medium text-gray-400 hover:text-gray-200;
+		@apply h-[42px] bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
+		@apply border hover:border-gray-400 dark:hover:border-gray-600;
+		border-color: var(--color-border);
+		@apply rounded-md px-4 py-2 font-medium;
+		color: var(--color-text-tertiary);
 		@apply transition-colors duration-150;
 		@apply cursor-pointer appearance-none;
-		@apply focus:border-gray-600 focus:outline-none;
+		@apply focus:outline-none;
+	}
+
+	.input-secondary:hover {
+		color: var(--color-text-secondary);
+	}
+
+	.input-secondary:focus {
+		border-color: var(--color-border-input);
 	}
 
 	/* Dropdown/select components */
 	.select-trigger {
-		@apply flex w-full items-center justify-between rounded-md border border-gray-600 bg-gray-700/50;
-		@apply px-3 py-2 text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500;
+		@apply flex w-full items-center justify-between rounded-md;
+		border: 1px solid var(--color-border-input);
+		background: var(--color-bg-input);
+		color: var(--color-text-primary);
+		@apply px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500;
 		@apply transition-colors duration-150;
 		@apply disabled:cursor-not-allowed disabled:opacity-50;
 	}
@@ -214,23 +294,22 @@
 	}
 
 	.select-dropdown {
-		@apply rounded-md border border-gray-600 bg-gray-700 shadow-lg;
+		@apply rounded-md shadow-lg;
+		border: 1px solid var(--color-border-input);
+		background: var(--color-bg-elevated);
 	}
 
 	.select-option {
 		@apply w-full px-3 py-3 text-left transition-colors;
-		@apply hover:bg-gray-600;
+		@apply hover:bg-gray-100 dark:hover:bg-gray-600;
 		@apply disabled:cursor-not-allowed disabled:opacity-50;
 	}
 
 	.select-option-selected {
-		@apply border-l-2 border-blue-500 bg-purple-900/30;
+		@apply border-l-2 border-blue-500 bg-blue-50/30 dark:bg-purple-900/30;
 	}
 
-	/* Datetime picker styling */
-	input[type='datetime-local'] {
-		color-scheme: dark;
-	}
+	/* Datetime picker styling — colorScheme is set on <html> by the theme script */
 
 	/* Radio button styling */
 	input[type='radio'] {
@@ -244,75 +323,82 @@
 
 	/* List items (for ListSelectItem, cards, etc) */
 	.list-item {
-		@apply rounded-lg border border-gray-700 bg-gray-800/50 p-4;
+		@apply rounded-lg p-4;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-surface);
 		@apply transition-colors duration-150;
 	}
 
 	.list-item-selected {
-		@apply border-blue-500 bg-purple-900/20 ring-1 ring-blue-500;
+		@apply border-blue-500 ring-1 ring-blue-500;
+		@apply bg-blue-50/20 dark:bg-purple-900/20;
 	}
 
 	.list-item-hover {
-		@apply hover:border-gray-600 hover:bg-gray-700/50;
+		@apply hover:bg-gray-100 dark:hover:bg-gray-700/50;
+	}
+
+	.list-item-hover:hover {
+		border-color: var(--color-border-input);
 	}
 
 	/* Label/tag backgrounds (for topology nodes, etc) */
 	.label-dark {
-		@apply rounded-md border border-gray-600 bg-gray-800/95 px-2 py-1 shadow-lg backdrop-blur-sm;
+		@apply rounded-md px-2 py-1 shadow-lg backdrop-blur-sm;
+		border: 1px solid var(--color-border-input);
+		@apply bg-white/95 dark:bg-gray-800/95;
 	}
 
 	/* Text color utilities - semantic naming */
 	.text-primary {
-		@apply text-white;
+		color: var(--color-text-primary);
 	}
 
 	.text-secondary {
-		@apply text-gray-300;
+		color: var(--color-text-secondary);
 	}
 
 	.text-tertiary {
-		@apply text-gray-400;
+		color: var(--color-text-tertiary);
 	}
 
 	.text-muted {
-		@apply text-gray-500;
+		color: var(--color-text-muted);
 	}
 
 	.text-disabled {
-		@apply text-gray-600;
+		color: var(--color-text-disabled);
 	}
 
 	.text-link {
-		@apply font-medium text-blue-400 hover:text-blue-300;
+		@apply font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300;
 	}
 
 	/* Semantic text colors for status/actions */
 	.text-success {
-		@apply text-green-400;
+		@apply text-green-600 dark:text-green-400;
 	}
 
 	.text-warning {
-		@apply text-yellow-400;
+		@apply text-yellow-600 dark:text-yellow-400;
 	}
 
 	.text-danger {
-		@apply text-red-400;
+		@apply text-red-600 dark:text-red-400;
 	}
 
 	.text-info {
-		@apply text-blue-400;
+		@apply text-blue-600 dark:text-blue-400;
 	}
 
 	.text-accent {
-		@apply text-purple-400;
+		@apply text-purple-600 dark:text-purple-400;
 	}
 
 	/* Scrollbars */
-
-	/* Scrollbar styling for dark theme */
 	* {
 		scrollbar-width: thin;
-		scrollbar-color: #374151 transparent;
+		scrollbar-color: var(--color-scrollbar-thumb) transparent;
 	}
 
 	/* Webkit browsers (Chrome, Safari, Edge) */
@@ -326,19 +412,19 @@
 	}
 
 	::-webkit-scrollbar-thumb {
-		background-color: #374151;
+		background-color: var(--color-scrollbar-thumb);
 		border-radius: 4px;
 	}
 
 	::-webkit-scrollbar-thumb:hover {
-		background-color: #4b5563;
+		background-color: var(--color-scrollbar-thumb-hover);
 	}
 }
 
 @layer utilities {
 	/* Neutral gradient text */
 	.text-gradient {
-		background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 50%, #64748b 100%);
+		background: var(--gradient-text);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
@@ -353,9 +439,9 @@
 	}
 
 	.glass {
-		background: rgba(255, 255, 255, 0.03);
+		background: var(--color-glass-bg);
 		backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		border: 1px solid var(--color-glass-border);
 	}
 }
 

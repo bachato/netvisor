@@ -747,7 +747,7 @@ impl DiscoveryService {
         tracing::debug!(
             session_id = %update.session_id,
             phase = %update.phase,
-            progrsss = %update.progress,
+            progress = %update.progress,
             "Updated session",
         );
 

@@ -22,6 +22,9 @@ fn write_fixture<T: serde::Serialize>(items: &[T], filename: &str) {
         .parent()
         .expect("Failed to get parent directory")
         .join(format!("ui/src/lib/data/{filename}"));
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("Failed to create ui/src/lib/data/ directory");
+    }
     std::fs::write(&path, json).unwrap_or_else(|_| panic!("Failed to write {filename}"));
 }
 

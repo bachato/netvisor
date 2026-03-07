@@ -13,7 +13,6 @@
 	import OsSelector from './OsSelector.svelte';
 	import {
 		common_close,
-		common_docsLink,
 		common_stepNumber,
 		daemons_currentVersion,
 		daemons_dockerApplyChanges,
@@ -21,7 +20,8 @@
 		daemons_dockerLinuxOnly,
 		daemons_dockerLinuxOnlyBody,
 		daemons_dockerPinnedVersion,
-		daemons_docsMultipleDaemonsLinkText,
+		daemons_docsUpgradeMultipleDaemons,
+		daemons_docsUpgradeMultipleDaemonsLinkText,
 		daemons_latestVersion,
 		daemons_updateAvailable,
 		daemons_upgradeConfigPreserved,
@@ -123,7 +123,7 @@ docker compose up -d`;
 									<summary class="cursor-pointer hover:text-blue-400"
 										>{daemons_upgradeMultipleDaemons()}</summary
 									>
-									<div class="mt-2 space-y-2">
+									<div class="mt-2 space-y-2 text-xs">
 										<p>{daemons_upgradeMultipleDaemonsBody()}</p>
 										<CodeContainer
 											language="bash"
@@ -131,9 +131,9 @@ docker compose up -d`;
 											code={linuxConfigListCommand}
 										/>
 										<DocsHint
-											text={common_docsLink()}
-											href="https://scanopy.net/docs/multiple-daemons/"
-											linkText={daemons_docsMultipleDaemonsLinkText()}
+											text={daemons_docsUpgradeMultipleDaemons()}
+											href="https://scanopy.net/docs/guides/multiple-daemons/#upgrading"
+											linkText={daemons_docsUpgradeMultipleDaemonsLinkText()}
 										/>
 									</div>
 								</details>
@@ -186,13 +186,13 @@ docker compose up -d`;
 								<summary class="cursor-pointer hover:text-blue-400"
 									>{daemons_upgradeMultipleDaemons()}</summary
 								>
-								<div class="mt-2 space-y-2">
+								<div class="mt-2 space-y-2 text-xs">
 									<p>{daemons_upgradeMultipleDaemonsBody()}</p>
 									<CodeContainer language="bash" expandable={false} code={macosConfigListCommand} />
 									<DocsHint
-										text={common_docsLink()}
-										href="https://scanopy.net/docs/multiple-daemons/"
-										linkText={daemons_docsMultipleDaemonsLinkText()}
+										text={daemons_docsUpgradeMultipleDaemons()}
+										href="https://scanopy.net/docs/guides/multiple-daemons/#upgrading"
+										linkText={daemons_docsUpgradeMultipleDaemonsLinkText()}
 									/>
 								</div>
 							</details>
@@ -225,7 +225,7 @@ docker compose up -d`;
 								<summary class="cursor-pointer hover:text-blue-400"
 									>{daemons_upgradeMultipleDaemons()}</summary
 								>
-								<div class="mt-2 space-y-2">
+								<div class="mt-2 space-y-2 text-xs">
 									<p>{daemons_upgradeMultipleDaemonsBody()}</p>
 									<CodeContainer
 										language="powershell"
@@ -233,9 +233,9 @@ docker compose up -d`;
 										code={windowsConfigListCommand}
 									/>
 									<DocsHint
-										text={common_docsLink()}
-										href="https://scanopy.net/docs/multiple-daemons/"
-										linkText={daemons_docsMultipleDaemonsLinkText()}
+										text={daemons_docsUpgradeMultipleDaemons()}
+										href="https://scanopy.net/docs/guides/multiple-daemons/#upgrading"
+										linkText={daemons_docsUpgradeMultipleDaemonsLinkText()}
 									/>
 								</div>
 							</details>

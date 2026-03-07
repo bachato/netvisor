@@ -16,11 +16,11 @@ use crate::{
             storage::traits::Storable,
             types::entities::{DiscoveryMetadata, EntitySource},
         },
-        subnets::r#impl::{base::Subnet, types::SubnetTypeDiscriminants},
+        subnets::r#impl::base::Subnet,
     },
 };
 use crate::{
-    daemon::utils::base::DaemonUtils,
+    daemon::utils::base::{DaemonUtils, merge_host_and_docker_subnets},
     server::{
         hosts::r#impl::base::{Host, HostBase},
         services::r#impl::base::Service,
@@ -28,10 +28,8 @@ use crate::{
 };
 use anyhow::{Error, Result};
 use async_trait::async_trait;
-use cidr::IpCidr;
 use futures::future::join_all;
 use std::net::{IpAddr, Ipv4Addr};
-use strum::IntoDiscriminant;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
@@ -85,7 +83,8 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<SelfReportDiscovery> {
             "Network subnets gathered for self-report"
         );
 
-        // Get docker subnets to verify that subnet interface string matching filtered them correctly
+        // Get docker subnets so we can merge them with host subnets correctly
+        // Host subnets take precedence — Docker subnets with matching CIDRs are dropped
         let docker_proxy = self.as_ref().config_store.get_docker_proxy().await;
         let docker_proxy_ssl_info = self.as_ref().config_store.get_docker_proxy_ssl_info().await;
 
@@ -95,7 +94,7 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<SelfReportDiscovery> {
             .new_local_docker_client(docker_proxy, docker_proxy_ssl_info)
             .await;
 
-        let docker_cidrs = if let Ok(docker_client) = docker_client {
+        let docker_subnets = if let Ok(docker_client) = docker_client {
             tracing::debug!("Docker client available, fetching Docker networks");
             match self
                 .as_ref()
@@ -109,14 +108,12 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<SelfReportDiscovery> {
                 .await
             {
                 Ok(docker_subnets) => {
-                    let docker_cidrs: Vec<IpCidr> =
-                        docker_subnets.iter().map(|s| s.base.cidr).collect();
                     tracing::debug!(
-                        docker_subnet_count = docker_cidrs.len(),
-                        cidrs = ?docker_cidrs.iter().map(|c| c.to_string()).collect::<Vec<_>>(),
-                        "Docker subnets detected (will be excluded from self-report)"
+                        docker_subnet_count = docker_subnets.len(),
+                        cidrs = ?docker_subnets.iter().map(|s| s.base.cidr.to_string()).collect::<Vec<_>>(),
+                        "Docker subnets detected"
                     );
-                    docker_cidrs
+                    docker_subnets
                 }
                 Err(e) => {
                     tracing::warn!(
@@ -131,24 +128,13 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<SelfReportDiscovery> {
             Vec::new()
         };
 
-        // Filter out docker bridge subnets, those are handled in docker discovery
-        let subnets_to_create: Vec<Subnet> = subnets
+        // Merge host and Docker subnets — host subnets always win on CIDR overlap
+        let merged = merge_host_and_docker_subnets(subnets, docker_subnets);
+
+        // Filter out DockerBridge subnets — those are handled by Docker discovery
+        let subnets_to_create: Vec<Subnet> = merged
             .into_iter()
-            .filter(|s| {
-                let is_docker_bridge =
-                    s.base.subnet_type.discriminant() == SubnetTypeDiscriminants::DockerBridge;
-                let is_in_docker_cidrs = docker_cidrs.contains(&s.base.cidr);
-                let keep = !is_docker_bridge && !is_in_docker_cidrs;
-                if !keep {
-                    tracing::debug!(
-                        cidr = %s.base.cidr,
-                        is_docker_bridge,
-                        is_in_docker_cidrs,
-                        "Filtering out subnet (Docker-related)"
-                    );
-                }
-                keep
-            })
+            .filter(|s| !s.is_docker_bridge_subnet())
             .collect();
 
         tracing::info!(

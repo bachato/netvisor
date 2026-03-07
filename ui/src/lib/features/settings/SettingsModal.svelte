@@ -1,7 +1,7 @@
 <script lang="ts">
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
-	import { User, Building2, CreditCard, Settings } from 'lucide-svelte';
+	import { User, Building2, CreditCard, Settings, Monitor } from 'lucide-svelte';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
@@ -9,11 +9,13 @@
 	import AccountTab from './AccountTab.svelte';
 	import OrganizationTab from './OrganizationTab.svelte';
 	import BillingTab from './BillingTab.svelte';
+	import SystemTab from './SystemTab.svelte';
 	import {
 		common_account,
 		common_billing,
 		common_organization,
-		common_settings
+		common_settings,
+		common_system
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -61,7 +63,8 @@
 			label: common_billing(),
 			icon: CreditCard,
 			notification: billingNeedsAttention
-		}
+		},
+		{ id: 'system', label: common_system(), icon: Monitor }
 	]);
 
 	// Filter tabs based on permissions
@@ -120,6 +123,8 @@
 			<OrganizationTab bind:subView={orgSubView} onClose={handleClose} />
 		{:else if activeTab === 'billing'}
 			<BillingTab {isOpen} onClose={handleClose} {dismissible} />
+		{:else if activeTab === 'system'}
+			<SystemTab />
 		{/if}
 	</div>
 </GenericModal>

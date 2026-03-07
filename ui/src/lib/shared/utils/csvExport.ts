@@ -67,6 +67,39 @@ export async function downloadCsv(
 }
 
 /**
+ * Download topology export in Mermaid or Confluence format.
+ */
+export async function downloadTopologyExport(
+	topologyId: string,
+	format: 'mermaid' | 'confluence'
+): Promise<void> {
+	const baseUrl = getServerUrl();
+	const url = new URL(`/api/v1/topology/${topologyId}/export/${format}`, baseUrl);
+
+	const response = await fetch(url.toString(), {
+		method: 'GET',
+		credentials: 'include'
+	});
+
+	if (!response.ok) {
+		pushError(`Export failed: ${response.statusText}`);
+		throw new Error(`Export failed: ${response.statusText}`);
+	}
+
+	const blob = await response.blob();
+	const blobUrl = URL.createObjectURL(blob);
+	const link = document.createElement('a');
+	link.href = blobUrl;
+	const date = new Date().toISOString().split('T')[0];
+	const ext = format === 'mermaid' ? 'mmd' : 'txt';
+	link.download = `scanopy-topology-${date}.${ext}`;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	URL.revokeObjectURL(blobUrl);
+}
+
+/**
  * Download ZIP export for hosts with all children.
  * Returns a zip containing hosts.csv, interfaces.csv, ports.csv, services.csv, if_entries.csv
  */

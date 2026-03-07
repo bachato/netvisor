@@ -1365,7 +1365,14 @@ impl HostService {
         // Update hostname if not set
         if existing_host.base.hostname.is_none() && new_host_data.base.hostname.is_some() {
             has_updates = true;
-            existing_host.base.hostname = new_host_data.base.hostname;
+            existing_host.base.hostname = new_host_data.base.hostname.clone();
+
+            // Also update display name if it was auto-set to IP (not manually renamed)
+            if existing_host.base.name.parse::<std::net::IpAddr>().is_ok()
+                && let Some(ref hostname) = existing_host.base.hostname
+            {
+                existing_host.base.name = hostname.clone();
+            }
         }
 
         // Update SNMP fields if not set

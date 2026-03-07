@@ -318,7 +318,12 @@
 		panOnDrag={true}
 		zoomOnScroll={true}
 	>
-		<Background variant={BackgroundVariant.Dots} bgColor="#15131e" gap={50} size={1} />
+		<Background
+			variant={BackgroundVariant.Dots}
+			bgColor="var(--color-topology-bg)"
+			gap={50}
+			size={1}
+		/>
 
 		{#if showControls}
 			<Controls
@@ -326,7 +331,7 @@
 				showFitView={true}
 				showLock={false}
 				position="top-right"
-				class="!rounded !border !border-gray-600 !bg-gray-800 !shadow-lg [&_button:hover]:!bg-gray-600 [&_button]:!border-gray-600 [&_button]:!bg-gray-700 [&_button]:!text-gray-100"
+				class="!rounded !border !border-gray-300 !bg-white !shadow-lg dark:!border-gray-600 dark:!bg-gray-800 [&_button:hover]:!bg-gray-100 dark:[&_button:hover]:!bg-gray-600 [&_button]:!border-gray-300 [&_button]:!bg-gray-50 [&_button]:!text-gray-700 dark:[&_button]:!border-gray-600 dark:[&_button]:!bg-gray-700 dark:[&_button]:!text-gray-100"
 			/>
 		{/if}
 
@@ -349,7 +354,7 @@
 <style>
 	:global(.svelte-flow__attribution) {
 		background: transparent;
-		color: rgba(255, 255, 255, 0.15);
+		color: var(--color-text-disabled);
 		font-size: 10px;
 	}
 
@@ -363,11 +368,11 @@
 	}
 
 	:global(.svelte-flow__attribution a) {
-		color: rgba(255, 255, 255, 0.15);
+		color: var(--color-text-disabled);
 	}
 
 	:global(.svelte-flow__attribution a:hover) {
-		color: rgba(255, 255, 255, 0.3);
+		color: var(--color-text-muted);
 	}
 
 	.branding-badge {
@@ -377,7 +382,7 @@
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		color: rgba(255, 255, 255, 0.5);
+		color: var(--color-text-muted);
 		font-size: 12px;
 		text-decoration: none;
 		z-index: 5;
@@ -385,7 +390,7 @@
 	}
 
 	.branding-badge:hover {
-		color: rgba(255, 255, 255, 0.8);
+		color: var(--color-text-secondary);
 	}
 
 	:global(.hide-for-export .svelte-flow__attribution) {

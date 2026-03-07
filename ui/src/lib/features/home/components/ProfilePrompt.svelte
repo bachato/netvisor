@@ -73,7 +73,7 @@
 
 {#if visible}
 	<section>
-		<div class="rounded-lg border border-blue-600/30 bg-blue-900/20 p-4">
+		<div class="card card-static !rounded-lg !p-4">
 			<div class="flex items-center justify-between">
 				<div>
 					<h3 class="text-primary text-sm font-semibold">Tell us about your team</h3>

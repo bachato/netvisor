@@ -310,7 +310,7 @@
 
 <div class="space-y-4">
 	<!-- Helper text -->
-	<div class="rounded bg-gray-800/50 pt-2">
+	<div class="rounded pt-2" style="background: var(--color-bg-surface)">
 		<p class="text-tertiary text-[10px] leading-tight">
 			{topology_multiselectHelp()}
 		</p>

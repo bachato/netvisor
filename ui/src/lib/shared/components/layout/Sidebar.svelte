@@ -499,10 +499,10 @@
 	}
 
 	const inactiveButtonClass =
-		'text-tertiary hover:text-secondary hover:bg-gray-800 border border-[#15131e]';
+		'text-tertiary hover:text-secondary hover:bg-gray-100 dark:hover:bg-gray-800 border border-[var(--color-bg-sidebar)]';
 
 	const sectionHeaderClass =
-		'text-secondary hover:text-primary flex w-full items-center rounded-lg text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-gray-800/50';
+		'text-secondary hover:text-primary flex w-full items-center rounded-lg text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-gray-100/50 dark:hover:bg-gray-800/50';
 
 	const baseClasses = 'flex w-full items-center rounded-lg font-medium transition-colors';
 </script>
@@ -514,10 +514,10 @@
 >
 	<!-- Logo/Brand -->
 	<div class="flex min-h-0 flex-1 flex-col">
-		<div class="border-b border-gray-700 px-2 py-4">
+		<div class="border-b px-2 py-4" style="border-color: var(--color-border)">
 			<button
 				onclick={toggleCollapse}
-				class="text-tertiary hover:text-secondary flex w-full items-center rounded-lg transition-colors hover:bg-gray-800"
+				class="text-tertiary hover:text-secondary flex w-full items-center rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
 				style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 				aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 			>
@@ -565,7 +565,7 @@
 											<button
 												onclick={() => handleItemClick(item)}
 												class="{baseClasses} {activeTab === item.id
-													? 'text-primary border border-blue-600 bg-blue-700'
+													? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 													: inactiveButtonClass}"
 												style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 												title={collapsed ? item.label : ''}
@@ -583,7 +583,7 @@
 															<button
 																onclick={() => handleItemClick(child)}
 																class="{baseClasses} {activeTab === child.id
-																	? 'text-primary border border-blue-600 bg-blue-700'
+																	? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 																	: inactiveButtonClass}"
 																style="height: 2.25rem; padding: 0.375rem 0.75rem;"
 																title={collapsed ? child.label : ''}
@@ -609,7 +609,7 @@
 								onclick={() => handleItemClick(configItem)}
 								class="{baseClasses} {activeTab === configItem.id ||
 								(configItem.id === 'settings' && showSettings)
-									? 'text-primary border border-blue-600 bg-blue-700'
+									? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 									: inactiveButtonClass}"
 								style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 								title={collapsed ? configItem.label : ''}
@@ -627,7 +627,7 @@
 	</div>
 
 	<!-- Bottom Navigation -->
-	<div class="flex-shrink-0 border-t border-gray-700 px-2 py-2">
+	<div class="flex-shrink-0 border-t px-2 py-2" style="border-color: var(--color-border)">
 		<ul class="space-y-1">
 			{#if showUpgradeButton}
 				<li>
@@ -655,7 +655,7 @@
 							onclick={() => handleItemClick(item)}
 							class="{baseClasses} {activeTab === item.id ||
 							(item.id === 'settings' && showSettings)
-								? 'text-primary border border-blue-600 bg-blue-700'
+								? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 								: inactiveButtonClass}"
 							style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 							title={collapsed ? item.label : ''}

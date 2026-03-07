@@ -25,7 +25,7 @@ pub struct DaemonCli {
     #[arg(long)]
     network_id: Option<String>,
 
-    /// Port the daemon listens on. Combined with daemon URL for server to connect.
+    /// Port the daemon listens on.
     #[arg(short, long)]
     daemon_port: Option<u16>,
 
@@ -77,7 +77,7 @@ pub struct DaemonCli {
     #[arg(long)]
     allow_self_signed_certs: Option<bool>,
 
-    /// Base URL where server can reach daemon (without port). Port is specified separately.
+    /// Base URL where server can reach daemon
     #[arg(long)]
     daemon_url: Option<String>,
 
@@ -85,7 +85,7 @@ pub struct DaemonCli {
     #[arg(long)]
     user_id: Option<Uuid>,
 
-    /// Accept invalid TLS certificates when scanning endpoints. Defaults to true since scanners probe arbitrary internal services.
+    /// Accept invalid TLS certificates when scanning endpoints. Enabled by default since scanners probe arbitrary internal services.
     #[arg(long)]
     accept_invalid_scan_certs: Option<bool>,
 
@@ -782,7 +782,11 @@ mod tests {
     }
 
     fn normalize_text(s: &str) -> String {
-        s.split_whitespace().collect::<Vec<_>>().join(" ")
+        s.split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .trim_end_matches('.')
+            .to_string()
     }
 
     /// Regression test for https://github.com/scanopy/scanopy/issues/463

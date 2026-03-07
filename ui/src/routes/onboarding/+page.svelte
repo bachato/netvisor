@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { themeStore } from '$lib/shared/stores/theme.svelte';
 	import { ChevronLeft } from 'lucide-svelte';
 	import Toast from '$lib/shared/components/feedback/Toast.svelte';
 	import OrgNetworksModal from '$lib/features/auth/components/onboarding/OrgNetworksModal.svelte';
@@ -237,14 +238,16 @@
 	}
 </script>
 
-<div class="relative flex min-h-screen flex-col items-center bg-gray-900 p-4">
+<div class="relative flex min-h-screen flex-col items-center bg-[var(--color-bg-elevated)] p-4">
 	<!-- Background image with overlay -->
 	<div class="absolute inset-0 z-0">
 		<div
-			class="h-full w-full bg-cover bg-center bg-no-repeat blur-sm"
-			style="background-image: url('/images/diagram.png')"
+			class="h-full w-full bg-cover bg-center bg-no-repeat blur-[2px]"
+			style="background-image: url('/images/background-{themeStore.resolvedTheme}.png')"
 		></div>
-		<div class="absolute inset-0 bg-black/60"></div>
+		<div
+			class="absolute inset-0 {themeStore.resolvedTheme === 'dark' ? 'bg-black/30' : 'bg-white/15'}"
+		></div>
 	</div>
 
 	<!-- Progress Indicator - fixed position above modal (hidden for invite flow) -->
@@ -252,7 +255,7 @@
 		<div class="fixed left-1/2 top-2 z-[200] -translate-x-1/2 sm:top-6">
 			<div class="flex flex-col items-center gap-1">
 				<div
-					class="flex items-center gap-2 rounded-full bg-gray-800/90 px-4 py-2 shadow-lg backdrop-blur-sm"
+					class="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-lg backdrop-blur-sm dark:bg-gray-800/90"
 				>
 					{#if currentStepNumber() > 1}
 						<button
@@ -273,7 +276,7 @@
 							<div
 								class="h-2 w-2 rounded-full transition-colors {i < currentStepNumber()
 									? 'bg-primary-500'
-									: 'bg-gray-600'}"
+									: 'bg-gray-300 dark:bg-gray-600'}"
 							></div>
 						{/each}
 					</div>

@@ -77,6 +77,9 @@
 
 	function handleCloseCreateDaemon() {
 		showCreateDaemonModal = false;
+		if (daemonsData.length === 0) {
+			window.location.hash = 'home';
+		}
 	}
 
 	async function handleBulkDelete(ids: string[]) {

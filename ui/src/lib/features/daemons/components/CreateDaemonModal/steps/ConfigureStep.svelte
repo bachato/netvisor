@@ -3,6 +3,7 @@
 	import type { FormValue } from '$lib/shared/components/forms/validators';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
+	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
@@ -16,8 +17,6 @@
 	import {
 		common_name,
 		common_port,
-		daemons_activateAfterCreation,
-		daemons_activateAfterCreationBody,
 		daemons_config_daemonUrl,
 		daemons_config_daemonUrlHelpNoPort,
 		daemons_config_mode,
@@ -25,6 +24,8 @@
 		daemons_config_portHelpServerPoll,
 		daemons_networkCannotChange,
 		daemons_portForwardingHint,
+		daemons_docsPollingMode,
+		daemons_docsPollingModeLinkText,
 		daemons_httpDaemonUrlWarning
 	} from '$lib/paraglide/messages';
 
@@ -34,9 +35,9 @@
 		formValues: Record<string, string | number | boolean>;
 		selectedNetworkId: string;
 		onNetworkChange: (id: string) => void;
+		onNameInput?: () => void;
 		hasDaemonPoll: boolean;
 		keySet: boolean;
-		onboardingMode: boolean;
 	}
 
 	let {
@@ -44,9 +45,9 @@
 		formValues,
 		selectedNetworkId,
 		onNetworkChange,
+		onNameInput,
 		hasDaemonPoll,
-		keySet,
-		onboardingMode
+		keySet
 	}: Props = $props();
 
 	// Get validators for a field
@@ -89,32 +90,27 @@
 </script>
 
 <div class="space-y-4">
-	{#if onboardingMode}
-		<InlineInfo
-			title={daemons_activateAfterCreation()}
-			body={daemons_activateAfterCreationBody()}
-		/>
-	{:else}
-		<SelectNetwork
-			{selectedNetworkId}
-			onNetworkChange={(id) => onNetworkChange(id)}
-			disabled={keySet}
-			disabledReason={daemons_networkCannotChange()}
-		/>
-	{/if}
+	<SelectNetwork
+		{selectedNetworkId}
+		onNetworkChange={(id) => onNetworkChange(id)}
+		disabled={keySet}
+		disabledReason={daemons_networkCannotChange()}
+	/>
 
 	<!-- Name -->
-	<form.Field name={nameDef.id} validators={getValidators(nameDef.id)}>
-		{#snippet children(field: AnyFieldApi)}
-			<TextInput
-				label={common_name()}
-				{field}
-				id={nameDef.id}
-				placeholder={daemons_config_namePlaceholder()}
-				required={true}
-			/>
-		{/snippet}
-	</form.Field>
+	<div oninput={() => onNameInput?.()}>
+		<form.Field name={nameDef.id} validators={getValidators(nameDef.id)}>
+			{#snippet children(field: AnyFieldApi)}
+				<TextInput
+					label={common_name()}
+					{field}
+					id={nameDef.id}
+					placeholder={daemons_config_namePlaceholder()}
+					required={true}
+				/>
+			{/snippet}
+		</form.Field>
+	</div>
 
 	<!-- Mode -->
 	<form.Field name={modeDef.id}>
@@ -142,6 +138,12 @@
 			/>
 		{/snippet}
 	</form.Field>
+
+	<DocsHint
+		text={daemons_docsPollingMode()}
+		href="https://scanopy.net/docs/setting-up-daemons/planning-daemon-deployment/#choosing-a-polling-mode"
+		linkText={daemons_docsPollingModeLinkText()}
+	/>
 
 	<!-- Server Poll: URL + Port side-by-side with port forwarding hint -->
 	{#if isServerPoll}

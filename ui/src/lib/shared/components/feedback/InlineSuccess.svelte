@@ -18,7 +18,7 @@
 	{body}
 	{dismissableKey}
 	Icon={Info}
-	borderColor="border-green-600/30"
-	bgColor="bg-green-900/20"
+	borderColor="border-green-200 dark:border-green-600/30"
+	bgColor="bg-green-50 dark:bg-green-900/20"
 	textColor="text-success"
 />

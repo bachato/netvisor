@@ -454,7 +454,7 @@ async fn receive_work_request(
         return Err(ApiError::entity_access_denied::<Daemon>(daemon_id));
     }
 
-    // Reject work requests from daemons on standby (plan doesn't support DaemonPoll)
+    // Reject work requests from daemons on standby (inactivity)
     if daemon.base.standby {
         return Err(ApiError::coded(
             StatusCode::FORBIDDEN,

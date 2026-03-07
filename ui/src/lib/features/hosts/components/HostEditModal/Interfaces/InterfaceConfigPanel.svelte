@@ -108,7 +108,7 @@
 					<TextInput
 						label={common_ipAddress()}
 						id="interface_ip_{iface.id}"
-						placeholder={common_placeholderIpAddress()}
+						placeholder={subnet.cidr.includes(':') ? '2001:db8::1' : common_placeholderIpAddress()}
 						required={true}
 						helpText={hosts_interfaces_ipMustBeWithin({ cidr: subnet.cidr })}
 						{field}

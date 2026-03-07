@@ -33,6 +33,7 @@
 		common_unknownNetwork,
 		common_updated,
 		hosts_confirmBulkDelete,
+		hosts_fields_interfaceIp,
 		hosts_fields_virtualizedBy,
 		hosts_noHostsYet,
 		hosts_notVirtualized,
@@ -51,6 +52,7 @@
 	} from '../queries';
 	import { useServicesByIds, useServicesCacheQuery } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
+	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import type { components } from '$lib/api/schema';
@@ -89,6 +91,7 @@
 	);
 	const networksQuery = useNetworksQuery();
 	useDaemonsQuery();
+	const interfacesQuery = useInterfacesQuery();
 
 	// Selective service lookup - only fetches services needed for virtualization display
 	// Extract service IDs from visible hosts for "Virtualized By" field
@@ -114,6 +117,7 @@
 	const servicesCacheQuery = useServicesCacheQuery();
 	let allServicesData = $derived(servicesCacheQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
+	let interfacesData = $derived(interfacesQuery.data ?? []);
 	// Only show full loading on initial load (no data yet)
 	let isInitialLoading = $derived(hostsQuery.isPending && !hostsQuery.data);
 
@@ -199,6 +203,16 @@
 							}
 						}
 						return hosts_notVirtualized();
+					}
+				},
+				interface_ip: {
+					label: hosts_fields_interfaceIp(),
+					type: 'string',
+					getValue: (host) => {
+						const iface = interfacesData
+							.filter((i) => i.host_id === host.id)
+							.sort((a, b) => (a.position ?? 0) - (b.position ?? 0))[0];
+						return iface?.ip_address ?? '';
 					}
 				},
 				network_id: {

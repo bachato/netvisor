@@ -1,23 +1,19 @@
-//! OpenAPI documentation configuration
+//! OpenAPI spec generation
 //!
-//! Uses utoipa-axum for automatic route documentation and utoipa-scalar for the UI.
+//! Uses utoipa-axum for automatic route documentation.
 //! Routes and schemas are collected automatically from handlers via OpenApiRouter.
 //!
 //! Endpoints tagged with "internal" are included in the full spec (for client generation)
-//! but filtered out of the public Scalar documentation.
+//! but filtered out of the public spec.
 
-use axum::{Extension, Json, Router};
 use serde_json::json;
-use std::sync::Arc;
 use utoipa::OpenApi as OpenApiDerive;
 use utoipa::openapi::RefOr;
 use utoipa::openapi::schema::Schema;
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
 use utoipa::openapi::{Components, OpenApi, PathItem};
-use utoipa_scalar::{Scalar, Servable};
 
 use crate::server::bindings::r#impl::base::Binding;
-use crate::server::config::AppState;
 use crate::server::daemon_api_keys::r#impl::base::DaemonApiKey;
 use crate::server::daemons::handlers::DaemonOrderField;
 use crate::server::daemons::r#impl::base::Daemon;
@@ -382,28 +378,6 @@ pub fn filter_internal_paths(spec: &OpenApi) -> OpenApi {
     }
 
     filtered
-}
-
-/// Create the OpenAPI documentation router
-/// Takes the OpenAPI spec collected from handlers and merges it with schema definitions.
-///
-/// The full spec (including internal endpoints) is served at `/api/openapi.json` for client generation.
-/// The filtered spec (excluding internal endpoints) is served at `/api/docs` for public documentation.
-pub fn create_docs_router(paths_from_handlers: OpenApi) -> Router<Arc<AppState>> {
-    let full_openapi = Arc::new(build_openapi(paths_from_handlers));
-    let public_openapi = filter_internal_paths(&full_openapi);
-
-    Router::new()
-        // Scalar docs show only public endpoints
-        .merge(Scalar::with_url("/api/docs", public_openapi))
-        // Full spec for client generation (includes internal endpoints)
-        .route("/api/openapi.json", axum::routing::get(get_openapi_json))
-        .layer(Extension(full_openapi))
-}
-
-/// Returns the OpenAPI specification as JSON
-async fn get_openapi_json(Extension(openapi): Extension<Arc<OpenApi>>) -> Json<OpenApi> {
-    Json((*openapi).clone())
 }
 
 /// Export the OpenAPI spec to a file for client generation.

@@ -139,6 +139,23 @@ async fn main() -> anyhow::Result<()> {
         daemon_service.start_polling_loop().await;
     });
 
+    // Check for inactive daemons and put them on standby (daily)
+    let inactivity_state = state.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(24 * 60 * 60));
+        loop {
+            interval.tick().await;
+            if let Err(e) = inactivity_state
+                .services
+                .daemon_service
+                .check_daemon_inactivity(inactivity_state.services.email_service.as_deref())
+                .await
+            {
+                tracing::error!(error = %e, "Failed to check daemon inactivity");
+            }
+        }
+    });
+
     tracing::info!(target: LOG_TARGET, "  Background tasks started");
 
     let (base_router, _openapi) = create_router(state.clone());
@@ -391,6 +408,12 @@ async fn main() -> anyhow::Result<()> {
     }
     if state.services.oidc_service.is_some() {
         tracing::info!(target: LOG_TARGET, "  OIDC:            enabled");
+    }
+    if state.config.disable_password_login {
+        tracing::info!(target: LOG_TARGET, "  Password login:  disabled");
+        if state.services.oidc_service.is_none() {
+            tracing::warn!(target: LOG_TARGET, "  Password login is disabled but no OIDC providers are configured!");
+        }
     }
     if state.config.use_secure_session_cookies {
         tracing::info!(target: LOG_TARGET, "  Secure cookies:  enabled (HTTPS)");

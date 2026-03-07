@@ -25,6 +25,7 @@
 	import InlineSuccess from '$lib/shared/components/feedback/InlineSuccess.svelte';
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
 	import { generateShareUrl, generateEmbedCode } from '../queries';
+	import { Sun, Moon, Monitor } from 'lucide-svelte';
 	import {
 		common_cancel,
 		common_create,
@@ -40,6 +41,7 @@
 		common_password,
 		common_save,
 		common_saving,
+		common_theme,
 		common_width,
 		shares_accessControl,
 		shares_allowedDomainsHelp,
@@ -60,6 +62,9 @@
 		shares_passwordHelpCreate,
 		shares_passwordHelpEdit,
 		shares_passwordPlaceholder,
+		shares_shareThemeDefault,
+		shares_shareThemeLight,
+		shares_shareThemeDark,
 		shares_shareTopology,
 		shares_shareUrl,
 		shares_showExportButton,
@@ -100,6 +105,7 @@
 	let deleting = $state(false);
 	let createdShare = $state<Share | null>(null);
 	let scrollContainer: HTMLDivElement | null = $state(null);
+	let shareTheme = $state<'default' | 'light' | 'dark'>('default');
 
 	// Scroll to bottom when share is created to show the share URL
 	$effect(() => {
@@ -201,6 +207,7 @@
 	function handleOpen() {
 		form.reset(getDefaultValues());
 		createdShare = null;
+		shareTheme = 'default';
 	}
 
 	function handleClose() {
@@ -232,6 +239,10 @@
 	let embedWidth = $derived(parseInt(String(formValues.embed_width)) || 800);
 	let embedHeight = $derived(parseInt(String(formValues.embed_height)) || 600);
 	let shareId: string = $derived(createdShare?.id ?? share?.id ?? '');
+	let themeParam = $derived(shareTheme === 'default' ? undefined : shareTheme) as
+		| 'light'
+		| 'dark'
+		| undefined;
 </script>
 
 <GenericModal
@@ -396,7 +407,45 @@
 								/>
 							{/snippet}
 						</form.Field>
-						<span class="block text-sm font-medium text-gray-300">{shares_embedDimensions()}</span>
+						<div>
+							<span class="text-secondary mb-1 block text-sm font-medium">{common_theme()}</span>
+							<div class="flex gap-2">
+								<button
+									type="button"
+									class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme ===
+									'default'
+										? 'btn-primary'
+										: 'btn-secondary'}"
+									onclick={() => (shareTheme = 'default')}
+								>
+									<Monitor class="h-3.5 w-3.5" />
+									{shares_shareThemeDefault()}
+								</button>
+								<button
+									type="button"
+									class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme ===
+									'light'
+										? 'btn-primary'
+										: 'btn-secondary'}"
+									onclick={() => (shareTheme = 'light')}
+								>
+									<Sun class="h-3.5 w-3.5" />
+									{shares_shareThemeLight()}
+								</button>
+								<button
+									type="button"
+									class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme ===
+									'dark'
+										? 'btn-primary'
+										: 'btn-secondary'}"
+									onclick={() => (shareTheme = 'dark')}
+								>
+									<Moon class="h-3.5 w-3.5" />
+									{shares_shareThemeDark()}
+								</button>
+							</div>
+						</div>
+						<span class="text-secondary block text-sm font-medium">{shares_embedDimensions()}</span>
 						<div class="grid grid-cols-2 gap-4">
 							<form.Field name="embed_width">
 								{#snippet children(field)}
@@ -430,16 +479,17 @@
 								<InlineSuccess title={shares_created()} body={shares_createdHelp()} />
 							{/if}
 							<div>
-								<span class="mb-1 block text-sm font-medium text-gray-300">{shares_shareUrl()}</span
+								<span class="text-secondary mb-1 block text-sm font-medium"
+									>{shares_shareUrl()}</span
 								>
 								<CodeContainer
 									language="bash"
 									expandable={false}
-									code={generateShareUrl(shareId)}
+									code={generateShareUrl(shareId, themeParam)}
 								/>
 							</div>
 							<div class="space-y-2">
-								<span class="mb-1 block text-sm font-medium text-gray-300"
+								<span class="text-secondary mb-1 block text-sm font-medium"
 									>{shares_embedCode()}</span
 								>
 								{#if !hasEmbedsFeature}
@@ -451,7 +501,7 @@
 									<CodeContainer
 										language="html"
 										expandable={false}
-										code={generateEmbedCode(shareId, embedWidth, embedHeight)}
+										code={generateEmbedCode(shareId, embedWidth, embedHeight, themeParam)}
 									/>
 								{/if}
 							</div>

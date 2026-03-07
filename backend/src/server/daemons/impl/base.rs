@@ -49,7 +49,7 @@ pub struct DaemonBase {
     /// Set to true after repeated polling failures, reset via retry-connection endpoint.
     #[serde(default)]
     pub is_unreachable: bool,
-    /// Whether the daemon is on standby due to plan restrictions (DaemonPoll on Free plan).
+    /// Whether the daemon is on standby due to inactivity (no discovery in 30 days).
     #[serde(default)]
     #[schema(read_only)]
     pub standby: bool,

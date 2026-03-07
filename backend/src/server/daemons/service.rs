@@ -48,12 +48,10 @@ use crate::server::shared::storage::generic::GenericPostgresStorage;
 use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::api::{ApiError, ApiResponse};
 use crate::server::shared::types::entities::EntitySource;
-use crate::server::shared::types::error_codes::ErrorCode;
 use crate::server::snmp_credentials::r#impl::discovery::SnmpCredentialMapping;
 use crate::server::subnets::service::SubnetService;
 use crate::server::tags::entity_tags::EntityTagService;
 use crate::server::users::service::UserService;
-use axum::http::StatusCode;
 
 /// Weekly Sunday midnight cron schedule for default discovery jobs
 const WEEKLY_SUNDAY_MIDNIGHT_CRON: &str = "0 0 0 * * 0";
@@ -561,19 +559,6 @@ impl DaemonService {
 
         if matches!(org.base.plan, Some(BillingPlan::Demo(_))) {
             return Err(ApiError::demo_mode_blocked());
-        }
-
-        // Check DaemonPoll restriction
-        if request.mode == DaemonMode::DaemonPoll
-            && let Some(plan) = &org.base.plan
-            && !plan.features().daemon_poll
-        {
-            return Err(ApiError::coded(
-                StatusCode::FORBIDDEN,
-                ErrorCode::BillingFeatureNotAvailable {
-                    feature: "DaemonPoll".into(),
-                },
-            ));
         }
 
         tracing::info!("{:?}", request);
@@ -1456,5 +1441,124 @@ impl DaemonService {
             .as_ref()
             .map(|s| s.expose_secret().to_string())
             .ok_or_else(|| anyhow::anyhow!("API key {} has no stored plaintext", api_key_id))
+    }
+
+    // ========================================================================
+    // Inactivity standby
+    // ========================================================================
+
+    /// Check all active daemons for inactivity (no completed discovery in 30 days)
+    /// and put them on standby, sending notification emails if email service is available.
+    pub async fn check_daemon_inactivity(
+        &self,
+        email_service: Option<&crate::server::email::traits::EmailService>,
+    ) -> Result<()> {
+        let cutoff = Utc::now() - chrono::Duration::days(30);
+
+        // Get all non-standby daemons created more than 30 days ago
+        let active_daemons = self
+            .get_all(StorableFilter::<Daemon>::new_for_active_daemons().created_before(cutoff))
+            .await?;
+
+        for mut daemon in active_daemons {
+            // Check for historical discoveries completed by this daemon
+            let filter = StorableFilter::<Discovery>::new_from_uuid_column("daemon_id", &daemon.id)
+                .historical_discovery();
+            let discoveries = self.discovery_service.get_all(filter).await?;
+
+            // Find the most recent finished_at from Historical discoveries
+            let last_finished = discoveries
+                .iter()
+                .filter_map(|d| {
+                    if let RunType::Historical { ref results } = d.base.run_type {
+                        results.finished_at
+                    } else {
+                        None
+                    }
+                })
+                .max();
+
+            let should_standby = match last_finished {
+                Some(finished) => finished < cutoff,
+                None => true, // No historical records at all
+            };
+
+            if should_standby {
+                daemon.base.standby = true;
+                self.update(&mut daemon, AuthenticatedEntity::System)
+                    .await?;
+                tracing::info!(
+                    daemon_id = %daemon.id,
+                    "Set daemon to standby (inactive for 30+ days)"
+                );
+
+                // Send notification emails if email service is available
+                if let Some(email_service) = email_service
+                    && let Err(e) = self.send_standby_notification(&daemon, email_service).await
+                {
+                    tracing::warn!(
+                        daemon_id = %daemon.id,
+                        error = %e,
+                        "Failed to send daemon standby notification email"
+                    );
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Send standby notification email to org owner and daemon installer
+    async fn send_standby_notification(
+        &self,
+        daemon: &Daemon,
+        email_service: &crate::server::email::traits::EmailService,
+    ) -> Result<()> {
+        let network = self
+            .network_service
+            .get_by_id(&daemon.base.network_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Network not found"))?;
+
+        let org_id = network.base.organization_id;
+        let network_name = &network.base.name;
+        let daemon_name = &daemon.base.name;
+        let is_daemon_poll = daemon.base.mode == DaemonMode::DaemonPoll;
+
+        // Send to org owner
+        let owners = email_service
+            .user_service
+            .get_organization_owners(&org_id)
+            .await?;
+        let owner = owners
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("No owner found for organization {}", org_id))?;
+        email_service
+            .send_daemon_standby_email(
+                owner.base.email.clone(),
+                daemon_name,
+                network_name,
+                is_daemon_poll,
+            )
+            .await?;
+
+        // Also send to daemon installer if different from owner
+        if daemon.base.user_id != owner.id
+            && let Some(user) = email_service
+                .user_service
+                .get_by_id(&daemon.base.user_id)
+                .await?
+        {
+            email_service
+                .send_daemon_standby_email(
+                    user.base.email,
+                    daemon_name,
+                    network_name,
+                    is_daemon_poll,
+                )
+                .await?;
+        }
+
+        Ok(())
     }
 }

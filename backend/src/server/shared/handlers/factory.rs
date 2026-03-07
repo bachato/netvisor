@@ -2,7 +2,6 @@ use crate::server::auth::middleware::billing::require_billing_for_users;
 use crate::server::auth::middleware::fixture_capture::capture_fixtures_middleware;
 use crate::server::config::{__path_get_public_config, get_public_config};
 use crate::server::github::handlers::{__path_get_stars, get_stars};
-use crate::server::openapi::create_docs_router;
 use crate::server::shared::types::api::ApiResponse;
 use crate::server::{
     auth::handlers as auth_handlers, billing::handlers as billing_handlers,
@@ -183,7 +182,6 @@ pub fn create_router(state: Arc<AppState>) -> (Router<Arc<AppState>>, OpenApi) {
         .merge(exempt_router)
         .merge(legacy_entity_router)
         .merge(cacheable_routes)
-        .merge(create_docs_router(openapi.clone()))
         // Fixture capture middleware (no-op unless capture-fixtures feature is enabled)
         .layer(middleware::from_fn(capture_fixtures_middleware));
 

@@ -190,7 +190,7 @@
 								label={common_cidr()}
 								id="cidr"
 								{field}
-								placeholder="192.168.1.0/24"
+								placeholder="192.168.1.0/24 or 2001:db8::/32"
 								disabled={getIsCidrDisabled()}
 								helpText={subnets_cidrHelp()}
 								required

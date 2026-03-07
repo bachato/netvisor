@@ -235,7 +235,7 @@ impl DaemonRuntimeService {
                     }
                 }
                 Err(e) => {
-                    // Check if daemon has been put on standby (plan downgrade)
+                    // Check if daemon has been put on standby (inactivity)
                     if let Some(api_err) = e.downcast_ref::<ApiErrorResponse>()
                         && api_err.matches_error(&ApiError::coded(
                             axum::http::StatusCode::FORBIDDEN,
@@ -244,8 +244,8 @@ impl DaemonRuntimeService {
                     {
                         tracing::warn!(
                             target: LOG_TARGET,
-                            "Daemon is on standby — your plan does not support DaemonPoll mode. \
-                             Upgrade your plan and restart the daemon to resume. \
+                            "Daemon is on standby due to inactivity. \
+                             Queue a discovery session and restart the daemon. \
                              Waiting for shutdown signal (Ctrl+C)..."
                         );
                         tokio::signal::ctrl_c().await.ok();

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { CheckCircle, AlertCircle, CreditCard, AlertTriangle } from 'lucide-svelte';
+	import ProgressTrack from '$lib/shared/components/data/ProgressTrack.svelte';
 	import { reopenSettingsAfterBilling, upgradeContext } from '$lib/features/billing/stores';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
@@ -94,19 +95,19 @@
 	function getPlanStatusColor(status: string): string {
 		switch (status.toLowerCase()) {
 			case 'active':
-				return 'text-green-400';
+				return 'text-green-600 dark:text-green-400';
 			case 'trialing':
-				return 'text-blue-400';
+				return 'text-blue-600 dark:text-blue-400';
 			case 'past_due':
 			case 'unpaid':
-				return 'text-red-400';
+				return 'text-red-600 dark:text-red-400';
 			case 'pending_cancellation':
-				return 'text-amber-400';
+				return 'text-amber-600 dark:text-amber-400';
 			case 'canceled':
 			case 'incomplete':
-				return 'text-yellow-400';
+				return 'text-yellow-600 dark:text-yellow-400';
 			default:
-				return 'text-gray-400';
+				return 'text-gray-600 dark:text-gray-400';
 		}
 	}
 
@@ -198,9 +199,9 @@
 							<h3 class="text-primary text-sm font-semibold">{settings_billing_currentPlan()}</h3>
 							<div class="flex items-center gap-2">
 								{#if planActive}
-									<CheckCircle class="h-4 w-4 text-green-400" />
+									<CheckCircle class="h-4 w-4 text-green-600 dark:text-green-400" />
 								{:else}
-									<AlertCircle class="h-4 w-4 text-yellow-400" />
+									<AlertCircle class="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
 								{/if}
 								<span class={`text-sm font-medium ${getPlanStatusColor(org.plan_status || '')}`}>
 									{formatPlanStatus(org.plan_status || '')}
@@ -238,7 +239,7 @@
 
 								<!-- Seats Usage -->
 								{#if org.plan.included_seats !== null}
-									<div class="border-t border-gray-700 pt-3">
+									<div class="border-t pt-3" style="border-color: var(--color-border)">
 										<div class="flex items-baseline justify-between">
 											<div>
 												<p class="text-primary font-medium">{common_seats()}</p>
@@ -274,7 +275,7 @@
 
 								<!-- Networks Usage -->
 								{#if org.plan.included_networks !== null}
-									<div class="border-t border-gray-700 pt-3">
+									<div class="border-t pt-3" style="border-color: var(--color-border)">
 										<div class="flex items-baseline justify-between">
 											<div>
 												<p class="text-primary font-medium">{common_networks()}</p>
@@ -310,7 +311,7 @@
 
 								<!-- Hosts Usage -->
 								{#if org.plan.included_hosts !== null}
-									<div class="border-t border-gray-700 pt-3">
+									<div class="border-t pt-3" style="border-color: var(--color-border)">
 										<div class="flex items-baseline justify-between">
 											<div>
 												<p class="text-primary font-medium">Hosts</p>
@@ -319,24 +320,19 @@
 												</p>
 											</div>
 											{#if hostCount >= (org.plan.included_hosts ?? 0)}
-												<p class="text-sm text-amber-400">At limit</p>
+												<p class="text-sm text-amber-600 dark:text-amber-400">At limit</p>
 											{:else}
 												<p class="text-tertiary text-sm">{common_included()}</p>
 											{/if}
 										</div>
 										{#if hostCount > 0}
-											<div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
-												<div
-													class="h-full rounded-full transition-all {hostCount >=
-													(org.plan.included_hosts ?? 0)
-														? 'bg-amber-500'
-														: 'bg-blue-500'}"
-													style="width: {Math.min(
-														100,
-														(hostCount / (org.plan.included_hosts || 1)) * 100
-													)}%"
-												></div>
-											</div>
+											<ProgressTrack
+												class="mt-2 w-full"
+												progress={Math.min(100, (hostCount / (org.plan.included_hosts || 1)) * 100)}
+												color={hostCount >= (org.plan.included_hosts ?? 0)
+													? 'bg-amber-500'
+													: 'bg-blue-500'}
+											/>
 										{/if}
 									</div>
 								{/if}
@@ -395,7 +391,7 @@
 				<InfoCard title={settings_billing_needHelp()}>
 					<p class="text-secondary text-sm">
 						{settings_billing_contactUs()}
-						<a href="mailto:billing@scanopy.net" class="text-blue-400 hover:underline"
+						<a href="mailto:billing@scanopy.net" class="text-link hover:underline"
 							>billing@scanopy.net</a
 						>
 						{settings_billing_billingQuestions()}

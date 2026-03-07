@@ -7,6 +7,7 @@
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
+	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
 	import {
 		auth_demoModeBody,
 		auth_demoModeTitle,
@@ -14,6 +15,7 @@
 		auth_enterYourEmail,
 		auth_enterYourPassword,
 		auth_forgotYourPassword,
+		auth_passwordLoginDisabledNoProviders,
 		auth_registerHere,
 		auth_resetPassword,
 		auth_scanopyLogo,
@@ -58,6 +60,7 @@
 	let configData = $derived(configQuery.data);
 
 	let disableRegistration = $derived(configData?.disable_registration ?? false);
+	let disablePasswordLogin = $derived(configData?.disable_password_login ?? false);
 	let oidcProviders = $derived(configData?.oidc_providers ?? []);
 	let hasOidcProviders = $derived(oidcProviders.length > 0);
 	let enablePasswordReset = $derived(configData?.has_email_service ?? false);
@@ -119,95 +122,89 @@
 		}}
 		class="flex min-h-0 flex-1 flex-col"
 	>
-		<div class="flex-1 overflow-auto p-6">
-			{#if demoMode}
-				<div class="mb-6">
-					<InlineInfo title={auth_demoModeTitle()} body={auth_demoModeBody()} />
-					<div class="mt-3 rounded-md bg-gray-800 p-3 font-mono text-sm">
-						<div class="text-secondary">
-							<span class="text-gray-400">{common_demoEmail()}</span>
-							<span class="text-primary ml-2">demo@scanopy.net</span>
-						</div>
-						<div class="text-secondary mt-1">
-							<span class="text-gray-400">{common_demoPassword()}</span>
-							<span class="text-primary ml-2">password123</span>
+		<div class={disablePasswordLogin && hasOidcProviders ? 'p-0' : 'flex-1 overflow-auto p-6'}>
+			{#if disablePasswordLogin && !hasOidcProviders}
+				<div class="p-6">
+					<InlineDanger title={auth_passwordLoginDisabledNoProviders()} />
+				</div>
+			{:else if disablePasswordLogin && hasOidcProviders}
+				<!-- OIDC-only mode: no email form needed -->
+			{:else}
+				{#if demoMode}
+					<div class="mb-6">
+						<InlineInfo title={auth_demoModeTitle()} body={auth_demoModeBody()} />
+						<div class="card mt-3 !rounded-md !p-3 font-mono text-sm">
+							<div class="text-secondary">
+								<span class="text-tertiary">{common_demoEmail()}</span>
+								<span class="text-primary ml-2">demo@scanopy.net</span>
+							</div>
+							<div class="text-secondary mt-1">
+								<span class="text-tertiary">{common_demoPassword()}</span>
+								<span class="text-primary ml-2">password123</span>
+							</div>
 						</div>
 					</div>
-				</div>
-			{:else if orgName && invitedBy}
-				<div class="mb-6">
-					<InlineInfo
-						title={auth_youreInvitedTitle()}
-						body={auth_youreInvitedBody({ orgName, invitedBy })}
-					/>
+				{:else if orgName && invitedBy}
+					<div class="mb-6">
+						<InlineInfo
+							title={auth_youreInvitedTitle()}
+							body={auth_youreInvitedBody({ orgName, invitedBy })}
+						/>
+					</div>
+				{/if}
+
+				<div class="space-y-6">
+					<div class="space-y-4">
+						<form.Field
+							name="email"
+							validators={{
+								onBlur: ({ value }) => required(value) || email(value)
+							}}
+						>
+							{#snippet children(field)}
+								<TextInput
+									label={common_email()}
+									id="email"
+									{field}
+									placeholder={auth_enterYourEmail()}
+									required
+								/>
+							{/snippet}
+						</form.Field>
+
+						<form.Field
+							name="password"
+							validators={{
+								onBlur: ({ value }) => required(value)
+							}}
+						>
+							{#snippet children(field)}
+								<TextInput
+									label={common_password()}
+									id="password"
+									type="password"
+									{field}
+									placeholder={auth_enterYourPassword()}
+									required
+								/>
+							{/snippet}
+						</form.Field>
+					</div>
 				</div>
 			{/if}
-
-			<div class="space-y-6">
-				<div class="space-y-4">
-					<form.Field
-						name="email"
-						validators={{
-							onBlur: ({ value }) => required(value) || email(value)
-						}}
-					>
-						{#snippet children(field)}
-							<TextInput
-								label={common_email()}
-								id="email"
-								{field}
-								placeholder={auth_enterYourEmail()}
-								required
-							/>
-						{/snippet}
-					</form.Field>
-
-					<form.Field
-						name="password"
-						validators={{
-							onBlur: ({ value }) => required(value)
-						}}
-					>
-						{#snippet children(field)}
-							<TextInput
-								label={common_password()}
-								id="password"
-								type="password"
-								{field}
-								placeholder={auth_enterYourPassword()}
-								required
-							/>
-						{/snippet}
-					</form.Field>
-				</div>
-			</div>
 		</div>
 
 		<!-- Footer -->
 		<div class="modal-footer">
 			<div class="flex w-full flex-col gap-4">
-				<!-- Sign In Button -->
-				<button type="submit" disabled={signingIn} class="btn-primary w-full">
-					{signingIn ? auth_signingIn() : auth_signInWithEmail()}
-				</button>
-
-				<!-- OIDC Providers -->
-				{#if hasOidcProviders && !demoMode}
-					<div class="relative">
-						<div class="absolute inset-0 flex items-center">
-							<div class="w-full border-t border-gray-600"></div>
-						</div>
-						<div class="relative flex justify-center text-sm">
-							<span class="bg-gray-900 px-2 text-gray-400">{common_or()}</span>
-						</div>
-					</div>
-
+				{#if disablePasswordLogin && hasOidcProviders}
+					<!-- OIDC-only mode: show OIDC buttons as primary -->
 					<div class="space-y-2">
 						{#each oidcProviders as provider (provider.slug)}
 							<button
 								type="button"
 								onclick={() => handleOidcLogin(provider.slug)}
-								class="btn-secondary flex w-full items-center justify-center gap-3"
+								class="btn-primary flex w-full items-center justify-center gap-3"
 							>
 								{#if provider.logo}
 									<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
@@ -216,34 +213,66 @@
 							</button>
 						{/each}
 					</div>
+				{:else if !disablePasswordLogin}
+					<!-- Sign In Button -->
+					<button type="submit" disabled={signingIn} class="btn-primary w-full">
+						{signingIn ? auth_signingIn() : auth_signInWithEmail()}
+					</button>
+
+					<!-- OIDC Providers -->
+					{#if hasOidcProviders && !demoMode}
+						<div class="relative">
+							<div class="absolute inset-0 flex items-center">
+								<div class="w-full border-t" style="border-color: var(--color-border)"></div>
+							</div>
+							<div class="relative flex justify-center text-sm">
+								<span class="text-tertiary bg-[var(--color-bg-elevated)] px-2">{common_or()}</span>
+							</div>
+						</div>
+
+						<div class="space-y-2">
+							{#each oidcProviders as provider (provider.slug)}
+								<button
+									type="button"
+									onclick={() => handleOidcLogin(provider.slug)}
+									class="btn-secondary flex w-full items-center justify-center gap-3"
+								>
+									{#if provider.logo}
+										<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
+									{/if}
+									{auth_signInWith({ provider: provider.name })}
+								</button>
+							{/each}
+						</div>
+					{/if}
+
+					{#if enablePasswordReset && !demoMode}
+						<div class="text-center">
+							<p class="text-tertiary text-sm">
+								{auth_forgotYourPassword()}
+								<button
+									type="button"
+									onclick={onSwitchToForgot}
+									class="text-link font-medium hover:underline"
+								>
+									{auth_resetPassword()}
+								</button>
+							</p>
+						</div>
+					{/if}
 				{/if}
 
-				<!-- Register Link -->
+				<!-- Register Link (visible in both OIDC-only and normal mode) -->
 				{#if onSwitchToRegister && !disableRegistration && !demoMode}
 					<div class="text-center">
-						<p class="text-sm text-gray-400">
+						<p class="text-tertiary text-sm">
 							{auth_dontHaveAccount()}
 							<button
 								type="button"
 								onclick={onSwitchToRegister}
-								class="font-medium text-blue-400 hover:text-blue-300"
+								class="text-link font-medium hover:underline"
 							>
 								{auth_registerHere()}
-							</button>
-						</p>
-					</div>
-				{/if}
-
-				{#if enablePasswordReset && !demoMode}
-					<div class="text-center">
-						<p class="text-sm text-gray-400">
-							{auth_forgotYourPassword()}
-							<button
-								type="button"
-								onclick={onSwitchToForgot}
-								class="font-medium text-blue-400 hover:text-blue-300"
-							>
-								{auth_resetPassword()}
 							</button>
 						</p>
 					</div>

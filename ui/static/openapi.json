@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.11\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.11\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.13\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.13\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -1377,29 +1377,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse_u32"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/metadata": {
-      "get": {
-        "tags": [
-          "internal",
-          "metadata"
-        ],
-        "summary": "Get metadata registry",
-        "description": "Returns metadata about all entity types, service definitions, and other system metadata.",
-        "operationId": "get_metadata_registry",
-        "responses": {
-          "200": {
-            "description": "Metadata registry",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_MetadataRegistry"
                 }
               }
             }
@@ -11027,6 +11004,122 @@
         ]
       }
     },
+    "/api/v1/topology/{id}/export/confluence": {
+      "get": {
+        "tags": [
+          "Topologies",
+          "internal"
+        ],
+        "summary": "Export topology as Confluence wiki markup",
+        "operationId": "export_confluence",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Topology ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Confluence wiki markup export",
+            "content": {
+              "text/plain": {}
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Topology not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/topology/{id}/export/mermaid": {
+      "get": {
+        "tags": [
+          "Topologies",
+          "internal"
+        ],
+        "summary": "Export topology as Mermaid flowchart",
+        "operationId": "export_mermaid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Topology ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mermaid flowchart export",
+            "content": {
+              "text/plain": {}
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Topology not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/topology/{id}/lock": {
       "post": {
         "tags": [
@@ -12032,12 +12125,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.11"
+            "example": "0.14.13"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.14.11"
+          "server_version": "0.14.13"
         }
       },
       "ApiResponse": {
@@ -12111,14 +12204,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-03-05T04:02:04.250379Z",
-              "id": "66940136-927e-477e-bcd0-9843aa437d04",
+              "created_at": "2026-03-06T03:44:42.652404Z",
+              "id": "3a5bf462-8f34-4536-84e0-024c2dceafe7",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-05T04:02:04.250379Z"
+              "updated_at": "2026-03-06T03:44:42.652404Z"
             }
           },
           "error": {
@@ -12918,14 +13011,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-03-05T04:02:04.231896Z",
-                      "id": "72679b29-a4c1-4178-bc01-3a24fc7ff965",
+                      "created_at": "2026-03-06T03:44:42.634468Z",
+                      "id": "a00faadb-2961-4ec1-934d-595ead58489f",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-03-05T04:02:04.231896Z"
+                      "updated_at": "2026-03-06T03:44:42.634468Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12934,7 +13027,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Unifi Access Point",
+                  "service_definition": "NTP Server",
                   "source": {
                     "type": "Manual"
                   },
@@ -13121,111 +13214,6 @@
                 }
               }
             ]
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "meta": {
-            "$ref": "#/components/schemas/ApiMeta"
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ApiResponse_MetadataRegistry": {
-        "type": "object",
-        "required": [
-          "success",
-          "meta"
-        ],
-        "properties": {
-          "data": {
-            "type": "object",
-            "required": [
-              "service_definitions",
-              "subnet_types",
-              "edge_types",
-              "group_types",
-              "entities",
-              "ports",
-              "discovery_types",
-              "billing_plans",
-              "features",
-              "permissions",
-              "concepts"
-            ],
-            "properties": {
-              "billing_plans": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              },
-              "concepts": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/EntityMetadata"
-                }
-              },
-              "discovery_types": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              },
-              "edge_types": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              },
-              "entities": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/EntityMetadata"
-                }
-              },
-              "features": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              },
-              "group_types": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              },
-              "permissions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              },
-              "ports": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              },
-              "service_definitions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              },
-              "subnet_types": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TypeMetadata"
-                }
-              }
-            }
           },
           "error": {
             "type": [
@@ -13537,6 +13525,7 @@
             "required": [
               "server_port",
               "disable_registration",
+              "disable_password_login",
               "oidc_providers",
               "billing_enabled",
               "has_integrated_daemon",
@@ -13552,6 +13541,9 @@
               },
               "deployment_type": {
                 "$ref": "#/components/schemas/DeploymentType"
+              },
+              "disable_password_login": {
+                "type": "boolean"
               },
               "disable_registration": {
                 "type": "boolean"
@@ -13737,14 +13729,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-03-05T04:02:04.245110Z",
-                  "id": "0f5827f8-fab0-4d98-bbd1-c618c01854de",
+                  "created_at": "2026-03-06T03:44:42.647360Z",
+                  "id": "cc999907-1595-4ed7-a7c1-f567cb1e089d",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-05T04:02:04.245110Z"
+                  "updated_at": "2026-03-06T03:44:42.647360Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13753,7 +13745,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Unifi Access Point",
+              "service_definition": "NTP Server",
               "source": {
                 "type": "Manual"
               },
@@ -14952,14 +14944,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-03-05T04:02:04.232294Z",
-          "id": "5fb680b0-ae0f-4368-9fa2-443549dcbd15",
+          "created_at": "2026-03-06T03:44:42.634670Z",
+          "id": "d1830da5-bb9c-41be-a76a-94d0d95b0a08",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-03-05T04:02:04.232294Z"
+          "updated_at": "2026-03-06T03:44:42.634670Z"
         }
       },
       "BindingBase": {
@@ -15466,7 +15458,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Unifi Access Point",
+              "service_definition": "NTP Server",
               "tags": [],
               "virtualization": null
             }
@@ -15755,7 +15747,7 @@
           },
           "standby": {
             "type": "boolean",
-            "description": "Whether the daemon is on standby due to plan restrictions (DaemonPoll on Free plan).",
+            "description": "Whether the daemon is on standby due to inactivity (no discovery in 30 days).",
             "readOnly": true
           },
           "tags": {
@@ -16724,25 +16716,6 @@
           "Unknown"
         ]
       },
-      "EntityMetadata": {
-        "type": "object",
-        "required": [
-          "id",
-          "color",
-          "icon"
-        ],
-        "properties": {
-          "color": {
-            "$ref": "#/components/schemas/Color"
-          },
-          "icon": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          }
-        }
-      },
       "EntitySource": {
         "oneOf": [
           {
@@ -17144,7 +17117,8 @@
           "hostname",
           "updated_at",
           "virtualized_by",
-          "network_id"
+          "network_id",
+          "interface_ip"
         ]
       },
       "HostResponse": {
@@ -17356,14 +17330,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-03-05T04:02:04.231361Z",
-                  "id": "60ef6b2f-c60c-48a4-9c44-4930ba0680f4",
+                  "created_at": "2026-03-06T03:44:42.634203Z",
+                  "id": "9ad158ed-8abc-4369-9b2b-151cf2d399f3",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-05T04:02:04.231361Z"
+                  "updated_at": "2026-03-06T03:44:42.634203Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -17372,7 +17346,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Unifi Access Point",
+              "service_definition": "NTP Server",
               "source": {
                 "type": "Manual"
               },
@@ -18316,90 +18290,6 @@
         ],
         "description": "Match reason - either a simple reason string or a container with nested reasons"
       },
-      "MetadataRegistry": {
-        "type": "object",
-        "required": [
-          "service_definitions",
-          "subnet_types",
-          "edge_types",
-          "group_types",
-          "entities",
-          "ports",
-          "discovery_types",
-          "billing_plans",
-          "features",
-          "permissions",
-          "concepts"
-        ],
-        "properties": {
-          "billing_plans": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          },
-          "concepts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EntityMetadata"
-            }
-          },
-          "discovery_types": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          },
-          "edge_types": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          },
-          "entities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EntityMetadata"
-            }
-          },
-          "features": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          },
-          "group_types": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          },
-          "permissions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          },
-          "ports": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          },
-          "service_definitions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          },
-          "subnet_types": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TypeMetadata"
-            }
-          }
-        }
-      },
       "Neighbor": {
         "oneOf": [
           {
@@ -18951,7 +18841,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.11"
+            "example": "0.14.13"
           }
         },
         "example": {
@@ -18962,7 +18852,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.14.11"
+          "server_version": "0.14.13"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -19320,14 +19210,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-03-05T04:02:04.219241Z",
-                        "id": "23aa38b8-494b-4996-9272-a0fc268c8f01",
+                        "created_at": "2026-03-06T03:44:42.619646Z",
+                        "id": "3f2af319-6fc7-4709-bb29-cdb225829e87",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-03-05T04:02:04.219241Z"
+                        "updated_at": "2026-03-06T03:44:42.619646Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -19336,7 +19226,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Unifi Access Point",
+                    "service_definition": "NTP Server",
                     "source": {
                       "type": "Manual"
                     },
@@ -19413,14 +19303,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-03-05T04:02:04.243707Z",
-                    "id": "2ad01715-437a-4116-806b-06f7d63235ab",
+                    "created_at": "2026-03-06T03:44:42.646395Z",
+                    "id": "d7edf167-6eae-4033-a53d-868854ac0009",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-03-05T04:02:04.243707Z"
+                    "updated_at": "2026-03-06T03:44:42.646395Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -19429,7 +19319,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Unifi Access Point",
+                "service_definition": "NTP Server",
                 "source": {
                   "type": "Manual"
                 },
@@ -20212,6 +20102,7 @@
         "required": [
           "server_port",
           "disable_registration",
+          "disable_password_login",
           "oidc_providers",
           "billing_enabled",
           "has_integrated_daemon",
@@ -20227,6 +20118,9 @@
           },
           "deployment_type": {
             "$ref": "#/components/schemas/DeploymentType"
+          },
+          "disable_password_login": {
+            "type": "boolean"
           },
           "disable_registration": {
             "type": "boolean"
@@ -20512,14 +20406,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-03-05T04:02:04.232164Z",
-              "id": "bae1d565-6e87-48c0-8af9-43af83cdcca7",
+              "created_at": "2026-03-06T03:44:42.634603Z",
+              "id": "663c61e0-39fc-4e21-a4ba-01a25a0667d3",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-05T04:02:04.232164Z"
+              "updated_at": "2026-03-06T03:44:42.634603Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20528,7 +20422,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Unifi Access Point",
+          "service_definition": "NTP Server",
           "source": {
             "type": "Manual"
           },
@@ -21740,51 +21634,6 @@
           "Udp",
           "Tcp"
         ]
-      },
-      "TypeMetadata": {
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "category",
-          "icon",
-          "color",
-          "metadata"
-        ],
-        "properties": {
-          "category": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "color": {
-            "$ref": "#/components/schemas/Color"
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "icon": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "id": {
-            "type": "string"
-          },
-          "metadata": {},
-          "name": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
       },
       "UpdateHostRequest": {
         "type": "object",

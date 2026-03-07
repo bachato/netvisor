@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { X, Plus } from 'lucide-svelte';
+	import { Plus } from 'lucide-svelte';
+	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import {
 		useTagsQuery,
 		useCreateTagMutation,
@@ -13,12 +14,7 @@
 	import { permissions } from '$lib/shared/stores/metadata';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { onMount } from 'svelte';
-	import {
-		common_creating,
-		common_unknown,
-		tags_addTag,
-		tags_createTagQuoted
-	} from '$lib/paraglide/messages';
+	import { common_creating, tags_addTag, tags_createTagQuoted } from '$lib/paraglide/messages';
 
 	/**
 	 * Compact inline tag picker for use in cards and bulk actions.
@@ -233,38 +229,13 @@
 	<!-- Selected tags -->
 	{#each selectedTagIds as tagId (tagId)}
 		{@const tag = getTag(tagId)}
-		{#if tag}
-			{@const colorHelper = createColorHelper(tag.color)}
-			<span
-				class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium {colorHelper.bg} {colorHelper.text}"
-			>
-				{tag.name}
-				{#if !disabled && (onRemove || isEntityMode)}
-					<button
-						type="button"
-						onclick={() => handleRemoveTag(tagId)}
-						class="rounded-full p-0.5 transition-colors hover:bg-white/20"
-					>
-						<X class="h-3 w-3" />
-					</button>
-				{/if}
-			</span>
-		{:else}
-			<span
-				class="inline-flex items-center gap-1 rounded-full bg-gray-600 px-2 py-0.5 text-xs font-medium text-gray-300"
-			>
-				{common_unknown()}
-				{#if !disabled && (onRemove || isEntityMode)}
-					<button
-						type="button"
-						onclick={() => handleRemoveTag(tagId)}
-						class="rounded-full p-0.5 transition-colors hover:bg-white/20"
-					>
-						<X class="h-3 w-3" />
-					</button>
-				{/if}
-			</span>
-		{/if}
+		<Tag
+			label={tag?.name}
+			color={tag?.color}
+			pill={true}
+			removable={!disabled && !!(onRemove || isEntityMode)}
+			onRemove={() => handleRemoveTag(tagId)}
+		/>
 	{/each}
 
 	<!-- Add button / dropdown -->
@@ -277,7 +248,8 @@
 					bind:value={inputValue}
 					type="text"
 					placeholder={tags_addTag()}
-					class="h-5 w-24 rounded-full border border-gray-600 bg-gray-700 px-2 text-xs text-gray-200 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					class="h-5 w-24 rounded-full px-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+					style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
 					onfocus={() => (isDropdownOpen = true)}
 					onblur={handleBlur}
 					onkeydown={handleKeydown}
@@ -287,7 +259,7 @@
 				<button
 					type="button"
 					onclick={handleAddClick}
-					class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-gray-500 text-gray-400 transition-colors hover:border-gray-400 hover:text-gray-300"
+					class="text-tertiary hover:text-secondary inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-gray-400 transition-colors dark:border-gray-500"
 				>
 					<Plus class="h-3 w-3" />
 				</button>
@@ -300,14 +272,15 @@
 {#if showDropdown && portalContainer}
 	<div
 		use:portal
-		class="fixed z-[9999] max-h-48 min-w-40 overflow-y-auto rounded-md border border-gray-600 bg-gray-700 shadow-lg"
+		class="select-dropdown fixed z-[9999] max-h-48 min-w-40 overflow-y-auto rounded-md shadow-lg"
 		style="top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
 	>
 		<!-- Create new tag option -->
 		{#if showCreateOption}
 			<button
 				type="button"
-				class="flex w-full items-center gap-2 border-b border-gray-600 px-3 py-2 text-left text-xs transition-colors hover:bg-gray-600"
+				class="select-option flex w-full items-center gap-2 border-b px-3 py-2 text-left text-xs transition-colors"
+				style="border-color: var(--color-border)"
 				onmousedown={handleCreateTag}
 				disabled={isCreating}
 			>
@@ -323,7 +296,7 @@
 			{@const colorHelper = createColorHelper(tag.color)}
 			<button
 				type="button"
-				class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-gray-600"
+				class="select-option flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors"
 				onmousedown={() => handleAddTag(tag.id)}
 			>
 				<span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {colorHelper.rgb};"

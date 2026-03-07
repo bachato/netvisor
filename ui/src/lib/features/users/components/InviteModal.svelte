@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createForm } from '@tanstack/svelte-form';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
+	import SectionPanel from '$lib/shared/components/layout/SectionPanel.svelte';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import {
 		UserPlus,
@@ -247,9 +248,9 @@
 							</div>
 
 							<!-- URL Display -->
-							<div class="rounded-md border border-gray-600 bg-gray-800/50 p-3">
+							<SectionPanel class="!rounded-md !p-3">
 								<code class="text-primary block break-all text-sm">{formatInviteUrl(invite)}</code>
-							</div>
+							</SectionPanel>
 
 							<!-- Copy Button -->
 							{#if isSecureContext}
