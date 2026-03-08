@@ -206,8 +206,8 @@
 		<EmptyState
 			title={userApiKeys_noApiKeysYet()}
 			subtitle={userApiKeys_noApiKeysSubtitle()}
-			onClick={handleCreate}
-			cta={common_create()}
+			onClick={isEmailVerified ? handleCreate : undefined}
+			cta={isEmailVerified ? common_create() : undefined}
 		/>
 	{:else}
 		<DataControls
