@@ -991,6 +991,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             scan_rate_pps,
             subnet.base.cidr,
             gateway_ips.to_vec(),
+            snmp_credential.as_ref(),
         )
         .await?;
         open_ports.extend(udp_ports);
