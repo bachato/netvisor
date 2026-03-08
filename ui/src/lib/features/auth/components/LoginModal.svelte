@@ -5,6 +5,7 @@
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import type { LoginRequest } from '../types/base';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
+	import { Loader2 } from 'lucide-svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
@@ -55,6 +56,7 @@
 	}: Props = $props();
 
 	let signingIn = $state(false);
+	let oidcLoadingSlug = $state<string | null>(null);
 
 	const configQuery = useConfigQuery();
 	let configData = $derived(configQuery.data);
@@ -90,6 +92,7 @@
 	}
 
 	function handleOidcLogin(providerSlug: string) {
+		oidcLoadingSlug = providerSlug;
 		const returnUrl = encodeURIComponent(window.location.origin);
 		window.location.href = `/api/auth/oidc/${providerSlug}/authorize?flow=login&return_url=${returnUrl}`;
 	}
@@ -204,9 +207,12 @@
 							<button
 								type="button"
 								onclick={() => handleOidcLogin(provider.slug)}
+								disabled={oidcLoadingSlug !== null}
 								class="btn-primary flex w-full items-center justify-center gap-3"
 							>
-								{#if provider.logo}
+								{#if oidcLoadingSlug === provider.slug}
+									<Loader2 class="h-5 w-5 animate-spin" />
+								{:else if provider.logo}
 									<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
 								{/if}
 								{auth_signInWith({ provider: provider.name })}
@@ -235,9 +241,12 @@
 								<button
 									type="button"
 									onclick={() => handleOidcLogin(provider.slug)}
+									disabled={oidcLoadingSlug !== null}
 									class="btn-secondary flex w-full items-center justify-center gap-3"
 								>
-									{#if provider.logo}
+									{#if oidcLoadingSlug === provider.slug}
+										<Loader2 class="h-5 w-5 animate-spin" />
+									{:else if provider.logo}
 										<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
 									{/if}
 									{auth_signInWith({ provider: provider.name })}

@@ -2,10 +2,11 @@
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import TopologyViewer from './visualization/TopologyViewer.svelte';
 	import TopologyOptionsPanel from './panel/TopologyOptionsPanel.svelte';
-	import { Edit, Globe, Lock, Plus, Radio, RefreshCcw, Share2, Trash2 } from 'lucide-svelte';
+	import { Edit, Lock, Plus, Radio, RefreshCcw, Share2, Trash2 } from 'lucide-svelte';
 	import ExportButton from './ExportButton.svelte';
 	import ExportModal from './ExportModal.svelte';
 	import ShareModal from '$lib/features/shares/components/ShareModal.svelte';
+	import { tooltip } from '$lib/features/billing/tooltip';
 	import { SvelteFlowProvider } from '@xyflow/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
@@ -55,8 +56,7 @@
 		topology_lockedTimestamp,
 		topology_noTopologySelected,
 		topology_staleData,
-		topology_staleDataBody,
-		topology_submitToCommunity
+		topology_staleDataBody
 	} from '$lib/paraglide/messages';
 
 	let { isReadOnly = false, isActive = false }: TabProps = $props();
@@ -183,6 +183,11 @@
 		}
 
 		if (onboarding.includes('FirstTopologyRebuild')) {
+			return;
+		}
+
+		// Don't auto-rebuild in manual mode — user controls when rebuilds happen
+		if (!$autoRebuild) {
 			return;
 		}
 
@@ -337,19 +342,22 @@
 				<div class="flex items-center gap-4 py-2">
 					<ExportButton onclick={() => (isExportModalOpen = true)} />
 					{#if !isReadOnly}
-						<button class="btn-secondary" onclick={() => openModal('topology-share')}>
-							<Share2 class="my-1 h-5 w-5" />
-						</button>
+						{#if currentUser && !currentUser.email_verified}
+							<span data-tooltip="Please verify email to share topology" use:tooltip>
+								<button class="btn-secondary opacity-50" disabled title="Share">
+									<Share2 class="my-1 h-5 w-5" />
+								</button>
+							</span>
+						{:else}
+							<button
+								class="btn-secondary"
+								onclick={() => openModal('topology-share')}
+								title="Share"
+							>
+								<Share2 class="my-1 h-5 w-5" />
+							</button>
+						{/if}
 					{/if}
-					<a
-						href="https://tally.so/r/lbqLAv"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="btn-secondary"
-						title={topology_submitToCommunity()}
-					>
-						<Globe class="my-1 h-5 w-5" />
-					</a>
 				</div>
 
 				{#if !isReadOnly}

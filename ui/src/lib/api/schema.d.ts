@@ -2762,7 +2762,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.14.13"
+         *       "server_version": "0.14.15"
          *     }
          */
         ApiMeta: {
@@ -2773,7 +2773,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.14.13
+             * @example 0.14.15
              */
             server_version: string;
         };
@@ -2787,14 +2787,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-06T03:44:42.652404Z",
-             *       "id": "3a5bf462-8f34-4536-84e0-024c2dceafe7",
+             *       "created_at": "2026-03-07T23:38:51.737244Z",
+             *       "id": "4951de81-439b-47a7-90cf-66864f2cb15f",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-06T03:44:42.652404Z"
+             *       "updated_at": "2026-03-07T23:38:51.737244Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3042,14 +3042,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-06T03:44:42.634468Z",
-             *               "id": "a00faadb-2961-4ec1-934d-595ead58489f",
+             *               "created_at": "2026-03-07T23:38:51.721021Z",
+             *               "id": "9e329198-7ab1-4319-a7a4-233ead1b60bf",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-06T03:44:42.634468Z"
+             *               "updated_at": "2026-03-07T23:38:51.721021Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3058,7 +3058,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "NTP Server",
+             *           "service_definition": "Sonos Speaker",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3314,14 +3314,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-06T03:44:42.647360Z",
-             *           "id": "cc999907-1595-4ed7-a7c1-f567cb1e089d",
+             *           "created_at": "2026-03-07T23:38:51.732728Z",
+             *           "id": "6c57a831-b290-4f2e-9022-bf79b759629d",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-06T03:44:42.647360Z"
+             *           "updated_at": "2026-03-07T23:38:51.732728Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3330,7 +3330,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "NTP Server",
+             *       "service_definition": "Sonos Speaker",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3633,14 +3633,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-06T03:44:42.634670Z",
-         *       "id": "d1830da5-bb9c-41be-a76a-94d0d95b0a08",
+         *       "created_at": "2026-03-07T23:38:51.721328Z",
+         *       "id": "b1012ea7-38e6-41b1-b08d-0bc655809d43",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-06T03:44:42.634670Z"
+         *       "updated_at": "2026-03-07T23:38:51.721328Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3822,7 +3822,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "NTP Server",
+         *           "service_definition": "Sonos Speaker",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4460,14 +4460,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-06T03:44:42.634203Z",
-         *               "id": "9ad158ed-8abc-4369-9b2b-151cf2d399f3",
+         *               "created_at": "2026-03-07T23:38:51.720612Z",
+         *               "id": "465158d1-281d-4af6-9c89-174e633c4da2",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-06T03:44:42.634203Z"
+         *               "updated_at": "2026-03-07T23:38:51.720612Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4476,7 +4476,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "NTP Server",
+         *           "service_definition": "Sonos Speaker",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5013,7 +5013,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.14.13"
+         *       "server_version": "0.14.15"
          *     }
          */
         PaginatedApiMeta: {
@@ -5026,7 +5026,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.14.13
+             * @example 0.14.15
              */
             server_version: string;
         };
@@ -5454,14 +5454,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-06T03:44:42.634603Z",
-         *           "id": "663c61e0-39fc-4e21-a4ba-01a25a0667d3",
+         *           "created_at": "2026-03-07T23:38:51.721218Z",
+         *           "id": "0f5e6ad7-22d6-4baf-ab1a-bebef98e7ab9",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-06T03:44:42.634603Z"
+         *           "updated_at": "2026-03-07T23:38:51.721218Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5470,7 +5470,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "NTP Server",
+         *       "service_definition": "Sonos Speaker",
          *       "source": {
          *         "type": "Manual"
          *       },

@@ -72,12 +72,16 @@
 	const organizationQuery = useOrganizationQuery();
 	let organization = $derived(organizationQuery.data);
 
+	let isCurrentlyTrialing = $derived(organization?.plan_status === 'trialing');
+
 	// Only show trial offers to orgs that have never had a non-Free paid plan and never trialed.
 	// trial_end_date is set by Stripe webhook only for subscriptions with trial periods
 	// (Free plan has trial_days=0, so it never sets trial_end_date).
+	// Trialing users are NOT returning — they should see trial-aware UI instead.
 	let isReturningCustomer = $derived(
-		(organization?.plan != null && organization.plan.type !== 'Free') ||
-			!!organization?.trial_end_date
+		!isCurrentlyTrialing &&
+			((organization?.plan != null && organization.plan.type !== 'Free') ||
+				!!organization?.trial_end_date)
 	);
 
 	// Mutations
@@ -184,6 +188,7 @@
 			{initialPlanFilter}
 			{recommendedPlan}
 			{isReturningCustomer}
+			{isCurrentlyTrialing}
 		/>
 	</div>
 

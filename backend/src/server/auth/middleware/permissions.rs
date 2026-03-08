@@ -37,9 +37,10 @@ pub trait PermissionRequirement: Send + Sync + 'static {
     fn description() -> &'static str;
 
     /// Whether this requirement allows unverified email users.
-    /// Defaults to `false` — most endpoints require verified email.
+    /// Defaults to `true` — most endpoints allow unverified users (soft verification).
+    /// Use `RequireVerified<P>` to restrict specific sensitive endpoints.
     fn allows_unverified() -> bool {
-        false
+        true
     }
 }
 
@@ -359,15 +360,14 @@ where
 }
 
 // ============================================================================
-// Unverified Email Wrapper
+// Verified Email Wrapper
 // ============================================================================
 
-/// Wraps a permission requirement to allow access even when the user's email
-/// is not yet verified. Use sparingly — only for endpoints that unverified
-/// users must reach (e.g., updating password, verifying email).
-pub struct AllowUnverified<P>(PhantomData<P>);
+/// Wraps a permission requirement to require verified email.
+/// Use on sensitive endpoints: invites, API keys, billing portal, shares.
+pub struct RequireVerified<P>(PhantomData<P>);
 
-impl<P: PermissionRequirement> PermissionRequirement for AllowUnverified<P> {
+impl<P: PermissionRequirement> PermissionRequirement for RequireVerified<P> {
     fn check(entity: &AuthenticatedEntity) -> Result<(), ApiError> {
         P::check(entity)
     }
@@ -377,7 +377,7 @@ impl<P: PermissionRequirement> PermissionRequirement for AllowUnverified<P> {
     }
 
     fn allows_unverified() -> bool {
-        true
+        false
     }
 }
 
@@ -469,8 +469,9 @@ where
 
         // Check email verification unless the endpoint explicitly allows unverified users
         if !P::allows_unverified() && !entity.email_verified() {
-            return Err(AuthError(ApiError::forbidden(
-                "Email verification required. Please verify your email before accessing this resource.",
+            return Err(AuthError(ApiError::coded(
+                axum::http::StatusCode::FORBIDDEN,
+                crate::server::shared::types::error_codes::ErrorCode::AuthEmailVerificationRequired,
             )));
         }
 

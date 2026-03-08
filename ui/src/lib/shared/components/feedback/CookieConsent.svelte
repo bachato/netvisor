@@ -33,90 +33,39 @@
 </script>
 
 <script lang="ts">
-	import posthog from 'posthog-js';
-	import { dev } from '$app/environment';
 	import { onMount } from 'svelte';
+	import CookieSettingsPanel from './CookieSettingsPanel.svelte';
 	import {
-		common_analytics,
 		common_close,
 		common_customize,
-		common_marketing,
-		common_necessary,
 		cookies_acceptAll,
-		cookies_alwaysOn,
-		cookies_analyticsDesc,
-		cookies_marketingDesc,
-		cookies_necessaryDesc,
 		cookies_preferences,
-		cookies_preferencesDesc,
 		cookies_rejectAll,
-		cookies_savePreferences,
 		cookies_settings,
 		cookies_settingsDesc
 	} from '$lib/paraglide/messages';
-
-	const COOKIE_DOMAIN = dev
-		? ''
-		: typeof window !== 'undefined' && window.location.hostname.endsWith('.scanopy.net')
-			? '.scanopy.net'
-			: '';
-	const COOKIE_DAYS = 365;
-
-	let preferences: CookiePreferences = $state({
-		necessary: true,
-		analytics: false,
-		marketing: false
-	});
 
 	let showBanner = $state(false);
 	let showSettings = $state(false);
 	let mounted = $state(false);
 	let hasConsented = $state(false);
 
+	let bannerPanel: CookieSettingsPanel;
+
 	onMount(() => {
 		mounted = true;
 		const saved = getGdprPreferences();
 		if (saved) {
-			preferences = { ...preferences, ...saved };
 			hasConsented = true;
-			applyPreferences();
 		} else {
 			showBanner = true;
 		}
 	});
 
-	function setCookie(name: string, value: string, days: number) {
-		const expires = new Date(Date.now() + days * 864e5).toUTCString();
-		const domain = COOKIE_DOMAIN ? `; domain=${COOKIE_DOMAIN}` : '';
-		document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/${domain}; SameSite=Lax`;
-	}
-
-	function applyPreferences() {
-		if (posthog.__loaded) {
-			if (preferences.analytics) {
-				posthog.opt_in_capturing();
-			} else {
-				posthog.opt_out_capturing();
-			}
-		}
-	}
-
-	function savePreferences() {
-		setCookie(COOKIE_NAME, JSON.stringify(preferences), COOKIE_DAYS);
+	function handlePanelSave() {
 		hasConsented = true;
 		showBanner = false;
 		showSettings = false;
-		applyPreferences();
-	}
-
-	function acceptAll() {
-		preferences = { necessary: true, analytics: true, marketing: true };
-		savePreferences();
-	}
-
-	function rejectAll() {
-		preferences = { necessary: true, analytics: false, marketing: false };
-		savePreferences();
 	}
 
 	function openSettings() {
@@ -160,60 +109,7 @@
 							</svg>
 						</button>
 					</div>
-					<p class="settings-description">
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted i18n content -->
-						{@html cookies_preferencesDesc()}
-					</p>
-
-					<div class="cookie-options">
-						<div class="cookie-option">
-							<div class="option-header">
-								<label class="option-label">
-									<input type="checkbox" checked disabled />
-									<span class="checkbox disabled"></span>
-									<span class="option-title">{common_necessary()}</span>
-								</label>
-								<span class="always-on">{cookies_alwaysOn()}</span>
-							</div>
-							<p class="option-description">
-								{cookies_necessaryDesc()}
-							</p>
-						</div>
-
-						<div class="cookie-option">
-							<div class="option-header">
-								<label class="option-label">
-									<input type="checkbox" bind:checked={preferences.analytics} />
-									<span class="checkbox"></span>
-									<span class="option-title">{common_analytics()}</span>
-								</label>
-							</div>
-							<p class="option-description">
-								{cookies_analyticsDesc()}
-							</p>
-						</div>
-
-						<div class="cookie-option">
-							<div class="option-header">
-								<label class="option-label">
-									<input type="checkbox" bind:checked={preferences.marketing} />
-									<span class="checkbox"></span>
-									<span class="option-title">{common_marketing()}</span>
-								</label>
-							</div>
-							<p class="option-description">
-								{cookies_marketingDesc()}
-							</p>
-						</div>
-					</div>
-
-					<div class="settings-buttons">
-						<button class="btn btn-secondary" onclick={rejectAll}>{cookies_rejectAll()}</button>
-						<button class="btn btn-secondary" onclick={acceptAll}>{cookies_acceptAll()}</button>
-						<button class="btn btn-primary" onclick={savePreferences}
-							>{cookies_savePreferences()}</button
-						>
-					</div>
+					<CookieSettingsPanel onSave={handlePanelSave} />
 				</div>
 			{:else}
 				<div class="content">
@@ -226,33 +122,17 @@
 					</div>
 					<div class="buttons">
 						<button class="btn btn-link" onclick={openSettings}>{common_customize()}</button>
-						<button class="btn btn-secondary" onclick={rejectAll}>{cookies_rejectAll()}</button>
-						<button class="btn btn-primary" onclick={acceptAll}>{cookies_acceptAll()}</button>
+						<button class="btn btn-secondary" onclick={() => bannerPanel.rejectAll()}
+							>{cookies_rejectAll()}</button
+						>
+						<button class="btn btn-primary" onclick={() => bannerPanel.acceptAll()}
+							>{cookies_acceptAll()}</button
+						>
 					</div>
 				</div>
+				<CookieSettingsPanel bind:this={bannerPanel} onSave={handlePanelSave} hidden={true} />
 			{/if}
 		</div>
-	{:else if hasConsented}
-		<button class="toggle" onclick={openSettings} aria-label={cookies_settings()}>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="20"
-				height="20"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<circle cx="12" cy="12" r="10" />
-				<circle cx="8" cy="9" r="1.5" fill="currentColor" />
-				<circle cx="15" cy="8" r="1.5" fill="currentColor" />
-				<circle cx="10" cy="14" r="1.5" fill="currentColor" />
-				<circle cx="16" cy="13" r="1.5" fill="currentColor" />
-				<circle cx="13" cy="17" r="1" fill="currentColor" />
-			</svg>
-		</button>
 	{/if}
 {/if}
 
@@ -340,24 +220,20 @@
 	}
 
 	/* :global() needed because links come from @html i18n content */
-	.description :global(a),
-	.settings-description :global(a) {
+	.description :global(a) {
 		color: #2563eb;
 		text-decoration: underline;
 	}
 
-	:global(.dark) .description :global(a),
-	:global(.dark) .settings-description :global(a) {
+	:global(.dark) .description :global(a) {
 		color: #60a5fa;
 	}
 
-	.description :global(a:hover),
-	.settings-description :global(a:hover) {
+	.description :global(a:hover) {
 		color: #1d4ed8;
 	}
 
-	:global(.dark) .description :global(a:hover),
-	:global(.dark) .settings-description :global(a:hover) {
+	:global(.dark) .description :global(a:hover) {
 		color: #93c5fd;
 	}
 
@@ -442,139 +318,5 @@
 	.close-btn:hover {
 		color: var(--color-text-primary);
 		background: var(--color-bg-surface-hover);
-	}
-
-	.settings-description {
-		color: var(--color-text-secondary);
-		font-size: 0.875rem;
-		margin: 0;
-	}
-
-	.cookie-options {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		margin: 0.5rem 0;
-	}
-
-	.cookie-option {
-		background: var(--color-bg-surface);
-		border: 1px solid var(--color-border);
-		border-radius: 0.375rem;
-		padding: 1rem;
-	}
-
-	.option-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 0.5rem;
-	}
-
-	.option-label {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		cursor: pointer;
-	}
-
-	.option-label input {
-		position: absolute;
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	.checkbox {
-		width: 1.25rem;
-		height: 1.25rem;
-		border: 1px solid var(--color-border-input);
-		border-radius: 0.25rem;
-		background: var(--color-bg-input);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		transition:
-			background 150ms,
-			border-color 150ms;
-	}
-
-	.checkbox.disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
-	.option-label input:checked + .checkbox {
-		background: #2563eb;
-		border-color: #2563eb;
-	}
-
-	.option-label input:checked + .checkbox::after {
-		content: '';
-		width: 0.5rem;
-		height: 0.75rem;
-		border: solid white;
-		border-width: 0 2px 2px 0;
-		transform: rotate(45deg) translateY(-1px);
-	}
-
-	.option-label:hover .checkbox:not(.disabled) {
-		border-color: var(--color-text-tertiary);
-	}
-
-	.option-title {
-		color: var(--color-text-primary);
-		font-weight: 500;
-		font-size: 0.9375rem;
-	}
-
-	.always-on {
-		color: var(--color-text-tertiary);
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.option-description {
-		color: var(--color-text-secondary);
-		font-size: 0.8125rem;
-		margin: 0;
-		line-height: 1.4;
-	}
-
-	.settings-buttons {
-		display: flex;
-		gap: 0.5rem;
-		justify-content: flex-end;
-		flex-wrap: wrap;
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	/* Toggle button */
-	.toggle {
-		position: fixed;
-		bottom: 1rem;
-		right: 1rem;
-		width: 3rem;
-		height: 3rem;
-		border-radius: 50%;
-		background: var(--color-bg-elevated);
-		border: 1px solid var(--color-border);
-		color: var(--color-text-secondary);
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-		z-index: 9999;
-		transition:
-			background-color 150ms,
-			color 150ms;
-	}
-
-	.toggle:hover {
-		background: var(--color-bg-surface-hover);
-		color: var(--color-text-primary);
 	}
 </style>

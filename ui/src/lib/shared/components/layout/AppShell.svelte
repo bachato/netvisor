@@ -12,6 +12,7 @@
 		flushStoredEvents
 	} from '$lib/shared/utils/analytics';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
+	import EmailVerificationBanner from '$lib/shared/components/feedback/EmailVerificationBanner.svelte';
 	import { resolve } from '$app/paths';
 	import { resetTopologyOptions } from '$lib/features/topology/queries';
 	import { pushError, pushSuccess } from '$lib/shared/stores/feedback';
@@ -171,29 +172,7 @@
 					goto(`${resolve('/onboarding')}${$page.url.search}`);
 				}
 			}
-		} else {
-			// Authenticated - check if email is verified
-			if (currentUser && !currentUser.email_verified) {
-				// Redirect unverified users to verification page
-				const isVerifyPage = $page.url.pathname === '/verify-email';
-				if (!isVerifyPage) {
-					// eslint-disable-next-line svelte/no-navigation-without-resolve
-					goto(`${resolve('/verify-email')}?email=${encodeURIComponent(currentUser.email)}`);
-				}
-				return;
-			}
 		}
-	});
-
-	// Reactive email verification guard — catches unverified state regardless of navigation method.
-	// The init effect above only runs once; hash navigation (/#topology) doesn't change pathname,
-	// so this separate effect ensures unverified users are always redirected.
-	$effect(() => {
-		if (!browser || !authCheckComplete || !isAuthenticated) return;
-		if (!currentUser || currentUser.email_verified) return;
-		if ($page.url.pathname === '/verify-email') return;
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(`${resolve('/verify-email')}?email=${encodeURIComponent(currentUser.email)}`);
 	});
 
 	// Handle organization-dependent routing (runs after org data loads)
@@ -266,6 +245,9 @@
 		<Loading />
 	</div>
 {:else}
+	{#if currentUser && !currentUser.email_verified}
+		<EmailVerificationBanner email={currentUser.email} />
+	{/if}
 	{@render children()}
 {/if}
 

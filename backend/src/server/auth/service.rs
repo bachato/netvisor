@@ -168,9 +168,15 @@ impl AuthService {
             )
             .await?;
 
-        // Handle email verification based on email service availability
-        if self.email_service.is_some() {
-            // Email service configured: send verification email
+        // Handle email verification based on context
+        if org_id.is_some() {
+            // Invited user joining existing org: auto-verify (invite link proves email ownership)
+            user.base.email_verified = true;
+            self.user_service
+                .update(&mut user, AuthenticatedEntity::System)
+                .await?;
+        } else if self.email_service.is_some() {
+            // New org registration with email service: send verification email
             if let Err(e) = self.send_verification_email_internal(&mut user).await {
                 tracing::warn!("Failed to send verification email: {}", e);
                 // Don't fail registration if email fails - user can resend later
@@ -483,11 +489,6 @@ impl AuthService {
 
         // Verify password
         verify_password(&request.password, password_hash)?;
-
-        // Check if email is verified
-        if !user.base.email_verified {
-            return Err(anyhow!("Please verify your email before logging in"));
-        }
 
         Ok(user.clone())
     }

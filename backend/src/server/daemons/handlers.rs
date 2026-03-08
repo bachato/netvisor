@@ -601,6 +601,14 @@ async fn provision_daemon(
     // Validate network access
     validate_network_access(Some(request.network_id), &network_ids, "provision daemon")?;
 
+    // Check daemon limit for unverified orgs (allows 1st daemon)
+    let org_id = auth.require_organization_id()?;
+    state
+        .services
+        .daemon_service
+        .check_unverified_daemon_limit(org_id)
+        .await?;
+
     // Generate API key (plaintext + hash)
     let (plaintext, hashed) = generate_api_key_for_storage(ApiKeyType::Daemon);
 
