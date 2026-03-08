@@ -29,7 +29,6 @@ use cidr::IpCidr;
 use futures::{StreamExt, future::try_join_all};
 use mac_address::MacAddress;
 use pnet::datalink;
-use redact::Secret;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -93,8 +92,8 @@ pub struct DeepScanParams<'a> {
     total_batches: Option<&'a Arc<AtomicUsize>>,
     /// Number of batches expected for a full port scan of this host
     batches_per_host: usize,
-    /// SNMP credential for this host (from default or IP-specific override)
-    snmp_credential: Option<SnmpQueryCredential>,
+    /// SNMP credentials ordered by specificity: IP override → network default → "public"
+    snmp_credentials: Vec<SnmpQueryCredential>,
     /// Shared concurrency controller for graceful FD exhaustion handling
     scan_controller: Arc<ScanConcurrencyController>,
     /// Whether to probe raw-socket ports (9100-9107) during endpoint scanning
@@ -630,7 +629,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                 if mac.is_some() {
                                     total_batches.fetch_add(batches_per_host, Ordering::Relaxed);
                                 }
-                                let snmp_credential = self.domain.snmp_credentials.get_credential_for_ip(&ip);
+                                let snmp_credentials = self.domain.snmp_credentials.get_credentials_by_specificity(&ip);
                                 let probe_raw_socket_ports = self.domain.probe_raw_socket_ports;
                                 pending_scans.push(Box::pin(async move {
                                     let result = self
@@ -645,7 +644,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                             batches_completed: Some(&batches_completed),
                                             total_batches: Some(&total_batches),
                                             batches_per_host,
-                                            snmp_credential,
+                                            snmp_credentials,
                                             scan_controller,
                                             probe_raw_socket_ports,
                                         })
@@ -722,7 +721,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         let last_activity = last_activity.clone();
                         let batches_completed = batches_completed.clone();
                         let total_batches = total_batches.clone();
-                        let snmp_credential = self.domain.snmp_credentials.get_credential_for_ip(&ip);
+                        let snmp_credentials = self.domain.snmp_credentials.get_credentials_by_specificity(&ip);
                         let scan_controller = scan_controller.clone();
                         let probe_raw_socket_ports = self.domain.probe_raw_socket_ports;
 
@@ -739,7 +738,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                     batches_completed: Some(&batches_completed),
                                     total_batches: Some(&total_batches),
                                     batches_per_host,
-                                    snmp_credential,
+                                    snmp_credentials,
                                     scan_controller,
                                     probe_raw_socket_ports,
                                 })
@@ -872,7 +871,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             batches_completed,
             total_batches,
             batches_per_host,
-            snmp_credential,
+            snmp_credentials,
             scan_controller,
             probe_raw_socket_ports,
         } = params;
@@ -939,7 +938,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             ip = %ip,
             responsiveness_ports = responsiveness_ports.len(),
             remaining_ports = remaining_tcp_ports.len(),
-            snmp_enabled = snmp_credential.is_some(),
+            snmp_enabled = !snmp_credentials.is_empty(),
             effective_batch_size,
             "Starting deep scan"
         );
@@ -992,7 +991,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             scan_rate_pps,
             subnet.base.cidr,
             gateway_ips.to_vec(),
-            snmp_credential.as_ref(),
+            snmp_credentials.first(),
         )
         .await?;
         open_ports.extend(udp_ports);
@@ -1036,31 +1035,25 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
 
         // SNMP polling - gather system info, interface table, and neighbor discovery
         // Only attempt if UDP 161 is open (saves time on hosts without SNMP)
+        // Credentials are tried in specificity order: IP override → network default → "public"
         let snmp_port_open = open_ports.contains(&PortType::Snmp);
         let (snmp_system_info, snmp_if_entries, lldp_neighbors, cdp_neighbors, ip_addr_table) =
             if snmp_port_open {
-                let default_public = SnmpQueryCredential {
-                    version: Default::default(),
-                    community: Secret::from("public".to_string()),
-                };
-
-                // Build ordered list: custom credential first, then "public" fallback
-                let mut credentials_to_try: Vec<&SnmpQueryCredential> = Vec::new();
-                if let Some(ref cred) = snmp_credential {
-                    credentials_to_try.push(cred);
-                }
-                credentials_to_try.push(&default_public);
-                // Deduplicate if custom IS "public"
-                credentials_to_try
-                    .dedup_by(|a, b| a.community.expose_secret() == b.community.expose_secret());
-
-                // Try each credential until system_info succeeds
+                // Try each credential until system_info succeeds with actual data
+                // (query_system_info returns Ok with empty fields on auth failure)
                 let mut working_credential = None;
-                for credential in &credentials_to_try {
+                for credential in &snmp_credentials {
                     match snmp::query_system_info(ip, credential).await {
-                        Ok(system_info) => {
-                            working_credential = Some((system_info, *credential));
+                        Ok(system_info)
+                            if system_info.sys_descr.is_some()
+                                || system_info.sys_name.is_some()
+                                || system_info.sys_object_id.is_some() =>
+                        {
+                            working_credential = Some((system_info, credential));
                             break;
+                        }
+                        Ok(_) => {
+                            tracing::debug!(ip = %ip, "SNMP credential returned no data, trying next");
                         }
                         Err(e) => {
                             tracing::debug!(ip = %ip, error = %e, "SNMP credential failed, trying next");
