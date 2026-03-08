@@ -12,11 +12,13 @@
 	let {
 		tabs,
 		activeTab = $bindable(),
-		isReadOnly = false
+		isReadOnly = false,
+		notifications
 	}: {
 		tabs: SubTab[];
 		activeTab: string;
 		isReadOnly: boolean;
+		notifications?: Record<string, string>;
 	} = $props();
 </script>
 
@@ -38,7 +40,15 @@
 				aria-current={activeTab === tab.id ? 'page' : undefined}
 			>
 				<div class="flex items-center gap-2">
-					<tab.icon class="h-4 w-4" />
+					<span class="relative">
+						<tab.icon class="h-4 w-4" />
+						{#if notifications?.[tab.id]}
+							<span
+								class="absolute -right-1 -top-1 h-2 w-2 rounded-full"
+								style="background-color: {notifications[tab.id]}"
+							></span>
+						{/if}
+					</span>
 					{tab.label}
 				</div>
 			</button>

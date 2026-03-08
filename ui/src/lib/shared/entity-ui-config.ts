@@ -36,7 +36,7 @@ export const TAB_LABELS: Record<string, string> = {
 	topology: 'Topology',
 	groups: 'Groups',
 	shares: 'Sharing',
-	discovery: 'Discovery',
+	discovery: 'Scans',
 	'discovery-sessions': 'Sessions',
 	'discovery-scheduled': 'Scheduled',
 	'discovery-history': 'History',

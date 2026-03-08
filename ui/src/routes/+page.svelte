@@ -63,6 +63,7 @@
 			isReadOnly: boolean;
 			subTabIds?: string[];
 			subTabDefs?: SubTab[];
+			subTabNotifications?: Record<string, string>;
 		}>
 	>([]);
 
@@ -165,7 +166,12 @@
 				{#each allTabs as tab (tab.id)}
 					{#if tab.subTabIds && tab.subTabDefs}
 						<div class={!tab.subTabIds.includes(activeTab) ? 'h-0 overflow-hidden' : ''}>
-							<ContentSubTabs tabs={tab.subTabDefs} bind:activeTab isReadOnly={tab.isReadOnly} />
+							<ContentSubTabs
+								tabs={tab.subTabDefs}
+								bind:activeTab
+								isReadOnly={tab.isReadOnly}
+								notifications={tab.subTabNotifications}
+							/>
 						</div>
 					{:else}
 						<div class={activeTab !== tab.id ? 'h-0 overflow-hidden' : ''}>

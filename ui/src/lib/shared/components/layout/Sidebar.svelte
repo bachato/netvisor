@@ -5,6 +5,7 @@
 	import SettingsModal from '$lib/features/settings/SettingsModal.svelte';
 	import SupportModal from '$lib/features/support/SupportModal.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
+	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
 	import { modalState, openModal } from '$lib/shared/stores/modal-registry';
 	import { entityUIConfig, TAB_LABELS } from '$lib/shared/entity-ui-config';
 	import type { EntityDiscriminants } from '$lib/api/entities';
@@ -58,6 +59,7 @@
 				isReadOnly: boolean;
 				subTabIds?: string[];
 				subTabDefs?: SubTab[];
+				subTabNotifications?: Record<string, string>;
 			}>
 		>([]),
 		showSettings = $bindable(false),
@@ -73,6 +75,7 @@
 			isReadOnly: boolean;
 			subTabIds?: string[];
 			subTabDefs?: SubTab[];
+			subTabNotifications?: Record<string, string>;
 		}>;
 		showSettings?: boolean;
 		settingsInitialTab?: string;
@@ -106,6 +109,10 @@
 		const hasPayment = organization.has_payment_method ?? false;
 		return isPastDue || (isTrialing && !hasPayment);
 	});
+
+	// Active discovery sessions — used for notification dot on sidebar and sub-tabs
+	const activeSessionsQuery = useActiveSessionsQuery(() => true);
+	let hasActiveSessions = $derived((activeSessionsQuery.data?.length ?? 0) > 0);
 
 	// Sync settings/support modal state from modal registry (for deep-link opens)
 	$effect(() => {
@@ -331,6 +338,7 @@
 			isReadOnly: boolean;
 			subTabIds?: string[];
 			subTabDefs?: SubTab[];
+			subTabNotifications?: Record<string, string>;
 		}> = [];
 
 		// Helper to extract tabs from an item and its children
@@ -349,7 +357,11 @@
 						component: null,
 						isReadOnly,
 						subTabIds: visibleSubTabs.map((st) => st.id),
-						subTabDefs: visibleSubTabs
+						subTabDefs: visibleSubTabs,
+						subTabNotifications:
+							item.id === 'discovery' && hasActiveSessions
+								? { 'discovery-sessions': entities.getColorHelper('Discovery').rgb }
+								: undefined
 					});
 				}
 			} else if (item.component) {
@@ -647,7 +659,15 @@
 												style="height: 2.5rem; padding: 0.5rem 0.75rem;"
 												title={collapsed ? item.label : ''}
 											>
-												<item.icon class="h-5 w-5 flex-shrink-0" />
+												<span class="relative">
+													<item.icon class="h-5 w-5 flex-shrink-0" />
+													{#if item.id === 'discovery' && hasActiveSessions}
+														<span
+															class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full"
+															style="background-color: {entities.getColorHelper('Discovery').rgb}"
+														></span>
+													{/if}
+												</span>
 												{#if !collapsed}
 													<span class="ml-3 truncate">{item.label}</span>
 												{/if}
