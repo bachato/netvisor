@@ -1700,6 +1700,8 @@ impl BillingService {
                 SubscriptionStatus::Active | SubscriptionStatus::Trialing
             )
         }) {
+            let is_trialing = sub.status == SubscriptionStatus::Trialing;
+
             UpdateSubscription::new(&sub.id)
                 .cancel_at_period_end(true)
                 .send(&self.stripe)
@@ -1708,10 +1710,15 @@ impl BillingService {
             tracing::info!(
                 organization_id = %organization_id,
                 subscription_id = %sub.id,
+                is_trialing,
                 "Scheduled downgrade to Free at period end"
             );
 
-            Ok("Your plan will change to Free at the end of your billing cycle.".to_string())
+            if is_trialing {
+                Ok("Your plan will change to Free when your trial ends.".to_string())
+            } else {
+                Ok("Your plan will change to Free at the end of your billing cycle.".to_string())
+            }
         } else {
             Err(anyhow!("No active subscription found"))
         }
@@ -1805,6 +1812,12 @@ impl BillingService {
                 .first()
                 .ok_or_else(|| anyhow!("No subscription items found"))?;
 
+            let proration = if sub.status == SubscriptionStatus::Trialing {
+                UpdateSubscriptionProrationBehavior::None
+            } else {
+                UpdateSubscriptionProrationBehavior::AlwaysInvoice
+            };
+
             UpdateSubscription::new(&sub.id)
                 .items(vec![UpdateSubscriptionItems {
                     id: Some(base_item.id.to_string()),
@@ -1816,18 +1829,28 @@ impl BillingService {
                     ("plan".to_string(), serde_json::to_string(&target_plan)?),
                     ("organization_id".to_string(), organization_id.to_string()),
                 ])
-                .proration_behavior(UpdateSubscriptionProrationBehavior::AlwaysInvoice)
+                .proration_behavior(proration)
                 .cancel_at_period_end(false) // Clear any pending cancellation
                 .send(&self.stripe)
                 .await?;
 
+            let is_trialing = sub.status == SubscriptionStatus::Trialing;
+
             tracing::info!(
                 organization_id = %organization_id,
                 target_plan = %target_plan.name(),
+                is_trialing,
                 "Plan changed via subscription update"
             );
 
-            Ok(format!("Plan changed to {}", target_plan.name()))
+            if is_trialing {
+                Ok(format!(
+                    "Plan changed to {}. Your trial continues.",
+                    target_plan.name()
+                ))
+            } else {
+                Ok(format!("Plan changed to {}", target_plan.name()))
+            }
         } else {
             Err(anyhow!("No active subscription found to modify"))
         }

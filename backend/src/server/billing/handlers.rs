@@ -125,6 +125,16 @@ async fn create_checkout_session(
                 Ok(Json(ApiResponse::success(result)))
             } else {
                 // Paid target — check trial eligibility and payment state
+                let is_currently_trialing = org.base.plan_status.as_deref() == Some("trialing");
+
+                if is_currently_trialing {
+                    // Currently trialing — switch plan via subscription update (preserves trial)
+                    let result = billing_service
+                        .change_plan(organization_id, request.plan, auth.into_entity())
+                        .await?;
+                    return Ok(Json(ApiResponse::success(result)));
+                }
+
                 let is_returning = org.base.trial_end_date.is_some()
                     || org.base.plan.as_ref().is_some_and(|p| !p.is_free());
                 let is_trial_eligible = !is_returning && request.plan.config().trial_days > 0;
