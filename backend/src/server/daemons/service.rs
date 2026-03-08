@@ -152,6 +152,47 @@ impl DaemonService {
         }
     }
 
+    /// Check if an unverified org has reached its daemon limit (1 daemon).
+    /// Allows first daemon so users can experience core product value.
+    pub async fn check_unverified_daemon_limit(&self, org_id: Uuid) -> Result<(), ApiError> {
+        let owners = self
+            .user_service
+            .get_organization_owners(&org_id)
+            .await
+            .map_err(|e| ApiError::internal_error(&e.to_string()))?;
+
+        let any_verified = owners.iter().any(|u| u.base.email_verified);
+        if any_verified {
+            return Ok(());
+        }
+
+        // Get networks for this org, then count daemons on those networks
+        let networks = self
+            .network_service
+            .get_all(StorableFilter::<Network>::new_from_org_id(&org_id))
+            .await
+            .unwrap_or_default();
+
+        let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
+        if network_ids.is_empty() {
+            return Ok(());
+        }
+
+        let all_daemons = self
+            .get_all(StorableFilter::<Daemon>::new_from_network_ids(&network_ids))
+            .await
+            .unwrap_or_default();
+
+        if !all_daemons.is_empty() {
+            return Err(ApiError::coded(
+                axum::http::StatusCode::FORBIDDEN,
+                crate::server::shared::types::error_codes::ErrorCode::AuthEmailVerificationRequired,
+            ));
+        }
+
+        Ok(())
+    }
+
     /// Logs a warning if a daemon URL uses HTTP (credentials sent in plaintext).
     /// Does not block — users may have legitimate reasons (VPN, private network).
     fn warn_if_insecure_daemon_url(url: &str) {
@@ -607,6 +648,9 @@ impl DaemonService {
                 server_capabilities,
             });
         }
+
+        // Check daemon limit for unverified orgs (allows 1st daemon)
+        self.check_unverified_daemon_limit(org.id).await?;
 
         // New registration - create host and daemon
         let dummy_host = Host::new(HostBase {

@@ -13,7 +13,7 @@ use crate::server::{
         },
         middleware::{
             auth::AuthenticatedEntity,
-            permissions::{AllowUnverified, Authorized, IsUser},
+            permissions::{Authorized, IsUser},
         },
         oidc::{OidcRegisterResult, OidcService},
     },
@@ -849,7 +849,7 @@ async fn update_password_auth(
     session: Session,
     ClientIp(ip): ClientIp,
     user_agent: Option<TypedHeader<UserAgent>>,
-    auth: Authorized<AllowUnverified<IsUser>>,
+    auth: Authorized<IsUser>,
     Json(request): Json<UpdatePasswordRequest>,
 ) -> ApiResult<Json<ApiResponse<User>>> {
     let user_id: Uuid = session

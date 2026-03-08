@@ -22,7 +22,7 @@ use crate::server::{
         middleware::{
             auth::AuthenticatedEntity,
             features::{RequireFeature, ShareViewsFeature},
-            permissions::{Authorized, Member},
+            permissions::{Authorized, Member, RequireVerified},
         },
         service::hash_password,
     },
@@ -135,7 +135,7 @@ pub fn create_public_router() -> OpenApiRouter<Arc<AppState>> {
 async fn create_share(
     State(state): State<Arc<AppState>>,
     _feature: RequireFeature<ShareViewsFeature>,
-    auth: Authorized<Member>,
+    auth: Authorized<RequireVerified<Member>>,
     Json(CreateUpdateShareRequest {
         mut share,
         password,
@@ -158,7 +158,7 @@ async fn create_share(
 
     share.base.created_by = auth.user_id().ok_or_else(ApiError::user_required)?;
 
-    create_handler::<Share>(State(state), auth, Json(share)).await
+    create_handler::<Share>(State(state), auth.into_permission::<Member>(), Json(share)).await
 }
 
 /// Update a share
@@ -176,7 +176,7 @@ async fn create_share(
 )]
 async fn update_share(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<Member>,
+    auth: Authorized<RequireVerified<Member>>,
     Path(id): Path<Uuid>,
     Json(CreateUpdateShareRequest {
         mut share,
@@ -218,7 +218,13 @@ async fn update_share(
     }
 
     // Delegate to generic handler
-    update_handler::<Share>(State(state), auth, Path(id), Json(share)).await
+    update_handler::<Share>(
+        State(state),
+        auth.into_permission::<Member>(),
+        Path(id),
+        Json(share),
+    )
+    .await
 }
 
 // ============================================================================

@@ -1,4 +1,4 @@
-use crate::server::auth::middleware::permissions::{Authorized, Owner, Viewer};
+use crate::server::auth::middleware::permissions::{Authorized, Owner, RequireVerified, Viewer};
 use crate::server::billing::types::api::{
     ChangePlanPreview, ChangePlanRequest, CreateCheckoutRequest, SetupPaymentMethodRequest,
 };
@@ -367,7 +367,7 @@ async fn handle_webhook(
 )]
 async fn create_portal_session(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<Owner>,
+    auth: Authorized<RequireVerified<Owner>>,
     Json(return_url): Json<String>,
 ) -> ApiResult<Json<ApiResponse<String>>> {
     let organization_id = auth

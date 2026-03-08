@@ -199,15 +199,6 @@
 				org_id: user.organization_id
 			});
 
-			// Check if email verification is required
-			if (!user.email_verified) {
-				// Redirect to verification pending page
-				onboardingStore.reset();
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto(`${resolve('/verify-email')}?email=${encodeURIComponent(user.email)}`);
-				return;
-			}
-
 			// Before clearing onboarding store, get state for tracking
 			const state = onboardingStore.getState();
 
