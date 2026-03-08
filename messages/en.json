@@ -407,7 +407,7 @@
 	"daemons_pasteApiKey": "Paste your API key here",
 	"daemons_portForwardingHint": "The server connects to the daemon at this address. If the daemon is behind a firewall or NAT, ensure the port is forwarded and reachable.",
 	"daemons_requestOsSupport": "Request {os} support",
-	"daemons_runInPowershell": "Run in PowerShell as Administrator",
+	"daemons_runInPowershell": "Run install command in PowerShell as Administrator",
 	"daemons_updateAvailable": "An update is available for daemon",
 	"daemons_upgradeConfigPreserved": "Your daemon configuration is preserved automatically — no need to re-enter server URL, API key, or other settings.",
 	"daemons_upgradeDaemon": "Upgrade Daemon",

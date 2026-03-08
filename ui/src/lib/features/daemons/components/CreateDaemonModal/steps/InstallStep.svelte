@@ -26,9 +26,13 @@
 		daemons_wslWarningBody
 	} from '$lib/paraglide/messages';
 
+	type LinuxMethod = 'binary' | 'docker';
+
 	interface Props {
 		selectedOS: DaemonOS;
 		onOsSelect: (os: DaemonOS) => void;
+		linuxMethod?: LinuxMethod;
+		onLinuxMethodChange?: (method: LinuxMethod) => void;
 		runCommand: string;
 		dockerCompose: string;
 		hasErrors: boolean;
@@ -43,6 +47,8 @@
 	let {
 		selectedOS,
 		onOsSelect,
+		linuxMethod = 'binary',
+		onLinuxMethodChange,
 		runCommand,
 		dockerCompose,
 		hasErrors,
@@ -56,9 +62,6 @@
 
 	const configQuery = useConfigQuery();
 	let hasEmail = $derived(configQuery.data?.has_email_service ?? false);
-
-	type LinuxMethod = 'binary' | 'docker';
-	let linuxMethod: LinuxMethod = $state('binary');
 
 	const windowsDownloadUrl =
 		'https://github.com/scanopy/scanopy/releases/latest/download/scanopy-daemon-windows-amd64.exe';
@@ -76,6 +79,14 @@
 
 	// Show waiting UI when connection status is not idle (first daemon only)
 	let showWaitingUI = $derived(isFirstDaemon && connectionStatus !== 'idle');
+
+	// Auto-scroll to troubleshooting panel when shown
+	let troubleshootingRef: HTMLDivElement | undefined = $state(undefined);
+	$effect(() => {
+		if (showTroubleshootingPanel && troubleshootingRef) {
+			troubleshootingRef.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		}
+	});
 </script>
 
 <div class="space-y-4">
@@ -97,7 +108,7 @@
 				</button>
 			</div>
 			{#if showTroubleshootingPanel}
-				<div class="border-primary/10 border-t pt-4">
+				<div bind:this={troubleshootingRef} class="border-primary/10 border-t pt-4">
 					<p class="text-secondary mb-3 text-sm font-medium">Need help?</p>
 					<SupportOptions isTroubleshooting={true} {hasEmailSupport} />
 				</div>
@@ -160,7 +171,7 @@
 				{selectedOS}
 				onOsSelect={handleOsSelect}
 				{linuxMethod}
-				onLinuxMethodChange={(method) => (linuxMethod = method)}
+				onLinuxMethodChange={(method) => onLinuxMethodChange?.(method)}
 			>
 				{#if selectedOS === 'linux'}
 					{#if linuxMethod === 'binary'}
@@ -249,7 +260,7 @@
 			</OsSelector>
 
 			{#if showTroubleshootingPanel}
-				<div class="border-primary/10 border-t pt-4">
+				<div bind:this={troubleshootingRef} class="border-primary/10 border-t pt-4">
 					<p class="text-secondary mb-3 text-sm font-medium">Need help?</p>
 					<SupportOptions isTroubleshooting={true} {hasEmailSupport} />
 				</div>

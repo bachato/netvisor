@@ -204,7 +204,7 @@
 	{#if isFirstDaemon || isServerPoll}
 		<InlineInfo
 			title=""
-			body="An API key will be automatically generated when you proceed to the next step."
+			body="An API key will be automatically generated for this daemon when you proceed to the next step."
 			dismissableKey="daemon-auto-key-hint"
 		/>
 	{/if}

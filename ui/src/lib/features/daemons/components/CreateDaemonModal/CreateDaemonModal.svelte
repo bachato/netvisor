@@ -9,6 +9,7 @@
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { Settings, Terminal, SlidersHorizontal, Loader2 } from 'lucide-svelte';
+	import confetti from 'canvas-confetti';
 	import {
 		createEmptyApiKeyFormData,
 		useCreateApiKeyMutation
@@ -96,6 +97,11 @@
 
 	// OS selection
 	let selectedOS: DaemonOS = $state(detectOS());
+	let linuxMethod = $state<'binary' | 'docker'>('binary');
+	let isDockerInstall = $derived(selectedOS === 'linux' && linuxMethod === 'docker');
+	let installCtaLabel = $derived(
+		isDockerInstall ? "I've started the Docker container" : "I've run the install command"
+	);
 
 	// Connection waiting state
 	let connectionStatus = $state<DaemonConnectionStatus>('idle');
@@ -349,6 +355,7 @@
 				clearTimeout(troubleTimeoutId);
 				troubleTimeoutId = null;
 			}
+			confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 			trackEvent('daemon_connected');
 		}
 	});
@@ -429,6 +436,8 @@
 				<InstallStep
 					{selectedOS}
 					onOsSelect={(os) => (selectedOS = os)}
+					{linuxMethod}
+					onLinuxMethodChange={(method) => (linuxMethod = method)}
 					{runCommand}
 					{dockerCompose}
 					{hasErrors}
@@ -476,7 +485,7 @@
 							I'm having trouble
 						</button>
 						<button type="button" class="btn-primary" onclick={handleInstalled}>
-							I've run the install command
+							{installCtaLabel}
 						</button>
 					{:else}
 						<button type="button" class="btn-secondary" onclick={previousTab}>

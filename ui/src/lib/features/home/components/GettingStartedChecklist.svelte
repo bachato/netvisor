@@ -61,7 +61,8 @@
 	});
 
 	$effect(() => {
-		if (allComplete && !dismissed && !celebrationDone) {
+		const isOnHomeTab = window.location.hash === '#home' || window.location.hash === '';
+		if (allComplete && !dismissed && !celebrationDone && isOnHomeTab) {
 			showCelebration = true;
 			confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 			setTimeout(() => {
