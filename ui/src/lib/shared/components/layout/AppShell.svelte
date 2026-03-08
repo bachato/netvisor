@@ -71,7 +71,9 @@
 
 		const posthogKey = configData.posthog_key;
 
-		if (browser && posthogKey && !posthogInitStarted) {
+		const isEmbedRoute = $page.url.pathname.match(/^\/share\/[^/]+\/embed/);
+
+		if (browser && posthogKey && !posthogInitStarted && !isEmbedRoute) {
 			posthogInitStarted = true;
 			// Lazy-load posthog-js to avoid blocking initial bundle
 			import('posthog-js').then(({ default: posthog }) => {

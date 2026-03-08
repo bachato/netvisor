@@ -198,11 +198,6 @@
 				marketing_opt_in: subscribed
 			});
 
-			// Track org creation
-			trackEvent('org_created', {
-				org_id: user.organization_id
-			});
-
 			// Before clearing onboarding store, get state for tracking
 			const state = onboardingStore.getState();
 
