@@ -30,6 +30,17 @@
 	export function hasMarketingConsent(): boolean {
 		return getGdprPreferences()?.marketing ?? false;
 	}
+
+	let _openSettingsCallback: (() => void) | null = null;
+	export function registerOpenSettings(cb: () => void) {
+		_openSettingsCallback = cb;
+	}
+	export function unregisterOpenSettings() {
+		_openSettingsCallback = null;
+	}
+	export function openCookieSettings() {
+		_openSettingsCallback?.();
+	}
 </script>
 
 <script lang="ts">
@@ -83,6 +94,9 @@
 		} else {
 			showBanner = true;
 		}
+
+		registerOpenSettings(openSettings);
+		return () => unregisterOpenSettings();
 	});
 
 	function setCookie(name: string, value: string, days: number) {
@@ -232,27 +246,6 @@
 				</div>
 			{/if}
 		</div>
-	{:else if hasConsented}
-		<button class="toggle" onclick={openSettings} aria-label={cookies_settings()}>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="20"
-				height="20"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<circle cx="12" cy="12" r="10" />
-				<circle cx="8" cy="9" r="1.5" fill="currentColor" />
-				<circle cx="15" cy="8" r="1.5" fill="currentColor" />
-				<circle cx="10" cy="14" r="1.5" fill="currentColor" />
-				<circle cx="16" cy="13" r="1.5" fill="currentColor" />
-				<circle cx="13" cy="17" r="1" fill="currentColor" />
-			</svg>
-		</button>
 	{/if}
 {/if}
 
@@ -549,32 +542,5 @@
 		flex-wrap: wrap;
 		padding-top: 0.5rem;
 		border-top: 1px solid var(--color-border);
-	}
-
-	/* Toggle button */
-	.toggle {
-		position: fixed;
-		bottom: 1rem;
-		right: 1rem;
-		width: 3rem;
-		height: 3rem;
-		border-radius: 50%;
-		background: var(--color-bg-elevated);
-		border: 1px solid var(--color-border);
-		color: var(--color-text-secondary);
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-		z-index: 9999;
-		transition:
-			background-color 150ms,
-			color 150ms;
-	}
-
-	.toggle:hover {
-		background: var(--color-bg-surface-hover);
-		color: var(--color-text-primary);
 	}
 </style>
