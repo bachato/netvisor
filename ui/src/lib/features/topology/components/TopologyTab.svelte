@@ -186,6 +186,11 @@
 			return;
 		}
 
+		// Don't auto-rebuild in manual mode — user controls when rebuilds happen
+		if (!$autoRebuild) {
+			return;
+		}
+
 		onboardingRebuildChecked.add(currentTopology.id);
 		// Also mark auto-rebuild as done to avoid a redundant second rebuild
 		initialRebuildChecked.add(currentTopology.id);
