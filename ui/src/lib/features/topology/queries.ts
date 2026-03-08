@@ -149,6 +149,7 @@ export function useDeleteTopologyMutation() {
 export function useRefreshTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
+			pendingRebuilds.add(topology.id);
 			await apiClient.POST('/api/v1/topology/{id}/refresh', {
 				params: { path: { id: topology.id } },
 				body: {
@@ -172,6 +173,7 @@ export function useRefreshTopologyMutation() {
 export function useRebuildTopologyMutation() {
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
+			pendingRebuilds.add(topology.id);
 			await apiClient.POST('/api/v1/topology/{id}/rebuild', {
 				params: { path: { id: topology.id } },
 				body: {
@@ -418,6 +420,11 @@ const EXPANDED_STORAGE_KEY = 'scanopy_topology_options_expanded_state';
 const AUTO_REBUILD_STORAGE_KEY = 'scanopy_topology_auto_rebuild';
 const PREFERRED_NETWORK_KEY = 'scanopy_preferred_network_id';
 
+// Tracks topology IDs with a pending user-initiated rebuild.
+// When manual mode receives an is_stale=false SSE update, we only apply
+// it if it resolves a pending rebuild — otherwise we'd wipe conflict state.
+const pendingRebuilds = new Set<string>();
+
 // UI-only state
 export const selectedTopologyId = writable<string | null>(null);
 export const selectedNode = writable<Node | null>(null);
@@ -608,9 +615,21 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 		return {
 			url: '/api/v1/topology/stream',
 			onMessage: (update) => {
-				// If the update says it's NOT stale, apply immediately (it's a full refresh)
+				// If the update says it's NOT stale, it's a rebuilt/refreshed topology
 				if (!update.is_stale) {
-					this.applyFullUpdate(update);
+					if (get(autoRebuild) || pendingRebuilds.has(update.id)) {
+						// Auto mode or user-initiated rebuild: apply full update
+						pendingRebuilds.delete(update.id);
+						this.applyFullUpdate(update);
+					} else {
+						// Manual mode, no pending rebuild — only apply if no conflicts to preserve
+						const cached = queryClient.getQueryData<Topology[]>(queryKeys.topology.all);
+						const current = cached?.find((t) => t.id === update.id);
+						if (current && hasConflicts(current)) {
+							return;
+						}
+						this.applyFullUpdate(update);
+					}
 					return;
 				}
 
