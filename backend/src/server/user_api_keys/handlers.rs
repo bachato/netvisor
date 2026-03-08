@@ -68,7 +68,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 pub async fn get_all(
     State(state): State<Arc<AppState>>,
     _feature: RequireFeature<ApiKeyFeature>,
-    auth: Authorized<RequireVerified<IsUser>>,
+    auth: Authorized<IsUser>,
     query: Query<NoFilterQuery>,
 ) -> ApiResult<Json<PaginatedApiResponse<UserApiKey>>> {
     let user_id = auth.require_user_id()?;
@@ -320,7 +320,7 @@ pub async fn rotate_key_handler(
 )]
 pub async fn get_by_id(
     state: State<Arc<AppState>>,
-    auth: Authorized<RequireVerified<IsUser>>,
+    auth: Authorized<IsUser>,
     _feature: RequireFeature<ApiKeyFeature>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<UserApiKey>>> {

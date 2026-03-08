@@ -224,7 +224,7 @@ async fn create_invite(
 )]
 async fn get_invite(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<RequireVerified<Admin>>,
+    auth: Authorized<Admin>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<Invite>>> {
     let organization_id = auth
@@ -258,7 +258,7 @@ async fn get_invite(
 )]
 async fn get_invites(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<RequireVerified<Admin>>,
+    auth: Authorized<Admin>,
 ) -> ApiResult<Json<ApiResponse<Vec<Invite>>>> {
     let organization_id = auth
         .organization_id()
