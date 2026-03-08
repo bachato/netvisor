@@ -29,6 +29,7 @@ use cidr::IpCidr;
 use futures::{StreamExt, future::try_join_all};
 use mac_address::MacAddress;
 use pnet::datalink;
+use redact::Secret;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -1037,76 +1038,100 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         // Only attempt if UDP 161 is open (saves time on hosts without SNMP)
         let snmp_port_open = open_ports.contains(&PortType::Snmp);
         let (snmp_system_info, snmp_if_entries, lldp_neighbors, cdp_neighbors, ip_addr_table) =
-            if let Some(credential) = &snmp_credential
-                && snmp_port_open
-            {
-                match snmp::query_system_info(ip, credential).await {
-                    Ok(system_info) => {
-                        tracing::debug!(
-                            ip = %ip,
-                            sys_name = ?system_info.sys_name,
-                            "SNMP system info retrieved"
-                        );
+            if snmp_port_open {
+                let default_public = SnmpQueryCredential {
+                    version: Default::default(),
+                    community: Secret::from("public".to_string()),
+                };
 
-                        // Walk interface table
-                        let if_entries = match snmp::walk_if_table(ip, credential).await {
-                            Ok(entries) => {
-                                tracing::debug!(
-                                    ip = %ip,
-                                    if_count = entries.len(),
-                                    "SNMP ifTable walked"
-                                );
-                                entries
-                            }
-                            Err(e) => {
-                                tracing::debug!(ip = %ip, error = %e, "SNMP ifTable walk failed");
-                                Vec::new()
-                            }
-                        };
+                // Build ordered list: custom credential first, then "public" fallback
+                let mut credentials_to_try: Vec<&SnmpQueryCredential> = Vec::new();
+                if let Some(ref cred) = snmp_credential {
+                    credentials_to_try.push(cred);
+                }
+                credentials_to_try.push(&default_public);
+                // Deduplicate if custom IS "public"
+                credentials_to_try
+                    .dedup_by(|a, b| a.community.expose_secret() == b.community.expose_secret());
 
-                        // Query LLDP neighbors
-                        let lldp = match snmp::query_lldp_neighbors(ip, credential).await {
-                            Ok(neighbors) => {
-                                tracing::debug!(
-                                    ip = %ip,
-                                    count = neighbors.len(),
-                                    "LLDP neighbors discovered"
-                                );
-                                neighbors
-                            }
-                            Err(e) => {
-                                tracing::debug!(ip = %ip, error = %e, "LLDP query failed");
-                                Vec::new()
-                            }
-                        };
-
-                        // Query CDP neighbors (Cisco devices)
-                        let cdp = match snmp::query_cdp_neighbors(ip, credential).await {
-                            Ok(neighbors) => {
-                                tracing::debug!(
-                                    ip = %ip,
-                                    count = neighbors.len(),
-                                    "CDP neighbors discovered"
-                                );
-                                neighbors
-                            }
-                            Err(e) => {
-                                tracing::debug!(ip = %ip, error = %e, "CDP query failed");
-                                Vec::new()
-                            }
-                        };
-
-                        // Query ipAddrTable for IP→ifIndex mappings
-                        let ip_addr_table = snmp::query_ip_addr_table(ip, credential)
-                            .await
-                            .unwrap_or_default();
-
-                        (Some(system_info), if_entries, lldp, cdp, ip_addr_table)
+                // Try each credential until system_info succeeds
+                let mut working_credential = None;
+                for credential in &credentials_to_try {
+                    match snmp::query_system_info(ip, credential).await {
+                        Ok(system_info) => {
+                            working_credential = Some((system_info, *credential));
+                            break;
+                        }
+                        Err(e) => {
+                            tracing::debug!(ip = %ip, error = %e, "SNMP credential failed, trying next");
+                        }
                     }
-                    Err(e) => {
-                        tracing::debug!(ip = %ip, error = %e, "SNMP query failed");
-                        (None, Vec::new(), Vec::new(), Vec::new(), Default::default())
-                    }
+                }
+
+                if let Some((system_info, credential)) = working_credential {
+                    tracing::debug!(
+                        ip = %ip,
+                        sys_name = ?system_info.sys_name,
+                        "SNMP system info retrieved"
+                    );
+
+                    // Walk interface table
+                    let if_entries = match snmp::walk_if_table(ip, credential).await {
+                        Ok(entries) => {
+                            tracing::debug!(
+                                ip = %ip,
+                                if_count = entries.len(),
+                                "SNMP ifTable walked"
+                            );
+                            entries
+                        }
+                        Err(e) => {
+                            tracing::debug!(ip = %ip, error = %e, "SNMP ifTable walk failed");
+                            Vec::new()
+                        }
+                    };
+
+                    // Query LLDP neighbors
+                    let lldp = match snmp::query_lldp_neighbors(ip, credential).await {
+                        Ok(neighbors) => {
+                            tracing::debug!(
+                                ip = %ip,
+                                count = neighbors.len(),
+                                "LLDP neighbors discovered"
+                            );
+                            neighbors
+                        }
+                        Err(e) => {
+                            tracing::debug!(ip = %ip, error = %e, "LLDP query failed");
+                            Vec::new()
+                        }
+                    };
+
+                    // Query CDP neighbors (Cisco devices)
+                    let cdp = match snmp::query_cdp_neighbors(ip, credential).await {
+                        Ok(neighbors) => {
+                            tracing::debug!(
+                                ip = %ip,
+                                count = neighbors.len(),
+                                "CDP neighbors discovered"
+                            );
+                            neighbors
+                        }
+                        Err(e) => {
+                            tracing::debug!(ip = %ip, error = %e, "CDP query failed");
+                            Vec::new()
+                        }
+                    };
+
+                    // Query ipAddrTable for IP→ifIndex mappings
+                    let ip_addr_table = snmp::query_ip_addr_table(ip, credential)
+                        .await
+                        .unwrap_or_default();
+
+                    (Some(system_info), if_entries, lldp, cdp, ip_addr_table)
+                } else {
+                    tracing::debug!(ip = %ip, "All SNMP credentials failed");
+                    (None, Vec::new(), Vec::new(), Vec::new(), Default::default())
                 }
             } else {
                 (None, Vec::new(), Vec::new(), Vec::new(), Default::default())

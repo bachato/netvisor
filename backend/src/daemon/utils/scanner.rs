@@ -722,55 +722,72 @@ pub async fn test_snmp_service(
     ip: IpAddr,
     credential: Option<&SnmpQueryCredential>,
 ) -> Result<Option<u16>, Error> {
+    // Try custom credential first if provided
+    if let Some(cred) = credential
+        && let Ok(Some(port)) = try_snmp_with_credential(ip, cred).await
+    {
+        return Ok(Some(port));
+    }
+    // Always try "public" as fallback
+    try_snmp_with_public(ip).await
+}
+
+/// Try an SNMP GET using a specific credential
+async fn try_snmp_with_credential(
+    ip: IpAddr,
+    credential: &SnmpQueryCredential,
+) -> Result<Option<u16>, Error> {
     let sys_descr_oid =
         Oid::from(&[1, 3, 6, 1, 2, 1, 1, 1, 0]).map_err(|e| anyhow!("Invalid Oid: {:?}", e))?;
 
-    if let Some(cred) = credential {
-        // Use provided credential via the shared session factory
-        match crate::daemon::utils::snmp::session::create_session(ip, cred).await {
-            Ok(mut session) => {
-                match timeout(Duration::from_millis(2000), session.get(&sys_descr_oid)).await {
-                    Ok(Ok(mut response)) => {
-                        if response.varbinds.next().is_some() {
-                            Ok(Some(161))
-                        } else {
-                            Ok(None)
-                        }
+    match crate::daemon::utils::snmp::session::create_session(ip, credential).await {
+        Ok(mut session) => {
+            match timeout(Duration::from_millis(2000), session.get(&sys_descr_oid)).await {
+                Ok(Ok(mut response)) => {
+                    if response.varbinds.next().is_some() {
+                        Ok(Some(161))
+                    } else {
+                        Ok(None)
                     }
-                    Ok(Err(_)) => Ok(None),
-                    Err(_) => Ok(None),
                 }
+                Ok(Err(_)) => Ok(None),
+                Err(_) => Ok(None),
             }
-            Err(_) => Ok(None),
         }
-    } else {
-        // Fall back to default "public" community string
-        let target = format!("{}:161", ip);
-        let community = b"public";
+        Err(_) => Ok(None),
+    }
+}
 
-        let session_result = timeout(
-            Duration::from_millis(2000),
-            AsyncSession::new_v2c(&target, community, 0),
-        )
-        .await;
+/// Try an SNMP GET using the default "public" community string
+async fn try_snmp_with_public(ip: IpAddr) -> Result<Option<u16>, Error> {
+    let sys_descr_oid =
+        Oid::from(&[1, 3, 6, 1, 2, 1, 1, 1, 0]).map_err(|e| anyhow!("Invalid Oid: {:?}", e))?;
 
-        match session_result {
-            Ok(Ok(mut session)) => {
-                match timeout(Duration::from_millis(2000), session.get(&sys_descr_oid)).await {
-                    Ok(Ok(mut response)) => {
-                        if response.varbinds.next().is_some() {
-                            Ok(Some(161))
-                        } else {
-                            Ok(None)
-                        }
+    let target = format!("{}:161", ip);
+    let community = b"public";
+
+    let session_result = timeout(
+        Duration::from_millis(2000),
+        AsyncSession::new_v2c(&target, community, 0),
+    )
+    .await;
+
+    match session_result {
+        Ok(Ok(mut session)) => {
+            match timeout(Duration::from_millis(2000), session.get(&sys_descr_oid)).await {
+                Ok(Ok(mut response)) => {
+                    if response.varbinds.next().is_some() {
+                        Ok(Some(161))
+                    } else {
+                        Ok(None)
                     }
-                    Ok(Err(_)) => Ok(None),
-                    Err(_) => Ok(None),
                 }
+                Ok(Err(_)) => Ok(None),
+                Err(_) => Ok(None),
             }
-            Ok(Err(_)) => Ok(None),
-            Err(_) => Ok(None),
         }
+        Ok(Err(_)) => Ok(None),
+        Err(_) => Ok(None),
     }
 }
 
