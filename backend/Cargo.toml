@@ -16,6 +16,10 @@ path = "src/bin/server.rs"
 name = "generate-error-codes"
 path = "src/bin/generate-error-codes.rs"
 
+[[bin]]
+name = "generate-fixtures"
+path = "src/bin/generate-fixtures.rs"
+
 [lib]
 name = "scanopy"
 path = "src/lib.rs"

@@ -1,5 +1,40 @@
 # ============================================
-# Stage 1: Build UI (SvelteKit static site)
+# Stage 1: Prepare Rust dependencies
+# ============================================
+FROM lukemathwalker/cargo-chef:latest-rust-1.90 AS chef
+WORKDIR /app
+
+FROM chef AS planner
+COPY backend/ .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ============================================
+# Stage 2: Build Rust binaries and generate fixtures
+# ============================================
+FROM chef AS rust-builder
+
+# Build dependencies first (cached layer)
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Build server and generate-fixtures binaries
+COPY backend/ .
+
+ARG CARGO_FEATURES=""
+RUN if [ -n "$CARGO_FEATURES" ]; then \
+      cargo build --release --bin server --bin generate-fixtures --features "$CARGO_FEATURES"; \
+    else \
+      cargo build --release --bin server --bin generate-fixtures; \
+    fi
+
+# Verify binary exists
+RUN test -f /app/target/release/server || (echo "Server binary not found" && exit 1)
+
+# Generate fixture JSON files for the UI build
+RUN /app/target/release/generate-fixtures --output-dir /fixtures
+
+# ============================================
+# Stage 3: Build UI (SvelteKit static site)
 # ============================================
 FROM node:20-slim AS ui-builder
 
@@ -15,6 +50,9 @@ COPY ui/ ./
 # Copy i18n messages (paraglide source - referenced by ../messages/ from project.inlang)
 COPY messages/ ../messages/
 
+# Copy generated fixtures from rust-builder
+COPY --from=rust-builder /fixtures/ ./src/lib/data/
+
 # Accept build-time configuration
 ARG PUBLIC_SERVER_HOSTNAME=default
 ARG PUBLIC_SERVER_PORT=60072
@@ -29,38 +67,6 @@ RUN npm run build
 # Verify build output exists
 RUN ls -la /app/ui/build && \
     test -f /app/ui/build/index.html || (echo "Build failed: no index.html found" && exit 1)
-
-# ============================================
-# Stage 2: Prepare Rust dependencies
-# ============================================
-FROM lukemathwalker/cargo-chef:latest-rust-1.90 AS chef
-WORKDIR /app
-
-FROM chef AS planner
-COPY backend/ .
-RUN cargo chef prepare --recipe-path recipe.json
-
-# ============================================
-# Stage 3: Build Rust server binary
-# ============================================
-FROM chef AS rust-builder
-
-# Build dependencies first (cached layer)
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
-
-# Build the server binary
-COPY backend/ .
-
-ARG CARGO_FEATURES=""
-RUN if [ -n "$CARGO_FEATURES" ]; then \
-      cargo build --release --bin server --features "$CARGO_FEATURES"; \
-    else \
-      cargo build --release --bin server; \
-    fi
-
-# Verify binary exists
-RUN test -f /app/target/release/server || (echo "Server binary not found" && exit 1)
 
 # ============================================
 # Stage 4: Final runtime image
