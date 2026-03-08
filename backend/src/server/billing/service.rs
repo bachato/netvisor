@@ -1216,6 +1216,14 @@ impl BillingService {
 
     /// Handle trial_will_end webhook (3 days before trial expiry)
     async fn handle_trial_will_end(&self, sub: Subscription) -> Result<(), Error> {
+        // Skip email if subscription is already marked for cancellation (e.g., user switched to Free)
+        if sub.cancel_at_period_end {
+            tracing::info!(
+                "Trial ending soon but subscription is pending cancellation, skipping email"
+            );
+            return Ok(());
+        }
+
         let org_id = sub
             .metadata
             .get("organization_id")
