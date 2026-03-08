@@ -42,6 +42,9 @@ use uuid::Uuid;
 /// Grace period to wait for late ARP arrivals after the last deep scan completes
 const LATE_ARRIVAL_GRACE_PERIOD: Duration = Duration::from_secs(30);
 
+/// Hard maximum duration for a single discovery run (safety net)
+const MAX_DISCOVERY_DURATION: Duration = Duration::from_secs(21600); // 6 hours
+
 /// Maximum interval between progress reports (heartbeat even if progress unchanged)
 const MAX_PROGRESS_REPORT_INTERVAL: Duration = Duration::from_secs(30);
 
@@ -175,17 +178,12 @@ impl DiscoversNetworkedEntities for DiscoveryRunner<NetworkScanDiscovery> {
                 )
                 .await?;
 
-            // Filter out docker bridge subnets (handled in docker discovery) and
-            // subnets with very large CIDRs (scanning would take too long)
+            // Filter out docker bridge subnets (handled in docker discovery).
+            // Size filtering for non-interfaced subnets is done later in
+            // scan_and_process_hosts() where subnet_cidr_to_mac is available.
             let subnets: Vec<Subnet> = subnets
                 .into_iter()
                 .filter(|s| {
-
-                    if s.base.cidr.network_length() < 10 {
-                        tracing::warn!("Skipping {} with CIDR {}, scanning would take too long", s.base.name, s.base.cidr);
-                        return false
-                    }
-
                     if s.base.subnet_type.discriminant() == SubnetTypeDiscriminants::DockerBridge {
                         tracing::warn!("Skipping {} with CIDR {}, docker bridge subnets are scanned in docker discovery", s.base.name, s.base.cidr);
                         return false
@@ -223,6 +221,29 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                 &interface_filter,
             )
             .await?;
+
+        // Filter non-interfaced subnets by size - ARP-scannable subnets of any
+        // size are fine (ARP finds responsive hosts first), but non-interfaced
+        // subnets require full port scanning of every IP which is too slow for
+        // large CIDRs
+        let subnets: Vec<Subnet> = subnets
+            .into_iter()
+            .filter(|s| {
+                let is_interfaced = subnet_cidr_to_mac
+                    .get(&s.base.cidr)
+                    .and_then(|m| *m)
+                    .is_some();
+                if !is_interfaced && s.base.cidr.network_length() < 16 {
+                    tracing::warn!(
+                        subnet = %s.base.name,
+                        cidr = %s.base.cidr,
+                        "Skipping non-interfaced subnet larger than /16, port scanning would take too long"
+                    );
+                    return false;
+                }
+                true
+            })
+            .collect();
 
         let all_ips_with_subnets: Vec<(IpAddr, Subnet)> = subnets
             .iter()
@@ -425,10 +446,24 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         let host_tx = host_tx.clone();
                         let subnet = subnet.clone();
 
-                        // Use a background thread for the blocking recv, forward via channel
+                        // Use a background thread for the blocking recv, forward via channel.
+                        // Hard timeout prevents infinite hangs if the ARP receiver thread
+                        // gets stuck (e.g., on bridge interfaces with continuous traffic).
                         std::thread::spawn(move || {
+                            let forwarder_start = Instant::now();
+                            let forwarder_timeout = Duration::from_secs(600); // 10 minutes
                             let mut forwarded = 0u64;
                             loop {
+                                if forwarder_start.elapsed() >= forwarder_timeout {
+                                    tracing::warn!(
+                                        cidr = %cidr,
+                                        forwarded,
+                                        elapsed_secs = forwarder_start.elapsed().as_secs(),
+                                        "ARP forwarder hit timeout, forcing exit"
+                                    );
+                                    break;
+                                }
+
                                 match arp_rx.recv_timeout(Duration::from_millis(100)) {
                                     Ok(ArpScanResult { ip, mac }) => {
                                         // Use blocking_send since we're in a std thread
@@ -532,7 +567,9 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                   has_pending_scans: bool,
                                   grace_elapsed: Duration,
                                   total_batches_val: usize,
-                                  batches_completed_val: usize|
+                                  batches_completed_val: usize,
+                                  hosts_discovered_val: usize,
+                                  hosts_scanned_val: usize|
          -> u8 {
             if !channel_closed {
                 // ARP phase (0-30%): Based on elapsed time vs estimated duration
@@ -549,6 +586,11 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                 // Deep scan phase (30-95%): Based on batch completion ratio for smooth progress
                 let scan_progress = batches_completed_val as f64 / total_batches_val as f64;
                 PROGRESS_ARP_PHASE + (scan_progress * PROGRESS_DEEP_SCAN_PHASE as f64) as u8
+            } else if has_pending_scans && total_batches_val == 0 && hosts_discovered_val > 0 {
+                // Channel closed but no batch info yet - use host-level progress
+                // to avoid getting stuck at 30% when batches haven't been registered
+                let host_progress = hosts_scanned_val as f64 / hosts_discovered_val as f64;
+                PROGRESS_ARP_PHASE + (host_progress * PROGRESS_DEEP_SCAN_PHASE as f64) as u8
             } else if has_pending_scans {
                 // Deep scan with no batch info yet - show minimal progress
                 PROGRESS_ARP_PHASE
@@ -636,24 +678,28 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         None => {
                             channel_closed = true;
 
+                            tracing::info!(
+                                hosts_discovered = hosts_discovered.load(Ordering::Relaxed),
+                                pending_scans = pending_scans.len(),
+                                pending_hosts = pending_hosts.len(),
+                                total_batches = total_batches.load(Ordering::Relaxed),
+                                batches_completed = batches_completed.load(Ordering::Relaxed),
+                                elapsed_secs = pipeline_start.elapsed().as_secs(),
+                                "Host discovery channel closed, transitioning to deep scan phase"
+                            );
+
                             // ARP complete - recalculate concurrency without ARP FD reservation
                             // Those FDs (2 per subnet) are now available for deep scanning
                             if let Ok(new_concurrency) = self.as_ref().utils.get_optimal_deep_scan_concurrency(
                                 effective_batch_size,
                                 0, // No more ARP channels open
-                            ) {
-                                if new_concurrency > deep_scan_concurrency {
-                                    tracing::info!(
-                                        old = deep_scan_concurrency,
-                                        new = new_concurrency,
-                                        "ARP complete, increasing deep scan concurrency"
-                                    );
-                                    deep_scan_concurrency = new_concurrency;
-                                } else {
-                                    tracing::debug!("Host discovery channel closed");
-                                }
-                            } else {
-                                tracing::debug!("Host discovery channel closed");
+                            ) && new_concurrency > deep_scan_concurrency {
+                                tracing::info!(
+                                    old = deep_scan_concurrency,
+                                    new = new_concurrency,
+                                    "Increasing deep scan concurrency"
+                                );
+                                deep_scan_concurrency = new_concurrency;
                             }
                         }
                     }
@@ -723,6 +769,8 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                     let grace_elapsed = last_activity.lock().unwrap().elapsed();
                     let total_batches_val = total_batches.load(Ordering::Relaxed);
                     let batches_completed_val = batches_completed.load(Ordering::Relaxed);
+                    let hosts_discovered_val = hosts_discovered.load(Ordering::Relaxed);
+                    let hosts_scanned_val = hosts_scanned.load(Ordering::Relaxed);
 
                     // Calculate and report progress (only if changed)
                     let progress = calculate_progress(
@@ -731,6 +779,8 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         grace_elapsed,
                         total_batches_val,
                         batches_completed_val,
+                        hosts_discovered_val,
+                        hosts_scanned_val,
                     );
 
                     // Report progress if it changed OR if enough time has passed (heartbeat)
@@ -754,7 +804,22 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
 
             // Check for cancellation
             if cancel.is_cancelled() {
+                tracing::info!("Discovery cancelled by user");
                 return Err(Error::msg("Discovery session was cancelled"));
+            }
+
+            // Global timeout safety net
+            if pipeline_start.elapsed() >= MAX_DISCOVERY_DURATION {
+                tracing::error!(
+                    elapsed_secs = pipeline_start.elapsed().as_secs(),
+                    hosts_discovered = hosts_discovered.load(Ordering::Relaxed),
+                    hosts_scanned = hosts_scanned.load(Ordering::Relaxed),
+                    pending_scans = pending_scans.len(),
+                    pending_hosts = pending_hosts.len(),
+                    channel_closed,
+                    "Discovery hit global timeout, forcing completion"
+                );
+                break;
             }
 
             // Exit when channel closed, no pending scans/hosts, and grace period expired
@@ -787,6 +852,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             hosts_discovered = discovered,
             hosts_scanned = hosts_scanned.load(Ordering::Relaxed),
             results = results.len(),
+            elapsed_secs = pipeline_start.elapsed().as_secs(),
             "Discovery pipeline complete"
         );
 
