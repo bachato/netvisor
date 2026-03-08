@@ -1,0 +1,15 @@
+backend/target/
+ui/node_modules/
+ui/build/
+.git/
+data/
+.vscode/
+.idea/
+.claude/
+.DS_Store
+*.log
+.env
+CLAUDE.md
+TASK.md
+TEST_PLAN.json
+TEST_RESULTS.json

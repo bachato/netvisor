@@ -242,7 +242,7 @@ generate-messages:
 
 generate-fixtures:
 	@echo "Generating metadata fixtures from backend..."
-	cd backend && cargo test generate_billing_fixtures -- --nocapture
+	cd backend && cargo run --bin generate-fixtures
 	@echo "✅ Generated all metadata fixtures in ui/src/lib/data/"
 
 stripe-webhook:

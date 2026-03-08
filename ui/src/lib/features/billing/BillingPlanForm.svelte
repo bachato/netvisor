@@ -48,6 +48,8 @@
 		forceCommercial?: boolean;
 		/** If true, user is a returning customer and should not see trial offers */
 		isReturningCustomer?: boolean;
+		/** If true, user is currently on an active trial */
+		isCurrentlyTrialing?: boolean;
 	}
 
 	// eslint-disable-next-line svelte/no-unused-props
@@ -63,7 +65,8 @@
 		showHosting = false,
 		recommendedPlan = null,
 		forceCommercial = false,
-		isReturningCustomer = false
+		isReturningCustomer = false,
+		isCurrentlyTrialing = false
 	}: Props = $props();
 
 	let loadingPlanType = $state<string | null>(null);
@@ -452,9 +455,9 @@
 							billed yearly
 						</div>
 						<div
-							class={`text-xs font-medium text-success ${hasTrial(plan) && !hasCustomPrice(plan) ? 'opacity-100' : 'opacity-0'}`}
+							class={`text-xs font-medium text-success ${(hasTrial(plan) || (isCurrentlyTrialing && plan.trial_days > 0)) && !hasCustomPrice(plan) ? 'opacity-100' : 'opacity-0'}`}
 						>
-							{plan.trial_days}-day free trial
+							{isCurrentlyTrialing ? 'Your trial continues' : `${plan.trial_days}-day free trial`}
 						</div>
 					</div>
 
@@ -485,6 +488,8 @@
 							>
 								{#if loadingPlanType === plan.type}
 									<Loader2 class="mx-auto h-4 w-4 animate-spin" />
+								{:else if isCurrentlyTrialing}
+									Switch plan
 								{:else}
 									{trial ? `Start ${plan.trial_days}-day free trial` : 'Get Started'}
 								{/if}

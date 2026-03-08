@@ -19,6 +19,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
+	import { tooltip } from '$lib/features/billing/tooltip';
 	import {
 		common_created,
 		common_email,
@@ -187,6 +188,13 @@
 				{#if canInviteUsers}
 					{#if isAtSeatLimit}
 						<UpgradeButton feature="seats" />
+					{:else if currentUser && !currentUser.email_verified}
+						<span data-tooltip="Please verify email to invite users" use:tooltip>
+							<button class="btn-primary flex items-center opacity-50" disabled>
+								<UserPlus class="mr-2 h-5 w-5" />
+								{users_inviteUser()}
+							</button>
+						</span>
 					{:else}
 						<button class="btn-primary flex items-center" onclick={handleCreateInvite}>
 							<UserPlus class="mr-2 h-5 w-5" />

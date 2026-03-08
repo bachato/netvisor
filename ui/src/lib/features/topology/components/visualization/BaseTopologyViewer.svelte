@@ -290,10 +290,9 @@
 </script>
 
 <div
-	class="h-full w-full overflow-hidden"
-	class:rounded-2xl={!isEmbed}
-	class:border={!isEmbed}
-	class:border-gray-700={!isEmbed}
+	class="h-full w-full overflow-hidden !p-0"
+	class:card={!isEmbed}
+	class:card-static={!isEmbed}
 	bind:this={containerElement}
 >
 	<SvelteFlow

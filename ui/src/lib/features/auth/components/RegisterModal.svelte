@@ -10,6 +10,7 @@
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import Password from '$lib/shared/components/forms/input/Password.svelte';
+	import { Loader2 } from 'lucide-svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
@@ -54,6 +55,7 @@
 	} = $props();
 
 	let registering = $state(false);
+	let oidcLoadingSlug = $state<string | null>(null);
 	let subStep = $state<'method' | 'email' | 'password'>('method');
 	let emailValue = $state('');
 	let emailError = $state<'email_in_use' | 'generic' | null>(null);
@@ -160,6 +162,7 @@
 	}
 
 	function handleOidcRegister(providerSlug: string) {
+		oidcLoadingSlug = providerSlug;
 		const returnUrl = encodeURIComponent(window.location.origin);
 		window.location.href = `/api/auth/oidc/${providerSlug}/authorize?flow=register&return_url=${returnUrl}&terms_accepted=${enableTermsCheckbox && form.state.values.terms_accepted}&marketing_opt_in=${form.state.values.subscribed}`;
 	}
@@ -255,11 +258,14 @@
 										{#each oidcProviders as provider (provider.slug)}
 											<button
 												onclick={() => handleOidcRegister(provider.slug)}
-												disabled={enableTermsCheckbox && !termsAccepted}
+												disabled={(enableTermsCheckbox && !termsAccepted) ||
+													oidcLoadingSlug !== null}
 												type="button"
 												class="btn-primary flex w-full items-center justify-center gap-3"
 											>
-												{#if provider.logo}
+												{#if oidcLoadingSlug === provider.slug}
+													<Loader2 class="h-5 w-5 animate-spin" />
+												{:else if provider.logo}
 													<img src={provider.logo} alt={provider.name} class="h-5 w-5" />
 												{/if}
 												{auth_createAccountWith({ provider: provider.name })}

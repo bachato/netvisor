@@ -1,6 +1,6 @@
 [package]
 name = "scanopy-server"
-version = "0.14.15"
+version = "0.14.16"
 edition = "2024"
 description = "Scanopy HTTP API server"
 
@@ -15,6 +15,10 @@ path = "src/bin/server.rs"
 [[bin]]
 name = "generate-error-codes"
 path = "src/bin/generate-error-codes.rs"
+
+[[bin]]
+name = "generate-fixtures"
+path = "src/bin/generate-fixtures.rs"
 
 [lib]
 name = "scanopy"

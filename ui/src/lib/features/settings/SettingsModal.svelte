@@ -51,7 +51,7 @@
 
 	// Tab and sub-view state
 	let activeTab = $state('account');
-	let accountSubView = $state<'main' | 'credentials'>('main');
+	let accountSubView = $state<'main' | 'credentials' | 'cookies'>('main');
 	let orgSubView = $state<'main' | 'edit'>('main');
 
 	// Define base tabs

@@ -22,6 +22,7 @@
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { auth_emailAlreadyInUse } from '$lib/paraglide/messages';
+	import { useConfigQuery, isCloud } from '$lib/shared/stores/config-query';
 
 	// Show OIDC error from redirect if present
 	onMount(() => {
@@ -47,6 +48,9 @@
 	const registerMutation = useRegisterMutation();
 	const onboardingStepMutation = useOnboardingStepMutation();
 	const onboardingStateQuery = useOnboardingStateQuery();
+
+	const onboardingConfigQuery = useConfigQuery();
+	let onboardingConfigData = $derived(onboardingConfigQuery.data);
 
 	// URL params for invite flow
 	let orgName = $derived($page.url.searchParams.get('org_name'));
@@ -199,15 +203,6 @@
 				org_id: user.organization_id
 			});
 
-			// Check if email verification is required
-			if (!user.email_verified) {
-				// Redirect to verification pending page
-				onboardingStore.reset();
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto(`${resolve('/verify-email')}?email=${encodeURIComponent(user.email)}`);
-				return;
-			}
-
 			// Before clearing onboarding store, get state for tracking
 			const state = onboardingStore.getState();
 
@@ -243,7 +238,7 @@
 	<div class="absolute inset-0 z-0">
 		<div
 			class="h-full w-full bg-cover bg-center bg-no-repeat blur-[2px]"
-			style="background-image: url('/images/background-{themeStore.resolvedTheme}.png')"
+			style="background-image: url('/images/background-{themeStore.resolvedTheme}.webp')"
 		></div>
 		<div
 			class="absolute inset-0 {themeStore.resolvedTheme === 'dark' ? 'bg-black/30' : 'bg-white/15'}"
@@ -281,7 +276,9 @@
 						{/each}
 					</div>
 				</div>
-				<span class="text-tertiary text-xs">No credit card required</span>
+				{#if onboardingConfigData && isCloud(onboardingConfigData)}
+					<span class="text-tertiary text-xs">No credit card required</span>
+				{/if}
 			</div>
 		</div>
 	{/if}

@@ -19,6 +19,8 @@
 		closeModal,
 		initModalFromUrl
 	} from '$lib/shared/stores/modal-registry';
+	import ContentSubTabs from '$lib/shared/components/layout/ContentSubTabs.svelte';
+	import type { SubTab } from '$lib/shared/components/layout/ContentSubTabs.svelte';
 
 	// Read hash immediately during script initialization, before onMount
 	const initialHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
@@ -53,8 +55,17 @@
 	let dataLoadingStarted = $state(false);
 	let showSettings = $state(false);
 	let isPastDue = $derived(organization?.plan_status === 'past_due');
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let allTabs = $state<Array<{ id: string; component: any; isReadOnly: boolean }>>([]);
+	let allTabs = $state<
+		Array<{
+			id: string;
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			component: any;
+			isReadOnly: boolean;
+			subTabIds?: string[];
+			subTabDefs?: SubTab[];
+			subTabNotifications?: Record<string, string>;
+		}>
+	>([]);
 
 	// Update URL hash when activeTab changes
 	$effect(() => {
@@ -153,9 +164,20 @@
 			<div class="p-8 [&_.sticky]:sticky [&_.sticky]:top-0">
 				<!-- Programmatically render all tabs based on sidebar config -->
 				{#each allTabs as tab (tab.id)}
-					<div class={activeTab !== tab.id ? 'h-0 overflow-hidden' : ''}>
-						<tab.component isReadOnly={tab.isReadOnly} isActive={activeTab === tab.id} />
-					</div>
+					{#if tab.subTabIds && tab.subTabDefs}
+						<div class={!tab.subTabIds.includes(activeTab) ? 'h-0 overflow-hidden' : ''}>
+							<ContentSubTabs
+								tabs={tab.subTabDefs}
+								bind:activeTab
+								isReadOnly={tab.isReadOnly}
+								notifications={tab.subTabNotifications}
+							/>
+						</div>
+					{:else}
+						<div class={activeTab !== tab.id ? 'h-0 overflow-hidden' : ''}>
+							<tab.component isReadOnly={tab.isReadOnly} isActive={activeTab === tab.id} />
+						</div>
+					{/if}
 				{/each}
 			</div>
 

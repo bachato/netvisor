@@ -4,7 +4,7 @@ use crate::server::shared::storage::traits::Entity;
 use crate::server::{
     auth::middleware::{
         features::{ApiKeyFeature, RequireFeature},
-        permissions::{Authorized, IsUser, Member, Viewer},
+        permissions::{Authorized, IsUser, Member, RequireVerified, Viewer},
     },
     config::AppState,
     shared::{
@@ -121,7 +121,7 @@ pub async fn get_all(
 )]
 pub async fn create_user_api_key(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<IsUser>,
+    auth: Authorized<RequireVerified<IsUser>>,
     _feature: RequireFeature<ApiKeyFeature>,
     Json(mut api_key): Json<UserApiKey>,
 ) -> ApiResult<Json<ApiResponse<UserApiKeyResponse>>> {
@@ -213,7 +213,7 @@ pub async fn create_user_api_key(
 )]
 pub async fn update_user_api_key(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<IsUser>,
+    auth: Authorized<RequireVerified<IsUser>>,
     _feature: RequireFeature<ApiKeyFeature>,
     Path(id): Path<Uuid>,
     Json(mut request): Json<UserApiKey>,
@@ -279,7 +279,7 @@ pub async fn update_user_api_key(
 )]
 pub async fn rotate_key_handler(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<IsUser>,
+    auth: Authorized<RequireVerified<IsUser>>,
     _feature: RequireFeature<ApiKeyFeature>,
     ClientIp(ip): ClientIp,
     user_agent: Option<TypedHeader<UserAgent>>,
@@ -354,7 +354,7 @@ pub async fn get_by_id(
 )]
 pub async fn delete(
     state: State<Arc<AppState>>,
-    auth: Authorized<IsUser>,
+    auth: Authorized<RequireVerified<IsUser>>,
     _feature: RequireFeature<ApiKeyFeature>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
@@ -387,7 +387,7 @@ pub async fn delete(
 )]
 pub async fn bulk_delete(
     state: State<Arc<AppState>>,
-    auth: Authorized<IsUser>,
+    auth: Authorized<RequireVerified<IsUser>>,
     _feature: RequireFeature<ApiKeyFeature>,
     Json(ids): Json<Vec<Uuid>>,
 ) -> ApiResult<Json<ApiResponse<BulkDeleteResponse>>> {

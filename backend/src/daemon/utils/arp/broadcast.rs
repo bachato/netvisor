@@ -16,6 +16,8 @@ use super::types::ArpScanResult;
 pub const ROUND_WAIT: Duration = Duration::from_secs(3);
 /// Extra receive time after final round
 pub const POST_SCAN_RECEIVE: Duration = Duration::from_secs(5);
+/// Hard max lifetime for the receiver thread (defense-in-depth)
+const MAX_RECEIVER_LIFETIME: Duration = Duration::from_secs(300);
 
 /// Check if broadcast ARP is available (requires raw socket capability)
 pub fn is_available() -> bool {
@@ -235,11 +237,36 @@ fn scan_subnet_background(
                             }
                         }
                     }
+
+                    // Check stop condition after processing - on bridge interfaces,
+                    // the Err/timeout path may never fire because LAN traffic
+                    // arrives continuously via the raw socket
+                    if sending_done_recv.load(Ordering::Relaxed) {
+                        break;
+                    }
+
+                    // Defense-in-depth: hard max lifetime prevents infinite hangs
+                    if start.elapsed() >= MAX_RECEIVER_LIFETIME {
+                        tracing::warn!(
+                            elapsed_secs = start.elapsed().as_secs(),
+                            "ARP receiver hit max lifetime, forcing exit"
+                        );
+                        break;
+                    }
                 }
                 Err(_) => {
                     // Timeout - check if we should stop
                     if sending_done_recv.load(Ordering::Relaxed) {
                         // Sender is done, do final receive period
+                        break;
+                    }
+
+                    // Defense-in-depth: hard max lifetime
+                    if start.elapsed() >= MAX_RECEIVER_LIFETIME {
+                        tracing::warn!(
+                            elapsed_secs = start.elapsed().as_secs(),
+                            "ARP receiver hit max lifetime during timeout, forcing exit"
+                        );
                         break;
                     }
                 }

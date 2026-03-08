@@ -176,7 +176,15 @@ pub trait DaemonUtils {
                 .filter(|s| s.base.cidr.contains(&ip_addr))
                 .max_by_key(|s| s.base.cidr.network_length())
             {
-                cidr_to_mac.insert(subnet.base.cidr, mac_address);
+                cidr_to_mac
+                    .entry(subnet.base.cidr)
+                    .and_modify(|existing: &mut Option<MacAddress>| {
+                        // Prefer a valid MAC over None
+                        if existing.is_none() && mac_address.is_some() {
+                            *existing = mac_address;
+                        }
+                    })
+                    .or_insert(mac_address);
 
                 interfaces.push(Interface::new(InterfaceBase {
                     network_id: subnet.base.network_id,

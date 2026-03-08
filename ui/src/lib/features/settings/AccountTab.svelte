@@ -5,7 +5,8 @@
 	import { apiClient } from '$lib/api/client';
 	import type { User } from '$lib/features/users/types';
 	import { pushError, pushSuccess } from '$lib/shared/stores/feedback';
-	import { Link, Key, LogOut } from 'lucide-svelte';
+	import { Link, Key, LogOut, Shield } from 'lucide-svelte';
+	import CookieSettingsPanel from '$lib/shared/components/feedback/CookieSettingsPanel.svelte';
 	import { createForm } from '@tanstack/svelte-form';
 	import { submitForm } from '$lib/shared/components/forms/form-context';
 	import {
@@ -51,14 +52,17 @@
 		settings_account_unlinkFirst,
 		settings_account_updateCredentials,
 		settings_account_updateEmailPassword,
-		settings_account_userInfo
+		settings_account_userInfo,
+		settings_account_cookiePreferencesDesc,
+		cookies_preferences,
+		common_manage
 	} from '$lib/paraglide/messages';
 
 	let {
-		subView = $bindable<'main' | 'credentials' | 'email-change'>('main'),
+		subView = $bindable<'main' | 'credentials' | 'email-change' | 'cookies'>('main'),
 		onClose
 	}: {
-		subView?: 'main' | 'credentials' | 'email-change';
+		subView?: 'main' | 'credentials' | 'email-change' | 'cookies';
 		onClose: () => void;
 	} = $props();
 
@@ -180,7 +184,7 @@
 	}
 
 	function handleCancel() {
-		if (subView === 'credentials' || subView === 'email-change') {
+		if (subView === 'credentials' || subView === 'email-change' || subView === 'cookies') {
 			subView = 'main';
 			form.reset({ currentPassword: '', password: '', confirmPassword: '' });
 			emailChangeForm.reset({ currentPassword: '', newEmail: '' });
@@ -344,6 +348,28 @@
 						</div>
 					</div>
 
+					<!-- Cookie Preferences -->
+					{#if configData?.needs_cookie_consent}
+						<InfoCard variant="compact">
+							<div class="flex items-center justify-between">
+								<div class="flex items-center gap-4">
+									<Shield class="text-secondary h-5 w-5 flex-shrink-0" />
+									<div>
+										<p class="text-primary text-sm font-medium">
+											{cookies_preferences()}
+										</p>
+										<p class="text-secondary text-xs">
+											{settings_account_cookiePreferencesDesc()}
+										</p>
+									</div>
+								</div>
+								<button type="button" onclick={() => (subView = 'cookies')} class="btn-primary">
+									{common_manage()}
+								</button>
+							</div>
+						</InfoCard>
+					{/if}
+
 					<!-- Logout -->
 					<InfoCard variant="compact">
 						<div class="flex items-center justify-between">
@@ -450,6 +476,8 @@
 					</emailChangeForm.Field>
 				</div>
 			</div>
+		{:else if subView === 'cookies'}
+			<CookieSettingsPanel onSave={() => (subView = 'main')} />
 		{/if}
 	</div>
 

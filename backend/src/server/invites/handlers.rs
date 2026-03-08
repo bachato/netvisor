@@ -1,6 +1,6 @@
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::features::{InviteUsersFeature, RequireFeature};
-use crate::server::auth::middleware::permissions::{Admin, Authorized};
+use crate::server::auth::middleware::permissions::{Admin, Authorized, RequireVerified};
 use crate::server::config::AppState;
 use crate::server::invites::r#impl::base::Invite;
 use crate::server::organizations::r#impl::api::CreateInviteRequest;
@@ -50,7 +50,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 )]
 async fn create_invite(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<Admin>,
+    auth: Authorized<RequireVerified<Admin>>,
     RequireFeature { plan, .. }: RequireFeature<InviteUsersFeature>,
     Json(request): Json<CreateInviteRequest>,
 ) -> ApiResult<Json<ApiResponse<Invite>>> {
@@ -304,7 +304,7 @@ async fn get_invites(
 )]
 async fn revoke_invite(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<Admin>,
+    auth: Authorized<RequireVerified<Admin>>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
     let organization_id = auth

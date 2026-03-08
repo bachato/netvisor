@@ -5,6 +5,8 @@
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import type { FieldConfig } from '$lib/shared/components/data/types';
 	import { Plus } from 'lucide-svelte';
+	import { useCurrentUserQuery } from '$lib/features/auth/queries';
+	import { tooltip } from '$lib/features/billing/tooltip';
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import UserApiKeyCard from './UserApiKeyCard.svelte';
@@ -38,6 +40,10 @@
 	import { modalState } from '$lib/shared/stores/modal-registry';
 
 	let { isReadOnly = false }: TabProps = $props();
+
+	const currentUserQuery = useCurrentUserQuery();
+	let currentUser = $derived(currentUserQuery.data);
+	let isEmailVerified = $derived(currentUser?.email_verified ?? true);
 
 	// Check if plan has api_access feature before querying
 	const organizationQuery = useOrganizationQuery();
@@ -172,9 +178,17 @@
 				body="Creating an integration that you think others might benefit from? Scanopy will be adding an integration library in an upcoming release. Go to the <a class='underline hover:no-underline' target='_blank' href='https://github.com/scanopy/integrations'>Scanopy integrations GitHub</a> and create a PR to get started."
 			></InlineSuccess>
 			{#if !isReadOnly && hasApiAccess}
-				<button class="btn-primary flex items-center" onclick={handleCreate}>
-					<Plus class="h-5 w-5" />{common_create()}
-				</button>
+				{#if !isEmailVerified}
+					<span data-tooltip="Please verify email to create an API key" use:tooltip>
+						<button class="btn-primary flex items-center opacity-50" disabled>
+							<Plus class="h-5 w-5" />{common_create()}
+						</button>
+					</span>
+				{:else}
+					<button class="btn-primary flex items-center" onclick={handleCreate}>
+						<Plus class="h-5 w-5" />{common_create()}
+					</button>
+				{/if}
 			{/if}
 		</svelte:fragment>
 	</TabHeader>
@@ -192,8 +206,8 @@
 		<EmptyState
 			title={userApiKeys_noApiKeysYet()}
 			subtitle={userApiKeys_noApiKeysSubtitle()}
-			onClick={handleCreate}
-			cta={common_create()}
+			onClick={isEmailVerified ? handleCreate : undefined}
+			cta={isEmailVerified ? common_create() : undefined}
 		/>
 	{:else}
 		<DataControls

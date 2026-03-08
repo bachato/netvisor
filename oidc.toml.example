@@ -8,7 +8,7 @@ slug = "authentik"
 # Optional logo to display next to provider
 logo = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/authentik.svg"
 
-# OIDC provider's issuer URL (must end with `/`)
+# OIDC provider's issuer URL (try with and without trailing slash if it doesn't work)
 issuer_url = "YOUR_ISSUER_URL"
 
 # OAuth2 client ID from provider

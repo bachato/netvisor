@@ -79,6 +79,8 @@ pub enum ErrorCode {
     AuthPasswordLoginDisabled,
     /// User registration is disabled
     AuthRegistrationDisabled,
+    /// Email verification required for this feature
+    AuthEmailVerificationRequired,
 
     // === Generic Entity Operations ===
     /// Entity was not found
@@ -226,6 +228,9 @@ impl ErrorCode {
             Self::AuthDemoMode => "This action is disabled in demo mode",
             Self::AuthPasswordLoginDisabled => "Password login is disabled",
             Self::AuthRegistrationDisabled => "User registration is disabled",
+            Self::AuthEmailVerificationRequired => {
+                "Please verify your email to access this feature"
+            }
 
             // Generic Entity Operations
             Self::EntityNotFound { .. } => "{entity} with ID '{id}' not found",
@@ -332,6 +337,7 @@ impl ErrorCode {
             | Self::AuthDemoMode
             | Self::AuthPasswordLoginDisabled
             | Self::AuthRegistrationDisabled
+            | Self::AuthEmailVerificationRequired
             | Self::AuthOidcNotConfigured
             | Self::SharePasswordRequired
             | Self::SharePasswordIncorrect
