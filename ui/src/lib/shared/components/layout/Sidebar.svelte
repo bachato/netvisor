@@ -23,6 +23,7 @@
 	import { onMount } from 'svelte';
 	import type { Component } from 'svelte';
 	import type { UserOrgPermissions } from '$lib/features/users/types';
+	import type { SubTab } from '$lib/shared/components/layout/ContentSubTabs.svelte';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 
 	// Import tab components
@@ -48,16 +49,31 @@
 	let {
 		activeTab = $bindable('topology'),
 		collapsed = $bindable(false),
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any, no-useless-assignment
-		allTabs = $bindable<Array<{ id: string; component: any; isReadOnly: boolean }>>([]),
+		// eslint-disable-next-line no-useless-assignment
+		allTabs = $bindable<
+			Array<{
+				id: string;
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				component: any;
+				isReadOnly: boolean;
+				subTabIds?: string[];
+				subTabDefs?: SubTab[];
+			}>
+		>([]),
 		showSettings = $bindable(false),
 		settingsInitialTab = 'account',
 		settingsDismissible = true
 	}: {
 		activeTab?: string;
 		collapsed?: boolean;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		allTabs?: Array<{ id: string; component: any; isReadOnly: boolean }>;
+		allTabs?: Array<{
+			id: string;
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			component: any;
+			isReadOnly: boolean;
+			subTabIds?: string[];
+			subTabDefs?: SubTab[];
+		}>;
 		showSettings?: boolean;
 		settingsInitialTab?: string;
 		settingsDismissible?: boolean;
@@ -114,6 +130,7 @@
 		requiresBilling?: boolean; // Whether this requires billing to be enabled
 		hideInDemo?: boolean; // Whether to hide this in demo mode
 		children?: NavItem[]; // Nested child items (displayed indented under parent)
+		subTabs?: (SubTab & { requiredPermissions?: UserOrgPermissions[] })[]; // Content area sub-tabs
 	}
 
 	interface NavSection {
@@ -167,38 +184,47 @@
 			label: 'Discover',
 			items: [
 				{
-					id: 'discovery-sessions',
-					label: TAB_LABELS['discovery-sessions'],
+					id: 'discovery',
+					label: TAB_LABELS['discovery'],
 					icon: entities.getIconComponent('Discovery'),
-					component: DiscoverySessionTab
+					subTabs: [
+						{
+							id: 'discovery-sessions',
+							label: TAB_LABELS['discovery-sessions'],
+							icon: entities.getIconComponent('Discovery'),
+							component: DiscoverySessionTab
+						},
+						{
+							id: entityUIConfig.Discovery!.tabId,
+							label: TAB_LABELS[entityUIConfig.Discovery!.tabId],
+							icon: Calendar as IconComponent,
+							component: DiscoveryScheduledTab
+						},
+						{
+							id: 'discovery-history',
+							label: TAB_LABELS['discovery-history'],
+							icon: History as IconComponent,
+							component: DiscoveryHistoryTab
+						}
+					]
 				},
 				{
-					id: entityUIConfig.Discovery!.tabId,
-					label: TAB_LABELS[entityUIConfig.Discovery!.tabId],
-					icon: Calendar as IconComponent,
-					entityType: 'Discovery',
-					component: DiscoveryScheduledTab
-				},
-				{
-					id: 'discovery-history',
-					label: TAB_LABELS['discovery-history'],
-					icon: History as IconComponent,
-					component: DiscoveryHistoryTab
-				},
-				{
-					id: entityUIConfig.Daemon!.tabId,
+					id: 'daemons-group',
 					label: TAB_LABELS[entityUIConfig.Daemon!.tabId],
 					icon: entities.getIconComponent('Daemon'),
-					entityType: 'Daemon',
-					component: DaemonTab,
-					children: [
+					subTabs: [
+						{
+							id: entityUIConfig.Daemon!.tabId,
+							label: TAB_LABELS[entityUIConfig.Daemon!.tabId],
+							icon: entities.getIconComponent('Daemon'),
+							component: DaemonTab
+						},
 						{
 							id: entityUIConfig.DaemonApiKey!.tabId,
 							label: TAB_LABELS[entityUIConfig.DaemonApiKey!.tabId],
 							icon: entities.getIconComponent('DaemonApiKey'),
-							entityType: 'DaemonApiKey',
 							component: ApiKeyTab,
-							requiredPermissions: ['Member', 'Admin', 'Owner']
+							requiredPermissions: ['Member', 'Admin', 'Owner'] as UserOrgPermissions[]
 						}
 					]
 				}
@@ -298,12 +324,35 @@
 	// Use navConfig (filtered by permissions) instead of baseNavConfig to prevent
 	// instantiating components the user doesn't have permission to access
 	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const tabs: Array<{ id: string; component: any; isReadOnly: boolean }> = [];
+		const tabs: Array<{
+			id: string;
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			component: any;
+			isReadOnly: boolean;
+			subTabIds?: string[];
+			subTabDefs?: SubTab[];
+		}> = [];
 
 		// Helper to extract tabs from an item and its children
 		function extractTabsFromItem(item: NavItem) {
-			if (item.component) {
+			if (item.subTabs && item.subTabs.length > 0) {
+				// Emit a single entry with all sub-tab IDs and defs
+				const visibleSubTabs = item.subTabs.filter(
+					(st) =>
+						!st.requiredPermissions ||
+						st.requiredPermissions.length === 0 ||
+						(userPermissions && st.requiredPermissions.includes(userPermissions))
+				);
+				if (visibleSubTabs.length > 0) {
+					tabs.push({
+						id: item.id,
+						component: null,
+						isReadOnly,
+						subTabIds: visibleSubTabs.map((st) => st.id),
+						subTabDefs: visibleSubTabs
+					});
+				}
+			} else if (item.component) {
 				tabs.push({ id: item.id, component: item.component, isReadOnly });
 			}
 			// Also extract tabs from children
@@ -374,10 +423,24 @@
 		);
 	}
 
-	// Helper to filter an item and its children
+	// Helper to filter an item and its children/subTabs
 	function filterItemWithChildren(item: NavItem): NavItem | null {
 		if (!isItemVisible(item)) {
 			return null;
+		}
+
+		// If item has subTabs, filter by permissions
+		if (item.subTabs) {
+			const visibleSubTabs = item.subTabs.filter(
+				(st) =>
+					!st.requiredPermissions ||
+					st.requiredPermissions.length === 0 ||
+					(userPermissions && st.requiredPermissions.includes(userPermissions))
+			);
+			if (visibleSubTabs.length === 0) {
+				return null;
+			}
+			return { ...item, subTabs: visibleSubTabs };
 		}
 
 		// If item has children, filter them too
@@ -493,9 +556,23 @@
 	function handleItemClick(item: NavItem) {
 		if (item.onClick) {
 			item.onClick();
+		} else if (item.subTabs && item.subTabs.length > 0) {
+			// Navigate to first visible sub-tab, or stay on current if already on one
+			const isAlreadyOnSubTab = item.subTabs.some((st) => activeTab === st.id);
+			if (!isAlreadyOnSubTab) {
+				activeTab = item.subTabs[0].id;
+			}
 		} else {
 			activeTab = item.id;
 		}
+	}
+
+	// Helper to check if a nav item (or its sub-tabs) is currently active
+	function isItemActive(item: NavItem): boolean {
+		if (item.subTabs) {
+			return item.subTabs.some((st) => activeTab === st.id);
+		}
+		return activeTab === item.id;
 	}
 
 	const inactiveButtonClass =
@@ -564,7 +641,7 @@
 										<li>
 											<button
 												onclick={() => handleItemClick(item)}
-												class="{baseClasses} {activeTab === item.id
+												class="{baseClasses} {isItemActive(item)
 													? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 													: inactiveButtonClass}"
 												style="height: 2.5rem; padding: 0.5rem 0.75rem;"
