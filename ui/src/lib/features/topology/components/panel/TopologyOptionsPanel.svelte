@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { optionsPanelExpanded, selectedNode, selectedEdge, selectedNodes } from '../../queries';
 	import { get } from 'svelte/store';
-	import { topology_multiSelectInspectorHint } from '$lib/paraglide/messages';
 	import { ChevronLeft, ChevronRight, Settings, Info } from 'lucide-svelte';
 	import OptionsContent from './options/OptionsContent.svelte';
 	import InspectorNode from './inspectors/InspectorNode.svelte';
 	import InspectorEdge from './inspectors/InspectorEdge.svelte';
+	import InspectorMultiSelect from './inspectors/InspectorMultiSelect.svelte';
 	import {
 		common_inspector,
 		common_options,
@@ -13,6 +13,16 @@
 		topology_collapsePanel,
 		topology_expandPanel
 	} from '$lib/paraglide/messages';
+
+	let {
+		isReadOnly = false,
+		onClearSelection,
+		onGroupCreated
+	}: {
+		isReadOnly?: boolean;
+		onClearSelection?: () => void;
+		onGroupCreated?: (groupId: string) => void;
+	} = $props();
 
 	// Add tab state
 	let activeTab: 'options' | 'inspector' = $state('options');
@@ -24,8 +34,9 @@
 
 	// Automatically switch to inspector when something is selected
 	$effect(() => {
-		if ($selectedNode || $selectedEdge) {
+		if ($selectedNode || $selectedEdge || multiSelectedNodes.length >= 2) {
 			activeTab = 'inspector';
+			optionsPanelExpanded.set(true);
 		}
 	});
 </script>
@@ -75,9 +86,11 @@
 					<OptionsContent />
 				{:else if activeTab === 'inspector'}
 					{#if multiSelectedNodes.length >= 2}
-						<div class="text-tertiary py-8 text-center text-sm">
-							{topology_multiSelectInspectorHint({ count: multiSelectedNodes.length })}
-						</div>
+						<InspectorMultiSelect
+							{isReadOnly}
+							onClearSelection={onClearSelection ?? (() => selectedNodes.set([]))}
+							{onGroupCreated}
+						/>
 					{:else if $selectedNode}
 						{#key $selectedNode.id}
 							<InspectorNode node={$selectedNode} />

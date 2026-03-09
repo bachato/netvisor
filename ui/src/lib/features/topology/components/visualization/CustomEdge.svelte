@@ -19,7 +19,7 @@
 		useTopologiesQuery
 	} from '../../queries';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
-	import { createColorHelper } from '$lib/shared/utils/styling';
+	import { createColorHelper, type Color } from '$lib/shared/utils/styling';
 	import type { Topology, TopologyEdge } from '../../types/base';
 	import {
 		getEdgeDisplayState,
@@ -117,6 +117,11 @@
 	let edgeColorHelper = $derived.by(() => {
 		if (group?.color) {
 			return createColorHelper(group.color);
+		}
+		// Preview edges carry their own color since they have no real group
+		const anyData = edgeData as Record<string, unknown> | undefined;
+		if (anyData?.is_preview && anyData?.preview_color) {
+			return createColorHelper(anyData.preview_color as Color);
 		}
 		if (!edgeData) {
 			return createColorHelper('Gray');

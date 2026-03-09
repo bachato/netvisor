@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import TopologyViewer from './visualization/TopologyViewer.svelte';
 	import TopologyOptionsPanel from './panel/TopologyOptionsPanel.svelte';
@@ -22,7 +21,6 @@
 		selectedNodes,
 		consumePreferredNetwork
 	} from '../queries';
-	import MultiSelectActionBar from './visualization/MultiSelectActionBar.svelte';
 	import type { Topology } from '../types/base';
 	import TopologyModal from './TopologyModal.svelte';
 	import { getTopologyState } from '../state';
@@ -247,12 +245,6 @@
 		isCreateEditOpen = false;
 		editingTopology = null;
 	}
-
-	// Subscribe to multi-select
-	let multiSelectedNodes = $state(get(selectedNodes));
-	selectedNodes.subscribe((value) => {
-		multiSelectedNodes = value;
-	});
 
 	function clearMultiSelect() {
 		selectedNodes.set([]);
@@ -500,19 +492,15 @@
 			<Loading />
 		{:else if currentTopology}
 			<div class="relative">
-				<TopologyOptionsPanel />
+				<TopologyOptionsPanel
+					{isReadOnly}
+					onClearSelection={clearMultiSelect}
+					onGroupCreated={() => {
+						clearMultiSelect();
+						handleRefresh();
+					}}
+				/>
 				<TopologyViewer bind:this={topologyViewer} />
-				{#if multiSelectedNodes.length >= 2 && currentTopology}
-					<MultiSelectActionBar
-						topology={currentTopology}
-						{isReadOnly}
-						onClearSelection={clearMultiSelect}
-						onGroupCreated={() => {
-							clearMultiSelect();
-							handleRefresh();
-						}}
-					/>
-				{/if}
 			</div>
 		{:else}
 			<div class="card card-static text-secondary">

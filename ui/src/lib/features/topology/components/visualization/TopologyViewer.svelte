@@ -111,10 +111,19 @@
 			selectedNodes.set([]);
 		}
 	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			selectedNodes.set([]);
+			selectedNode.set(null);
+			selectedEdge.set(null);
+		}
+	}
 </script>
 
 {#if topology}
-	<div class="h-[calc(100vh-150px)] w-full">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="h-[calc(100vh-150px)] w-full" onkeydown={handleKeydown}>
 		<BaseTopologyViewer
 			bind:this={baseViewer}
 			{topology}
