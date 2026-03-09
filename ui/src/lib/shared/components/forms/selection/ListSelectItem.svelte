@@ -4,6 +4,7 @@
 	import { onMount, getContext } from 'svelte';
 	import Tag from '../../data/Tag.svelte';
 	import EntityTag from '../../data/EntityTag.svelte';
+	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 	import type { EntityDisplayComponent } from './types';
 
 	export let item: T;
@@ -16,6 +17,18 @@
 	$: icon = displayComponent.getIcon?.(item, context);
 	$: tags = displayComponent.getTags?.(item, context) || [];
 	$: description = displayComponent.getDescription?.(item, context) || '';
+	$: tagPickerProps = displayComponent.getTagPickerProps?.(item, context) ?? null;
+	$: showTagPicker =
+		tagPickerProps &&
+		context &&
+		typeof context === 'object' &&
+		'showEntityTagPicker' in context &&
+		(context as Record<string, unknown>).showEntityTagPicker;
+	$: tagPickerDisabled =
+		context &&
+		typeof context === 'object' &&
+		'tagPickerDisabled' in context &&
+		!!(context as Record<string, unknown>).tagPickerDisabled;
 
 	let containerEl: HTMLDivElement;
 	let labelEl: HTMLSpanElement;
@@ -120,6 +133,21 @@
 								color={tag.color}
 								icon={tag.icon ?? null}
 							/>
+						{:else if !staticTags && !staticTagsContext && (tag.onmouseenter || tag.onmouseleave || tag.onclick)}
+							<button
+								type="button"
+								class="inline-flex cursor-pointer"
+								onmouseenter={tag.onmouseenter}
+								onmouseleave={tag.onmouseleave}
+								onclick={tag.onclick}
+							>
+								<Tag
+									label={tag.label}
+									color={tag.color}
+									icon={tag.icon ?? null}
+									href={tag.href ?? ''}
+								/>
+							</button>
 						{:else}
 							<Tag
 								label={tag.label}
@@ -137,6 +165,16 @@
 		</div>
 		{#if description.length > 0}
 			<span class="text-tertiary mt-1 block truncate text-xs">{description}</span>
+		{/if}
+		{#if showTagPicker && tagPickerProps}
+			<div class="mt-1">
+				<TagPickerInline
+					selectedTagIds={tagPickerProps.selectedTagIds}
+					entityId={tagPickerProps.entityId}
+					entityType={tagPickerProps.entityType}
+					disabled={tagPickerDisabled}
+				/>
+			</div>
 		{/if}
 	</div>
 </div>

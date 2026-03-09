@@ -1,14 +1,19 @@
 <script lang="ts" module>
 	import { concepts, serviceDefinitions } from '$lib/shared/stores/metadata';
-	import { useQueryClient } from '@tanstack/svelte-query';
-	import { getPortByIdFromCache } from '$lib/features/ports/queries';
+	import { hoveredServiceCategory } from '$lib/features/topology/interactions';
+	import { topologyOptions } from '$lib/features/topology/queries';
+	import type { Port } from '$lib/features/hosts/types/base';
+	import type { components } from '$lib/api/schema';
+	type ServiceCategory = components['schemas']['ServiceCategory'];
 
-	interface InterfaceId {
-		interfaceId: string | null;
-		queryClient?: ReturnType<typeof useQueryClient>;
+	export interface ServiceDisplayContext {
+		interfaceId?: string | null;
+		ports?: Port[];
+		showEntityTagPicker?: boolean;
+		tagPickerDisabled?: boolean;
 	}
 
-	export const ServiceDisplay: EntityDisplayComponent<Service, InterfaceId> = {
+	export const ServiceDisplay: EntityDisplayComponent<Service, ServiceDisplayContext> = {
 		getId: (service: Service) => service.id,
 		getLabel: (service: Service) => service.name,
 		getDescription: (service: Service, context) => {
@@ -25,17 +30,15 @@
 				b.interface_id ? context.interfaceId == b.interface_id || context.interfaceId == null : true
 			);
 
-			// If specific interface(s) provided, show port details
-			if (context.interfaceId && context.interfaceId.length > 0 && context.queryClient) {
+			// Show actual port numbers when ports are available in context
+			if (context.ports && context.ports.length > 0) {
 				const portBindings = bindingsOnInterface.filter((b) => b.type === 'Port');
-
 				let bindingDescriptions: string[] = [];
 
-				// Add port bindings
 				if (portBindings.length > 0) {
 					for (const binding of portBindings) {
 						const port = binding.port_id
-							? getPortByIdFromCache(context.queryClient, binding.port_id)
+							? context.ports.find((p) => p.id === binding.port_id)
 							: null;
 
 						if (port) {
@@ -45,13 +48,15 @@
 				}
 
 				if (bindingDescriptions.length > 0) {
-					descriptionItems.push('Listening on ports: ' + bindingDescriptions.join(', '));
+					descriptionItems.push(bindingDescriptions.join(', '));
 				}
 			} else {
-				// No specific interface - show binding count across all interfaces
-				descriptionItems.push(
-					`${bindingsOnInterface.length} binding${bindingsOnInterface.length > 1 ? 's' : ''}`
-				);
+				// No ports in context - show binding count
+				if (bindingsOnInterface.length > 0) {
+					descriptionItems.push(
+						`${bindingsOnInterface.length} binding${bindingsOnInterface.length > 1 ? 's' : ''}`
+					);
+				}
 			}
 
 			return descriptionItems.join(' · ');
@@ -62,18 +67,56 @@
 		getIconColor: (service: Service) =>
 			serviceDefinitions.getColorHelper(service.service_definition).icon,
 		getTags: (service: Service) => {
-			let tags = [];
+			let tags: TagProps[] = [];
+
+			// Add category tag
+			const category = serviceDefinitions.getCategory(service.service_definition);
+			if (category) {
+				const categoryColor = serviceDefinitions.getColorHelper(service.service_definition).color;
+				tags.push({
+					label: category,
+					color: categoryColor,
+					onmouseenter: () => {
+						hoveredServiceCategory.set({ category, color: categoryColor });
+					},
+					onmouseleave: () => {
+						hoveredServiceCategory.set(null);
+					},
+					onclick: () => {
+						const cat = category as ServiceCategory;
+						topologyOptions.update((opts) => {
+							const hidden = opts.request.hide_service_categories ?? [];
+							if (!hidden.includes(cat)) {
+								return {
+									...opts,
+									request: {
+										...opts.request,
+										hide_service_categories: [...hidden, cat]
+									}
+								};
+							}
+							return opts;
+						});
+					}
+				});
+			}
 
 			if (service.virtualization) {
-				const tag: TagProps = {
+				tags.push({
 					label: service.virtualization.type,
 					color: concepts.getColorHelper('Virtualization').color
-				};
-
-				tags.push(tag);
+				});
 			}
 
 			return tags;
+		},
+		getTagPickerProps: (service: Service, context: ServiceDisplayContext) => {
+			if (!context.showEntityTagPicker) return null;
+			return {
+				selectedTagIds: service.tags,
+				entityId: service.id,
+				entityType: 'Service' as const
+			};
 		},
 		getCategory: () => null
 	};
@@ -88,13 +131,10 @@
 
 	interface Props {
 		item: Service;
-		context: InterfaceId;
+		context: ServiceDisplayContext;
 	}
 
 	let { item, context }: Props = $props();
-
-	const queryClient = useQueryClient();
-	let contextWithQueryClient = $derived({ ...context, queryClient });
 </script>
 
-<ListSelectItem {item} context={contextWithQueryClient} displayComponent={ServiceDisplay} />
+<ListSelectItem {item} {context} displayComponent={ServiceDisplay} />

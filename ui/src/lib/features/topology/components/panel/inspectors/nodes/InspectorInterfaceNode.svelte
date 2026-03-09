@@ -4,8 +4,13 @@
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
-	import { useTopologiesQuery, selectedTopologyId } from '$lib/features/topology/queries';
+	import {
+		useTopologiesQuery,
+		selectedTopologyId,
+		autoRebuild
+	} from '$lib/features/topology/queries';
 	import type { InterfaceNode, Topology } from '$lib/features/topology/types/base';
+	import { getTopologyStateInfo } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 
@@ -17,6 +22,12 @@
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let topology = $derived(
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
+	);
+
+	// Freshness gating for inline edits
+	let isReadonly = $derived(!!topologyContext);
+	let liveEditsEnabled = $derived(
+		!isReadonly && topology && getTopologyStateInfo(topology, $autoRebuild).type == 'fresh'
 	);
 
 	let nodeData = $derived(node.data as InterfaceNode);
@@ -51,6 +62,21 @@
 
 	// Context for interface displays
 	let interfaceContext = $derived({ subnets: topology?.subnets ?? [] });
+
+	// Context for service displays - include ports for actual port number display
+	let serviceContext = $derived({
+		interfaceId: nodeData.interface_id ?? null,
+		ports: topology?.ports ?? [],
+		showEntityTagPicker: true,
+		tagPickerDisabled: !liveEditsEnabled
+	});
+
+	// Context for host display
+	let hostContext = $derived({
+		services: topology?.services.filter((s) => host && s.host_id == host.id) ?? [],
+		showEntityTagPicker: true,
+		tagPickerDisabled: !liveEditsEnabled
+	});
 </script>
 
 <div class="space-y-4">
@@ -78,7 +104,7 @@
 				{#each servicesOnThisInterface as service (service.id)}
 					<div class="card card-static">
 						<EntityDisplayWrapper
-							context={{ interfaceId: nodeData.interface_id ?? null }}
+							context={serviceContext}
 							item={service}
 							displayComponent={ServiceDisplay}
 						/>
@@ -93,13 +119,7 @@
 		<div>
 			<span class="text-secondary mb-2 block text-sm font-medium">Host</span>
 			<div class="card card-static">
-				<EntityDisplayWrapper
-					context={{
-						services: topology?.services.filter((s) => host && s.host_id == host.id) ?? []
-					}}
-					item={host}
-					displayComponent={HostDisplay}
-				/>
+				<EntityDisplayWrapper context={hostContext} item={host} displayComponent={HostDisplay} />
 			</div>
 		</div>
 	{/if}

@@ -32,6 +32,13 @@ export interface HoveredTag {
 }
 export const hoveredTag = writable<HoveredTag | null>(null);
 
+// Service category hover state for highlighting services in the same category
+export interface HoveredServiceCategory {
+	category: string;
+	color: string;
+}
+export const hoveredServiceCategory = writable<HoveredServiceCategory | null>(null);
+
 interface TagFilter {
 	hidden_host_tag_ids?: string[];
 	hidden_service_tag_ids?: string[];

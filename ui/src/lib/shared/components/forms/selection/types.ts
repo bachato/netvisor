@@ -1,5 +1,6 @@
 import type { TagProps } from '../../data/types';
 import type { IconComponent } from '$lib/shared/utils/types';
+import type { EntityDiscriminants } from '$lib/api/entities';
 import type { Component } from 'svelte';
 
 // @typescript-eslint/no-explicit-any
@@ -15,6 +16,16 @@ export interface EntityDisplayComponent<T, C> {
 	getTags?(item: T, context: C): TagProps[];
 	getCategory?(item: T, context: C): string | null;
 	getDisabled?(item: T, context: C): boolean;
+
+	// Inline tag picker support
+	getTagPickerProps?(
+		item: T,
+		context: C
+	): {
+		selectedTagIds: string[];
+		entityId: string;
+		entityType: EntityDiscriminants;
+	} | null;
 
 	// Inline editing support
 	supportsInlineEdit?: boolean;

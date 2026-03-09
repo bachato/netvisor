@@ -18,6 +18,9 @@ export interface TagProps {
 	icon?: IconComponent;
 	href?: string;
 	entityRef?: EntityRef;
+	onmouseenter?: () => void;
+	onmouseleave?: () => void;
+	onclick?: () => void;
 }
 
 export interface CardAction {

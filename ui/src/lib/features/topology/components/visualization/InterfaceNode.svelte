@@ -21,6 +21,7 @@
 		tagHiddenNodeIds,
 		tagHiddenServiceIds,
 		hoveredTag,
+		hoveredServiceCategory,
 		UNTAGGED_SENTINEL
 	} from '../../interactions';
 	import { createColorHelper } from '$lib/shared/utils/styling';
@@ -51,6 +52,12 @@
 	let currentHoveredTag = $state(get(hoveredTag));
 	hoveredTag.subscribe((value) => {
 		currentHoveredTag = value;
+	});
+
+	// Subscribe to service category hover state
+	let currentHoveredCategory = $state(get(hoveredServiceCategory));
+	hoveredServiceCategory.subscribe((value) => {
+		currentHoveredCategory = value;
 	});
 
 	// Try to get topology from context (for share/embed pages), fallback to TanStack query
@@ -239,6 +246,15 @@
 							);
 							return `text-decoration: underline; text-decoration-color: ${colorHelper.rgb}; text-underline-offset: 2px;`;
 						})()}
+						{@const serviceCategoryUnderline = (() => {
+							if (!currentHoveredCategory) return '';
+							const serviceCategory = serviceDefinitions.getCategory(service.service_definition);
+							if (serviceCategory !== currentHoveredCategory.category) return '';
+							const colorHelper = createColorHelper(
+								currentHoveredCategory.color as Parameters<typeof createColorHelper>[0]
+							);
+							return `text-decoration: underline; text-decoration-color: ${colorHelper.rgb}; text-underline-offset: 2px;`;
+						})()}
 						<div
 							class="flex flex-1 flex-col items-center justify-center"
 							style="min-width: 0; max-width: 100%; width: 100%;"
@@ -249,7 +265,10 @@
 								title={service.name}
 							>
 								<ServiceIcon class="h-5 w-5 flex-shrink-0 {hostColorHelper.icon}" />
-								<span class="text-m text-secondary truncate" style={serviceTagUnderline}>
+								<span
+									class="text-m text-secondary truncate"
+									style={serviceTagUnderline || serviceCategoryUnderline}
+								>
 									{service.name}
 								</span>
 							</div>
