@@ -130,6 +130,11 @@
 				<button type="button" class="btn-primary" onclick={() => onViewDiscovery?.()}>
 					View Discovery Progress
 				</button>
+				{#if hasEmail && isFirstDaemon}
+					<p class="text-secondary text-sm">
+						We'll email you when your first network discovery is complete.
+					</p>
+				{/if}
 			</div>
 		{:else if connectionStatus === 'trouble'}
 			<div class="flex flex-col items-center gap-4 py-8 text-center">
@@ -153,13 +158,6 @@
 			body={daemons_advancedHint()}
 			dismissableKey="daemon-wizard-advanced-hint"
 		/>
-
-		{#if hasEmail && isFirstDaemon}
-			<InlineInfo
-				title="We'll email you when your daemon connects and your network map is ready."
-				dismissableKey="daemon-install-email-hint"
-			/>
-		{/if}
 
 		{#if hasErrors}
 			<InlineWarning
