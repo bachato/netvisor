@@ -197,25 +197,29 @@
 		return `Found ${hosts} hosts — estimating scan time...`;
 	});
 
-	// Waiting suggestions
+	// Waiting suggestions — filtered by onboarding completion
 	function getInAppSuggestions(): Array<{ label: string; action: () => void }> {
-		const suggestions = [
-			{
+		const suggestions: Array<{ label: string; action: () => void }> = [];
+		if (!onboarding.includes('FirstSnmpCredentialCreated')) {
+			suggestions.push({
 				label: 'Set up SNMP credentials',
 				action: () => {
 					onNavigate('snmp-credentials');
 					openModal('snmp-credential-editor');
 				}
-			},
-			{
+			});
+		}
+		if (!onboarding.includes('FirstTagCreated')) {
+			suggestions.push({
 				label: 'Create tags to organize hosts',
 				action: () => {
 					onNavigate('tags');
 					openModal('tag-editor');
 				}
-			}
-		];
+			});
+		}
 		if (
+			!onboarding.includes('InviteSent') &&
 			organization?.plan &&
 			((organization.plan.included_seats ?? 0) > 1 || (organization.plan.seat_cents ?? 0) > 0)
 		) {
