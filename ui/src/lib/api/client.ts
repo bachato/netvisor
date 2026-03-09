@@ -51,11 +51,14 @@ if (typeof window !== 'undefined') {
 	}
 }
 
-// Tracks when the last request was released from the gate, so each subsequent
-// request staggers 200ms after the previous one (not a counter that resets)
-let lastGateRelease = 0;
-const STAGGER_MS = 500;
 const MIN_RATE_LIMIT_MS = 3000; // Minimum wait — Retry-After: 1 is too optimistic for stampedes
+
+// Concurrency control — limits parallel requests so when a 429 arrives,
+// queued requests see the gate before going out
+const MAX_CONCURRENT = 6;
+let activeRequests = 0;
+const pendingQueue: Array<() => void> = [];
+const STAGGER_MS = 500; // Stagger releases during rate-limit recovery
 
 function setRateLimitedUntil(until: number) {
 	const prev = rateLimitedUntil;
@@ -76,6 +79,76 @@ export function isRateLimited(): boolean {
 
 export function getRateLimitDelay(): number {
 	return Math.max(0, rateLimitedUntil - Date.now());
+}
+
+function acquireSlot(): Promise<void> {
+	if (activeRequests < MAX_CONCURRENT && !isRateLimited()) {
+		activeRequests++;
+		return Promise.resolve();
+	}
+	return new Promise<void>((resolve) => {
+		pendingQueue.push(resolve);
+		if (isRateLimited()) {
+			setTimeout(() => drainQueue(), getRateLimitDelay() + 100);
+		}
+	});
+}
+
+function releaseSlot(): void {
+	activeRequests = Math.max(0, activeRequests - 1);
+	drainQueue();
+}
+
+function drainQueue(): void {
+	if (pendingQueue.length === 0 || activeRequests >= MAX_CONCURRENT) return;
+
+	if (isRateLimited()) {
+		setTimeout(() => drainQueue(), getRateLimitDelay() + 100);
+		return;
+	}
+
+	activeRequests++;
+	const next = pendingQueue.shift()!;
+	next();
+
+	if (pendingQueue.length > 0) {
+		// After a rate limit, stagger releases to avoid re-triggering
+		const recentlyRateLimited = rateLimitedUntil > 0 && Date.now() - rateLimitedUntil < 10000;
+		if (recentlyRateLimited) {
+			setTimeout(() => drainQueue(), STAGGER_MS);
+		} else {
+			drainQueue();
+		}
+	}
+}
+
+/**
+ * Custom fetch with concurrency control and rate limit detection.
+ *
+ * Limits in-flight requests to MAX_CONCURRENT. When a 429 arrives,
+ * the gate is set BEFORE releasing the slot — so queued requests
+ * see the gate and wait instead of stampeding.
+ */
+async function rateLimitedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+	await acquireSlot();
+	try {
+		const response = await fetch(input, init);
+
+		if (response.status === 429) {
+			const retryAfterHeader = response.headers.get('Retry-After');
+			const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : null;
+			const headerMs = retryAfter && !isNaN(retryAfter) ? retryAfter * 1000 : 5000;
+			const retryAfterMs = Math.max(headerMs, MIN_RATE_LIMIT_MS);
+			setRateLimitedUntil(Date.now() + retryAfterMs);
+			console.log(
+				`[rate-limit] 429 detected, gate set for ${retryAfterMs}ms, ${pendingQueue.length} requests queued`
+			);
+		}
+
+		return response;
+	} finally {
+		releaseSlot();
+	}
 }
 
 /**
@@ -141,42 +214,6 @@ function cleanupExpiredRequests() {
 }
 
 /**
- * Rate limit gate middleware - delays requests when globally rate-limited
- *
- * When any request receives a 429, all subsequent requests wait until
- * the rate limit window passes (+ jitter) instead of stampeding at once.
- */
-const rateLimitGateMiddleware: Middleware = {
-	async onRequest({ request }) {
-		const url = new URL(request.url).pathname;
-		if (getRateLimitDelay() > 0) {
-			// Loop: schedule release, sleep, then re-check in case a new 429
-			// extended the window while we were waiting
-			let attempts = 0;
-			while (getRateLimitDelay() > 0 && attempts < 5) {
-				attempts++;
-				const now = Date.now();
-				const earliestRelease = Math.max(rateLimitedUntil, lastGateRelease + STAGGER_MS);
-				lastGateRelease = earliestRelease;
-				const waitTime = earliestRelease - now;
-				console.log(
-					`[rate-limit-gate] HOLDING ${url} for ${waitTime}ms (rateLimitedUntil=${rateLimitedUntil}, lastRelease=${earliestRelease}, attempt=${attempts})`
-				);
-				if (waitTime > 0) {
-					await new Promise((resolve) => setTimeout(resolve, waitTime));
-				}
-			}
-			console.log(`[rate-limit-gate] RELEASING ${url}`);
-		} else {
-			console.log(
-				`[rate-limit-gate] PASS ${url} (rateLimitedUntil=${rateLimitedUntil}, now=${Date.now()})`
-			);
-		}
-		return undefined;
-	}
-};
-
-/**
  * Caching middleware - debounces identical GET requests within 250ms
  */
 const cachingMiddleware: Middleware = {
@@ -230,13 +267,10 @@ const errorMiddleware: Middleware = {
 			if (response.status === 401) {
 				return response;
 			}
-			// For 429, set global rate limit gate and throw for TanStack Query retry
+			// For 429, throw for TanStack Query retry (gate already set by rateLimitedFetch)
 			if (response.status === 429) {
 				const retryAfterHeader = response.headers.get('Retry-After');
 				const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : null;
-				const headerMs = retryAfter && !isNaN(retryAfter) ? retryAfter * 1000 : 5000;
-				const retryAfterMs = Math.max(headerMs, MIN_RATE_LIMIT_MS);
-				setRateLimitedUntil(Date.now() + retryAfterMs);
 				throw new ApiError(
 					'Rate limited',
 					429,
@@ -271,11 +305,11 @@ export const apiClient = createClient<paths>({
 	credentials: 'include',
 	headers: {
 		'Content-Type': 'application/json'
-	}
+	},
+	fetch: rateLimitedFetch
 });
 
-// Add middleware (order matters - rate limit gate first, then caching, then error handling)
-apiClient.use(rateLimitGateMiddleware);
+// Add middleware (rate limiting handled by custom fetch wrapper above)
 apiClient.use(cachingMiddleware);
 apiClient.use(errorMiddleware);
 
