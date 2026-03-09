@@ -1,26 +1,10 @@
 <script lang="ts">
 	import { optionsPanelExpanded, selectedNode, selectedEdge } from '../../queries';
-	import { ChevronLeft, ChevronRight, Settings, Info } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import OptionsContent from './options/OptionsContent.svelte';
 	import InspectorNode from './inspectors/InspectorNode.svelte';
 	import InspectorEdge from './inspectors/InspectorEdge.svelte';
-	import {
-		common_inspector,
-		common_options,
-		topology_clickToInspect,
-		topology_collapsePanel,
-		topology_expandPanel
-	} from '$lib/paraglide/messages';
-
-	// Add tab state
-	let activeTab: 'options' | 'inspector' = $state('options');
-
-	// Automatically switch to inspector when something is selected
-	$effect(() => {
-		if ($selectedNode || $selectedEdge) {
-			activeTab = 'inspector';
-		}
-	});
+	import { topology_collapsePanel, topology_expandPanel } from '$lib/paraglide/messages';
 </script>
 
 <!-- Floating Panel -->
@@ -31,9 +15,8 @@
 >
 	<div class="card card-static p-0 shadow-lg">
 		{#if $optionsPanelExpanded}
-			<!-- Header with tabs and collapse button -->
+			<!-- Header with collapse button -->
 			<div class="flex items-center border-b border-gray-700">
-				<!-- Collapse button -->
 				<button
 					class="btn-icon rounded-xl p-3"
 					onclick={() => optionsPanelExpanded.set(false)}
@@ -41,45 +24,20 @@
 				>
 					<ChevronLeft class="text-secondary h-5 w-5" />
 				</button>
-				<!-- Tab buttons -->
-				<button
-					class="flex-1 px-4 py-3 text-sm font-medium transition-colors {activeTab === 'options'
-						? 'text-primary border-b-2 border-blue-500'
-						: 'text-secondary hover:text-primary'}"
-					onclick={() => (activeTab = 'options')}
-				>
-					<Settings class="mr-1 inline h-4 w-4" />
-					{common_options()}
-				</button>
-				<button
-					class="flex-1 px-4 py-3 text-sm font-medium transition-colors {activeTab === 'inspector'
-						? 'text-primary border-b-2 border-blue-500'
-						: 'text-secondary hover:text-primary'}"
-					onclick={() => (activeTab = 'inspector')}
-				>
-					<Info class="mr-1 inline h-4 w-4" />
-					{common_inspector()}
-				</button>
 			</div>
 
-			<!-- Tab content -->
+			<!-- Content area -->
 			<div class="overflow-y-auto p-3" style="max-height: calc(100vh - 250px);">
-				{#if activeTab === 'options'}
+				{#if $selectedNode}
+					{#key $selectedNode.id}
+						<InspectorNode node={$selectedNode} />
+					{/key}
+				{:else if $selectedEdge}
+					{#key $selectedEdge.id}
+						<InspectorEdge edge={$selectedEdge} />
+					{/key}
+				{:else}
 					<OptionsContent />
-				{:else if activeTab === 'inspector'}
-					{#if $selectedNode}
-						{#key $selectedNode.id}
-							<InspectorNode node={$selectedNode} />
-						{/key}
-					{:else if $selectedEdge}
-						{#key $selectedEdge.id}
-							<InspectorEdge edge={$selectedEdge} />
-						{/key}
-					{:else}
-						<div class="text-tertiary py-8 text-center text-sm">
-							{topology_clickToInspect()}
-						</div>
-					{/if}
 				{/if}
 			</div>
 		{:else}
