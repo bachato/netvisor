@@ -193,7 +193,7 @@
 	async function handleRegister(data: RegisterRequest, subscribed: boolean) {
 		try {
 			// Include marketing_opt_in in the registration request
-			const user = await registerMutation.mutateAsync({
+			await registerMutation.mutateAsync({
 				...data,
 				marketing_opt_in: subscribed
 			});

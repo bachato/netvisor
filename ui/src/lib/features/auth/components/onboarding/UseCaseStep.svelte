@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { createForm } from '@tanstack/svelte-form';
-	import { AlertTriangle, Home, Building2, Users } from 'lucide-svelte';
+	import { Home, Building2, Users } from 'lucide-svelte';
 	import { type UseCase, getUseCases } from '../../types/base';
 	import { useConfigQuery, isCloud, isCommunity } from '$lib/shared/stores/config-query';
 	import { onboardingStore } from '../../stores/onboarding';
@@ -252,7 +252,10 @@
 
 				<!-- License Warning (Community + Company/MSP) -->
 				{#if showLicenseWarning}
-					<InlineWarning title={onboarding_commercialNoticeTitle()} body={onboarding_commercialNoticeBody()}/>
+					<InlineWarning
+						title={onboarding_commercialNoticeTitle()}
+						body={onboarding_commercialNoticeBody()}
+					/>
 					<button type="button" class="btn-primary mt-4" onclick={handleLicenseAcknowledge}>
 						{onboarding_understandContinue()}
 					</button>
