@@ -8,10 +8,11 @@
 	import type { DaemonOS } from '../../../utils';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import OsSelector from '../../OsSelector.svelte';
-	import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-svelte';
+	import { Loader2, CheckCircle2, AlertTriangle, SlidersHorizontal } from 'lucide-svelte';
 	import type { DaemonConnectionStatus } from '../../../stores/daemon-setup';
 	import {
 		common_stepNumber,
+		common_advanced,
 		daemons_advancedHint,
 		daemons_dockerLinuxOnly,
 		daemons_dockerLinuxOnlyBody,
@@ -42,6 +43,7 @@
 		onViewDiscovery?: () => void;
 		hasEmailSupport?: boolean;
 		showTroubleshootingPanel?: boolean;
+		onAdvanced?: (() => void) | null;
 	}
 
 	let {
@@ -57,7 +59,8 @@
 		onReviewCommands,
 		onViewDiscovery,
 		hasEmailSupport = false,
-		showTroubleshootingPanel = false
+		showTroubleshootingPanel = false,
+		onAdvanced = null
 	}: Props = $props();
 
 	const configQuery = useConfigQuery();
@@ -80,11 +83,13 @@
 	// Show waiting UI when connection status is not idle (first daemon only)
 	let showWaitingUI = $derived(isFirstDaemon && connectionStatus !== 'idle');
 
-	// Auto-scroll to troubleshooting panel when shown
+	// Auto-scroll to troubleshooting panel when first shown
 	let troubleshootingRef: HTMLDivElement | undefined = $state(undefined);
+	let hasScrolledToTroubleshooting = $state(false);
 	$effect(() => {
-		if (showTroubleshootingPanel && troubleshootingRef) {
+		if (showTroubleshootingPanel && troubleshootingRef && !hasScrolledToTroubleshooting) {
 			troubleshootingRef.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			hasScrolledToTroubleshooting = true;
 		}
 	});
 </script>
@@ -108,7 +113,7 @@
 				</button>
 			</div>
 			{#if showTroubleshootingPanel}
-				<div bind:this={troubleshootingRef} class="border-primary/10 border-t pt-4">
+				<div bind:this={troubleshootingRef} class="pt-4">
 					<p class="text-secondary mb-3 text-sm font-medium">Need help?</p>
 					<SupportOptions isTroubleshooting={true} {hasEmailSupport} />
 				</div>
@@ -162,17 +167,27 @@
 				body={daemons_fixValidationErrorsBody()}
 			/>
 		{:else}
-			<DocsHint
-				text={daemons_docsMultiVlan()}
-				href="https://scanopy.net/docs/setting-up-daemons/planning-daemon-deployment/"
-				linkText={daemons_docsMultiVlanLinkText()}
-			/>
 			<OsSelector
 				{selectedOS}
 				onOsSelect={handleOsSelect}
 				{linuxMethod}
 				onLinuxMethodChange={(method) => onLinuxMethodChange?.(method)}
 			>
+				{#snippet afterLabel()}
+					<DocsHint
+						text={daemons_docsMultiVlan()}
+						href="https://scanopy.net/docs/setting-up-daemons/planning-daemon-deployment/"
+						linkText={daemons_docsMultiVlanLinkText()}
+					/>
+				{/snippet}
+				{#snippet afterButtons()}
+					{#if onAdvanced}
+						<button type="button" class="btn-secondary shrink-0 text-sm" onclick={onAdvanced}>
+							<SlidersHorizontal class="h-4 w-4" />
+							{common_advanced()}
+						</button>
+					{/if}
+				{/snippet}
 				{#if selectedOS === 'linux'}
 					{#if linuxMethod === 'binary'}
 						<div class="text-secondary">
@@ -204,6 +219,7 @@
 						<CodeContainer
 							language="yaml"
 							expandable={false}
+							maxHeight=""
 							code={dockerCompose}
 							onCopy={() => handleCopy('docker-compose')}
 						/>
@@ -260,7 +276,7 @@
 			</OsSelector>
 
 			{#if showTroubleshootingPanel}
-				<div bind:this={troubleshootingRef} class="border-primary/10 border-t pt-4">
+				<div bind:this={troubleshootingRef} class="pt-4">
 					<p class="text-secondary mb-3 text-sm font-medium">Need help?</p>
 					<SupportOptions isTroubleshooting={true} {hasEmailSupport} />
 				</div>

@@ -8,7 +8,7 @@
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { entities } from '$lib/shared/stores/metadata';
-	import { Settings, Terminal, SlidersHorizontal, Loader2 } from 'lucide-svelte';
+	import { Settings, Terminal, Loader2, ArrowRight, ArrowLeft } from 'lucide-svelte';
 	import confetti from 'canvas-confetti';
 	import {
 		createEmptyApiKeyFormData,
@@ -35,7 +35,6 @@
 	import InstallStep from './steps/InstallStep.svelte';
 	import AdvancedStep from './steps/AdvancedStep.svelte';
 	import {
-		common_advanced,
 		common_back,
 		common_close,
 		common_configure,
@@ -167,8 +166,8 @@
 	const mainFlow = ['configure', 'install'] as const;
 
 	let activeTab = $state('configure');
-	let previousMainTab = $state('configure');
 	let furthestReached = $state(0);
+	let showAdvanced = $state(false);
 
 	let tabs: ModalTab[] = $derived([
 		{ id: 'configure', label: common_configure(), icon: Settings },
@@ -177,16 +176,8 @@
 			label: common_install(),
 			icon: Terminal,
 			disabled: furthestReached < 1
-		},
-		{
-			id: 'advanced',
-			label: common_advanced(),
-			icon: SlidersHorizontal,
-			disabled: furthestReached < 1
 		}
 	]);
-
-	let isOnAdvanced = $derived(activeTab === 'advanced');
 
 	function nextTab() {
 		const idx = (mainFlow as readonly string[]).indexOf(activeTab);
@@ -196,10 +187,6 @@
 	}
 
 	function previousTab() {
-		if (isOnAdvanced) {
-			activeTab = previousMainTab;
-			return;
-		}
 		const idx = (mainFlow as readonly string[]).indexOf(activeTab);
 		if (idx > 0) {
 			activeTab = mainFlow[idx - 1];
@@ -207,9 +194,7 @@
 	}
 
 	function handleTabChange(tabId: string) {
-		if (tabId === 'advanced' && activeTab !== 'advanced') {
-			previousMainTab = activeTab;
-		}
+		showAdvanced = false;
 		activeTab = tabId;
 	}
 
@@ -378,8 +363,8 @@
 		isAutoGenerating = false;
 		nameManuallyEdited = false;
 		activeTab = 'configure';
-		previousMainTab = 'configure';
 		furthestReached = 0;
+		showAdvanced = false;
 		connectionStatus = 'idle';
 		showTroubleshootingPanel = false;
 		onClose();
@@ -390,7 +375,7 @@
 		nameManuallyEdited = false;
 		activeTab = 'configure';
 		furthestReached = 0;
-		previousMainTab = 'configure';
+		showAdvanced = false;
 		connectionStatus = 'idle';
 		startedAsFirstDaemon = isFirstDaemon;
 		showTroubleshootingPanel = false;
@@ -410,6 +395,7 @@
 	onOpen={handleOpen}
 	{tabs}
 	{activeTab}
+	tabStyle="stepper"
 	onTabChange={handleTabChange}
 >
 	{#snippet headerIcon()}
@@ -418,7 +404,9 @@
 
 	<div class="flex min-h-0 flex-1 flex-col">
 		<div class="flex-1 overflow-auto p-6">
-			{#if activeTab === 'configure'}
+			{#if showAdvanced}
+				<AdvancedStep {form} {formValues} />
+			{:else if activeTab === 'configure'}
 				<ConfigureStep
 					{form}
 					{formValues}
@@ -430,9 +418,7 @@
 					{isFirstDaemon}
 					onUseExistingKey={handleUseExistingKey}
 				/>
-			{/if}
-
-			{#if activeTab === 'install'}
+			{:else if activeTab === 'install'}
 				<InstallStep
 					{selectedOS}
 					onOsSelect={(os) => (selectedOS = os)}
@@ -447,21 +433,23 @@
 					onViewDiscovery={handleViewDiscovery}
 					{hasEmailSupport}
 					{showTroubleshootingPanel}
+					onAdvanced={() => (showAdvanced = true)}
 				/>
-			{/if}
-
-			{#if activeTab === 'advanced'}
-				<AdvancedStep {form} {formValues} />
 			{/if}
 		</div>
 
 		<!-- Footer -->
 		<div class="modal-footer">
 			<div class="flex items-center justify-end gap-3">
-				{#if activeTab === 'configure'}
+				{#if showAdvanced}
+					<button type="button" class="btn-primary" onclick={() => (showAdvanced = false)}>
+						<ArrowLeft class="h-4 w-4" />
+						Back to install
+					</button>
+				{:else if activeTab === 'configure'}
 					<button
 						type="button"
-						class="btn-primary"
+						class="btn-primary btn-primary-lg"
 						onclick={handleNext}
 						disabled={isAutoGenerating}
 					>
@@ -469,6 +457,7 @@
 							<Loader2 class="h-4 w-4 animate-spin" />
 						{:else}
 							{common_next()}
+							<ArrowRight class="h-4 w-4" />
 						{/if}
 					</button>
 				{:else if activeTab === 'install'}
@@ -481,7 +470,7 @@
 							{common_close()}
 						</button>
 					{:else if startedAsFirstDaemon}
-						<button type="button" class="btn-link text-sm" onclick={handleTrouble}>
+						<button type="button" class="btn-secondary" onclick={handleTrouble}>
 							I'm having trouble
 						</button>
 						<button type="button" class="btn-primary" onclick={handleInstalled}>
@@ -495,10 +484,6 @@
 							{common_close()}
 						</button>
 					{/if}
-				{:else if activeTab === 'advanced'}
-					<button type="button" class="btn-secondary" onclick={previousTab}>
-						{common_back()}
-					</button>
 				{/if}
 			</div>
 		</div>
