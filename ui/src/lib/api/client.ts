@@ -57,8 +57,12 @@ let gatePosition = 0;
 const STAGGER_MS = 200;
 
 function setRateLimitedUntil(until: number) {
+	const prev = rateLimitedUntil;
 	rateLimitedUntil = Math.max(rateLimitedUntil, until);
 	gatePosition = 0; // Reset stagger for new rate limit window
+	console.log(
+		`[rate-limit-gate] SET rateLimitedUntil=${rateLimitedUntil} (was=${prev}, requested=${until}, delay=${rateLimitedUntil - Date.now()}ms)`
+	);
 	try {
 		sessionStorage.setItem('rateLimitedUntil', String(rateLimitedUntil));
 	} catch {
@@ -145,10 +149,20 @@ function cleanupExpiredRequests() {
 const rateLimitGateMiddleware: Middleware = {
 	async onRequest({ request }) {
 		const delay = getRateLimitDelay();
+		const url = new URL(request.url).pathname;
 		if (delay > 0) {
 			const position = gatePosition++;
 			const stagger = position * STAGGER_MS;
-			await new Promise((resolve) => setTimeout(resolve, delay + stagger));
+			const totalWait = delay + stagger;
+			console.log(
+				`[rate-limit-gate] HOLDING ${url} for ${totalWait}ms (delay=${delay}, pos=${position}, stagger=${stagger})`
+			);
+			await new Promise((resolve) => setTimeout(resolve, totalWait));
+			console.log(`[rate-limit-gate] RELEASING ${url}`);
+		} else {
+			console.log(
+				`[rate-limit-gate] PASS ${url} (rateLimitedUntil=${rateLimitedUntil}, now=${Date.now()})`
+			);
 		}
 		return undefined;
 	}
