@@ -51,15 +51,15 @@ if (typeof window !== 'undefined') {
 	}
 }
 
-// Stagger counter — each request entering the gate gets a sequential position
-// so they trickle out one at a time instead of all at once
-let gatePosition = 0;
+// Tracks when the last request was released from the gate, so each subsequent
+// request staggers 200ms after the previous one (not a counter that resets)
+let lastGateRelease = 0;
 const STAGGER_MS = 200;
+const MIN_RATE_LIMIT_MS = 3000; // Minimum wait — Retry-After: 1 is too optimistic for stampedes
 
 function setRateLimitedUntil(until: number) {
 	const prev = rateLimitedUntil;
 	rateLimitedUntil = Math.max(rateLimitedUntil, until);
-	gatePosition = 0; // Reset stagger for new rate limit window
 	console.log(
 		`[rate-limit-gate] SET rateLimitedUntil=${rateLimitedUntil} (was=${prev}, requested=${until}, delay=${rateLimitedUntil - Date.now()}ms)`
 	);
@@ -151,13 +151,19 @@ const rateLimitGateMiddleware: Middleware = {
 		const delay = getRateLimitDelay();
 		const url = new URL(request.url).pathname;
 		if (delay > 0) {
-			const position = gatePosition++;
-			const stagger = position * STAGGER_MS;
-			const totalWait = delay + stagger;
+			// Schedule this request after both the rate limit window AND
+			// the previous release + stagger. This ensures requests trickle
+			// out one at a time, even when 429s keep extending the window.
+			const now = Date.now();
+			const earliestRelease = Math.max(rateLimitedUntil, lastGateRelease + STAGGER_MS);
+			lastGateRelease = earliestRelease;
+			const waitTime = earliestRelease - now;
 			console.log(
-				`[rate-limit-gate] HOLDING ${url} for ${totalWait}ms (delay=${delay}, pos=${position}, stagger=${stagger})`
+				`[rate-limit-gate] HOLDING ${url} for ${waitTime}ms (rateLimitedUntil=${rateLimitedUntil}, lastRelease=${earliestRelease})`
 			);
-			await new Promise((resolve) => setTimeout(resolve, totalWait));
+			if (waitTime > 0) {
+				await new Promise((resolve) => setTimeout(resolve, waitTime));
+			}
 			console.log(`[rate-limit-gate] RELEASING ${url}`);
 		} else {
 			console.log(
@@ -226,7 +232,8 @@ const errorMiddleware: Middleware = {
 			if (response.status === 429) {
 				const retryAfterHeader = response.headers.get('Retry-After');
 				const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : null;
-				const retryAfterMs = retryAfter && !isNaN(retryAfter) ? retryAfter * 1000 : 5000;
+				const headerMs = retryAfter && !isNaN(retryAfter) ? retryAfter * 1000 : 5000;
+				const retryAfterMs = Math.max(headerMs, MIN_RATE_LIMIT_MS);
 				setRateLimitedUntil(Date.now() + retryAfterMs);
 				throw new ApiError(
 					'Rate limited',
