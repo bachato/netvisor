@@ -54,7 +54,7 @@ if (typeof window !== 'undefined') {
 // Tracks when the last request was released from the gate, so each subsequent
 // request staggers 200ms after the previous one (not a counter that resets)
 let lastGateRelease = 0;
-const STAGGER_MS = 200;
+const STAGGER_MS = 500;
 const MIN_RATE_LIMIT_MS = 3000; // Minimum wait — Retry-After: 1 is too optimistic for stampedes
 
 function setRateLimitedUntil(until: number) {
@@ -148,21 +148,23 @@ function cleanupExpiredRequests() {
  */
 const rateLimitGateMiddleware: Middleware = {
 	async onRequest({ request }) {
-		const delay = getRateLimitDelay();
 		const url = new URL(request.url).pathname;
-		if (delay > 0) {
-			// Schedule this request after both the rate limit window AND
-			// the previous release + stagger. This ensures requests trickle
-			// out one at a time, even when 429s keep extending the window.
-			const now = Date.now();
-			const earliestRelease = Math.max(rateLimitedUntil, lastGateRelease + STAGGER_MS);
-			lastGateRelease = earliestRelease;
-			const waitTime = earliestRelease - now;
-			console.log(
-				`[rate-limit-gate] HOLDING ${url} for ${waitTime}ms (rateLimitedUntil=${rateLimitedUntil}, lastRelease=${earliestRelease})`
-			);
-			if (waitTime > 0) {
-				await new Promise((resolve) => setTimeout(resolve, waitTime));
+		if (getRateLimitDelay() > 0) {
+			// Loop: schedule release, sleep, then re-check in case a new 429
+			// extended the window while we were waiting
+			let attempts = 0;
+			while (getRateLimitDelay() > 0 && attempts < 5) {
+				attempts++;
+				const now = Date.now();
+				const earliestRelease = Math.max(rateLimitedUntil, lastGateRelease + STAGGER_MS);
+				lastGateRelease = earliestRelease;
+				const waitTime = earliestRelease - now;
+				console.log(
+					`[rate-limit-gate] HOLDING ${url} for ${waitTime}ms (rateLimitedUntil=${rateLimitedUntil}, lastRelease=${earliestRelease}, attempt=${attempts})`
+				);
+				if (waitTime > 0) {
+					await new Promise((resolve) => setTimeout(resolve, waitTime));
+				}
 			}
 			console.log(`[rate-limit-gate] RELEASING ${url}`);
 		} else {
