@@ -81,6 +81,18 @@ export function getRateLimitDelay(): number {
 	return Math.max(0, rateLimitedUntil - Date.now());
 }
 
+// Single drain timer — ensures only ONE pending drain at a time,
+// preventing multiple acquireSlot/releaseSlot calls from defeating stagger
+let drainTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleDrain(delay: number): void {
+	if (drainTimer !== null) return; // Already scheduled
+	drainTimer = setTimeout(() => {
+		drainTimer = null;
+		drainQueue();
+	}, delay);
+}
+
 function acquireSlot(): Promise<void> {
 	if (activeRequests < MAX_CONCURRENT && !isRateLimited()) {
 		activeRequests++;
@@ -89,33 +101,45 @@ function acquireSlot(): Promise<void> {
 	return new Promise<void>((resolve) => {
 		pendingQueue.push(resolve);
 		if (isRateLimited()) {
-			setTimeout(() => drainQueue(), getRateLimitDelay() + 100);
+			scheduleDrain(getRateLimitDelay() + 100);
 		}
 	});
 }
 
 function releaseSlot(): void {
 	activeRequests = Math.max(0, activeRequests - 1);
-	drainQueue();
+	if (pendingQueue.length === 0) return;
+
+	if (isRateLimited()) {
+		scheduleDrain(getRateLimitDelay() + 100);
+	} else {
+		const recentlyRateLimited = rateLimitedUntil > 0 && Date.now() - rateLimitedUntil < 10000;
+		if (recentlyRateLimited) {
+			scheduleDrain(STAGGER_MS);
+		} else {
+			drainQueue();
+		}
+	}
 }
 
 function drainQueue(): void {
 	if (pendingQueue.length === 0 || activeRequests >= MAX_CONCURRENT) return;
 
 	if (isRateLimited()) {
-		setTimeout(() => drainQueue(), getRateLimitDelay() + 100);
+		scheduleDrain(getRateLimitDelay() + 100);
 		return;
 	}
 
+	// Release exactly one request
 	activeRequests++;
 	const next = pendingQueue.shift()!;
 	next();
 
+	// Schedule next release if more pending
 	if (pendingQueue.length > 0) {
-		// After a rate limit, stagger releases to avoid re-triggering
 		const recentlyRateLimited = rateLimitedUntil > 0 && Date.now() - rateLimitedUntil < 10000;
 		if (recentlyRateLimited) {
-			setTimeout(() => drainQueue(), STAGGER_MS);
+			scheduleDrain(STAGGER_MS);
 		} else {
 			drainQueue();
 		}
