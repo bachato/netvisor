@@ -2762,7 +2762,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.14.16"
+         *       "server_version": "0.14.17"
          *     }
          */
         ApiMeta: {
@@ -2773,7 +2773,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.14.16
+             * @example 0.14.17
              */
             server_version: string;
         };
@@ -2787,14 +2787,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-09T04:32:54.934519Z",
-             *       "id": "4a1a9f26-0c00-4fbb-b057-bb980c7501f3",
+             *       "created_at": "2026-03-09T19:59:46.367720Z",
+             *       "id": "b0a7d3b8-12ed-410c-810e-90f3dc445216",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-09T04:32:54.934519Z"
+             *       "updated_at": "2026-03-09T19:59:46.367720Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -2923,8 +2923,12 @@ export interface components {
                 daemon_id: string;
                 discovery_type: components["schemas"]["DiscoveryType"];
                 error?: string | null;
+                /** Format: int32 */
+                estimated_remaining_secs?: number | null;
                 /** Format: date-time */
                 finished_at?: string | null;
+                /** Format: int32 */
+                hosts_discovered?: number | null;
                 /** Format: uuid */
                 network_id: string;
                 phase: components["schemas"]["DiscoveryPhase"];
@@ -3042,14 +3046,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-09T04:32:54.914110Z",
-             *               "id": "45d0563e-f81d-4cda-8720-5b4042d993c3",
+             *               "created_at": "2026-03-09T19:59:46.348377Z",
+             *               "id": "5f29676a-97dc-4697-9799-1b497063602c",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-09T04:32:54.914110Z"
+             *               "updated_at": "2026-03-09T19:59:46.348377Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3058,7 +3062,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Gatus",
+             *           "service_definition": "Bacula",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3314,14 +3318,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-09T04:32:54.928959Z",
-             *           "id": "e771badb-0b58-4936-9727-5574c473c697",
+             *           "created_at": "2026-03-09T19:59:46.362488Z",
+             *           "id": "5b6169b9-6796-4a2f-aca7-99a5496b9a34",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-09T04:32:54.928959Z"
+             *           "updated_at": "2026-03-09T19:59:46.362488Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3330,7 +3334,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Gatus",
+             *       "service_definition": "Bacula",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3538,8 +3542,12 @@ export interface components {
                 daemon_id: string;
                 discovery_type: components["schemas"]["DiscoveryType"];
                 error?: string | null;
+                /** Format: int32 */
+                estimated_remaining_secs?: number | null;
                 /** Format: date-time */
                 finished_at?: string | null;
+                /** Format: int32 */
+                hosts_discovered?: number | null;
                 /** Format: uuid */
                 network_id: string;
                 phase: components["schemas"]["DiscoveryPhase"];
@@ -3633,14 +3641,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-09T04:32:54.914530Z",
-         *       "id": "8fd30344-9894-47a6-a3f4-ae3f0011254d",
+         *       "created_at": "2026-03-09T19:59:46.348781Z",
+         *       "id": "5080a264-3e80-4373-adbf-1c2491ad94c5",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-09T04:32:54.914530Z"
+         *       "updated_at": "2026-03-09T19:59:46.348781Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3822,7 +3830,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Gatus",
+         *           "service_definition": "Bacula",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4156,8 +4164,12 @@ export interface components {
             daemon_id: string;
             discovery_type: components["schemas"]["DiscoveryType"];
             error?: string | null;
+            /** Format: int32 */
+            estimated_remaining_secs?: number | null;
             /** Format: date-time */
             finished_at?: string | null;
+            /** Format: int32 */
+            hosts_discovered?: number | null;
             /** Format: uuid */
             network_id: string;
             phase: components["schemas"]["DiscoveryPhase"];
@@ -4466,14 +4478,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-09T04:32:54.913512Z",
-         *               "id": "3f2708c4-dafa-4029-8be0-835331d7ca6a",
+         *               "created_at": "2026-03-09T19:59:46.347814Z",
+         *               "id": "7c8b3311-36fb-4322-b103-4241d99f7a8f",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-09T04:32:54.913512Z"
+         *               "updated_at": "2026-03-09T19:59:46.347814Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4482,7 +4494,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Gatus",
+         *           "service_definition": "Bacula",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5008,6 +5020,8 @@ export interface components {
             readonly plan_status: string | null;
             /** Format: date-time */
             readonly trial_end_date?: string | null;
+            /** @description Use case selection (homelab, company, msp) */
+            use_case?: string | null;
         };
         /**
          * @description API metadata for paginated list responses (pagination is always present)
@@ -5019,7 +5033,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.14.16"
+         *       "server_version": "0.14.17"
          *     }
          */
         PaginatedApiMeta: {
@@ -5032,7 +5046,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.14.16
+             * @example 0.14.17
              */
             server_version: string;
         };
@@ -5460,14 +5474,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-09T04:32:54.914382Z",
-         *           "id": "9936581a-5f73-44e7-8e79-8e10e63fb285",
+         *           "created_at": "2026-03-09T19:59:46.348642Z",
+         *           "id": "bec50013-3e91-457d-b83b-4368d00c7f5f",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-09T04:32:54.914382Z"
+         *           "updated_at": "2026-03-09T19:59:46.348642Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5476,7 +5490,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Gatus",
+         *       "service_definition": "Bacula",
          *       "source": {
          *         "type": "Manual"
          *       },

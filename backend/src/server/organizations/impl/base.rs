@@ -54,6 +54,9 @@ pub struct OrganizationBase {
     /// Tracks which plan limit notification levels have been sent
     #[serde(default, skip_serializing)]
     pub plan_limit_notifications: PlanLimitNotifications,
+    /// Use case selection (homelab, company, msp)
+    #[serde(default)]
+    pub use_case: Option<String>,
 }
 
 #[derive(

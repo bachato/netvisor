@@ -11,6 +11,7 @@
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { entityRef } from '$lib/shared/components/data/types';
+	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
 
 	// Props
 	let {
@@ -36,6 +37,16 @@
 	let isCancelling = $derived(
 		session?.session_id ? $cancellingSessions.get(session.session_id) === true : false
 	);
+
+	let estimationText = $derived.by(() => {
+		const hosts = session.hosts_discovered;
+		const estimate = session.estimated_remaining_secs;
+
+		if (!hosts) return 'Scanning for hosts...';
+		if (estimate != null)
+			return `Found ${hosts} hosts — ~${formatEstimatedRemaining(estimate)} remaining`;
+		return `Found ${hosts} hosts — estimating...`;
+	});
 
 	async function handleCancelDiscovery() {
 		if (onCancel) {
@@ -113,6 +124,8 @@
 				</ProgressTrack>
 				<span class="text-secondary text-xs">{session.progress}%</span>
 			</div>
+
+			<p class="text-secondary mt-1 text-xs">{estimationText}</p>
 		</div>
 	</div>
 {/snippet}

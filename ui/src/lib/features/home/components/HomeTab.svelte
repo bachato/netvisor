@@ -3,7 +3,9 @@
 	import { useDashboardQuery } from '$lib/features/home/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
+	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
 	import GettingStartedChecklist from './GettingStartedChecklist.svelte';
+	import ActiveDiscoveries from './ActiveDiscoveries.svelte';
 	import NetworkMetrics from './NetworkMetrics.svelte';
 	import DaemonHealthPanel from './DaemonHealthPanel.svelte';
 	import RecentDiscoveries from './RecentDiscoveries.svelte';
@@ -25,10 +27,12 @@
 	const organizationQuery = useOrganizationQuery();
 	const currentUserQuery = useCurrentUserQuery();
 	const configQuery = useConfigQuery();
+	const sessionsQuery = useActiveSessionsQuery();
 
 	let dashboard = $derived(dashboardQuery.data);
 	let organization = $derived(organizationQuery.data);
 	let currentUser = $derived(currentUserQuery.data);
+	let activeSessions = $derived(sessionsQuery.data ?? []);
 
 	let onboarding = $derived((organization?.onboarding ?? []) as OnboardingOperation[]);
 	let isOwner = $derived(currentUser?.permissions === 'Owner');
@@ -81,7 +85,7 @@
 	{:else if dashboard && organization}
 		<!-- Getting Started Checklist -->
 		{#if !checklistDismissed}
-			<GettingStartedChecklist {onboarding} onNavigate={navigateTo} />
+			<GettingStartedChecklist {onboarding} {organization} onNavigate={navigateTo} />
 		{/if}
 
 		<!-- Profile Prompt — shown after discovery for company/msp cloud users -->
@@ -125,6 +129,14 @@
 					</div>
 				</div>
 			</section>
+		{/if}
+
+		<!-- Active Discoveries — shown when sessions exist, after first discovery completed -->
+		{#if has('FirstDiscoveryCompleted') && activeSessions.length > 0}
+			<ActiveDiscoveries
+				sessions={activeSessions}
+				onNavigate={() => navigateTo('discovery-sessions')}
+			/>
 		{/if}
 
 		<!-- Feature Nudges — shown after checklist is complete/dismissed -->

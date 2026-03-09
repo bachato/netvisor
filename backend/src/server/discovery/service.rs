@@ -912,6 +912,8 @@ impl DiscoveryService {
             started_at: session.started_at,
             finished_at: Some(Utc::now()),
             discovery_type: session.discovery_type,
+            hosts_discovered: None,
+            estimated_remaining_secs: None,
         };
 
         // Handle based on current phase
@@ -1094,6 +1096,8 @@ impl DiscoveryService {
                 started_at: session.started_at,
                 finished_at: Some(Utc::now()),
                 discovery_type: session.discovery_type.clone(),
+                hosts_discovered: None,
+                estimated_remaining_secs: None,
             };
 
             if let Err(e) = self

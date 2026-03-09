@@ -79,6 +79,7 @@ impl Storable for Organization {
                     trial_end_date,
                     brevo_company_id,
                     plan_limit_notifications,
+                    use_case,
                 },
         } = self.clone();
 
@@ -96,6 +97,7 @@ impl Storable for Organization {
                 "trial_end_date",
                 "brevo_company_id",
                 "plan_limit_notifications",
+                "use_case",
             ],
             vec![
                 SqlValue::Uuid(id),
@@ -110,6 +112,7 @@ impl Storable for Organization {
                 SqlValue::OptionTimestamp(trial_end_date),
                 SqlValue::OptionalString(brevo_company_id),
                 SqlValue::PlanLimitNotifications(plan_limit_notifications),
+                SqlValue::OptionalString(use_case),
             ],
         ))
     }
@@ -146,6 +149,7 @@ impl Storable for Organization {
                     .ok()
                     .and_then(|v| serde_json::from_value(v).ok())
                     .unwrap_or_default(),
+                use_case: row.try_get("use_case").ok().flatten(),
             },
         })
     }

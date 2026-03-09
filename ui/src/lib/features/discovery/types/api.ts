@@ -14,10 +14,13 @@ export type DockerDiscovery = Extract<DiscoveryType, { type: 'Docker' }>;
 export interface DiscoveryUpdatePayload {
 	session_id: string;
 	daemon_id: string;
+	network_id: string;
 	discovery_type: DiscoveryType;
 	phase: DiscoveryPhase;
 	progress: number;
 	error?: string | null;
 	started_at?: string | null;
 	finished_at?: string | null;
+	hosts_discovered?: number | null;
+	estimated_remaining_secs?: number | null;
 }

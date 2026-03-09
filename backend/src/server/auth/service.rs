@@ -267,6 +267,8 @@ impl AuthService {
             };
             new_org_plan_type = plan.as_ref().map(|p| p.name().to_string());
 
+            let use_case = pending_setup.as_ref().and_then(|s| s.use_case.clone());
+
             // Create new organization for this user
             let organization = self
                 .organization_service
@@ -281,6 +283,7 @@ impl AuthService {
                         trial_end_date: None,
                         brevo_company_id: None,
                         plan_limit_notifications: Default::default(),
+                        use_case,
                     }),
                     AuthenticatedEntity::System,
                 )

@@ -568,6 +568,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
         let mut channel_closed = false;
         let mut last_progress_report = 0u8;
         let mut last_progress_time = Instant::now();
+        let mut deep_scan_started_at: Option<Instant> = None;
 
         // Buffer for hosts waiting to be scanned when at concurrency limit
         let mut pending_hosts: Vec<(IpAddr, Subnet, Option<MacAddress>)> = Vec::new();
@@ -797,6 +798,21 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         hosts_discovered_val,
                         hosts_scanned_val,
                     );
+
+                    // Update estimation atomics on the session
+                    if let Ok(session) = self.as_ref().get_session().await {
+                        session.hosts_discovered.store(hosts_discovered_val as u32, Ordering::Relaxed);
+
+                        if batches_completed_val > 0 {
+                            let started = deep_scan_started_at.get_or_insert(Instant::now());
+                            let deep_scan_elapsed = started.elapsed();
+                            let time_per_batch = deep_scan_elapsed.as_secs_f64() / batches_completed_val as f64;
+                            let remaining_batches = total_batches_val.saturating_sub(batches_completed_val);
+                            let remaining_secs = (remaining_batches as f64 * time_per_batch) as u32
+                                + LATE_ARRIVAL_GRACE_PERIOD.as_secs() as u32;
+                            session.estimated_remaining_secs.store(remaining_secs, Ordering::Relaxed);
+                        }
+                    }
 
                     // Report progress if it changed OR if enough time has passed (heartbeat)
                     let time_since_last_report = last_progress_time.elapsed();

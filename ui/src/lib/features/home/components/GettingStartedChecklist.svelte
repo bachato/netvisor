@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { components } from '$lib/api/schema';
-	import { Check, Circle, Info } from 'lucide-svelte';
+	import { Check, Circle, Info, Loader2, ExternalLink } from 'lucide-svelte';
 	import SectionPanel from '$lib/shared/components/layout/SectionPanel.svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { onMount } from 'svelte';
@@ -8,15 +8,19 @@
 	import confetti from 'canvas-confetti';
 	import { daemonSetupState } from '$lib/features/daemons/stores/daemon-setup';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
+	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
+	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
 	import SupportOptions from '$lib/features/support/SupportOptions.svelte';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
 	let {
 		onboarding,
+		organization,
 		onNavigate
 	}: {
 		onboarding: OnboardingOperation[];
+		organization: { use_case?: string | null; plan?: { included_seats?: number | null } | null };
 		onNavigate: (tab: string) => void;
 	} = $props();
 
@@ -36,6 +40,44 @@
 	// Poll org query while daemon is waiting/trouble
 	const organizationQuery = useOrganizationQuery();
 
+	// Active sessions query
+	const sessionsQuery = useActiveSessionsQuery();
+
+	let activeNetworkSession = $derived(
+		(sessionsQuery.data ?? []).find((s) => s.discovery_type?.type === 'Network')
+	);
+	let isDiscoveryActive = $derived(!!activeNetworkSession);
+
+	// Fun suggestion localStorage state
+	let funChecked = $state<Record<string, boolean>>({});
+
+	onMount(() => {
+		dismissed = localStorage.getItem(DISMISS_KEY) === 'true';
+
+		// Load fun item states from localStorage
+		for (let i = 0; i < localStorage.length; i++) {
+			const key = localStorage.key(i);
+			if (key?.startsWith('waiting-fun:')) {
+				funChecked[key.replace('waiting-fun:', '')] = true;
+			}
+		}
+
+		return unsubscribe;
+	});
+
+	// Clear fun item states when discovery completes
+	$effect(() => {
+		if (onboarding.includes('FirstDiscoveryCompleted')) {
+			for (let i = localStorage.length - 1; i >= 0; i--) {
+				const key = localStorage.key(i);
+				if (key?.startsWith('waiting-fun:')) {
+					localStorage.removeItem(key);
+				}
+			}
+			funChecked = {};
+		}
+	});
+
 	$effect(() => {
 		if (daemonStatus === 'waiting' || daemonStatus === 'trouble') {
 			const interval = setInterval(() => {
@@ -53,11 +95,6 @@
 		) {
 			daemonSetupState.set({ connectionStatus: 'connected' });
 		}
-	});
-
-	onMount(() => {
-		dismissed = localStorage.getItem(DISMISS_KEY) === 'true';
-		return unsubscribe;
 	});
 
 	$effect(() => {
@@ -141,6 +178,96 @@
 		localStorage.setItem(DISMISS_KEY, 'true');
 		dismissed = true;
 	}
+
+	// Estimation text for active discovery
+	let estimationText = $derived.by(() => {
+		if (!activeNetworkSession) return '';
+		const hosts = activeNetworkSession.hosts_discovered;
+		const estimate = activeNetworkSession.estimated_remaining_secs;
+
+		if (!hosts) {
+			return 'Scanning for hosts on the network...';
+		}
+		if (estimate != null) {
+			return `Found ${hosts} hosts — ${formatEstimatedRemaining(estimate)} remaining`;
+		}
+		return `Found ${hosts} hosts — estimating...`;
+	});
+
+	// Waiting suggestions
+	function getInAppSuggestions(): Array<{ label: string; action: () => void }> {
+		const suggestions = [
+			{ label: 'Set up SNMP credentials', action: () => onNavigate('snmp-credentials') },
+			{ label: 'Create tags to organize hosts', action: () => onNavigate('tags') }
+		];
+		if (
+			organization?.plan &&
+			'included_seats' in organization.plan &&
+			(organization.plan.included_seats ?? 0) > 1
+		) {
+			suggestions.push({
+				label: 'Invite team members',
+				action: () => onNavigate('users')
+			});
+		}
+		return suggestions;
+	}
+
+	function getFunSuggestions(): Array<{ id: string; label: string; url?: string }> {
+		const useCase = organization?.use_case;
+		if (useCase === 'homelab') {
+			return [
+				{
+					id: 'homelab-reddit',
+					label: 'Browse r/homelab for inspiration',
+					url: 'https://reddit.com/r/homelab'
+				},
+				{ id: 'homelab-upgrade', label: 'Plan your next hardware upgrade' },
+				{ id: 'homelab-nas', label: "Research that NAS build you've been eyeing" }
+			];
+		}
+		if (useCase === 'msp') {
+			return [
+				{
+					id: 'msp-reddit',
+					label: 'Browse r/msp for war stories',
+					url: 'https://reddit.com/r/msp'
+				},
+				{ id: 'msp-refresh', label: 'Start planning that infrastructure refresh' },
+				{ id: 'msp-daydream', label: 'Daydream about a fully documented network' }
+			];
+		}
+		if (useCase === 'company') {
+			return [
+				{
+					id: 'company-reddit',
+					label: 'Catch up on r/sysadmin',
+					url: 'https://reddit.com/r/sysadmin'
+				},
+				{ id: 'company-upgrade', label: "Research that network upgrade you've been pitching" },
+				{ id: 'company-daydream', label: 'Daydream about a fully documented network' }
+			];
+		}
+		return [
+			{ id: 'fallback-coffee', label: 'Grab a coffee' },
+			{ id: 'fallback-stretch', label: 'Take a quick stretch break' },
+			{ id: 'fallback-daydream', label: 'Daydream about a fully documented network' }
+		];
+	}
+
+	function toggleFunItem(id: string) {
+		if (funChecked[id]) {
+			delete funChecked[id];
+			localStorage.removeItem(`waiting-fun:${id}`);
+		} else {
+			funChecked[id] = true;
+			localStorage.setItem(`waiting-fun:${id}`, 'true');
+		}
+		funChecked = { ...funChecked };
+	}
+
+	let inAppSuggestions = $derived(getInAppSuggestions());
+	let funSuggestions = $derived(getFunSuggestions());
 </script>
 
 {#if showCelebration}
@@ -176,51 +303,99 @@
 				{#each steps as step (step.id)}
 					{@const complete = isStepComplete(step)}
 					{@const enabled = isStepEnabled(step)}
-					<button
-						class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors {!complete &&
-						enabled
-							? 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50'
-							: ''} {!enabled ? 'opacity-50' : ''}"
-						disabled={complete || !enabled}
-						onclick={() => step.action()}
-					>
-						<div class="flex items-center gap-3">
-							{#if complete}
-								<Check class="h-5 w-5 flex-shrink-0 text-green-400" />
-							{:else}
-								<Circle
-									class="h-5 w-5 flex-shrink-0 {enabled ? 'text-tertiary' : 'text-disabled'}"
-								/>
-							{/if}
-							<div>
-								<div class="flex items-center gap-2">
-									<span
-										class="text-sm font-medium"
-										class:text-primary={!complete && enabled}
-										class:text-tertiary={complete}
-										class:text-disabled={!complete && !enabled}
-										class:line-through={complete}
-									>
-										{step.label}
-									</span>
-									{#if step.id === 'daemon' && showDaemonTroubleTag}
-										<!-- svelte-ignore a11y_click_events_have_key_events -->
-										<!-- svelte-ignore a11y_no_static_element_interactions -->
+					{@const isActiveDiscoveryStep = step.id === 'discovery' && isDiscoveryActive && !complete}
+					<div>
+						<button
+							class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors {!complete &&
+							enabled
+								? 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50'
+								: ''} {!enabled ? 'opacity-50' : ''}"
+							disabled={complete || !enabled}
+							onclick={() => step.action()}
+						>
+							<div class="flex items-center gap-3">
+								{#if complete}
+									<Check class="h-5 w-5 flex-shrink-0 text-green-400" />
+								{:else if isActiveDiscoveryStep}
+									<Loader2 class="h-5 w-5 flex-shrink-0 animate-spin text-blue-500" />
+								{:else}
+									<Circle
+										class="h-5 w-5 flex-shrink-0 {enabled ? 'text-tertiary' : 'text-disabled'}"
+									/>
+								{/if}
+								<div>
+									<div class="flex items-center gap-2">
 										<span
-											class="inline-flex cursor-pointer items-center gap-1 rounded bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 transition-colors hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50"
-											onclick={handleTroubleTagClick}
+											class="text-sm font-medium"
+											class:text-primary={!complete && enabled}
+											class:text-tertiary={complete}
+											class:text-disabled={!complete && !enabled}
+											class:line-through={complete}
 										>
-											<Info class="h-3 w-3" />
-											Having trouble?
+											{isActiveDiscoveryStep ? 'Scanning your network' : step.label}
 										</span>
+										{#if step.id === 'daemon' && showDaemonTroubleTag}
+											<!-- svelte-ignore a11y_click_events_have_key_events -->
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<span
+												class="inline-flex cursor-pointer items-center gap-1 rounded bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 transition-colors hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50"
+												onclick={handleTroubleTagClick}
+											>
+												<Info class="h-3 w-3" />
+												Having trouble?
+											</span>
+										{/if}
+									</div>
+									{#if isActiveDiscoveryStep && estimationText}
+										<p class="text-secondary mt-0.5 text-xs">{estimationText}</p>
+									{:else if !complete && enabled}
+										<p class="text-tertiary text-xs">{step.description}</p>
 									{/if}
 								</div>
-								{#if !complete && enabled}
-									<p class="text-tertiary text-xs">{step.description}</p>
-								{/if}
 							</div>
-						</div>
-					</button>
+						</button>
+
+						<!-- Waiting suggestions shown below discovery step when active -->
+						{#if isActiveDiscoveryStep}
+							<div class="ml-11 mt-1 space-y-1">
+								<p class="text-tertiary mb-1 text-xs font-medium">While you wait:</p>
+
+								<!-- In-app suggestions -->
+								{#each inAppSuggestions as suggestion (suggestion.label)}
+									<button
+										class="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+										onclick={() => suggestion.action()}
+									>
+										<Circle class="h-3 w-3 flex-shrink-0" />
+										{suggestion.label}
+									</button>
+								{/each}
+
+								<!-- Fun suggestions -->
+								{#each funSuggestions as item (item.id)}
+									<button
+										class="text-tertiary flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+										onclick={() => {
+											if (item.url) {
+												window.open(item.url, '_blank', 'noopener,noreferrer');
+											}
+											toggleFunItem(item.id);
+										}}
+									>
+										{#if funChecked[item.id]}
+											<Check class="h-3 w-3 flex-shrink-0 text-green-400" />
+										{:else}
+											<Circle class="h-3 w-3 flex-shrink-0" />
+										{/if}
+										<span class:line-through={funChecked[item.id]}>{item.label}</span>
+										{#if item.url}
+											<ExternalLink class="h-3 w-3 flex-shrink-0 opacity-50" />
+										{/if}
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
 				{/each}
 			</div>
 

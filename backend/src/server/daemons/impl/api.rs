@@ -113,6 +113,10 @@ pub struct DiscoveryUpdatePayload {
     pub error: Option<String>,
     pub started_at: Option<DateTime<Utc>>,
     pub finished_at: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub hosts_discovered: Option<u32>,
+    #[serde(default)]
+    pub estimated_remaining_secs: Option<u32>,
 }
 
 impl DiscoveryUpdatePayload {
@@ -132,6 +136,8 @@ impl DiscoveryUpdatePayload {
             error: None,
             started_at: None,
             finished_at: None,
+            hosts_discovered: None,
+            estimated_remaining_secs: None,
         }
     }
 
@@ -150,6 +156,8 @@ impl DiscoveryUpdatePayload {
             error: update.error,
             started_at: info.started_at,
             finished_at: update.finished_at,
+            hosts_discovered: None,
+            estimated_remaining_secs: None,
         }
     }
 

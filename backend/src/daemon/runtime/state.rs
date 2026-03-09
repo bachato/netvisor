@@ -176,6 +176,18 @@ impl DaemonState {
                 error: None,
                 started_at: s.info.started_at,
                 finished_at: None,
+                hosts_discovered: {
+                    let v = s
+                        .hosts_discovered
+                        .load(std::sync::atomic::Ordering::Relaxed);
+                    if v > 0 { Some(v) } else { None }
+                },
+                estimated_remaining_secs: {
+                    let v = s
+                        .estimated_remaining_secs
+                        .load(std::sync::atomic::Ordering::Relaxed);
+                    if v != u32::MAX { Some(v) } else { None }
+                },
             });
         }
         drop(session);
