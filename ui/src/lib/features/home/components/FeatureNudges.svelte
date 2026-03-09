@@ -49,8 +49,6 @@
 
 	const isPaidPlan = $derived(planType != null && planType !== 'Free' && planType !== 'Demo');
 	const isProPlus = $derived(isPaidPlan && planType !== 'Starter');
-	const isTeamPlus = $derived(isProPlus && planType !== 'Pro');
-
 	interface Nudge {
 		id: string;
 		title: string;
@@ -194,7 +192,10 @@
 					onNavigate('users');
 					openModal('invite-user');
 				},
-				visible: isTeamPlus && !has('InviteSent'),
+				visible:
+					((organization.plan?.included_seats ?? 0) > 1 ||
+						(organization.plan?.seat_cents ?? 0) > 0) &&
+					!has('InviteSent'),
 				icon: entities.getIconComponent('User'),
 				iconColor: entities.getColorHelper('User').icon
 			}

@@ -20,7 +20,10 @@
 		onNavigate
 	}: {
 		onboarding: OnboardingOperation[];
-		organization: { use_case?: string | null; plan?: { included_seats?: number | null } | null };
+		organization: {
+			use_case?: string | null;
+			plan?: { included_seats?: number | null; seat_cents?: number | null } | null;
+		};
 		onNavigate: (tab: string) => void;
 	} = $props();
 
@@ -191,23 +194,41 @@
 		if (estimate != null) {
 			return `Found ${hosts} hosts — ${formatEstimatedRemaining(estimate)} remaining`;
 		}
-		return `Found ${hosts} hosts — estimating...`;
+		return `Found ${hosts} hosts — estimating scan time...`;
 	});
 
-	// Waiting suggestions
+	// Waiting suggestions — filtered by onboarding completion
 	function getInAppSuggestions(): Array<{ label: string; action: () => void }> {
-		const suggestions = [
-			{ label: 'Set up SNMP credentials', action: () => onNavigate('snmp-credentials') },
-			{ label: 'Create tags to organize hosts', action: () => onNavigate('tags') }
-		];
+		const suggestions: Array<{ label: string; action: () => void }> = [];
+		if (!onboarding.includes('FirstSnmpCredentialCreated')) {
+			suggestions.push({
+				label: 'Set up SNMP credentials',
+				action: () => {
+					onNavigate('snmp-credentials');
+					openModal('snmp-credential-editor');
+				}
+			});
+		}
+		if (!onboarding.includes('FirstTagCreated')) {
+			suggestions.push({
+				label: 'Create tags to organize hosts',
+				action: () => {
+					onNavigate('tags');
+					openModal('tag-editor');
+				}
+			});
+		}
 		if (
+			!onboarding.includes('InviteSent') &&
 			organization?.plan &&
-			'included_seats' in organization.plan &&
-			(organization.plan.included_seats ?? 0) > 1
+			((organization.plan.included_seats ?? 0) > 1 || (organization.plan.seat_cents ?? 0) > 0)
 		) {
 			suggestions.push({
 				label: 'Invite team members',
-				action: () => onNavigate('users')
+				action: () => {
+					onNavigate('users');
+					openModal('invite-user');
+				}
 			});
 		}
 		return suggestions;
@@ -358,7 +379,12 @@
 						<!-- Waiting suggestions shown below discovery step when active -->
 						{#if isActiveDiscoveryStep}
 							<div class="ml-11 mt-1 space-y-1">
-								<p class="text-tertiary mb-1 text-xs font-medium">While you wait:</p>
+								<p class="text-secondary mt-1 text-xs">
+									We'll email you when your scan is complete — feel free to leave and come back
+									later.
+								</p>
+
+								<p class="text-tertiary mb-1 mt-2 text-xs font-medium">While you wait:</p>
 
 								<!-- In-app suggestions -->
 								{#each inAppSuggestions as suggestion (suggestion.label)}
@@ -374,7 +400,7 @@
 								<!-- Fun suggestions -->
 								{#each funSuggestions as item (item.id)}
 									<button
-										class="text-tertiary flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+										class="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
 										onclick={() => {
 											if (item.url) {
 												window.open(item.url, '_blank', 'noopener,noreferrer');

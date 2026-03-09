@@ -1,5 +1,4 @@
 <script lang="ts">
-	import SectionPanel from '$lib/shared/components/layout/SectionPanel.svelte';
 	import ProgressTrack from '$lib/shared/components/data/ProgressTrack.svelte';
 	import AnimatedProgressBar from '$lib/features/discovery/components/cards/AnimatedProgressBar.svelte';
 	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
@@ -17,29 +16,39 @@
 	const daemonsQuery = useDaemonsQuery();
 	let daemons = $derived(daemonsQuery.data ?? []);
 
+	// Only show sessions in Scanning phase
+	let scanningSessions = $derived(sessions.filter((s) => s.phase === 'Scanning'));
+
 	function getDaemonName(daemonId: string): string {
 		return daemons.find((d) => d.id === daemonId)?.name ?? 'Unknown';
 	}
 
-	function getEstimationText(session: DiscoveryUpdatePayload): string {
+	function getEstimationText(session: DiscoveryUpdatePayload): string | null {
+		if (session.discovery_type?.type !== 'Network') return null;
 		const hosts = session.hosts_discovered;
 		const estimate = session.estimated_remaining_secs;
 
 		if (!hosts) return 'Scanning for hosts...';
 		if (estimate != null)
-			return `Found ${hosts} hosts — ~${formatEstimatedRemaining(estimate)} remaining`;
-		return `Found ${hosts} hosts — estimating...`;
+			return `Found ${hosts} hosts — ${formatEstimatedRemaining(estimate)} remaining`;
+		return `Found ${hosts} hosts — estimating scan time...`;
 	}
 </script>
 
-<section>
-	<SectionPanel>
+{#if scanningSessions.length > 0}
+	<section>
 		<h3 class="text-primary mb-3 text-base font-semibold">Active Discoveries</h3>
-		<div class="space-y-3">
-			{#each sessions as session (session.session_id)}
-				<button
-					class="w-full rounded-lg bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-700/50"
+		<div class="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-4">
+			{#each scanningSessions as session (session.session_id)}
+				{@const estimation = getEstimationText(session)}
+				<div
+					class="card card-static cursor-pointer hover:ring-1 hover:ring-gray-700"
 					onclick={onNavigate}
+					onkeydown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') onNavigate();
+					}}
+					role="button"
+					tabindex={0}
 				>
 					<div class="mb-2 flex items-center justify-between">
 						<span class="text-primary text-sm font-medium">
@@ -53,9 +62,11 @@
 						</ProgressTrack>
 						<span class="text-secondary text-xs">{session.progress}%</span>
 					</div>
-					<p class="text-secondary text-xs">{getEstimationText(session)}</p>
-				</button>
+					{#if estimation}
+						<p class="text-secondary text-xs">{estimation}</p>
+					{/if}
+				</div>
 			{/each}
 		</div>
-	</SectionPanel>
-</section>
+	</section>
+{/if}

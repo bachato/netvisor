@@ -38,14 +38,19 @@
 		session?.session_id ? $cancellingSessions.get(session.session_id) === true : false
 	);
 
+	let isNetworkScanning = $derived(
+		session.discovery_type?.type === 'Network' && session.phase === 'Scanning'
+	);
+
 	let estimationText = $derived.by(() => {
+		if (!isNetworkScanning) return null;
 		const hosts = session.hosts_discovered;
 		const estimate = session.estimated_remaining_secs;
 
 		if (!hosts) return 'Scanning for hosts...';
 		if (estimate != null)
-			return `Found ${hosts} hosts — ~${formatEstimatedRemaining(estimate)} remaining`;
-		return `Found ${hosts} hosts — estimating...`;
+			return `Found ${hosts} hosts — ${formatEstimatedRemaining(estimate)} remaining`;
+		return `Found ${hosts} hosts — estimating scan time...`;
 	});
 
 	async function handleCancelDiscovery() {
@@ -125,7 +130,9 @@
 				<span class="text-secondary text-xs">{session.progress}%</span>
 			</div>
 
-			<p class="text-secondary mt-1 text-xs">{estimationText}</p>
+			{#if estimationText}
+				<p class="text-secondary mt-1 text-xs">{estimationText}</p>
+			{/if}
 		</div>
 	</div>
 {/snippet}
