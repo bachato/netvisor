@@ -61,11 +61,7 @@ const pendingQueue: Array<() => void> = [];
 const STAGGER_MS = 500; // Stagger releases during rate-limit recovery
 
 function setRateLimitedUntil(until: number) {
-	const prev = rateLimitedUntil;
 	rateLimitedUntil = Math.max(rateLimitedUntil, until);
-	console.log(
-		`[rate-limit-gate] SET rateLimitedUntil=${rateLimitedUntil} (was=${prev}, requested=${until}, delay=${rateLimitedUntil - Date.now()}ms)`
-	);
 	try {
 		sessionStorage.setItem('rateLimitedUntil', String(rateLimitedUntil));
 	} catch {
@@ -164,9 +160,6 @@ async function rateLimitedFetch(input: RequestInfo | URL, init?: RequestInit): P
 			const headerMs = retryAfter && !isNaN(retryAfter) ? retryAfter * 1000 : 5000;
 			const retryAfterMs = Math.max(headerMs, MIN_RATE_LIMIT_MS);
 			setRateLimitedUntil(Date.now() + retryAfterMs);
-			console.log(
-				`[rate-limit] 429 detected, gate set for ${retryAfterMs}ms, ${pendingQueue.length} requests queued`
-			);
 		}
 
 		return response;
