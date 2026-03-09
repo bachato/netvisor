@@ -5,6 +5,7 @@
  */
 
 import { QueryClient } from '@tanstack/svelte-query';
+import { ApiError } from './client';
 
 /**
  * Create a QueryClient with application-specific defaults
@@ -17,10 +18,23 @@ export function createQueryClient(): QueryClient {
 				staleTime: 30 * 1000,
 				// Keep unused data in cache for 5 minutes
 				gcTime: 5 * 60 * 1000,
-				// Retry failed requests up to 2 times
-				retry: 2,
-				// Delay between retries (exponential backoff)
-				retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+				// Retry 429s more aggressively (5 times), others 2 times
+				retry: (failureCount, error) => {
+					if (error instanceof ApiError && error.status === 429) {
+						return failureCount < 5;
+					}
+					return failureCount < 2;
+				},
+				// Use Retry-After for 429s, default exponential backoff for others
+				retryDelay: (attemptIndex, error) => {
+					if (error instanceof ApiError && error.status === 429) {
+						if (error.retryAfter !== null) {
+							return error.retryAfter * 1000;
+						}
+						return Math.min(2000 * 2 ** attemptIndex, 60000);
+					}
+					return Math.min(1000 * 2 ** attemptIndex, 30000);
+				},
 				// Refetch on window focus (useful for keeping data fresh)
 				refetchOnWindowFocus: true,
 				// Don't refetch on mount if data is fresh

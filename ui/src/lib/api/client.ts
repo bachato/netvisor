@@ -27,6 +27,17 @@ export type ApiResponse<T> = {
 	meta: ApiMeta;
 };
 
+export class ApiError extends Error {
+	status: number;
+	retryAfter: number | null;
+	constructor(message: string, status: number, retryAfter: number | null = null) {
+		super(message);
+		this.name = 'ApiError';
+		this.status = status;
+		this.retryAfter = retryAfter;
+	}
+}
+
 /**
  * Get the server URL based on environment configuration
  */
@@ -142,6 +153,16 @@ const errorMiddleware: Middleware = {
 			// Don't show error toasts for 401 (expected when not logged in)
 			if (response.status === 401) {
 				return response;
+			}
+			// For 429, throw ApiError to propagate to TanStack Query for smart retry
+			if (response.status === 429) {
+				const retryAfterHeader = response.headers.get('Retry-After');
+				const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : null;
+				throw new ApiError(
+					'Rate limited',
+					429,
+					retryAfter && !isNaN(retryAfter) ? retryAfter : null
+				);
 			}
 			try {
 				const errorData: ApiErrorResponse = await response.clone().json();
