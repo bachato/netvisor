@@ -8,8 +8,12 @@
 	import { type DiscoveryUpdatePayload } from '../../types/api';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
+	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import type { TabProps } from '$lib/shared/types';
+	import type { components } from '$lib/api/schema';
+	import { useOrganizationQuery } from '$lib/features/organizations/queries';
+	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import {
 		common_daemon,
 		common_name,
@@ -26,9 +30,19 @@
 
 	let { isReadOnly = false }: TabProps = $props();
 
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
+
 	// Queries
 	const daemonsQuery = useDaemonsQuery();
 	const sessionsQuery = useActiveSessionsQuery();
+	const organizationQuery = useOrganizationQuery();
+	const configQuery = useConfigQuery();
+
+	// Email hint visibility
+	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
+	let hasEmail = $derived(configQuery.data?.has_email_service ?? false);
+	let hasCompletedFirstDiscovery = $derived(onboarding.includes('FirstDiscoveryCompleted'));
+	let showEmailHint = $derived(hasEmail && !hasCompletedFirstDiscovery);
 
 	// Mutations
 	const cancelDiscoveryMutation = useCancelDiscoveryMutation();
@@ -97,6 +111,12 @@
 <div class="space-y-6">
 	<!-- Header -->
 	<TabHeader title={discovery_activeSessionsTitle()} />
+	{#if showEmailHint}
+		<InlineInfo
+			title="We'll email you when your first network discovery is complete."
+			dismissableKey="discovery-email-hint"
+		/>
+	{/if}
 	{#if isLoading}
 		<Loading />
 	{:else if sessionsList.length === 0}
