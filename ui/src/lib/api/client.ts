@@ -38,6 +38,36 @@ export class ApiError extends Error {
 	}
 }
 
+// Global rate limit state — when any request gets 429'd, all requests wait
+// Persisted to sessionStorage so it survives page refreshes
+let rateLimitedUntil = 0;
+
+if (typeof window !== 'undefined') {
+	try {
+		const stored = sessionStorage.getItem('rateLimitedUntil');
+		if (stored) rateLimitedUntil = parseInt(stored, 10) || 0;
+	} catch {
+		// sessionStorage may not be available
+	}
+}
+
+function setRateLimitedUntil(until: number) {
+	rateLimitedUntil = Math.max(rateLimitedUntil, until);
+	try {
+		sessionStorage.setItem('rateLimitedUntil', String(rateLimitedUntil));
+	} catch {
+		// sessionStorage may not be available
+	}
+}
+
+export function isRateLimited(): boolean {
+	return Date.now() < rateLimitedUntil;
+}
+
+export function getRateLimitDelay(): number {
+	return Math.max(0, rateLimitedUntil - Date.now());
+}
+
 /**
  * Get the server URL based on environment configuration
  */
@@ -101,6 +131,23 @@ function cleanupExpiredRequests() {
 }
 
 /**
+ * Rate limit gate middleware - delays requests when globally rate-limited
+ *
+ * When any request receives a 429, all subsequent requests wait until
+ * the rate limit window passes (+ jitter) instead of stampeding at once.
+ */
+const rateLimitGateMiddleware: Middleware = {
+	async onRequest({ request }) {
+		const delay = getRateLimitDelay();
+		if (delay > 0) {
+			const jitter = Math.random() * 2000;
+			await new Promise((resolve) => setTimeout(resolve, delay + jitter));
+		}
+		return undefined;
+	}
+};
+
+/**
  * Caching middleware - debounces identical GET requests within 250ms
  */
 const cachingMiddleware: Middleware = {
@@ -154,10 +201,12 @@ const errorMiddleware: Middleware = {
 			if (response.status === 401) {
 				return response;
 			}
-			// For 429, throw ApiError to propagate to TanStack Query for smart retry
+			// For 429, set global rate limit gate and throw for TanStack Query retry
 			if (response.status === 429) {
 				const retryAfterHeader = response.headers.get('Retry-After');
 				const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : null;
+				const retryAfterMs = retryAfter && !isNaN(retryAfter) ? retryAfter * 1000 : 5000;
+				setRateLimitedUntil(Date.now() + retryAfterMs);
 				throw new ApiError(
 					'Rate limited',
 					429,
@@ -195,7 +244,8 @@ export const apiClient = createClient<paths>({
 	}
 });
 
-// Add middleware (order matters - logging first, then caching, then error handling)
+// Add middleware (order matters - rate limit gate first, then caching, then error handling)
+apiClient.use(rateLimitGateMiddleware);
 apiClient.use(cachingMiddleware);
 apiClient.use(errorMiddleware);
 

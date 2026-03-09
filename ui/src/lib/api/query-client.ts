@@ -18,21 +18,20 @@ export function createQueryClient(): QueryClient {
 				staleTime: 30 * 1000,
 				// Keep unused data in cache for 5 minutes
 				gcTime: 5 * 60 * 1000,
-				// Retry 429s more aggressively (5 times), others 2 times
+				// Retry 429s 3 times (global rate limit gate handles waiting), others 2 times
 				retry: (failureCount, error) => {
 					if (error instanceof ApiError && error.status === 429) {
-						return failureCount < 5;
+						return failureCount < 3;
 					}
 					return failureCount < 2;
 				},
-				// Use Retry-After for 429s with jitter to avoid thundering herd
+				// For 429s, retry almost immediately — the global rate limit gate
+				// middleware holds requests until the window passes (+ jitter).
+				// Retrying fast ensures retries enter the gate while it's active,
+				// preventing stampedes when all retries fire after the window expires.
 				retryDelay: (attemptIndex, error) => {
 					if (error instanceof ApiError && error.status === 429) {
-						const jitter = Math.random() * 2000;
-						if (error.retryAfter !== null) {
-							return error.retryAfter * 1000 + jitter;
-						}
-						return Math.min(2000 * 2 ** attemptIndex, 60000) + jitter;
+						return 100;
 					}
 					return Math.min(1000 * 2 ** attemptIndex, 30000);
 				},
