@@ -14,6 +14,7 @@
 	import '@xyflow/svelte/dist/style.css';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { pushError } from '$lib/shared/stores/feedback';
+	import { previewEdges, selectedNodes } from '../../queries';
 
 	// Import custom node/edge components
 	import SubnetNode from './SubnetNode.svelte';
@@ -51,6 +52,7 @@
 	export let onNodeSelect: ((node: Node | null) => void) | null = null;
 	export let onEdgeSelect: ((edge: Edge | null) => void) | null = null;
 	export let onPaneSelect: (() => void) | null = null;
+	export let onSelectionChange: ((nodes: Node[], edges: Edge[]) => void) | null = null;
 
 	const { fitView } = useSvelteFlow();
 	const queryClient = useQueryClient();
@@ -109,17 +111,20 @@
 	$: {
 		void selectedNode;
 		void selectedEdge;
+		void $selectedNodes;
 
 		if (topology && (topology.edges || topology.nodes)) {
 			const currentEdges = get(edges);
 			const currentNodes = get(nodes);
+			const multiSelected = get(selectedNodes);
 			updateConnectedNodes(
 				selectedNode,
 				selectedEdge,
 				currentEdges,
 				currentNodes,
 				queryClient,
-				topology
+				topology,
+				multiSelected
 			);
 
 			// Update edge animated state based on selection
@@ -155,6 +160,7 @@
 					height: node.size.y,
 					expandParent: true,
 					deletable: false,
+					selectable: node.node_type !== 'SubnetNode',
 					parentId: node.node_type == 'InterfaceNode' ? node.subnet_id : undefined,
 					extent: node.node_type == 'InterfaceNode' ? 'parent' : undefined,
 					data: node
@@ -287,6 +293,29 @@
 
 		edges.set(updatedEdges);
 	}
+
+	function handleSelectionChange({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) {
+		if (onSelectionChange) {
+			onSelectionChange(selNodes, []);
+		}
+	}
+
+	// Merge preview edges into the edge store when they change
+	$: {
+		const preview = $previewEdges;
+		if (preview.length > 0) {
+			const currentEdges = get(edges);
+			// Remove old preview edges, add new ones
+			const realEdges = currentEdges.filter((e) => !e.id.startsWith('preview-'));
+			edges.set([...realEdges, ...preview]);
+		} else {
+			const currentEdges = get(edges);
+			const hasPreview = currentEdges.some((e) => e.id.startsWith('preview-'));
+			if (hasPreview) {
+				edges.set(currentEdges.filter((e) => !e.id.startsWith('preview-')));
+			}
+		}
+	}
 </script>
 
 <div
@@ -307,6 +336,7 @@
 		onedgepointerleave={handleEdgeHover}
 		onnodedragstop={readonly ? undefined : handleNodeDragStop}
 		onreconnect={readonly ? undefined : handleReconnect}
+		onselectionchange={handleSelectionChange}
 		fitView={true}
 		minZoom={0.1}
 		noPanClass="nopan"
@@ -314,6 +344,8 @@
 		nodesDraggable={!readonly}
 		nodesConnectable={!readonly}
 		elementsSelectable={true}
+		selectionOnDrag={true}
+		selectionKey="Shift"
 		panOnDrag={true}
 		zoomOnScroll={true}
 	>

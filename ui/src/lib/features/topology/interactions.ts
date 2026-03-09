@@ -183,6 +183,7 @@ function getVirtualizedContainerNodes(
 /**
  * Update connected nodes when a node or edge is selected
  * @param topology - Optional topology data for direct lookups (used in share views where cache is empty)
+ * @param multiSelectedNodes - Optional array of multi-selected nodes
  */
 export function updateConnectedNodes(
 	selectedNode: Node | null,
@@ -190,9 +191,30 @@ export function updateConnectedNodes(
 	allEdges: Edge[],
 	allNodes: Node[],
 	queryClient: QueryClient,
-	topology?: Topology
+	topology?: Topology,
+	multiSelectedNodes?: Node[]
 ) {
 	const connected = new Set<string>();
+
+	// If multiple nodes are selected
+	if (multiSelectedNodes && multiSelectedNodes.length >= 2) {
+		for (const node of multiSelectedNodes) {
+			connected.add(node.id);
+			// Add direct neighbors of each selected node
+			for (const edge of allEdges) {
+				const edgeData = edge.data as TopologyEdge | undefined;
+				if (!edgeData) continue;
+				if (edgeData.source === node.id) {
+					connected.add(edgeData.target as string);
+				}
+				if (edgeData.target === node.id) {
+					connected.add(edgeData.source as string);
+				}
+			}
+		}
+		connectedNodeIds.set(connected);
+		return;
+	}
 
 	// If a node is selected
 	if (selectedNode) {

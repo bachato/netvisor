@@ -4,12 +4,13 @@
 		optionsPanelExpanded,
 		selectedEdge,
 		selectedNode,
+		selectedNodes,
 		selectedTopologyId,
 		useTopologiesQuery,
 		useUpdateNodePositionMutation,
 		useUpdateEdgeHandlesMutation
 	} from '../../queries';
-	import { type EdgeHandle, type TopologyEdge } from '../../types/base';
+	import { type EdgeHandle, type TopologyEdge, type TopologyNode } from '../../types/base';
 	import BaseTopologyViewer from './BaseTopologyViewer.svelte';
 
 	// TanStack Query hooks
@@ -91,6 +92,24 @@
 	function handlePaneSelect() {
 		selectedNode.set(null);
 		selectedEdge.set(null);
+		selectedNodes.set([]);
+	}
+
+	function handleSelectionChange(nodes: Node[]) {
+		// Filter to InterfaceNodes only
+		const interfaceNodes = nodes.filter((n) => {
+			const nodeData = n.data as TopologyNode;
+			return nodeData.node_type === 'InterfaceNode';
+		});
+
+		if (interfaceNodes.length >= 2) {
+			selectedNodes.set(interfaceNodes);
+			// Clear single-select to hide inspector, show action bar
+			selectedNode.set(null);
+			selectedEdge.set(null);
+		} else {
+			selectedNodes.set([]);
+		}
 	}
 </script>
 
@@ -108,6 +127,7 @@
 			onNodeSelect={handleNodeSelect}
 			onEdgeSelect={handleEdgeSelect}
 			onPaneSelect={handlePaneSelect}
+			onSelectionChange={handleSelectionChange}
 		/>
 	</div>
 {/if}

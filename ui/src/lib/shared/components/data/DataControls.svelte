@@ -67,6 +67,7 @@
 		type EntityDiscriminants
 	} from '$lib/features/tags/queries';
 	import type { Color } from '$lib/shared/utils/styling';
+	import { computeCommonTags } from '$lib/shared/utils/tags';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import type { components } from '$lib/api/schema';
 
@@ -721,14 +722,7 @@
 		const selectedItems = items.filter((item) => selectedIds.has(getItemId(item)));
 		if (selectedItems.length === 0) return [];
 
-		// Start with first item's tags, then intersect with others
-		let common = new Set(getItemTags(selectedItems[0]));
-		for (let i = 1; i < selectedItems.length; i++) {
-			const itemTags = new Set(getItemTags(selectedItems[i]));
-			common = new Set([...common].filter((tag) => itemTags.has(tag)));
-		}
-
-		return Array.from(common);
+		return computeCommonTags(selectedItems.map((item) => ({ tags: getItemTags!(item) })));
 	});
 
 	// Check if bulk tagging is enabled
