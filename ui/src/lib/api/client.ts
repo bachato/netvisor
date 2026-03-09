@@ -51,8 +51,14 @@ if (typeof window !== 'undefined') {
 	}
 }
 
+// Stagger counter — each request entering the gate gets a sequential position
+// so they trickle out one at a time instead of all at once
+let gatePosition = 0;
+const STAGGER_MS = 200;
+
 function setRateLimitedUntil(until: number) {
 	rateLimitedUntil = Math.max(rateLimitedUntil, until);
+	gatePosition = 0; // Reset stagger for new rate limit window
 	try {
 		sessionStorage.setItem('rateLimitedUntil', String(rateLimitedUntil));
 	} catch {
@@ -140,8 +146,9 @@ const rateLimitGateMiddleware: Middleware = {
 	async onRequest({ request }) {
 		const delay = getRateLimitDelay();
 		if (delay > 0) {
-			const jitter = Math.random() * 2000;
-			await new Promise((resolve) => setTimeout(resolve, delay + jitter));
+			const position = gatePosition++;
+			const stagger = position * STAGGER_MS;
+			await new Promise((resolve) => setTimeout(resolve, delay + stagger));
 		}
 		return undefined;
 	}
