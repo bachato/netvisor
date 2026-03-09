@@ -3,18 +3,11 @@
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
-	import {
-		useTopologiesQuery,
-		selectedTopologyId,
-		topologyOptions,
-		selectedNode,
-		selectedEdge
-	} from '$lib/features/topology/queries';
+	import { useTopologiesQuery, selectedTopologyId } from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import Tag from '$lib/shared/components/data/Tag.svelte';
-	import { Settings } from 'lucide-svelte';
+	import OptionToggle from '../../options/OptionToggle.svelte';
 	import { topology_hideVmOnContainer } from '$lib/paraglide/messages';
 
 	let { edge, vmServiceId }: { edge: Edge; vmServiceId: string } = $props();
@@ -29,12 +22,6 @@
 
 	let vmService = $derived(topology ? topology.services.find((s) => s.id == vmServiceId) : null);
 	let hypervisorHost = $derived(topology ? topology.hosts.find((h) => h.id == edge.target) : null);
-	let isVmTitleHidden = $derived($topologyOptions.request.hide_vm_title_on_docker_container);
-
-	function deselect() {
-		selectedNode.set(null);
-		selectedEdge.set(null);
-	}
 </script>
 
 <div class="space-y-3">
@@ -65,16 +52,13 @@
 		</div>
 	{/if}
 
-	<!-- Contextual setting hints -->
+	<!-- Contextual setting toggles -->
 	<div class="flex flex-wrap gap-1 pt-2">
-		<button onclick={deselect} title="Open settings">
-			<Tag
-				label={topology_hideVmOnContainer()}
-				color={isVmTitleHidden ? 'Blue' : null}
-				disabled={!isVmTitleHidden}
-				pill
-				icon={Settings}
-			/>
-		</button>
+		<OptionToggle
+			label={topology_hideVmOnContainer()}
+			path="request"
+			optionKey="hide_vm_title_on_docker_container"
+			compact
+		/>
 	</div>
 </div>

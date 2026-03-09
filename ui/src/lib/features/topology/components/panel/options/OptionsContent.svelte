@@ -4,6 +4,7 @@
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import TagFilterGroup from './TagFilterGroup.svelte';
+	import OptionToggle from './OptionToggle.svelte';
 	import {
 		common_categories,
 		common_docker,
@@ -384,21 +385,12 @@
 				<div class="space-y-3 px-3 pb-3">
 					{#each section.fields as def (def.id)}
 						{#if def.type === 'boolean'}
-							<div>
-								<label class="flex cursor-pointer items-center gap-2">
-									<input
-										type="checkbox"
-										id={def.id}
-										class="checkbox-card h-4 w-4"
-										checked={!!values[def.id]}
-										onchange={(e) => updateValue(def, e.currentTarget.checked)}
-									/>
-									<span class="text-secondary text-sm">{def.label()}</span>
-								</label>
-								{#if def.helpText}
-									<p class="text-tertiary ml-6 mt-1 text-xs">{def.helpText()}</p>
-								{/if}
-							</div>
+							<OptionToggle
+								label={def.label()}
+								helpText={def.helpText()}
+								path={def.path}
+								optionKey={def.key}
+							/>
 						{:else if def.type === 'string'}
 							<div>
 								<label for={def.id} class="text-secondary mb-1 block text-sm font-medium">

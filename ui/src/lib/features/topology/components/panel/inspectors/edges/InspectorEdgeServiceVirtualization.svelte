@@ -14,9 +14,7 @@
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import Tag from '$lib/shared/components/data/Tag.svelte';
-	import { Settings } from 'lucide-svelte';
-	import { selectedNode, selectedEdge } from '$lib/features/topology/queries';
+	import OptionToggle from '../../options/OptionToggle.svelte';
 	import { topology_groupDockerBridges, topology_hideVmOnContainer } from '$lib/paraglide/messages';
 
 	let { edge, containerizingServiceId }: { edge: Edge; containerizingServiceId: string } = $props();
@@ -41,13 +39,6 @@
 
 	// Target can be either a subnet (grouped) or a service (not grouped)
 	let isGrouped = $derived($topologyOptions.request.group_docker_bridges_by_host);
-	let isVmTitleHidden = $derived($topologyOptions.request.hide_vm_title_on_docker_container);
-
-	function deselect() {
-		selectedNode.set(null);
-		selectedEdge.set(null);
-	}
-
 	// Get containerized services - all if grouped, or just the one in edge.target if not
 	let containerizedServices = $derived(
 		topology
@@ -155,25 +146,19 @@
 		{/each}
 	{/if}
 
-	<!-- Contextual setting hints -->
+	<!-- Contextual setting toggles -->
 	<div class="flex flex-wrap gap-1 pt-2">
-		<button onclick={deselect} title="Open settings">
-			<Tag
-				label={topology_groupDockerBridges()}
-				color={isGrouped ? 'Blue' : null}
-				disabled={!isGrouped}
-				pill
-				icon={Settings}
-			/>
-		</button>
-		<button onclick={deselect} title="Open settings">
-			<Tag
-				label={topology_hideVmOnContainer()}
-				color={isVmTitleHidden ? 'Blue' : null}
-				disabled={!isVmTitleHidden}
-				pill
-				icon={Settings}
-			/>
-		</button>
+		<OptionToggle
+			label={topology_groupDockerBridges()}
+			path="request"
+			optionKey="group_docker_bridges_by_host"
+			compact
+		/>
+		<OptionToggle
+			label={topology_hideVmOnContainer()}
+			path="request"
+			optionKey="hide_vm_title_on_docker_container"
+			compact
+		/>
 	</div>
 </div>
