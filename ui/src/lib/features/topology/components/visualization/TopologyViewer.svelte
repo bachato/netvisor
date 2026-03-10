@@ -29,21 +29,6 @@
 	let localSelectedNode: Node | null = $state(null);
 	let localSelectedEdge: Edge | null = $state(null);
 
-	// Track mouse movement to distinguish pane click from pan
-	let mouseDownPos: { x: number; y: number } | null = null;
-	const PAN_THRESHOLD = 5; // pixels
-
-	function handleMouseDown(event: MouseEvent) {
-		mouseDownPos = { x: event.clientX, y: event.clientY };
-	}
-
-	function wasPan(event?: MouseEvent): boolean {
-		if (!mouseDownPos || !event) return false;
-		const dx = event.clientX - mouseDownPos.x;
-		const dy = event.clientY - mouseDownPos.y;
-		return Math.abs(dx) > PAN_THRESHOLD || Math.abs(dy) > PAN_THRESHOLD;
-	}
-
 	export function triggerFitView() {
 		baseViewer?.triggerFitView();
 	}
@@ -105,17 +90,20 @@
 		optionsPanelExpanded.set(true);
 	}
 
-	function handlePaneSelect(event?: MouseEvent) {
+	function handlePaneSelect(_event?: MouseEvent, wasPanning?: boolean) {
 		selectedNode.set(null);
 		selectedEdge.set(null);
 		// Only clear multi-selection on true click, not after panning
-		if (!wasPan(event)) {
+		if (!wasPanning) {
 			selectedNodes.set([]);
 		}
-		mouseDownPos = null;
 	}
 
-	function handleSelectionChange(newNodes: Node[]) {
+	function handleSelectionChange(
+		newNodes: Node[],
+		_edges: Edge[],
+		lastClickedNodeId?: string | null
+	) {
 		// Filter to InterfaceNodes only
 		const interfaceNodes = newNodes.filter((n) => {
 			const nodeData = n.data as TopologyNode;
@@ -129,6 +117,16 @@
 			const newIds = new Set(interfaceNodes.map((n) => n.id));
 			const kept = current.filter((n) => newIds.has(n.id));
 			const added = interfaceNodes.filter((n) => !currentIds.has(n.id));
+
+			// Sort added so the most recently clicked node comes last
+			if (lastClickedNodeId && added.length > 1) {
+				added.sort((a, b) => {
+					if (a.id === lastClickedNodeId) return 1;
+					if (b.id === lastClickedNodeId) return -1;
+					return 0;
+				});
+			}
+
 			selectedNodes.set([...kept, ...added]);
 			// Clear single-select to hide inspector, show action bar
 			selectedNode.set(null);
@@ -152,7 +150,7 @@
 
 {#if topology}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="h-[calc(100vh-150px)] w-full" onkeydown={handleKeydown} onmousedown={handleMouseDown}>
+	<div class="h-[calc(100vh-150px)] w-full" onkeydown={handleKeydown}>
 		<BaseTopologyViewer
 			bind:this={baseViewer}
 			{topology}

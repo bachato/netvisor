@@ -51,8 +51,17 @@
 	// Optional callbacks for selection changes
 	export let onNodeSelect: ((node: Node | null) => void) | null = null;
 	export let onEdgeSelect: ((edge: Edge | null) => void) | null = null;
-	export let onPaneSelect: ((event?: MouseEvent) => void) | null = null;
-	export let onSelectionChange: ((nodes: Node[], edges: Edge[]) => void) | null = null;
+	export let onPaneSelect: ((event?: MouseEvent, wasPanning?: boolean) => void) | null = null;
+	export let onSelectionChange:
+		| ((nodes: Node[], edges: Edge[], lastClickedNodeId?: string | null) => void)
+		| null = null;
+
+	// Track viewport panning state
+	let viewportMoved = false;
+	let viewportMoveTimer: ReturnType<typeof setTimeout> | null = null;
+
+	// Track last clicked node for selection order preservation
+	let lastClickedNodeId: string | null = null;
 
 	const { fitView } = useSvelteFlow();
 	const queryClient = useQueryClient();
@@ -253,6 +262,7 @@
 	}
 
 	function handleNodeClick({ node }: { node: Node; event: MouseEvent | TouchEvent }) {
+		lastClickedNodeId = node.id;
 		selectedNode = node;
 		selectedEdge = null;
 		if (onNodeSelect) {
@@ -268,11 +278,32 @@
 		}
 	}
 
+	function handleMoveStart() {
+		viewportMoved = true;
+		if (viewportMoveTimer) {
+			clearTimeout(viewportMoveTimer);
+			viewportMoveTimer = null;
+		}
+	}
+
+	function handleMoveEnd() {
+		// Delay clearing the flag so it's still set when onpaneclick fires
+		viewportMoveTimer = setTimeout(() => {
+			viewportMoved = false;
+		}, 50);
+	}
+
 	function handlePaneClick({ event }: { event: MouseEvent }) {
 		selectedNode = null;
 		selectedEdge = null;
 		if (onPaneSelect) {
-			onPaneSelect(event);
+			onPaneSelect(event, viewportMoved);
+		}
+		// Reset immediately after handling
+		viewportMoved = false;
+		if (viewportMoveTimer) {
+			clearTimeout(viewportMoveTimer);
+			viewportMoveTimer = null;
 		}
 	}
 
@@ -296,7 +327,7 @@
 
 	function handleSelectionChange({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) {
 		if (onSelectionChange) {
-			onSelectionChange(selNodes, []);
+			onSelectionChange(selNodes, [], lastClickedNodeId);
 		}
 	}
 
@@ -337,6 +368,8 @@
 		onnodedragstop={readonly ? undefined : handleNodeDragStop}
 		onreconnect={readonly ? undefined : handleReconnect}
 		onselectionchange={handleSelectionChange}
+		onmovestart={handleMoveStart}
+		onmoveend={handleMoveEnd}
 		fitView={true}
 		minZoom={0.1}
 		noPanClass="nopan"
