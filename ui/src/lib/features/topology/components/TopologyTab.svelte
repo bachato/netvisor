@@ -81,6 +81,7 @@
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
+	let hasCompletedFirstRebuild = $derived(onboarding.includes('FirstTopologyRebuild'));
 
 	// Mutations
 	const deleteTopologyMutation = useDeleteTopologyMutation();
@@ -371,43 +372,49 @@
 
 					<div class="flex items-center py-2">
 						<div class="mr-2 flex flex-col text-center">
-							<div class="flex justify-around gap-6">
-								<button
-									onclick={handleToggleLock}
-									class={`text-xs ${currentTopology.is_locked ? 'btn-icon-info' : 'btn-icon'}`}
-								>
-									<Lock class="mr-2 h-4 w-4" />
-									{currentTopology.is_locked ? common_unlock() : common_lock()}
-								</button>
-
-								{#if !currentTopology.is_locked}
+							{#if hasCompletedFirstRebuild}
+								<div class="flex justify-around gap-6">
 									<button
-										onclick={handleAutoRebuildToggle}
-										type="button"
-										class={`text-xs ${$autoRebuild && !currentTopology.is_locked ? 'btn-icon-success' : 'btn-icon'}`}
-										disabled={currentTopology.is_locked}
+										onclick={handleToggleLock}
+										class={`text-xs ${currentTopology.is_locked ? 'btn-icon-info' : 'btn-icon'}`}
+										data-tooltip="Lock prevents changes to your topology layout"
+										use:tooltip
 									>
-										{#if $autoRebuild}
-											<Radio class="mr-2 h-4 w-4" /> {common_auto()}
-										{:else}
-											<RefreshCcw class="mr-2 h-4 w-4" /> {common_manual()}
-										{/if}
+										<Lock class="mr-2 h-4 w-4" />
+										{currentTopology.is_locked ? common_unlock() : common_lock()}
 									</button>
+
+									{#if !currentTopology.is_locked}
+										<button
+											onclick={handleAutoRebuildToggle}
+											type="button"
+											class={`text-xs ${$autoRebuild && !currentTopology.is_locked ? 'btn-icon-success' : 'btn-icon'}`}
+											disabled={currentTopology.is_locked}
+											data-tooltip="Auto-rebuild keeps your topology up to date"
+											use:tooltip
+										>
+											{#if $autoRebuild}
+												<Radio class="mr-2 h-4 w-4" /> {common_auto()}
+											{:else}
+												<RefreshCcw class="mr-2 h-4 w-4" /> {common_manual()}
+											{/if}
+										</button>
+									{/if}
+								</div>
+								{#if currentTopology.is_locked && currentTopology.locked_at}
+									<span class="text-tertiary whitespace-nowrap text-[10px]"
+										>{topology_lockedTimestamp({
+											timestamp: formatTimestamp(currentTopology.locked_at),
+											user: lockedByDisplay ?? ''
+										})}</span
+									>
+								{:else}
+									<span class="text-tertiary whitespace-nowrap text-[10px]"
+										>{topology_lastRebuild({
+											timestamp: formatTimestamp(currentTopology.last_refreshed)
+										})}</span
+									>
 								{/if}
-							</div>
-							{#if currentTopology.is_locked && currentTopology.locked_at}
-								<span class="text-tertiary whitespace-nowrap text-[10px]"
-									>{topology_lockedTimestamp({
-										timestamp: formatTimestamp(currentTopology.locked_at),
-										user: lockedByDisplay ?? ''
-									})}</span
-								>
-							{:else}
-								<span class="text-tertiary whitespace-nowrap text-[10px]"
-									>{topology_lastRebuild({
-										timestamp: formatTimestamp(currentTopology.last_refreshed)
-									})}</span
-								>
 							{/if}
 						</div>
 						<!-- State Badge / Action Button -->
