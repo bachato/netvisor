@@ -3,6 +3,10 @@ import type { Topology } from './types/base';
 import type { IconComponent } from '$lib/shared/utils/types';
 import type { Color } from '$lib/shared/utils/styling';
 import { hasConflicts } from './queries';
+import {
+	topology_optionDisabledRebuildRequired,
+	topology_optionDisabledUnlockRequired
+} from '$lib/paraglide/messages';
 
 export type TopologyStateType = 'locked' | 'fresh' | 'stale_safe' | 'stale_conflicts';
 
@@ -106,6 +110,11 @@ export function getTopologyEditState(
 	if (topology.is_locked) disabledReason = 'locked';
 	else if (stateInfo.type !== 'fresh') disabledReason = 'stale';
 	return { isReadonly: false, isEditable, disabledReason };
+}
+
+export function getOptionDisabledTooltip(reason: TopologyEditState['disabledReason']): string {
+	if (reason === 'locked') return topology_optionDisabledUnlockRequired();
+	return topology_optionDisabledRebuildRequired();
 }
 
 /**
