@@ -42,7 +42,7 @@
 {#if text}
 	<div class={className}>
 		<p class="text-secondary text-xs">{text}</p>
-		{#if phase === 'Scanning' && estimated_remaining_secs != null && estimated_remaining_secs > 600}
+		{#if phase === 'Scanning' && estimated_remaining_secs != null && estimated_remaining_secs > 3600}
 			<DocsHint
 				text={home_docsDiscoveryTakesLong()}
 				href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/#discovery-takes-hours"
