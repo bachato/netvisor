@@ -11,6 +11,7 @@
 	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
 	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
 	import SupportOptions from '$lib/features/support/SupportOptions.svelte';
+	import { useConfigQuery } from '$lib/shared/stores/config-query';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -45,6 +46,9 @@
 
 	// Active sessions query
 	const sessionsQuery = useActiveSessionsQuery();
+
+	const configQuery = useConfigQuery();
+	let hasEmail = $derived(configQuery.data?.has_email_service ?? false);
 
 	let activeNetworkSession = $derived(
 		(sessionsQuery.data ?? []).find((s) => s.discovery_type?.type === 'Network')
@@ -377,10 +381,12 @@
 						<!-- Waiting suggestions shown below discovery step when active -->
 						{#if isActiveDiscoveryStep}
 							<div class="ml-11 mt-1 space-y-1">
-								<p class="text-secondary mt-1 text-xs">
-									We'll email you when your scan is complete — feel free to leave and come back
-									later.
-								</p>
+								{#if hasEmail}
+									<p class="text-secondary mt-1 text-xs">
+										We'll email you when your scan is complete — feel free to leave and come back
+										later.
+									</p>
+								{/if}
 
 								<p class="text-tertiary mb-1 mt-2 text-xs font-medium">While you wait:</p>
 
