@@ -81,7 +81,9 @@
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
-	let hasCompletedFirstRebuild = $derived(onboarding.includes('FirstTopologyRebuild'));
+	let hasCompletedFirstRebuild = $derived(
+		onboarding.length === 0 || onboarding.includes('FirstTopologyRebuild')
+	);
 
 	// Mutations
 	const deleteTopologyMutation = useDeleteTopologyMutation();
@@ -377,7 +379,7 @@
 									<button
 										onclick={handleToggleLock}
 										class={`text-xs ${currentTopology.is_locked ? 'btn-icon-info' : 'btn-icon'}`}
-										data-tooltip="Lock prevents changes to your topology layout"
+										data-tooltip="Lock your topology layout to prevent discovery from changing it"
 										use:tooltip
 									>
 										<Lock class="mr-2 h-4 w-4" />
@@ -390,7 +392,9 @@
 											type="button"
 											class={`text-xs ${$autoRebuild && !currentTopology.is_locked ? 'btn-icon-success' : 'btn-icon'}`}
 											disabled={currentTopology.is_locked}
-											data-tooltip="Auto-rebuild keeps your topology up to date"
+											data-tooltip={$autoRebuild
+												? 'Your topology rebuilds automatically when new data arrives from discovery'
+												: "In manual mode, your topology won't update until you trigger a rebuild"}
 											use:tooltip
 										>
 											{#if $autoRebuild}
