@@ -51,7 +51,7 @@
 	// Optional callbacks for selection changes
 	export let onNodeSelect: ((node: Node | null) => void) | null = null;
 	export let onEdgeSelect: ((edge: Edge | null) => void) | null = null;
-	export let onPaneSelect: (() => void) | null = null;
+	export let onPaneSelect: ((event?: MouseEvent) => void) | null = null;
 	export let onSelectionChange: ((nodes: Node[], edges: Edge[]) => void) | null = null;
 
 	const { fitView } = useSvelteFlow();
@@ -268,11 +268,11 @@
 		}
 	}
 
-	function handlePaneClick() {
+	function handlePaneClick({ event }: { event: MouseEvent }) {
 		selectedNode = null;
 		selectedEdge = null;
 		if (onPaneSelect) {
-			onPaneSelect();
+			onPaneSelect(event);
 		}
 	}
 

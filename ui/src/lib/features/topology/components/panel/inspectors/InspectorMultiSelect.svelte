@@ -315,13 +315,29 @@
 		onGroupCreated?.(created.id);
 	}
 
-	// Compute best source/target handles based on node positions
+	// Get absolute position for a node (accounting for parent offset)
+	function getAbsolutePosition(node: Node): { x: number; y: number } {
+		if (node.parentId && topology) {
+			const parent = topology.nodes.find((n) => n.id === node.parentId);
+			if (parent) {
+				return {
+					x: parent.position.x + node.position.x,
+					y: parent.position.y + node.position.y
+				};
+			}
+		}
+		return { x: node.position.x, y: node.position.y };
+	}
+
+	// Compute best source/target handles based on absolute node positions
 	function getBestHandles(
 		source: Node,
 		target: Node
 	): { sourceHandle: string; targetHandle: string } {
-		const dx = target.position.x - source.position.x;
-		const dy = target.position.y - source.position.y;
+		const sourcePos = getAbsolutePosition(source);
+		const targetPos = getAbsolutePosition(target);
+		const dx = targetPos.x - sourcePos.x;
+		const dy = targetPos.y - sourcePos.y;
 		if (Math.abs(dx) > Math.abs(dy)) {
 			return dx > 0
 				? { sourceHandle: 'Right', targetHandle: 'Left' }
