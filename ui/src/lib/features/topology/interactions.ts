@@ -512,7 +512,12 @@ export function updateSearchFilter(topology: Topology | undefined, query: string
 		const nameMatch = host.name.toLowerCase().includes(q);
 		const hostnameMatch = host.hostname?.toLowerCase().includes(q) ?? false;
 		if (nameMatch || hostnameMatch) {
-			const hostInterfaces = topology.interfaces.filter((i) => i.host_id === host.id);
+			const hostInterfaces = topology.interfaces.filter((i) => {
+				if (i.host_id !== host.id) return false;
+				const subnet = topology.subnets.find((s) => s.id === i.subnet_id);
+				if (!subnet) return true;
+				return !subnetTypes.getMetadata(subnet.subnet_type).is_for_containers;
+			});
 			hostInterfaces.forEach((i) => {
 				if (!matchingNodeIds.includes(i.id)) matchingNodeIds.push(i.id);
 			});
@@ -550,7 +555,12 @@ export function updateSearchFilter(topology: Topology | undefined, query: string
 		for (const tagId of host.tags) {
 			const tag = entityTags.find((t) => t.id === tagId);
 			if (tag && tag.name.toLowerCase().includes(q)) {
-				const hostInterfaces = topology.interfaces.filter((i) => i.host_id === host.id);
+				const hostInterfaces = topology.interfaces.filter((i) => {
+					if (i.host_id !== host.id) return false;
+					const subnet = topology.subnets.find((s) => s.id === i.subnet_id);
+					if (!subnet) return true;
+					return !subnetTypes.getMetadata(subnet.subnet_type).is_for_containers;
+				});
 				hostInterfaces.forEach((i) => {
 					if (!matchingNodeIds.includes(i.id)) matchingNodeIds.push(i.id);
 				});

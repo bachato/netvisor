@@ -111,6 +111,7 @@
 		selectedNode.set(null);
 		selectedEdge.set(null);
 		selectedNodes.set([]);
+		clearSearch();
 	}
 
 	function handleSelectionChange(newNodes: Node[]) {
