@@ -2787,14 +2787,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-10T04:43:21.291154Z",
-             *       "id": "ad08bca2-19d8-4ac4-a6d3-14608d4590f1",
+             *       "created_at": "2026-03-10T05:04:33.127821Z",
+             *       "id": "b641e7b8-c812-403a-8bfb-5da1cf4cce3d",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-10T04:43:21.291154Z"
+             *       "updated_at": "2026-03-10T05:04:33.127821Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3046,14 +3046,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-10T04:43:21.271673Z",
-             *               "id": "2e6a3578-18bd-4f5a-b833-1ccfc192d2c4",
+             *               "created_at": "2026-03-10T05:04:33.116806Z",
+             *               "id": "6ab75937-ba2d-49df-819a-0fb79bb78824",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-10T04:43:21.271673Z"
+             *               "updated_at": "2026-03-10T05:04:33.116806Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3318,14 +3318,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-10T04:43:21.286328Z",
-             *           "id": "0407c0d9-f206-4858-8e48-fe3ab69fd73f",
+             *           "created_at": "2026-03-10T05:04:33.124388Z",
+             *           "id": "b1daa48a-9813-4858-abeb-9ee4ad87f898",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-10T04:43:21.286328Z"
+             *           "updated_at": "2026-03-10T05:04:33.124388Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3641,14 +3641,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-10T04:43:21.271866Z",
-         *       "id": "75768559-f47b-4ae7-8605-0eb4b6d74970",
+         *       "created_at": "2026-03-10T05:04:33.117018Z",
+         *       "id": "6ed416dd-bcfa-4248-a5a4-9fc569049e61",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-10T04:43:21.271866Z"
+         *       "updated_at": "2026-03-10T05:04:33.117018Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4478,14 +4478,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-10T04:43:21.271407Z",
-         *               "id": "5246fb29-8480-40c3-9671-061be4376da0",
+         *               "created_at": "2026-03-10T05:04:33.116515Z",
+         *               "id": "cfd9f480-8281-4118-a7a3-dc266d8fb525",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-10T04:43:21.271407Z"
+         *               "updated_at": "2026-03-10T05:04:33.116515Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -5474,14 +5474,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-10T04:43:21.271802Z",
-         *           "id": "d89029f6-90ac-48f0-bd9b-11a0bcc74242",
+         *           "created_at": "2026-03-10T05:04:33.116947Z",
+         *           "id": "d72be9b3-c0e4-4ce0-bf4b-fd98a12b591e",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-10T04:43:21.271802Z"
+         *           "updated_at": "2026-03-10T05:04:33.116947Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
