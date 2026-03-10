@@ -9,7 +9,7 @@
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
-	import { getTopologyStateInfo } from '$lib/features/topology/state';
+	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import OptionToggle from '../../options/OptionToggle.svelte';
@@ -29,11 +29,9 @@
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
 	);
 
-	// Freshness gating for inline edits
+	// Unified edit state
 	let isReadonly = $derived(!!topologyContext);
-	let liveEditsEnabled = $derived(
-		!isReadonly && topology && getTopologyStateInfo(topology, $autoRebuild).type == 'fresh'
-	);
+	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	let vmService = $derived(topology ? topology.services.find((s) => s.id == vmServiceId) : null);
 	let hypervisorHost = $derived(topology ? topology.hosts.find((h) => h.id == edge.target) : null);
@@ -46,6 +44,7 @@
 			helpText={topology_hideVmOnContainerHelp()}
 			path="request"
 			optionKey="hide_vm_title_on_docker_container"
+			disabled={!editState.isEditable}
 		/>
 	</OptionsCard>
 
@@ -57,7 +56,7 @@
 					interfaceId: null,
 					ports: topology?.ports ?? [],
 					showEntityTagPicker: true,
-					tagPickerDisabled: !liveEditsEnabled,
+					tagPickerDisabled: !editState.isEditable,
 					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={vmService}
@@ -76,7 +75,7 @@
 							hypervisorHost ? s.host_id == hypervisorHost.id : false
 						) ?? [],
 					showEntityTagPicker: true,
-					tagPickerDisabled: !liveEditsEnabled,
+					tagPickerDisabled: !editState.isEditable,
 					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={hypervisorHost}

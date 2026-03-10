@@ -5,12 +5,14 @@
 		label,
 		helpText = '',
 		path,
-		optionKey
+		optionKey,
+		disabled = false
 	}: {
 		label: string;
 		helpText?: string;
 		path: 'local' | 'request';
 		optionKey: string;
+		disabled?: boolean;
 	} = $props();
 
 	let checked = $derived(
@@ -20,6 +22,7 @@
 	);
 
 	function toggle() {
+		if (disabled) return;
 		topologyOptions.update((opts) => {
 			if (path === 'local') {
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,8 +37,10 @@
 </script>
 
 <div>
-	<label class="flex cursor-pointer items-center gap-2">
-		<input type="checkbox" class="checkbox-card h-4 w-4" {checked} onchange={toggle} />
+	<label
+		class="flex items-center gap-2 {disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}"
+	>
+		<input type="checkbox" class="checkbox-card h-4 w-4" {checked} {disabled} onchange={toggle} />
 		<span class="text-secondary text-sm">{label}</span>
 	</label>
 	{#if helpText}

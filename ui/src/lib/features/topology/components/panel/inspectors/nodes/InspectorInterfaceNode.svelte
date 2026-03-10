@@ -7,15 +7,16 @@
 	import {
 		useTopologiesQuery,
 		selectedTopologyId,
-		topologyOptions,
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { InterfaceNode, Topology } from '$lib/features/topology/types/base';
-	import { getTopologyStateInfo } from '$lib/features/topology/state';
+	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import OptionToggle from '../../options/OptionToggle.svelte';
 	import OptionsCard from '../../options/OptionsCard.svelte';
+	import InlineDescription from '../InlineDescription.svelte';
+	import { useUpdateHostMutation } from '$lib/features/hosts/queries';
 	import {
 		topology_hidePorts,
 		topology_hidePortsHelp,
@@ -33,11 +34,11 @@
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
 	);
 
-	// Freshness gating for inline edits
+	// Unified edit state
 	let isReadonly = $derived(!!topologyContext);
-	let liveEditsEnabled = $derived(
-		!isReadonly && topology && getTopologyStateInfo(topology, $autoRebuild).type == 'fresh'
-	);
+	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
+
+	const updateHostMutation = useUpdateHostMutation();
 
 	let nodeData = $derived(node.data as InterfaceNode);
 
@@ -83,7 +84,7 @@
 		interfaceId: nodeData.interface_id ?? null,
 		ports: topology?.ports ?? [],
 		showEntityTagPicker: true,
-		tagPickerDisabled: !liveEditsEnabled,
+		tagPickerDisabled: !editState.isEditable,
 		entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 	});
 
@@ -91,7 +92,7 @@
 	let hostContext = $derived({
 		services: topology?.services.filter((s) => host && s.host_id == host.id) ?? [],
 		showEntityTagPicker: true,
-		tagPickerDisabled: !liveEditsEnabled,
+		tagPickerDisabled: !editState.isEditable,
 		entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 	});
 </script>
@@ -105,6 +106,7 @@
 					helpText={topology_hidePortsHelp()}
 					path="request"
 					optionKey="hide_ports"
+					disabled={!editState.isEditable}
 				/>
 			{/if}
 			{#if isVirtualized}
@@ -113,6 +115,7 @@
 					helpText={topology_hideVmOnContainerHelp()}
 					path="request"
 					optionKey="hide_vm_title_on_docker_container"
+					disabled={!editState.isEditable}
 				/>
 			{/if}
 		</OptionsCard>
@@ -159,6 +162,21 @@
 			<div class="card card-static">
 				<EntityDisplayWrapper context={hostContext} item={host} displayComponent={HostDisplay} />
 			</div>
+			<InlineDescription
+				value={host.description}
+				editable={editState.isEditable}
+				maxLength={500}
+				onSave={(desc) => {
+					if (host) {
+						updateHostMutation.mutate({
+							host: { ...host, description: desc },
+							interfaces: null,
+							ports: null,
+							services: null
+						});
+					}
+				}}
+			/>
 		</div>
 	{/if}
 

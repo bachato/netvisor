@@ -9,7 +9,7 @@
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
-	import { getTopologyStateInfo } from '$lib/features/topology/state';
+	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 
@@ -23,11 +23,9 @@
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
 	);
 
-	// Freshness gating for inline edits
+	// Unified edit state
 	let isReadonly = $derived(!!topologyContext);
-	let liveEditsEnabled = $derived(
-		!isReadonly && topology && getTopologyStateInfo(topology, $autoRebuild).type == 'fresh'
-	);
+	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	let host = $derived(topology ? topology.hosts.find((h) => h.id == hostId) : null);
 
@@ -46,7 +44,7 @@
 				context={{
 					services: topology?.services.filter((s) => host && s.host_id == host.id) ?? [],
 					showEntityTagPicker: true,
-					tagPickerDisabled: !liveEditsEnabled,
+					tagPickerDisabled: !editState.isEditable,
 					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={host}

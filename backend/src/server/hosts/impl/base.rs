@@ -20,7 +20,7 @@ pub struct HostBase {
     pub network_id: Uuid,
     #[schema(required)]
     pub hostname: Option<String>,
-    #[validate(length(min = 0, max = 100))]
+    #[validate(length(min = 0, max = 500))]
     #[serde(deserialize_with = "deserialize_empty_string_as_none")]
     #[schema(required)]
     pub description: Option<String>,

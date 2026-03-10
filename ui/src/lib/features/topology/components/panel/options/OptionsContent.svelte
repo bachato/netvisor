@@ -1,6 +1,12 @@
 <script lang="ts">
-	import { topologyOptions, selectedTopologyId, useTopologiesQuery } from '../../../queries';
+	import {
+		topologyOptions,
+		selectedTopologyId,
+		useTopologiesQuery,
+		autoRebuild
+	} from '../../../queries';
 	import { updateTagFilter } from '../../../interactions';
+	import { getTopologyEditState } from '../../../state';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import TagFilterGroup from './TagFilterGroup.svelte';
@@ -42,6 +48,9 @@
 	const topologiesQuery = useTopologiesQuery();
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let topology = $derived(topologiesData.find((t) => t.id === $selectedTopologyId));
+
+	// Unified edit state for gating request-path options
+	let editState = $derived(getTopologyEditState(topology, $autoRebuild, false));
 
 	// Derive tags that are actually used per entity type
 	let hostTagIds = $derived(new Set(topology?.hosts.flatMap((h) => h.tags) ?? []));
@@ -417,6 +426,7 @@
 								helpText={def.helpText()}
 								path={def.path}
 								optionKey={def.key}
+								disabled={def.path === 'request' && !editState.isEditable}
 							/>
 						{:else if def.type === 'string'}
 							<div>
@@ -445,6 +455,7 @@
 									class="input-field w-full"
 									multiple
 									size={4}
+									disabled={def.path === 'request' && !editState.isEditable}
 									onchange={(e) => handleMultiSelectChange(def, e)}
 								>
 									{#each def.getOptions?.() ?? [] as option (option.value)}
@@ -467,6 +478,7 @@
 							categories={serviceCategoriesWithColors}
 							hiddenCategories={$topologyOptions.request.hide_service_categories ?? []}
 							onToggle={toggleServiceCategory}
+							disabled={!editState.isEditable}
 						/>
 					{/if}
 				</div>

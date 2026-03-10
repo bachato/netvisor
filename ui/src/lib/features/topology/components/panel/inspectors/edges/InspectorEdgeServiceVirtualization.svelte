@@ -10,7 +10,7 @@
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
-	import { getTopologyStateInfo } from '$lib/features/topology/state';
+	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { Subnet } from '$lib/features/subnets/types/base';
@@ -35,11 +35,9 @@
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
 	);
 
-	// Freshness gating for inline edits
+	// Unified edit state
 	let isReadonly = $derived(!!topologyContext);
-	let liveEditsEnabled = $derived(
-		!isReadonly && topology && getTopologyStateInfo(topology, $autoRebuild).type == 'fresh'
-	);
+	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	let containerizingService = $derived(
 		topology ? topology.services.find((s) => s.id == containerizingServiceId) : null
@@ -116,12 +114,14 @@
 			helpText={topology_groupDockerBridgesHelp()}
 			path="request"
 			optionKey="group_docker_bridges_by_host"
+			disabled={!editState.isEditable}
 		/>
 		<OptionToggle
 			label={topology_hideVmOnContainer()}
 			helpText={topology_hideVmOnContainerHelp()}
 			path="request"
 			optionKey="hide_vm_title_on_docker_container"
+			disabled={!editState.isEditable}
 		/>
 	</OptionsCard>
 
@@ -135,7 +135,7 @@
 							containerizingHost ? s.host_id == containerizingHost.id : false
 						) ?? [],
 					showEntityTagPicker: true,
-					tagPickerDisabled: !liveEditsEnabled,
+					tagPickerDisabled: !editState.isEditable,
 					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={containerizingHost}
@@ -151,7 +151,7 @@
 					interfaceId: null,
 					ports: topology?.ports ?? [],
 					showEntityTagPicker: true,
-					tagPickerDisabled: !liveEditsEnabled,
+					tagPickerDisabled: !editState.isEditable,
 					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={containerizingService}
@@ -170,7 +170,7 @@
 					interfaceId: null,
 					ports: topology?.ports ?? [],
 					showEntityTagPicker: true,
-					tagPickerDisabled: !liveEditsEnabled,
+					tagPickerDisabled: !editState.isEditable,
 					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={service}

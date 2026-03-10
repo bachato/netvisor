@@ -11,7 +11,7 @@
 	} from '../../../queries';
 	import type { InterfaceNode as InterfaceNodeType } from '../../../types/base';
 	import type { GroupType, EdgeStyle } from '$lib/features/groups/types/base';
-	import { getTopologyStateInfo } from '../../../state';
+	import { getTopologyEditState } from '../../../state';
 	import { computeCommonTags } from '$lib/shared/utils/tags';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 	import { useBulkAddTagMutation, useBulkRemoveTagMutation } from '$lib/features/tags/queries';
@@ -24,8 +24,6 @@
 	import type { Node, Edge } from '@xyflow/svelte';
 	import type { Color } from '$lib/shared/utils/styling';
 	import { AVAILABLE_COLORS, createColorHelper } from '$lib/shared/utils/styling';
-	import { useQueryClient } from '@tanstack/svelte-query';
-	import { queryKeys } from '$lib/api/query-client';
 	import { browser } from '$app/environment';
 	import {
 		topology_multiSelectActionBarCount,
@@ -57,7 +55,6 @@
 
 	const PREVIEW_STORAGE_KEY = 'scanopy_topology_group_preview';
 
-	const queryClient = useQueryClient();
 	const topologiesQuery = useTopologiesQuery();
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let topology = $derived(topologiesData.find((t) => t.id === $selectedTopologyId));
@@ -124,35 +121,23 @@
 	// Common tags across selected entities
 	let commonTags = $derived(computeCommonTags(tagEntities));
 
-	// Check if topology allows mutations
-	let topologyStateType = $derived.by(() => {
-		if (!topology) return null;
-		const stateInfo = getTopologyStateInfo(topology, get(autoRebuild));
-		return stateInfo.type;
-	});
-
-	let canMutate = $derived.by(() => {
-		if (isReadOnly || !topology) return false;
-		return topologyStateType === 'fresh' && !topology.is_locked;
-	});
+	// Unified edit state
+	let editState = $derived(getTopologyEditState(topology, get(autoRebuild), isReadOnly));
 
 	let mutateDisabledReason = $derived.by(() => {
-		if (isReadOnly) return topology_multiSelectReadOnlyHint();
-		if (!topology) return '';
-		if (topology.is_locked) return topology_multiSelectLockedHint();
-		if (topologyStateType === 'stale_safe' || topologyStateType === 'stale_conflicts')
-			return topology_multiSelectStaleHint();
-		return '';
+		if (!editState.disabledReason) return '';
+		if (editState.disabledReason === 'readonly') return topology_multiSelectReadOnlyHint();
+		if (editState.disabledReason === 'locked') return topology_multiSelectLockedHint();
+		return topology_multiSelectStaleHint();
 	});
 
-	// Tag handlers — invalidate topology cache after so tags show immediately
+	// Tag handlers — mutation onSuccess handles cache updates optimistically
 	async function handleAddTag(tagId: string) {
 		await bulkAddTagMutation.mutateAsync({
 			entity_ids: tagEntityIds,
 			entity_type: tagEntityType,
 			tag_id: tagId
 		});
-		queryClient.invalidateQueries({ queryKey: queryKeys.topology.all });
 	}
 
 	async function handleRemoveTag(tagId: string) {
@@ -161,7 +146,6 @@
 			entity_type: tagEntityType,
 			tag_id: tagId
 		});
-		queryClient.invalidateQueries({ queryKey: queryKeys.topology.all });
 	}
 
 	// Group creation state — always visible, no expand/collapse
@@ -387,7 +371,7 @@
 		</button>
 	</div>
 
-	{#if canMutate}
+	{#if editState.isEditable}
 		<!-- Tags section -->
 		<div class="space-y-2">
 			<span class="text-secondary block text-sm font-medium">{common_tags()}</span>

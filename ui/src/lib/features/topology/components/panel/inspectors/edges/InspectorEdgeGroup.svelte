@@ -16,8 +16,9 @@
 		selectedTopologyId
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
-	import { getTopologyStateInfo } from '$lib/features/topology/state';
+	import { getTopologyEditState } from '$lib/features/topology/state';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
+	import InlineDescription from '../InlineDescription.svelte';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
@@ -36,8 +37,9 @@
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
 	);
 
-	// Check if we're in readonly mode (context exists means we're on share page)
+	// Unified edit state
 	let isReadonly = $derived(!!topologyContext);
+	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	// TanStack Query mutation for updating groups
 	const updateGroupMutation = useUpdateGroupMutation();
@@ -54,10 +56,6 @@
 			localGroup = { ...group };
 		}
 	});
-
-	let liveEditsEnabled = $derived(
-		!isReadonly && topology && getTopologyStateInfo(topology, $autoRebuild).type == 'fresh'
-	);
 
 	// Auto-save when styling changes (only in non-readonly mode)
 	// Guard against calling mutate while a mutation is already pending to prevent infinite loops
@@ -123,17 +121,31 @@
 		<div class="card card-static">
 			<EntityDisplayWrapper context={{}} item={group} displayComponent={GroupDisplay} />
 		</div>
+		<InlineDescription
+			value={group.description ?? null}
+			editable={editState.isEditable}
+			maxLength={500}
+			onSave={(desc) => {
+				if (group) {
+					updateGroupMutation.mutate({ ...group, description: desc });
+				}
+			}}
+		/>
 
 		{#if !isReadonly}
 			<span class="text-secondary mb-2 block text-sm font-medium">Edge Style</span>
-			{#if topology && getTopologyStateInfo(topology, $autoRebuild).type != 'fresh'}
+			{#if !editState.isEditable && editState.disabledReason}
 				<InlineWarning
 					title="Editing disabled"
 					body="Editing is only available when topology is unlocked and up-to-date."
 				/>
 			{/if}
-			<div class={`card p-4 ${liveEditsEnabled ? '' : 'card-static'}`}>
-				<EdgeStyleForm bind:formData={localGroup} collapsed={true} editable={liveEditsEnabled} />
+			<div class={`card p-4 ${editState.isEditable ? '' : 'card-static'}`}>
+				<EdgeStyleForm
+					bind:formData={localGroup}
+					collapsed={true}
+					editable={editState.isEditable}
+				/>
 			</div>
 		{/if}
 
