@@ -151,7 +151,7 @@
 			topologyViewer?.triggerFitView();
 			setTimeout(() => {
 				newNodeIds.set(new Set());
-			}, 3000);
+			}, 2000);
 		}
 	});
 

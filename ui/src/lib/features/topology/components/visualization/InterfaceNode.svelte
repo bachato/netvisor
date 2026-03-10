@@ -199,6 +199,7 @@
 
 	const hostColorHelper = entities.getColorHelper('Host');
 	const virtualizationColorHelper = concepts.getColorHelper('Virtualization');
+	const discoveryColorHelper = entities.getColorHelper('Discovery');
 
 	// Check if this host should be highlighted by tag hover
 	let tagHoverRingStyle = $derived.by(() => {
@@ -238,7 +239,7 @@
 {#if nodeRenderData}
 	<div
 		class={`${cardClass} ${isNewNode ? 'animate-pulse-highlight' : ''}`}
-		style={`width: ${effectiveWidth}px; height: ${effectiveHeight}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${tagHoverRingStyle}`}
+		style={`width: ${effectiveWidth}px; height: ${effectiveHeight}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${isNewNode ? `--pulse-color: ${discoveryColorHelper.rgb};` : ''} ${tagHoverRingStyle}`}
 	>
 		<!-- Rest of component stays the same -->
 		<!-- Header section with gradient transition to body -->
