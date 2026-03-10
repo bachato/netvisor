@@ -4,6 +4,11 @@
 	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { DiscoveryUpdatePayload } from '$lib/features/discovery/types/api';
+	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
+	import {
+		home_docsDiscoveryTakesLong,
+		home_docsDiscoveryTakesLongLinkText
+	} from '$lib/paraglide/messages';
 
 	let {
 		sessions,
@@ -64,6 +69,14 @@
 					</div>
 					{#if estimation}
 						<p class="text-secondary text-xs">{estimation}</p>
+						{#if session.estimated_remaining_secs != null && session.estimated_remaining_secs > 3600}
+							<DocsHint
+								text={home_docsDiscoveryTakesLong()}
+								href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/#discovery-takes-hours"
+								linkText={home_docsDiscoveryTakesLongLinkText()}
+								class="mt-0.5"
+							/>
+						{/if}
 					{/if}
 				</div>
 			{/each}

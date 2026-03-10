@@ -567,6 +567,8 @@
 	"groups_subtitle": "Create custom groups to improve topology visualization",
 	"home_demoEmbedSubtitle": "This is a live demo of Scanopy's interactive topology view — you'll have a visual map of your network like this once your first scan completes.",
 	"home_demoEmbedTitle": "Preview: Shareable Network Map",
+	"home_docsDiscoveryTakesLong": "Estimate longer than expected? %link%.",
+	"home_docsDiscoveryTakesLongLinkText": "See reasons why",
 	"home_noDiscoveriesYet": "No discovery results yet. Set up a daemon to start discovering your network.",
 	"hosts_confirmBulkDelete": "Are you sure you want to delete {count} Hosts?",
 	"hosts_consolidateModal_chooseHost": "Choose a host...",

@@ -12,6 +12,11 @@
 	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
 	import SupportOptions from '$lib/features/support/SupportOptions.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
+	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
+	import {
+		home_docsDiscoveryTakesLong,
+		home_docsDiscoveryTakesLongLinkText
+	} from '$lib/paraglide/messages';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -371,6 +376,14 @@
 									</div>
 									{#if isActiveDiscoveryStep && estimationText}
 										<p class="text-secondary mt-0.5 text-xs">{estimationText}</p>
+										{#if activeNetworkSession?.estimated_remaining_secs != null && activeNetworkSession.estimated_remaining_secs > 3600}
+											<DocsHint
+												text={home_docsDiscoveryTakesLong()}
+												href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/#discovery-takes-hours"
+												linkText={home_docsDiscoveryTakesLongLinkText()}
+												class="mt-0.5"
+											/>
+										{/if}
 									{:else if !complete && enabled}
 										<p class="text-tertiary text-xs">{step.description}</p>
 									{/if}

@@ -7,6 +7,11 @@
 	import { Loader2, X } from 'lucide-svelte';
 	import type { DiscoveryUpdatePayload } from '../../types/api';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
+	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
+	import {
+		home_docsDiscoveryTakesLong,
+		home_docsDiscoveryTakesLongLinkText
+	} from '$lib/paraglide/messages';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
@@ -132,6 +137,14 @@
 
 			{#if estimationText}
 				<p class="text-secondary mt-1 text-xs">{estimationText}</p>
+				{#if session.estimated_remaining_secs != null && session.estimated_remaining_secs > 3600}
+					<DocsHint
+						text={home_docsDiscoveryTakesLong()}
+						href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/#discovery-takes-hours"
+						linkText={home_docsDiscoveryTakesLongLinkText()}
+						class="mt-0.5"
+					/>
+				{/if}
 			{/if}
 		</div>
 	</div>
