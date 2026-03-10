@@ -67,6 +67,7 @@
 		type EntityDiscriminants
 	} from '$lib/features/tags/queries';
 	import type { Color } from '$lib/shared/utils/styling';
+	import { scrollFade } from '$lib/shared/utils/scrollFade';
 	import { computeCommonTags } from '$lib/shared/utils/tags';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import type { components } from '$lib/api/schema';
@@ -1212,7 +1213,7 @@
 							{:else if fieldKey === 'tags'}
 								<!-- Special tag filter with colored tags (stores tag IDs for server-side filtering) -->
 								{@const filter = filterState[fieldKey]}
-								<div class="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+								<div use:scrollFade class="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
 									{#if allTags.length === 0}
 										<p class="text-tertiary text-xs">{common_noTagsAvailable()}</p>
 									{:else}
@@ -1232,7 +1233,7 @@
 							{:else}
 								{@const uniqueValues = field.filterOptions ?? getUniqueValues(field)}
 								{@const filter = filterState[fieldKey]}
-								<div class="max-h-32 space-y-1.5 overflow-y-auto">
+								<div use:scrollFade class="max-h-32 space-y-1.5 overflow-y-auto">
 									{#if uniqueValues.length === 0}
 										<p class="text-tertiary text-xs">{common_noValuesAvailable()}</p>
 									{:else}
