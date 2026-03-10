@@ -415,6 +415,39 @@ export function useUpdateHostMutation() {
 }
 
 /**
+ * Mutation hook for updating only a host's description.
+ * Omits tags from the request body to avoid set_tags() conflicts.
+ */
+export function useUpdateHostDescriptionMutation() {
+	const queryClient = useQueryClient();
+
+	return createMutation(() => ({
+		mutationFn: async (data: { host: Host; description: string | null }) => {
+			const { data: result } = await apiClient.PUT('/api/v1/hosts/{id}', {
+				params: { path: { id: data.host.id } },
+				body: {
+					id: data.host.id,
+					name: data.host.name,
+					hostname: data.host.hostname,
+					description: data.description,
+					virtualization: data.host.virtualization,
+					hidden: data.host.hidden,
+					expected_updated_at: data.host.updated_at
+					// tags intentionally omitted: serde(default) → [] → set_tags() early return preserves existing
+				}
+			});
+			if (!result?.success || !result.data) {
+				throw new Error(result?.error || 'Failed to update host');
+			}
+			return result.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.hosts.lists() });
+		}
+	}));
+}
+
+/**
  * Mutation hook for deleting a host
  */
 export function useDeleteHostMutation() {

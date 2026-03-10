@@ -6,7 +6,7 @@
 	import ExportButton from './ExportButton.svelte';
 	import ExportModal from './ExportModal.svelte';
 	import ShareModal from '$lib/features/shares/components/ShareModal.svelte';
-	import { tooltip } from '$lib/features/billing/tooltip';
+	import { tooltip } from '$lib/shared/actions/tooltip';
 	import { SvelteFlowProvider } from '@xyflow/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {

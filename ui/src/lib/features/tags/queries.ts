@@ -4,17 +4,11 @@
  * Replaces the writable store pattern with query-based data fetching.
  */
 
-import {
-	createQuery,
-	createMutation,
-	useQueryClient,
-	type QueryClient
-} from '@tanstack/svelte-query';
+import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 import { queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Tag } from './types/base';
 import type { components } from '$lib/api/schema';
-import type { Topology } from '$lib/features/topology/types/base';
 
 // Types for tag assignment operations
 export type EntityDiscriminants = components['schemas']['EntityDiscriminants'];
@@ -214,12 +208,11 @@ export function useBulkAddTagMutation() {
 				entityIds: request.entity_ids
 			};
 		},
-		onSuccess: ({ entityType, tagId, entityIds }) => {
+		onSuccess: ({ entityType }) => {
 			const queryKey = getQueryKeyForEntityType(entityType);
 			if (queryKey) {
 				queryClient.invalidateQueries({ queryKey });
 			}
-			updateTopologyEntityTags(queryClient, entityType, entityIds, tagId, 'add');
 		}
 	}));
 }
@@ -243,12 +236,11 @@ export function useBulkRemoveTagMutation() {
 				entityIds: request.entity_ids
 			};
 		},
-		onSuccess: ({ entityType, tagId, entityIds }) => {
+		onSuccess: ({ entityType }) => {
 			const queryKey = getQueryKeyForEntityType(entityType);
 			if (queryKey) {
 				queryClient.invalidateQueries({ queryKey });
 			}
-			updateTopologyEntityTags(queryClient, entityType, entityIds, tagId, 'remove');
 		}
 	}));
 }
@@ -276,57 +268,3 @@ export function useSetEntityTagsMutation() {
 	}));
 }
 
-/**
- * Optimistically update the topology cache after tag mutations.
- * The backend topology is a stored snapshot that doesn't reflect tag changes,
- * so we update the frontend cache directly.
- */
-function updateTopologyEntityTags(
-	queryClient: QueryClient,
-	entityType: EntityDiscriminants,
-	entityIds: string[],
-	tagId: string,
-	action: 'add' | 'remove'
-) {
-	const field = { Host: 'hosts', Service: 'services', Subnet: 'subnets' }[entityType] as
-		| 'hosts'
-		| 'services'
-		| 'subnets'
-		| undefined;
-	if (!field) return;
-
-	queryClient.setQueryData<Topology[]>(queryKeys.topology.all, (old) => {
-		if (!old) return old;
-		return old.map((topo) => {
-			const entities = topo[field];
-			let changed = false;
-			const updatedEntities = entities.map((entity) => {
-				if (!entityIds.includes(entity.id)) return entity;
-				const tags = entity.tags;
-				if (action === 'add' && !tags.includes(tagId)) {
-					changed = true;
-					return { ...entity, tags: [...tags, tagId] };
-				} else if (action === 'remove' && tags.includes(tagId)) {
-					changed = true;
-					return { ...entity, tags: tags.filter((t) => t !== tagId) };
-				}
-				return entity;
-			});
-
-			if (!changed) return topo;
-
-			const result = { ...topo, [field]: updatedEntities };
-
-			// For 'add': ensure tag definition is in entity_tags
-			if (action === 'add' && !topo.entity_tags?.some((t) => t.id === tagId)) {
-				const allTags = queryClient.getQueryData<Tag[]>(queryKeys.tags.all);
-				const tagDef = allTags?.find((t) => t.id === tagId);
-				if (tagDef) {
-					result.entity_tags = [...(topo.entity_tags ?? []), tagDef];
-				}
-			}
-
-			return result;
-		});
-	});
-}

@@ -38,6 +38,7 @@
 		topology_leftZoneCategoriesHelp,
 		topology_leftZoneTitleHelp,
 		topology_multiselectHelp,
+		topology_optionDisabledRebuildRequired,
 		topology_showGatewayInLeftZone,
 		topology_showGatewayInLeftZoneHelp,
 		topology_tagFilter,
@@ -427,6 +428,9 @@
 								path={def.path}
 								optionKey={def.key}
 								disabled={def.path === 'request' && !editState.isEditable}
+								disabledReason={def.path === 'request' && !editState.isEditable
+									? topology_optionDisabledRebuildRequired()
+									: ''}
 							/>
 						{:else if def.type === 'string'}
 							<div>

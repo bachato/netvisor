@@ -11,6 +11,10 @@
 		showEntityTagPicker?: boolean;
 		tagPickerDisabled?: boolean;
 		entityTags?: import('$lib/features/tags/types/base').Tag[];
+		showEditableEntityDescription?: boolean;
+		entityDescription?: string | null;
+		entityDescriptionDisabled?: boolean;
+		onEntityDescriptionSave?: (value: string | null) => void;
 	}
 
 	export const HostDisplay: EntityDisplayComponent<Host, HostDisplayContext> = {

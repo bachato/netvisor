@@ -286,3 +286,33 @@ impl From<IfEntry> for Entity {
         Self::IfEntry(value)
     }
 }
+
+impl From<EntityDiscriminants> for Entity {
+    fn from(d: EntityDiscriminants) -> Self {
+        match d {
+            EntityDiscriminants::Host => Entity::Host(Host::default()),
+            EntityDiscriminants::Service => Entity::Service(Service::default()),
+            EntityDiscriminants::Subnet => Entity::Subnet(Subnet::default()),
+            EntityDiscriminants::Group => Entity::Group(Group::default()),
+            EntityDiscriminants::Port => Entity::Port(Port::default()),
+            EntityDiscriminants::Interface => Entity::Interface(Interface::default()),
+            EntityDiscriminants::Binding => Entity::Binding(Binding::default()),
+            EntityDiscriminants::IfEntry => Entity::IfEntry(IfEntry::default()),
+            EntityDiscriminants::Tag => Entity::Tag(Tag::default()),
+            EntityDiscriminants::Network => Entity::Network(Network::default()),
+            EntityDiscriminants::Organization => Entity::Organization(Organization::default()),
+            EntityDiscriminants::User => Entity::User(User::default()),
+            EntityDiscriminants::Invite => Entity::Invite(Invite::default()),
+            EntityDiscriminants::Share => Entity::Share(Share::default()),
+            EntityDiscriminants::Discovery => Entity::Discovery(Discovery::default()),
+            EntityDiscriminants::Daemon => Entity::Daemon(Daemon::default()),
+            EntityDiscriminants::DaemonApiKey => Entity::DaemonApiKey(DaemonApiKey::default()),
+            EntityDiscriminants::UserApiKey => Entity::UserApiKey(UserApiKey::default()),
+            EntityDiscriminants::SnmpCredential => {
+                Entity::SnmpCredential(SnmpCredential::default())
+            }
+            EntityDiscriminants::Topology => Entity::Topology(Box::default()),
+            EntityDiscriminants::Unknown => Entity::Unknown,
+        }
+    }
+}

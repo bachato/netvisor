@@ -58,7 +58,7 @@
 	></textarea>
 {:else if editable && !value}
 	<button
-		class="text-tertiary hover:text-secondary flex items-center gap-1 text-xs"
+		class="text-tertiary hover:text-secondary flex items-center gap-1 text-xs italic"
 		onclick={startEdit}
 	>
 		<Pencil class="h-3 w-3" />
@@ -67,10 +67,11 @@
 {:else if value}
 	{#if editable}
 		<button
-			class="text-secondary w-full cursor-text text-left text-xs hover:opacity-80"
+			class="text-secondary flex w-full cursor-text items-center gap-1 text-left text-xs hover:opacity-80"
 			onclick={startEdit}
 		>
-			{value}
+			<span class="flex-1 text-left">{value}</span>
+			<Pencil class="h-3 w-3 shrink-0 opacity-50" />
 		</button>
 	{:else}
 		<p class="text-secondary text-xs">{value}</p>

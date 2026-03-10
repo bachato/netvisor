@@ -18,7 +18,6 @@
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { getTopologyEditState } from '$lib/features/topology/state';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
-	import InlineDescription from '../InlineDescription.svelte';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
@@ -113,24 +112,30 @@
 		ports: topology?.ports ?? [],
 		isContainerSubnet: isContainerSubnetFn
 	});
+
+	// Context for group display with description
+	let groupContext = $derived({
+		showEditableEntityDescription: true,
+		entityDescription: group?.description ?? null,
+		entityDescriptionDisabled: !editState.isEditable,
+		onEntityDescriptionSave: (desc: string | null) => {
+			if (group) {
+				updateGroupMutation.mutate({
+					...group,
+					description: desc,
+					binding_ids: [...new Set(group.binding_ids)]
+				});
+			}
+		}
+	});
 </script>
 
 <div class="space-y-3">
 	{#if group && localGroup}
 		<span class="text-secondary mb-2 block text-sm font-medium">Group</span>
 		<div class="card card-static">
-			<EntityDisplayWrapper context={{}} item={group} displayComponent={GroupDisplay} />
+			<EntityDisplayWrapper context={groupContext} item={group} displayComponent={GroupDisplay} />
 		</div>
-		<InlineDescription
-			value={group.description ?? null}
-			editable={editState.isEditable}
-			maxLength={500}
-			onSave={(desc) => {
-				if (group) {
-					updateGroupMutation.mutate({ ...group, description: desc });
-				}
-			}}
-		/>
 
 		{#if !isReadonly}
 			<span class="text-secondary mb-2 block text-sm font-medium">Edge Style</span>

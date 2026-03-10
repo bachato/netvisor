@@ -19,7 +19,7 @@
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
-	import { tooltip } from '$lib/features/billing/tooltip';
+	import { tooltip } from '$lib/shared/actions/tooltip';
 	import {
 		common_created,
 		common_email,

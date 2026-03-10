@@ -5,6 +5,7 @@
 	import Tag from '../../data/Tag.svelte';
 	import EntityTag from '../../data/EntityTag.svelte';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
+	import InlineDescription from '$lib/features/topology/components/panel/inspectors/InlineDescription.svelte';
 	import type { EntityDisplayComponent } from './types';
 
 	export let item: T;
@@ -29,6 +30,23 @@
 		typeof context === 'object' &&
 		'tagPickerDisabled' in context &&
 		!!(context as Record<string, unknown>).tagPickerDisabled;
+
+	$: showEditableDescription =
+		context &&
+		typeof context === 'object' &&
+		'showEditableEntityDescription' in context &&
+		(context as Record<string, unknown>).showEditableEntityDescription;
+	$: descriptionValue = showEditableDescription
+		? ((context as Record<string, unknown>).entityDescription as string | null) ?? null
+		: null;
+	$: descriptionDisabled = showEditableDescription
+		? !!(context as Record<string, unknown>).entityDescriptionDisabled
+		: true;
+	$: descriptionOnSave = showEditableDescription
+		? ((context as Record<string, unknown>).onEntityDescriptionSave as
+				| ((value: string | null) => void)
+				| undefined)
+		: undefined;
 
 	let containerEl: HTMLDivElement;
 	let labelEl: HTMLSpanElement;
@@ -175,6 +193,15 @@
 					entityType={tagPickerProps.entityType}
 					disabled={tagPickerDisabled}
 					availableTags={tagPickerProps.availableTags}
+				/>
+			</div>
+		{/if}
+		{#if showEditableDescription && descriptionOnSave}
+			<div class="mt-2 border-t border-gray-700/50 pt-2">
+				<InlineDescription
+					value={descriptionValue}
+					editable={!descriptionDisabled}
+					onSave={descriptionOnSave}
 				/>
 			</div>
 		{/if}

@@ -16,7 +16,8 @@
 	import OptionsCard from '../../options/OptionsCard.svelte';
 	import {
 		topology_hideVmOnContainer,
-		topology_hideVmOnContainerHelp
+		topology_hideVmOnContainerHelp,
+		topology_optionDisabledRebuildRequired
 	} from '$lib/paraglide/messages';
 
 	let { edge, vmServiceId }: { edge: Edge; vmServiceId: string } = $props();
@@ -38,15 +39,18 @@
 </script>
 
 <div class="space-y-3">
-	<OptionsCard>
-		<OptionToggle
-			label={topology_hideVmOnContainer()}
-			helpText={topology_hideVmOnContainerHelp()}
-			path="request"
-			optionKey="hide_vm_title_on_docker_container"
-			disabled={!editState.isEditable}
-		/>
-	</OptionsCard>
+	{#if !editState.isReadonly}
+		<OptionsCard>
+			<OptionToggle
+				label={topology_hideVmOnContainer()}
+				helpText={topology_hideVmOnContainerHelp()}
+				path="request"
+				optionKey="hide_vm_title_on_docker_container"
+				disabled={!editState.isEditable}
+				disabledReason={topology_optionDisabledRebuildRequired()}
+			/>
+		</OptionsCard>
+	{/if}
 
 	{#if vmService}
 		<span class="text-secondary mb-2 block text-sm font-medium">VM Service</span>

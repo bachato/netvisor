@@ -1,18 +1,21 @@
 <script lang="ts">
 	import { topologyOptions } from '$lib/features/topology/queries';
+	import { tooltip } from '$lib/shared/actions/tooltip';
 
 	let {
 		label,
 		helpText = '',
 		path,
 		optionKey,
-		disabled = false
+		disabled = false,
+		disabledReason = ''
 	}: {
 		label: string;
 		helpText?: string;
 		path: 'local' | 'request';
 		optionKey: string;
 		disabled?: boolean;
+		disabledReason?: string;
 	} = $props();
 
 	let checked = $derived(
@@ -36,7 +39,7 @@
 	}
 </script>
 
-<div>
+<div use:tooltip data-tooltip={disabled && disabledReason ? disabledReason : null}>
 	<label
 		class="flex items-center gap-2 {disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}"
 	>

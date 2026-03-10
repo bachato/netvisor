@@ -15,7 +15,7 @@
 	import type { BillingPlanMetadata, FeatureMetadata } from '$lib/shared/stores/metadata';
 	import type { ColorStyle, Color } from '$lib/shared/utils/styling';
 	import type { IconComponent } from '$lib/shared/utils/types';
-	import { tooltip } from './tooltip';
+	import { tooltip } from '$lib/shared/actions/tooltip';
 
 	/**
 	 * Interface for metadata helpers props.

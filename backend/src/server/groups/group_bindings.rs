@@ -223,11 +223,15 @@ impl GroupBindingStorage {
         let filter = StorableFilter::<GroupBinding>::new_from_group_ids(&[*group_id]);
         tx.delete_by_filter(filter).await?;
 
+        // Deduplicate binding_ids while preserving order
+        let mut seen = std::collections::HashSet::new();
+        let unique_bindings: Vec<&Uuid> = binding_ids.iter().filter(|id| seen.insert(*id)).collect();
+
         // Insert new bindings with position
-        for (position, binding_id) in binding_ids.iter().enumerate() {
+        for (position, binding_id) in unique_bindings.iter().enumerate() {
             let group_binding = GroupBinding::new(GroupBindingBase::new(
                 *group_id,
-                *binding_id,
+                **binding_id,
                 position as i32,
             ));
             tx.create(&group_binding).await?;

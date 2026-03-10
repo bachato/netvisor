@@ -1,6 +1,9 @@
+use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Admin, Authorized, Member, Viewer};
 use crate::server::shared::entities::{EntityDiscriminants, is_entity_taggable};
-use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
+use crate::server::shared::events::types::{
+    EntityEvent, EntityOperation, OnboardingEvent, OnboardingOperation,
+};
 use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
@@ -258,6 +261,38 @@ pub async fn create_tag(
     Ok(response)
 }
 
+/// Emit EntityEvent::Updated for each entity whose tags changed.
+/// This triggers subscribers (like topology) to refresh their snapshots.
+async fn emit_tag_change_events(
+    state: &AppState,
+    auth: &AuthenticatedEntity,
+    entity_ids: &[Uuid],
+    entity_type: EntityDiscriminants,
+) {
+    let default_entity: crate::server::shared::entities::Entity = entity_type.into();
+
+    for entity_id in entity_ids {
+        let _ = state
+            .services
+            .event_bus
+            .publish_entity(EntityEvent {
+                id: Uuid::new_v4(),
+                entity_id: *entity_id,
+                network_id: None,
+                organization_id: auth.organization_id(),
+                entity_type: default_entity.clone(),
+                operation: EntityOperation::Updated,
+                timestamp: Utc::now(),
+                metadata: serde_json::json!({
+                    "trigger_stale": false,
+                    "suppress_logs": true
+                }),
+                authentication: auth.clone(),
+            })
+            .await;
+    }
+}
+
 /// Request body for bulk tag operations
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct BulkTagRequest {
@@ -336,6 +371,11 @@ pub async fn bulk_add_tag(
         )
         .await?;
 
+    if affected_count > 0 {
+        emit_tag_change_events(&state, &auth.entity, &request.entity_ids, request.entity_type)
+            .await;
+    }
+
     Ok(Json(ApiResponse::success(BulkTagResponse {
         affected_count,
     })))
@@ -362,7 +402,7 @@ pub async fn bulk_add_tag(
 )]
 pub async fn bulk_remove_tag(
     State(state): State<Arc<AppState>>,
-    _auth: Authorized<Member>,
+    auth: Authorized<Member>,
     Json(request): Json<BulkTagRequest>,
 ) -> ApiResult<Json<ApiResponse<BulkTagResponse>>> {
     // Validate entity type is taggable
@@ -378,6 +418,11 @@ pub async fn bulk_remove_tag(
         .entity_tag_service
         .bulk_remove_tag(&request.entity_ids, request.entity_type, request.tag_id)
         .await?;
+
+    if affected_count > 0 {
+        emit_tag_change_events(&state, &auth.entity, &request.entity_ids, request.entity_type)
+            .await;
+    }
 
     Ok(Json(ApiResponse::success(BulkTagResponse {
         affected_count,
@@ -431,6 +476,8 @@ pub async fn set_entity_tags(
             organization_id,
         )
         .await?;
+
+    emit_tag_change_events(&state, &auth.entity, &[request.entity_id], request.entity_type).await;
 
     Ok(Json(ApiResponse::success(())))
 }

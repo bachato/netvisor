@@ -6,7 +6,7 @@
 	import type { FieldConfig } from '$lib/shared/components/data/types';
 	import { Plus } from 'lucide-svelte';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
-	import { tooltip } from '$lib/features/billing/tooltip';
+	import { tooltip } from '$lib/shared/actions/tooltip';
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import UserApiKeyCard from './UserApiKeyCard.svelte';
