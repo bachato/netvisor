@@ -8,9 +8,12 @@
 	import type { Writable } from 'svelte/store';
 	import { subnetTypes } from '$lib/shared/stores/metadata';
 	import OptionToggle from '../../options/OptionToggle.svelte';
+	import OptionsCard from '../../options/OptionsCard.svelte';
 	import {
 		topology_showGatewayInLeftZone,
-		topology_groupDockerBridges
+		topology_showGatewayInLeftZoneHelp,
+		topology_groupDockerBridges,
+		topology_groupDockerBridgesHelp
 	} from '$lib/paraglide/messages';
 
 	let { node }: { node: Node } = $props();
@@ -31,6 +34,23 @@
 </script>
 
 <div class="space-y-4">
+	<OptionsCard>
+		<OptionToggle
+			label={topology_showGatewayInLeftZone()}
+			helpText={topology_showGatewayInLeftZoneHelp()}
+			path="request"
+			optionKey="show_gateway_in_left_zone"
+		/>
+		{#if isContainerSubnet}
+			<OptionToggle
+				label={topology_groupDockerBridges()}
+				helpText={topology_groupDockerBridgesHelp()}
+				path="request"
+				optionKey="group_docker_bridges_by_host"
+			/>
+		{/if}
+	</OptionsCard>
+
 	{#if subnet}
 		<div>
 			<span class="text-secondary mb-2 block text-sm font-medium">Subnet</span>
@@ -39,22 +59,4 @@
 			</div>
 		</div>
 	{/if}
-
-	<!-- Contextual setting toggles -->
-	<div class="flex flex-wrap gap-1 pt-2">
-		<OptionToggle
-			label={topology_showGatewayInLeftZone()}
-			path="request"
-			optionKey="show_gateway_in_left_zone"
-			compact
-		/>
-		{#if isContainerSubnet}
-			<OptionToggle
-				label={topology_groupDockerBridges()}
-				path="request"
-				optionKey="group_docker_bridges_by_host"
-				compact
-			/>
-		{/if}
-	</div>
 </div>

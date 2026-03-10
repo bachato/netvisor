@@ -13,7 +13,11 @@
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import OptionToggle from '../../options/OptionToggle.svelte';
-	import { topology_hideVmOnContainer } from '$lib/paraglide/messages';
+	import OptionsCard from '../../options/OptionsCard.svelte';
+	import {
+		topology_hideVmOnContainer,
+		topology_hideVmOnContainerHelp
+	} from '$lib/paraglide/messages';
 
 	let { edge, vmServiceId }: { edge: Edge; vmServiceId: string } = $props();
 
@@ -36,6 +40,15 @@
 </script>
 
 <div class="space-y-3">
+	<OptionsCard>
+		<OptionToggle
+			label={topology_hideVmOnContainer()}
+			helpText={topology_hideVmOnContainerHelp()}
+			path="request"
+			optionKey="hide_vm_title_on_docker_container"
+		/>
+	</OptionsCard>
+
 	{#if vmService}
 		<span class="text-secondary mb-2 block text-sm font-medium">VM Service</span>
 		<div class="card card-static">
@@ -72,14 +85,4 @@
 			/>
 		</div>
 	{/if}
-
-	<!-- Contextual setting toggles -->
-	<div class="flex flex-wrap gap-1 pt-2">
-		<OptionToggle
-			label={topology_hideVmOnContainer()}
-			path="request"
-			optionKey="hide_vm_title_on_docker_container"
-			compact
-		/>
-	</div>
 </div>
