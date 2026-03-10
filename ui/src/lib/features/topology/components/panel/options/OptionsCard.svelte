@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { browser } from '$app/environment';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
-	import { common_options } from '$lib/paraglide/messages';
+	import { common_options, topology_optionsHint } from '$lib/paraglide/messages';
 
 	const STORAGE_KEY = 'scanopy_topology_inspector_options_expanded';
 
@@ -43,6 +43,7 @@
 		{common_options()}
 	</button>
 	{#if expanded}
+		<p class="text-tertiary px-3 text-xs">{topology_optionsHint()}</p>
 		<div class="space-y-3 px-3 pb-3">
 			{@render children()}
 		</div>

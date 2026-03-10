@@ -943,6 +943,7 @@
 	"topology_multiselectHelp": "Hold Ctrl (Windows/Linux) or Cmd (Mac) to select/deselect multiple options",
 	"topology_namePlaceholder": "Enter topology name",
 	"topology_noNodesToExport": "No nodes to export",
+	"topology_optionsHint": "These settings apply to the entire topology",
 	"topology_noTopologySelected": "No topology selected. Create one to get started.",
 	"topology_removedWarning": "These entities no longer exist in the network and will be removed from this diagram if you rebuild.",
 	"topology_reviewConflicts": "Review Refresh Conflicts",
