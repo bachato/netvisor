@@ -9,14 +9,9 @@
 	import { daemonSetupState } from '$lib/features/daemons/stores/daemon-setup';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
-	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
 	import SupportOptions from '$lib/features/support/SupportOptions.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
-	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
-	import {
-		home_docsDiscoveryTakesLong,
-		home_docsDiscoveryTakesLongLinkText
-	} from '$lib/paraglide/messages';
+	import DiscoveryEstimation from '$lib/features/discovery/components/DiscoveryEstimation.svelte';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -191,21 +186,6 @@
 		dismissed = true;
 	}
 
-	// Estimation text for active discovery
-	let estimationText = $derived.by(() => {
-		if (!activeNetworkSession) return '';
-		const hosts = activeNetworkSession.hosts_discovered;
-		const estimate = activeNetworkSession.estimated_remaining_secs;
-
-		if (!hosts) {
-			return 'Scanning for hosts on the network...';
-		}
-		if (estimate != null) {
-			return `Found ${hosts} hosts — ${formatEstimatedRemaining(estimate)} remaining`;
-		}
-		return `Found ${hosts} hosts — estimating scan time...`;
-	});
-
 	// Waiting suggestions — show all applicable, mark completed ones
 	function getInAppSuggestions(): Array<{ label: string; action: () => void; completed: boolean }> {
 		const suggestions: Array<{ label: string; action: () => void; completed: boolean }> = [];
@@ -374,16 +354,12 @@
 											</span>
 										{/if}
 									</div>
-									{#if isActiveDiscoveryStep && estimationText}
-										<p class="text-secondary mt-0.5 text-xs">{estimationText}</p>
-										{#if activeNetworkSession?.estimated_remaining_secs != null && activeNetworkSession.estimated_remaining_secs > 3600}
-											<DocsHint
-												text={home_docsDiscoveryTakesLong()}
-												href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/#discovery-takes-hours"
-												linkText={home_docsDiscoveryTakesLongLinkText()}
-												class="mt-0.5"
-											/>
-										{/if}
+									{#if isActiveDiscoveryStep && activeNetworkSession}
+										<DiscoveryEstimation
+											hosts_discovered={activeNetworkSession.hosts_discovered}
+											estimated_remaining_secs={activeNetworkSession.estimated_remaining_secs}
+											class="mt-0.5"
+										/>
 									{:else if !complete && enabled}
 										<p class="text-tertiary text-xs">{step.description}</p>
 									{/if}
