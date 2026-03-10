@@ -145,7 +145,7 @@
 			show_zoom_controls: s.options?.show_zoom_controls ?? true,
 			show_inspect_panel: s.options?.show_inspect_panel ?? true,
 			show_export_button: s.options?.show_export_button ?? true,
-			show_minimap: s.options?.show_minimap ?? false,
+			show_minimap: s.options?.show_minimap ?? true,
 			embed_width: '800',
 			embed_height: '600',
 			// Preserve other share fields

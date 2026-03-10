@@ -423,10 +423,7 @@
 		{/if}
 
 		{#if (showMinimap !== undefined ? showMinimap : $topologyOptions.local.show_minimap) && !$isExporting}
-			<MiniMap
-				position="bottom-left"
-				class="!rounded !border !border-gray-300 !bg-white !shadow-lg dark:!border-gray-700 dark:!bg-gray-800"
-			/>
+			<MiniMap position="bottom-left" />
 		{/if}
 
 		{#if showBranding}
@@ -462,6 +459,20 @@
 
 	:global(.svelte-flow__attribution a:hover) {
 		color: var(--color-text-muted);
+	}
+
+	:global(.svelte-flow__minimap) {
+		border-radius: 0.25rem;
+		border: 1px solid #d1d5db;
+		background: white;
+		box-shadow:
+			0 10px 15px -3px rgb(0 0 0 / 0.1),
+			0 4px 6px -4px rgb(0 0 0 / 0.1);
+	}
+
+	:global(.dark .svelte-flow__minimap) {
+		border-color: #374151;
+		background: #1f2937;
 	}
 
 	.branding-badge {
