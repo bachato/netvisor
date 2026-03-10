@@ -1885,6 +1885,18 @@ impl BillingService {
             return Ok(());
         };
 
+        // Skip for Free plan orgs — legacy $0 subscriptions may still generate invoices
+        if organization.base.plan.as_ref().is_some_and(|p| p.is_free()) {
+            tracing::info!(organization_id = %organization.id, "Skipping payment_failed — Free plan (legacy subscription)");
+            return Ok(());
+        }
+
+        // Skip for orgs without a payment method — trial auto-cancel flow
+        if !organization.base.has_payment_method {
+            tracing::info!(organization_id = %organization.id, "Skipping payment_failed — no payment method (trial auto-cancel)");
+            return Ok(());
+        }
+
         tracing::info!(
             organization_id = %organization.id,
             attempt_count = invoice.attempt_count,
@@ -1927,6 +1939,18 @@ impl BillingService {
             tracing::debug!("No org found for invoice.payment_action_required — ignoring");
             return Ok(());
         };
+
+        // Skip for Free plan orgs — legacy $0 subscriptions may still generate invoices
+        if organization.base.plan.as_ref().is_some_and(|p| p.is_free()) {
+            tracing::info!(organization_id = %organization.id, "Skipping payment_action_required — Free plan (legacy subscription)");
+            return Ok(());
+        }
+
+        // Skip for orgs without a payment method — trial auto-cancel flow
+        if !organization.base.has_payment_method {
+            tracing::info!(organization_id = %organization.id, "Skipping payment_action_required — no payment method (trial auto-cancel)");
+            return Ok(());
+        }
 
         tracing::info!(
             organization_id = %organization.id,
