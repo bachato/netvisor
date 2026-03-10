@@ -4,7 +4,7 @@
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { upgradeContext } from '$lib/features/billing/stores';
 	import { optionsPanelExpanded } from '$lib/features/topology/queries';
-	import { entities } from '$lib/shared/stores/metadata';
+	import { entities, billingPlans } from '$lib/shared/stores/metadata';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import type { IconComponent } from '$lib/shared/utils/types';
 	import { onMount } from 'svelte';
@@ -47,8 +47,8 @@
 	const onboarding = $derived(organization.onboarding ?? []);
 	const has = (op: OnboardingOperation) => onboarding.includes(op);
 
-	const isPaidPlan = $derived(planType != null && planType !== 'Free' && planType !== 'Demo');
-	const isProPlus = $derived(isPaidPlan && planType !== 'Starter');
+	const planMetadata = $derived(billingPlans.getMetadata(planType));
+	const features = $derived(planMetadata?.features ?? {});
 	interface Nudge {
 		id: string;
 		title: string;
@@ -140,7 +140,7 @@
 					upgradeContext.set(null);
 					openModal('billing-plan');
 				},
-				visible: planType === 'Free',
+				visible: !features.scheduled_discovery,
 				icon: entities.getIconComponent('Discovery'),
 				iconColor: entities.getColorHelper('Discovery').icon
 			},
@@ -153,7 +153,8 @@
 					onNavigate('api-keys');
 					openModal('user-api-key');
 				},
-				visible: isProPlus && has('FirstDiscoveryCompleted') && !has('FirstUserApiKeyCreated'),
+				visible:
+					features.api_access && has('FirstDiscoveryCompleted') && !has('FirstUserApiKeyCreated'),
 				icon: entities.getIconComponent('UserApiKey'),
 				iconColor: entities.getColorHelper('UserApiKey').icon
 			},
@@ -166,7 +167,11 @@
 					onNavigate('networks');
 					openModal('network-editor');
 				},
-				visible: isProPlus && dashboard.networks.length === 1,
+				visible:
+					(organization.plan?.included_networks === null ||
+						(organization.plan?.included_networks ?? 0) > 1 ||
+						(organization.plan?.network_cents ?? 0) > 0) &&
+					dashboard.networks.length === 1,
 				icon: entities.getIconComponent('Network'),
 				iconColor: entities.getColorHelper('Network').icon
 			},
@@ -179,7 +184,7 @@
 					onNavigate('topology');
 					openModal('topology-share');
 				},
-				visible: isProPlus && has('FirstTopologyRebuild'),
+				visible: features.share_views && has('FirstTopologyRebuild'),
 				icon: entities.getIconComponent('Share'),
 				iconColor: entities.getColorHelper('Share').icon
 			},
