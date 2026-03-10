@@ -4,6 +4,7 @@
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import TagFilterGroup from './TagFilterGroup.svelte';
+	import CategoryFilterGroup from './CategoryFilterGroup.svelte';
 	import {
 		common_categories,
 		common_docker,
@@ -23,8 +24,6 @@
 		topology_hidePortsHelp,
 		topology_hideResizeHandles,
 		topology_hideResizeHandlesHelp,
-		topology_hideServiceCategories,
-		topology_hideServiceCategoriesHelp,
 		topology_hideStuff,
 		topology_hideVmOnContainer,
 		topology_hideVmOnContainerHelp,
@@ -107,6 +106,24 @@
 		});
 	}
 
+	function toggleServiceCategory(category: string) {
+		topologyOptions.update((opts) => {
+			const hidden = opts.request.hide_service_categories ?? [];
+			const idx = hidden.indexOf(category as (typeof hidden)[number]);
+			const newHidden =
+				idx === -1
+					? [...hidden, category as (typeof hidden)[number]]
+					: hidden.filter((c) => c !== category);
+			return {
+				...opts,
+				request: {
+					...opts.request,
+					hide_service_categories: newHidden
+				}
+			};
+		});
+	}
+
 	// Update tag filter stores when topology or options change
 	$effect(() => {
 		updateTagFilter(topology, $topologyOptions.local.tag_filter);
@@ -122,6 +139,26 @@
 			.filter((c) => c)
 			.sort()
 			.map((c) => ({ value: c, label: c }));
+	});
+
+	// Build categories with colors for the CategoryFilterGroup
+	let serviceCategoriesWithColors = $derived.by(() => {
+		const serviceDefinitionItems = serviceDefinitions.getItems() || [];
+		const seen: Record<string, boolean> = {};
+		const result: {
+			value: string;
+			label: string;
+			color: import('$lib/shared/utils/styling').Color;
+		}[] = [];
+		for (const item of serviceDefinitionItems) {
+			const category = serviceDefinitions.getCategory(item.id);
+			if (category && !seen[category]) {
+				seen[category] = true;
+				const color = serviceDefinitions.getColorHelper(item.id).color;
+				result.push({ value: category, label: category, color });
+			}
+		}
+		return result.sort((a, b) => a.label.localeCompare(b.label));
 	});
 	let eTypes: { value: string; label: string }[] = $derived.by(() => {
 		return (edgeTypes.getItems() || []).map((e) => ({ value: e.id, label: e.id }));
@@ -217,16 +254,6 @@
 			key: 'hide_ports',
 			helpText: () => topology_hidePortsHelp(),
 			section: () => topology_hideStuff()
-		},
-		{
-			id: 'hide_service_categories',
-			label: () => topology_hideServiceCategories(),
-			type: 'multiselect',
-			path: 'request',
-			key: 'hide_service_categories',
-			helpText: () => topology_hideServiceCategoriesHelp(),
-			section: () => topology_hideStuff(),
-			getOptions: () => serviceCategories
 		},
 		{
 			id: 'hide_edge_types',
@@ -443,6 +470,13 @@
 							</div>
 						{/if}
 					{/each}
+					{#if section.name === topology_hideStuff()}
+						<CategoryFilterGroup
+							categories={serviceCategoriesWithColors}
+							hiddenCategories={$topologyOptions.request.hide_service_categories ?? []}
+							onToggle={toggleServiceCategory}
+						/>
+					{/if}
 				</div>
 			{/if}
 		</div>

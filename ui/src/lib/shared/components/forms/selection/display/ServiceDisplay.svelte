@@ -1,17 +1,12 @@
 <script lang="ts" module>
 	import { concepts, serviceDefinitions } from '$lib/shared/stores/metadata';
-	import { hoveredServiceCategory } from '$lib/features/topology/interactions';
-	import { topologyOptions } from '$lib/features/topology/queries';
 	import type { Port } from '$lib/features/hosts/types/base';
-	import type { components } from '$lib/api/schema';
-	type ServiceCategory = components['schemas']['ServiceCategory'];
 
 	export interface ServiceDisplayContext {
 		interfaceId?: string | null;
 		ports?: Port[];
 		showEntityTagPicker?: boolean;
 		tagPickerDisabled?: boolean;
-		categoryInteractable?: boolean;
 		entityTags?: import('$lib/features/tags/types/base').Tag[];
 	}
 
@@ -68,47 +63,8 @@
 		},
 		getIconColor: (service: Service) =>
 			serviceDefinitions.getColorHelper(service.service_definition).icon,
-		getTags: (service: Service, context) => {
+		getTags: (service: Service) => {
 			let tags: TagProps[] = [];
-
-			// Add category tag
-			const category = serviceDefinitions.getCategory(service.service_definition);
-			if (category) {
-				const categoryColor = serviceDefinitions.getColorHelper(service.service_definition).color;
-				const tagProps: TagProps = {
-					label: category,
-					color: categoryColor
-				};
-
-				if (context.categoryInteractable) {
-					tagProps.pill = true;
-					tagProps.title = 'Click to hide this category';
-					tagProps.onmouseenter = () => {
-						hoveredServiceCategory.set({ category, color: categoryColor });
-					};
-					tagProps.onmouseleave = () => {
-						hoveredServiceCategory.set(null);
-					};
-					tagProps.onclick = () => {
-						const cat = category as ServiceCategory;
-						topologyOptions.update((opts) => {
-							const hidden = opts.request.hide_service_categories ?? [];
-							if (!hidden.includes(cat)) {
-								return {
-									...opts,
-									request: {
-										...opts.request,
-										hide_service_categories: [...hidden, cat]
-									}
-								};
-							}
-							return opts;
-						});
-					};
-				}
-
-				tags.push(tagProps);
-			}
 
 			if (service.virtualization) {
 				tags.push({

@@ -112,7 +112,7 @@
 						topology?.services.filter((s) =>
 							containerizingHost ? s.host_id == containerizingHost.id : false
 						) ?? [],
-					showEntityTagPicker: !isReadonly,
+					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
 					entityTags: topology?.entity_tags ?? []
 				}}
@@ -128,9 +128,8 @@
 				context={{
 					interfaceId: null,
 					ports: topology?.ports ?? [],
-					showEntityTagPicker: !isReadonly,
+					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
-					categoryInteractable: !!liveEditsEnabled,
 					entityTags: topology?.entity_tags ?? []
 				}}
 				item={containerizingService}
@@ -148,9 +147,8 @@
 				context={{
 					interfaceId: null,
 					ports: topology?.ports ?? [],
-					showEntityTagPicker: !isReadonly,
+					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
-					categoryInteractable: !!liveEditsEnabled,
 					entityTags: topology?.entity_tags ?? []
 				}}
 				item={service}

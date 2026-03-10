@@ -137,7 +137,6 @@
 							<button
 								type="button"
 								class="inline-flex cursor-pointer"
-								title={tag.title}
 								onmouseenter={tag.onmouseenter}
 								onmouseleave={tag.onmouseleave}
 								onclick={tag.onclick}

@@ -45,7 +45,7 @@
 			<EntityDisplayWrapper
 				context={{
 					services: topology?.services.filter((s) => host && s.host_id == host.id) ?? [],
-					showEntityTagPicker: !isReadonly,
+					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
 					entityTags: topology?.entity_tags ?? []
 				}}
