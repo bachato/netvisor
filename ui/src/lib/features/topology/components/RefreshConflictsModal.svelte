@@ -31,94 +31,105 @@
 	export let onLock: () => void;
 	export let onCancel: () => void;
 
-	// Get removed entity details
+	// Use removed_* array lengths directly for total count — these are always
+	// accurate even when entities are hidden by server-side filters
+	$: totalRemoved =
+		topology.removed_hosts.length +
+		topology.removed_services.length +
+		topology.removed_subnets.length +
+		topology.removed_groups.length +
+		topology.removed_interfaces.length +
+		topology.removed_ports.length +
+		topology.removed_bindings.length;
+
+	// Resolved entities (for display names)
 	$: removedHosts = topology.removed_hosts
 		.map((id) => topology.hosts.find((h) => h.id === id))
 		.filter((h) => h != undefined);
+	$: unresolvedHostCount = topology.removed_hosts.length - removedHosts.length;
 
 	$: removedServices = topology.removed_services
 		.map((id) => topology.services.find((s) => s.id === id))
 		.filter((s) => s != undefined);
+	$: unresolvedServiceCount = topology.removed_services.length - removedServices.length;
 
 	$: removedSubnets = topology.removed_subnets
 		.map((id) => topology.subnets.find((s) => s.id === id))
 		.filter((s) => s != undefined);
+	$: unresolvedSubnetCount = topology.removed_subnets.length - removedSubnets.length;
 
 	$: removedGroups = topology.removed_groups
 		.map((id) => topology.groups.find((g) => g.id === id))
 		.filter((g) => g != undefined);
+	$: unresolvedGroupCount = topology.removed_groups.length - removedGroups.length;
 
 	$: removedInterfaces = topology.removed_interfaces
 		.map((id) => topology.interfaces.find((i) => i.id === id))
 		.filter((i) => i != undefined);
+	$: unresolvedInterfaceCount = topology.removed_interfaces.length - removedInterfaces.length;
 
 	$: removedPorts = topology.removed_ports
 		.map((id) => topology.ports.find((p) => p.id === id))
 		.filter((p) => p != undefined);
+	$: unresolvedPortCount = topology.removed_ports.length - removedPorts.length;
 
 	$: removedBindings = topology.removed_bindings
 		.map((id) => topology.bindings.find((b) => b.id === id))
 		.filter((b) => b != undefined);
+	$: unresolvedBindingCount = topology.removed_bindings.length - removedBindings.length;
 
-	$: totalRemoved =
-		removedHosts.length +
-		removedServices.length +
-		removedSubnets.length +
-		removedGroups.length +
-		removedInterfaces.length +
-		removedPorts.length +
-		removedBindings.length;
-
-	// Build single list with category headers
+	// Build single list with category headers, including unresolved counts
 	$: allRemovedEntities = (() => {
-		const items = [];
+		const items: { id: string; name: string }[] = [];
 
-		if (removedHosts.length > 0) {
-			items.push({
-				id: 'hosts-header',
-				name: `${common_hosts()}: ${removedHosts.map((h) => h.name).join(', ')}`
-			});
+		if (removedHosts.length > 0 || unresolvedHostCount > 0) {
+			const names = removedHosts.map((h) => h.name);
+			if (unresolvedHostCount > 0) names.push(`(+${unresolvedHostCount} hidden by filters)`);
+			items.push({ id: 'hosts-header', name: `${common_hosts()}: ${names.join(', ')}` });
 		}
 
-		if (removedServices.length > 0) {
-			items.push({
-				id: 'services-header',
-				name: `${common_services()}: ${removedServices.map((s) => s.name).join(', ')}`
-			});
+		if (removedServices.length > 0 || unresolvedServiceCount > 0) {
+			const names = removedServices.map((s) => s.name);
+			if (unresolvedServiceCount > 0) names.push(`(+${unresolvedServiceCount} hidden by filters)`);
+			items.push({ id: 'services-header', name: `${common_services()}: ${names.join(', ')}` });
 		}
 
-		if (removedSubnets.length > 0) {
-			items.push({
-				id: 'subnets-header',
-				name: `${common_subnets()}: ${removedSubnets.map((s) => s.name).join(', ')}`
-			});
+		if (removedSubnets.length > 0 || unresolvedSubnetCount > 0) {
+			const names = removedSubnets.map((s) => s.name);
+			if (unresolvedSubnetCount > 0) names.push(`(+${unresolvedSubnetCount} hidden by filters)`);
+			items.push({ id: 'subnets-header', name: `${common_subnets()}: ${names.join(', ')}` });
 		}
 
-		if (removedGroups.length > 0) {
+		if (removedGroups.length > 0 || unresolvedGroupCount > 0) {
+			const names = removedGroups.map((g) => g.name);
+			if (unresolvedGroupCount > 0) names.push(`(+${unresolvedGroupCount} hidden by filters)`);
 			items.push({
 				id: 'groups-header',
-				name: `${common_groupsLabel()}: ${removedGroups.map((g) => g.name).join(', ')}`
+				name: `${common_groupsLabel()}: ${names.join(', ')}`
 			});
 		}
 
-		if (removedInterfaces.length > 0) {
+		if (removedInterfaces.length > 0 || unresolvedInterfaceCount > 0) {
+			const names = removedInterfaces.map((i) => i.ip_address);
+			if (unresolvedInterfaceCount > 0)
+				names.push(`(+${unresolvedInterfaceCount} hidden by filters)`);
 			items.push({
 				id: 'interfaces-header',
-				name: `${common_interfaces()}: ${removedInterfaces.map((i) => i.ip_address).join(', ')}`
+				name: `${common_interfaces()}: ${names.join(', ')}`
 			});
 		}
 
-		if (removedPorts.length > 0) {
-			items.push({
-				id: 'ports-header',
-				name: `${common_ports()}: ${removedPorts.map((p) => `${p.number}/${p.protocol}`).join(', ')}`
-			});
+		if (removedPorts.length > 0 || unresolvedPortCount > 0) {
+			const names = removedPorts.map((p) => `${p.number}/${p.protocol}`);
+			if (unresolvedPortCount > 0) names.push(`(+${unresolvedPortCount} hidden by filters)`);
+			items.push({ id: 'ports-header', name: `${common_ports()}: ${names.join(', ')}` });
 		}
 
-		if (removedBindings.length > 0) {
+		if (removedBindings.length > 0 || unresolvedBindingCount > 0) {
+			const total = removedBindings.length + unresolvedBindingCount;
 			items.push({
 				id: 'bindings-header',
-				name: topology_bindingsRemoved({ count: removedBindings.length })
+				name: topology_bindingsRemoved({ count: total })
 			});
 		}
 
