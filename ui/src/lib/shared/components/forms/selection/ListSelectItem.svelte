@@ -37,7 +37,7 @@
 		'showEditableEntityDescription' in context &&
 		(context as Record<string, unknown>).showEditableEntityDescription;
 	$: descriptionValue = showEditableDescription
-		? ((context as Record<string, unknown>).entityDescription as string | null) ?? null
+		? (((context as Record<string, unknown>).entityDescription as string | null) ?? null)
 		: null;
 	$: descriptionDisabled = showEditableDescription
 		? !!(context as Record<string, unknown>).entityDescriptionDisabled
@@ -185,24 +185,27 @@
 		{#if description.length > 0}
 			<span class="text-tertiary mt-1 block truncate text-xs">{description}</span>
 		{/if}
-		{#if showTagPicker && tagPickerProps}
-			<div class="mt-2">
-				<TagPickerInline
-					selectedTagIds={tagPickerProps.selectedTagIds}
-					entityId={tagPickerProps.entityId}
-					entityType={tagPickerProps.entityType}
-					disabled={tagPickerDisabled}
-					availableTags={tagPickerProps.availableTags}
-				/>
-			</div>
-		{/if}
-		{#if showEditableDescription && descriptionOnSave}
-			<div class="mt-2 border-t border-gray-700/50 pt-2">
-				<InlineDescription
-					value={descriptionValue}
-					editable={!descriptionDisabled}
-					onSave={descriptionOnSave}
-				/>
+		{#if (showEditableDescription && descriptionOnSave) || (showTagPicker && tagPickerProps)}
+			<div class="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
+				{#if showEditableDescription && descriptionOnSave}
+					<InlineDescription
+						value={descriptionValue}
+						editable={!descriptionDisabled}
+						onSave={descriptionOnSave}
+					/>
+				{/if}
+				{#if showTagPicker && tagPickerProps}
+					<div class="flex items-start gap-1.5">
+						<span class="text-tertiary shrink-0 text-xs leading-5">Tags:</span>
+						<TagPickerInline
+							selectedTagIds={tagPickerProps.selectedTagIds}
+							entityId={tagPickerProps.entityId}
+							entityType={tagPickerProps.entityType}
+							disabled={tagPickerDisabled}
+							availableTags={tagPickerProps.availableTags}
+						/>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>

@@ -1,6 +1,9 @@
 <script lang="ts">
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
-	import { useUpdateGroupMutation } from '$lib/features/groups/queries';
+	import {
+		useUpdateGroupMutation,
+		useUpdateGroupDescriptionMutation
+	} from '$lib/features/groups/queries';
 	import {
 		BindingWithServiceDisplay,
 		type BindingWithServiceContext
@@ -42,6 +45,7 @@
 
 	// TanStack Query mutation for updating groups
 	const updateGroupMutation = useUpdateGroupMutation();
+	const descriptionMutation = useUpdateGroupDescriptionMutation();
 	let isMutationPending = $derived(updateGroupMutation.isPending);
 
 	let group = $derived(topology ? topology.groups.find((g) => g.id == groupId) : null);
@@ -120,11 +124,7 @@
 		entityDescriptionDisabled: !editState.isEditable,
 		onEntityDescriptionSave: (desc: string | null) => {
 			if (group) {
-				updateGroupMutation.mutate({
-					...group,
-					description: desc,
-					binding_ids: [...new Set(group.binding_ids)]
-				});
+				descriptionMutation.mutate({ groupId: group.id, description: desc });
 			}
 		}
 	});

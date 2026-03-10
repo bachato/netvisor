@@ -6,7 +6,7 @@
 		autoRebuild
 	} from '../../../queries';
 	import { updateTagFilter } from '../../../interactions';
-	import { getTopologyEditState } from '../../../state';
+	import { getTopologyEditState, getOptionDisabledTooltip } from '../../../state';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import TagFilterGroup from './TagFilterGroup.svelte';
@@ -38,7 +38,6 @@
 		topology_leftZoneCategoriesHelp,
 		topology_leftZoneTitleHelp,
 		topology_multiselectHelp,
-		topology_optionDisabledRebuildRequired,
 		topology_showGatewayInLeftZone,
 		topology_showGatewayInLeftZoneHelp,
 		topology_tagFilter,
@@ -429,7 +428,7 @@
 								optionKey={def.key}
 								disabled={def.path === 'request' && !editState.isEditable}
 								disabledReason={def.path === 'request' && !editState.isEditable
-									? topology_optionDisabledRebuildRequired()
+									? getOptionDisabledTooltip(editState.disabledReason)
 									: ''}
 							/>
 						{:else if def.type === 'string'}

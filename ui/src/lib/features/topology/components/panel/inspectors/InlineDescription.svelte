@@ -31,15 +31,8 @@
 		}
 	}
 
-	function cancel() {
-		editing = false;
-	}
-
 	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') {
-			e.preventDefault();
-			cancel();
-		} else if (e.key === 'Enter' && !e.shiftKey) {
+		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
 			save();
 		}

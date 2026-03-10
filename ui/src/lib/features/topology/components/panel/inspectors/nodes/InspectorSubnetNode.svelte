@@ -8,7 +8,7 @@
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
-	import { getTopologyEditState } from '$lib/features/topology/state';
+	import { getTopologyEditState, getOptionDisabledTooltip } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { subnetTypes } from '$lib/shared/stores/metadata';
@@ -19,8 +19,7 @@
 		topology_showGatewayInLeftZone,
 		topology_showGatewayInLeftZoneHelp,
 		topology_groupDockerBridges,
-		topology_groupDockerBridgesHelp,
-		topology_optionDisabledRebuildRequired
+		topology_groupDockerBridgesHelp
 	} from '$lib/paraglide/messages';
 
 	let { node }: { node: Node } = $props();
@@ -67,7 +66,7 @@
 				path="request"
 				optionKey="show_gateway_in_left_zone"
 				disabled={!editState.isEditable}
-				disabledReason={topology_optionDisabledRebuildRequired()}
+				disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
 			/>
 			{#if isContainerSubnet}
 				<OptionToggle
@@ -76,7 +75,7 @@
 					path="request"
 					optionKey="group_docker_bridges_by_host"
 					disabled={!editState.isEditable}
-					disabledReason={topology_optionDisabledRebuildRequired()}
+					disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
 				/>
 			{/if}
 		</OptionsCard>

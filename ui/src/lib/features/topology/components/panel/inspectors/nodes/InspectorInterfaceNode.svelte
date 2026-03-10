@@ -10,7 +10,7 @@
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { InterfaceNode, Topology } from '$lib/features/topology/types/base';
-	import { getTopologyEditState } from '$lib/features/topology/state';
+	import { getTopologyEditState, getOptionDisabledTooltip } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import OptionToggle from '../../options/OptionToggle.svelte';
@@ -20,8 +20,7 @@
 		topology_hidePorts,
 		topology_hidePortsHelp,
 		topology_hideVmOnContainer,
-		topology_hideVmOnContainerHelp,
-		topology_optionDisabledRebuildRequired
+		topology_hideVmOnContainerHelp
 	} from '$lib/paraglide/messages';
 
 	let { node }: { node: Node } = $props();
@@ -115,7 +114,7 @@
 					path="request"
 					optionKey="hide_ports"
 					disabled={!editState.isEditable}
-					disabledReason={topology_optionDisabledRebuildRequired()}
+					disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
 				/>
 			{/if}
 			{#if isVirtualized}
@@ -125,7 +124,7 @@
 					path="request"
 					optionKey="hide_vm_title_on_docker_container"
 					disabled={!editState.isEditable}
-					disabledReason={topology_optionDisabledRebuildRequired()}
+					disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
 				/>
 			{/if}
 		</OptionsCard>

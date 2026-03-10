@@ -130,6 +130,36 @@ export function useBulkDeleteGroupsMutation() {
 	}));
 }
 
+/**
+ * Mutation hook for updating only a group's description.
+ * Reads authoritative group data (with correct binding_ids) from the groups query cache
+ * to avoid re-saving bindings from potentially stale topology snapshot data.
+ */
+export function useUpdateGroupDescriptionMutation() {
+	const queryClient = useQueryClient();
+	return createMutation(() => ({
+		mutationFn: async (data: { groupId: string; description: string | null }) => {
+			const groups = queryClient.getQueryData<Group[]>(queryKeys.groups.all);
+			const currentGroup = groups?.find((g) => g.id === data.groupId);
+			if (!currentGroup) throw new Error('Group not found in cache');
+
+			const { data: result } = await apiClient.PUT('/api/v1/groups/{id}', {
+				params: { path: { id: data.groupId } },
+				body: { ...currentGroup, description: data.description }
+			});
+			if (!result?.success || !result.data)
+				throw new Error(result?.error || 'Failed to update group description');
+			return result.data;
+		},
+		onSuccess: (updatedGroup: Group) => {
+			queryClient.setQueryData<Group[]>(
+				queryKeys.groups.all,
+				(old) => old?.map((g) => (g.id === updatedGroup.id ? updatedGroup : g)) ?? []
+			);
+		}
+	}));
+}
+
 import { utcTimeZoneSentinel, uuidv4Sentinel } from '$lib/shared/utils/formatting';
 import { entities } from '$lib/shared/stores/metadata';
 import type { Color } from '$lib/shared/utils/styling';
