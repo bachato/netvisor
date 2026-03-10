@@ -171,6 +171,8 @@ export function useRefreshTopologyMutation() {
  * (network_id, options, nodes/edges for position preservation)
  */
 export function useRebuildTopologyMutation() {
+	const queryClient = useQueryClient();
+
 	return createMutation(() => ({
 		mutationFn: async (topology: Topology) => {
 			await apiClient.POST('/api/v1/topology/{id}/rebuild', {
@@ -183,6 +185,9 @@ export function useRebuildTopologyMutation() {
 				}
 			});
 			return topology.id;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.organizations.current() });
 		}
 	}));
 }
