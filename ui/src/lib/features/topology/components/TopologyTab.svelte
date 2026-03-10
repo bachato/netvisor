@@ -40,7 +40,7 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import type { components } from '$lib/api/schema';
-	import { permissions } from '$lib/shared/stores/metadata';
+	import { entities, permissions } from '$lib/shared/stores/metadata';
 	import { modalState, openModal } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import {
@@ -347,6 +347,16 @@
 	let lockedByDisplay = $derived(
 		lockedByUser?.email ?? (currentTopology?.locked_by ? topology_anotherUser() : null)
 	);
+
+	const HostIcon = entities.getIconComponent('Host');
+	const ServiceIcon = entities.getIconComponent('Service');
+	const SubnetIcon = entities.getIconComponent('Subnet');
+	const GroupIcon = entities.getIconComponent('Group');
+
+	const hostColor = entities.getColorHelper('Host').icon;
+	const serviceColor = entities.getColorHelper('Service').icon;
+	const subnetColor = entities.getColorHelper('Subnet').icon;
+	const groupColor = entities.getColorHelper('Group').icon;
 </script>
 
 <SvelteFlowProvider>
@@ -510,6 +520,46 @@
 		{#if isLoading}
 			<Loading />
 		{:else if currentTopology}
+			{@const hostCount = currentTopology.hosts.length}
+			{@const serviceCount = currentTopology.services.length}
+			{@const subnetCount = currentTopology.subnets.length}
+			{@const groupCount = currentTopology.groups.length}
+			{#if hostCount + serviceCount + subnetCount + groupCount > 0}
+				<div class="flex items-center gap-4 px-4 py-1">
+					{#if hostCount > 0}
+						<div class="flex items-center gap-1.5">
+							<HostIcon class="h-3.5 w-3.5 flex-shrink-0 {hostColor}" />
+							<span class="text-secondary text-xs"
+								>{hostCount} {hostCount === 1 ? 'host' : 'hosts'}</span
+							>
+						</div>
+					{/if}
+					{#if serviceCount > 0}
+						<div class="flex items-center gap-1.5">
+							<ServiceIcon class="h-3.5 w-3.5 flex-shrink-0 {serviceColor}" />
+							<span class="text-secondary text-xs"
+								>{serviceCount} {serviceCount === 1 ? 'service' : 'services'}</span
+							>
+						</div>
+					{/if}
+					{#if subnetCount > 0}
+						<div class="flex items-center gap-1.5">
+							<SubnetIcon class="h-3.5 w-3.5 flex-shrink-0 {subnetColor}" />
+							<span class="text-secondary text-xs"
+								>{subnetCount} {subnetCount === 1 ? 'subnet' : 'subnets'}</span
+							>
+						</div>
+					{/if}
+					{#if groupCount > 0}
+						<div class="flex items-center gap-1.5">
+							<GroupIcon class="h-3.5 w-3.5 flex-shrink-0 {groupColor}" />
+							<span class="text-secondary text-xs"
+								>{groupCount} {groupCount === 1 ? 'group' : 'groups'}</span
+							>
+						</div>
+					{/if}
+				</div>
+			{/if}
 			<div class="relative">
 				<TopologyOptionsPanel
 					{isReadOnly}
