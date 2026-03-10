@@ -2,7 +2,7 @@
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import TopologyViewer from './visualization/TopologyViewer.svelte';
 	import TopologyOptionsPanel from './panel/TopologyOptionsPanel.svelte';
-	import { Edit, Lock, Plus, Radio, RefreshCcw, Share2, Trash2 } from 'lucide-svelte';
+	import { Edit, Lock, Plus, Radar, Radio, RefreshCcw, Share2, Trash2 } from 'lucide-svelte';
 	import ExportButton from './ExportButton.svelte';
 	import ExportModal from './ExportModal.svelte';
 	import ShareModal from '$lib/features/shares/components/ShareModal.svelte';
@@ -34,6 +34,7 @@
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
+	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
 	import { useGroupsQuery } from '$lib/features/groups/queries';
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
@@ -78,6 +79,14 @@
 	const usersQuery = useUsersQuery({ enabled: () => canViewUsers });
 	const topologiesQuery = useTopologiesQuery();
 	const organizationQuery = useOrganizationQuery();
+	const activeSessionsQuery = useActiveSessionsQuery();
+
+	// Find active discovery session for current topology's network
+	let activeSession = $derived(
+		currentTopology
+			? (activeSessionsQuery.data ?? []).find((s) => s.network_id === currentTopology.network_id)
+			: null
+	);
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
@@ -423,6 +432,16 @@
 									/>
 								</div>
 							</div>
+						{/if}
+						{#if activeSession}
+							<span class="btn-icon-info inline-flex items-center gap-1.5 text-xs">
+								<Radar class="h-4 w-4 animate-pulse" />
+								{#if activeSession.progress > 0}
+									Scanning... {activeSession.progress}%
+								{:else}
+									Discovery running...
+								{/if}
+							</span>
 						{/if}
 					</div>
 
