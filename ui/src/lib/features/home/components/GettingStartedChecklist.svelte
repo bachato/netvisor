@@ -197,29 +197,26 @@
 		return `Found ${hosts} hosts — estimating scan time...`;
 	});
 
-	// Waiting suggestions — filtered by onboarding completion
-	function getInAppSuggestions(): Array<{ label: string; action: () => void }> {
-		const suggestions: Array<{ label: string; action: () => void }> = [];
-		if (!onboarding.includes('FirstSnmpCredentialCreated')) {
-			suggestions.push({
-				label: 'Set up SNMP credentials',
-				action: () => {
-					onNavigate('snmp-credentials');
-					openModal('snmp-credential-editor');
-				}
-			});
-		}
-		if (!onboarding.includes('FirstTagCreated')) {
-			suggestions.push({
-				label: 'Create tags to organize hosts',
-				action: () => {
-					onNavigate('tags');
-					openModal('tag-editor');
-				}
-			});
-		}
+	// Waiting suggestions — show all applicable, mark completed ones
+	function getInAppSuggestions(): Array<{ label: string; action: () => void; completed: boolean }> {
+		const suggestions: Array<{ label: string; action: () => void; completed: boolean }> = [];
+		suggestions.push({
+			label: 'Set up SNMP credentials',
+			action: () => {
+				onNavigate('snmp-credentials');
+				openModal('snmp-credential-editor');
+			},
+			completed: onboarding.includes('FirstSnmpCredentialCreated')
+		});
+		suggestions.push({
+			label: 'Create tags to organize hosts',
+			action: () => {
+				onNavigate('tags');
+				openModal('tag-editor');
+			},
+			completed: onboarding.includes('FirstTagCreated')
+		});
 		if (
-			!onboarding.includes('InviteSent') &&
 			organization?.plan &&
 			((organization.plan.included_seats ?? 0) > 1 || (organization.plan.seat_cents ?? 0) > 0)
 		) {
@@ -228,7 +225,8 @@
 				action: () => {
 					onNavigate('users');
 					openModal('invite-user');
-				}
+				},
+				completed: onboarding.includes('InviteSent')
 			});
 		}
 		return suggestions;
@@ -391,9 +389,14 @@
 									<button
 										class="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
 										onclick={() => suggestion.action()}
+										disabled={suggestion.completed}
 									>
-										<Circle class="h-3 w-3 flex-shrink-0" />
-										{suggestion.label}
+										{#if suggestion.completed}
+											<Check class="h-3 w-3 flex-shrink-0 text-green-400" />
+										{:else}
+											<Circle class="h-3 w-3 flex-shrink-0" />
+										{/if}
+										<span class:line-through={suggestion.completed}>{suggestion.label}</span>
 									</button>
 								{/each}
 
