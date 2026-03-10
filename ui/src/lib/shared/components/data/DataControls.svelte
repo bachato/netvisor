@@ -608,6 +608,20 @@
 				values: newValues
 			}
 		};
+
+		// Notify parent of exclude filter changes
+		if (onExcludeFilterChange) {
+			const field = fields.find((f) => getFieldKey(f) === fieldKey);
+			if (field?.filterMode === 'exclude') {
+				onExcludeFilterChange(fieldKey, Array.from(newValues));
+				// Reset pagination
+				if (useServerPagination && onPageChange) {
+					onPageChange(1, pageSize);
+				} else {
+					currentPage = 1;
+				}
+			}
+		}
 	}
 
 	// Toggle boolean filter
@@ -667,13 +681,22 @@
 				} else {
 					newFilterState[key] = {
 						type: 'string',
-						values: new SvelteSet(field.filterDefaults)
+						values: new SvelteSet()
 					};
 				}
 			}
 		});
 
 		filterState = newFilterState;
+
+		// Notify parent that exclude filters were cleared
+		if (onExcludeFilterChange) {
+			fields.forEach((field) => {
+				if (field.filterable && field.filterMode === 'exclude') {
+					onExcludeFilterChange(getFieldKey(field), []);
+				}
+			});
+		}
 	}
 
 	// Clear search
@@ -919,58 +942,6 @@
 			// Notify parent of the change
 			if (onTagFilterChange) {
 				onTagFilterChange(currentTagIds);
-			}
-		}
-	});
-
-	// Track previous exclude filter state to detect changes
-	let prevExcludeFilterValues = new SvelteMap<string, string[]>();
-	let excludeFilterInitialized = false;
-
-	// Notify parent of exclude filter changes
-	$effect(() => {
-		if (!onExcludeFilterChange) return;
-
-		const excludeFields = fields.filter((f) => f.filterable && f.filterMode === 'exclude');
-		if (excludeFields.length === 0) return;
-
-		const currentValues = new SvelteMap<string, string[]>();
-		for (const field of excludeFields) {
-			const key = getFieldKey(field);
-			const filter = filterState[key];
-			currentValues.set(key, filter ? Array.from(filter.values).sort() : []);
-		}
-
-		// Skip the initial run (state restoration)
-		if (!excludeFilterInitialized) {
-			prevExcludeFilterValues = currentValues;
-			excludeFilterInitialized = true;
-			return;
-		}
-
-		// Check if any exclude filter actually changed
-		let changed = false;
-		for (const [key, values] of currentValues) {
-			const prev = prevExcludeFilterValues.get(key) ?? [];
-			if (values.length !== prev.length || values.some((v, i) => v !== prev[i])) {
-				changed = true;
-				break;
-			}
-		}
-
-		if (changed) {
-			prevExcludeFilterValues = currentValues;
-
-			// Reset to page 1
-			if (useServerPagination && onPageChange) {
-				onPageChange(1, pageSize);
-			} else {
-				currentPage = 1;
-			}
-
-			// Notify parent for each exclude field
-			for (const [key, values] of currentValues) {
-				onExcludeFilterChange(key, values);
 			}
 		}
 	});

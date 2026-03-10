@@ -214,7 +214,7 @@ async fn get_all_services(
             let excluded_ids: Vec<String> = ServiceDefinitionRegistry::all_service_definitions()
                 .iter()
                 .filter(|def| categories.contains(&def.category()))
-                .map(|def| def.id().to_string())
+                .map(|def| serde_json::to_string(def.id()).unwrap_or_default())
                 .collect();
             if !excluded_ids.is_empty() {
                 filter.service_definition_not_in(&excluded_ids)
