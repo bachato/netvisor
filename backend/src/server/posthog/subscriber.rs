@@ -19,6 +19,10 @@ use anyhow::Error;
 use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
+use uuid::Uuid;
+
+/// Demo org ID — filtered from noisy analytics events to avoid skewing metrics.
+const DEMO_ORG_ID: Uuid = uuid::uuid!("0380451f-a50b-41cd-ae76-6ce47214d8ff");
 
 /// Build common properties from the event's authentication context.
 fn auth_properties(event: &Event) -> serde_json::Value {
@@ -333,6 +337,17 @@ impl EventSubscriber for PosthogService {
                     }
                 }
                 Event::Analytics(analytics_event) => {
+                    // Skip share/embed view events from the demo org to avoid skewing metrics
+                    if analytics_event.organization_id == DEMO_ORG_ID
+                        && matches!(
+                            analytics_event.operation,
+                            AnalyticsOperation::TopologyShareViewed
+                                | AnalyticsOperation::TopologyEmbedViewed
+                        )
+                    {
+                        continue;
+                    }
+
                     let distinct_id = format!("org:{}", analytics_event.organization_id);
                     let event_name = analytics_event.operation.to_string();
 
