@@ -20,6 +20,7 @@
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import {
@@ -74,10 +75,17 @@
 	// Selective host lookup - only fetches hosts needed for service display
 	// Extract host IDs from visible services for host name display
 	const hostsQuery = useHostsByIds(() => {
-		return (servicesQuery.data?.items ?? [])
+		const ids = (servicesQuery.data?.items ?? [])
 			.filter((s) => s.host_id)
 			.map((s) => s.host_id)
 			.filter((id, idx, arr) => arr.indexOf(id) === idx);
+		// Include host for service navigated via EntityTag
+		const ms = $modalState;
+		if (ms.name === 'service-editor' && ms.entityData?.host_id) {
+			const hostId = ms.entityData.host_id as string;
+			if (!ids.includes(hostId)) ids.push(hostId);
+		}
+		return ids;
 	});
 
 	// Mutations
@@ -163,15 +171,23 @@
 	}
 
 	let serviceHosts = $derived(
-		new Map(
-			servicesData.map((service) => {
-				const foundHost = hostsData.find((h) => {
-					return h.id == service.host_id;
-				});
-
-				return [service.id, foundHost];
-			})
-		)
+		(() => {
+			const map = new SvelteMap(
+				servicesData.map((service) => {
+					const foundHost = hostsData.find((h) => h.id == service.host_id);
+					return [service.id, foundHost] as [string, (typeof hostsData)[0] | undefined];
+				})
+			);
+			// Include entityData service (EntityTag navigation)
+			const ms = $modalState;
+			if (ms.name === 'service-editor' && ms.entityData?.id && ms.entityData?.host_id) {
+				if (!map.has(ms.entityData.id as string)) {
+					const host = hostsData.find((h) => h.id === ms.entityData!.host_id);
+					if (host) map.set(ms.entityData.id as string, host);
+				}
+			}
+			return map;
+		})()
 	);
 
 	function handleDeleteService(service: Service) {
