@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { GitBranch, Network, X } from 'lucide-svelte';
+	import { GitBranch, Network, X, Info } from 'lucide-svelte';
 	import {
 		selectedNodes,
 		previewEdges,
@@ -22,14 +22,22 @@
 	import { AVAILABLE_COLORS, createColorHelper } from '$lib/shared/utils/styling';
 	import { useQueryClient } from '@tanstack/svelte-query';
 	import { queryKeys } from '$lib/api/query-client';
+	import { browser } from '$app/environment';
 	import {
 		topology_multiSelectActionBarCount,
 		topology_multiSelectGroupName,
 		topology_multiSelectNoBindings,
 		topology_multiSelectPickBinding,
+		common_hosts,
+		common_services,
+		topology_multiSelectLockedHint,
+		topology_multiSelectStaleHint,
+		topology_multiSelectReadOnlyHint,
+		topology_multiSelectPreviewHint,
+		topology_multiSelectPreviewShow,
+		topology_multiSelectPreviewHide,
 		common_cancel,
 		common_clearSelection,
-		common_confirm,
 		common_tags,
 		groups_createGroup,
 		groups_serviceBindings
@@ -44,6 +52,8 @@
 		onClearSelection: () => void;
 		onGroupCreated?: (groupId: string) => void;
 	} = $props();
+
+	const PREVIEW_STORAGE_KEY = 'scanopy_topology_group_preview';
 
 	const queryClient = useQueryClient();
 	const topologiesQuery = useTopologiesQuery();
@@ -77,21 +87,68 @@
 		topology ? topology.hosts.filter((h) => selectedHostIds.includes(h.id)) : []
 	);
 
-	// Common tags across selected hosts
-	let commonHostTags = $derived(computeCommonTags(selectedHosts));
+	// Get services bound to selected interfaces
+	let selectedServiceIds = $derived.by(() => {
+		if (!topology) return [];
+		const serviceIds: string[] = [];
+		for (const node of nodes) {
+			const data = node.data as InterfaceNodeType;
+			if (!data.interface_id) continue;
+			for (const service of topology.services) {
+				if (serviceIds.includes(service.id)) continue;
+				for (const binding of service.bindings) {
+					if (binding.interface_id === data.interface_id || binding.interface_id === null) {
+						if (service.host_id && selectedHostIds.includes(service.host_id)) {
+							serviceIds.push(service.id);
+							break;
+						}
+					}
+				}
+			}
+		}
+		return serviceIds;
+	});
+
+	let selectedServices = $derived(
+		topology ? topology.services.filter((s) => selectedServiceIds.includes(s.id)) : []
+	);
+
+	// Tag entity type toggle
+	let tagEntityType: 'Host' | 'Service' = $state('Host');
+
+	let tagEntityIds = $derived(tagEntityType === 'Host' ? selectedHostIds : selectedServiceIds);
+	let tagEntities = $derived(tagEntityType === 'Host' ? selectedHosts : selectedServices);
+	let tagEntityNames = $derived(tagEntities.map((e) => e.name).join(', '));
+
+	// Common tags across selected entities
+	let commonTags = $derived(computeCommonTags(tagEntities));
 
 	// Check if topology allows mutations
+	let topologyStateType = $derived.by(() => {
+		if (!topology) return null;
+		const stateInfo = getTopologyStateInfo(topology, get(autoRebuild));
+		return stateInfo.type;
+	});
+
 	let canMutate = $derived.by(() => {
 		if (isReadOnly || !topology) return false;
-		const stateInfo = getTopologyStateInfo(topology, get(autoRebuild));
-		return stateInfo.type === 'fresh' && !topology.is_locked;
+		return topologyStateType === 'fresh' && !topology.is_locked;
+	});
+
+	let mutateDisabledReason = $derived.by(() => {
+		if (isReadOnly) return topology_multiSelectReadOnlyHint();
+		if (!topology) return '';
+		if (topology.is_locked) return topology_multiSelectLockedHint();
+		if (topologyStateType === 'stale_safe' || topologyStateType === 'stale_conflicts')
+			return topology_multiSelectStaleHint();
+		return '';
 	});
 
 	// Tag handlers — invalidate topology cache after so tags show immediately
 	async function handleAddTag(tagId: string) {
 		await bulkAddTagMutation.mutateAsync({
-			entity_ids: selectedHostIds,
-			entity_type: 'Host',
+			entity_ids: tagEntityIds,
+			entity_type: tagEntityType,
 			tag_id: tagId
 		});
 		queryClient.invalidateQueries({ queryKey: queryKeys.topology.all });
@@ -99,8 +156,8 @@
 
 	async function handleRemoveTag(tagId: string) {
 		await bulkRemoveTagMutation.mutateAsync({
-			entity_ids: selectedHostIds,
-			entity_type: 'Host',
+			entity_ids: tagEntityIds,
+			entity_type: tagEntityType,
 			tag_id: tagId
 		});
 		queryClient.invalidateQueries({ queryKey: queryKeys.topology.all });
@@ -114,6 +171,33 @@
 		AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)]
 	);
 	let groupEdgeStyle: EdgeStyle = $state('SmoothStep');
+
+	// Preview toggle with localStorage persistence
+	let showPreview = $state(true);
+	if (browser) {
+		try {
+			const stored = localStorage.getItem(PREVIEW_STORAGE_KEY);
+			if (stored !== null) showPreview = stored === 'true';
+		} catch {
+			// ignore
+		}
+	}
+
+	function togglePreview() {
+		showPreview = !showPreview;
+		if (browser) {
+			try {
+				localStorage.setItem(PREVIEW_STORAGE_KEY, String(showPreview));
+			} catch {
+				// ignore
+			}
+		}
+		if (!showPreview) {
+			previewEdges.set([]);
+		} else {
+			updatePreviewEdges();
+		}
+	}
 
 	// Fake group data for EdgeStyleForm binding
 	let edgeStyleFormData = $derived({
@@ -205,7 +289,9 @@
 		groupColor = AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)];
 		groupEdgeStyle = 'SmoothStep';
 		initBindingSelections();
-		updatePreviewEdges();
+		if (showPreview) {
+			updatePreviewEdges();
+		}
 	}
 
 	function cancelGroupCreation() {
@@ -257,13 +343,13 @@
 						edge_type: 'RequestPath',
 						is_preview: true,
 						group_id: '__preview__',
-						preview_color: groupColor
+						preview_color: groupColor,
+						preview_edge_style: groupEdgeStyle
 					},
 					markerEnd: {
 						type: 'arrow',
 						color: colorHelper.rgb
-					},
-					animated: true
+					}
 				});
 			}
 		} else {
@@ -277,24 +363,25 @@
 						edge_type: 'HubAndSpoke',
 						is_preview: true,
 						group_id: '__preview__',
-						preview_color: groupColor
+						preview_color: groupColor,
+						preview_edge_style: groupEdgeStyle
 					},
 					markerEnd: {
 						type: 'arrow',
 						color: colorHelper.rgb
-					},
-					animated: true
+					}
 				});
 			}
 		}
 		previewEdges.set(preview);
 	}
 
-	// Update preview when color or group type changes while creating
+	// Update preview when color, group type, or edge style changes while creating
 	$effect(() => {
-		if (isCreatingGroup) {
+		if (isCreatingGroup && showPreview) {
 			void groupColor;
 			void groupType;
+			void groupEdgeStyle;
 			updatePreviewEdges();
 		}
 	});
@@ -315,9 +402,34 @@
 		<!-- Tags section -->
 		<div class="space-y-2">
 			<span class="text-secondary block text-sm font-medium">{common_tags()}</span>
-			<div class="card card-static p-2">
+			<div class="card card-static space-y-2 p-2">
+				<!-- Entity type toggle -->
+				<div class="flex items-center gap-1">
+					<div class="flex rounded-md border border-gray-600">
+						<button
+							class="px-2 py-1 text-xs transition-colors {tagEntityType === 'Host'
+								? 'bg-blue-600 text-white'
+								: 'text-secondary hover:text-primary'}"
+							onclick={() => (tagEntityType = 'Host')}
+						>
+							{common_hosts()}
+						</button>
+						<button
+							class="px-2 py-1 text-xs transition-colors {tagEntityType === 'Service'
+								? 'bg-blue-600 text-white'
+								: 'text-secondary hover:text-primary'}"
+							onclick={() => (tagEntityType = 'Service')}
+						>
+							{common_services()}
+						</button>
+					</div>
+				</div>
+				<!-- Entity names -->
+				{#if tagEntityNames}
+					<div class="text-tertiary truncate text-xs">{tagEntityNames}</div>
+				{/if}
 				<TagPickerInline
-					selectedTagIds={commonHostTags}
+					selectedTagIds={commonTags}
 					onAdd={handleAddTag}
 					onRemove={handleRemoveTag}
 				/>
@@ -329,35 +441,12 @@
 			<span class="text-secondary block text-sm font-medium">{groups_createGroup()}</span>
 
 			{#if !isCreatingGroup}
-				<!-- Group type toggle + Create button -->
-				<div class="flex items-center gap-2">
-					<div class="flex rounded-md border border-gray-600">
-						<button
-							class="px-2 py-1.5 text-xs transition-colors {groupType === 'RequestPath'
-								? 'bg-blue-600 text-white'
-								: 'text-secondary hover:text-primary'}"
-							onclick={() => (groupType = 'RequestPath')}
-							title="Request Path"
-						>
-							<GitBranch class="h-3.5 w-3.5" />
-						</button>
-						<button
-							class="px-2 py-1.5 text-xs transition-colors {groupType === 'HubAndSpoke'
-								? 'bg-blue-600 text-white'
-								: 'text-secondary hover:text-primary'}"
-							onclick={() => (groupType = 'HubAndSpoke')}
-							title="Hub & Spoke"
-						>
-							<Network class="h-3.5 w-3.5" />
-						</button>
-					</div>
-					<button class="btn-primary flex-1 text-xs" onclick={startGroupCreation}>
-						{groups_createGroup()}
-					</button>
-				</div>
+				<button class="btn-primary w-full text-xs" onclick={startGroupCreation}>
+					{groups_createGroup()}
+				</button>
 			{:else}
-				<!-- Group creation form -->
-				<div class="space-y-3">
+				<!-- Group creation form — all options visible -->
+				<div class="card card-static space-y-3 p-3">
 					<!-- Group type toggle -->
 					<div class="flex items-center gap-2">
 						<div class="flex rounded-md border border-gray-600">
@@ -422,7 +511,7 @@
 									</div>
 								{:else}
 									<select
-										class="h-6 w-full rounded px-1 text-xs"
+										class="h-auto min-h-6 w-full rounded px-1 text-xs"
 										style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
 										value={bindingSelections.get(choice.interfaceId) ?? ''}
 										onchange={(e) => {
@@ -440,6 +529,19 @@
 						{/each}
 					</div>
 
+					<!-- Preview callout -->
+					<div class="text-tertiary flex items-start gap-1.5 text-xs">
+						<Info class="mt-0.5 h-3 w-3 shrink-0" />
+						<span>
+							{topology_multiSelectPreviewHint()}
+							<button class="text-blue-400 hover:text-blue-300" onclick={togglePreview}>
+								{showPreview
+									? topology_multiSelectPreviewHide()
+									: topology_multiSelectPreviewShow()}
+							</button>
+						</span>
+					</div>
+
 					<!-- Action buttons -->
 					<div class="flex gap-2">
 						<button
@@ -447,7 +549,7 @@
 							onclick={confirmGroupCreation}
 							disabled={!groupName.trim() || createGroupMutation.isPending}
 						>
-							{common_confirm()}
+							{groups_createGroup()}
 						</button>
 						<button class="btn-secondary flex-1 text-xs" onclick={cancelGroupCreation}>
 							{common_cancel()}
@@ -456,5 +558,12 @@
 				</div>
 			{/if}
 		</div>
+	{:else}
+		<!-- Show reason why actions are unavailable -->
+		{#if mutateDisabledReason}
+			<div class="text-tertiary py-2 text-center text-sm">
+				{mutateDisabledReason}
+			</div>
+		{/if}
 	{/if}
 </div>

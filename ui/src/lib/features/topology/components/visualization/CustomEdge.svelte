@@ -131,12 +131,17 @@
 
 	// Determine if this edge should use the two-color dashed effect
 	let isGroupEdge = $derived(edgeTypeMetadata?.is_group_edge ?? false);
-	let useMultiColorDash = $derived(isGroupEdge && shouldShowFull);
+	let isPreview = $derived(!!(edgeData as Record<string, unknown> | undefined)?.is_preview);
+	let useMultiColorDash = $derived((isGroupEdge && shouldShowFull) || isPreview);
 
 	// Calculate base edge properties
-	let baseStrokeWidth = $derived(!$topologyOptions.local.no_fade_edges && shouldShowFull ? 3 : 2);
+	let baseStrokeWidth = $derived(
+		!$topologyOptions.local.no_fade_edges && (shouldShowFull || isPreview) ? 3 : 2
+	);
 	let baseOpacity = $derived.by(() => {
 		if ($isExporting) return 1;
+		// Preview edges always full opacity
+		if (isPreview) return 1;
 		// Fade if either endpoint is hidden by tag filter
 		if (isEndpointHiddenByTagFilter) return 0.4;
 		// Fade based on selection state
@@ -272,8 +277,11 @@
 
 	// Calculate edge path and label position - DRY approach
 	let pathData = $derived.by(() => {
-		// Use group edge_style if available, otherwise use edge type metadata
-		const edge_style = group ? group.edge_style : (edgeTypeMetadata?.edge_style ?? 'SmoothStep');
+		// Use group edge_style if available, then preview edge style, otherwise edge type metadata
+		const anyData = edgeData as Record<string, unknown> | undefined;
+		const edge_style = group
+			? group.edge_style
+			: ((anyData?.preview_edge_style as string) ?? edgeTypeMetadata?.edge_style ?? 'SmoothStep');
 		return getPathFunction(edge_style);
 	});
 

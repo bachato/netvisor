@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { type Node, type Edge, type Connection } from '@xyflow/svelte';
+	import { get } from 'svelte/store';
 	import {
 		optionsPanelExpanded,
 		selectedEdge,
@@ -95,15 +96,21 @@
 		selectedNodes.set([]);
 	}
 
-	function handleSelectionChange(nodes: Node[]) {
+	function handleSelectionChange(newNodes: Node[]) {
 		// Filter to InterfaceNodes only
-		const interfaceNodes = nodes.filter((n) => {
+		const interfaceNodes = newNodes.filter((n) => {
 			const nodeData = n.data as TopologyNode;
 			return nodeData.node_type === 'InterfaceNode';
 		});
 
 		if (interfaceNodes.length >= 2) {
-			selectedNodes.set(interfaceNodes);
+			// Preserve insertion order: keep existing nodes in order, append new ones at end
+			const current = get(selectedNodes);
+			const currentIds = new Set(current.map((n) => n.id));
+			const newIds = new Set(interfaceNodes.map((n) => n.id));
+			const kept = current.filter((n) => newIds.has(n.id));
+			const added = interfaceNodes.filter((n) => !currentIds.has(n.id));
+			selectedNodes.set([...kept, ...added]);
 			// Clear single-select to hide inspector, show action bar
 			selectedNode.set(null);
 			selectedEdge.set(null);
