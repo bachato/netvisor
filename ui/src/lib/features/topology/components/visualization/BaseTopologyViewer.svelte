@@ -34,6 +34,7 @@
 	export let showControls: boolean = true;
 	export let isEmbed: boolean = false;
 	export let showBranding: boolean = false;
+	export let showMinimap: boolean | undefined = undefined;
 
 	// Create a context store for the topology so child nodes can access it
 	const topologyContext = svelteWritable<Topology>(topology);
@@ -407,10 +408,10 @@
 			/>
 		{/if}
 
-		{#if $topologyOptions.local.show_minimap && !$isExporting}
+		{#if (showMinimap !== undefined ? showMinimap : $topologyOptions.local.show_minimap) && !$isExporting}
 			<MiniMap
 				position="bottom-left"
-				class="!rounded !border !border-gray-300 !bg-white !shadow-lg dark:!border-gray-600 dark:!bg-gray-800"
+				class="!rounded !border !border-gray-300 !bg-white !shadow-lg dark:!border-gray-700 dark:!bg-gray-800"
 			/>
 		{/if}
 
@@ -435,11 +436,6 @@
 		background: transparent;
 		color: var(--color-text-disabled);
 		font-size: 10px;
-	}
-
-	:global(.svelte-flow__attribution.right) {
-		right: unset;
-		left: 10px;
 	}
 
 	:global(.svelte-flow__attribution.bottom) {

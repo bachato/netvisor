@@ -69,6 +69,7 @@
 		shares_shareUrl,
 		shares_showExportButton,
 		shares_showInspectPanel,
+		shares_showMinimap,
 		shares_showZoomControls,
 		shares_upgradeForEmbeds
 	} from '$lib/paraglide/messages';
@@ -144,6 +145,7 @@
 			show_zoom_controls: s.options?.show_zoom_controls ?? true,
 			show_inspect_panel: s.options?.show_inspect_panel ?? true,
 			show_export_button: s.options?.show_export_button ?? true,
+			show_minimap: s.options?.show_minimap ?? false,
 			embed_width: '800',
 			embed_height: '600',
 			// Preserve other share fields
@@ -175,7 +177,8 @@
 				options: {
 					show_zoom_controls: value.show_zoom_controls,
 					show_inspect_panel: value.show_inspect_panel,
-					show_export_button: value.show_export_button
+					show_export_button: value.show_export_button,
+					show_minimap: value.show_minimap
 				}
 			} as Share;
 
@@ -402,6 +405,16 @@
 								<Checkbox
 									label={shares_showExportButton()}
 									id="show-export-button"
+									{field}
+									disabled={!!createdShare}
+								/>
+							{/snippet}
+						</form.Field>
+						<form.Field name="show_minimap">
+							{#snippet children(field)}
+								<Checkbox
+									label={shares_showMinimap()}
+									id="show-minimap"
 									{field}
 									disabled={!!createdShare}
 								/>

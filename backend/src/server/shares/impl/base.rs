@@ -37,6 +37,9 @@ pub struct ShareOptions {
     pub show_zoom_controls: bool,
     #[schema(required)]
     pub show_export_button: bool,
+    #[serde(default)]
+    #[schema(required)]
+    pub show_minimap: bool,
 }
 
 impl Default for ShareOptions {
@@ -45,6 +48,7 @@ impl Default for ShareOptions {
             show_inspect_panel: true,
             show_zoom_controls: true,
             show_export_button: true,
+            show_minimap: false,
         }
     }
 }

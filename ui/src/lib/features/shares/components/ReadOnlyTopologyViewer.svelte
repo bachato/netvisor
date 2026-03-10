@@ -15,6 +15,7 @@
 	export let showExport: boolean = false;
 	export let isEmbed: boolean = false;
 	export let shareName: string = '';
+	export let showMinimap: boolean = false;
 
 	let isExportModalOpen = false;
 
@@ -80,6 +81,7 @@
 				{showControls}
 				{isEmbed}
 				showBranding={true}
+				{showMinimap}
 				bind:selectedNode={localSelectedNode}
 				bind:selectedEdge={localSelectedEdge}
 				onNodeSelect={handleNodeSelect}
