@@ -803,12 +803,14 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                     if let Ok(session) = self.as_ref().get_session().await {
                         session.hosts_discovered.store(hosts_discovered_val as u32, Ordering::Relaxed);
 
-                        if hosts_scanned_val > 0 {
+                        if batches_completed_val > 0 {
                             let started = deep_scan_started_at.get_or_insert(Instant::now());
                             let deep_scan_elapsed = started.elapsed();
-                            let time_per_host = deep_scan_elapsed.as_secs_f64() / hosts_scanned_val as f64;
-                            let remaining_hosts = hosts_discovered_val.saturating_sub(hosts_scanned_val);
-                            let remaining_secs = (remaining_hosts as f64 * time_per_host) as u32
+                            let time_per_batch = deep_scan_elapsed.as_secs_f64() / batches_completed_val as f64;
+                            let remaining_batches = total_batches_val.saturating_sub(batches_completed_val);
+                            // Pad by 20% to account for post-TCP work not captured by batch
+                            // tracking (UDP scanning, SNMP queries, endpoint probing, host creation).
+                            let remaining_secs = (remaining_batches as f64 * time_per_batch * 1.2) as u32
                                 + LATE_ARRIVAL_GRACE_PERIOD.as_secs() as u32;
                             session.estimated_remaining_secs.store(remaining_secs, Ordering::Relaxed);
                         }
