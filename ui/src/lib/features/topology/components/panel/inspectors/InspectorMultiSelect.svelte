@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { GitBranch, Network, X, Info } from 'lucide-svelte';
+	import { Eye, EyeOff, X } from 'lucide-svelte';
 	import {
 		selectedNodes,
 		previewEdges,
@@ -17,6 +17,10 @@
 	import { useBulkAddTagMutation, useBulkRemoveTagMutation } from '$lib/features/tags/queries';
 	import { useCreateGroupMutation, createEmptyGroupFormData } from '$lib/features/groups/queries';
 	import EdgeStyleForm from '$lib/features/groups/components/GroupEditModal/EdgeStyleForm.svelte';
+	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
+	import { entities, groupTypes } from '$lib/shared/stores/metadata';
+	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import type { Node, Edge } from '@xyflow/svelte';
 	import type { Color } from '$lib/shared/utils/styling';
 	import { AVAILABLE_COLORS, createColorHelper } from '$lib/shared/utils/styling';
@@ -28,19 +32,17 @@
 		topology_multiSelectGroupName,
 		topology_multiSelectNoBindings,
 		topology_multiSelectPickBinding,
+		topology_multiSelectCreateGroupRebuildWarning,
 		common_hosts,
 		common_services,
 		topology_multiSelectLockedHint,
 		topology_multiSelectStaleHint,
 		topology_multiSelectReadOnlyHint,
-		topology_multiSelectPreviewHint,
-		topology_multiSelectPreviewShow,
-		topology_multiSelectPreviewHide,
-		common_cancel,
 		common_clearSelection,
 		common_tags,
 		groups_createGroup,
-		groups_serviceBindings
+		groups_serviceBindings,
+		groups_serviceBindingsHelp
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -118,7 +120,6 @@
 
 	let tagEntityIds = $derived(tagEntityType === 'Host' ? selectedHostIds : selectedServiceIds);
 	let tagEntities = $derived(tagEntityType === 'Host' ? selectedHosts : selectedServices);
-	let tagEntityNames = $derived(tagEntities.map((e) => e.name).join(', '));
 
 	// Common tags across selected entities
 	let commonTags = $derived(computeCommonTags(tagEntities));
@@ -163,8 +164,7 @@
 		queryClient.invalidateQueries({ queryKey: queryKeys.topology.all });
 	}
 
-	// Group creation state
-	let isCreatingGroup = $state(false);
+	// Group creation state — always visible, no expand/collapse
 	let groupType: GroupType = $state('RequestPath');
 	let groupName = $state('');
 	let groupColor: Color = $state(
@@ -283,22 +283,11 @@
 		}
 	}
 
-	function startGroupCreation() {
-		isCreatingGroup = true;
-		groupName = '';
-		groupColor = AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)];
-		groupEdgeStyle = 'SmoothStep';
+	// Initialize binding selections reactively when choices change
+	$effect(() => {
+		void interfaceBindingChoices;
 		initBindingSelections();
-		if (showPreview) {
-			updatePreviewEdges();
-		}
-	}
-
-	function cancelGroupCreation() {
-		isCreatingGroup = false;
-		groupName = '';
-		previewEdges.set([]);
-	}
+	});
 
 	async function confirmGroupCreation() {
 		if (!topology) return;
@@ -320,7 +309,6 @@
 
 		const created = await createGroupMutation.mutateAsync(newGroup);
 		previewEdges.set([]);
-		isCreatingGroup = false;
 		onGroupCreated?.(created.id);
 	}
 
@@ -376,12 +364,13 @@
 		previewEdges.set(preview);
 	}
 
-	// Update preview when color, group type, or edge style changes while creating
+	// Start preview edges on mount and update when dependencies change
 	$effect(() => {
-		if (isCreatingGroup && showPreview) {
+		if (showPreview) {
 			void groupColor;
 			void groupType;
 			void groupEdgeStyle;
+			void nodes;
 			updatePreviewEdges();
 		}
 	});
@@ -424,139 +413,140 @@
 						</button>
 					</div>
 				</div>
-				<!-- Entity names -->
-				{#if tagEntityNames}
-					<div class="text-tertiary truncate text-xs">{tagEntityNames}</div>
+				<!-- Entity names as EntityTag pills -->
+				{#if tagEntities.length > 0}
+					{@const IconComponent = entities.getIconComponent(tagEntityType)}
+					{@const color = entities.getColorHelper(tagEntityType).color}
+					<div class="flex flex-wrap gap-1">
+						{#each tagEntities as entity (entity.id)}
+							<EntityTag
+								entityRef={entityRef(tagEntityType, entity.id, entity)}
+								label={entity.name}
+								icon={IconComponent}
+								{color}
+								disablePopover
+							/>
+						{/each}
+					</div>
 				{/if}
-				<TagPickerInline
-					selectedTagIds={commonTags}
-					onAdd={handleAddTag}
-					onRemove={handleRemoveTag}
-				/>
+				<div class="flex items-center gap-1.5">
+					<span class="text-tertiary shrink-0 text-xs">{common_tags()}:</span>
+					<TagPickerInline
+						selectedTagIds={commonTags}
+						onAdd={handleAddTag}
+						onRemove={handleRemoveTag}
+					/>
+				</div>
 			</div>
 		</div>
 
-		<!-- Group creation section -->
+		<!-- Group creation section — always visible -->
 		<div class="space-y-2">
 			<span class="text-secondary block text-sm font-medium">{groups_createGroup()}</span>
 
-			{#if !isCreatingGroup}
-				<button class="btn-primary w-full text-xs" onclick={startGroupCreation}>
-					{groups_createGroup()}
-				</button>
-			{:else}
-				<!-- Group creation form — all options visible -->
-				<div class="card card-static space-y-3 p-3">
-					<!-- Group type toggle -->
-					<div class="flex items-center gap-2">
-						<div class="flex rounded-md border border-gray-600">
+			<div class="card card-static space-y-3 p-3">
+				<!-- Group type toggle + preview button -->
+				<div class="flex items-center gap-2">
+					<div class="flex rounded-md border border-gray-600">
+						{#each ['RequestPath', 'HubAndSpoke'] as type (type)}
+							{@const Icon = groupTypes.getIconComponent(type)}
 							<button
-								class="px-2 py-1.5 text-xs transition-colors {groupType === 'RequestPath'
+								class="px-2 py-1.5 text-xs transition-colors {groupType === type
 									? 'bg-blue-600 text-white'
 									: 'text-secondary hover:text-primary'}"
-								onclick={() => (groupType = 'RequestPath')}
-								title="Request Path"
+								onclick={() => (groupType = type as GroupType)}
+								title={type === 'RequestPath' ? 'Request Path' : 'Hub & Spoke'}
 							>
-								<GitBranch class="h-3.5 w-3.5" />
+								<Icon class="h-3.5 w-3.5" />
 							</button>
-							<button
-								class="px-2 py-1.5 text-xs transition-colors {groupType === 'HubAndSpoke'
-									? 'bg-blue-600 text-white'
-									: 'text-secondary hover:text-primary'}"
-								onclick={() => (groupType = 'HubAndSpoke')}
-								title="Hub & Spoke"
-							>
-								<Network class="h-3.5 w-3.5" />
-							</button>
-						</div>
-					</div>
-
-					<!-- Name input -->
-					<input
-						type="text"
-						bind:value={groupName}
-						placeholder={topology_multiSelectGroupName()}
-						class="h-8 w-full rounded px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-						style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
-					/>
-
-					<!-- Edge style & color -->
-					<EdgeStyleForm
-						bind:formData={edgeStyleFormData}
-						collapsed={false}
-						editable={true}
-						showCollapseToggle={false}
-						onColorChange={(c) => (groupColor = c)}
-						onEdgeStyleChange={(s) => (groupEdgeStyle = s)}
-					/>
-
-					<!-- Binding selection -->
-					<div class="space-y-2">
-						<span class="text-secondary block text-xs font-medium">{groups_serviceBindings()}</span>
-						{#each interfaceBindingChoices as choice (choice.interfaceId)}
-							<div class="card card-static space-y-1 p-2">
-								<div class="text-primary truncate text-xs font-medium">
-									{choice.hostName}
-								</div>
-								<div class="text-tertiary truncate text-[10px]">
-									{choice.interfaceName}
-								</div>
-								{#if choice.bindings.length === 0}
-									<div class="text-tertiary text-xs italic">
-										{topology_multiSelectNoBindings()}
-									</div>
-								{:else if choice.bindings.length === 1}
-									<div class="text-secondary text-xs">
-										{choice.bindings[0].label}
-									</div>
-								{:else}
-									<select
-										class="h-auto min-h-6 w-full rounded px-1 text-xs"
-										style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
-										value={bindingSelections.get(choice.interfaceId) ?? ''}
-										onchange={(e) => {
-											const target = e.target as HTMLSelectElement;
-											bindingSelections.set(choice.interfaceId, target.value || null);
-										}}
-									>
-										<option value="">{topology_multiSelectPickBinding()}</option>
-										{#each choice.bindings as binding (binding.id)}
-											<option value={binding.id}>{binding.label}</option>
-										{/each}
-									</select>
-								{/if}
-							</div>
 						{/each}
 					</div>
-
-					<!-- Preview callout -->
-					<div class="text-tertiary flex items-start gap-1.5 text-xs">
-						<Info class="mt-0.5 h-3 w-3 shrink-0" />
-						<span>
-							{topology_multiSelectPreviewHint()}
-							<button class="text-blue-400 hover:text-blue-300" onclick={togglePreview}>
-								{showPreview
-									? topology_multiSelectPreviewHide()
-									: topology_multiSelectPreviewShow()}
-							</button>
-						</span>
-					</div>
-
-					<!-- Action buttons -->
-					<div class="flex gap-2">
-						<button
-							class="btn-primary flex-1 text-xs"
-							onclick={confirmGroupCreation}
-							disabled={!groupName.trim() || createGroupMutation.isPending}
-						>
-							{groups_createGroup()}
-						</button>
-						<button class="btn-secondary flex-1 text-xs" onclick={cancelGroupCreation}>
-							{common_cancel()}
-						</button>
-					</div>
+					<button
+						class="btn-secondary p-1.5"
+						onclick={togglePreview}
+						title={showPreview ? 'Hide preview' : 'Show preview'}
+					>
+						{#if showPreview}
+							<Eye class="h-3.5 w-3.5" />
+						{:else}
+							<EyeOff class="h-3.5 w-3.5" />
+						{/if}
+					</button>
 				</div>
-			{/if}
+
+				<!-- Name input -->
+				<input
+					type="text"
+					bind:value={groupName}
+					placeholder={topology_multiSelectGroupName()}
+					class="h-8 w-full rounded px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+					style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
+				/>
+
+				<!-- Edge style & color -->
+				<EdgeStyleForm
+					bind:formData={edgeStyleFormData}
+					collapsed={false}
+					editable={true}
+					showCollapseToggle={false}
+					onColorChange={(c) => (groupColor = c)}
+					onEdgeStyleChange={(s) => (groupEdgeStyle = s)}
+				/>
+
+				<!-- Binding selection -->
+				<div class="space-y-2">
+					<span class="text-secondary block text-xs font-medium">{groups_serviceBindings()}</span>
+					<InlineInfo title={groups_serviceBindings()} body={groups_serviceBindingsHelp()} />
+					{#each interfaceBindingChoices as choice (choice.interfaceId)}
+						<div class="card card-static space-y-1 p-2">
+							<div class="text-primary truncate text-xs font-medium">
+								{choice.hostName}
+							</div>
+							<div class="text-tertiary truncate text-[10px]">
+								{choice.interfaceName}
+							</div>
+							{#if choice.bindings.length === 0}
+								<div class="text-tertiary text-xs italic">
+									{topology_multiSelectNoBindings()}
+								</div>
+							{:else if choice.bindings.length === 1}
+								<div class="text-secondary text-xs">
+									{choice.bindings[0].label}
+								</div>
+							{:else}
+								<select
+									class="h-auto min-h-6 w-full rounded px-1 text-xs"
+									style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
+									value={bindingSelections.get(choice.interfaceId) ?? ''}
+									onchange={(e) => {
+										const target = e.target as HTMLSelectElement;
+										bindingSelections.set(choice.interfaceId, target.value || null);
+									}}
+								>
+									<option value="">{topology_multiSelectPickBinding()}</option>
+									{#each choice.bindings as binding (binding.id)}
+										<option value={binding.id}>{binding.label}</option>
+									{/each}
+								</select>
+							{/if}
+						</div>
+					{/each}
+				</div>
+
+				<!-- Rebuild warning + Create button -->
+				<div class="space-y-2">
+					<p class="text-tertiary text-xs">
+						{topology_multiSelectCreateGroupRebuildWarning()}
+					</p>
+					<button
+						class="btn-primary w-full text-xs"
+						onclick={confirmGroupCreation}
+						disabled={!groupName.trim() || createGroupMutation.isPending}
+					>
+						{groups_createGroup()}
+					</button>
+				</div>
+			</div>
 		</div>
 	{:else}
 		<!-- Show reason why actions are unavailable -->
