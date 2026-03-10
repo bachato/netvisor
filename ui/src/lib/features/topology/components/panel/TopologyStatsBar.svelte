@@ -32,7 +32,7 @@
 </script>
 
 {#if totalCount > 0}
-	<div class="flex items-center gap-3">
+	<div class="flex min-w-0 items-center gap-3 overflow-hidden">
 		{#if hostCount > 0}
 			<div class="flex items-center gap-1">
 				<HostIcon class="h-3.5 w-3.5 flex-shrink-0 {hostColor}" />

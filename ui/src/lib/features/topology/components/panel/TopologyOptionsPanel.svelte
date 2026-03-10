@@ -64,7 +64,7 @@
 			<!-- Header with collapse button -->
 			<div class="flex items-center justify-end border-b border-gray-700">
 				<button
-					class="btn-icon rounded-xl p-3"
+					class="btn-icon flex-shrink-0 rounded-xl p-3"
 					onclick={() => optionsPanelExpanded.set(false)}
 					aria-label={topology_collapsePanel()}
 				>
