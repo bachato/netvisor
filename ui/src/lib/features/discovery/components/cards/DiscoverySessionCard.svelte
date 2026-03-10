@@ -38,10 +38,6 @@
 		session?.session_id ? $cancellingSessions.get(session.session_id) === true : false
 	);
 
-	let isNetworkScanning = $derived(
-		session.discovery_type?.type === 'Network' && session.phase === 'Scanning'
-	);
-
 	async function handleCancelDiscovery() {
 		if (onCancel) {
 			await onCancel(session.session_id);
@@ -112,20 +108,19 @@
 				>
 			</div>
 
+			<DiscoveryEstimation
+				phase={isCancelling ? 'Cancelling' : session.phase}
+				hosts_discovered={session.hosts_discovered}
+				estimated_remaining_secs={session.estimated_remaining_secs}
+				class="mb-1"
+			/>
+
 			<div class="flex items-center gap-2">
 				<ProgressTrack class="flex-1">
 					<AnimatedProgressBar progress={session.progress} />
 				</ProgressTrack>
 				<span class="text-secondary text-xs">{session.progress}%</span>
 			</div>
-
-			{#if isNetworkScanning}
-				<DiscoveryEstimation
-					hosts_discovered={session.hosts_discovered}
-					estimated_remaining_secs={session.estimated_remaining_secs}
-					class="mt-1"
-				/>
-			{/if}
 		</div>
 	</div>
 {/snippet}

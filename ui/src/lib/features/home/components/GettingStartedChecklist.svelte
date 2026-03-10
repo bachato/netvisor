@@ -356,6 +356,7 @@
 									</div>
 									{#if isActiveDiscoveryStep && activeNetworkSession}
 										<DiscoveryEstimation
+											phase={activeNetworkSession.phase}
 											hosts_discovered={activeNetworkSession.hosts_discovered}
 											estimated_remaining_secs={activeNetworkSession.estimated_remaining_secs}
 											class="mt-0.5"

@@ -44,18 +44,18 @@
 						</span>
 						<span class="text-tertiary text-xs">{getDaemonName(session.daemon_id)}</span>
 					</div>
-					<div class="mb-1 flex items-center gap-2">
+					<DiscoveryEstimation
+						phase={session.phase}
+						hosts_discovered={session.hosts_discovered}
+						estimated_remaining_secs={session.estimated_remaining_secs}
+						class="mb-1"
+					/>
+					<div class="flex items-center gap-2">
 						<ProgressTrack class="flex-1">
 							<AnimatedProgressBar progress={session.progress} />
 						</ProgressTrack>
 						<span class="text-secondary text-xs">{session.progress}%</span>
 					</div>
-					{#if session.discovery_type?.type === 'Network'}
-						<DiscoveryEstimation
-							hosts_discovered={session.hosts_discovered}
-							estimated_remaining_secs={session.estimated_remaining_secs}
-						/>
-					{/if}
 				</div>
 			{/each}
 		</div>
