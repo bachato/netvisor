@@ -4,6 +4,7 @@
 		SvelteFlow,
 		Controls,
 		MiniMap,
+		Panel,
 		Background,
 		BackgroundVariant,
 		type EdgeMarkerType,
@@ -403,25 +404,24 @@
 		/>
 
 		{#if showControls}
+			{#if onOpenShortcuts}
+				<Panel position="top-right" class="!mb-1">
+					<button
+						class="rounded !border !border-gray-300 !bg-gray-50 p-1.5 !text-gray-700 !shadow-lg hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600"
+						onclick={onOpenShortcuts}
+						title={topology_shortcutsTitle()}
+					>
+						<Keyboard class="h-4 w-4" />
+					</button>
+				</Panel>
+			{/if}
 			<Controls
 				showZoom={true}
 				showFitView={true}
 				showLock={false}
 				position="top-right"
 				class="!rounded !border !border-gray-300 !bg-white !shadow-lg dark:!border-gray-600 dark:!bg-gray-800 [&_button:hover]:!bg-gray-100 dark:[&_button:hover]:!bg-gray-600 [&_button]:!border-gray-300 [&_button]:!bg-gray-50 [&_button]:!text-gray-700 dark:[&_button]:!border-gray-600 dark:[&_button]:!bg-gray-700 dark:[&_button]:!text-gray-100"
-			>
-				{#snippet before()}
-					{#if onOpenShortcuts}
-						<button
-							class="svelte-flow__controls-button pb-2"
-							onclick={onOpenShortcuts}
-							title={topology_shortcutsTitle()}
-						>
-							<Keyboard class="h-4 w-4"  />
-						</button>
-					{/if}
-				{/snippet}
-			</Controls>
+			/>
 		{/if}
 
 		{#if (showMinimap !== undefined ? showMinimap : $topologyOptions.local.show_minimap) && !$isExporting}

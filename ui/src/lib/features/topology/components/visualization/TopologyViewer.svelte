@@ -166,6 +166,7 @@
 		if (!wasPanning) {
 			selectedNodes.set([]);
 		}
+		clearSearch();
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
