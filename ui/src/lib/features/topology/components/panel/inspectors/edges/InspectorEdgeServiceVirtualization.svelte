@@ -136,7 +136,7 @@
 						) ?? [],
 					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
-					entityTags: topology?.entity_tags ?? []
+					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={containerizingHost}
 				displayComponent={HostDisplay}
@@ -152,7 +152,7 @@
 					ports: topology?.ports ?? [],
 					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
-					entityTags: topology?.entity_tags ?? []
+					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={containerizingService}
 				displayComponent={ServiceDisplay}
@@ -171,7 +171,7 @@
 					ports: topology?.ports ?? [],
 					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
-					entityTags: topology?.entity_tags ?? []
+					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={service}
 				displayComponent={ServiceDisplay}

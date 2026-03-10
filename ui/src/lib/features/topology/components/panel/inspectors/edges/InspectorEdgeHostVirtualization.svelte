@@ -58,7 +58,7 @@
 					ports: topology?.ports ?? [],
 					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
-					entityTags: topology?.entity_tags ?? []
+					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={vmService}
 				displayComponent={ServiceDisplay}
@@ -77,7 +77,7 @@
 						) ?? [],
 					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
-					entityTags: topology?.entity_tags ?? []
+					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined
 				}}
 				item={hypervisorHost}
 				displayComponent={HostDisplay}

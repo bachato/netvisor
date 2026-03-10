@@ -259,7 +259,7 @@
 		<Tag
 			label={tag?.name}
 			color={tag?.color}
-			pill={true}
+			pill={!disabled}
 			removable={!disabled && !!(onRemove || isEntityMode)}
 			onRemove={() => handleRemoveTag(tagId)}
 		/>
