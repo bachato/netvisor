@@ -9571,14 +9571,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-03-10T04:43:21.291201Z",
-              "id": "70d10df3-a181-4f8f-8993-8fbcb13ce6a7",
+              "created_at": "2026-03-10T07:41:02.106897Z",
+              "id": "018a1295-3150-412e-83bb-01a3ecb89d6f",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-10T04:43:21.291201Z"
+              "updated_at": "2026-03-10T07:41:02.106897Z"
             }
           },
           "error": {
@@ -10394,14 +10394,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-03-10T04:43:21.273768Z",
-                      "id": "dd647b9e-e1e3-4f44-9fc7-0508f3db6486",
+                      "created_at": "2026-03-10T07:41:02.087898Z",
+                      "id": "fbfa370d-3843-4810-94c7-c94cc638fede",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-03-10T04:43:21.273768Z"
+                      "updated_at": "2026-03-10T07:41:02.087898Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10410,7 +10410,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Mealie",
+                  "service_definition": "MQTT",
                   "source": {
                     "type": "Manual"
                   },
@@ -11112,14 +11112,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-03-10T04:43:21.287017Z",
-                  "id": "043f4277-4094-40f9-ae1b-d1f1c3b6157b",
+                  "created_at": "2026-03-10T07:41:02.101828Z",
+                  "id": "578b06da-4e32-43ae-b3db-25da8f15fbbf",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-10T04:43:21.287017Z"
+                  "updated_at": "2026-03-10T07:41:02.101828Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11128,7 +11128,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Mealie",
+              "service_definition": "MQTT",
               "source": {
                 "type": "Manual"
               },
@@ -12343,14 +12343,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-03-10T04:43:21.274195Z",
-          "id": "531327ef-9894-4164-a6dd-e244fe9ec7f6",
+          "created_at": "2026-03-10T07:41:02.088284Z",
+          "id": "d90d3b14-cfdf-42f0-aaad-12b3cb3b7962",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-03-10T04:43:21.274195Z"
+          "updated_at": "2026-03-10T07:41:02.088284Z"
         }
       },
       "BindingBase": {
@@ -12857,7 +12857,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Mealie",
+              "service_definition": "MQTT",
               "tags": [],
               "virtualization": null
             }
@@ -14753,14 +14753,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-03-10T04:43:21.273113Z",
-                  "id": "4198a91e-35c5-4804-a00e-39e17d2a3f18",
+                  "created_at": "2026-03-10T07:41:02.087380Z",
+                  "id": "57570e02-a202-41b0-80c4-d48b526558cb",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-10T04:43:21.273113Z"
+                  "updated_at": "2026-03-10T07:41:02.087380Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14769,7 +14769,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Mealie",
+              "service_definition": "MQTT",
               "source": {
                 "type": "Manual"
               },
@@ -16640,14 +16640,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-03-10T04:43:21.258351Z",
-                        "id": "575e2fb7-355d-45a7-8dd0-96a07f46bedf",
+                        "created_at": "2026-03-10T07:41:02.074289Z",
+                        "id": "1e8ab832-5250-4176-b19a-f73681777c4b",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-03-10T04:43:21.258351Z"
+                        "updated_at": "2026-03-10T07:41:02.074289Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16656,7 +16656,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Mealie",
+                    "service_definition": "MQTT",
                     "source": {
                       "type": "Manual"
                     },
@@ -16733,14 +16733,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-03-10T04:43:21.285151Z",
-                    "id": "bfc434f1-0ac7-4ff4-9184-66d785cd0293",
+                    "created_at": "2026-03-10T07:41:02.100270Z",
+                    "id": "3756bf58-58f8-4acd-a9e5-967e170f2728",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-03-10T04:43:21.285151Z"
+                    "updated_at": "2026-03-10T07:41:02.100270Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16749,7 +16749,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Mealie",
+                "service_definition": "MQTT",
                 "source": {
                   "type": "Manual"
                 },
@@ -17836,14 +17836,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-03-10T04:43:21.274046Z",
-              "id": "052762e0-0b77-47e6-b347-fd14e8eab050",
+              "created_at": "2026-03-10T07:41:02.088158Z",
+              "id": "cc9d8884-26eb-411c-9ab0-93077dbe39af",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-10T04:43:21.274046Z"
+              "updated_at": "2026-03-10T07:41:02.088158Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17852,7 +17852,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Mealie",
+          "service_definition": "MQTT",
           "source": {
             "type": "Manual"
           },
@@ -18213,13 +18213,17 @@
         "required": [
           "show_inspect_panel",
           "show_zoom_controls",
-          "show_export_button"
+          "show_export_button",
+          "show_minimap"
         ],
         "properties": {
           "show_export_button": {
             "type": "boolean"
           },
           "show_inspect_panel": {
+            "type": "boolean"
+          },
+          "show_minimap": {
             "type": "boolean"
           },
           "show_zoom_controls": {

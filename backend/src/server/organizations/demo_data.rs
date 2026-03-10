@@ -3924,6 +3924,7 @@ fn generate_shares(
                     show_inspect_panel: false,
                     show_zoom_controls: false,
                     show_export_button: false,
+                    show_minimap: false,
                 },
             },
         });

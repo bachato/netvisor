@@ -162,6 +162,7 @@
 				showControls={topologyData.share.options.show_zoom_controls}
 				showInspectPanel={topologyData.share.options.show_inspect_panel}
 				showExport={!isEmbed && (topologyData.share.options.show_export_button ?? true)}
+				showMinimap={topologyData.share.options.show_minimap ?? false}
 				{isEmbed}
 			/>
 		</div>

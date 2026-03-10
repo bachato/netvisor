@@ -17,7 +17,8 @@ export interface ShareWithTopology {
 export const defaultShareOptions: ShareOptions = {
 	show_inspect_panel: true,
 	show_zoom_controls: true,
-	show_export_button: true
+	show_export_button: true,
+	show_minimap: false
 };
 
 export function createEmptyShare(topology_id: string, network_id: string): Share {
