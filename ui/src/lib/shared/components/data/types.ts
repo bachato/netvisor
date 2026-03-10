@@ -19,7 +19,6 @@ export interface TagProps {
 	href?: string;
 	entityRef?: EntityRef;
 	pill?: boolean;
-	title?: string;
 	onmouseenter?: () => void;
 	onmouseleave?: () => void;
 	onclick?: () => void;

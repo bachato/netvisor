@@ -56,9 +56,8 @@
 				context={{
 					interfaceId: null,
 					ports: topology?.ports ?? [],
-					showEntityTagPicker: !isReadonly,
+					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
-					categoryInteractable: !!liveEditsEnabled,
 					entityTags: topology?.entity_tags ?? []
 				}}
 				item={vmService}
@@ -76,7 +75,7 @@
 						topology?.services.filter((s) =>
 							hypervisorHost ? s.host_id == hypervisorHost.id : false
 						) ?? [],
-					showEntityTagPicker: !isReadonly,
+					showEntityTagPicker: true,
 					tagPickerDisabled: !liveEditsEnabled,
 					entityTags: topology?.entity_tags ?? []
 				}}
