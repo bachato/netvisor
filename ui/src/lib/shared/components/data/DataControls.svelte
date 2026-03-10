@@ -1213,7 +1213,10 @@
 							{:else if fieldKey === 'tags'}
 								<!-- Special tag filter with colored tags (stores tag IDs for server-side filtering) -->
 								{@const filter = filterState[fieldKey]}
-								<div use:scrollFade class="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+								<div
+									use:scrollFade
+									class="flex max-h-32 flex-wrap gap-1.5 overflow-y-scroll rounded-md bg-black/5 p-2 dark:bg-white/5"
+								>
 									{#if allTags.length === 0}
 										<p class="text-tertiary text-xs">{common_noTagsAvailable()}</p>
 									{:else}
@@ -1233,7 +1236,10 @@
 							{:else}
 								{@const uniqueValues = field.filterOptions ?? getUniqueValues(field)}
 								{@const filter = filterState[fieldKey]}
-								<div use:scrollFade class="max-h-32 space-y-1.5 overflow-y-auto">
+								<div
+									use:scrollFade
+									class="max-h-32 space-y-1.5 overflow-y-scroll rounded-md bg-black/5 p-2 dark:bg-white/5"
+								>
 									{#if uniqueValues.length === 0}
 										<p class="text-tertiary text-xs">{common_noValuesAvailable()}</p>
 									{:else}
