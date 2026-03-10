@@ -9,9 +9,9 @@
 	import { daemonSetupState } from '$lib/features/daemons/stores/daemon-setup';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
-	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
 	import SupportOptions from '$lib/features/support/SupportOptions.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
+	import DiscoveryEstimation from '$lib/features/discovery/components/DiscoveryEstimation.svelte';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -186,21 +186,6 @@
 		dismissed = true;
 	}
 
-	// Estimation text for active discovery
-	let estimationText = $derived.by(() => {
-		if (!activeNetworkSession) return '';
-		const hosts = activeNetworkSession.hosts_discovered;
-		const estimate = activeNetworkSession.estimated_remaining_secs;
-
-		if (!hosts) {
-			return 'Scanning for hosts on the network...';
-		}
-		if (estimate != null) {
-			return `Found ${hosts} hosts — ${formatEstimatedRemaining(estimate)} remaining`;
-		}
-		return `Found ${hosts} hosts — estimating scan time...`;
-	});
-
 	// Waiting suggestions — show all applicable, mark completed ones
 	function getInAppSuggestions(): Array<{ label: string; action: () => void; completed: boolean }> {
 		const suggestions: Array<{ label: string; action: () => void; completed: boolean }> = [];
@@ -369,8 +354,12 @@
 											</span>
 										{/if}
 									</div>
-									{#if isActiveDiscoveryStep && estimationText}
-										<p class="text-secondary mt-0.5 text-xs">{estimationText}</p>
+									{#if isActiveDiscoveryStep && activeNetworkSession}
+										<DiscoveryEstimation
+											hosts_discovered={activeNetworkSession.hosts_discovered}
+											estimated_remaining_secs={activeNetworkSession.estimated_remaining_secs}
+											class="mt-0.5"
+										/>
 									{:else if !complete && enabled}
 										<p class="text-tertiary text-xs">{step.description}</p>
 									{/if}

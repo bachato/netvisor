@@ -565,6 +565,8 @@
 	"groups_subtitle": "Create custom groups to improve topology visualization",
 	"home_demoEmbedSubtitle": "This is a live demo of Scanopy's interactive topology view — you'll have a visual map of your network like this once your first scan completes.",
 	"home_demoEmbedTitle": "Preview: Shareable Network Map",
+	"home_docsDiscoveryTakesLong": "Estimate longer than expected? %link%.",
+	"home_docsDiscoveryTakesLongLinkText": "See reasons why",
 	"home_noDiscoveriesYet": "No discovery results yet. Set up a daemon to start discovering your network.",
 	"home_nudges_unclaimedPortsAction": "Learn More",
 	"home_nudges_unclaimedPortsDescription": "Some hosts have open ports that weren't matched to known services. You can review and reassign them.",

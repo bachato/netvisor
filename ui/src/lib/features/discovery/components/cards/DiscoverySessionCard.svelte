@@ -11,7 +11,7 @@
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { entityRef } from '$lib/shared/components/data/types';
-	import { formatEstimatedRemaining } from '$lib/features/discovery/utils/estimation';
+	import DiscoveryEstimation from '../DiscoveryEstimation.svelte';
 
 	// Props
 	let {
@@ -41,17 +41,6 @@
 	let isNetworkScanning = $derived(
 		session.discovery_type?.type === 'Network' && session.phase === 'Scanning'
 	);
-
-	let estimationText = $derived.by(() => {
-		if (!isNetworkScanning) return null;
-		const hosts = session.hosts_discovered;
-		const estimate = session.estimated_remaining_secs;
-
-		if (!hosts) return 'Scanning for hosts...';
-		if (estimate != null)
-			return `Found ${hosts} hosts — ${formatEstimatedRemaining(estimate)} remaining`;
-		return `Found ${hosts} hosts — estimating scan time...`;
-	});
 
 	async function handleCancelDiscovery() {
 		if (onCancel) {
@@ -130,8 +119,12 @@
 				<span class="text-secondary text-xs">{session.progress}%</span>
 			</div>
 
-			{#if estimationText}
-				<p class="text-secondary mt-1 text-xs">{estimationText}</p>
+			{#if isNetworkScanning}
+				<DiscoveryEstimation
+					hosts_discovered={session.hosts_discovered}
+					estimated_remaining_secs={session.estimated_remaining_secs}
+					class="mt-1"
+				/>
 			{/if}
 		</div>
 	</div>
