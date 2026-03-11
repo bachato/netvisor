@@ -7,6 +7,7 @@ import { queryClient, queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Discovery } from './types/base';
 import type { DiscoveryUpdatePayload } from './types/api';
+import type { Organization } from '../organizations/types';
 import { pushError, pushSuccess, pushWarning } from '$lib/shared/stores/feedback';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
 import { writable } from 'svelte/store';
@@ -525,6 +526,12 @@ class DiscoverySSEManager extends BaseSSEManager<DiscoveryUpdatePayload> {
 					pushWarning(`Discovery cancelled`);
 				} else if (update.phase === 'Failed' && update.error) {
 					pushError(`Discovery error: ${update.error}`, -1);
+				}
+
+				// Invalidate org cache until FirstDiscoveryCompleted milestone appears
+				const org = queryClient.getQueryData<Organization>(queryKeys.organizations.current());
+				if (org && !org.onboarding.includes('FirstDiscoveryCompleted')) {
+					queryClient.invalidateQueries({ queryKey: queryKeys.organizations.current() });
 				}
 
 				// Update sessions in TanStack cache
