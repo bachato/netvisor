@@ -17,7 +17,8 @@
 	let {
 		onboarding,
 		organization,
-		onNavigate
+		onNavigate,
+		isActive = false
 	}: {
 		onboarding: OnboardingOperation[];
 		organization: {
@@ -25,6 +26,7 @@
 			plan?: { included_seats?: number | null; seat_cents?: number | null } | null;
 		};
 		onNavigate: (tab: string) => void;
+		isActive: boolean;
 	} = $props();
 
 	const DISMISS_KEY = 'home-checklist-dismissed';
@@ -104,8 +106,7 @@
 	});
 
 	$effect(() => {
-		const isOnHomeTab = window.location.hash === '#home' || window.location.hash === '';
-		if (allComplete && !dismissed && !celebrationDone && isOnHomeTab) {
+		if (allComplete && !dismissed && !celebrationDone && isActive) {
 			showCelebration = true;
 			confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 			setTimeout(() => {

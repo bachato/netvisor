@@ -85,7 +85,7 @@
 	{:else if dashboard && organization}
 		<!-- Getting Started Checklist -->
 		{#if !checklistDismissed}
-			<GettingStartedChecklist {onboarding} {organization} onNavigate={navigateTo} />
+			<GettingStartedChecklist {onboarding} {organization} onNavigate={navigateTo} {isActive} />
 		{/if}
 
 		<!-- Profile Prompt — shown after discovery for company/msp cloud users -->
