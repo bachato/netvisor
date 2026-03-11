@@ -30,6 +30,7 @@ use crate::server::{
         base::Host,
         legacy::{HostCreateRequestBody, HostCreateResponse, LegacyHostWithServicesResponse},
     },
+    networks::r#impl::Network,
     shared::types::api::{ApiError, ApiResponse, ApiResult, PaginatedApiResponse},
 };
 use axum::body::Body;
@@ -565,6 +566,62 @@ async fn create_host_discovery(
         ));
     }
 
+    // Extract entity before limit check (into_entity consumes auth)
+    let entity = auth.into_entity();
+
+    // Pre-check billing host limit before calling process_discovery_entities.
+    // Without this, limit-blocked hosts are silently skipped and the handler
+    // returns a generic 500 ("No host returned from processor") which the
+    // daemon treats as transient and retries with exponential backoff.
+    if let Ok(Some(network)) = state
+        .services
+        .network_service
+        .get_by_id(&daemon_network_id)
+        .await
+        && let Ok(Some(org)) = state
+            .services
+            .organization_service
+            .get_by_id(&network.base.organization_id)
+            .await
+        && let Some(plan) = &org.base.plan
+        && let Some(limit) = plan.host_limit()
+    {
+        let org_networks = state
+            .services
+            .network_service
+            .get_all(StorableFilter::<Network>::new_from_org_id(&org.id))
+            .await
+            .unwrap_or_default();
+        let org_network_ids: Vec<Uuid> = org_networks.iter().map(|n| n.id).collect();
+        let org_filter = StorableFilter::<Host>::new_from_network_ids(&org_network_ids);
+        let current_hosts = state.services.host_service.get_all(org_filter).await?.len() as u64;
+
+        if current_hosts >= limit {
+            let _ = state
+                .services
+                .event_bus
+                .publish_billing(BillingEvent::new(
+                    Uuid::new_v4(),
+                    org.id,
+                    BillingOperation::FeatureLimitHit,
+                    Utc::now(),
+                    entity.clone(),
+                    serde_json::json!({
+                        "limit_type": "hosts",
+                        "current_count": current_hosts,
+                        "limit": limit,
+                        "source": "discovery",
+                    }),
+                ))
+                .await;
+
+            return Err(ApiError::coded(
+                StatusCode::FORBIDDEN,
+                ErrorCode::BillingHostLimitReached { limit },
+            ));
+        }
+    }
+
     // Delegate to processor for shared discovery logic
     // This ensures both DaemonPoll and ServerPoll modes use the same logic
     let entities = BufferedEntities {
@@ -575,7 +632,7 @@ async fn create_host_discovery(
     let created = state
         .services
         .daemon_service
-        .process_discovery_entities(entities, auth.into_entity())
+        .process_discovery_entities(entities, entity)
         .await?;
 
     let (_, host_response) = created

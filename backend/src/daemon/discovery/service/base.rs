@@ -7,6 +7,7 @@ use std::{
     time::Duration,
 };
 
+use crate::server::shared::types::api::ApiErrorResponse;
 use crate::{
     daemon::{
         discovery::{
@@ -675,6 +676,10 @@ pub trait CreatesDiscoveredEntities:
                         .with_max_delay(Duration::from_secs(30))
                         .with_max_times(ENTITY_CREATION_MAX_RETRIES),
                 )
+                .when(|e| {
+                    // Don't retry structured API errors (e.g. billing limit reached)
+                    e.downcast_ref::<ApiErrorResponse>().is_none()
+                })
                 .notify(|e, dur| tracing::warn!("Retrying host creation after {:?}: {}", dur, e))
                 .await?;
 
