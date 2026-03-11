@@ -382,6 +382,47 @@ impl<P: PermissionRequirement> PermissionRequirement for RequireVerified<P> {
 }
 
 // ============================================================================
+// Satisfies Trait (Upgrade Guard)
+// ============================================================================
+
+/// Marker: P satisfies Q (P is at least as strict as Q).
+/// Prevents `into_permission` from upgrading permissions.
+pub trait Satisfies<Q: PermissionRequirement>: PermissionRequirement {}
+
+// Level hierarchy: Owner > Admin > Member > Viewer
+impl Satisfies<Owner> for Owner {}
+impl Satisfies<Admin> for Owner {}
+impl Satisfies<Member> for Owner {}
+impl Satisfies<Viewer> for Owner {}
+
+impl Satisfies<Admin> for Admin {}
+impl Satisfies<Member> for Admin {}
+impl Satisfies<Viewer> for Admin {}
+
+impl Satisfies<Member> for Member {}
+impl Satisfies<Viewer> for Member {}
+
+impl Satisfies<Viewer> for Viewer {}
+
+// RequireVerified<P> satisfies whatever P satisfies
+impl<P, Q> Satisfies<Q> for RequireVerified<P>
+where
+    P: PermissionRequirement + Satisfies<Q>,
+    Q: PermissionRequirement,
+{
+}
+
+// And<A, B> satisfies Q if B satisfies Q.
+// Convention: And<AuthType, Level> — the level (B) determines hierarchy.
+impl<A, B, Q> Satisfies<Q> for And<A, B>
+where
+    A: PermissionRequirement,
+    B: PermissionRequirement + Satisfies<Q>,
+    Q: PermissionRequirement,
+{
+}
+
+// ============================================================================
 // The Authorized Extractor
 // ============================================================================
 
@@ -445,7 +486,11 @@ impl<P: PermissionRequirement> Authorized<P> {
     /// Convert to a different permission level.
     /// Use this when a handler requires a lower permission level than what was checked.
     /// For example, Admin -> Member, since Admin >= Member.
-    pub fn into_permission<Q: PermissionRequirement>(self) -> Authorized<Q> {
+    /// The `Satisfies<Q>` bound prevents upgrading permissions (e.g. Member -> Admin).
+    pub fn into_permission<Q: PermissionRequirement>(self) -> Authorized<Q>
+    where
+        P: Satisfies<Q>,
+    {
         Authorized {
             entity: self.entity,
             _marker: PhantomData,

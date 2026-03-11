@@ -4,7 +4,8 @@ use crate::server::shared::handlers::traits::{
 };
 use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
-use crate::server::shared::storage::traits::Entity;
+use crate::server::shared::storage::traits::{Entity, Storable};
+use crate::server::topology::types::base::{Topology, TopologyBase};
 use crate::server::{
     auth::middleware::{
         features::{CreateNetworkFeature, RequireFeature},
@@ -77,6 +78,14 @@ async fn create_network(
         let service = Network::get_service(&state);
         service
             .create_organizational_subnets(network.id, entity.clone())
+            .await?;
+
+        let topology = Topology::new(TopologyBase::new(network.base.name.clone(), network.id));
+
+        state
+            .services
+            .topology_service
+            .create(topology, entity.clone())
             .await?;
 
         // Emit SecondNetworkCreated telemetry event
