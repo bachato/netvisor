@@ -16,8 +16,9 @@ use crate::server::{
         PAYMENT_FAILED_BODY, PAYMENT_FAILED_TITLE, PAYMENT_METHOD_ADDED_BODY,
         PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY, PLAN_CHANGED_TITLE,
         PLAN_LIMIT_APPROACHING_BODY, PLAN_LIMIT_APPROACHING_TITLE, PLAN_LIMIT_REACHED_BODY,
-        PLAN_LIMIT_REACHED_TITLE, SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE,
-        TOPOLOGY_READY_BODY, TOPOLOGY_READY_TITLE, TRIAL_CONVERTED_BODY, TRIAL_CONVERTED_TITLE,
+        PLAN_LIMIT_REACHED_TITLE, SCAN_AUTO_DISABLED_BODY, SCAN_AUTO_DISABLED_TITLE,
+        SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE, TOPOLOGY_READY_BODY,
+        TOPOLOGY_READY_TITLE, TRIAL_CONVERTED_BODY, TRIAL_CONVERTED_TITLE,
         TRIAL_ENDING_BODY_HAS_PAYMENT, TRIAL_ENDING_BODY_NO_PAYMENT, TRIAL_ENDING_TITLE,
         TRIAL_EXPIRED_BODY, TRIAL_EXPIRED_TITLE, TRIAL_STARTED_BODY, TRIAL_STARTED_TITLE,
         USAGE_SUMMARY_BODY, USAGE_SUMMARY_TITLE,
@@ -251,6 +252,22 @@ pub trait EmailProvider: Send + Sync {
                 .replace("{resume_instructions}", resume_instructions),
         );
         (DAEMON_STANDBY_TITLE.to_string(), body)
+    }
+
+    fn build_scan_auto_disabled_email(
+        &self,
+        scan_name: &str,
+        network_name: &str,
+        failure_count: u32,
+    ) -> (String, String) {
+        let body = self.build_email(
+            SCAN_AUTO_DISABLED_BODY
+                .replace("{scan_name}", scan_name)
+                .replace("{network_name}", network_name)
+                .replace("{failure_count}", &failure_count.to_string()),
+        );
+        let subject = SCAN_AUTO_DISABLED_TITLE.replace("{scan_name}", scan_name);
+        (subject, body)
     }
 
     fn build_trial_converted_email(
@@ -699,6 +716,23 @@ impl EmailService {
                 .build_daemon_standby_email(daemon_name, network_name, is_daemon_poll);
         let body = body.replace("{base_url}", &self.public_url);
         self.provider.send_billing_email(to, subject, body).await
+    }
+
+    pub async fn send_scan_auto_disabled_email(
+        &self,
+        org_id: &Uuid,
+        scan_name: &str,
+        network_name: &str,
+        failure_count: u32,
+    ) -> Result<()> {
+        let owner_email = self.get_owner_email(org_id).await?;
+        let (subject, body) =
+            self.provider
+                .build_scan_auto_disabled_email(scan_name, network_name, failure_count);
+        let body = body.replace("{base_url}", &self.public_url);
+        self.provider
+            .send_billing_email(owner_email, subject, body)
+            .await
     }
 
     // ========================================================================

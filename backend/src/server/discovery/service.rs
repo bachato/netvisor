@@ -4,12 +4,12 @@ use crate::daemon::runtime::service::LOG_TARGET;
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::daemons::r#impl::api::DiscoveryUpdatePayload;
 use crate::server::discovery::r#impl::base::Discovery;
-use crate::server::discovery::r#impl::types::{DiscoveryType, RunType};
+use crate::server::discovery::r#impl::types::{DiscoveryType, RunType, SESSION_STALLED_ERROR};
 use crate::server::networks::service::NetworkService;
 use crate::server::organizations::service::OrganizationService;
 use crate::server::shared::entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants};
 use crate::server::shared::events::bus::EventBus;
-use crate::server::shared::events::types::{EntityEvent, EntityOperation};
+use crate::server::shared::events::types::{DiscoverySessionEvent, EntityEvent, EntityOperation};
 use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
@@ -305,6 +305,13 @@ impl DiscoveryService {
             .get_by_id(&discovery.id)
             .await?
             .ok_or_else(|| anyhow::anyhow!("Could not find discovery {}", discovery))?;
+
+        // Reset consecutive failures when re-enabling a disabled scheduled discovery
+        if let RunType::Scheduled { enabled: true, .. } = &discovery.base.run_type
+            && let RunType::Scheduled { enabled: false, .. } = &current.base.run_type
+        {
+            discovery.reset_failures();
+        }
 
         // If it's a scheduled discovery and schedule or timezone has changed, need to reschedule
         let schedule_changed = if let RunType::Scheduled {
@@ -859,6 +866,21 @@ impl DiscoveryService {
                 None
             };
 
+            // Track consecutive failures for scheduled discoveries
+            {
+                let discovery_sessions = self.discovery_sessions.read().await;
+                let discovery_id = discovery_sessions
+                    .iter()
+                    .find(|(_, sid)| **sid == update.session_id)
+                    .map(|(did, _)| *did);
+                drop(discovery_sessions);
+
+                if let Some(discovery_id) = discovery_id {
+                    self.handle_session_failure_tracking(&update, discovery_id)
+                        .await;
+                }
+            }
+
             // Remove the completed session
             sessions.remove(&update.session_id);
 
@@ -1150,11 +1172,18 @@ impl DiscoveryService {
 
                 // Update to failed state
                 session.phase = DiscoveryPhase::Failed;
-                session.error = Some(
-                    "Session stalled - no updates received from daemon for more than 5 minutes"
-                        .to_string(),
-                );
+                session.error = Some(SESSION_STALLED_ERROR.to_string());
                 session.finished_at = Some(now);
+
+                // Track consecutive failures before removing from discovery_sessions
+                let discovery_id = discovery_sessions
+                    .iter()
+                    .find(|(_, sid)| **sid == session_id)
+                    .map(|(did, _)| *did);
+                if let Some(discovery_id) = discovery_id {
+                    self.handle_session_failure_tracking(&session, discovery_id)
+                        .await;
+                }
 
                 // Remove from daemon sessions queue
                 if let Some(queue) = daemon_sessions.get_mut(&daemon_id) {
@@ -1224,6 +1253,127 @@ impl DiscoveryService {
 
         if stalled_count > 0 {
             tracing::info!("Cleaned up {} stalled discovery sessions", stalled_count);
+        }
+    }
+
+    /// Track consecutive stall failures for scheduled discoveries.
+    /// On Complete: resets the counter. On Failed with stall error: increments and
+    /// auto-disables after 3 consecutive failures.
+    async fn handle_session_failure_tracking(
+        &self,
+        session: &DiscoveryUpdatePayload,
+        discovery_id: Uuid,
+    ) {
+        let mut discovery = match self.discovery_storage.get_by_id(&discovery_id).await {
+            Ok(Some(d)) => d,
+            _ => return,
+        };
+
+        if !matches!(discovery.base.run_type, RunType::Scheduled { .. }) {
+            return;
+        }
+
+        if session.phase == DiscoveryPhase::Complete && discovery.consecutive_failures() > 0 {
+            discovery.reset_failures();
+            if let Err(e) = self.discovery_storage.update(&mut discovery).await {
+                tracing::warn!(
+                    discovery_id = %discovery_id,
+                    error = %e,
+                    "Failed to reset consecutive failures"
+                );
+            }
+            return;
+        }
+
+        if session.phase == DiscoveryPhase::Failed {
+            let is_stall = session
+                .error
+                .as_deref()
+                .map(|e| e == SESSION_STALLED_ERROR)
+                .unwrap_or(false);
+
+            if !is_stall {
+                return;
+            }
+
+            let count = discovery.increment_failures();
+
+            if count >= 3 {
+                discovery.disable();
+
+                // Remove cron job from scheduler
+                if let Some(scheduler) = &self.scheduler
+                    && let Some(job_id) = self.job_ids.read().await.get(&discovery_id).copied()
+                {
+                    if let Err(e) = scheduler.write().await.remove(&job_id).await {
+                        tracing::warn!(
+                            discovery_id = %discovery_id,
+                            error = ?e,
+                            "Failed to remove cron job for auto-disabled discovery"
+                        );
+                    } else {
+                        self.job_ids.write().await.remove(&discovery_id);
+                    }
+                }
+
+                // Look up network name and org_id for the email event
+                let (network_name, org_id) = match self
+                    .network_service
+                    .get_by_id(&discovery.base.network_id)
+                    .await
+                {
+                    Ok(Some(network)) => (
+                        network.base.name.clone(),
+                        Some(network.base.organization_id),
+                    ),
+                    _ => ("Unknown Network".to_string(), None),
+                };
+
+                // Publish auto-disabled event with metadata for email subscriber
+                let metadata = serde_json::json!({
+                    "auto_disabled": true,
+                    "scan_name": discovery.base.name,
+                    "network_name": network_name,
+                    "org_id": org_id.map(|id| id.to_string()),
+                    "failure_count": count,
+                });
+
+                let event = DiscoverySessionEvent::new(
+                    Uuid::new_v4(),
+                    session.session_id,
+                    session.network_id,
+                    session.daemon_id,
+                    DiscoveryPhase::Failed,
+                    session.discovery_type.clone(),
+                    Utc::now(),
+                    AuthenticatedEntity::System,
+                    metadata,
+                );
+
+                if let Err(e) = self.event_bus.publish_discovery(event).await {
+                    tracing::warn!(
+                        discovery_id = %discovery_id,
+                        error = %e,
+                        "Failed to publish auto-disabled discovery event"
+                    );
+                }
+
+                tracing::warn!(
+                    discovery_id = %discovery_id,
+                    scan_name = %discovery.base.name,
+                    consecutive_failures = count,
+                    "Auto-disabled scheduled discovery after {} consecutive stall failures",
+                    count
+                );
+            }
+
+            if let Err(e) = self.discovery_storage.update(&mut discovery).await {
+                tracing::warn!(
+                    discovery_id = %discovery_id,
+                    error = %e,
+                    "Failed to persist consecutive failure count"
+                );
+            }
         }
     }
 }

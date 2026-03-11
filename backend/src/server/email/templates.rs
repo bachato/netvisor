@@ -490,6 +490,30 @@ pub const DAEMON_STANDBY_BODY: &str = r#"                    <!-- Main Content -
 "#;
 
 // ============================================================================
+// Scan Auto-Disabled Templates
+// ============================================================================
+
+pub const SCAN_AUTO_DISABLED_TITLE: &str = "Scheduled Scan Paused \u{2014} {scan_name}";
+
+pub const SCAN_AUTO_DISABLED_BODY: &str = r#"                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 20px 40px;">
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Scheduled Scan Paused</h1>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your scheduled scan <strong>{scan_name}</strong> on <strong>{network_name}</strong> has failed {failure_count} times in a row and has been automatically paused.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">This usually means the daemon is offline or has been uninstalled. Check that your daemon is running and re-enable the scan when ready.</p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td align="center" style="padding: 0 40px 30px 40px;">
+                            <a href="{base_url}/#daemons" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Check Daemon Status</a>
+                        </td>
+                    </tr>
+"#;
+
+// ============================================================================
 // Account Change Notification Templates
 // ============================================================================
 

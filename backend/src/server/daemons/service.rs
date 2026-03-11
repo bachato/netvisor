@@ -1019,6 +1019,7 @@ impl DaemonService {
                 last_run: None,
                 enabled: true,
                 timezone: None,
+                consecutive_failures: 0,
             }
         };
 

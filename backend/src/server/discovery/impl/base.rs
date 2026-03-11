@@ -46,11 +46,48 @@ pub struct Discovery {
 impl Discovery {
     pub fn disable(&mut self) {
         if let RunType::Scheduled {
-            enabled: mut _enabled,
+            ref mut enabled, ..
+        } = self.base.run_type
+        {
+            *enabled = false;
+        }
+    }
+
+    /// Increment the consecutive failure counter and return the new value.
+    pub fn increment_failures(&mut self) -> u32 {
+        if let RunType::Scheduled {
+            ref mut consecutive_failures,
             ..
         } = self.base.run_type
         {
-            _enabled = false;
+            *consecutive_failures += 1;
+            *consecutive_failures
+        } else {
+            0
+        }
+    }
+
+    /// Reset the consecutive failure counter to zero.
+    pub fn reset_failures(&mut self) {
+        if let RunType::Scheduled {
+            ref mut consecutive_failures,
+            ..
+        } = self.base.run_type
+        {
+            *consecutive_failures = 0;
+        }
+    }
+
+    /// Get the current consecutive failure count.
+    pub fn consecutive_failures(&self) -> u32 {
+        if let RunType::Scheduled {
+            consecutive_failures,
+            ..
+        } = &self.base.run_type
+        {
+            *consecutive_failures
+        } else {
+            0
         }
     }
 }

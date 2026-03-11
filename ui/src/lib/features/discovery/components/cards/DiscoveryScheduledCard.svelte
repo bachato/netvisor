@@ -39,10 +39,19 @@
 		onSelectionChange?: (selected: boolean) => void;
 	} = $props();
 
+	let isAutoDisabled = $derived(
+		discovery.run_type.type === 'Scheduled' &&
+			!discovery.run_type.enabled &&
+			(discovery.run_type.consecutive_failures ?? 0) >= 3
+	);
+
 	let cardData = $derived({
 		title: discovery.name,
 		iconColor: entities.getColorHelper('Discovery').icon,
 		Icon: entities.getIconComponent('Discovery'),
+		status: isAutoDisabled
+			? { label: 'Auto-paused', textColor: 'text-amber-400', bgColor: 'bg-amber-400/10' }
+			: null,
 		fields: [
 			{
 				label: 'Daemon',

@@ -2762,7 +2762,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.14.17"
+         *       "server_version": "0.14.18"
          *     }
          */
         ApiMeta: {
@@ -2773,7 +2773,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.14.17
+             * @example 0.14.18
              */
             server_version: string;
         };
@@ -2787,14 +2787,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-10T20:44:32.019378Z",
-             *       "id": "291f6c9a-a075-459f-98f7-51e2ffb71f20",
+             *       "created_at": "2026-03-11T20:23:01.407674Z",
+             *       "id": "7ea169e5-7a0f-4d1a-a687-d1799b2d9501",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-10T20:44:32.019378Z"
+             *       "updated_at": "2026-03-11T20:23:01.407674Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3046,14 +3046,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-10T20:44:32.003271Z",
-             *               "id": "4dfbbb25-6016-4447-80ed-ebf02638d7c1",
+             *               "created_at": "2026-03-11T20:23:01.390050Z",
+             *               "id": "e8e0e592-0ee6-4d20-a178-c9b89f324d2e",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-10T20:44:32.003271Z"
+             *               "updated_at": "2026-03-11T20:23:01.390050Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3062,7 +3062,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "UptimeKuma",
+             *           "service_definition": "Rocket.Chat",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3318,14 +3318,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-10T20:44:32.014786Z",
-             *           "id": "e7e66538-00a7-41ca-8d0b-715d615a1075",
+             *           "created_at": "2026-03-11T20:23:01.402236Z",
+             *           "id": "7185ed8f-6553-484a-9409-8f008c60786c",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-10T20:44:32.014786Z"
+             *           "updated_at": "2026-03-11T20:23:01.402236Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3334,7 +3334,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "UptimeKuma",
+             *       "service_definition": "Rocket.Chat",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3641,14 +3641,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-10T20:44:32.003462Z",
-         *       "id": "6d506b42-8285-4c33-8a8c-9af065d74efe",
+         *       "created_at": "2026-03-11T20:23:01.390267Z",
+         *       "id": "3cee12c6-e7fd-4108-beb5-ee3e5cdd8ea9",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-10T20:44:32.003462Z"
+         *       "updated_at": "2026-03-11T20:23:01.390267Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3830,7 +3830,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "UptimeKuma",
+         *           "service_definition": "Rocket.Chat",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4478,14 +4478,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-10T20:44:32.003006Z",
-         *               "id": "4c9ba712-7467-41f2-b761-a78f7036b404",
+         *               "created_at": "2026-03-11T20:23:01.389761Z",
+         *               "id": "6f9c2e64-1700-4ac8-89d5-c5453dffc1cc",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-10T20:44:32.003006Z"
+         *               "updated_at": "2026-03-11T20:23:01.389761Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4494,7 +4494,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "UptimeKuma",
+         *           "service_definition": "Rocket.Chat",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5033,7 +5033,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.14.17"
+         *       "server_version": "0.14.18"
          *     }
          */
         PaginatedApiMeta: {
@@ -5046,7 +5046,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.14.17
+             * @example 0.14.18
              */
             server_version: string;
         };
@@ -5443,6 +5443,11 @@ export interface components {
             token: string;
         };
         RunType: {
+            /**
+             * Format: int32
+             * @description Number of consecutive stall failures. Auto-disables after 3.
+             */
+            readonly consecutive_failures?: number;
             cron_schedule: string;
             enabled: boolean;
             /** Format: date-time */
@@ -5474,14 +5479,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-10T20:44:32.003398Z",
-         *           "id": "7651e08e-cb64-4c79-bf55-e23db0dc5780",
+         *           "created_at": "2026-03-11T20:23:01.390195Z",
+         *           "id": "411ff4fc-2652-472c-9703-de5a9bb90920",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-10T20:44:32.003398Z"
+         *           "updated_at": "2026-03-11T20:23:01.390195Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5490,7 +5495,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "UptimeKuma",
+         *       "service_definition": "Rocket.Chat",
          *       "source": {
          *         "type": "Manual"
          *       },

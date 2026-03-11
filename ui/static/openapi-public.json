@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.17\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.17\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.18\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.18\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -9492,12 +9492,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.17"
+            "example": "0.14.18"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.14.17"
+          "server_version": "0.14.18"
         }
       },
       "ApiResponse": {
@@ -9571,14 +9571,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-03-10T20:44:32.019375Z",
-              "id": "be073d0d-07b4-4dd1-a7c2-91d2c8db8443",
+              "created_at": "2026-03-11T20:23:01.407675Z",
+              "id": "f9a27ae4-c73e-467c-8cf6-523d951ef48c",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-10T20:44:32.019375Z"
+              "updated_at": "2026-03-11T20:23:01.407675Z"
             }
           },
           "error": {
@@ -10394,14 +10394,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-03-10T20:44:32.003285Z",
-                      "id": "aa03bacd-b01e-4dd5-93da-ddf9b8e97dfa",
+                      "created_at": "2026-03-11T20:23:01.390038Z",
+                      "id": "a23f5ea7-03c8-49cb-950b-fb7b490cf77c",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-03-10T20:44:32.003285Z"
+                      "updated_at": "2026-03-11T20:23:01.390038Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10410,7 +10410,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "UptimeKuma",
+                  "service_definition": "Rocket.Chat",
                   "source": {
                     "type": "Manual"
                   },
@@ -11112,14 +11112,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-03-10T20:44:32.014786Z",
-                  "id": "275f7b5f-7152-4123-9786-e20a9aa03565",
+                  "created_at": "2026-03-11T20:23:01.402243Z",
+                  "id": "9f321238-23ad-43fb-82bb-28323cf41fda",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-10T20:44:32.014786Z"
+                  "updated_at": "2026-03-11T20:23:01.402243Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11128,7 +11128,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "UptimeKuma",
+              "service_definition": "Rocket.Chat",
               "source": {
                 "type": "Manual"
               },
@@ -12343,14 +12343,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-03-10T20:44:32.003483Z",
-          "id": "15a1c982-d06d-4e8b-9015-62a4f561632b",
+          "created_at": "2026-03-11T20:23:01.390247Z",
+          "id": "d389ff8c-e7a6-410f-ad0c-5202cbfc70c0",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-03-10T20:44:32.003483Z"
+          "updated_at": "2026-03-11T20:23:01.390247Z"
         }
       },
       "BindingBase": {
@@ -12857,7 +12857,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "UptimeKuma",
+              "service_definition": "Rocket.Chat",
               "tags": [],
               "virtualization": null
             }
@@ -14753,14 +14753,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-03-10T20:44:32.003014Z",
-                  "id": "6b490933-4767-4741-b311-f7554448db8e",
+                  "created_at": "2026-03-11T20:23:01.389757Z",
+                  "id": "97904a36-115f-4963-a878-c727fbfaf42e",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-10T20:44:32.003014Z"
+                  "updated_at": "2026-03-11T20:23:01.389757Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14769,7 +14769,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "UptimeKuma",
+              "service_definition": "Rocket.Chat",
               "source": {
                 "type": "Manual"
               },
@@ -16271,7 +16271,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.17"
+            "example": "0.14.18"
           }
         },
         "example": {
@@ -16282,7 +16282,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.14.17"
+          "server_version": "0.14.18"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -16640,14 +16640,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-03-10T20:44:31.990907Z",
-                        "id": "7b02462e-4d6c-458b-9867-b298aa65f659",
+                        "created_at": "2026-03-11T20:23:01.376461Z",
+                        "id": "af426736-e5fd-48b3-a17a-825efb988662",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-03-10T20:44:31.990907Z"
+                        "updated_at": "2026-03-11T20:23:01.376461Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16656,7 +16656,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "UptimeKuma",
+                    "service_definition": "Rocket.Chat",
                     "source": {
                       "type": "Manual"
                     },
@@ -16733,14 +16733,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-03-10T20:44:32.013911Z",
-                    "id": "88b781c6-0f36-4034-a8ed-0e472a7eea18",
+                    "created_at": "2026-03-11T20:23:01.401278Z",
+                    "id": "be3d8394-6647-4639-b66d-bc1ef6b5e007",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-03-10T20:44:32.013911Z"
+                    "updated_at": "2026-03-11T20:23:01.401278Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16749,7 +16749,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "UptimeKuma",
+                "service_definition": "Rocket.Chat",
                 "source": {
                   "type": "Manual"
                 },
@@ -17703,6 +17703,13 @@
               "type"
             ],
             "properties": {
+              "consecutive_failures": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Number of consecutive stall failures. Auto-disables after 3.",
+                "readOnly": true,
+                "minimum": 0
+              },
               "cron_schedule": {
                 "type": "string"
               },
@@ -17836,14 +17843,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-03-10T20:44:32.003414Z",
-              "id": "a5df9e99-1bbe-4f07-8b81-29734c6fcfd3",
+              "created_at": "2026-03-11T20:23:01.390178Z",
+              "id": "ebc84d62-03d1-4ac8-9202-bf661351a49d",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-10T20:44:32.003414Z"
+              "updated_at": "2026-03-11T20:23:01.390178Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17852,7 +17859,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "UptimeKuma",
+          "service_definition": "Rocket.Chat",
           "source": {
             "type": "Manual"
           },
