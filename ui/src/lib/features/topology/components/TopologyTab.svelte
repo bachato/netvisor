@@ -113,7 +113,7 @@
 		onboarding.length === 0 || onboarding.includes('FirstDiscoveryCompleted')
 	);
 	let hasCompletedFirstRebuild = $derived(
-		onboarding.length === 0 || onboarding.includes('FirstTopologyRebuild')
+		onboarding.length === 0 || onboarding.includes('FirstDiscoveryCompleted')
 	);
 
 	// Mutations
