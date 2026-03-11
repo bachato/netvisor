@@ -9,6 +9,7 @@ import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-qu
 import { queryClient, queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Topology, TopologyOptions } from './types/base';
+import type { Organization } from '$lib/features/organizations/types';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
 import { writable, get } from 'svelte/store';
@@ -675,6 +676,12 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 			if (!old) return [update];
 			return old.map((topo) => (topo.id === update.id ? update : topo));
 		});
+
+		// Invalidate org cache until FirstTopologyRebuild milestone appears
+		const org = queryClient.getQueryData<Organization>(queryKeys.organizations.current());
+		if (org && !org.onboarding.includes('FirstTopologyRebuild')) {
+			queryClient.invalidateQueries({ queryKey: queryKeys.organizations.current() });
+		}
 	}
 
 	private applyPartialUpdate(topologyId: string, updates: Partial<Topology>) {

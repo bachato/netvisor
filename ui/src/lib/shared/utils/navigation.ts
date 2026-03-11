@@ -15,13 +15,7 @@ export function getRoute(): string {
 		return resolve('/onboarding');
 	}
 
-	// Check onboarding first
-	const onboardingModalCompleted = organization.onboarding.includes('OnboardingModalCompleted');
-	if (!onboardingModalCompleted) {
-		return resolve('/onboarding');
-	}
-
-	// All checks passed - go to main app
+	// Org exists - go to main app
 	// Billing plan selection is handled by the modal on the main page
 	return resolve('/');
 }
