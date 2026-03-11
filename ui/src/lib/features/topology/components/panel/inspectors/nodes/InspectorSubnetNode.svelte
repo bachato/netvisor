@@ -22,7 +22,7 @@
 		topology_showGatewayInLeftZoneHelp,
 		topology_groupDockerBridges,
 		topology_groupDockerBridgesHelp,
-		topology_focusNode,
+		topology_focusNode
 	} from '$lib/paraglide/messages';
 
 	let { node }: { node: Node } = $props();

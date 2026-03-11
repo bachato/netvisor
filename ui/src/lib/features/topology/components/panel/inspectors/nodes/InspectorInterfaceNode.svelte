@@ -23,7 +23,7 @@
 		topology_hidePortsHelp,
 		topology_hideVmOnContainer,
 		topology_hideVmOnContainerHelp,
-		topology_focusNode,
+		topology_focusNode
 	} from '$lib/paraglide/messages';
 
 	let { node }: { node: Node } = $props();

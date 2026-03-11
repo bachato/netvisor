@@ -160,11 +160,12 @@
 	}
 
 	function handlePaneSelect(_event?: MouseEvent, wasPanning?: boolean) {
-		selectedNode.set(null);
+		
 		selectedEdge.set(null);
-		// Only clear multi-selection on true click, not after panning
+		// Only clear selection on true click, not after panning
 		if (!wasPanning) {
 			selectedNodes.set([]);
+			selectedNode.set(null);
 		}
 		clearSearch();
 	}

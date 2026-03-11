@@ -218,15 +218,15 @@ export function createStyle(color: Color | null, icon: string | null) {
  */
 export function twColorToRgba(twColor: string, alphaOverride?: number): string {
 	const match = twColor.match(/([a-zA-Z]+)-(\d{2,3})(?:\/(\d{1,3}))?/);
-	if (!match) return "rgba(0,0,0,0)";
+	if (!match) return 'rgba(0,0,0,0)';
 
 	const [, colorName, shade, opacityRaw] = match;
 
 	const palette = (colors as unknown as Record<string, Record<number, string>>)[colorName];
-	if (!palette) return "rgba(0,0,0,0)";
+	if (!palette) return 'rgba(0,0,0,0)';
 
 	const hex = palette[parseInt(shade)];
-	if (!hex) return "rgba(0,0,0,0)";
+	if (!hex) return 'rgba(0,0,0,0)';
 
 	const alpha =
 		typeof alphaOverride === 'number'

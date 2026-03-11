@@ -20,5 +20,5 @@
 <button type="button" onclick={onClick} class={cls} {disabled}>
 	<Icon class="h-4 w-4" />
 	<span>{label}</span>
-	<KbdKey size="sm" key="R"/>
+	<KbdKey size="sm" key="R" />
 </button>

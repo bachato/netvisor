@@ -65,7 +65,6 @@
 				>
 					<ChevronLeft class="text-secondary h-5 w-5" />
 				</button>
-				<TopologyStatsBar {topology} />
 			</div>
 
 			<!-- Content area -->

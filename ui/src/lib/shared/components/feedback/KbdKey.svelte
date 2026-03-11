@@ -15,7 +15,9 @@
 </script>
 
 <kbd
-	class="inline-flex items-center justify-center rounded border border-gray-300 bg-gray-50 font-mono font-medium text-gray-600 shadow-[0_1px_0_1px_rgba(0,0,0,0.08)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:shadow-[0_1px_0_1px_rgba(0,0,0,0.3)] {sizeClasses[size]} {className}"
+	class="inline-flex items-center justify-center rounded border border-gray-300 bg-gray-50 font-mono font-medium text-gray-600 shadow-[0_1px_0_1px_rgba(0,0,0,0.08)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:shadow-[0_1px_0_1px_rgba(0,0,0,0.3)] {sizeClasses[
+		size
+	]} {className}"
 >
 	{key}
 </kbd>

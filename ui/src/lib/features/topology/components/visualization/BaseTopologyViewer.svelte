@@ -425,15 +425,15 @@
 		{/if}
 
 		{#if (showMinimap !== undefined ? showMinimap : $topologyOptions.local.show_minimap) && !$isExporting}
-
-<MiniMap                                                                                                                                                                                                           
-    position="bottom-left"
-    bgColor={themeStore.resolvedTheme === "dark" ? "#1f2937" : "#ffffff"}
-    nodeColor={themeStore.resolvedTheme === "dark" ? "#6b7280" : "#9ca3af"}
-    maskColor={themeStore.resolvedTheme === "dark" ? "rgba(17, 24, 39, 0.7)" : "rgba(243, 244, 246, 0.7)"}
-    maskStrokeColor={themeStore.resolvedTheme === "dark" ? "#374151" : "#d1d5db"}
-  />
-
+			<MiniMap
+				position="bottom-left"
+				bgColor={themeStore.resolvedTheme === 'dark' ? '#1f2937' : '#ffffff'}
+				nodeColor={themeStore.resolvedTheme === 'dark' ? '#6b7280' : '#9ca3af'}
+				maskColor={themeStore.resolvedTheme === 'dark'
+					? 'rgba(17, 24, 39, 0.7)'
+					: 'rgba(243, 244, 246, 0.7)'}
+				maskStrokeColor={themeStore.resolvedTheme === 'dark' ? '#374151' : '#d1d5db'}
+			/>
 		{/if}
 
 		{#if showBranding}

@@ -36,25 +36,27 @@
 		{#if hostCount > 0}
 			<div class="flex items-center gap-1">
 				<HostIcon class="h-3.5 w-3.5 flex-shrink-0 {hostColor}" />
-				<span class="text-secondary text-xs">{hostCount} host{hostCount > 1 ? "s":""}</span>
+				<span class="text-secondary text-xs">{hostCount} host{hostCount > 1 ? 's' : ''}</span>
 			</div>
 		{/if}
 		{#if serviceCount > 0}
 			<div class="flex items-center gap-1">
 				<ServiceIcon class="h-3.5 w-3.5 flex-shrink-0 {serviceColor}" />
-				<span class="text-secondary text-xs">{serviceCount} service{serviceCount > 1 ? "s":""}</span>
+				<span class="text-secondary text-xs"
+					>{serviceCount} service{serviceCount > 1 ? 's' : ''}</span
+				>
 			</div>
 		{/if}
 		{#if subnetCount > 0}
 			<div class="flex items-center gap-1">
 				<SubnetIcon class="h-3.5 w-3.5 flex-shrink-0 {subnetColor}" />
-				<span class="text-secondary text-xs">{subnetCount} subnet{subnetCount > 1 ? "s":""}</span>
+				<span class="text-secondary text-xs">{subnetCount} subnet{subnetCount > 1 ? 's' : ''}</span>
 			</div>
 		{/if}
 		{#if groupCount > 0}
 			<div class="flex items-center gap-1">
 				<GroupIcon class="h-3.5 w-3.5 flex-shrink-0 {groupColor}" />
-				<span class="text-secondary text-xs">{groupCount} group{groupCount > 1 ? "s":""}</span>
+				<span class="text-secondary text-xs">{groupCount} group{groupCount > 1 ? 's' : ''}</span>
 			</div>
 		{/if}
 	</div>

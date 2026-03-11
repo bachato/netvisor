@@ -39,7 +39,7 @@
 				<span class="text-secondary text-sm">{shortcut.description()}</span>
 				<div class="flex items-center gap-1">
 					{#each shortcut.keys as key (key)}
-						<KbdKey {key} size="md"/>
+						<KbdKey {key} size="md" />
 					{/each}
 				</div>
 			</div>
