@@ -1,4 +1,4 @@
-<script lang="ts" generics="T, V, C">
+<script lang="ts" generics="T, V, OC, IC">
 	import { ArrowUp, ArrowDown, Trash2, Plus, Edit, Square, CheckSquare } from 'lucide-svelte';
 	import RichSelect from './RichSelect.svelte';
 	import ListSelectItem from './ListSelectItem.svelte';
@@ -23,14 +23,14 @@
 
 		// Options (dropdown)
 		options?: V[];
-		optionDisplayComponent: EntityDisplayComponent<V, C>;
-		getOptionContext?: (option: V, index: number) => C;
+		optionDisplayComponent: EntityDisplayComponent<V, OC>;
+		getOptionContext?: (option: V, index: number) => OC;
 		showSearch?: boolean;
 
 		// Items
 		items?: T[];
-		itemDisplayComponent: EntityDisplayComponent<T, C>;
-		getItemContext?: (item: T, index: number) => C;
+		itemDisplayComponent: EntityDisplayComponent<T, IC>;
+		getItemContext?: (item: T, index: number) => IC;
 
 		// Item interaction
 		allowDuplicates?: boolean;
@@ -72,13 +72,13 @@
 		// Options (dropdown)
 		options = [] as V[],
 		optionDisplayComponent,
-		getOptionContext = () => ({}) as C,
+		getOptionContext = () => ({}) as OC,
 		showSearch = false,
 
 		// Items
 		items = [] as T[],
 		itemDisplayComponent,
-		getItemContext = () => ({}) as C,
+		getItemContext = () => ({}) as IC,
 		selectedItems = $bindable([]),
 
 		// Item interaction

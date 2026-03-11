@@ -1,4 +1,4 @@
-<script lang="ts" generics="V, C">
+<script lang="ts" generics="V, OC">
 	import { ChevronDown } from 'lucide-svelte';
 	import ListSelectItem from './ListSelectItem.svelte';
 	import type { EntityDisplayComponent } from './types';
@@ -23,7 +23,7 @@
 		onDisabledClick = null,
 		showSearch = false,
 		displayComponent,
-		getOptionContext = () => new Object() as C
+		getOptionContext = () => new Object() as OC
 	}: {
 		label?: string;
 		selectedValue?: string | null;
@@ -35,8 +35,8 @@
 		onSelect: (value: string) => void;
 		onDisabledClick?: ((value: string) => void) | null;
 		showSearch?: boolean;
-		displayComponent: EntityDisplayComponent<V, C>;
-		getOptionContext?: (option: V, index: number) => C;
+		displayComponent: EntityDisplayComponent<V, OC>;
+		getOptionContext?: (option: V, index: number) => OC;
 	} = $props();
 
 	let isOpen = $state(false);
