@@ -755,6 +755,32 @@ impl DiscoveryService {
             "Updated session",
         );
 
+        // Publish onboarding milestone BEFORE SSE update so it's
+        // in the DB when the SSE-triggered org refetch arrives
+        if update.phase == DiscoveryPhase::Complete
+            && matches!(update.discovery_type, DiscoveryType::Network { .. })
+            && let Ok(Some(network)) = self.network_service.get_by_id(&network_id).await
+            && let Ok(Some(org)) = self
+                .organization_service
+                .get_by_id(&network.base.organization_id)
+                .await
+            && org.not_onboarded(&OnboardingOperation::FirstDiscoveryCompleted)
+        {
+            let _ = self
+                .event_bus
+                .publish_onboarding(OnboardingEvent::new(
+                    Uuid::new_v4(),
+                    org.id,
+                    OnboardingOperation::FirstDiscoveryCompleted,
+                    Utc::now(),
+                    AuthenticatedEntity::System,
+                    serde_json::json!({
+                        "discovery_type": update.discovery_type.to_string(),
+                    }),
+                ))
+                .await;
+        }
+
         let _ = self.update_tx.send(update.clone());
 
         *session = update.clone();
@@ -763,31 +789,6 @@ impl DiscoveryService {
             self.event_bus()
                 .publish_discovery(session.into_discovery_event())
                 .await?;
-
-            // Emit FirstDiscoveryCompleted telemetry if this is the org's first completed discovery
-            if session.phase == DiscoveryPhase::Complete
-                && matches!(session.discovery_type, DiscoveryType::Network { .. })
-                && let Ok(Some(network)) = self.network_service.get_by_id(&network_id).await
-                && let Ok(Some(org)) = self
-                    .organization_service
-                    .get_by_id(&network.base.organization_id)
-                    .await
-                && org.not_onboarded(&OnboardingOperation::FirstDiscoveryCompleted)
-            {
-                let _ = self
-                    .event_bus
-                    .publish_onboarding(OnboardingEvent::new(
-                        Uuid::new_v4(),
-                        org.id,
-                        OnboardingOperation::FirstDiscoveryCompleted,
-                        Utc::now(),
-                        AuthenticatedEntity::System,
-                        serde_json::json!({
-                            "discovery_type": session.discovery_type.to_string(),
-                        }),
-                    ))
-                    .await;
-            }
 
             // If user cancelled session, but it finished before we could send cancellation, remove key so it doesn't cancel upcoming sessions
             self.pull_cancellation_for_daemon(&session.daemon_id).await;

@@ -396,8 +396,8 @@ async fn rebuild(
     let organization_id = auth.organization_id();
     let entity = auth.into_entity();
 
-    service.update(&mut topology, entity.clone()).await?;
-
+    // Publish onboarding milestone BEFORE topology update so it's
+    // in the DB when the SSE-triggered org refetch arrives
     if let Some(org_id) = organization_id {
         let organization = state
             .services
@@ -418,11 +418,13 @@ async fn rebuild(
                     operation: OnboardingOperation::FirstTopologyRebuild,
                     timestamp: Utc::now(),
                     metadata: serde_json::json!({}),
-                    authentication: entity,
+                    authentication: entity.clone(),
                 })
                 .await?;
         }
     }
+
+    service.update(&mut topology, entity).await?;
 
     // Return will be handled through event subscriber which triggers SSE
 
