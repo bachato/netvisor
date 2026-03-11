@@ -9,7 +9,6 @@ import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-qu
 import { queryClient, queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Topology, TopologyOptions } from './types/base';
-import type { Organization } from '../organizations/types';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
 import { writable, get } from 'svelte/store';
@@ -616,12 +615,6 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 		return {
 			url: '/api/v1/topology/stream',
 			onMessage: (update) => {
-				// Invalidate org cache until FirstTopologyRebuild milestone appears
-				const org = queryClient.getQueryData<Organization>(queryKeys.organizations.current());
-				if (org && !org.onboarding.includes('FirstTopologyRebuild')) {
-					queryClient.invalidateQueries({ queryKey: queryKeys.organizations.current() });
-				}
-
 				// If the update says it's NOT stale, apply immediately (it's a full refresh)
 				if (!update.is_stale) {
 					this.applyFullUpdate(update);

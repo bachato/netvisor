@@ -82,7 +82,7 @@
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
 	let hasCompletedFirstRebuild = $derived(
-		onboarding.length === 0 || onboarding.includes('FirstTopologyRebuild')
+		onboarding.length === 0 || onboarding.includes('FirstDiscoveryCompleted')
 	);
 
 	// Mutations
