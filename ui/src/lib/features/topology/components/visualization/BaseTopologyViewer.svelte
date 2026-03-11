@@ -367,7 +367,7 @@
 		/>
 
 		{#if showControls}
-			<Panel position="top-right" class="!m-2 !flex !flex-col !items-center !gap-2 !p-0">
+			<Panel position="top-right" class="!m-[10px] !flex !flex-col !items-center !gap-2 !p-0">
 				{#if onOpenShortcuts}
 					<button
 						class="flex items-center justify-center rounded !border !border-gray-300 !bg-gray-50 p-1.5 !text-gray-700 !shadow-lg hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600"
