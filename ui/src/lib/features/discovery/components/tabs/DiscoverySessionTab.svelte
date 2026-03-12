@@ -1,6 +1,8 @@
 <script lang="ts">
 	import TabHeader from '$lib/shared/components/layout/TabHeader.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
+	import PreDaemonEmptyState from '$lib/shared/components/layout/PreDaemonEmptyState.svelte';
+	import { hasDaemon } from '$lib/shared/onboarding/checklist';
 	import type { FieldConfig } from '$lib/shared/components/data/types';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import { useActiveSessionsQuery, useCancelDiscoveryMutation } from '../../queries';
@@ -117,7 +119,9 @@
 			dismissableKey="discovery-email-hint"
 		/>
 	{/if}
-	{#if isLoading}
+	{#if !hasDaemon(onboarding)}
+		<PreDaemonEmptyState entityName="Discovery sessions" />
+	{:else if isLoading}
 		<Loading />
 	{:else if sessionsList.length === 0}
 		<!-- Empty state -->

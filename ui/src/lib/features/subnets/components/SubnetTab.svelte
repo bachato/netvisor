@@ -4,11 +4,13 @@
 	import TabHeader from '$lib/shared/components/layout/TabHeader.svelte';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
+	import PreDaemonEmptyState from '$lib/shared/components/layout/PreDaemonEmptyState.svelte';
 	import type { Subnet } from '../types/base';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import { defineFields } from '$lib/shared/components/data/types';
 	import { Plus } from 'lucide-svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
+	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import {
 		useSubnetsQuery,
 		useCreateSubnetMutation,
@@ -37,10 +39,16 @@
 		subnets_noSubnetsYet,
 		subnets_subnetType
 	} from '$lib/paraglide/messages';
+	import { hasDaemon } from '$lib/shared/onboarding/checklist';
 
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	type SubnetOrderField = components['schemas']['SubnetOrderField'];
 
 	let { isReadOnly = false }: TabProps = $props();
+
+	// Organization query for onboarding state
+	const organizationQuery = useOrganizationQuery();
+	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
 
 	// Queries
 	const tagsQuery = useTagsQuery();
@@ -187,8 +195,10 @@
 		</svelte:fragment>
 	</TabHeader>
 
-	<!-- Loading state -->
-	{#if isLoading}
+	{#if !hasDaemon(onboarding)}
+		<PreDaemonEmptyState entityName="Subnets" />
+	{:else if isLoading}
+		<!-- Loading state -->
 		<Loading />
 	{:else if subnetsData.length === 0}
 		<!-- Empty state -->

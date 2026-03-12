@@ -26,6 +26,10 @@
 	import type { UserOrgPermissions } from '$lib/features/users/types';
 	import type { SubTab } from '$lib/shared/components/layout/ContentSubTabs.svelte';
 	import { trackEvent } from '$lib/shared/utils/analytics';
+	import { daemonSetupState } from '$lib/features/daemons/stores/daemon-setup';
+	import { isAllComplete } from '$lib/shared/onboarding/checklist';
+	import SidebarChecklist from './SidebarChecklist.svelte';
+	import type { components } from '$lib/api/schema';
 
 	// Import tab components
 	import TopologyTab from '$lib/features/topology/components/TopologyTab.svelte';
@@ -46,6 +50,8 @@
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import ShareTab from '$lib/features/shares/components/ShareTab.svelte';
 	import HomeTab from '$lib/features/home/components/HomeTab.svelte';
+
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
 	let {
 		activeTab = $bindable('topology'),
@@ -113,6 +119,19 @@
 	// Active discovery sessions — used for notification dot on sidebar and sub-tabs
 	const activeSessionsQuery = useActiveSessionsQuery(() => true);
 	let hasActiveSessions = $derived((activeSessionsQuery.data?.length ?? 0) > 0);
+
+	// Onboarding checklist state
+	let onboarding = $derived((organization?.onboarding ?? []) as OnboardingOperation[]);
+	let showSidebarChecklist = $derived(organization && !isAllComplete(onboarding));
+	let isDiscoveryActive = $derived(
+		(activeSessionsQuery.data ?? []).some((s) => s.discovery_type?.type === 'Network')
+	);
+
+	// Subscribe to daemon setup state
+	let daemonStatus = $state<'idle' | 'waiting' | 'connected' | 'trouble'>('idle');
+	const unsubscribeDaemon = daemonSetupState.subscribe((s) => {
+		daemonStatus = s.connectionStatus;
+	});
 
 	// Sync settings/support modal state from modal registry (for deep-link opens)
 	$effect(() => {
@@ -537,6 +556,8 @@
 				console.warn('Failed to load sidebar state from localStorage:', error);
 			}
 		}
+
+		return unsubscribeDaemon;
 	});
 
 	function toggleCollapse() {
@@ -548,6 +569,19 @@
 				localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(collapsed));
 			} catch (error) {
 				console.error('Failed to save sidebar state to localStorage:', error);
+			}
+		}
+	}
+
+	function expandSidebar() {
+		if (collapsed) {
+			collapsed = false;
+			if (typeof window !== 'undefined') {
+				try {
+					localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(false));
+				} catch (error) {
+					console.error('Failed to save sidebar state to localStorage:', error);
+				}
 			}
 		}
 	}
@@ -624,6 +658,20 @@
 				</div>
 			{/if}
 		</div>
+
+		<!-- Sidebar Checklist -->
+		{#if showSidebarChecklist}
+			<SidebarChecklist
+				{onboarding}
+				{collapsed}
+				onNavigate={(tab) => {
+					activeTab = tab;
+				}}
+				{isDiscoveryActive}
+				{daemonStatus}
+				onExpandSidebar={expandSidebar}
+			/>
+		{/if}
 
 		<!-- Main Navigation -->
 		<nav class="flex-1 overflow-y-auto px-2 py-4">

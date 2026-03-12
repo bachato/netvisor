@@ -162,11 +162,13 @@
 			/>
 		{/if}
 
-		<!-- Plan Usage — always visible if limits are approaching -->
-		<PlanUsage planUsage={dashboard.plan_usage} plan={organization.plan} {isOwner} />
+		<!-- Plan Usage — hidden pre-daemon since limits can't be hit -->
+		{#if has('FirstDaemonRegistered')}
+			<PlanUsage planUsage={dashboard.plan_usage} plan={organization.plan} {isOwner} />
+		{/if}
 
-		<!-- Network Metrics — last since large plans can have many networks -->
-		{#if dashboard.networks.length > 0}
+		<!-- Network Metrics — hidden pre-daemon since no meaningful data yet -->
+		{#if has('FirstDaemonRegistered') && dashboard.networks.length > 0}
 			<NetworkMetrics networks={dashboard.networks} />
 		{/if}
 	{/if}

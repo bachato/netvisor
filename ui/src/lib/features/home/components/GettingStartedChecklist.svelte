@@ -11,6 +11,16 @@
 	import SupportOptions from '$lib/features/support/SupportOptions.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import DiscoveryEstimation from '$lib/features/discovery/components/DiscoveryEstimation.svelte';
+	import {
+		CHECKLIST_STEPS,
+		isStepComplete as checkStepComplete,
+		isStepEnabled as checkStepEnabled,
+		getCompletedCount,
+		isAllComplete,
+		executeStepAction,
+		trackChecklistStepClicked,
+		type ChecklistStep
+	} from '$lib/shared/onboarding/checklist';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
@@ -117,56 +127,15 @@
 		}
 	});
 
-	interface ChecklistStep {
-		id: string;
-		milestone: OnboardingOperation;
-		prerequisite: OnboardingOperation | null;
-		label: string;
-		description: string;
-		action: () => void;
-	}
+	const steps = CHECKLIST_STEPS;
 
-	const steps: ChecklistStep[] = [
-		{
-			id: 'daemon',
-			milestone: 'FirstDaemonRegistered',
-			prerequisite: null,
-			label: 'Add a Daemon',
-			description: 'Install a daemon to start discovering your network.',
-			action: () => {
-				onNavigate('daemons');
-				openModal('create-daemon');
-			}
-		},
-		{
-			id: 'discovery',
-			milestone: 'FirstDiscoveryCompleted',
-			prerequisite: 'FirstDaemonRegistered',
-			label: 'Check Discovery Progress',
-			description: 'See live results as your daemon discovers hosts and services.',
-			action: () => onNavigate('discovery-sessions')
-		},
-		{
-			id: 'topology',
-			milestone: 'FirstTopologyRebuild',
-			prerequisite: 'FirstDiscoveryCompleted',
-			label: 'View your Topology',
-			description: 'See your network visualized as an interactive map.',
-			action: () => onNavigate('topology')
-		}
-	];
+	let completedCount = $derived(getCompletedCount(onboarding));
 
-	let completedCount = $derived(steps.filter((s) => onboarding.includes(s.milestone)).length);
+	let allComplete = $derived(isAllComplete(onboarding));
 
-	let allComplete = $derived(completedCount === steps.length);
-
-	function isStepComplete(step: ChecklistStep): boolean {
-		return onboarding.includes(step.milestone);
-	}
-
-	function isStepEnabled(step: ChecklistStep): boolean {
-		if (step.prerequisite === null) return true;
-		return onboarding.includes(step.prerequisite);
+	function handleStepClick(step: ChecklistStep) {
+		trackChecklistStepClicked(step.id, 'home');
+		executeStepAction(step, onNavigate);
 	}
 
 	let showDaemonTroubleTag = $derived(
@@ -309,17 +278,19 @@
 
 			<div class="space-y-2">
 				{#each steps as step (step.id)}
-					{@const complete = isStepComplete(step)}
-					{@const enabled = isStepEnabled(step)}
+					{@const complete = checkStepComplete(step, onboarding)}
+					{@const enabled = checkStepEnabled(step, onboarding)}
+					{@const isAccountStep = step.id === 'account'}
 					{@const isActiveDiscoveryStep = step.id === 'discovery' && isDiscoveryActive && !complete}
 					<div>
 						<button
 							class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors {!complete &&
+							!isAccountStep &&
 							enabled
 								? 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50'
 								: ''} {!enabled ? 'opacity-50' : ''}"
-							disabled={complete || !enabled}
-							onclick={() => step.action()}
+							disabled={complete || !enabled || isAccountStep}
+							onclick={() => handleStepClick(step)}
 						>
 							<div class="flex items-center gap-3">
 								{#if complete}
@@ -361,7 +332,7 @@
 											estimated_remaining_secs={activeNetworkSession.estimated_remaining_secs}
 											class="mt-0.5"
 										/>
-									{:else if !complete && enabled}
+									{:else if !complete && enabled && !isAccountStep}
 										<p class="text-tertiary text-xs">{step.description}</p>
 									{/if}
 								</div>

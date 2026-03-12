@@ -2,6 +2,7 @@
 	import TabHeader from '$lib/shared/components/layout/TabHeader.svelte';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
+	import PreDaemonEmptyState from '$lib/shared/components/layout/PreDaemonEmptyState.svelte';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import { defineFields } from '$lib/shared/components/data/types';
 	import type { Service } from '../types/base';
@@ -18,6 +19,7 @@
 	} from '../queries';
 	import { useHostsByIds } from '$lib/features/hosts/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
+	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -32,11 +34,17 @@
 		services_subtitle
 	} from '$lib/paraglide/messages';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { hasDaemon } from '$lib/shared/onboarding/checklist';
 
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	type ServiceOrderField = components['schemas']['ServiceOrderField'];
 	type OrderDirection = components['schemas']['OrderDirection'];
 
 	let { isReadOnly = false }: TabProps = $props();
+
+	// Organization query for onboarding state
+	const organizationQuery = useOrganizationQuery();
+	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
 
 	// Pagination state (managed by DataControls, updated via callback)
 	let pageSize = $state(20);
@@ -302,8 +310,10 @@
 	<!-- Header -->
 	<TabHeader title={common_services()} subtitle={services_subtitle()} />
 
-	<!-- Loading state (only on initial load) -->
-	{#if isInitialLoading}
+	{#if !hasDaemon(onboarding)}
+		<PreDaemonEmptyState entityName="Services" />
+	{:else if isInitialLoading}
+		<!-- Loading state (only on initial load) -->
 		<Loading />
 	{:else if servicesData.length === 0 && !servicesPagination}
 		<!-- Empty state -->

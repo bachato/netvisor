@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
+	import PreDaemonEmptyState from '$lib/shared/components/layout/PreDaemonEmptyState.svelte';
+	import { hasDaemon } from '$lib/shared/onboarding/checklist';
 	import TopologyViewer from './visualization/TopologyViewer.svelte';
 	import TopologyOptionsPanel from './panel/TopologyOptionsPanel.svelte';
 	import { Edit, Lock, Plus, Radar, Radio, RefreshCcw, Share2, Trash2 } from 'lucide-svelte';
@@ -392,213 +394,217 @@
 </script>
 
 <SvelteFlowProvider>
-	<div class="space-y-6">
-		<!-- Header -->
-		<div class="card card-static flex items-center justify-evenly gap-4 px-4 py-2">
-			{#if currentTopology}
-				<div class="flex items-center gap-4 py-2">
-					<ExportButton onclick={() => (isExportModalOpen = true)} />
-					{#if !isReadOnly}
-						{#if currentUser && !currentUser.email_verified}
-							<span data-tooltip="Please verify email to share topology" use:tooltip>
-								<button class="btn-secondary opacity-50" disabled title="Share">
+	{#if !hasDaemon(onboarding)}
+		<PreDaemonEmptyState entityName="Your network topology" />
+	{:else}
+		<div class="space-y-6">
+			<!-- Header -->
+			<div class="card card-static flex items-center justify-evenly gap-4 px-4 py-2">
+				{#if currentTopology}
+					<div class="flex items-center gap-4 py-2">
+						<ExportButton onclick={() => (isExportModalOpen = true)} />
+						{#if !isReadOnly}
+							{#if currentUser && !currentUser.email_verified}
+								<span data-tooltip="Please verify email to share topology" use:tooltip>
+									<button class="btn-secondary opacity-50" disabled title="Share">
+										<Share2 class="my-1 h-5 w-5" />
+									</button>
+								</span>
+							{:else}
+								<button
+									class="btn-secondary"
+									onclick={() => openModal('topology-share')}
+									title="Share"
+								>
 									<Share2 class="my-1 h-5 w-5" />
 								</button>
-							</span>
-						{:else}
-							<button
-								class="btn-secondary"
-								onclick={() => openModal('topology-share')}
-								title="Share"
-							>
-								<Share2 class="my-1 h-5 w-5" />
-							</button>
-						{/if}
-					{/if}
-				</div>
-
-				{#if !isReadOnly}
-					<div class="card-divider-v self-stretch"></div>
-					{#if activeSession}
-						{@const estimate = activeSession.estimated_remaining_secs}
-						<div
-							class="flex cursor-default flex-col items-center {discoveryColor.icon}"
-							data-tooltip={!hasCompletedFirstDiscovery && hasEmail
-								? "We'll email you when your scan is complete."
-								: ''}
-							use:tooltip
-						>
-							<div class="flex items-center p-2">
-								<Radar class="mr-2 h-4 w-4 animate-pulse [animation-duration:5s]" />
-								{#if activeSession.progress > 0}
-									<span class="text-xs">{activeSession.progress}%</span>
-								{/if}
-							</div>
-							{#if estimate != null}
-								<span class="text-[10px]">~{Math.round(estimate / 60)} min left</span>
-							{:else}
-								<span class="text-[10px]">Estimating...</span>
 							{/if}
-						</div>
-						<div class="card-divider-v self-stretch"></div>
-					{/if}
-					{#if hasCompletedFirstRebuild}
-						<div class="flex items-center">
-							<div class="mx-2 flex flex-col text-center">
-								<div class="flex justify-around gap-6">
-									<button
-										onclick={handleToggleLock}
-										class={`text-xs ${currentTopology.is_locked ? 'btn-icon-info' : 'btn-icon'}`}
-										data-tooltip="Lock your topology layout to prevent discovery from changing it"
-										use:tooltip
-										title={currentTopology.is_locked ? 'Unlock' : 'Lock'}
-									>
-										<Lock class="mr-2 h-4 w-4" />
-										{currentTopology.is_locked ? common_unlock() : common_lock()}
-									</button>
+						{/if}
+					</div>
 
-									{#if !currentTopology.is_locked}
-										<button
-											onclick={handleAutoRebuildToggle}
-											type="button"
-											class={`text-xs ${$autoRebuild && !currentTopology.is_locked ? 'btn-icon-success' : 'btn-icon'}`}
-											disabled={currentTopology.is_locked}
-											data-tooltip={$autoRebuild
-												? 'Your topology rebuilds automatically when new data arrives from discovery'
-												: "In manual mode, your topology won't update until you trigger a rebuild"}
-											use:tooltip
-											title={$autoRebuild ? 'Auto' : 'Manual'}
-										>
-											{#if $autoRebuild}
-												<Radio class="mr-2 h-4 w-4" /> {common_auto()}
-											{:else}
-												<RefreshCcw class="mr-2 h-4 w-4" /> {common_manual()}
-											{/if}
-										</button>
+					{#if !isReadOnly}
+						<div class="card-divider-v self-stretch"></div>
+						{#if activeSession}
+							{@const estimate = activeSession.estimated_remaining_secs}
+							<div
+								class="flex cursor-default flex-col items-center {discoveryColor.icon}"
+								data-tooltip={!hasCompletedFirstDiscovery && hasEmail
+									? "We'll email you when your scan is complete."
+									: ''}
+								use:tooltip
+							>
+								<div class="flex items-center p-2">
+									<Radar class="mr-2 h-4 w-4 animate-pulse [animation-duration:5s]" />
+									{#if activeSession.progress > 0}
+										<span class="text-xs">{activeSession.progress}%</span>
 									{/if}
 								</div>
-								{#if currentTopology.is_locked && currentTopology.locked_at}
-									<span class="text-tertiary whitespace-nowrap text-[10px]"
-										>{topology_lockedTimestamp({
-											timestamp: formatTimestamp(currentTopology.locked_at),
-											user: lockedByDisplay ?? ''
-										})}</span
-									>
+								{#if estimate != null}
+									<span class="text-[10px]">~{Math.round(estimate / 60)} min left</span>
 								{:else}
-									<span class="text-tertiary whitespace-nowrap text-[10px]"
-										>{topology_lastRebuild({
-											timestamp: formatTimestamp(currentTopology.last_refreshed)
-										})}</span
-									>
+									<span class="text-[10px]">Estimating...</span>
 								{/if}
 							</div>
-							<!-- State Badge / Action Button -->
-							{#if stateConfig && !currentTopology.is_locked && !$autoRebuild}
-								<div class="flex flex-col items-center gap-2">
-									<div class="flex items-center">
-										<StateBadge
-											disabled={stateConfig?.disabled || false}
-											Icon={stateConfig.icon}
-											label={stateConfig.buttonText}
-											cls={stateConfig.class}
-											onClick={stateConfig.action}
-										/>
-									</div>
-								</div>
-							{/if}
-						</div>
+							<div class="card-divider-v self-stretch"></div>
+						{/if}
+						{#if hasCompletedFirstRebuild}
+							<div class="flex items-center">
+								<div class="mx-2 flex flex-col text-center">
+									<div class="flex justify-around gap-6">
+										<button
+											onclick={handleToggleLock}
+											class={`text-xs ${currentTopology.is_locked ? 'btn-icon-info' : 'btn-icon'}`}
+											data-tooltip="Lock your topology layout to prevent discovery from changing it"
+											use:tooltip
+											title={currentTopology.is_locked ? 'Unlock' : 'Lock'}
+										>
+											<Lock class="mr-2 h-4 w-4" />
+											{currentTopology.is_locked ? common_unlock() : common_lock()}
+										</button>
 
-						<div class="card-divider-v self-stretch"></div>
+										{#if !currentTopology.is_locked}
+											<button
+												onclick={handleAutoRebuildToggle}
+												type="button"
+												class={`text-xs ${$autoRebuild && !currentTopology.is_locked ? 'btn-icon-success' : 'btn-icon'}`}
+												disabled={currentTopology.is_locked}
+												data-tooltip={$autoRebuild
+													? 'Your topology rebuilds automatically when new data arrives from discovery'
+													: "In manual mode, your topology won't update until you trigger a rebuild"}
+												use:tooltip
+												title={$autoRebuild ? 'Auto' : 'Manual'}
+											>
+												{#if $autoRebuild}
+													<Radio class="mr-2 h-4 w-4" /> {common_auto()}
+												{:else}
+													<RefreshCcw class="mr-2 h-4 w-4" /> {common_manual()}
+												{/if}
+											</button>
+										{/if}
+									</div>
+									{#if currentTopology.is_locked && currentTopology.locked_at}
+										<span class="text-tertiary whitespace-nowrap text-[10px]"
+											>{topology_lockedTimestamp({
+												timestamp: formatTimestamp(currentTopology.locked_at),
+												user: lockedByDisplay ?? ''
+											})}</span
+										>
+									{:else}
+										<span class="text-tertiary whitespace-nowrap text-[10px]"
+											>{topology_lastRebuild({
+												timestamp: formatTimestamp(currentTopology.last_refreshed)
+											})}</span
+										>
+									{/if}
+								</div>
+								<!-- State Badge / Action Button -->
+								{#if stateConfig && !currentTopology.is_locked && !$autoRebuild}
+									<div class="flex flex-col items-center gap-2">
+										<div class="flex items-center">
+											<StateBadge
+												disabled={stateConfig?.disabled || false}
+												Icon={stateConfig.icon}
+												label={stateConfig.buttonText}
+												cls={stateConfig.class}
+												onClick={stateConfig.action}
+											/>
+										</div>
+									</div>
+								{/if}
+							</div>
+
+							<div class="card-divider-v self-stretch"></div>
+						{/if}
+					{/if}
+
+					{#if topologiesData.length > 0}
+						<RichSelect
+							label=""
+							selectedValue={currentTopology.id}
+							displayComponent={TopologyDisplay}
+							onSelect={handleTopologyChange}
+							options={topologiesData}
+						/>
 					{/if}
 				{/if}
 
-				{#if topologiesData.length > 0}
-					<RichSelect
-						label=""
-						selectedValue={currentTopology.id}
-						displayComponent={TopologyDisplay}
-						onSelect={handleTopologyChange}
-						options={topologiesData}
+				{#if !isReadOnly}
+					{#if currentTopology}
+						<div class="card-divider-v self-stretch"></div>
+					{/if}
+
+					<div class="flex items-center gap-4 py-2">
+						{#if currentTopology}
+							<button class="btn-primary" onclick={handleEditTopology}>
+								<Edit class="my-1 h-4 w-4" />
+							</button>
+						{/if}
+
+						<button class="btn-primary" onclick={handleCreateTopology}>
+							<Plus class="my-1 h-4 w-4" />
+						</button>
+
+						{#if currentTopology}
+							<button class="btn-danger" onclick={handleDelete}>
+								<Trash2 class="my-1 h-5 w-5" />
+							</button>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
+			<!-- Contextual Info Banner -->
+			{#if currentTopology && stateConfig}
+				{#if stateConfig.type === 'locked'}
+					<InlineInfo
+						dismissableKey="topology-locked-info"
+						title={topology_locked()}
+						body={topology_lockedInfoBody()}
+					/>
+				{:else if stateConfig.type === 'stale_conflicts'}
+					<InlineDanger
+						dismissableKey="topology-conflict-info"
+						title={topology_conflictsDetected()}
+						body={topology_conflictsDetectedBody()}
+					/>
+				{:else if stateConfig.type === 'stale_safe'}
+					<InlineWarning
+						dismissableKey="topology-refresh-info"
+						title={topology_staleData()}
+						body={topology_staleDataBody()}
 					/>
 				{/if}
 			{/if}
 
-			{#if !isReadOnly}
-				{#if currentTopology}
-					<div class="card-divider-v self-stretch"></div>
-				{/if}
-
-				<div class="flex items-center gap-4 py-2">
-					{#if currentTopology}
-						<button class="btn-primary" onclick={handleEditTopology}>
-							<Edit class="my-1 h-4 w-4" />
-						</button>
-					{/if}
-
-					<button class="btn-primary" onclick={handleCreateTopology}>
-						<Plus class="my-1 h-4 w-4" />
-					</button>
-
-					{#if currentTopology}
-						<button class="btn-danger" onclick={handleDelete}>
-							<Trash2 class="my-1 h-5 w-5" />
-						</button>
-					{/if}
+			{#if isLoading}
+				<Loading />
+			{:else if currentTopology}
+				<div class="relative">
+					<TopologyOptionsPanel
+						{isReadOnly}
+						onClearSelection={clearMultiSelect}
+						onGroupCreated={() => {
+							clearMultiSelect();
+							handleRefresh();
+						}}
+					/>
+					<TopologyViewer
+						bind:this={topologyViewer}
+						onToggleLock={handleToggleLock}
+						onRebuild={handleRefresh}
+						{isActive}
+					/>
+				</div>
+			{:else}
+				<div class="card card-static text-secondary">
+					{topology_noTopologySelected()}
 				</div>
 			{/if}
 		</div>
 
-		<!-- Contextual Info Banner -->
-		{#if currentTopology && stateConfig}
-			{#if stateConfig.type === 'locked'}
-				<InlineInfo
-					dismissableKey="topology-locked-info"
-					title={topology_locked()}
-					body={topology_lockedInfoBody()}
-				/>
-			{:else if stateConfig.type === 'stale_conflicts'}
-				<InlineDanger
-					dismissableKey="topology-conflict-info"
-					title={topology_conflictsDetected()}
-					body={topology_conflictsDetectedBody()}
-				/>
-			{:else if stateConfig.type === 'stale_safe'}
-				<InlineWarning
-					dismissableKey="topology-refresh-info"
-					title={topology_staleData()}
-					body={topology_staleDataBody()}
-				/>
-			{/if}
+		{#if currentTopology}
+			<ExportModal topologyId={currentTopology.id} bind:isOpen={isExportModalOpen} />
 		{/if}
-
-		{#if isLoading}
-			<Loading />
-		{:else if currentTopology}
-			<div class="relative">
-				<TopologyOptionsPanel
-					{isReadOnly}
-					onClearSelection={clearMultiSelect}
-					onGroupCreated={() => {
-						clearMultiSelect();
-						handleRefresh();
-					}}
-				/>
-				<TopologyViewer
-					bind:this={topologyViewer}
-					onToggleLock={handleToggleLock}
-					onRebuild={handleRefresh}
-					{isActive}
-				/>
-			</div>
-		{:else}
-			<div class="card card-static text-secondary">
-				{topology_noTopologySelected()}
-			</div>
-		{/if}
-	</div>
-
-	{#if currentTopology}
-		<ExportModal topologyId={currentTopology.id} bind:isOpen={isExportModalOpen} />
 	{/if}
 </SvelteFlowProvider>
 

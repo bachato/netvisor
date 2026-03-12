@@ -8,6 +8,7 @@
 	import TabHeader from '$lib/shared/components/layout/TabHeader.svelte';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
+	import PreDaemonEmptyState from '$lib/shared/components/layout/PreDaemonEmptyState.svelte';
 	import HostEditor from './HostEditModal/HostEditor.svelte';
 	import HostConsolidationModal from './HostConsolidationModal.svelte';
 	import HostExportModal from './HostExportModal.svelte';
@@ -56,7 +57,9 @@
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import type { components } from '$lib/api/schema';
+	import { hasDaemon } from '$lib/shared/onboarding/checklist';
 
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	type HostOrderField = components['schemas']['HostOrderField'];
 	type OrderDirection = components['schemas']['OrderDirection'];
 
@@ -76,6 +79,7 @@
 	const organizationQuery = useOrganizationQuery();
 	let org = $derived(organizationQuery.data);
 	let hostLimit = $derived(org?.plan?.included_hosts ?? null);
+	let onboarding = $derived((org?.onboarding ?? []) as OnboardingOperation[]);
 
 	const tagsQuery = useTagsQuery();
 	// Paginated hosts with server-side pagination, ordering, and tag filtering
@@ -371,8 +375,10 @@
 		</svelte:fragment>
 	</TabHeader>
 
-	<!-- Loading state (only on initial load) -->
-	{#if isInitialLoading}
+	{#if !hasDaemon(onboarding)}
+		<PreDaemonEmptyState entityName="Hosts" />
+	{:else if isInitialLoading}
+		<!-- Loading state (only on initial load) -->
 		<Loading />
 	{:else if hostsData.length === 0 && !hostsPagination}
 		<!-- Empty state -->
