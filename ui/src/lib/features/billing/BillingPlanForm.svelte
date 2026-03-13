@@ -324,9 +324,9 @@
 	}
 </script>
 
-<div class="flex min-h-0 flex-1 flex-col {className}">
-	<!-- Header with Toggles (fixed above scroll) -->
-	<div class="flex shrink-0 flex-wrap items-center justify-center px-4 py-3 lg:px-6">
+<div class={className}>
+	<!-- Header with Toggles -->
+	<div class="flex flex-wrap items-center justify-center px-4 py-2 lg:px-6">
 		{#if showGithubStars}
 			<!-- <GithubStars /> -->
 		{/if}
@@ -338,152 +338,129 @@
 		/>
 	</div>
 
-	<!-- Scrollable area for plan cards and comparison grid -->
-	<div class="min-h-0 flex-1 overflow-y-auto">
-		<!-- Plan Cards -->
-		<div class="plan-cards-container px-4 lg:px-6">
-			<div class="plan-cards-grid">
-				{#each filteredPlans as plan (plan.type + plan.rate)}
-					{@const IconComponent = billingPlanHelpers.getIconComponent(plan.type)}
-					{@const colorHelper = billingPlanHelpers.getColorHelper(plan.type)}
-					{@const isRecommended = recommendedPlan === plan.type}
-					{@const description = billingPlanHelpers.getDescription(plan.type)}
-					{@const hosting = getHosting(plan)}
-					{@const commercial = isCommercial(plan)}
-					{@const trial = hasTrial(plan)}
-					{@const enterprise = isEnterprise(plan)}
-					{@const metadata = billingPlanHelpers.getMetadata(plan.type)}
-					{@const incrementalFeatures = metadata?.incremental_features ?? []}
-					{@const sortedIncrFeatures = sortFeaturesByCategory(incrementalFeatures)}
-					{@const prevTier = metadata?.previous_tier}
+	<!-- Plan Cards -->
+	<div class="plan-cards-container px-4 lg:px-6">
+		<div class="plan-cards-grid">
+			{#each filteredPlans as plan (plan.type + plan.rate)}
+				{@const IconComponent = billingPlanHelpers.getIconComponent(plan.type)}
+				{@const colorHelper = billingPlanHelpers.getColorHelper(plan.type)}
+				{@const isRecommended = recommendedPlan === plan.type}
+				{@const description = billingPlanHelpers.getDescription(plan.type)}
+				{@const hosting = getHosting(plan)}
+				{@const commercial = isCommercial(plan)}
+				{@const trial = hasTrial(plan)}
+				{@const enterprise = isEnterprise(plan)}
+				{@const metadata = billingPlanHelpers.getMetadata(plan.type)}
+				{@const incrementalFeatures = metadata?.incremental_features ?? []}
+				{@const sortedIncrFeatures = sortFeaturesByCategory(incrementalFeatures)}
+				{@const prevTier = metadata?.previous_tier}
 
-					<div
-						class="plan-card card card-static flex flex-col {isRecommended
-							? 'plan-card-recommended'
-							: ''}"
-					>
-						<!-- Recommended Badge -->
-						{#if isRecommended}
-							<div class="-mt-3 mb-1 flex justify-center">
-								<Tag label="Recommended" color="Yellow" />
-							</div>
-						{/if}
+				<div
+					class="plan-card card card-static flex flex-col {isRecommended
+						? 'plan-card-recommended'
+						: ''}"
+				>
+					<!-- Recommended Badge -->
+					{#if isRecommended}
+						<div class="-mt-3 mb-1 flex justify-center">
+							<Tag label="Recommended" color="Yellow" />
+						</div>
+					{/if}
 
-						<!-- Plan Header -->
-						<div class="flex flex-col items-center gap-2 pb-4">
-							<div class="flex items-center gap-2">
-								<IconComponent class="{colorHelper.icon} h-5 w-5 lg:h-6 lg:w-6" />
-								<span class="text-primary text-base font-semibold lg:text-lg">
-									{billingPlanHelpers.getName(plan.type)}
-								</span>
-							</div>
-
-							{#if showHosting && hosting}
-								<Tag label={getHostingLabel(hosting)} color={getHostingColor(hosting)} />
-							{/if}
+					<!-- Plan Header -->
+					<div class="flex flex-col items-center gap-2 pb-4">
+						<div class="flex items-center gap-2">
+							<IconComponent class="{colorHelper.icon} h-5 w-5 lg:h-6 lg:w-6" />
+							<span class="text-primary text-base font-semibold lg:text-lg">
+								{billingPlanHelpers.getName(plan.type)}
+							</span>
 						</div>
 
-						<!-- Pricing -->
-						<div class="flex flex-col items-center gap-1 pb-4">
-							<div class="flex items-baseline gap-1">
-								<span class="text-primary text-2xl font-bold lg:text-3xl">
-									{hasExtras(plan)
-										? formatCents(
-												plan.rate === 'Year'
-													? getEstimatedTotal(plan) / 12
-													: getEstimatedTotal(plan)
-											)
-										: formatBasePricing(plan)}
-								</span>
-								{#if formatRate(plan)}
-									<span class="text-tertiary text-sm">{formatRate(plan)}</span>
+						{#if showHosting && hosting}
+							<Tag label={getHostingLabel(hosting)} color={getHostingColor(hosting)} />
+						{/if}
+					</div>
+
+					<!-- Pricing -->
+					<div class="flex flex-col items-center gap-1 pb-4">
+						<div class="flex items-baseline gap-1">
+							<span class="text-primary text-2xl font-bold lg:text-3xl">
+								{hasExtras(plan)
+									? formatCents(
+											plan.rate === 'Year' ? getEstimatedTotal(plan) / 12 : getEstimatedTotal(plan)
+										)
+									: formatBasePricing(plan)}
+							</span>
+							{#if formatRate(plan)}
+								<span class="text-tertiary text-sm">{formatRate(plan)}</span>
+							{/if}
+						</div>
+						{#if hasExtras(plan)}
+							<div class="text-tertiary text-center text-xs">
+								Base {formatCents(plan.rate === 'Year' ? plan.base_cents / 12 : plan.base_cents)}
+								{#if getExtraSeats(plan.type) > 0}
+									{@const seatCost = getExtraSeats(plan.type) * (plan.seat_cents ?? 0)}
+									+ {getExtraSeats(plan.type)}
+									{getExtraSeats(plan.type) === 1 ? 'seat' : 'seats'} ({formatCents(
+										plan.rate === 'Year' ? seatCost / 12 : seatCost
+									)})
+								{/if}
+								{#if getExtraNetworks(plan.type) > 0}
+									{@const netCost = getExtraNetworks(plan.type) * (plan.network_cents ?? 0)}
+									+ {getExtraNetworks(plan.type)}
+									{getExtraNetworks(plan.type) === 1 ? 'network' : 'networks'} ({formatCents(
+										plan.rate === 'Year' ? netCost / 12 : netCost
+									)})
 								{/if}
 							</div>
-							{#if hasExtras(plan)}
-								<div class="text-tertiary text-center text-xs">
-									Base {formatCents(plan.rate === 'Year' ? plan.base_cents / 12 : plan.base_cents)}
-									{#if getExtraSeats(plan.type) > 0}
-										{@const seatCost = getExtraSeats(plan.type) * (plan.seat_cents ?? 0)}
-										+ {getExtraSeats(plan.type)}
-										{getExtraSeats(plan.type) === 1 ? 'seat' : 'seats'} ({formatCents(
-											plan.rate === 'Year' ? seatCost / 12 : seatCost
-										)})
-									{/if}
-									{#if getExtraNetworks(plan.type) > 0}
-										{@const netCost = getExtraNetworks(plan.type) * (plan.network_cents ?? 0)}
-										+ {getExtraNetworks(plan.type)}
-										{getExtraNetworks(plan.type) === 1 ? 'network' : 'networks'} ({formatCents(
-											plan.rate === 'Year' ? netCost / 12 : netCost
-										)})
-									{/if}
-								</div>
-							{/if}
-							<div
-								class={`text-tertiary text-xs ${showBilledYearly(plan) ? 'opacity-100' : 'opacity-0'}`}
-							>
-								billed yearly
-							</div>
-							<div
-								class={`text-xs font-medium text-success ${(hasTrial(plan) || (isCurrentlyTrialing && plan.trial_days > 0)) && !hasCustomPrice(plan) ? 'opacity-100' : 'opacity-0'}`}
-							>
-								{isCurrentlyTrialing ? 'Your trial continues' : `${plan.trial_days}-day free trial`}
-							</div>
-						</div>
-
-						<!-- Description -->
-						{#if description}
-							<p class="text-tertiary pb-4 text-center text-xs leading-relaxed lg:text-sm">
-								{description}
-							</p>
 						{/if}
+						<div
+							class={`text-tertiary text-xs ${showBilledYearly(plan) ? 'opacity-100' : 'opacity-0'}`}
+						>
+							billed yearly
+						</div>
+						<div
+							class={`text-xs font-medium text-success ${(hasTrial(plan) || (isCurrentlyTrialing && plan.trial_days > 0)) && !hasCustomPrice(plan) ? 'opacity-100' : 'opacity-0'}`}
+						>
+							{isCurrentlyTrialing ? 'Your trial continues' : `${plan.trial_days}-day free trial`}
+						</div>
+					</div>
 
-						<!-- CTA Button -->
-						<div class="py-4" style="border-color: var(--color-border)">
-							{#if enterprise && onPlanInquiry}
-								<button
-									type="button"
-									onclick={() => onPlanInquiry(plan)}
-									disabled={loadingPlanType !== null}
-									class="btn-primary w-full text-sm"
-								>
-									Request Information
-								</button>
-							{:else if hosting === 'Cloud'}
-								<button
-									type="button"
-									onclick={() => handlePlanSelect(plan)}
-									disabled={loadingPlanType !== null}
-									class="btn-primary w-full text-sm"
-								>
-									{#if loadingPlanType === plan.type}
-										<Loader2 class="mx-auto h-4 w-4 animate-spin" />
-									{:else if isCurrentlyTrialing}
-										Switch plan
-									{:else}
-										{trial ? `Start ${plan.trial_days}-day free trial` : 'Get Started'}
-									{/if}
-								</button>
-							{:else if hosting === 'SelfHosted'}
-								{#if commercial && onPlanInquiry}
-									<button
-										type="button"
-										onclick={() => onPlanInquiry(plan)}
-										disabled={loadingPlanType !== null}
-										class="btn-primary w-full text-sm"
-									>
-										Contact Us
-									</button>
+					<!-- Description -->
+					{#if description}
+						<p class="text-tertiary pb-4 text-center text-xs leading-relaxed lg:text-sm">
+							{description}
+						</p>
+					{/if}
+
+					<!-- CTA Button -->
+					<div class="py-4" style="border-color: var(--color-border)">
+						{#if enterprise && onPlanInquiry}
+							<button
+								type="button"
+								onclick={() => onPlanInquiry(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								Request Information
+							</button>
+						{:else if hosting === 'Cloud'}
+							<button
+								type="button"
+								onclick={() => handlePlanSelect(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								{#if loadingPlanType === plan.type}
+									<Loader2 class="mx-auto h-4 w-4 animate-spin" />
+								{:else if isCurrentlyTrialing}
+									Switch plan
 								{:else}
-									<a
-										href="https://github.com/scanopy/scanopy"
-										target="_blank"
-										rel="noopener noreferrer"
-										class="btn-secondary inline-block w-full text-center text-sm"
-									>
-										View on GitHub
-									</a>
+									{trial ? `Start ${plan.trial_days}-day free trial` : 'Get Started'}
 								{/if}
-							{:else if commercial && onPlanInquiry}
+							</button>
+						{:else if hosting === 'SelfHosted'}
+							{#if commercial && onPlanInquiry}
 								<button
 									type="button"
 									onclick={() => onPlanInquiry(plan)}
@@ -492,216 +469,167 @@
 								>
 									Contact Us
 								</button>
-							{/if}
-						</div>
-
-						<!-- Included Resources with Stepper Controls -->
-						<div class="space-y-2 border-b pb-4" style="border-color: var(--color-border)">
-							<!-- Seats -->
-							<div class="flex items-center justify-between text-sm">
-								<div class="flex flex-col">
-									<span class="text-secondary">Seats</span>
-									{#if plan.seat_cents}
-										<span class="text-tertiary text-xs">{formatSeatAddonPricing(plan)}</span>
-									{/if}
-								</div>
-								{#if plan.seat_cents && plan.included_seats !== null}
-									<div class="stepper">
-										<button
-											type="button"
-											class="stepper-btn"
-											disabled={getExtraSeats(plan.type) === 0}
-											onclick={() => (extraSeats = adjustExtra(extraSeats, plan.type, -1))}
-										>
-											<Minus class="h-3 w-3" />
-										</button>
-										<span class="text-primary w-8 text-center text-sm font-medium">
-											{(plan.included_seats ?? 0) + getExtraSeats(plan.type)}
-										</span>
-										<button
-											type="button"
-											class="stepper-btn"
-											onclick={() => (extraSeats = adjustExtra(extraSeats, plan.type, 1))}
-										>
-											<Plus class="h-3 w-3" />
-										</button>
-									</div>
-								{:else}
-									<span class="text-primary font-medium">
-										{formatIncludedValue(plan.included_seats, plan)}
-									</span>
-								{/if}
-							</div>
-
-							<!-- Networks -->
-							<div class="flex items-center justify-between text-sm">
-								<div class="flex flex-col">
-									<span class="text-secondary">Networks</span>
-									{#if plan.network_cents}
-										<span class="text-tertiary text-xs">{formatNetworkAddonPricing(plan)}</span>
-									{/if}
-								</div>
-								{#if plan.network_cents && plan.included_networks !== null}
-									<div class="stepper">
-										<button
-											type="button"
-											class="stepper-btn"
-											disabled={getExtraNetworks(plan.type) === 0}
-											onclick={() => (extraNetworks = adjustExtra(extraNetworks, plan.type, -1))}
-										>
-											<Minus class="h-3 w-3" />
-										</button>
-										<span class="text-primary w-8 text-center text-sm font-medium">
-											{(plan.included_networks ?? 0) + getExtraNetworks(plan.type)}
-										</span>
-										<button
-											type="button"
-											class="stepper-btn"
-											onclick={() => (extraNetworks = adjustExtra(extraNetworks, plan.type, 1))}
-										>
-											<Plus class="h-3 w-3" />
-										</button>
-									</div>
-								{:else}
-									<span class="text-primary font-medium">
-										{formatIncludedValue(plan.included_networks, plan)}
-									</span>
-								{/if}
-							</div>
-
-							<!-- Hosts -->
-							<div class="flex items-center justify-between text-sm">
-								<div class="flex flex-col">
-									<span class="text-secondary">Hosts</span>
-									{#if plan.host_cents}
-										<span class="text-tertiary text-xs">{formatHostAddonPricing(plan)}</span>
-									{/if}
-								</div>
-								<span class="text-primary font-medium">
-									{formatIncludedValue(plan.included_hosts, plan)}
-								</span>
-							</div>
-						</div>
-
-						<!-- Incremental Features -->
-						<div class="flex-1 py-4">
-							{#if prevTier}
-								<p class="text-secondary mb-4 text-xs font-medium">
-									Everything in <span class="text-primary"
-										>{billingPlanHelpers.getName(prevTier)}</span
-									>, plus:
-								</p>
-							{:else if plan.type !== 'Free' && incrementalFeatures.length > 0}
-								<p class="text-tertiary mb-2 text-xs">Key features:</p>
-							{/if}
-							<ul class="space-y-1.5">
-								{#each sortedIncrFeatures as featureKey, i (featureKey)}
-									{@const category = featureHelpers.getCategory(featureKey)}
-									{@const prevCategory =
-										i > 0 ? featureHelpers.getCategory(sortedIncrFeatures[i - 1]) : null}
-									{#if category !== prevCategory}
-										<li
-											class="text-tertiary text-[10px] font-medium uppercase tracking-wider {i > 0
-												? 'mt-2'
-												: ''}"
-										>
-											{category}
-										</li>
-									{/if}
-									{@const comingSoon = isComingSoon(featureKey)}
-									<li class="flex items-start gap-2 text-sm">
-										<Check
-											class="mt-0.5 h-4 w-4 flex-shrink-0 {comingSoon
-												? 'text-gray-500'
-												: 'text-success'}"
-										/>
-										<span
-											class={comingSoon ? 'text-tertiary' : 'text-secondary'}
-											data-tooltip={featureHelpers.getDescription(featureKey)}
-											use:tooltip>{featureHelpers.getName(featureKey)}</span
-										>
-										{#if comingSoon}
-											<Tag label="Coming Soon" color="Gray" />
-										{/if}
-									</li>
-								{/each}
-							</ul>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-
-		<!-- Full Comparison Grid (expandable, inside scroll area) -->
-		{#if showFullComparison}
-			<div class="card mx-4 mt-3 overflow-auto p-0 lg:mx-10">
-				<!-- Plan Name Headers -->
-				<div
-					class="comparison-row comparison-header-row"
-					style="grid-template-columns: {gridColumns}"
-				>
-					<div class="comparison-label-cell">
-						<div class="text-xs font-medium lg:text-sm">Feature</div>
-					</div>
-					{#each filteredPlans as plan (plan.type)}
-						<div class="comparison-value-cell">
-							<span class="text-primary text-xs font-semibold lg:text-sm"
-								>{billingPlanHelpers.getName(plan.type)}</span
-							>
-						</div>
-					{/each}
-				</div>
-
-				{#each [...groupedFeatures.entries()] as [category, categoryFeatures] (category)}
-					<!-- Category Header -->
-					<div class="comparison-category-row">
-						<span
-							class="text-secondary p-2 text-xs font-semibold uppercase tracking-wide lg:p-3 lg:text-sm"
-						>
-							{category}
-						</span>
-					</div>
-
-					{#each categoryFeatures as featureKey (featureKey)}
-						{@const comingSoon = isComingSoon(featureKey)}
-						<div class="comparison-row" style="grid-template-columns: {gridColumns}">
-							<div class="comparison-label-cell">
-								<div
-									class="text-xs font-medium lg:text-sm"
-									data-tooltip={featureHelpers.getDescription(featureKey)}
-									use:tooltip
+							{:else}
+								<a
+									href="https://github.com/scanopy/scanopy"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="btn-secondary inline-block w-full text-center text-sm"
 								>
-									{featureHelpers.getName(featureKey)}
-								</div>
-							</div>
-							{#each filteredPlans as plan (plan.type)}
-								{@const value = getFeatureValue(plan.type, featureKey)}
-								<div class="comparison-value-cell">
-									{#if comingSoon && value}
-										<Tag label="Coming Soon" color="Gray" />
-									{:else if typeof value === 'boolean'}
-										{#if value}
-											<Check class="mx-auto h-4 w-4 text-success lg:h-5 lg:w-5" />
-										{:else}
-											<X class="text-muted mx-auto h-4 w-4 lg:h-5 lg:w-5" />
-										{/if}
-									{:else if value === null}
-										<span class="text-tertiary">&mdash;</span>
-									{:else}
-										<span class="text-secondary text-xs lg:text-sm">{value}</span>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					{/each}
-				{/each}
-			</div>
-		{/if}
-	</div>
-	<!-- end scrollable area -->
+									View on GitHub
+								</a>
+							{/if}
+						{:else if commercial && onPlanInquiry}
+							<button
+								type="button"
+								onclick={() => onPlanInquiry(plan)}
+								disabled={loadingPlanType !== null}
+								class="btn-primary w-full text-sm"
+							>
+								Contact Us
+							</button>
+						{/if}
+					</div>
 
-	<!-- Compare All Features Toggle (fixed below scroll) -->
-	<div class="flex shrink-0 justify-center py-2">
+					<!-- Included Resources with Stepper Controls -->
+					<div class="space-y-2 border-b pb-4" style="border-color: var(--color-border)">
+						<!-- Seats -->
+						<div class="flex items-center justify-between text-sm">
+							<div class="flex flex-col">
+								<span class="text-secondary">Seats</span>
+								{#if plan.seat_cents}
+									<span class="text-tertiary text-xs">{formatSeatAddonPricing(plan)}</span>
+								{/if}
+							</div>
+							{#if plan.seat_cents && plan.included_seats !== null}
+								<div class="stepper">
+									<button
+										type="button"
+										class="stepper-btn"
+										disabled={getExtraSeats(plan.type) === 0}
+										onclick={() => (extraSeats = adjustExtra(extraSeats, plan.type, -1))}
+									>
+										<Minus class="h-3 w-3" />
+									</button>
+									<span class="text-primary w-8 text-center text-sm font-medium">
+										{(plan.included_seats ?? 0) + getExtraSeats(plan.type)}
+									</span>
+									<button
+										type="button"
+										class="stepper-btn"
+										onclick={() => (extraSeats = adjustExtra(extraSeats, plan.type, 1))}
+									>
+										<Plus class="h-3 w-3" />
+									</button>
+								</div>
+							{:else}
+								<span class="text-primary font-medium">
+									{formatIncludedValue(plan.included_seats, plan)}
+								</span>
+							{/if}
+						</div>
+
+						<!-- Networks -->
+						<div class="flex items-center justify-between text-sm">
+							<div class="flex flex-col">
+								<span class="text-secondary">Networks</span>
+								{#if plan.network_cents}
+									<span class="text-tertiary text-xs">{formatNetworkAddonPricing(plan)}</span>
+								{/if}
+							</div>
+							{#if plan.network_cents && plan.included_networks !== null}
+								<div class="stepper">
+									<button
+										type="button"
+										class="stepper-btn"
+										disabled={getExtraNetworks(plan.type) === 0}
+										onclick={() => (extraNetworks = adjustExtra(extraNetworks, plan.type, -1))}
+									>
+										<Minus class="h-3 w-3" />
+									</button>
+									<span class="text-primary w-8 text-center text-sm font-medium">
+										{(plan.included_networks ?? 0) + getExtraNetworks(plan.type)}
+									</span>
+									<button
+										type="button"
+										class="stepper-btn"
+										onclick={() => (extraNetworks = adjustExtra(extraNetworks, plan.type, 1))}
+									>
+										<Plus class="h-3 w-3" />
+									</button>
+								</div>
+							{:else}
+								<span class="text-primary font-medium">
+									{formatIncludedValue(plan.included_networks, plan)}
+								</span>
+							{/if}
+						</div>
+
+						<!-- Hosts -->
+						<div class="flex items-center justify-between text-sm">
+							<div class="flex flex-col">
+								<span class="text-secondary">Hosts</span>
+								{#if plan.host_cents}
+									<span class="text-tertiary text-xs">{formatHostAddonPricing(plan)}</span>
+								{/if}
+							</div>
+							<span class="text-primary font-medium">
+								{formatIncludedValue(plan.included_hosts, plan)}
+							</span>
+						</div>
+					</div>
+
+					<!-- Incremental Features -->
+					<div class="flex-1 py-4">
+						{#if prevTier}
+							<p class="text-secondary mb-4 text-xs font-medium">
+								Everything in <span class="text-primary"
+									>{billingPlanHelpers.getName(prevTier)}</span
+								>, plus:
+							</p>
+						{:else if plan.type !== 'Free' && incrementalFeatures.length > 0}
+							<p class="text-tertiary mb-2 text-xs">Key features:</p>
+						{/if}
+						<ul class="space-y-1.5">
+							{#each sortedIncrFeatures as featureKey, i (featureKey)}
+								{@const category = featureHelpers.getCategory(featureKey)}
+								{@const prevCategory =
+									i > 0 ? featureHelpers.getCategory(sortedIncrFeatures[i - 1]) : null}
+								{#if category !== prevCategory}
+									<li
+										class="text-tertiary text-[10px] font-medium uppercase tracking-wider {i > 0
+											? 'mt-2'
+											: ''}"
+									>
+										{category}
+									</li>
+								{/if}
+								{@const comingSoon = isComingSoon(featureKey)}
+								<li class="flex items-start gap-2 text-sm">
+									<Check
+										class="mt-0.5 h-4 w-4 flex-shrink-0 {comingSoon
+											? 'text-gray-500'
+											: 'text-success'}"
+									/>
+									<span
+										class={comingSoon ? 'text-tertiary' : 'text-secondary'}
+										data-tooltip={featureHelpers.getDescription(featureKey)}
+										use:tooltip>{featureHelpers.getName(featureKey)}</span
+									>
+									{#if comingSoon}
+										<Tag label="Coming Soon" color="Gray" />
+									{/if}
+								</li>
+							{/each}
+						</ul>
+					</div>
+				</div>
+			{/each}
+		</div>
+	</div>
+
+	<!-- Compare All Features Toggle -->
+	<div class="flex justify-center py-4">
 		<button
 			type="button"
 			class="btn-primary flex items-center gap-2 text-sm"
@@ -715,6 +643,72 @@
 			{/if}
 		</button>
 	</div>
+
+	<!-- Full Comparison Grid (expandable) -->
+	{#if showFullComparison}
+		<div class="card mx-4 overflow-auto p-0 lg:mx-10">
+			<!-- Plan Name Headers -->
+			<div
+				class="comparison-row comparison-header-row"
+				style="grid-template-columns: {gridColumns}"
+			>
+				<div class="comparison-label-cell">
+					<div class="text-xs font-medium lg:text-sm">Feature</div>
+				</div>
+				{#each filteredPlans as plan (plan.type)}
+					<div class="comparison-value-cell">
+						<span class="text-primary text-xs font-semibold lg:text-sm"
+							>{billingPlanHelpers.getName(plan.type)}</span
+						>
+					</div>
+				{/each}
+			</div>
+
+			{#each [...groupedFeatures.entries()] as [category, categoryFeatures] (category)}
+				<!-- Category Header -->
+				<div class="comparison-category-row">
+					<span
+						class="text-secondary p-2 text-xs font-semibold uppercase tracking-wide lg:p-3 lg:text-sm"
+					>
+						{category}
+					</span>
+				</div>
+
+				{#each categoryFeatures as featureKey (featureKey)}
+					{@const comingSoon = isComingSoon(featureKey)}
+					<div class="comparison-row" style="grid-template-columns: {gridColumns}">
+						<div class="comparison-label-cell">
+							<div
+								class="text-xs font-medium lg:text-sm"
+								data-tooltip={featureHelpers.getDescription(featureKey)}
+								use:tooltip
+							>
+								{featureHelpers.getName(featureKey)}
+							</div>
+						</div>
+						{#each filteredPlans as plan (plan.type)}
+							{@const value = getFeatureValue(plan.type, featureKey)}
+							<div class="comparison-value-cell">
+								{#if comingSoon && value}
+									<Tag label="Coming Soon" color="Gray" />
+								{:else if typeof value === 'boolean'}
+									{#if value}
+										<Check class="mx-auto h-4 w-4 text-success lg:h-5 lg:w-5" />
+									{:else}
+										<X class="text-muted mx-auto h-4 w-4 lg:h-5 lg:w-5" />
+									{/if}
+								{:else if value === null}
+									<span class="text-tertiary">&mdash;</span>
+								{:else}
+									<span class="text-secondary text-xs lg:text-sm">{value}</span>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/each}
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>

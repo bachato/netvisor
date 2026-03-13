@@ -165,8 +165,9 @@
 	showCloseButton={false}
 	floatingCloseButton={dismissible}
 	borderless={true}
+	compactPadding={true}
 >
-	<div class="flex min-h-0 flex-1 flex-col pb-0 pt-0">
+	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
 		<BillingPlanForm
 			plans={plansData}
 			{billingPlanHelpers}

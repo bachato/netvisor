@@ -39,6 +39,7 @@
 		borderless = false,
 		floatingCloseButton = false,
 		fixedHeight = false,
+		compactPadding = false,
 		tabs = [],
 		activeTab = $bindable(''),
 		tabStyle = 'tabs',
@@ -63,6 +64,7 @@
 		borderless?: boolean;
 		floatingCloseButton?: boolean;
 		fixedHeight?: boolean;
+		compactPadding?: boolean;
 		tabs?: ModalTab[];
 		activeTab?: string;
 		tabStyle?: 'tabs' | 'stepper';
@@ -196,7 +198,9 @@
 {#if isOpen}
 	<!-- Modal backdrop -->
 	<div
-		class={showBackdrop ? 'modal-page modal-background' : 'modal-page'}
+		class="{showBackdrop ? 'modal-page modal-background' : 'modal-page'} {compactPadding
+			? '!py-2 sm:!py-4'
+			: ''}"
 		onclick={handleBackdropClick}
 		role="dialog"
 		aria-modal="true"
@@ -219,10 +223,13 @@
 
 		<!-- Modal content -->
 		<div
-			class="relative {borderless ? '' : 'modal-container'} {sizeClasses[size]} {size === 'full' ||
-			fixedHeight
-				? 'h-[calc(100vh-2rem)] sm:h-[calc(100vh-8rem)]'
-				: 'max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-8rem)]'} flex w-full flex-col"
+			class="relative {borderless ? '' : 'modal-container'} {sizeClasses[size]} {compactPadding
+				? size === 'full' || fixedHeight
+					? 'h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)]'
+					: 'max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)]'
+				: size === 'full' || fixedHeight
+					? 'h-[calc(100vh-2rem)] sm:h-[calc(100vh-8rem)]'
+					: 'max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-8rem)]'} flex w-full flex-col"
 		>
 			<!-- Floating close button (absolute positioned within modal container) -->
 			{#if floatingCloseButton && onClose}
