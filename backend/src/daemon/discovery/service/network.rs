@@ -12,6 +12,7 @@ use crate::server::if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBas
 use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
 use crate::server::ports::r#impl::base::PortType;
 use crate::server::services::r#impl::base::{Service, ServiceMatchBaselineParams};
+use crate::server::shared::types::entities::EntitySource;
 use crate::server::snmp_credentials::r#impl::discovery::{
     SnmpCredentialMapping, SnmpQueryCredential,
 };
@@ -19,7 +20,11 @@ use crate::server::subnets::r#impl::types::SubnetTypeDiscriminants;
 use crate::{
     daemon::utils::base::DaemonUtils,
     server::{
-        daemons::r#impl::api::DaemonDiscoveryRequest, hosts::r#impl::base::Host,
+        daemons::r#impl::{api::DaemonDiscoveryRequest, base::DaemonMode},
+        hosts::r#impl::{
+            api::{DiscoveryHostRequest, HostResponse},
+            base::{Host, HostBase},
+        },
         subnets::r#impl::base::Subnet,
     },
 };
@@ -98,6 +103,8 @@ pub struct DeepScanParams<'a> {
     scan_controller: Arc<ScanConcurrencyController>,
     /// Whether to probe raw-socket ports (9100-9107) during endpoint scanning
     probe_raw_socket_ports: bool,
+    /// Host ID from early reporting — reused in final create_host to update rather than duplicate
+    early_host_id: Uuid,
 }
 
 impl CreatesDiscoveredEntities for DiscoveryRunner<NetworkScanDiscovery> {}
@@ -621,6 +628,11 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             }
         };
 
+        let mut early_reported_hosts: HashMap<
+            IpAddr,
+            tokio::task::JoinHandle<Result<Uuid, Error>>,
+        > = HashMap::new();
+
         loop {
             tokio::select! {
                 // Try to receive new hosts from the channel
@@ -629,6 +641,58 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         Some((ip, subnet, mac)) => {
                             hosts_discovered.fetch_add(1, Ordering::Relaxed);
                             *last_activity.lock().unwrap() = Instant::now();
+
+                            // Early-report a minimal host so the UI shows it immediately
+                            if let std::collections::hash_map::Entry::Vacant(e) = early_reported_hosts.entry(ip) {
+                                let early_subnet = subnet.clone();
+                                let early_cancel = cancel.clone();
+                                let service = self.service.clone();
+                                let early_handle = tokio::spawn(async move {
+                                    let host = Host::new(HostBase {
+                                        name: ip.to_string(),
+                                        network_id: early_subnet.base.network_id,
+                                        source: EntitySource::Discovery { metadata: vec![] },
+                                        ..Default::default()
+                                    });
+                                    let host_id = host.id;
+                                    let interface = Interface::new(InterfaceBase {
+                                        network_id: early_subnet.base.network_id,
+                                        host_id: Uuid::nil(),
+                                        name: None,
+                                        subnet_id: early_subnet.id,
+                                        ip_address: ip,
+                                        mac_address: mac,
+                                        position: 0,
+                                    });
+                                    let request = DiscoveryHostRequest {
+                                        host,
+                                        interfaces: vec![interface],
+                                        ports: vec![],
+                                        services: vec![],
+                                        if_entries: vec![],
+                                    };
+                                    service.entity_buffer.push_host(request.clone()).await;
+                                    let mode = service.config_store.get_mode().await?;
+                                    match mode {
+                                        DaemonMode::DaemonPoll => {
+                                            let _response: HostResponse = service
+                                                .api_client
+                                                .post("/api/v1/hosts/discovery", &request, "Failed to create early host")
+                                                .await?;
+                                            Ok(host_id)
+                                        }
+                                        DaemonMode::ServerPoll => {
+                                            let _actual = service
+                                                .entity_buffer
+                                                .await_host(&host_id, Duration::from_secs(120), &early_cancel)
+                                                .await
+                                                .ok_or_else(|| anyhow::anyhow!("Timeout waiting for early host creation"))?;
+                                            Ok(host_id)
+                                        }
+                                    }
+                                });
+                                e.insert(early_handle);
+                            }
 
                             // Spawn deep scan if under concurrency limit, otherwise buffer
                             if pending_scans.len() < deep_scan_concurrency {
@@ -647,7 +711,16 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                 }
                                 let snmp_credentials = self.domain.snmp_credentials.get_credentials_by_specificity(&ip);
                                 let probe_raw_socket_ports = self.domain.probe_raw_socket_ports;
+                                let early_host_handle = early_reported_hosts.remove(&ip);
                                 pending_scans.push(Box::pin(async move {
+                                    let early_host_id = match early_host_handle {
+                                        Some(handle) => match handle.await {
+                                            Ok(Ok(id)) => id,
+                                            _ => Uuid::new_v4(),
+                                        },
+                                        None => Uuid::new_v4(),
+                                    };
+
                                     let result = self
                                         .deep_scan_host(DeepScanParams {
                                             ip,
@@ -663,6 +736,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                             snmp_credentials,
                                             scan_controller,
                                             probe_raw_socket_ports,
+                                            early_host_id,
                                         })
                                         .await;
 
@@ -740,8 +814,17 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                         let snmp_credentials = self.domain.snmp_credentials.get_credentials_by_specificity(&ip);
                         let scan_controller = scan_controller.clone();
                         let probe_raw_socket_ports = self.domain.probe_raw_socket_ports;
+                        let early_host_handle = early_reported_hosts.remove(&ip);
 
                         pending_scans.push(Box::pin(async move {
+                            let early_host_id = match early_host_handle {
+                                Some(handle) => match handle.await {
+                                    Ok(Ok(id)) => id,
+                                    _ => Uuid::new_v4(),
+                                },
+                                None => Uuid::new_v4(),
+                            };
+
                             let result = self
                                 .deep_scan_host(DeepScanParams {
                                     ip,
@@ -757,6 +840,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
                                     snmp_credentials,
                                     scan_controller,
                                     probe_raw_socket_ports,
+                                    early_host_id,
                                 })
                                 .await;
 
@@ -907,6 +991,7 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             snmp_credentials,
             scan_controller,
             probe_raw_socket_ports,
+            early_host_id,
         } = params;
 
         if cancel.is_cancelled() {
@@ -1225,6 +1310,9 @@ impl DiscoveryRunner<NetworkScanDiscovery> {
             )
             .await
         {
+            // Reuse the early-reported host ID so the server updates the existing record
+            host.id = early_host_id;
+
             // Add SNMP system info to host if available
             if let Some(ref info) = snmp_system_info {
                 host.base.sys_descr = info.sys_descr.clone();
