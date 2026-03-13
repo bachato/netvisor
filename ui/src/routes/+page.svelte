@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import Toast from '$lib/shared/components/feedback/Toast.svelte';
+	import EmailVerificationBanner from '$lib/shared/components/feedback/EmailVerificationBanner.svelte';
+	import DemoBanner from '$lib/shared/components/feedback/DemoBanner.svelte';
 	import Sidebar from '$lib/shared/components/layout/Sidebar.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import { discoverySSEManager } from '$lib/features/discovery/queries';
@@ -142,7 +144,7 @@
 </script>
 
 {#if appInitialized}
-	<div class="flex h-full">
+	<div class="flex h-screen">
 		<!-- Sidebar -->
 		<div class="flex-shrink-0">
 			<Sidebar
@@ -161,6 +163,12 @@
 			class:ml-16={sidebarCollapsed}
 			class:ml-64={!sidebarCollapsed}
 		>
+			{#if currentUserQuery.data && !currentUserQuery.data.email_verified}
+				<EmailVerificationBanner email={currentUserQuery.data.email} />
+			{/if}
+			{#if organization?.plan?.type === 'Demo'}
+				<DemoBanner />
+			{/if}
 			<div class="p-8 [&_.sticky]:sticky [&_.sticky]:top-0">
 				<!-- Programmatically render all tabs based on sidebar config -->
 				{#each allTabs as tab (tab.id)}

@@ -12,8 +12,6 @@
 		flushStoredEvents
 	} from '$lib/shared/utils/analytics';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
-	import EmailVerificationBanner from '$lib/shared/components/feedback/EmailVerificationBanner.svelte';
-	import DemoBanner from '$lib/shared/components/feedback/DemoBanner.svelte';
 	import { resolve } from '$app/paths';
 	import { resetTopologyOptions } from '$lib/features/topology/queries';
 	import { pushError, pushSuccess } from '$lib/shared/stores/feedback';
@@ -248,17 +246,7 @@
 		<Loading />
 	</div>
 {:else}
-	<div class="flex h-screen flex-col">
-		{#if currentUser && !currentUser.email_verified}
-			<EmailVerificationBanner email={currentUser.email} />
-		{/if}
-		{#if organization?.plan?.type === 'Demo'}
-			<DemoBanner />
-		{/if}
-		<div class="min-h-0 flex-1">
-			{@render children()}
-		</div>
-	</div>
+	{@render children()}
 {/if}
 
 {#if configData && configData.needs_cookie_consent && !$page.url.pathname.startsWith('/share/')}
