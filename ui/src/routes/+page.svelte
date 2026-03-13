@@ -142,7 +142,7 @@
 </script>
 
 {#if appInitialized}
-	<div class="flex h-screen">
+	<div class="flex h-full">
 		<!-- Sidebar -->
 		<div class="flex-shrink-0">
 			<Sidebar
