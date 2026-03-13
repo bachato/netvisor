@@ -80,6 +80,15 @@
 	// ServerPoll health check for trouble state
 	const healthCheckMutation = useTestReachabilityMutation();
 	let healthResult = $state<{ reachable: boolean; health?: boolean; error?: string } | null>(null);
+	let isCheckingHealth = $state(false);
+
+	// Severity ranking: not-reachable (0) < reachable+health-false (1) < reachable+health-true (2)
+	function healthSeverity(r: { reachable: boolean; health?: boolean } | null): number {
+		if (!r) return -1;
+		if (!r.reachable) return 0;
+		if (r.health) return 2;
+		return 1;
+	}
 
 	async function handleHealthCheck() {
 		if (!daemonUrl) return;
@@ -88,13 +97,29 @@
 				url: daemonUrl,
 				check_health: true
 			});
-			healthResult = {
+			const newResult = {
 				reachable: result.reachable,
 				health: result.health ?? undefined,
 				error: result.error ?? undefined
 			};
+			// Only update if new result is equal or better (prevents flicker)
+			if (healthSeverity(newResult) >= healthSeverity(healthResult)) {
+				healthResult = newResult;
+			}
 		} catch {
-			healthResult = { reachable: false, error: 'Failed to test reachability' };
+			const newResult = { reachable: false, error: 'Failed to test reachability' };
+			if (healthSeverity(newResult) >= healthSeverity(healthResult)) {
+				healthResult = newResult;
+			}
+		}
+	}
+
+	async function handleManualHealthCheck() {
+		isCheckingHealth = true;
+		try {
+			await handleHealthCheck();
+		} finally {
+			isCheckingHealth = false;
 		}
 	}
 
@@ -107,6 +132,21 @@
 			return () => {
 				if (healthPollInterval) clearInterval(healthPollInterval);
 			};
+		}
+	});
+
+	// Stop polling once health check is green
+	$effect(() => {
+		if (healthResult?.reachable && healthResult?.health && healthPollInterval) {
+			clearInterval(healthPollInterval);
+			healthPollInterval = null;
+		}
+	});
+
+	// Auto-run health check when entering trouble state for ServerPoll
+	$effect(() => {
+		if (connectionStatus === 'trouble' && daemonMode === 'server_poll' && daemonUrl) {
+			handleManualHealthCheck();
 		}
 	});
 
@@ -204,24 +244,13 @@
 						It's been a while. Check that the daemon is running and can reach this server.
 					</p>
 				</div>
-				<ul class="text-secondary space-y-1 text-left text-sm">
+				<ol class="text-secondary list-decimal space-y-1 pl-5 text-left text-sm">
 					<li>Check that the daemon process is running</li>
 					<li>Verify the server URL in the daemon config matches this server</li>
 					<li>Check that no firewall is blocking the connection</li>
-				</ul>
+				</ol>
 				{#if daemonMode === 'server_poll' && daemonUrl}
-					<div class="flex items-center gap-3">
-						<button
-							type="button"
-							class="btn-secondary text-sm"
-							disabled={healthCheckMutation.isPending}
-							onclick={handleHealthCheck}
-						>
-							{#if healthCheckMutation.isPending}
-								<Loader2 class="h-4 w-4 animate-spin" />
-							{/if}
-							Test Daemon Reachability
-						</button>
+					<div class="flex flex-col items-center gap-2">
 						{#if healthResult}
 							{#if healthResult.reachable && healthResult.health}
 								<span class="flex items-center gap-1 text-sm text-green-400">
@@ -240,6 +269,17 @@
 								</span>
 							{/if}
 						{/if}
+						<button
+							type="button"
+							class="btn-secondary text-sm"
+							disabled={isCheckingHealth}
+							onclick={handleManualHealthCheck}
+						>
+							{#if isCheckingHealth}
+								<Loader2 class="h-4 w-4 animate-spin" />
+							{/if}
+							Test Daemon Reachability
+						</button>
 					</div>
 				{/if}
 				<DocsHint
@@ -247,11 +287,7 @@
 					href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/"
 					linkText="troubleshooting guide"
 				/>
-				<button type="button" class="btn-link text-sm" onclick={() => onReviewCommands?.()}>
-					Review install commands
-				</button>
 			</div>
-			<SupportOptions isTroubleshooting={true} {hasEmailSupport} />
 		{/if}
 	{:else}
 		<!-- Normal install commands view -->
