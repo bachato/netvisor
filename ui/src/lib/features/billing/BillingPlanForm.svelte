@@ -324,9 +324,9 @@
 	}
 </script>
 
-<div class="space-y-3 {className}">
+<div class={className}>
 	<!-- Header with Toggles -->
-	<div class="flex flex-wrap items-stretch justify-center gap-3 px-4 pt-3 lg:px-6">
+	<div class="flex flex-wrap items-stretch justify-center gap-3 px-4 pb-3 lg:px-6">
 		{#if showGithubStars}
 			<!-- <GithubStars /> -->
 		{/if}
@@ -629,7 +629,7 @@
 	</div>
 
 	<!-- Compare All Features Toggle -->
-	<div class="sticky bottom-0 z-10 flex justify-center bg-[var(--color-bg-elevated)] py-3">
+	<div class="sticky bottom-0 z-10 flex justify-center py-3">
 		<button
 			type="button"
 			class="btn-primary flex items-center gap-2 text-sm"
