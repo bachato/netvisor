@@ -117,6 +117,13 @@
 		return 'scanopy-daemon';
 	}
 
+	// Auto-select first network when SelectNetwork is hidden (first daemon)
+	$effect(() => {
+		if (isFirstDaemon && !selectedNetworkId && networksData.length > 0) {
+			selectedNetworkId = networksData[0].id;
+		}
+	});
+
 	$effect(() => {
 		if (selectedNetworkId && !nameManuallyEdited) {
 			const defaultName = getDefaultDaemonName(selectedNetworkId);
