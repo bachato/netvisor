@@ -244,62 +244,62 @@ jobs:
           cache-from: type=gha,scope=server-${{ matrix.suffix }}
           cache-to: type=gha,mode=max,scope=server-${{ matrix.suffix }}
 
-  build-docker-server-commercial:
-    name: Build Server (Commercial)
-    runs-on: ${{ matrix.runner }}
-    needs: [build-binaries, test-and-update-fixtures]
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      matrix:
-        include:
-          - runner: ubuntu-latest
-            platform: linux/amd64
-            suffix: amd64
-          - runner: ubuntu-24.04-arm
-            platform: linux/arm64
-            suffix: arm64
+  # build-docker-server-commercial:
+  #   name: Build Server (Commercial)
+  #   runs-on: ${{ matrix.runner }}
+  #   needs: [build-binaries, test-and-update-fixtures]
+  #   permissions:
+  #     contents: read
+  #     packages: write
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - runner: ubuntu-latest
+  #           platform: linux/amd64
+  #           suffix: amd64
+  #         - runner: ubuntu-24.04-arm
+  #           platform: linux/arm64
+  #           suffix: arm64
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Pull latest changes
-        run: |
-          git fetch origin ${{ github.event.release.target_commitish }}
-          git reset --hard origin/${{ github.event.release.target_commitish }}
+  #     - name: Pull latest changes
+  #       run: |
+  #         git fetch origin ${{ github.event.release.target_commitish }}
+  #         git reset --hard origin/${{ github.event.release.target_commitish }}
 
-      - name: Download generated UI fixtures
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-fixtures
-          path: ui/src/lib/data/
+  #     - name: Download generated UI fixtures
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: ui-fixtures
+  #         path: ui/src/lib/data/
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
       
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Login to GitHub Container Registry
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./backend/Dockerfile
-          platforms: ${{ matrix.platform }}
-          push: true
-          build-args: |
-            PUBLIC_SERVER_HOSTNAME=default
-            PUBLIC_SERVER_PORT=60072
-            CARGO_FEATURES=commercial
-          tags: |
-            ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }}-${{ matrix.suffix }}
-          cache-from: type=gha,scope=server-commercial-${{ matrix.suffix }}
-          cache-to: type=gha,mode=max,scope=server-commercial-${{ matrix.suffix }}
+  #     - name: Build and push
+  #       uses: docker/build-push-action@v5
+  #       with:
+  #         context: .
+  #         file: ./backend/Dockerfile
+  #         platforms: ${{ matrix.platform }}
+  #         push: true
+  #         build-args: |
+  #           PUBLIC_SERVER_HOSTNAME=default
+  #           PUBLIC_SERVER_PORT=60072
+  #           CARGO_FEATURES=commercial
+  #         tags: |
+  #           ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }}-${{ matrix.suffix }}
+  #         cache-from: type=gha,scope=server-commercial-${{ matrix.suffix }}
+  #         cache-to: type=gha,mode=max,scope=server-commercial-${{ matrix.suffix }}
 
   build-docker-daemon:
     name: Build Daemon Docker
@@ -359,7 +359,7 @@ jobs:
   create-manifests:
     name: Create Multi-arch Manifests
     runs-on: ubuntu-latest
-    needs: [build-docker-server-community, build-docker-server-commercial, build-docker-daemon]
+    needs: [build-docker-server-community, build-docker-daemon] #build-docker-server-commercial
     permissions:
       packages: write
 
@@ -377,11 +377,11 @@ jobs:
             ghcr.io/${{ github.repository }}/server:${{ github.event.release.tag_name }}-amd64 \
             ghcr.io/${{ github.repository }}/server:${{ github.event.release.tag_name }}-arm64
       
-      - name: Create manifest for Server Commercial (GHCR)
-        run: |
-          docker buildx imagetools create -t ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }} \
-            ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }}-amd64 \
-            ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }}-arm64
+      # - name: Create manifest for Server Commercial (GHCR)
+      #   run: |
+      #     docker buildx imagetools create -t ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }} \
+      #       ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }}-amd64 \
+      #       ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }}-arm64
 
   upload-assets:
     name: Upload Release Assets
