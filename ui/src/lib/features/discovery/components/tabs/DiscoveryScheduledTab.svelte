@@ -192,7 +192,7 @@
 	</TabHeader>
 
 	{#if !hasDaemon(onboarding)}
-		<PreDaemonEmptyState entityName="Discovery Scans" />
+		<PreDaemonEmptyState entityName="Discoveries" />
 	{:else if isLoading}
 		<Loading />
 	{:else if discoveriesData.length === 0}

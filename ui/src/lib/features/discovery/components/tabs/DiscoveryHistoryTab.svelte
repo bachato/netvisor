@@ -173,7 +173,7 @@
 	<TabHeader title={discovery_historyTitle()} />
 
 	{#if !hasDaemon(onboarding)}
-		<PreDaemonEmptyState entityName="Discovery History" />
+		<PreDaemonEmptyState entityName="Discoveries" />
 	{:else if isLoading}
 		<Loading />
 	{:else if historicalDiscoveries.length === 0}
