@@ -40,12 +40,10 @@
 		featureHelpers: MetadataHelpers<FeatureMetadata>;
 		onPlanSelect: (plan: BillingPlan) => void | Promise<void>;
 		onPlanInquiry?: (plan: BillingPlan) => void | Promise<void>;
-		initialPlanFilter?: 'all' | 'personal' | 'commercial';
 		showGithubStars?: boolean;
 		showHosting?: boolean;
 		class?: string;
 		recommendedPlan?: string | null;
-		forceCommercial?: boolean;
 		/** If true, user is a returning customer and should not see trial offers */
 		isReturningCustomer?: boolean;
 		/** If true, user is currently on an active trial */
@@ -59,12 +57,10 @@
 		featureHelpers,
 		onPlanSelect,
 		onPlanInquiry,
-		initialPlanFilter = 'commercial',
 		showGithubStars = true,
 		class: className = '',
 		showHosting = false,
 		recommendedPlan = null,
-		forceCommercial = false,
 		isReturningCustomer = false,
 		isCurrentlyTrialing = false
 	}: Props = $props();
@@ -72,25 +68,8 @@
 	let loadingPlanType = $state<string | null>(null);
 	let showFullComparison = $state(false);
 
-	type PlanFilter = 'all' | 'personal' | 'commercial';
-	let planFilter = $state<PlanFilter>(untrack(() => initialPlanFilter));
-
 	type BillingPeriod = 'monthly' | 'yearly';
 	let billingPeriod = $state<BillingPeriod>('yearly');
-
-	// Filter out personal option when forceCommercial is true
-	let planTypeOptions = $derived(
-		forceCommercial
-			? [
-					{ value: 'all', label: 'All Plans' },
-					{ value: 'commercial', label: 'Commercial' }
-				]
-			: [
-					{ value: 'all', label: 'All Plans' },
-					{ value: 'personal', label: 'Personal' },
-					{ value: 'commercial', label: 'Commercial' }
-				]
-	);
 
 	const billingPeriodOptions = [
 		{ value: 'monthly', label: 'Monthly' },
@@ -99,14 +78,6 @@
 
 	let filteredPlans = $derived.by(() => {
 		let result = plans;
-		if (planFilter !== 'all') {
-			result = result.filter((plan) => {
-				const metadata = billingPlanHelpers.getMetadata(plan.type);
-				if (planFilter === 'commercial') return metadata.is_commercial;
-				if (planFilter === 'personal') return !metadata.is_commercial;
-				return true;
-			});
-		}
 		result = result.filter((plan) => {
 			// Free plan is always monthly (no yearly variant)
 			if (plan.type === 'Free') return true;
@@ -359,12 +330,6 @@
 		{#if showGithubStars}
 			<!-- <GithubStars /> -->
 		{/if}
-
-		<ToggleGroup
-			options={planTypeOptions}
-			selected={planFilter}
-			onchange={(value) => (planFilter = value as PlanFilter)}
-		/>
 
 		<ToggleGroup
 			options={billingPeriodOptions}

@@ -114,18 +114,6 @@
 
 	let recommendedPlan = $derived(contextHighlightPlan ?? baseRecommendedPlan);
 
-	let initialPlanFilter = $derived.by<'all' | 'commercial' | 'personal'>(() => {
-		if (contextHighlightPlan) {
-			const meta = billingPlanHelpers.getMetadata(contextHighlightPlan);
-			return meta?.is_commercial ? 'commercial' : 'personal';
-		}
-		if (organization?.plan?.type && organization.plan.type !== 'Free') {
-			const meta = billingPlanHelpers.getMetadata(organization.plan.type);
-			return meta?.is_commercial ? 'commercial' : 'personal';
-		}
-		return useCase === 'company' || useCase === 'msp' ? 'commercial' : 'personal';
-	});
-
 	async function handlePlanSelect(plan: BillingPlan) {
 		try {
 			// Store event to flush after Stripe redirect (hard navigation kills pending PostHog requests)
@@ -185,7 +173,6 @@
 			{featureHelpers}
 			onPlanSelect={handlePlanSelect}
 			onPlanInquiry={handlePlanInquiry}
-			{initialPlanFilter}
 			{recommendedPlan}
 			{isReturningCustomer}
 			{isCurrentlyTrialing}
