@@ -11,6 +11,7 @@
 	import { topologySSEManager } from '$lib/features/topology/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import BillingPlanModal from '$lib/features/billing/BillingPlanModal.svelte';
+	import DaemonPromptModal from '$lib/features/daemons/components/DaemonPromptModal.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { isBillingPlanActive } from '$lib/features/organizations/types';
@@ -51,6 +52,16 @@
 		(needsPlanSelection && !planJustActivated) || $modalState.name === 'billing-plan'
 	);
 
+	// Daemon prompt: intercept 'daemon-prompt' modal param and show DaemonPromptModal
+	let pendingDaemonPrompt = $state(false);
+	$effect(() => {
+		if ($modalState.name === 'daemon-prompt') {
+			pendingDaemonPrompt = true;
+			closeModal();
+		}
+	});
+	let showDaemonPrompt = $derived(pendingDaemonPrompt && !showBillingModal);
+
 	let activeTab = $state(initialHash || 'home');
 	let appInitialized = $state(false);
 	let sidebarCollapsed = $state(false);
@@ -81,7 +92,7 @@
 	let initialTabSet = $state(false);
 	$effect(() => {
 		if (!initialHash && !initialTabSet && daemonsQuery.isSuccess && !showBillingModal) {
-			const wantsDaemonSetup = $modalState.name === 'create-daemon';
+			const wantsDaemonSetup = $modalState.name === 'create-daemon' || pendingDaemonPrompt;
 			activeTab = wantsDaemonSetup ? 'daemons' : 'home';
 			initialTabSet = true;
 		}
@@ -205,6 +216,17 @@
 				reopenSettingsAfterBilling.set(false);
 				openModal('settings', { tab: 'billing' });
 			}
+		}}
+	/>
+
+	<DaemonPromptModal
+		isOpen={showDaemonPrompt}
+		onInstall={() => {
+			pendingDaemonPrompt = false;
+			openModal('create-daemon');
+		}}
+		onSkip={() => {
+			pendingDaemonPrompt = false;
 		}}
 	/>
 {:else}

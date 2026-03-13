@@ -6,9 +6,6 @@ export interface OnboardingState {
 	organizationName: string;
 	network: NetworkSetup;
 	populateSeedData: boolean;
-	// Referral source (Cloud only, not persisted to DB)
-	referralSource: string | null;
-	referralSourceOther: string | null;
 }
 
 const STORAGE_KEY = 'scanopy_onboarding';
@@ -51,9 +48,7 @@ const initialState: OnboardingState = {
 	useCase: persisted.useCase,
 	organizationName: '',
 	network: { name: '' },
-	populateSeedData: true,
-	referralSource: null,
-	referralSourceOther: null
+	populateSeedData: true
 };
 
 function createOnboardingStore() {
@@ -108,13 +103,6 @@ function createOnboardingStore() {
 			update((state) => ({
 				...state,
 				populateSeedData: populate
-			})),
-
-		setReferralSource: (referralSource: string | null, referralSourceOther: string | null) =>
-			update((state) => ({
-				...state,
-				referralSource,
-				referralSourceOther
 			})),
 
 		// Get the current state synchronously

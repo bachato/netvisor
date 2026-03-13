@@ -122,13 +122,9 @@
 	$effect(() => {
 		if (stepInitialized && !isInviteFlow && currentStep !== lastPersistedStep) {
 			lastPersistedStep = currentStep;
-			// Include use_case and qualification data in the mutation so they're persisted with the step
-			const state = onboardingStore.getState();
 			onboardingStepMutation.mutate({
 				step: currentStep,
-				use_case: useCase ?? undefined,
-				referral_source: state.referralSource ?? undefined,
-				referral_source_other: state.referralSourceOther ?? undefined
+				use_case: useCase ?? undefined
 			});
 		}
 	});
@@ -213,7 +209,7 @@
 			onboardingStore.reset();
 
 			// Navigate to main app with modal param so daemon setup opens
-			await navigateWithModal('create-daemon');
+			await navigateWithModal('daemon-prompt');
 		} catch {
 			// Error handled by mutation
 		}
