@@ -187,7 +187,7 @@
 	<!-- Header -->
 	<TabHeader title={common_subnets()}>
 		<svelte:fragment slot="actions">
-			{#if !isReadOnly}
+			{#if hasDaemon(onboarding) && !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateSubnet}
 					><Plus class="h-5 w-5" />{common_create()}</button
 				>

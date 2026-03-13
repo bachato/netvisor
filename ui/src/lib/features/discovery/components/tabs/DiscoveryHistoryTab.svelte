@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TabHeader from '$lib/shared/components/layout/TabHeader.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
+	import PreDaemonEmptyState from '$lib/shared/components/layout/PreDaemonEmptyState.svelte';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import type { Discovery } from '../../types/base';
 	import { discoveryFields } from '../../queries';
@@ -18,6 +19,9 @@
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
+	import { useOrganizationQuery } from '$lib/features/organizations/queries';
+	import { hasDaemon } from '$lib/shared/onboarding/checklist';
+	import type { components } from '$lib/api/schema';
 	import type { TabProps } from '$lib/shared/types';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import { modalState, openModal, closeModal } from '$lib/shared/stores/modal-registry';
@@ -33,7 +37,13 @@
 		discovery_startedAt
 	} from '$lib/paraglide/messages';
 
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
+
 	let { isReadOnly = false }: TabProps = $props();
+
+	// Organization query for onboarding state
+	const organizationQuery = useOrganizationQuery();
+	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
 
 	// Queries
 	const discoveriesQuery = useDiscoveriesQuery();
@@ -162,7 +172,9 @@
 	<!-- Header -->
 	<TabHeader title={discovery_historyTitle()} />
 
-	{#if isLoading}
+	{#if !hasDaemon(onboarding)}
+		<PreDaemonEmptyState entityName="Discovery History" />
+	{:else if isLoading}
 		<Loading />
 	{:else if historicalDiscoveries.length === 0}
 		<!-- Empty state -->

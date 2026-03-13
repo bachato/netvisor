@@ -14,7 +14,7 @@
 
 <EmptyState
 	IconComponent={Server as IconComponent}
-	title="{entityName} will appear here once you run a discovery scan."
+	title="Install a daemon to start discovering {entityName.toLowerCase()} on your network."
 	onClick={handleClick}
 	cta="Install a Daemon"
 />
