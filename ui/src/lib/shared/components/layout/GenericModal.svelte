@@ -217,25 +217,24 @@
 			</button>
 		{/if}
 
-		<!-- Floating close button (absolute positioned, top-right of viewport) -->
-		{#if floatingCloseButton && onClose}
-			<button
-				type="button"
-				onclick={handleClose}
-				class="fixed right-6 top-6 z-50 rounded-full bg-white/80 p-2 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-800/80 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-				aria-label={common_closeModal()}
-			>
-				<X class="h-5 w-5" />
-			</button>
-		{/if}
-
 		<!-- Modal content -->
 		<div
-			class="{borderless ? '' : 'modal-container'} {sizeClasses[size]} {size === 'full' ||
+			class="relative {borderless ? '' : 'modal-container'} {sizeClasses[size]} {size === 'full' ||
 			fixedHeight
 				? 'h-[calc(100vh-2rem)] sm:h-[calc(100vh-8rem)]'
 				: 'max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-8rem)]'} flex w-full flex-col"
 		>
+			<!-- Floating close button (absolute positioned within modal container) -->
+			{#if floatingCloseButton && onClose}
+				<button
+					type="button"
+					onclick={handleClose}
+					class="absolute right-4 top-4 z-20 rounded-full bg-white/80 p-2 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-800/80 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+					aria-label={common_closeModal()}
+				>
+					<X class="h-5 w-5" />
+				</button>
+			{/if}
 			<!-- Header (hidden when no title, no close button, and no tabs) -->
 			{#if title || showCloseButton || tabs.length > 0}
 				<div class="modal-header flex-col gap-0 {tabs.length > 0 ? 'pb-0' : ''}">

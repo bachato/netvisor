@@ -326,7 +326,7 @@
 
 <div class="space-y-3 {className}">
 	<!-- Header with Toggles -->
-	<div class="flex flex-wrap items-stretch justify-end gap-3 px-4 pr-14 lg:px-6 lg:pr-14">
+	<div class="flex flex-wrap items-stretch justify-center gap-3 px-4 pt-3 lg:px-6">
 		{#if showGithubStars}
 			<!-- <GithubStars /> -->
 		{/if}
@@ -629,12 +629,10 @@
 	</div>
 
 	<!-- Compare All Features Toggle -->
-	<div
-		class="sticky bottom-0 z-10 flex justify-center bg-gradient-to-t from-[var(--color-bg-elevated)] to-transparent py-3"
-	>
+	<div class="sticky bottom-0 z-10 flex justify-center bg-[var(--color-bg-elevated)] py-3">
 		<button
 			type="button"
-			class="btn-secondary flex items-center gap-2 text-sm"
+			class="btn-primary flex items-center gap-2 text-sm"
 			onclick={() => (showFullComparison = !showFullComparison)}
 		>
 			{showFullComparison ? 'Hide' : 'Compare all features'}
