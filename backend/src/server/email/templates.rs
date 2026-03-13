@@ -39,7 +39,7 @@ pub const EMAIL_FOOTER: &str = r#"                    <!-- Footer -->
                                 </tr>
                             </table>
                             
-                            <p style="margin: 0; font-size: 12px; line-height: 18px; color: #9ca3af;">© 2025 Scanopy. All rights reserved.</p>
+                            <p style="margin: 0; font-size: 12px; line-height: 18px; color: #9ca3af;">© {current_year} Scanopy. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>

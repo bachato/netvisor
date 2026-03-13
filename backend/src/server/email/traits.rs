@@ -35,7 +35,8 @@ use crate::server::{
 #[async_trait]
 pub trait EmailProvider: Send + Sync {
     fn build_email(&self, body: String) -> String {
-        format!("{}{}{}", EMAIL_HEADER, body, EMAIL_FOOTER)
+        let year = chrono::Utc::now().format("%Y").to_string();
+        format!("{}{}{}", EMAIL_HEADER, body, EMAIL_FOOTER).replace("{current_year}", &year)
     }
 
     fn build_invite_title(&self, from_user: EmailAddress) -> String {
