@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { components } from '$lib/api/schema';
-	import { Check, Circle, Loader2 } from 'lucide-svelte';
+	import { Check, Circle, Info, Loader2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import {
 		CHECKLIST_STEPS,
@@ -11,6 +11,7 @@
 		executeStepAction,
 		trackChecklistStepClicked
 	} from '$lib/shared/onboarding/checklist';
+	import DaemonTroubleshootingModal from './DaemonTroubleshootingModal.svelte';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	type DaemonStatus = 'idle' | 'waiting' | 'connected' | 'trouble';
@@ -49,8 +50,9 @@
 
 	let completedCount = $derived(getCompletedCount(onboarding));
 	let allComplete = $derived(isAllComplete(onboarding));
+	let showTroubleshootingModal = $state(false);
 
-	function isDaemonSpinner(stepId: string, complete: boolean): boolean {
+	function isDaemonTrouble(stepId: string, complete: boolean): boolean {
 		return (
 			stepId === 'daemon' && !complete && (daemonStatus === 'waiting' || daemonStatus === 'trouble')
 		);
@@ -103,8 +105,8 @@
 						{@const complete = isStepComplete(step, onboarding)}
 						{@const enabled = isStepEnabled(step, onboarding)}
 						{@const isAccountStep = step.id === 'account'}
-						{@const showSpinner =
-							isDaemonSpinner(step.id, complete) || isDiscoverySpinner(step.id, complete)}
+						{@const daemonTrouble = isDaemonTrouble(step.id, complete)}
+						{@const discoverySpinner = isDiscoverySpinner(step.id, complete)}
 						<button
 							class="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs transition-colors {!complete &&
 							!isAccountStep &&
@@ -113,13 +115,19 @@
 								: ''} {!enabled ? 'opacity-50' : ''}"
 							disabled={complete || !enabled || isAccountStep}
 							onclick={() => {
+								if (daemonTrouble) {
+									showTroubleshootingModal = true;
+									return;
+								}
 								trackChecklistStepClicked(step.id, 'sidebar');
 								executeStepAction(step, onNavigate);
 							}}
 						>
 							{#if complete}
 								<Check class="h-3.5 w-3.5 flex-shrink-0 text-green-400" />
-							{:else if showSpinner}
+							{:else if daemonTrouble}
+								<Info class="h-3.5 w-3.5 flex-shrink-0 text-yellow-500" />
+							{:else if discoverySpinner}
 								<Loader2 class="h-3.5 w-3.5 flex-shrink-0 animate-spin text-blue-500" />
 							{:else if enabled}
 								<Circle class="text-tertiary h-3.5 w-3.5 flex-shrink-0" />
@@ -135,6 +143,11 @@
 							>
 								{step.label}
 							</span>
+							{#if daemonTrouble}
+								<span class="ml-auto flex-shrink-0 text-[10px] font-medium text-yellow-500"
+									>Having trouble?</span
+								>
+							{/if}
 						</button>
 					{/each}
 				</div>
@@ -142,3 +155,8 @@
 		</div>
 	{/if}
 {/if}
+
+<DaemonTroubleshootingModal
+	isOpen={showTroubleshootingModal}
+	onClose={() => (showTroubleshootingModal = false)}
+/>

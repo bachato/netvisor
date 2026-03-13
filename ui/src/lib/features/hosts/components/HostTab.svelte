@@ -347,31 +347,33 @@
 	<!-- Header -->
 	<TabHeader title={common_hosts()}>
 		<svelte:fragment slot="actions">
-			<div class="flex items-center gap-3">
-				{#if hostLimit !== null}
-					<span
-						class="text-sm {isAtHostLimit
-							? 'text-amber-400'
-							: isNearHostLimit
-								? 'text-yellow-400'
-								: 'text-tertiary'}"
-					>
-						{totalHostCount} / {hostLimit}
-					</span>
-				{/if}
-				{#if !isReadOnly}
-					{#if isAtHostLimit}
-						<UpgradeButton feature="hosts" />
-					{:else}
-						{#if isNearHostLimit}
-							<UpgradeButton feature="hosts" />
-						{/if}
-						<button class="btn-primary flex items-center" onclick={handleCreateHost}
-							><Plus class="h-5 w-5" />{common_create()}</button
+			{#if hasDaemon(onboarding)}
+				<div class="flex items-center gap-3">
+					{#if hostLimit !== null}
+						<span
+							class="text-sm {isAtHostLimit
+								? 'text-amber-400'
+								: isNearHostLimit
+									? 'text-yellow-400'
+									: 'text-tertiary'}"
 						>
+							{totalHostCount} / {hostLimit}
+						</span>
 					{/if}
-				{/if}
-			</div>
+					{#if !isReadOnly}
+						{#if isAtHostLimit}
+							<UpgradeButton feature="hosts" />
+						{:else}
+							{#if isNearHostLimit}
+								<UpgradeButton feature="hosts" />
+							{/if}
+							<button class="btn-primary flex items-center" onclick={handleCreateHost}
+								><Plus class="h-5 w-5" />{common_create()}</button
+							>
+						{/if}
+					{/if}
+				</div>
+			{/if}
 		</svelte:fragment>
 	</TabHeader>
 
