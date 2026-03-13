@@ -280,3 +280,26 @@ pub struct ProvisionDaemonResponse {
     /// This is shown only once - store it securely.
     pub daemon_api_key: String,
 }
+
+/// Request to test reachability of a daemon URL.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct TestReachabilityRequest {
+    /// Full URL of the daemon (e.g. "https://daemon.example.com:60073")
+    pub url: String,
+    /// If true, also perform an HTTP GET to {url}/health after the TCP check
+    #[serde(default)]
+    pub check_health: bool,
+}
+
+/// Response from a reachability test.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct TestReachabilityResponse {
+    /// Whether the TCP connection succeeded
+    pub reachable: bool,
+    /// Error message if not reachable
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    /// Health check result (only present when check_health was true)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub health: Option<bool>,
+}

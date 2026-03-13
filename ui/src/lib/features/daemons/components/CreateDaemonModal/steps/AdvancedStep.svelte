@@ -5,6 +5,7 @@
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
+	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
 	import {
 		daemons_docsConfigOptions,
@@ -51,6 +52,12 @@
 </script>
 
 <div class="space-y-6">
+	<InlineInfo
+		title=""
+		body="Changes you make here will be reflected in the install commands."
+		dismissableKey="daemon-advanced-hint"
+	/>
+
 	<DocsHint
 		text={daemons_docsConfigOptions()}
 		href="https://scanopy.net/docs/reference/daemon-configuration/"

@@ -129,6 +129,23 @@ export function useRetryDaemonConnectionMutation() {
 }
 
 /**
+ * Mutation hook for testing daemon URL reachability
+ */
+export function useTestReachabilityMutation() {
+	return createMutation(() => ({
+		mutationFn: async (request: { url: string; check_health: boolean }) => {
+			const { data } = await apiClient.POST('/api/v1/daemons/test-reachability', {
+				body: request
+			});
+			if (!data?.success || !data.data) {
+				throw new Error(data?.error || 'Failed to test reachability');
+			}
+			return data.data;
+		}
+	}));
+}
+
+/**
  * Helper to check if a daemon is currently running a discovery session
  */
 export function getDaemonIsRunningDiscovery(

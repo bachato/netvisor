@@ -3,6 +3,7 @@ use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member,
 use crate::server::daemon_api_keys::r#impl::base::{DaemonApiKey, DaemonApiKeyBase};
 use crate::server::daemons::r#impl::api::{
     DaemonHeartbeatPayload, ProvisionDaemonRequest, ProvisionDaemonResponse,
+    TestReachabilityRequest, TestReachabilityResponse,
 };
 use crate::server::openapi::SERVER_VERSION;
 use crate::server::shared::api_key_common::{ApiKeyType, generate_api_key_for_storage};
@@ -152,6 +153,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(generated::export_csv))
         .routes(routes!(provision_daemon))
         .routes(routes!(retry_connection))
+        .routes(routes!(test_reachability))
 }
 
 /// Daemon-internal endpoints (unversioned at /api/daemon)
@@ -788,4 +790,130 @@ async fn retry_connection(
     }
 
     Ok(Json(ApiResponse::success(())))
+}
+
+// ============================================================================
+// Reachability Testing
+// ============================================================================
+
+/// Check if a URL is private/loopback (SSRF protection)
+fn is_private_ip(addr: &std::net::IpAddr) -> bool {
+    match addr {
+        std::net::IpAddr::V4(ip) => {
+            ip.is_loopback() || ip.is_private() || ip.is_link_local() || ip.is_unspecified()
+        }
+        std::net::IpAddr::V6(ip) => ip.is_loopback() || ip.is_unspecified(),
+    }
+}
+
+/// Test reachability of a daemon URL
+///
+/// Performs a TCP connection test and optionally an HTTP health check
+/// to verify that a daemon URL is reachable from the server.
+#[utoipa::path(
+    post,
+    path = "/test-reachability",
+    tag = Daemon::ENTITY_NAME_PLURAL,
+    operation_id = "test_daemon_reachability",
+    summary = "Test reachability of a daemon URL",
+    request_body = TestReachabilityRequest,
+    responses(
+        (status = 200, description = "Reachability test result", body = ApiResponse<TestReachabilityResponse>),
+        (status = 400, description = "Invalid URL", body = ApiErrorResponse),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+async fn test_reachability(
+    State(state): State<Arc<AppState>>,
+    _auth: Authorized<Member>,
+    Json(request): Json<TestReachabilityRequest>,
+) -> ApiResult<Json<ApiResponse<TestReachabilityResponse>>> {
+    // Parse the URL
+    let parsed =
+        url::Url::parse(&request.url).map_err(|_| ApiError::bad_request("Invalid URL format"))?;
+
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| ApiError::bad_request("URL must contain a host"))?;
+
+    let port = parsed.port().unwrap_or(match parsed.scheme() {
+        "https" => 443,
+        _ => 80,
+    });
+
+    // Resolve hostname to IP for SSRF check
+    let addr_str = format!("{}:{}", host, port);
+    let addrs: Vec<std::net::SocketAddr> = tokio::net::lookup_host(&addr_str)
+        .await
+        .map_err(|_| ApiError::bad_request(&format!("Could not resolve host: {}", host)))?
+        .collect();
+
+    if addrs.is_empty() {
+        return Err(ApiError::bad_request(&format!(
+            "Could not resolve host: {}",
+            host
+        )));
+    }
+
+    // SSRF protection: reject private IPs unless server is in dev mode
+    let is_dev = state.config.public_url.starts_with("http://localhost")
+        || state.config.public_url.starts_with("http://127.");
+
+    if !is_dev {
+        for addr in &addrs {
+            if is_private_ip(&addr.ip()) {
+                return Err(ApiError::bad_request(
+                    "Cannot test reachability to private/loopback addresses",
+                ));
+            }
+        }
+    }
+
+    // TCP connection test with 5s timeout
+    let tcp_result = tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        tokio::net::TcpStream::connect(addrs.as_slice()),
+    )
+    .await;
+
+    let reachable = match tcp_result {
+        Ok(Ok(_stream)) => true,
+        Ok(Err(e)) => {
+            return Ok(Json(ApiResponse::success(TestReachabilityResponse {
+                reachable: false,
+                error: Some(format!("Connection failed: {}", e)),
+                health: None,
+            })));
+        }
+        Err(_) => {
+            return Ok(Json(ApiResponse::success(TestReachabilityResponse {
+                reachable: false,
+                error: Some("Connection timed out after 5 seconds".to_string()),
+                health: None,
+            })));
+        }
+    };
+
+    // Optional health check
+    let health = if request.check_health {
+        let health_url = format!("{}/health", request.url.trim_end_matches('/'));
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(5))
+            .redirect(reqwest::redirect::Policy::none())
+            .build()
+            .unwrap_or_default();
+
+        match client.get(&health_url).send().await {
+            Ok(resp) => Some(resp.status().is_success()),
+            Err(_) => Some(false),
+        }
+    } else {
+        None
+    };
+
+    Ok(Json(ApiResponse::success(TestReachabilityResponse {
+        reachable,
+        error: None,
+        health,
+    })))
 }

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.17\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.17\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.18\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.14.18\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nThe API version is an integer (`api_version: 1`) incremented only on breaking changes. API is versioned independently from the application. Endpoints are prefixed with `/api/v1/`. Check `GET /api/version` for current versions.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -3230,6 +3230,56 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/daemons/test-reachability": {
+      "post": {
+        "tags": [
+          "Daemons"
+        ],
+        "summary": "Test reachability of a daemon URL",
+        "description": "Performs a TCP connection test and optionally an HTTP health check\nto verify that a daemon URL is reachable from the server.",
+        "operationId": "test_daemon_reachability",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestReachabilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Reachability test result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_TestReachabilityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid URL",
             "content": {
               "application/json": {
                 "schema": {
@@ -12155,12 +12205,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.17"
+            "example": "0.14.18"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.14.17"
+          "server_version": "0.14.18"
         }
       },
       "ApiResponse": {
@@ -12234,14 +12284,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-03-10T20:44:32.019378Z",
-              "id": "291f6c9a-a075-459f-98f7-51e2ffb71f20",
+              "created_at": "2026-03-13T07:24:59.970877Z",
+              "id": "b4b35a1c-30da-4dff-8d3e-7f8cb4394a3d",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-10T20:44:32.019378Z"
+              "updated_at": "2026-03-13T07:24:59.970877Z"
             }
           },
           "error": {
@@ -13057,14 +13107,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-03-10T20:44:32.003271Z",
-                      "id": "4dfbbb25-6016-4447-80ed-ebf02638d7c1",
+                      "created_at": "2026-03-13T07:24:59.953894Z",
+                      "id": "0aa368a2-57e9-492e-a4c3-6553d208a238",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-03-10T20:44:32.003271Z"
+                      "updated_at": "2026-03-13T07:24:59.953894Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -13073,7 +13123,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "UptimeKuma",
+                  "service_definition": "FileZilla Server",
                   "source": {
                     "type": "Manual"
                   },
@@ -13775,14 +13825,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-03-10T20:44:32.014786Z",
-                  "id": "e7e66538-00a7-41ca-8d0b-715d615a1075",
+                  "created_at": "2026-03-13T07:24:59.966188Z",
+                  "id": "951640bd-df69-4773-9397-b8d2c750bf87",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-10T20:44:32.014786Z"
+                  "updated_at": "2026-03-13T07:24:59.966188Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13791,7 +13841,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "UptimeKuma",
+              "service_definition": "FileZilla Server",
               "source": {
                 "type": "Manual"
               },
@@ -14091,6 +14141,54 @@
               "name": "production",
               "organization_id": "550e8400-e29b-41d4-a716-446655440001",
               "updated_at": "2026-01-15T10:30:00Z"
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_TestReachabilityResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Response from a reachability test.",
+            "required": [
+              "reachable"
+            ],
+            "properties": {
+              "error": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Error message if not reachable"
+              },
+              "health": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "Health check result (only present when check_health was true)"
+              },
+              "reachable": {
+                "type": "boolean",
+                "description": "Whether the TCP connection succeeded"
+              }
             }
           },
           "error": {
@@ -15006,14 +15104,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-03-10T20:44:32.003462Z",
-          "id": "6d506b42-8285-4c33-8a8c-9af065d74efe",
+          "created_at": "2026-03-13T07:24:59.954230Z",
+          "id": "f9af13a1-9a24-4183-bc95-e951f0e9fdbe",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-03-10T20:44:32.003462Z"
+          "updated_at": "2026-03-13T07:24:59.954230Z"
         }
       },
       "BindingBase": {
@@ -15520,7 +15618,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "UptimeKuma",
+              "service_definition": "FileZilla Server",
               "tags": [],
               "virtualization": null
             }
@@ -17416,14 +17514,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-03-10T20:44:32.003006Z",
-                  "id": "4c9ba712-7467-41f2-b761-a78f7036b404",
+                  "created_at": "2026-03-13T07:24:59.953437Z",
+                  "id": "e934b442-a0cf-498a-8249-2502ceee9ef7",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-10T20:44:32.003006Z"
+                  "updated_at": "2026-03-13T07:24:59.953437Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -17432,7 +17530,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "UptimeKuma",
+              "service_definition": "FileZilla Server",
               "source": {
                 "type": "Manual"
               },
@@ -18934,7 +19032,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.14.17"
+            "example": "0.14.18"
           }
         },
         "example": {
@@ -18945,7 +19043,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.14.17"
+          "server_version": "0.14.18"
         }
       },
       "PaginatedApiResponse_DaemonResponse": {
@@ -19303,14 +19401,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-03-10T20:44:31.990896Z",
-                        "id": "ead06937-1d6f-4576-910d-12d148520f0d",
+                        "created_at": "2026-03-13T07:24:59.942133Z",
+                        "id": "8ef947b6-bbc3-42b0-8c4e-1fe8ff124bb4",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-03-10T20:44:31.990896Z"
+                        "updated_at": "2026-03-13T07:24:59.942133Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -19319,7 +19417,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "UptimeKuma",
+                    "service_definition": "FileZilla Server",
                     "source": {
                       "type": "Manual"
                     },
@@ -19396,14 +19494,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-03-10T20:44:32.013908Z",
-                    "id": "89103afa-593b-4c99-acc4-71ab905de5e0",
+                    "created_at": "2026-03-13T07:24:59.964889Z",
+                    "id": "007bb1fe-e56e-44a1-85ab-2d82df9d790d",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-03-10T20:44:32.013908Z"
+                    "updated_at": "2026-03-13T07:24:59.964889Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -19412,7 +19510,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "UptimeKuma",
+                "service_definition": "FileZilla Server",
                 "source": {
                   "type": "Manual"
                 },
@@ -20499,14 +20597,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-03-10T20:44:32.003398Z",
-              "id": "7651e08e-cb64-4c79-bf55-e23db0dc5780",
+              "created_at": "2026-03-13T07:24:59.954113Z",
+              "id": "b45080ca-f5bd-4c90-80ab-683239378a9a",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-10T20:44:32.003398Z"
+              "updated_at": "2026-03-13T07:24:59.954113Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20515,7 +20613,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "UptimeKuma",
+          "service_definition": "FileZilla Server",
           "source": {
             "type": "Manual"
           },
@@ -21233,6 +21331,50 @@
           "color",
           "updated_at"
         ]
+      },
+      "TestReachabilityRequest": {
+        "type": "object",
+        "description": "Request to test reachability of a daemon URL.",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "check_health": {
+            "type": "boolean",
+            "description": "If true, also perform an HTTP GET to {url}/health after the TCP check"
+          },
+          "url": {
+            "type": "string",
+            "description": "Full URL of the daemon (e.g. \"https://daemon.example.com:60073\")"
+          }
+        }
+      },
+      "TestReachabilityResponse": {
+        "type": "object",
+        "description": "Response from a reachability test.",
+        "required": [
+          "reachable"
+        ],
+        "properties": {
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Error message if not reachable"
+          },
+          "health": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Health check result (only present when check_health was true)"
+          },
+          "reachable": {
+            "type": "boolean",
+            "description": "Whether the TCP connection succeeded"
+          }
+        }
       },
       "Topology": {
         "allOf": [

@@ -18,6 +18,7 @@
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
+	import { useTestReachabilityMutation } from '../../queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
 	import { getVisibleFieldIds } from '../../config';
 	import {
@@ -65,10 +66,6 @@
 	let serverUrl = $derived(configQuery.data?.public_url ?? '');
 	let currentUserId = $derived(currentUserQuery.data?.id ?? null);
 	let org = $derived(organizationQuery.data);
-	let hasDaemonPoll = $derived.by(() => {
-		if (!org?.plan?.type) return true;
-		return billingPlans.getMetadata(org.plan.type).features.daemon_poll;
-	});
 	let isFirstDaemon = $derived(!org?.onboarding?.includes('FirstDaemonRegistered'));
 	// Snapshot: tracks whether wizard was opened as first-daemon flow.
 	// Prevents reactivity from flipping showWaitingUI when FirstDaemonRegistered appears.
@@ -101,6 +98,10 @@
 	let installCtaLabel = $derived(
 		isDockerInstall ? "I've started the Docker container" : "I've run the install command"
 	);
+
+	// ServerPoll reachability state
+	let serverPollReachable = $state<boolean | null>(null);
+	const testReachabilityMutation = useTestReachabilityMutation();
 
 	// Connection waiting state
 	let connectionStatus = $state<DaemonConnectionStatus>('idle');
@@ -257,6 +258,9 @@
 
 			if (!isValid) return;
 
+			// ServerPoll requires reachability check to pass
+			if (formValues.mode === 'server_poll' && serverPollReachable !== true) return;
+
 			trackEvent('daemon_wizard_step_completed', { step: 'configure' });
 
 			// Auto-generate key for: first daemon (any mode), or server_poll, or daemon_poll with generate source
@@ -292,6 +296,14 @@
 		connectionStatus = 'waiting';
 		daemonSetupState.set({ connectionStatus: 'waiting' });
 		trackEvent('daemon_install_confirmed');
+
+		// For ServerPoll, fire a health check
+		if (formValues.mode === 'server_poll') {
+			const daemonUrlBase = String(formValues.daemonUrl ?? '');
+			const port = Number(formValues.daemonPort) || 60073;
+			const fullUrl = constructDaemonUrl(daemonUrlBase, port);
+			testReachabilityMutation.mutate({ url: fullUrl, check_health: true });
+		}
 
 		// Set 2-minute timeout for trouble state
 		troubleTimeoutId = setTimeout(() => {
@@ -367,6 +379,7 @@
 		showAdvanced = false;
 		connectionStatus = 'idle';
 		showTroubleshootingPanel = false;
+		serverPollReachable = null;
 		onClose();
 	}
 
@@ -379,6 +392,7 @@
 		connectionStatus = 'idle';
 		startedAsFirstDaemon = isFirstDaemon;
 		showTroubleshootingPanel = false;
+		serverPollReachable = null;
 	}
 
 	let colorHelper = entities.getColorHelper('Daemon');
@@ -413,10 +427,10 @@
 					{selectedNetworkId}
 					onNetworkChange={(id) => (selectedNetworkId = id)}
 					onNameInput={() => (nameManuallyEdited = true)}
-					{hasDaemonPoll}
 					{keySet}
 					{isFirstDaemon}
 					onUseExistingKey={handleUseExistingKey}
+					onReachabilityChange={(r) => (serverPollReachable = r)}
 				/>
 			{:else if activeTab === 'install'}
 				<InstallStep
@@ -434,6 +448,11 @@
 					{hasEmailSupport}
 					{showTroubleshootingPanel}
 					onAdvanced={() => (showAdvanced = true)}
+					daemonMode={String(formValues.mode ?? 'daemon_poll')}
+					daemonUrl={constructDaemonUrl(
+						String(formValues.daemonUrl ?? ''),
+						Number(formValues.daemonPort) || 60073
+					)}
 				/>
 			{/if}
 		</div>
@@ -451,7 +470,8 @@
 						type="button"
 						class="btn-primary btn-primary-lg"
 						onclick={handleNext}
-						disabled={isAutoGenerating}
+						disabled={isAutoGenerating ||
+							(formValues.mode === 'server_poll' && serverPollReachable !== true)}
 					>
 						{#if isAutoGenerating}
 							<Loader2 class="h-4 w-4 animate-spin" />

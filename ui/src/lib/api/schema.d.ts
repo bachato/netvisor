@@ -924,6 +924,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/daemons/test-reachability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test reachability of a daemon URL
+         * @description Performs a TCP connection test and optionally an HTTP health check
+         *     to verify that a daemon URL is reachable from the server.
+         */
+        post: operations["test_daemon_reachability"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/daemons/{id}": {
         parameters: {
             query?: never;
@@ -2762,7 +2783,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.14.17"
+         *       "server_version": "0.14.18"
          *     }
          */
         ApiMeta: {
@@ -2773,7 +2794,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.14.17
+             * @example 0.14.18
              */
             server_version: string;
         };
@@ -2787,14 +2808,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-10T20:44:32.019378Z",
-             *       "id": "291f6c9a-a075-459f-98f7-51e2ffb71f20",
+             *       "created_at": "2026-03-13T07:24:59.970877Z",
+             *       "id": "b4b35a1c-30da-4dff-8d3e-7f8cb4394a3d",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-10T20:44:32.019378Z"
+             *       "updated_at": "2026-03-13T07:24:59.970877Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3046,14 +3067,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-10T20:44:32.003271Z",
-             *               "id": "4dfbbb25-6016-4447-80ed-ebf02638d7c1",
+             *               "created_at": "2026-03-13T07:24:59.953894Z",
+             *               "id": "0aa368a2-57e9-492e-a4c3-6553d208a238",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-10T20:44:32.003271Z"
+             *               "updated_at": "2026-03-13T07:24:59.953894Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3062,7 +3083,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "UptimeKuma",
+             *           "service_definition": "FileZilla Server",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3318,14 +3339,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-10T20:44:32.014786Z",
-             *           "id": "e7e66538-00a7-41ca-8d0b-715d615a1075",
+             *           "created_at": "2026-03-13T07:24:59.966188Z",
+             *           "id": "951640bd-df69-4773-9397-b8d2c750bf87",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-10T20:44:32.014786Z"
+             *           "updated_at": "2026-03-13T07:24:59.966188Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3334,7 +3355,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "UptimeKuma",
+             *       "service_definition": "FileZilla Server",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3445,6 +3466,20 @@ export interface components {
                 readonly id: string;
                 /** Format: date-time */
                 readonly updated_at: string;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
+        ApiResponse_TestReachabilityResponse: {
+            /** @description Response from a reachability test. */
+            data?: {
+                /** @description Error message if not reachable */
+                error?: string | null;
+                /** @description Health check result (only present when check_health was true) */
+                health?: boolean | null;
+                /** @description Whether the TCP connection succeeded */
+                reachable: boolean;
             };
             error?: string | null;
             meta: components["schemas"]["ApiMeta"];
@@ -3641,14 +3676,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-10T20:44:32.003462Z",
-         *       "id": "6d506b42-8285-4c33-8a8c-9af065d74efe",
+         *       "created_at": "2026-03-13T07:24:59.954230Z",
+         *       "id": "f9af13a1-9a24-4183-bc95-e951f0e9fdbe",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-10T20:44:32.003462Z"
+         *       "updated_at": "2026-03-13T07:24:59.954230Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3830,7 +3865,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "UptimeKuma",
+         *           "service_definition": "FileZilla Server",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4478,14 +4513,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-10T20:44:32.003006Z",
-         *               "id": "4c9ba712-7467-41f2-b761-a78f7036b404",
+         *               "created_at": "2026-03-13T07:24:59.953437Z",
+         *               "id": "e934b442-a0cf-498a-8249-2502ceee9ef7",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-10T20:44:32.003006Z"
+         *               "updated_at": "2026-03-13T07:24:59.953437Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4494,7 +4529,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "UptimeKuma",
+         *           "service_definition": "FileZilla Server",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5033,7 +5068,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.14.17"
+         *       "server_version": "0.14.18"
          *     }
          */
         PaginatedApiMeta: {
@@ -5046,7 +5081,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.14.17
+             * @example 0.14.18
              */
             server_version: string;
         };
@@ -5474,14 +5509,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-10T20:44:32.003398Z",
-         *           "id": "7651e08e-cb64-4c79-bf55-e23db0dc5780",
+         *           "created_at": "2026-03-13T07:24:59.954113Z",
+         *           "id": "b45080ca-f5bd-4c90-80ab-683239378a9a",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-10T20:44:32.003398Z"
+         *           "updated_at": "2026-03-13T07:24:59.954113Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5490,7 +5525,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "UptimeKuma",
+         *       "service_definition": "FileZilla Server",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -5753,6 +5788,22 @@ export interface components {
          * @enum {string}
          */
         TagOrderField: "created_at" | "name" | "color" | "updated_at";
+        /** @description Request to test reachability of a daemon URL. */
+        TestReachabilityRequest: {
+            /** @description If true, also perform an HTTP GET to {url}/health after the TCP check */
+            check_health?: boolean;
+            /** @description Full URL of the daemon (e.g. "https://daemon.example.com:60073") */
+            url: string;
+        };
+        /** @description Response from a reachability test. */
+        TestReachabilityResponse: {
+            /** @description Error message if not reachable */
+            error?: string | null;
+            /** @description Health check result (only present when check_health was true) */
+            health?: boolean | null;
+            /** @description Whether the TCP connection succeeded */
+            reachable: boolean;
+        };
         Topology: components["schemas"]["TopologyBase"] & {
             /** Format: date-time */
             readonly created_at: string;
@@ -8056,6 +8107,39 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    test_daemon_reachability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestReachabilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Reachability test result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_TestReachabilityResponse"];
+                };
+            };
+            /** @description Invalid URL */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

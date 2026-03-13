@@ -7,13 +7,12 @@
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import type { DaemonOS } from '../../../utils';
 	import { trackEvent } from '$lib/shared/utils/analytics';
+	import { useTestReachabilityMutation } from '../../../queries';
 	import OsSelector from '../../OsSelector.svelte';
-	import { Loader2, CheckCircle2, AlertTriangle, SlidersHorizontal } from 'lucide-svelte';
+	import { Loader2, CheckCircle2, AlertTriangle, SlidersHorizontal, XCircle } from 'lucide-svelte';
 	import type { DaemonConnectionStatus } from '../../../stores/daemon-setup';
 	import {
-		common_stepNumber,
 		common_advanced,
-		daemons_advancedHint,
 		daemons_dockerLinuxOnly,
 		daemons_dockerLinuxOnlyBody,
 		daemons_docsMacvlan,
@@ -22,7 +21,6 @@
 		daemons_docsMultiVlanLinkText,
 		daemons_fixValidationErrors,
 		daemons_fixValidationErrorsBody,
-		daemons_runInPowershell,
 		daemons_wslWarning,
 		daemons_wslWarningBody
 	} from '$lib/paraglide/messages';
@@ -44,6 +42,8 @@
 		hasEmailSupport?: boolean;
 		showTroubleshootingPanel?: boolean;
 		onAdvanced?: (() => void) | null;
+		daemonMode?: string;
+		daemonUrl?: string;
 	}
 
 	let {
@@ -60,7 +60,9 @@
 		onViewDiscovery,
 		hasEmailSupport = false,
 		showTroubleshootingPanel = false,
-		onAdvanced = null
+		onAdvanced = null,
+		daemonMode = 'daemon_poll',
+		daemonUrl = ''
 	}: Props = $props();
 
 	const configQuery = useConfigQuery();
@@ -70,6 +72,43 @@
 		'https://github.com/scanopy/scanopy/releases/latest/download/scanopy-daemon-windows-amd64.exe';
 	const windowsInstallCommand = `Invoke-WebRequest -Uri "${windowsDownloadUrl}" -OutFile "scanopy-daemon-windows-amd64.exe"`;
 	const installScript = `bash -c "$(curl -fsSL https://raw.githubusercontent.com/scanopy/scanopy/refs/heads/main/install.sh)"`;
+
+	// Combined install commands
+	let combinedLinuxMacCommand = $derived(`${installScript} && ${runCommand}`);
+	let combinedWindowsCommand = $derived(`${windowsInstallCommand}; ${runCommand}`);
+
+	// ServerPoll health check for trouble state
+	const healthCheckMutation = useTestReachabilityMutation();
+	let healthResult = $state<{ reachable: boolean; health?: boolean; error?: string } | null>(null);
+
+	async function handleHealthCheck() {
+		if (!daemonUrl) return;
+		try {
+			const result = await healthCheckMutation.mutateAsync({
+				url: daemonUrl,
+				check_health: true
+			});
+			healthResult = {
+				reachable: result.reachable,
+				health: result.health ?? undefined,
+				error: result.error ?? undefined
+			};
+		} catch {
+			healthResult = { reachable: false, error: 'Failed to test reachability' };
+		}
+	}
+
+	// Auto-poll health check for ServerPoll when waiting
+	let healthPollInterval = $state<ReturnType<typeof setInterval> | null>(null);
+	$effect(() => {
+		if (connectionStatus === 'waiting' && daemonMode === 'server_poll' && daemonUrl) {
+			handleHealthCheck();
+			healthPollInterval = setInterval(handleHealthCheck, 10_000);
+			return () => {
+				if (healthPollInterval) clearInterval(healthPollInterval);
+			};
+		}
+	});
 
 	function handleOsSelect(os: DaemonOS) {
 		onOsSelect(os);
@@ -108,6 +147,26 @@
 						This usually takes less than a minute. Make sure the daemon is running.
 					</p>
 				</div>
+				{#if daemonMode === 'server_poll' && healthResult}
+					<div class="text-sm">
+						{#if healthResult.reachable && healthResult.health}
+							<span class="flex items-center gap-1 text-green-400">
+								<CheckCircle2 class="h-4 w-4" />
+								Daemon is running and reachable
+							</span>
+						{:else if healthResult.reachable && healthResult.health === false}
+							<span class="flex items-center gap-1 text-yellow-400">
+								<AlertTriangle class="h-4 w-4" />
+								Port is open but daemon may still be starting...
+							</span>
+						{:else if !healthResult.reachable}
+							<span class="flex items-center gap-1 text-red-400">
+								<XCircle class="h-4 w-4" />
+								Port not reachable — check firewall and port forwarding
+							</span>
+						{/if}
+					</div>
+				{/if}
 				<button type="button" class="btn-link text-sm" onclick={() => onReviewCommands?.()}>
 					Review install commands
 				</button>
@@ -145,6 +204,49 @@
 						It's been a while. Check that the daemon is running and can reach this server.
 					</p>
 				</div>
+				<ul class="text-secondary space-y-1 text-left text-sm">
+					<li>Check that the daemon process is running</li>
+					<li>Verify the server URL in the daemon config matches this server</li>
+					<li>Check that no firewall is blocking the connection</li>
+				</ul>
+				{#if daemonMode === 'server_poll' && daemonUrl}
+					<div class="flex items-center gap-3">
+						<button
+							type="button"
+							class="btn-secondary text-sm"
+							disabled={healthCheckMutation.isPending}
+							onclick={handleHealthCheck}
+						>
+							{#if healthCheckMutation.isPending}
+								<Loader2 class="h-4 w-4 animate-spin" />
+							{/if}
+							Test Daemon Reachability
+						</button>
+						{#if healthResult}
+							{#if healthResult.reachable && healthResult.health}
+								<span class="flex items-center gap-1 text-sm text-green-400">
+									<CheckCircle2 class="h-4 w-4" />
+									Daemon is reachable and healthy
+								</span>
+							{:else if healthResult.reachable}
+								<span class="flex items-center gap-1 text-sm text-yellow-400">
+									<AlertTriangle class="h-4 w-4" />
+									Port open but health check failed
+								</span>
+							{:else}
+								<span class="flex items-center gap-1 text-sm text-red-400">
+									<XCircle class="h-4 w-4" />
+									{healthResult.error ?? 'Not reachable'}
+								</span>
+							{/if}
+						{/if}
+					</div>
+				{/if}
+				<DocsHint
+					text="See our %link% for common solutions."
+					href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/"
+					linkText="troubleshooting guide"
+				/>
 				<button type="button" class="btn-link text-sm" onclick={() => onReviewCommands?.()}>
 					Review install commands
 				</button>
@@ -153,12 +255,6 @@
 		{/if}
 	{:else}
 		<!-- Normal install commands view -->
-		<InlineInfo
-			title=""
-			body={daemons_advancedHint()}
-			dismissableKey="daemon-wizard-advanced-hint"
-		/>
-
 		{#if hasErrors}
 			<InlineWarning
 				title={daemons_fixValidationErrors()}
@@ -188,25 +284,11 @@
 				{/snippet}
 				{#if selectedOS === 'linux'}
 					{#if linuxMethod === 'binary'}
-						<div class="text-secondary">
-							<b>{common_stepNumber({ number: '1' })}</b>
-							Download the binary
-						</div>
 						<CodeContainer
 							language="bash"
 							expandable={false}
-							code={installScript}
-							onCopy={() => handleCopy('install-script')}
-						/>
-						<div class="text-secondary">
-							<b>{common_stepNumber({ number: '2' })}</b>
-							Run the install command
-						</div>
-						<CodeContainer
-							language="bash"
-							expandable={false}
-							code={runCommand}
-							onCopy={() => handleCopy('run-command')}
+							code={combinedLinuxMacCommand}
+							onCopy={() => handleCopy('combined-install')}
 						/>
 					{:else if linuxMethod === 'docker' && dockerCompose}
 						<DocsHint
@@ -223,49 +305,20 @@
 						/>
 					{/if}
 				{:else if selectedOS === 'macos'}
-					<div class="text-secondary">
-						<b>{common_stepNumber({ number: '1' })}</b>
-						Download the binary
-					</div>
 					<CodeContainer
 						language="bash"
 						expandable={false}
-						code={installScript}
-						onCopy={() => handleCopy('install-script')}
-					/>
-					<div class="text-secondary">
-						<b>{common_stepNumber({ number: '2' })}</b>
-						Run the install command
-					</div>
-					<CodeContainer
-						language="bash"
-						expandable={false}
-						code={runCommand}
-						onCopy={() => handleCopy('run-command')}
+						code={combinedLinuxMacCommand}
+						onCopy={() => handleCopy('combined-install')}
 					/>
 
 					<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 				{:else if selectedOS === 'windows'}
-					<div class="text-secondary">
-						<b>{common_stepNumber({ number: '1' })}</b>
-						Download the executable
-					</div>
 					<CodeContainer
 						language="powershell"
 						expandable={false}
-						code={windowsInstallCommand}
-						onCopy={() => handleCopy('windows-download')}
-					/>
-
-					<div class="text-secondary">
-						<b>{common_stepNumber({ number: '2' })}</b>
-						{daemons_runInPowershell()}
-					</div>
-					<CodeContainer
-						language="powershell"
-						expandable={false}
-						code={runCommand}
-						onCopy={() => handleCopy('run-command')}
+						code={combinedWindowsCommand}
+						onCopy={() => handleCopy('combined-install')}
 					/>
 
 					<InlineWarning title={daemons_wslWarning()} body={daemons_wslWarningBody()} />

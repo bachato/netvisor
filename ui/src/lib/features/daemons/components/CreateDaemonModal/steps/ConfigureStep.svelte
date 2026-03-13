@@ -6,15 +6,11 @@
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
-	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
 	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
-	import {
-		SimpleOptionDisplay,
-		type SimpleOption
-	} from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
-	import { ArrowUpCircle } from 'lucide-svelte';
-	import { openModal } from '$lib/shared/stores/modal-registry';
+	import { Loader2, CheckCircle2, XCircle } from 'lucide-svelte';
 	import { fieldDefs } from '../../../config';
+	import { constructDaemonUrl } from '../../../utils';
+	import { useTestReachabilityMutation } from '../../../queries';
 	import {
 		common_apiKey,
 		common_name,
@@ -44,10 +40,10 @@
 		selectedNetworkId: string;
 		onNetworkChange: (id: string) => void;
 		onNameInput?: () => void;
-		hasDaemonPoll: boolean;
 		keySet: boolean;
 		isFirstDaemon?: boolean;
 		onUseExistingKey?: () => void;
+		onReachabilityChange?: (reachable: boolean | null) => void;
 	}
 
 	let {
@@ -56,10 +52,10 @@
 		selectedNetworkId,
 		onNetworkChange,
 		onNameInput,
-		hasDaemonPoll,
 		keySet,
 		isFirstDaemon = false,
-		onUseExistingKey
+		onUseExistingKey,
+		onReachabilityChange
 	}: Props = $props();
 
 	// Get validators for a field
@@ -85,6 +81,7 @@
 
 	let isServerPoll = $derived(formValues.mode === 'server_poll');
 	let daemonUrl = $derived(String(formValues.daemonUrl ?? ''));
+	let daemonPort = $derived(Number(formValues.daemonPort) || 60073);
 	let showHttpWarning = $derived.by(() => {
 		try {
 			const parsed = new URL(daemonUrl);
@@ -99,15 +96,49 @@
 			return false;
 		}
 	});
+
+	// Reachability test state
+	const testReachabilityMutation = useTestReachabilityMutation();
+	let reachabilityResult = $state<{ reachable: boolean; error?: string } | null>(null);
+	let isTesting = $derived(testReachabilityMutation.isPending);
+
+	// Reset reachability when URL or port changes
+	let prevUrlPort = $state('');
+	$effect(() => {
+		const key = `${daemonUrl}:${daemonPort}`;
+		if (key !== prevUrlPort) {
+			prevUrlPort = key;
+			reachabilityResult = null;
+			onReachabilityChange?.(null);
+		}
+	});
+
+	async function handleTestReachability() {
+		if (!daemonUrl) return;
+		const fullUrl = constructDaemonUrl(daemonUrl, daemonPort);
+		try {
+			const result = await testReachabilityMutation.mutateAsync({
+				url: fullUrl,
+				check_health: false
+			});
+			reachabilityResult = { reachable: result.reachable, error: result.error ?? undefined };
+			onReachabilityChange?.(result.reachable);
+		} catch {
+			reachabilityResult = { reachable: false, error: 'Failed to test reachability' };
+			onReachabilityChange?.(false);
+		}
+	}
 </script>
 
 <div class="space-y-4">
-	<SelectNetwork
-		{selectedNetworkId}
-		onNetworkChange={(id) => onNetworkChange(id)}
-		disabled={keySet}
-		disabledReason={daemons_networkCannotChange()}
-	/>
+	{#if !isFirstDaemon}
+		<SelectNetwork
+			{selectedNetworkId}
+			onNetworkChange={(id) => onNetworkChange(id)}
+			disabled={keySet}
+			disabledReason={daemons_networkCannotChange()}
+		/>
+	{/if}
 
 	<!-- Name -->
 	<div oninput={() => onNameInput?.()}>
@@ -127,26 +158,25 @@
 	<!-- Mode -->
 	<form.Field name={modeDef.id}>
 		{#snippet children(field: AnyFieldApi)}
-			<RichSelect
+			<RadioGroup
 				label={daemons_config_mode()}
-				selectedValue={String(field.state.value ?? '')}
+				id="daemon-mode"
+				{field}
+				options={[
+					{
+						value: 'daemon_poll',
+						label: (modeDef.options ?? [])[0]?.label() ?? 'Daemon Poll',
+						helpText:
+							'Recommended. Daemon connects to the server — works behind NAT/firewalls without opening ports.'
+					},
+					{
+						value: 'server_poll',
+						label: (modeDef.options ?? [])[1]?.label() ?? 'Server Poll',
+						helpText:
+							'Server connects to the daemon — requires the daemon to be reachable at a public URL.'
+					}
+				]}
 				disabled={keySet}
-				options={(modeDef.options ?? []).map((opt): SimpleOption => {
-					const needsUpgrade = opt.value === 'daemon_poll' && !hasDaemonPoll;
-					return {
-						value: opt.value,
-						label: opt.label(),
-						description:
-							opt.value === 'daemon_poll'
-								? 'Daemon connects to server; works behind NAT/firewall without opening ports'
-								: 'Server connects to daemon; requires providing Daemon URL',
-						disabled: needsUpgrade,
-						tags: needsUpgrade ? [{ label: 'Upgrade', color: 'Yellow', icon: ArrowUpCircle }] : []
-					};
-				})}
-				onSelect={(value) => field.handleChange(value)}
-				onDisabledClick={() => openModal('billing-plan')}
-				displayComponent={SimpleOptionDisplay}
 			/>
 		{/snippet}
 	</form.Field>
@@ -198,15 +228,41 @@
 		{/if}
 
 		<InlineInfo title="" body={daemons_portForwardingHint()} />
-	{/if}
 
-	<!-- API key info: auto-generated when no key source choice is shown -->
-	{#if isFirstDaemon || isServerPoll}
-		<InlineInfo
-			title=""
-			body="An API key will be automatically generated for this daemon when you proceed to the next step."
-			dismissableKey="daemon-auto-key-hint"
-		/>
+		<!-- Reachability test -->
+		<div class="flex items-center gap-3">
+			<button
+				type="button"
+				class="btn-secondary text-sm"
+				disabled={!daemonUrl || isTesting}
+				onclick={handleTestReachability}
+			>
+				{#if isTesting}
+					<Loader2 class="h-4 w-4 animate-spin" />
+				{/if}
+				Test Connection
+			</button>
+			{#if reachabilityResult}
+				{#if reachabilityResult.reachable}
+					<span class="flex items-center gap-1 text-sm text-green-400">
+						<CheckCircle2 class="h-4 w-4" />
+						Port is reachable
+					</span>
+				{:else}
+					<span class="flex items-center gap-1 text-sm text-red-400">
+						<XCircle class="h-4 w-4" />
+						{reachabilityResult.error ?? 'Port is not reachable'}
+					</span>
+				{/if}
+			{/if}
+		</div>
+		{#if reachabilityResult && !reachabilityResult.reachable}
+			<DocsHint
+				text="Having trouble? Check our %link% for common solutions."
+				href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/"
+				linkText="troubleshooting guide"
+			/>
+		{/if}
 	{/if}
 
 	<!-- Inline API key source for DaemonPoll (subsequent daemons only) -->
