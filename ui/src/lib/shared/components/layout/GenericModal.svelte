@@ -236,7 +236,7 @@
 				<button
 					type="button"
 					onclick={handleClose}
-					class="absolute right-4 top-4 z-20 rounded-full bg-white/80 p-2 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-800/80 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+					class="absolute right-4 top-3 z-30 rounded-full bg-white/80 p-2 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-800/80 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
 					aria-label={common_closeModal()}
 				>
 					<X class="h-5 w-5" />
