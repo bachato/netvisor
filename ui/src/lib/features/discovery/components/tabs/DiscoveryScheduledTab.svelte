@@ -100,6 +100,14 @@
 		initiateDiscoveryMutation.mutate(discovery.id);
 	}
 
+	async function handleToggleEnabled(discovery: Discovery) {
+		const updated = structuredClone(discovery);
+		if (updated.run_type.type === 'Scheduled') {
+			updated.run_type.enabled = !updated.run_type.enabled;
+			await updateDiscoveryMutation.mutateAsync(updated);
+		}
+	}
+
 	async function handleDiscoveryCreate(data: Discovery) {
 		await createDiscoveryMutation.mutateAsync(data);
 		showDiscoveryModal = false;
@@ -209,6 +217,7 @@
 					onDelete={isReadOnly ? undefined : handleDeleteDiscovery}
 					onEdit={isReadOnly ? undefined : handleEditDiscovery}
 					onRun={isReadOnly ? undefined : handleDiscoveryRun}
+					onToggleEnabled={isReadOnly ? undefined : handleToggleEnabled}
 					{viewMode}
 				/>
 			{/snippet}

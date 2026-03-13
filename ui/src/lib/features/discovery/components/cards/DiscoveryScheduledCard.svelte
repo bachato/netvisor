@@ -1,7 +1,7 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
-	import { Edit, Play, Trash2 } from 'lucide-svelte';
+	import { Edit, Pause, Play, Power, Trash2 } from 'lucide-svelte';
 	import type { Discovery } from '../../types/base';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
@@ -27,6 +27,7 @@
 		onEdit,
 		onDelete,
 		onRun,
+		onToggleEnabled,
 		selected,
 		onSelectionChange = () => {}
 	}: {
@@ -35,6 +36,7 @@
 		onEdit?: (discovery: Discovery) => void;
 		onDelete?: (discovery: Discovery) => void;
 		onRun?: (discovery: Discovery) => void;
+		onToggleEnabled?: (discovery: Discovery) => void;
 		selected: boolean;
 		onSelectionChange?: (selected: boolean) => void;
 	} = $props();
@@ -94,6 +96,16 @@
 		actions: [
 			...(onDelete
 				? [{ label: 'Delete', icon: Trash2, class: `btn-icon`, onClick: () => onDelete(discovery) }]
+				: []),
+			...(onToggleEnabled && discovery.run_type.type === 'Scheduled'
+				? [
+						{
+							label: discovery.run_type.enabled ? 'Disable' : 'Enable',
+							icon: discovery.run_type.enabled ? Pause : Power,
+							class: `btn-icon`,
+							onClick: () => onToggleEnabled(discovery)
+						}
+					]
 				: []),
 			...(onRun
 				? [{ label: 'Run', icon: Play, class: `btn-icon`, onClick: () => onRun(discovery) }]
