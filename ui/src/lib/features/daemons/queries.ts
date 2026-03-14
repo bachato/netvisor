@@ -29,6 +29,27 @@ export function useDaemonsQuery(options?: { enabled?: () => boolean }) {
 }
 
 /**
+ * Query hook for fetching a single daemon by ID
+ */
+export function useDaemonQuery(id: () => string | null, options?: { enabled?: () => boolean }) {
+	return createQuery(() => ({
+		queryKey: queryKeys.daemons.detail(id() ?? ''),
+		queryFn: async () => {
+			const daemonId = id();
+			if (!daemonId) throw new Error('No daemon ID');
+			const { data } = await apiClient.GET('/api/v1/daemons/{id}', {
+				params: { path: { id: daemonId } }
+			});
+			if (!data?.success || !data.data) {
+				throw new Error(data?.error || 'Failed to fetch daemon');
+			}
+			return data.data;
+		},
+		enabled: (options?.enabled?.() ?? true) && !!id()
+	}));
+}
+
+/**
  * Mutation hook for deleting a daemon
  */
 export function useDeleteDaemonMutation() {

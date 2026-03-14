@@ -14,7 +14,7 @@
 		createEmptyApiKeyFormData,
 		useCreateApiKeyMutation
 	} from '$lib/features/daemon_api_keys/queries';
-	import { useProvisionDaemonMutation } from '../../queries';
+	import { useProvisionDaemonMutation, useDaemonQuery, useDaemonsQuery } from '../../queries';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
@@ -109,6 +109,17 @@
 	let connectionStatus = $state<DaemonConnectionStatus>('idle');
 	let troubleTimeoutId = $state<ReturnType<typeof setTimeout> | null>(null);
 	let showTroubleshootingPanel = $state(false);
+	let daemonIdsAtWaitStart = $state<Set<string>>(new Set());
+
+	// Daemon-specific queries for connection detection
+	const provisionedDaemonQuery = useDaemonQuery(() => provisionedDaemonId || null, {
+		enabled: () =>
+			(connectionStatus === 'waiting' || connectionStatus === 'trouble') && !!provisionedDaemonId
+	});
+	const daemonsQuery = useDaemonsQuery({
+		enabled: () =>
+			(connectionStatus === 'waiting' || connectionStatus === 'trouble') && !provisionedDaemonId
+	});
 
 	function getDefaultDaemonName(networkId: string): string {
 		const network = networksData.find((n) => n.id === networkId);
@@ -333,6 +344,12 @@
 	}
 
 	function handleInstalled() {
+		// Snapshot daemon IDs for DaemonPoll detection before entering waiting state
+		if (formValues.mode !== 'server_poll') {
+			const currentDaemons = daemonsQuery.data ?? [];
+			daemonIdsAtWaitStart = new Set(currentDaemons.map((d) => d.id));
+		}
+
 		connectionStatus = 'waiting';
 		daemonSetupState.set({ connectionStatus: 'waiting' });
 		trackEvent('daemon_install_confirmed');
@@ -358,30 +375,63 @@
 		trackEvent('daemon_install_trouble');
 	}
 
-	// Poll org query for FirstDaemonRegistered when waiting
+	function markConnected() {
+		connectionStatus = 'connected';
+		daemonSetupState.set({ connectionStatus: 'connected' });
+		if (troubleTimeoutId) {
+			clearTimeout(troubleTimeoutId);
+			troubleTimeoutId = null;
+		}
+		confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+		trackEvent('daemon_connected');
+	}
+
+	// ServerPoll: poll provisionedDaemonQuery every 5s when waiting/trouble
 	$effect(() => {
-		if (connectionStatus === 'waiting' || connectionStatus === 'trouble') {
+		if ((connectionStatus === 'waiting' || connectionStatus === 'trouble') && provisionedDaemonId) {
 			const interval = setInterval(() => {
-				organizationQuery.refetch();
+				provisionedDaemonQuery.refetch();
 			}, 5000);
 			return () => clearInterval(interval);
 		}
 	});
 
-	// Detect connection via org onboarding
+	// ServerPoll: detect connection when last_seen becomes non-null
 	$effect(() => {
 		if (
 			(connectionStatus === 'waiting' || connectionStatus === 'trouble') &&
-			org?.onboarding?.includes('FirstDaemonRegistered')
+			provisionedDaemonId &&
+			provisionedDaemonQuery.data?.last_seen
 		) {
-			connectionStatus = 'connected';
-			daemonSetupState.set({ connectionStatus: 'connected' });
-			if (troubleTimeoutId) {
-				clearTimeout(troubleTimeoutId);
-				troubleTimeoutId = null;
+			markConnected();
+		}
+	});
+
+	// DaemonPoll: poll daemonsQuery every 5s when waiting/trouble
+	$effect(() => {
+		if (
+			(connectionStatus === 'waiting' || connectionStatus === 'trouble') &&
+			!provisionedDaemonId
+		) {
+			const interval = setInterval(() => {
+				daemonsQuery.refetch();
+			}, 5000);
+			return () => clearInterval(interval);
+		}
+	});
+
+	// DaemonPoll: detect connection when a new daemon ID appears
+	$effect(() => {
+		if (
+			(connectionStatus === 'waiting' || connectionStatus === 'trouble') &&
+			!provisionedDaemonId &&
+			daemonsQuery.data
+		) {
+			const currentIds = daemonsQuery.data.map((d) => d.id);
+			const hasNewDaemon = currentIds.some((id) => !daemonIdsAtWaitStart.has(id));
+			if (hasNewDaemon) {
+				markConnected();
 			}
-			confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-			trackEvent('daemon_connected');
 		}
 	});
 
@@ -410,6 +460,7 @@
 		serverPollReachable = null;
 		isTestingReachability = false;
 		serverPollReachabilityResult = null;
+		daemonIdsAtWaitStart = new Set();
 		onClose();
 	}
 
@@ -424,6 +475,7 @@
 		showTroubleshootingPanel = false;
 		serverPollReachable = null;
 		serverPollReachabilityResult = null;
+		daemonIdsAtWaitStart = new Set();
 	}
 
 	let colorHelper = entities.getColorHelper('Daemon');

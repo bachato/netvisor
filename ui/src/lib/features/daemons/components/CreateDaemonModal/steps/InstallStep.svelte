@@ -216,14 +216,14 @@
 							>
 						</div>
 						<InlineSuccess
-							title="Daemon is reachable and healthy \u2014 waiting for server to register it"
+							title="Daemon is reachable and healthy — waiting for server to register it"
 						/>
 						<div>
 							<h3 class="text-primary text-base font-semibold">
 								Waiting for server to register your daemon...
 							</h3>
 							<p class="text-secondary mt-1 text-sm">
-								Your daemon is running \u2014 the server will pick it up on its next polling cycle.
+								Your daemon is running — the server will pick it up on its next polling cycle.
 							</p>
 						</div>
 						<div class="flex items-center gap-3">
@@ -245,16 +245,17 @@
 					{:else if healthResult}
 						<!-- Health check failed -->
 						{#if healthResult.reachable}
-							<InlineWarning title="Port open but health check failed" />
+							<InlineWarning
+								title="Port open but health check failed"
+								body="The port is open but the daemon isn't responding to health checks. It may still be starting — try again in a moment. If this persists, <a href='https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/' target='_blank' class='underline'>check the daemon logs</a>."
+							/>
 						{:else}
-							<InlineDanger title={healthResult.error ?? 'Not reachable'} />
+							<InlineDanger
+								title={healthResult.error ?? 'Not reachable'}
+								body="The daemon may not be running, or the port may no longer be reachable. Verify the install command completed and the daemon process started. If the host has a firewall, check that the port is open and forwarded."
+							/>
 						{/if}
-						<div>
-							<h3 class="text-primary text-base font-semibold">Connection test failed</h3>
-							<p class="text-secondary mt-1 text-sm">
-								Check that the daemon is running and the port is reachable.
-							</p>
-						</div>
+						<h3 class="text-primary text-base font-semibold">Connection test failed</h3>
 						<button
 							type="button"
 							class="btn-primary text-sm"
@@ -353,12 +354,18 @@
 						{#if healthResult}
 							{#if healthResult.reachable && healthResult.health}
 								<InlineSuccess
-									title="Daemon is reachable and healthy \u2014 waiting for server to register it"
+									title="Daemon is reachable and healthy — waiting for server to register it"
 								/>
 							{:else if healthResult.reachable}
-								<InlineWarning title="Port open but health check failed" />
+								<InlineWarning
+									title="Port open but health check failed"
+									body="The port is open but the daemon isn't responding to health checks. It may still be starting — try again in a moment. If this persists, <a href='https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/' target='_blank' class='underline'>check the daemon logs</a>."
+								/>
 							{:else}
-								<InlineDanger title={healthResult.error ?? 'Not reachable'} />
+								<InlineDanger
+									title={healthResult.error ?? 'Not reachable'}
+									body="The daemon may not be running, or the port may no longer be reachable. Verify the install command completed and the daemon process started. If the host has a firewall, check that the port is open and forwarded."
+								/>
 							{/if}
 						{/if}
 						<button

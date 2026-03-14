@@ -881,13 +881,19 @@ async fn test_reachability(
         Ok(Err(e)) => {
             let message = match e.kind() {
                 std::io::ErrorKind::ConnectionRefused => {
-                    "Connection refused — no service is listening on this port".to_string()
+                    format!(
+                        "Connection refused — no service is listening on port {} at {}",
+                        port, host
+                    )
                 }
                 std::io::ErrorKind::TimedOut => {
-                    "Connection timed out — the host may be unreachable or a firewall is blocking the port".to_string()
+                    format!(
+                        "Connection timed out — {}:{} may be unreachable or a firewall is blocking the port",
+                        host, port
+                    )
                 }
                 std::io::ErrorKind::AddrNotAvailable => {
-                    "Address not available".to_string()
+                    format!("Address not available — {}", host)
                 }
                 _ => format!("Connection failed: {}", e),
             };
@@ -900,7 +906,10 @@ async fn test_reachability(
         Err(_) => {
             return Ok(Json(ApiResponse::success(TestReachabilityResponse {
                 reachable: false,
-                error: Some("Connection timed out after 5 seconds".to_string()),
+                error: Some(format!(
+                    "Connection timed out after 5 seconds — could not reach {}:{}",
+                    host, port
+                )),
                 health: None,
             })));
         }
