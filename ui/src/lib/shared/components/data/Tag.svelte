@@ -38,7 +38,6 @@
 
 {#snippet content()}
 	<span
-		{title}
 		class="inline-flex items-center gap-1 {pill
 			? 'rounded-full'
 			: 'rounded'} px-2 py-0.5 text-xs font-medium
@@ -75,13 +74,17 @@
 		{href}
 		target="_blank"
 		rel="noopener noreferrer"
+		title={title || undefined}
 		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125"
 		onclick={(e) => e.stopPropagation()}
 	>
 		{@render content()}
 	</a>
 {:else}
-	<div class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded">
+	<div
+		title={title || undefined}
+		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded"
+	>
 		{@render content()}
 	</div>
 {/if}

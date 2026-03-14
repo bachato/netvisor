@@ -257,7 +257,11 @@
 						class="group relative overflow-visible transition-all duration-200 ease-in-out {cls}"
 						title={action.label}
 					>
-						<div class="flex items-center justify-center {action.forceLabel ? 'opacity-0' : ''}">
+						<div
+							class="flex items-center justify-center {action.forceLabel
+								? 'opacity-0'
+								: 'transition-opacity duration-200 group-hover:opacity-0'}"
+						>
 							<action.icon size={16} class="flex-shrink-0 {action.animation || ''}" />
 						</div>
 

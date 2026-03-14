@@ -49,16 +49,14 @@
 		if (failureCount >= 3) {
 			return {
 				label: 'Auto-paused',
-				textColor: 'text-red-400',
-				bgColor: 'bg-red-400/10',
+				color: 'Red' as const,
 				title: `Automatically paused after ${failureCount} consecutive stall failures`
 			};
 		}
 		if (failureCount >= 1) {
 			return {
 				label: `${failureCount} failure${failureCount > 1 ? 's' : ''}`,
-				textColor: 'text-amber-400',
-				bgColor: 'bg-amber-400/10',
+				color: 'Orange' as const,
 				title: 'Will auto-pause after 3 consecutive failures'
 			};
 		}

@@ -36,9 +36,9 @@
 	let hasUnclaimedPorts = $derived(
 		(servicesQuery.data ?? []).some((s) => s.service_definition === 'Unclaimed Open Ports')
 	);
-	let hasFailingDiscoveries = $derived(
+	let hasAutoPausedDiscoveries = $derived(
 		(discoveriesQuery.data ?? []).some(
-			(d) => d.run_type.type === 'Scheduled' && (d.run_type.consecutive_failures ?? 0) > 0
+			(d) => d.run_type.type === 'Scheduled' && (d.run_type.consecutive_failures ?? 0) >= 3
 		)
 	);
 	let hasUnreachableDaemons = $derived(
@@ -90,17 +90,15 @@
 				iconColor: entities.getColorHelper('Port').icon
 			},
 			{
-				id: 'scans-failing',
-				title: 'Scans are failing',
-				description: 'Some scheduled scans have consecutive failures and may be auto-paused.',
-				actionLabel: 'Troubleshoot',
+				id: 'scans-auto-paused',
+				title: 'Scans have been auto-paused',
+				description:
+					'Some scheduled scans were automatically paused after repeated failures. <a href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/" target="_blank" class="text-blue-400 hover:text-blue-300">Learn how to troubleshoot</a>.',
+				actionLabel: 'Go to Discoveries',
 				action: () => {
-					window.open(
-						'https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/',
-						'_blank'
-					);
+					onNavigate('discoveries');
 				},
-				visible: hasFailingDiscoveries,
+				visible: hasAutoPausedDiscoveries,
 				icon: entities.getIconComponent('Discovery'),
 				iconColor: entities.getColorHelper('Discovery').icon
 			},

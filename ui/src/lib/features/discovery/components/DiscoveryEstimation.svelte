@@ -22,8 +22,10 @@
 
 	let text = $derived.by(() => {
 		switch (phase) {
+			case 'Queued':
+				return 'Waiting in queue — another scan is running on this daemon';
 			case 'Pending':
-				return 'Waiting for session to get picked up by the daemon';
+				return 'Ready to start — waiting for daemon to begin scanning';
 			case 'Starting':
 				return 'Waiting for session to start on the daemon';
 			case 'Cancelling':

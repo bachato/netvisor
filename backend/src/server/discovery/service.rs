@@ -334,7 +334,24 @@ impl DiscoveryService {
             false
         };
 
-        let updated = if schedule_changed
+        // Detect enabled state transitions (disabled→enabled or enabled→disabled)
+        let enabled_changed = if let RunType::Scheduled {
+            enabled: new_enabled,
+            ..
+        } = &discovery.base.run_type
+            && let RunType::Scheduled {
+                enabled: current_enabled,
+                ..
+            } = &current.base.run_type
+        {
+            current_enabled != new_enabled
+        } else {
+            false
+        };
+
+        let needs_reschedule = schedule_changed || enabled_changed;
+
+        let updated = if needs_reschedule
             && matches!(discovery.base.run_type, RunType::Scheduled { .. })
         {
             // Remove old schedule first using the actual job_id
@@ -356,17 +373,22 @@ impl DiscoveryService {
             // Update in DB first
             let mut updated = self.discovery_storage.update(&mut discovery).await?;
 
-            // Try to reschedule with new cron expression
+            // Re-add cron job (schedule_discovery guards on !enabled, so disabling skips re-add)
             if let Err(e) = Self::schedule_discovery(self, &updated).await {
-                // Disable and save again
-                updated.disable();
-                let disabled_discovery = self.discovery_storage.update(&mut updated).await?;
+                // Only disable if we were trying to enable/reschedule (not if already disabling)
+                if matches!(
+                    updated.base.run_type,
+                    RunType::Scheduled { enabled: true, .. }
+                ) {
+                    updated.disable();
+                    let disabled_discovery = self.discovery_storage.update(&mut updated).await?;
 
-                tracing::error!(
-                    "Failed to reschedule discovery {}. Discovery updated but disabled. Error: {}",
-                    disabled_discovery.id,
-                    e
-                );
+                    tracing::error!(
+                        "Failed to reschedule discovery {}. Discovery updated but disabled. Error: {}",
+                        disabled_discovery.id,
+                        e
+                    );
+                }
             }
 
             updated
@@ -880,20 +902,14 @@ impl DiscoveryService {
                 None
             };
 
-            // Track consecutive failures for scheduled discoveries
-            {
+            // Find discovery_id for failure tracking before removing mappings
+            let failure_discovery_id = {
                 let discovery_sessions = self.discovery_sessions.read().await;
-                let discovery_id = discovery_sessions
+                discovery_sessions
                     .iter()
                     .find(|(_, sid)| **sid == update.session_id)
-                    .map(|(did, _)| *did);
-                drop(discovery_sessions);
-
-                if let Some(discovery_id) = discovery_id {
-                    self.handle_session_failure_tracking(&update, discovery_id)
-                        .await;
-                }
-            }
+                    .map(|(did, _)| *did)
+            };
 
             // Remove the completed session
             sessions.remove(&update.session_id);
@@ -904,8 +920,14 @@ impl DiscoveryService {
                 .await
                 .retain(|_, sid| *sid != update.session_id);
 
-            // Drop the sessions lock before sending the request
+            // Drop the sessions lock before failure tracking (which acquires its own locks)
             drop(sessions);
+
+            // Track consecutive failures after locks are released to avoid deadlock
+            if let Some(discovery_id) = failure_discovery_id {
+                self.handle_session_failure_tracking(&update, discovery_id)
+                    .await;
+            }
 
             // Publish event which will trigger notifying any daemons in ServerPoll to start session
             // If daemon is daemon_poll mode, it will request next session on its next poll
@@ -1182,6 +1204,7 @@ impl DiscoveryService {
         let mut discovery_sessions = self.discovery_sessions.write().await;
 
         let mut stalled_count = 0;
+        let mut failure_tracking: Vec<(DiscoveryUpdatePayload, Uuid)> = Vec::new();
 
         for session in stalled_sessions {
             if let Some(mut session) = sessions.remove(&session.session_id) {
@@ -1200,14 +1223,13 @@ impl DiscoveryService {
                 session.error = Some(SESSION_STALLED_ERROR.to_string());
                 session.finished_at = Some(now);
 
-                // Track consecutive failures before removing from discovery_sessions
-                let discovery_id = discovery_sessions
+                // Collect failure tracking data before removing from discovery_sessions
+                if let Some(discovery_id) = discovery_sessions
                     .iter()
                     .find(|(_, sid)| **sid == session_id)
-                    .map(|(did, _)| *did);
-                if let Some(discovery_id) = discovery_id {
-                    self.handle_session_failure_tracking(&session, discovery_id)
-                        .await;
+                    .map(|(did, _)| *did)
+                {
+                    failure_tracking.push((session.clone(), discovery_id));
                 }
 
                 // Remove from daemon sessions queue and promote next Queued → Pending
@@ -1287,6 +1309,20 @@ impl DiscoveryService {
 
         if stalled_count > 0 {
             tracing::info!("Cleaned up {} stalled discovery sessions", stalled_count);
+        }
+
+        // Drop all write locks before calling handle_session_failure_tracking
+        // which acquires its own locks (job_ids, event_bus)
+        drop(sessions);
+        drop(last_updated);
+        drop(daemon_sessions);
+        drop(daemon_pull_cancellations);
+        drop(discovery_sessions);
+
+        // Track consecutive failures after all locks are released to avoid deadlock
+        for (session, discovery_id) in failure_tracking {
+            self.handle_session_failure_tracking(&session, discovery_id)
+                .await;
         }
     }
 
