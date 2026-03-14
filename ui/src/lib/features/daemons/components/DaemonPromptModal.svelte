@@ -195,7 +195,7 @@
 
 <style>
 	.discovery-line {
-		stroke: rgb(var(--color-primary-500));
+		stroke: #0ea5e9;
 		stroke-width: 1.5;
 	}
 </style>
