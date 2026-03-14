@@ -276,7 +276,7 @@
 							const colorHelper = createColorHelper(
 								color as Parameters<typeof createColorHelper>[0]
 							);
-							return `color: ${colorHelper.rgb};`;
+							return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
 						})()}
 						{@const serviceCategoryHighlight = (() => {
 							if (!currentHoveredCategory) return '';
@@ -285,7 +285,7 @@
 							const colorHelper = createColorHelper(
 								currentHoveredCategory.color as Parameters<typeof createColorHelper>[0]
 							);
-							return `color: ${colorHelper.rgb};`;
+							return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
 						})()}
 						<div
 							class="flex flex-1 flex-col items-center justify-center"
@@ -298,8 +298,11 @@
 							>
 								<ServiceIcon class="h-5 w-5 flex-shrink-0 {hostColorHelper.icon}" />
 								<span
-									class="text-m text-secondary truncate"
-									style={serviceTagHighlight || serviceCategoryHighlight}
+									class="text-m text-secondary truncate {serviceTagHighlight ||
+									serviceCategoryHighlight
+										? 'animate-text-pulse-highlight'
+										: ''}"
+									style="transition: color 0.15s; {serviceTagHighlight || serviceCategoryHighlight}"
 								>
 									{service.name}
 								</span>
