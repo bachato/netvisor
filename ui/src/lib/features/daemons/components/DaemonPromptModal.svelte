@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { draw, fade, scale } from 'svelte/transition';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
+	import MiniTopologyPreview from './MiniTopologyPreview.svelte';
 	import { useConfigQuery, isCloud } from '$lib/shared/stores/config-query';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { createForm } from '@tanstack/svelte-form';
@@ -92,60 +92,7 @@
 	<div class="flex min-h-0 flex-1 flex-col">
 		<div class="flex-1 overflow-auto p-6">
 			<div class="space-y-6">
-				<!-- Animated node discovery visual -->
-				<div class="flex h-32 items-center justify-center">
-					<svg width="200" height="100" viewBox="0 0 200 100">
-						{#if isOpen}
-							<!-- Lines -->
-							<line
-								x1="40"
-								y1="30"
-								x2="100"
-								y2="50"
-								class="discovery-line"
-								in:draw={{ delay: 800, duration: 500 }}
-							/>
-							<line
-								x1="100"
-								y1="50"
-								x2="160"
-								y2="25"
-								class="discovery-line"
-								in:draw={{ delay: 1200, duration: 500 }}
-							/>
-							<line
-								x1="100"
-								y1="50"
-								x2="130"
-								y2="80"
-								class="discovery-line"
-								in:draw={{ delay: 1600, duration: 500 }}
-							/>
-
-							<!-- Nodes -->
-							<g in:fade={{ delay: 200, duration: 400 }}>
-								<g in:scale={{ start: 0, delay: 200, duration: 400 }}>
-									<circle cx="40" cy="30" r="6" class="fill-primary-500" />
-								</g>
-							</g>
-							<g in:fade={{ delay: 500, duration: 400 }}>
-								<g in:scale={{ start: 0, delay: 500, duration: 400 }}>
-									<circle cx="100" cy="50" r="6" class="fill-primary-500" />
-								</g>
-							</g>
-							<g in:fade={{ delay: 800, duration: 400 }}>
-								<g in:scale={{ start: 0, delay: 800, duration: 400 }}>
-									<circle cx="160" cy="25" r="6" class="fill-primary-500" />
-								</g>
-							</g>
-							<g in:fade={{ delay: 1100, duration: 400 }}>
-								<g in:scale={{ start: 0, delay: 1100, duration: 400 }}>
-									<circle cx="130" cy="80" r="6" class="fill-primary-500" />
-								</g>
-							</g>
-						{/if}
-					</svg>
-				</div>
+				<MiniTopologyPreview active={isOpen} />
 
 				<p class="text-secondary text-sm">{daemons_promptBody()}</p>
 
@@ -192,10 +139,3 @@
 		</div>
 	</div>
 </GenericModal>
-
-<style>
-	.discovery-line {
-		stroke: #0ea5e9;
-		stroke-width: 1.5;
-	}
-</style>
