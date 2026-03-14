@@ -329,13 +329,8 @@
 	}
 
 	// --- Connection waiting ---
-	function handleInstalled() {
-		if (!startedAsFirstDaemon) return;
-		connectionStatus = 'waiting';
-		daemonSetupState.set({ connectionStatus: 'waiting' });
-		trackEvent('daemon_install_confirmed');
-
-		// Set 60-second timeout for trouble state
+	function startWaitingTimeout() {
+		if (troubleTimeoutId) return; // already started
 		troubleTimeoutId = setTimeout(() => {
 			if (connectionStatus === 'waiting') {
 				connectionStatus = 'trouble';
@@ -343,6 +338,18 @@
 				trackEvent('daemon_connection_timeout');
 			}
 		}, 60_000);
+	}
+
+	function handleInstalled() {
+		if (!startedAsFirstDaemon) return;
+		connectionStatus = 'waiting';
+		daemonSetupState.set({ connectionStatus: 'waiting' });
+		trackEvent('daemon_install_confirmed');
+
+		// DaemonPoll: start timeout immediately. ServerPoll: wait for health check to pass.
+		if (formValues.mode !== 'server_poll') {
+			startWaitingTimeout();
+		}
 	}
 
 	function handleReviewCommands() {
@@ -492,6 +499,7 @@
 					)}
 					{provisionedDaemonId}
 					onTroubleshoot={handleTrouble}
+					onStartWaitingTimeout={startWaitingTimeout}
 				/>
 			{/if}
 		</div>

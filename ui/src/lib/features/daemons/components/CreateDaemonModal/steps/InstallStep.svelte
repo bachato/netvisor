@@ -50,6 +50,7 @@
 		daemonUrl?: string;
 		provisionedDaemonId?: string;
 		onTroubleshoot?: () => void;
+		onStartWaitingTimeout?: () => void;
 	}
 
 	let {
@@ -70,7 +71,8 @@
 		daemonMode = 'daemon_poll',
 		daemonUrl = '',
 		provisionedDaemonId = '',
-		onTroubleshoot
+		onTroubleshoot,
+		onStartWaitingTimeout
 	}: Props = $props();
 
 	const configQuery = useConfigQuery();
@@ -90,6 +92,7 @@
 	const retryConnectionMutation = useRetryDaemonConnectionMutation();
 	let healthResult = $state<{ reachable: boolean; health?: boolean; error?: string } | null>(null);
 	let isCheckingHealth = $state(false);
+	let isServerPoll = $derived(daemonMode === 'server_poll');
 
 	async function handleHealthCheck() {
 		if (!daemonUrl) return;
@@ -107,6 +110,8 @@
 			// If reachable and healthy, reset unreachable flag so server resumes polling
 			if (result.reachable && result.health && provisionedDaemonId) {
 				retryConnectionMutation.mutate(provisionedDaemonId);
+				// Start the 60s timeout now that we know the daemon is reachable
+				onStartWaitingTimeout?.();
 			}
 		} catch {
 			healthResult = { reachable: false, error: 'Failed to test reachability' };
@@ -122,19 +127,33 @@
 		}
 	});
 
-	// Auto-run health check once on transition into trouble state for ServerPoll
+	// ServerPoll: auto-run health check when entering waiting state
 	let prevConnectionStatus = $state<DaemonConnectionStatus>('idle');
 	$effect(() => {
 		if (
+			prevConnectionStatus !== 'waiting' &&
+			connectionStatus === 'waiting' &&
+			isServerPoll &&
+			daemonUrl
+		) {
+			handleHealthCheck();
+		}
+		// Also auto-run on trouble entry (user hit 60s timeout)
+		if (
 			prevConnectionStatus !== 'trouble' &&
 			connectionStatus === 'trouble' &&
-			daemonMode === 'server_poll' &&
+			isServerPoll &&
 			daemonUrl
 		) {
 			handleHealthCheck();
 		}
 		prevConnectionStatus = connectionStatus;
 	});
+
+	// ServerPoll waiting state: health check passed = show progress bar
+	let serverPollReachable = $derived(
+		isServerPoll && healthResult?.reachable === true && healthResult?.health === true
+	);
 
 	function handleOsSelect(os: DaemonOS) {
 		onOsSelect(os);
@@ -153,7 +172,9 @@
 	let waitingProgress = $state(0);
 	let waitingStartTime = $state<number | null>(null);
 	$effect(() => {
-		if (connectionStatus === 'waiting') {
+		// DaemonPoll: start progress on waiting. ServerPoll: start after health check passes.
+		const shouldProgress = connectionStatus === 'waiting' && (!isServerPoll || serverPollReachable);
+		if (shouldProgress) {
 			waitingStartTime = Date.now();
 			waitingProgress = 0;
 			const interval = setInterval(() => {
@@ -181,12 +202,47 @@
 		<!-- Waiting / Connected / Trouble states -->
 		{#if connectionStatus === 'waiting'}
 			<div class="flex flex-col items-center gap-4 py-8 text-center">
-				<div class="flex w-full max-w-xs items-center gap-2">
-					<ProgressTrack class="flex-1">
-						<AnimatedProgressBar progress={waitingProgress} />
-					</ProgressTrack>
-					<span class="text-secondary text-xs tabular-nums">{Math.round(waitingProgress)}%</span>
-				</div>
+				{#if isServerPoll}
+					<!-- ServerPoll: show health check result, then progress bar if reachable -->
+					{#if isCheckingHealth}
+						<Loader2 class="text-primary h-10 w-10 animate-spin" />
+						<p class="text-secondary text-sm">Testing connection to your daemon...</p>
+					{:else if serverPollReachable}
+						<div class="flex w-full max-w-xs items-center gap-2">
+							<ProgressTrack class="flex-1">
+								<AnimatedProgressBar progress={waitingProgress} />
+							</ProgressTrack>
+							<span class="text-secondary text-xs tabular-nums">{Math.round(waitingProgress)}%</span
+							>
+						</div>
+						<InlineSuccess
+							title="Daemon is reachable and healthy — waiting for server to register it"
+						/>
+					{:else if healthResult}
+						<!-- Health check failed -->
+						{#if healthResult.reachable}
+							<InlineWarning title="Port open but health check failed" />
+						{:else}
+							<InlineDanger title={healthResult.error ?? 'Not reachable'} />
+						{/if}
+						<button
+							type="button"
+							class="btn-primary text-sm"
+							disabled={isCheckingHealth}
+							onclick={handleHealthCheck}
+						>
+							Test Daemon Reachability
+						</button>
+					{/if}
+				{:else}
+					<!-- DaemonPoll: progress bar immediately -->
+					<div class="flex w-full max-w-xs items-center gap-2">
+						<ProgressTrack class="flex-1">
+							<AnimatedProgressBar progress={waitingProgress} />
+						</ProgressTrack>
+						<span class="text-secondary text-xs tabular-nums">{Math.round(waitingProgress)}%</span>
+					</div>
+				{/if}
 				<div>
 					<h3 class="text-primary text-base font-semibold">
 						Waiting for your daemon to connect...
@@ -242,7 +298,7 @@
 					<li>Verify the server URL in the daemon config matches this server</li>
 					<li>Check that no firewall is blocking the connection</li>
 				</ol>
-				{#if daemonMode === 'server_poll' && daemonUrl}
+				{#if isServerPoll && daemonUrl}
 					<div class="flex flex-col items-center gap-2">
 						{#if healthResult}
 							{#if healthResult.reachable && healthResult.health}

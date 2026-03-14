@@ -3,7 +3,7 @@
 	import type { FormValue } from '$lib/shared/components/forms/validators';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
-	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
+
 	import InlineSuccess from '$lib/shared/components/feedback/InlineSuccess.svelte';
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
@@ -23,7 +23,6 @@
 		daemons_generateNewKeyHelp,
 		daemons_networkCannotChange,
 		daemons_pasteApiKey,
-		daemons_portForwardingHint,
 		daemons_docsPollingMode,
 		daemons_docsPollingModeLinkText,
 		daemons_httpDaemonUrlWarning,
@@ -212,12 +211,9 @@
 			{#if reachabilityResult.reachable}
 				<InlineSuccess title="Port is reachable" />
 			{:else}
-				<InlineDanger title={reachabilityResult.error ?? 'Port is not reachable'} />
-				<InlineInfo title="" body={daemons_portForwardingHint()} />
-				<DocsHint
-					text="Having trouble? Check our %link% for common solutions."
-					href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/"
-					linkText="troubleshooting guide"
+				<InlineDanger
+					title={reachabilityResult.error ?? 'Port is not reachable'}
+					body="Ensure the port is open and forwarded to the host the daemon will run on."
 				/>
 			{/if}
 		{/if}
