@@ -50,14 +50,16 @@
 			return {
 				label: 'Auto-paused',
 				color: 'Red' as const,
-				title: `Automatically paused after ${failureCount} consecutive stall failures`
+				title: `Automatically paused after ${failureCount} consecutive stall failures`,
+				href: 'https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/auto-pause/'
 			};
 		}
 		if (failureCount >= 1) {
 			return {
 				label: `${failureCount} failure${failureCount > 1 ? 's' : ''}`,
 				color: 'Orange' as const,
-				title: 'Will auto-pause after 3 consecutive failures'
+				title: 'Will auto-pause after 3 consecutive failures',
+				href: 'https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/auto-pause/'
 			};
 		}
 		return null;

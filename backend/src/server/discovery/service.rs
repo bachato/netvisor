@@ -14,7 +14,7 @@ use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation}
 use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
 use crate::server::shared::storage::generic::GenericPostgresStorage;
-use crate::server::shared::storage::traits::{Storable, Storage};
+use crate::server::shared::storage::traits::{Entity, Storable, Storage};
 use crate::server::shared::types::api::ApiError;
 use crate::server::snmp_credentials::service::SnmpCredentialService;
 use crate::server::tags::entity_tags::EntityTagService;
@@ -22,13 +22,17 @@ use anyhow::anyhow;
 use anyhow::{Error, Result};
 use async_trait::async_trait;
 use chrono::Utc;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Weak},
+};
 use tokio::sync::{RwLock, broadcast};
 use tokio_cron_scheduler::{JobBuilder, JobScheduler};
 use uuid::Uuid;
 
 /// Server-side session management for discovery
 pub struct DiscoveryService {
+    self_ref: Weak<Self>,
     discovery_storage: Arc<GenericPostgresStorage<Discovery>>,
     sessions: RwLock<HashMap<Uuid, DiscoveryUpdatePayload>>, // session_id -> session state mapping
     daemon_sessions: RwLock<HashMap<Uuid, Vec<Uuid>>>,       // daemon_id -> session_id mapping
@@ -67,6 +71,162 @@ impl CrudService<Discovery> for DiscoveryService {
     fn entity_tag_service(&self) -> Option<&Arc<EntityTagService>> {
         Some(&self.entity_tag_service)
     }
+
+    async fn update(
+        &self,
+        entity: &mut Discovery,
+        authentication: AuthenticatedEntity,
+    ) -> Result<Discovery, anyhow::Error> {
+        Self::validate_timezone(&entity.base.run_type)?;
+
+        let current = self
+            .get_by_id(&entity.id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Could not find discovery {}", entity))?;
+
+        // Preserve server-managed fields from current DB state
+        // (the API client may send stale values for these read-only fields)
+        if let RunType::Scheduled {
+            ref mut consecutive_failures,
+            ref mut last_run,
+            ..
+        } = entity.base.run_type
+            && let RunType::Scheduled {
+                consecutive_failures: current_failures,
+                last_run: current_last_run,
+                ..
+            } = &current.base.run_type
+        {
+            *consecutive_failures = *current_failures;
+            *last_run = *current_last_run;
+        }
+
+        // Reset consecutive failures when re-enabling a disabled scheduled discovery
+        if let RunType::Scheduled { enabled: true, .. } = &entity.base.run_type
+            && let RunType::Scheduled { enabled: false, .. } = &current.base.run_type
+        {
+            entity.reset_failures();
+        }
+
+        // If it's a scheduled discovery and schedule or timezone has changed, need to reschedule
+        let schedule_changed = if let RunType::Scheduled {
+            cron_schedule: new_cron,
+            timezone: new_tz,
+            ..
+        } = &entity.base.run_type
+            && let RunType::Scheduled {
+                cron_schedule: current_cron,
+                timezone: current_tz,
+                ..
+            } = &current.base.run_type
+        {
+            current_cron != new_cron || current_tz != new_tz
+        } else {
+            false
+        };
+
+        // Detect enabled state transitions (disabled→enabled or enabled→disabled)
+        let enabled_changed = if let RunType::Scheduled {
+            enabled: new_enabled,
+            ..
+        } = &entity.base.run_type
+            && let RunType::Scheduled {
+                enabled: current_enabled,
+                ..
+            } = &current.base.run_type
+        {
+            current_enabled != new_enabled
+        } else {
+            false
+        };
+
+        let needs_reschedule = schedule_changed || enabled_changed;
+
+        let updated = if needs_reschedule
+            && matches!(entity.base.run_type, RunType::Scheduled { .. })
+        {
+            // Remove old schedule first using the actual job_id
+            if let Some(scheduler) = &self.scheduler
+                && let Some(job_id) = self.job_ids.read().await.get(&entity.id).copied()
+            {
+                if let Err(e) = scheduler.write().await.remove(&job_id).await {
+                    tracing::warn!(
+                        discovery_id = %entity.id,
+                        job_id = %job_id,
+                        error = ?e,
+                        "Failed to remove old scheduled job"
+                    );
+                } else {
+                    self.job_ids.write().await.remove(&entity.id);
+                }
+            }
+
+            // Update in DB first
+            let mut updated = self.discovery_storage.update(entity).await?;
+
+            // Re-add cron job (schedule_discovery guards on !enabled, so disabling skips re-add)
+            if let Some(arc_self) = self.self_ref.upgrade()
+                && let Err(e) = Self::schedule_discovery(&arc_self, &updated).await
+            {
+                // Only disable if we were trying to enable/reschedule (not if already disabling)
+                if matches!(
+                    updated.base.run_type,
+                    RunType::Scheduled { enabled: true, .. }
+                ) {
+                    updated.disable();
+                    let disabled_discovery = self.discovery_storage.update(&mut updated).await?;
+
+                    tracing::error!(
+                        "Failed to reschedule discovery {}. Discovery updated but disabled. Error: {}",
+                        disabled_discovery.id,
+                        e
+                    );
+                }
+            }
+
+            updated
+        } else {
+            // For non-scheduled or no reschedule needed, just update
+            self.discovery_storage.update(entity).await?
+        };
+
+        // Update tags in junction table
+        if let Some(entity_tag_service) = self.entity_tag_service()
+            && let Some(org_id) = authentication.organization_id()
+            && let Some(tags) = updated.get_tags()
+        {
+            entity_tag_service
+                .set_tags(
+                    updated.id(),
+                    EntityDiscriminants::Discovery,
+                    tags.clone(),
+                    org_id,
+                )
+                .await?;
+        }
+
+        let trigger_stale = updated.triggers_staleness(Some(current));
+        let suppress_logs = self.suppress_logs(None, None);
+
+        self.event_bus()
+            .publish_entity(EntityEvent {
+                id: Uuid::new_v4(),
+                entity_id: updated.id(),
+                network_id: self.get_network_id(&updated),
+                organization_id: self.get_organization_id(&updated),
+                entity_type: updated.clone().into(),
+                operation: EntityOperation::Updated,
+                timestamp: Utc::now(),
+                metadata: serde_json::json!({
+                    "trigger_stale": trigger_stale,
+                    "suppress_logs": suppress_logs
+                }),
+                authentication,
+            })
+            .await?;
+
+        Ok(updated)
+    }
 }
 
 impl DiscoveryService {
@@ -80,8 +240,10 @@ impl DiscoveryService {
     ) -> Result<Arc<Self>> {
         let (tx, _rx) = broadcast::channel(100); // Buffer 100 messages
         let scheduler = JobScheduler::new().await?;
+        let scheduler = Some(Arc::new(RwLock::new(scheduler)));
 
-        Ok(Arc::new(Self {
+        Ok(Arc::new_cyclic(|weak| Self {
+            self_ref: weak.clone(),
             discovery_storage,
             sessions: RwLock::new(HashMap::new()),
             daemon_sessions: RwLock::new(HashMap::new()),
@@ -89,7 +251,7 @@ impl DiscoveryService {
             daemon_pull_cancellations: RwLock::new(HashMap::new()),
             session_last_updated: RwLock::new(HashMap::new()),
             update_tx: tx,
-            scheduler: Some(Arc::new(RwLock::new(scheduler))),
+            scheduler,
             job_ids: RwLock::new(HashMap::new()),
             event_bus,
             entity_tag_service,
@@ -295,142 +457,6 @@ impl DiscoveryService {
             .await?;
 
         Ok(created_discovery)
-    }
-
-    /// Update discovery
-    pub async fn update_discovery(
-        self: &Arc<Self>,
-        mut discovery: Discovery,
-        authentication: AuthenticatedEntity,
-    ) -> Result<Discovery, Error> {
-        Self::validate_timezone(&discovery.base.run_type)?;
-
-        let current = self
-            .get_by_id(&discovery.id)
-            .await?
-            .ok_or_else(|| anyhow::anyhow!("Could not find discovery {}", discovery))?;
-
-        // Reset consecutive failures when re-enabling a disabled scheduled discovery
-        if let RunType::Scheduled { enabled: true, .. } = &discovery.base.run_type
-            && let RunType::Scheduled { enabled: false, .. } = &current.base.run_type
-        {
-            discovery.reset_failures();
-        }
-
-        // If it's a scheduled discovery and schedule or timezone has changed, need to reschedule
-        let schedule_changed = if let RunType::Scheduled {
-            cron_schedule: new_cron,
-            timezone: new_tz,
-            ..
-        } = &discovery.base.run_type
-            && let RunType::Scheduled {
-                cron_schedule: current_cron,
-                timezone: current_tz,
-                ..
-            } = &current.base.run_type
-        {
-            current_cron != new_cron || current_tz != new_tz
-        } else {
-            false
-        };
-
-        // Detect enabled state transitions (disabled→enabled or enabled→disabled)
-        let enabled_changed = if let RunType::Scheduled {
-            enabled: new_enabled,
-            ..
-        } = &discovery.base.run_type
-            && let RunType::Scheduled {
-                enabled: current_enabled,
-                ..
-            } = &current.base.run_type
-        {
-            current_enabled != new_enabled
-        } else {
-            false
-        };
-
-        let needs_reschedule = schedule_changed || enabled_changed;
-
-        let updated = if needs_reschedule
-            && matches!(discovery.base.run_type, RunType::Scheduled { .. })
-        {
-            // Remove old schedule first using the actual job_id
-            if let Some(scheduler) = &self.scheduler
-                && let Some(job_id) = self.job_ids.read().await.get(&discovery.id).copied()
-            {
-                if let Err(e) = scheduler.write().await.remove(&job_id).await {
-                    tracing::warn!(
-                        discovery_id = %discovery.id,
-                        job_id = %job_id,
-                        error = ?e,
-                        "Failed to remove old scheduled job"
-                    );
-                } else {
-                    self.job_ids.write().await.remove(&discovery.id);
-                }
-            }
-
-            // Update in DB first
-            let mut updated = self.discovery_storage.update(&mut discovery).await?;
-
-            // Re-add cron job (schedule_discovery guards on !enabled, so disabling skips re-add)
-            if let Err(e) = Self::schedule_discovery(self, &updated).await {
-                // Only disable if we were trying to enable/reschedule (not if already disabling)
-                if matches!(
-                    updated.base.run_type,
-                    RunType::Scheduled { enabled: true, .. }
-                ) {
-                    updated.disable();
-                    let disabled_discovery = self.discovery_storage.update(&mut updated).await?;
-
-                    tracing::error!(
-                        "Failed to reschedule discovery {}. Discovery updated but disabled. Error: {}",
-                        disabled_discovery.id,
-                        e
-                    );
-                }
-            }
-
-            updated
-        } else {
-            // For non-scheduled, just update
-            self.discovery_storage.update(&mut discovery).await?
-        };
-
-        // Update tags in junction table
-        if let Some(entity_tag_service) = self.entity_tag_service()
-            && let Some(org_id) = authentication.organization_id()
-        {
-            entity_tag_service
-                .set_tags(
-                    updated.id,
-                    EntityDiscriminants::Discovery,
-                    discovery.base.tags,
-                    org_id,
-                )
-                .await?;
-        }
-
-        let trigger_stale = updated.triggers_staleness(Some(current));
-
-        self.event_bus()
-            .publish_entity(EntityEvent {
-                id: Uuid::new_v4(),
-                entity_id: updated.id(),
-                network_id: self.get_network_id(&updated),
-                organization_id: self.get_organization_id(&updated),
-                entity_type: updated.clone().into(),
-                operation: EntityOperation::Updated,
-                timestamp: Utc::now(),
-                metadata: serde_json::json!({
-                    "trigger_stale": trigger_stale
-                }),
-
-                authentication,
-            })
-            .await?;
-
-        Ok(updated)
     }
 
     /// Delete group

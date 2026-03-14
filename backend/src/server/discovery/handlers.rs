@@ -297,7 +297,7 @@ async fn start_session(
     state
         .services
         .discovery_service
-        .update_discovery(discovery, entity)
+        .update(&mut discovery, entity)
         .await?;
 
     Ok(Json(ApiResponse::success(update)))

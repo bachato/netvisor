@@ -56,6 +56,13 @@ impl EventSubscriber for EmailService {
         for event in events {
             match event {
                 Event::Entity(e) => {
+                    tracing::debug!(
+                        entity_type = ?e.entity_type,
+                        operation = ?e.operation,
+                        entity_id = %e.entity_id,
+                        "Email subscriber received entity event"
+                    );
+
                     let org_id = if let Some(org_id) = e.organization_id {
                         Some(org_id)
                     } else if let Some(network_id) = e.network_id {
@@ -79,57 +86,70 @@ impl EventSubscriber for EmailService {
                         );
                     }
                 }
-                Event::Onboarding(t) => match t.operation {
-                    OnboardingOperation::FirstDaemonRegistered => {
-                        let daemon_name = t
-                            .metadata
-                            .get("daemon_name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("your daemon");
-                        let network_name = t
-                            .metadata
-                            .get("network_name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("your network");
+                Event::Onboarding(t) => {
+                    tracing::debug!(
+                        operation = ?t.operation,
+                        organization_id = %t.organization_id,
+                        "Email subscriber received onboarding event"
+                    );
+                    match t.operation {
+                        OnboardingOperation::FirstDaemonRegistered => {
+                            let daemon_name = t
+                                .metadata
+                                .get("daemon_name")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("your daemon");
+                            let network_name = t
+                                .metadata
+                                .get("network_name")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("your network");
 
-                        if let Err(e) = self
-                            .send_discovery_guide_for_org(
-                                t.organization_id,
-                                daemon_name,
-                                network_name,
-                            )
-                            .await
-                        {
-                            tracing::warn!(
-                                organization_id = %t.organization_id,
-                                error = %e,
-                                "Failed to send discovery guide email"
-                            );
+                            if let Err(e) = self
+                                .send_discovery_guide_for_org(
+                                    t.organization_id,
+                                    daemon_name,
+                                    network_name,
+                                )
+                                .await
+                            {
+                                tracing::warn!(
+                                    organization_id = %t.organization_id,
+                                    error = %e,
+                                    "Failed to send discovery guide email"
+                                );
+                            }
                         }
-                    }
-                    OnboardingOperation::FirstDiscoveryCompleted => {
-                        // Only send topology ready email for Network discoveries, not SelfReport
-                        let is_network = t
-                            .metadata
-                            .get("discovery_type")
-                            .and_then(|v| v.as_str())
-                            .map(|dt| dt.starts_with("Network"))
-                            .unwrap_or(false);
+                        OnboardingOperation::FirstDiscoveryCompleted => {
+                            // Only send topology ready email for Network discoveries, not SelfReport
+                            let is_network = t
+                                .metadata
+                                .get("discovery_type")
+                                .and_then(|v| v.as_str())
+                                .map(|dt| dt.starts_with("Network"))
+                                .unwrap_or(false);
 
-                        if is_network
-                            && let Err(e) =
-                                self.send_topology_ready_for_org(t.organization_id).await
-                        {
-                            tracing::warn!(
-                                organization_id = %t.organization_id,
-                                error = %e,
-                                "Failed to send topology ready email"
-                            );
+                            if is_network
+                                && let Err(e) =
+                                    self.send_topology_ready_for_org(t.organization_id).await
+                            {
+                                tracing::warn!(
+                                    organization_id = %t.organization_id,
+                                    error = %e,
+                                    "Failed to send topology ready email"
+                                );
+                            }
                         }
+                        _ => {}
                     }
-                    _ => {}
-                },
+                }
                 Event::Discovery(d) => {
+                    tracing::debug!(
+                        phase = ?d.phase,
+                        metadata = ?d.metadata,
+                        "Email subscriber received discovery event"
+                    );
+
                     let is_auto_disabled = d
                         .metadata
                         .get("auto_disabled")
@@ -158,8 +178,15 @@ impl EventSubscriber for EmailService {
                             .and_then(|v| v.as_u64())
                             .unwrap_or(3) as u32;
 
-                        if let Some(org_id) = org_id
-                            && let Err(e) = self
+                        if let Some(org_id) = org_id {
+                            tracing::debug!(
+                                org_id = %org_id,
+                                scan_name = %scan_name,
+                                network_name = %network_name,
+                                failure_count = failure_count,
+                                "Sending scan auto-disabled email"
+                            );
+                            if let Err(e) = self
                                 .send_scan_auto_disabled_email(
                                     &org_id,
                                     scan_name,
@@ -167,12 +194,18 @@ impl EventSubscriber for EmailService {
                                     failure_count,
                                 )
                                 .await
-                        {
-                            tracing::warn!(
-                                org_id = %org_id,
+                            {
+                                tracing::warn!(
+                                    org_id = %org_id,
+                                    scan_name = %scan_name,
+                                    error = %e,
+                                    "Failed to send scan auto-disabled email"
+                                );
+                            }
+                        } else {
+                            tracing::debug!(
                                 scan_name = %scan_name,
-                                error = %e,
-                                "Failed to send scan auto-disabled email"
+                                "Skipping auto-disabled email: org_id not found in metadata"
                             );
                         }
                     }

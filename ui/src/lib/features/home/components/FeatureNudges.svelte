@@ -93,7 +93,7 @@
 				id: 'scans-auto-paused',
 				title: 'Scans have been auto-paused',
 				description:
-					'Some scheduled scans were automatically paused after repeated failures. <a href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/" target="_blank" class="text-blue-400 hover:text-blue-300">Learn how to troubleshoot</a>.',
+					'Some scheduled scans were automatically paused after repeated failures. <a href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/auto-pause/" target="_blank" class="text-blue-400 hover:text-blue-300">Learn how to troubleshoot</a>.',
 				actionLabel: 'Go to Discoveries',
 				action: () => {
 					onNavigate('discoveries');

@@ -508,7 +508,7 @@ pub const SCAN_AUTO_DISABLED_BODY: &str = r#"                    <!-- Main Conte
                     <!-- CTA Button -->
                     <tr>
                         <td align="center" style="padding: 0 40px 30px 40px;">
-                            <a href="{base_url}/#daemons" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">Check Daemon Status</a>
+                            <a href="{base_url}/#discovery-scheduled" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">View Scheduled Scans</a>
                         </td>
                     </tr>
 "#;

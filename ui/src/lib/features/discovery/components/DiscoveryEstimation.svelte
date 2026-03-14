@@ -25,7 +25,7 @@
 			case 'Queued':
 				return 'Waiting in queue — another scan is running on this daemon';
 			case 'Pending':
-				return 'Ready to start — waiting for daemon to begin scanning';
+				return 'Ready to start — connecting to daemon';
 			case 'Starting':
 				return 'Waiting for session to start on the daemon';
 			case 'Cancelling':
