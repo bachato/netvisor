@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { entities } from '$lib/shared/stores/metadata';
+	import { COLOR_MAP, type Color } from '$lib/shared/utils/styling';
 
 	let { active = true }: { active?: boolean } = $props();
 
@@ -8,24 +10,26 @@
 	let mouseX = -1000;
 	let mouseY = -1000;
 
-	// Scan line position (pixels from left). -30 = offscreen left
 	let scanX = -30;
-	const SCAN_SPEED = 2.2; // pixels per frame
-	const PAUSE_FRAMES = 90; // pause before restarting loop
+	const SCAN_SPEED = 2.2;
+	const PAUSE_FRAMES = 240;
 	let pauseCounter = 0;
 
-	const COLORS = {
-		cyan: '#06b6d4',
-		blue: '#3b82f6',
-		emerald: '#10b981',
-		purple: '#8b5cf6',
-		orange: '#f97316',
-		pink: '#ec4899'
-	};
+	// Resolve the Discovery entity color for the scan line
+	function getScanRgb(): string {
+		return entities.getColorHelper('Discovery').rgb;
+	}
 
-	type ColorKey = keyof typeof COLORS;
+	// Extract r,g,b integers from an "rgb(r, g, b)" string
+	function parseRgb(rgb: string): [number, number, number] {
+		const m = rgb.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+		return m ? [+m[1], +m[2], +m[3]] : [107, 114, 128];
+	}
 
-	// Canvas layout width for scan normalization
+	function colorRgb(color: Color): string {
+		return COLOR_MAP[color].rgb;
+	}
+
 	const LAYOUT_W = 455;
 
 	interface TopoNode {
@@ -36,11 +40,11 @@
 		y: number;
 		w: number;
 		h: number;
-		color: ColorKey;
+		color: Color;
 		label: string;
 		sublabel?: string;
 		subnet: number;
-		revealedAt: number; // 0 = not yet, ramps to 1 after scan passes
+		revealedAt: number;
 	}
 
 	interface Edge {
@@ -54,27 +58,27 @@
 		w: number;
 		h: number;
 		label: string;
-		color: ColorKey;
+		color: Color;
 		revealedAt: number;
 	}
 
 	const subnets: Subnet[] = [
-		{ x: 18, y: 30, w: 200, h: 145, label: '10.0.1.0/24', color: 'cyan', revealedAt: 0 },
-		{ x: 240, y: 22, w: 195, h: 155, label: '10.0.2.0/24', color: 'purple', revealedAt: 0 }
+		{ x: 18, y: 30, w: 200, h: 145, label: '10.0.1.0/24', color: 'Cyan', revealedAt: 0 },
+		{ x: 240, y: 22, w: 195, h: 155, label: '10.0.2.0/24', color: 'Purple', revealedAt: 0 }
 	];
 
 	const NODE_W = 62;
 	const NODE_H = 36;
 
 	const nodes: TopoNode[] = [
-		{ id: 0, homeX: 42, homeY: 60, x: 42, y: 60, w: NODE_W, h: NODE_H, color: 'blue', label: 'gateway', sublabel: '.1', subnet: 0, revealedAt: 0 },
-		{ id: 1, homeX: 132, homeY: 56, x: 132, y: 56, w: NODE_W, h: NODE_H, color: 'emerald', label: 'web-srv', sublabel: '.10', subnet: 0, revealedAt: 0 },
-		{ id: 2, homeX: 42, homeY: 120, x: 42, y: 120, w: NODE_W, h: NODE_H, color: 'emerald', label: 'db-01', sublabel: '.20', subnet: 0, revealedAt: 0 },
-		{ id: 3, homeX: 132, homeY: 120, x: 132, y: 120, w: NODE_W, h: NODE_H, color: 'orange', label: 'nas', sublabel: '.30', subnet: 0, revealedAt: 0 },
-		{ id: 4, homeX: 264, homeY: 52, x: 264, y: 52, w: NODE_W, h: NODE_H, color: 'blue', label: 'core-sw', sublabel: '.1', subnet: 1, revealedAt: 0 },
-		{ id: 5, homeX: 354, homeY: 52, x: 354, y: 52, w: NODE_W, h: NODE_H, color: 'pink', label: 'monitor', sublabel: '.5', subnet: 1, revealedAt: 0 },
-		{ id: 6, homeX: 264, homeY: 122, x: 264, y: 122, w: NODE_W, h: NODE_H, color: 'emerald', label: 'app-srv', sublabel: '.11', subnet: 1, revealedAt: 0 },
-		{ id: 7, homeX: 354, homeY: 122, x: 354, y: 122, w: NODE_W, h: NODE_H, color: 'orange', label: 'printer', sublabel: '.50', subnet: 1, revealedAt: 0 }
+		{ id: 0, homeX: 42, homeY: 60, x: 42, y: 60, w: NODE_W, h: NODE_H, color: 'Blue', label: 'gateway', sublabel: '.1', subnet: 0, revealedAt: 0 },
+		{ id: 1, homeX: 132, homeY: 56, x: 132, y: 56, w: NODE_W, h: NODE_H, color: 'Emerald', label: 'web-srv', sublabel: '.10', subnet: 0, revealedAt: 0 },
+		{ id: 2, homeX: 42, homeY: 120, x: 42, y: 120, w: NODE_W, h: NODE_H, color: 'Emerald', label: 'db-01', sublabel: '.20', subnet: 0, revealedAt: 0 },
+		{ id: 3, homeX: 132, homeY: 120, x: 132, y: 120, w: NODE_W, h: NODE_H, color: 'Orange', label: 'nas', sublabel: '.30', subnet: 0, revealedAt: 0 },
+		{ id: 4, homeX: 264, homeY: 52, x: 264, y: 52, w: NODE_W, h: NODE_H, color: 'Blue', label: 'core-sw', sublabel: '.1', subnet: 1, revealedAt: 0 },
+		{ id: 5, homeX: 354, homeY: 52, x: 354, y: 52, w: NODE_W, h: NODE_H, color: 'Pink', label: 'monitor', sublabel: '.5', subnet: 1, revealedAt: 0 },
+		{ id: 6, homeX: 264, homeY: 122, x: 264, y: 122, w: NODE_W, h: NODE_H, color: 'Emerald', label: 'app-srv', sublabel: '.11', subnet: 1, revealedAt: 0 },
+		{ id: 7, homeX: 354, homeY: 122, x: 354, y: 122, w: NODE_W, h: NODE_H, color: 'Orange', label: 'printer', sublabel: '.50', subnet: 1, revealedAt: 0 }
 	];
 
 	const edges: Edge[] = [
@@ -132,7 +136,6 @@
 		if (scanX > LAYOUT_W + 40) {
 			pauseCounter++;
 			if (pauseCounter >= PAUSE_FRAMES) {
-				// Reset everything for next sweep
 				scanX = -30;
 				pauseCounter = 0;
 				for (const s of subnets) s.revealedAt = 0;
@@ -146,7 +149,7 @@
 			scanX += SCAN_SPEED;
 		}
 
-		// Update reveal state: elements get revealed when scan passes their center x
+		// Update reveal state
 		for (const subnet of subnets) {
 			if (scanX >= subnet.x && subnet.revealedAt < 1) {
 				subnet.revealedAt = Math.min(1, subnet.revealedAt + 0.06);
@@ -159,7 +162,7 @@
 			}
 		}
 
-		// Mouse displacement (only after reveal)
+		// Mouse displacement
 		const MOUSE_RADIUS = 100;
 		const MOUSE_STRENGTH = 12;
 		for (const node of nodes) {
@@ -198,8 +201,12 @@
 		const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)';
 		const dotColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)';
 		const edgeColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)';
-		const scanColor = isDark ? 'rgba(6, 182, 212, 0.15)' : 'rgba(6, 182, 212, 0.1)';
-		const scanLineColor = isDark ? 'rgba(6, 182, 212, 0.5)' : 'rgba(6, 182, 212, 0.35)';
+
+		// Scan line color from Discovery entity
+		const scanRgb = getScanRgb();
+		const [sr, sg, sb] = parseRgb(scanRgb);
+		const scanBeamColor = isDark ? `rgba(${sr},${sg},${sb},0.15)` : `rgba(${sr},${sg},${sb},0.1)`;
+		const scanLineColor = isDark ? `rgba(${sr},${sg},${sb},0.5)` : `rgba(${sr},${sg},${sb},0.35)`;
 
 		// Background
 		ctx.fillStyle = bgColor;
@@ -230,7 +237,7 @@
 			ctx.stroke();
 
 			ctx.font = '600 8.5px ui-monospace, monospace';
-			ctx.fillStyle = COLORS[subnet.color];
+			ctx.fillStyle = colorRgb(subnet.color);
 			ctx.fillText(subnet.label, subnet.x + 10, subnet.y + 14);
 			ctx.restore();
 		}
@@ -287,7 +294,7 @@
 				drawRoundedRect(ctx, sx, sy, sw, 3, 0);
 				ctx.clip();
 				drawRoundedRect(ctx, sx, sy, sw, 5, 5);
-				ctx.fillStyle = COLORS[node.color];
+				ctx.fillStyle = colorRgb(node.color);
 				ctx.fill();
 				ctx.restore();
 
@@ -311,8 +318,8 @@
 		if (scanX >= -30 && scanX <= LAYOUT_W + 40) {
 			const beamWidth = 50;
 			const beamGrad = ctx.createLinearGradient(scanX - beamWidth, 0, scanX, 0);
-			beamGrad.addColorStop(0, 'rgba(6, 182, 212, 0)');
-			beamGrad.addColorStop(1, scanColor);
+			beamGrad.addColorStop(0, `rgba(${sr},${sg},${sb},0)`);
+			beamGrad.addColorStop(1, scanBeamColor);
 			ctx.fillStyle = beamGrad;
 			ctx.fillRect(scanX - beamWidth, 0, beamWidth, h);
 
