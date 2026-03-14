@@ -215,9 +215,11 @@
 							<span class="text-secondary text-xs tabular-nums">{Math.round(waitingProgress)}%</span
 							>
 						</div>
-						<InlineSuccess
-							title="Daemon is reachable and healthy — waiting for server to register it"
-						/>
+						<div class="text-left">
+							<InlineSuccess
+								title="Daemon is reachable and healthy — waiting for server to register it"
+							/>
+						</div>
 						<div>
 							<h3 class="text-primary text-base font-semibold">
 								Waiting for server to register your daemon...
@@ -244,17 +246,19 @@
 						</div>
 					{:else if healthResult}
 						<!-- Health check failed -->
-						{#if healthResult.reachable}
-							<InlineWarning
-								title="Port open but health check failed"
-								body="The port is open but the daemon isn't responding to health checks. It may still be starting — try again in a moment. If this persists, <a href='https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/' target='_blank' class='underline'>check the daemon logs</a>."
-							/>
-						{:else}
-							<InlineDanger
-								title={healthResult.error ?? 'Not reachable'}
-								body="The daemon may not be running, or the port may no longer be reachable. Verify the install command completed and the daemon process started. If the host has a firewall, check that the port is open and forwarded."
-							/>
-						{/if}
+						<div class="text-left">
+							{#if healthResult.reachable}
+								<InlineWarning
+									title="Port open but health check failed"
+									body="The port is open but the daemon isn't responding to health checks. It may still be starting — try again in a moment. If this persists, <a href='https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/' target='_blank' class='underline'>check the daemon logs</a>."
+								/>
+							{:else}
+								<InlineDanger
+									title={healthResult.error ?? 'Not reachable'}
+									body="The daemon may not be running, or the port may no longer be reachable. Verify the install command completed and the daemon process started. If the host has a firewall, check that the port is open and forwarded."
+								/>
+							{/if}
+						</div>
 						<h3 class="text-primary text-base font-semibold">Connection test failed</h3>
 						<button
 							type="button"
@@ -350,7 +354,7 @@
 					<li>Check that no firewall is blocking the connection</li>
 				</ol>
 				{#if isServerPoll && daemonUrl}
-					<div class="flex flex-col items-center gap-2">
+					<div class="flex flex-col items-center gap-2 text-left">
 						{#if healthResult}
 							{#if healthResult.reachable && healthResult.health}
 								<InlineSuccess
