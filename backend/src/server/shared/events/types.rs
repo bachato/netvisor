@@ -484,6 +484,7 @@ pub enum OnboardingOperation {
     InviteSent,
     InviteAccepted,
     ProfileCompleted,
+    ReferralSourceCompleted,
 }
 
 impl OnboardingOperation {

@@ -206,3 +206,25 @@ export async function fetchOrganization(): Promise<Organization> {
 		}
 	});
 }
+
+/**
+ * Mutation hook for submitting referral source
+ */
+export function useReferralSourceMutation() {
+	const queryClient = useQueryClient();
+
+	return createMutation(() => ({
+		mutationFn: async (request: { referral_source: string; referral_source_other?: string }) => {
+			const { data } = await apiClient.POST('/api/v1/organizations/referral-source', {
+				body: request
+			});
+			if (!data?.success) {
+				throw new Error(data?.error || 'Failed to submit referral source');
+			}
+			return true;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
+		}
+	}));
+}
