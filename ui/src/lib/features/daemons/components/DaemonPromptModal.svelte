@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fade, scale } from 'svelte/transition';
+	import { draw, fade, scale } from 'svelte/transition';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import { useConfigQuery, isCloud } from '$lib/shared/stores/config-query';
 	import { trackEvent } from '$lib/shared/utils/analytics';
@@ -95,34 +95,34 @@
 				<!-- Animated node discovery visual -->
 				<div class="flex h-32 items-center justify-center">
 					<svg width="200" height="100" viewBox="0 0 200 100">
-						<!-- Lines (drawn with CSS animation) -->
-						<line
-							x1="40"
-							y1="30"
-							x2="100"
-							y2="50"
-							class="discovery-line"
-							style="animation-delay: 0.8s"
-						/>
-						<line
-							x1="100"
-							y1="50"
-							x2="160"
-							y2="25"
-							class="discovery-line"
-							style="animation-delay: 1.2s"
-						/>
-						<line
-							x1="100"
-							y1="50"
-							x2="130"
-							y2="80"
-							class="discovery-line"
-							style="animation-delay: 1.6s"
-						/>
-
-						<!-- Nodes -->
 						{#if isOpen}
+							<!-- Lines -->
+							<line
+								x1="40"
+								y1="30"
+								x2="100"
+								y2="50"
+								class="discovery-line"
+								in:draw={{ delay: 800, duration: 500 }}
+							/>
+							<line
+								x1="100"
+								y1="50"
+								x2="160"
+								y2="25"
+								class="discovery-line"
+								in:draw={{ delay: 1200, duration: 500 }}
+							/>
+							<line
+								x1="100"
+								y1="50"
+								x2="130"
+								y2="80"
+								class="discovery-line"
+								in:draw={{ delay: 1600, duration: 500 }}
+							/>
+
+							<!-- Nodes -->
 							<g in:fade={{ delay: 200, duration: 400 }}>
 								<g in:scale={{ start: 0, delay: 200, duration: 400 }}>
 									<circle cx="40" cy="30" r="6" class="fill-primary-500" />
@@ -197,14 +197,5 @@
 	.discovery-line {
 		stroke: rgb(var(--color-primary-500));
 		stroke-width: 1.5;
-		stroke-dasharray: 100;
-		stroke-dashoffset: 100;
-		animation: draw-line 0.6s ease-out forwards;
-	}
-
-	@keyframes draw-line {
-		to {
-			stroke-dashoffset: 0;
-		}
 	}
 </style>
