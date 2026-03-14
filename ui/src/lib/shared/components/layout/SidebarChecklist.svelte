@@ -108,48 +108,64 @@
 						{@const isAccountStep = step.id === 'account'}
 						{@const daemonTrouble = isDaemonTrouble(step.id, complete)}
 						{@const discoverySpinner = isDiscoverySpinner(step.id, complete)}
-						<button
-							class="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs transition-colors {!complete &&
-							!isAccountStep &&
-							enabled
-								? 'hover:bg-gray-100 dark:hover:bg-gray-800'
-								: ''} {!enabled ? 'opacity-50' : ''}"
-							disabled={complete || !enabled || isAccountStep}
-							onclick={() => {
-								if (daemonTrouble) {
-									showTroubleshootingModal = true;
-									return;
-								}
-								trackChecklistStepClicked(step.id, 'sidebar');
-								executeStepAction(step, onNavigate);
-							}}
-						>
-							{#if complete}
-								<Check class="h-3.5 w-3.5 flex-shrink-0 text-green-400" />
-							{:else if daemonTrouble}
-								<Info class="h-3.5 w-3.5 flex-shrink-0 text-yellow-500" />
-							{:else if discoverySpinner}
-								<Loader2 class="h-3.5 w-3.5 flex-shrink-0 animate-spin text-blue-500" />
-							{:else if enabled}
-								<Circle class="text-tertiary h-3.5 w-3.5 flex-shrink-0" />
-							{:else}
-								<Circle class="text-disabled h-3.5 w-3.5 flex-shrink-0" />
-							{/if}
-							<span
-								class="truncate"
-								class:text-tertiary={complete}
-								class:line-through={complete}
-								class:text-primary={!complete && enabled}
-								class:text-disabled={!complete && !enabled}
+						{#if daemonTrouble}
+							<div
+								class="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs {!enabled
+									? 'opacity-50'
+									: ''}"
 							>
-								{step.label}
-							</span>
-							{#if daemonTrouble}
-								<span class="ml-auto flex-shrink-0 text-[10px] font-medium text-yellow-500"
-									>Having trouble?</span
+								<Info class="h-3.5 w-3.5 flex-shrink-0 text-yellow-500" />
+								<button
+									class="text-primary truncate rounded hover:underline"
+									onclick={() => {
+										trackChecklistStepClicked(step.id, 'sidebar');
+										executeStepAction(step, onNavigate);
+									}}
 								>
-							{/if}
-						</button>
+									{step.label}
+								</button>
+								<button
+									class="ml-auto flex-shrink-0 rounded text-[10px] font-medium text-yellow-500 hover:underline"
+									onclick={() => {
+										showTroubleshootingModal = true;
+									}}
+								>
+									Having trouble?
+								</button>
+							</div>
+						{:else}
+							<button
+								class="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs transition-colors {!complete &&
+								!isAccountStep &&
+								enabled
+									? 'hover:bg-gray-100 dark:hover:bg-gray-800'
+									: ''} {!enabled ? 'opacity-50' : ''}"
+								disabled={complete || !enabled || isAccountStep}
+								onclick={() => {
+									trackChecklistStepClicked(step.id, 'sidebar');
+									executeStepAction(step, onNavigate);
+								}}
+							>
+								{#if complete}
+									<Check class="h-3.5 w-3.5 flex-shrink-0 text-green-400" />
+								{:else if discoverySpinner}
+									<Loader2 class="h-3.5 w-3.5 flex-shrink-0 animate-spin text-blue-500" />
+								{:else if enabled}
+									<Circle class="text-tertiary h-3.5 w-3.5 flex-shrink-0" />
+								{:else}
+									<Circle class="text-disabled h-3.5 w-3.5 flex-shrink-0" />
+								{/if}
+								<span
+									class="truncate"
+									class:text-tertiary={complete}
+									class:line-through={complete}
+									class:text-primary={!complete && enabled}
+									class:text-disabled={!complete && !enabled}
+								>
+									{step.label}
+								</span>
+							</button>
+						{/if}
 					{/each}
 				</div>
 			{/if}

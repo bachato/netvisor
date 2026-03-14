@@ -12,5 +12,7 @@
 </script>
 
 <GenericModal title="Daemon Troubleshooting" {isOpen} {onClose} size="sm">
-	<SupportOptions isTroubleshooting={true} hasEmailSupport={false} />
+	<div class="p-6">
+		<SupportOptions isTroubleshooting={true} hasEmailSupport={false} />
+	</div>
 </GenericModal>
