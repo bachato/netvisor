@@ -16,7 +16,7 @@
 		useOnboardingStateQuery
 	} from '$lib/features/auth/queries';
 	import { fetchOrganization } from '$lib/features/organizations/queries';
-	import { navigateWithModal } from '$lib/shared/utils/navigation';
+	import { navigate, navigateWithModal } from '$lib/shared/utils/navigation';
 	import { resolve } from '$app/paths';
 	import { onboardingStore } from '$lib/features/auth/stores/onboarding';
 	import { trackEvent } from '$lib/shared/utils/analytics';
@@ -208,8 +208,13 @@
 			// Clear onboarding store
 			onboardingStore.reset();
 
-			// Navigate to main app with modal param so daemon setup opens
-			await navigateWithModal('daemon-prompt');
+			// Cloud: billing modal auto-opens via needsPlanSelection; its onClose chains to daemon-prompt
+			// Non-Cloud: navigate with daemon-prompt modal param directly
+			if (onboardingConfigData && isCloud(onboardingConfigData)) {
+				await navigate();
+			} else {
+				await navigateWithModal('daemon-prompt');
+			}
 		} catch {
 			// Error handled by mutation
 		}

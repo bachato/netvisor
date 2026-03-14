@@ -52,18 +52,8 @@
 		(needsPlanSelection && !planJustActivated) || $modalState.name === 'billing-plan'
 	);
 
-	// Daemon prompt: intercept 'daemon-prompt' modal param and show DaemonPromptModal
-	let pendingDaemonPrompt = $state(false);
-	$effect(() => {
-		if ($modalState.name === 'daemon-prompt') {
-			pendingDaemonPrompt = true;
-			closeModal();
-		}
-	});
-	// Only show after billing state is resolved (org query loaded or billing disabled)
-	// to prevent a brief flash before billing modal takes priority
-	let billingStateResolved = $derived(!billingEnabled || organizationQuery.isSuccess);
-	let showDaemonPrompt = $derived(pendingDaemonPrompt && !showBillingModal && billingStateResolved);
+	// Daemon prompt: driven by modal registry
+	let showDaemonPrompt = $derived($modalState.name === 'daemon-prompt');
 
 	let activeTab = $state(initialHash || 'home');
 	let appInitialized = $state(false);
@@ -95,7 +85,8 @@
 	let initialTabSet = $state(false);
 	$effect(() => {
 		if (!initialHash && !initialTabSet && daemonsQuery.isSuccess && !showBillingModal) {
-			const wantsDaemonSetup = $modalState.name === 'create-daemon' || pendingDaemonPrompt;
+			const wantsDaemonSetup =
+				$modalState.name === 'create-daemon' || $modalState.name === 'daemon-prompt';
 			activeTab = wantsDaemonSetup ? 'daemons' : 'home';
 			initialTabSet = true;
 		}
@@ -218,6 +209,8 @@
 			if ($reopenSettingsAfterBilling) {
 				reopenSettingsAfterBilling.set(false);
 				openModal('settings', { tab: 'billing' });
+			} else if (daemonsQuery.data?.length === 0) {
+				openModal('daemon-prompt');
 			}
 		}}
 	/>
@@ -225,11 +218,10 @@
 	<DaemonPromptModal
 		isOpen={showDaemonPrompt}
 		onInstall={() => {
-			pendingDaemonPrompt = false;
 			openModal('create-daemon');
 		}}
 		onSkip={() => {
-			pendingDaemonPrompt = false;
+			closeModal();
 		}}
 	/>
 {:else}
