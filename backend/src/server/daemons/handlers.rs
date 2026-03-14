@@ -908,7 +908,7 @@ async fn test_reachability(
 
     // Optional health check
     let health = if request.check_health {
-        let health_url = format!("{}/health", request.url.trim_end_matches('/'));
+        let health_url = format!("{}/api/health", request.url.trim_end_matches('/'));
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(5))
             .redirect(reqwest::redirect::Policy::none())
