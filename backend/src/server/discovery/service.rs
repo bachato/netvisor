@@ -145,21 +145,8 @@ impl CrudService<Discovery> for DiscoveryService {
         let updated = if needs_reschedule
             && matches!(entity.base.run_type, RunType::Scheduled { .. })
         {
-            // Remove old schedule first using the actual job_id
-            if let Some(scheduler) = &self.scheduler
-                && let Some(job_id) = self.job_ids.read().await.get(&entity.id).copied()
-            {
-                if let Err(e) = scheduler.write().await.remove(&job_id).await {
-                    tracing::warn!(
-                        discovery_id = %entity.id,
-                        job_id = %job_id,
-                        error = ?e,
-                        "Failed to remove old scheduled job"
-                    );
-                } else {
-                    self.job_ids.write().await.remove(&entity.id);
-                }
-            }
+            // Remove old schedule first (with timeout to prevent deadlock)
+            self.remove_scheduled_job(&entity.id).await;
 
             // Update in DB first
             let mut updated = self.discovery_storage.update(entity).await?;
@@ -470,22 +457,9 @@ impl DiscoveryService {
             .await?
             .ok_or_else(|| anyhow::anyhow!("Discovery not found"))?;
 
-        // If it's scheduled, remove from scheduler first using the actual job_id
-        if matches!(discovery.base.run_type, RunType::Scheduled { .. })
-            && let Some(scheduler) = &self.scheduler
-        {
-            if let Some(job_id) = self.job_ids.read().await.get(id).copied() {
-                if let Err(e) = scheduler.write().await.remove(&job_id).await {
-                    tracing::warn!(
-                        discovery_id = %id,
-                        job_id = %job_id,
-                        error = ?e,
-                        "Failed to remove scheduled job during deletion"
-                    );
-                } else {
-                    self.job_ids.write().await.remove(id);
-                }
-            }
+        // If it's scheduled, remove from scheduler first (with timeout to prevent deadlock)
+        if matches!(discovery.base.run_type, RunType::Scheduled { .. }) {
+            self.remove_scheduled_job(id).await;
             tracing::debug!("Removed scheduled job for discovery {}", id);
         }
 
@@ -659,7 +633,23 @@ impl DiscoveryService {
             }))
             .build()?;
 
-        let job_id = scheduler.write().await.add(job).await?;
+        let job_id = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            scheduler.write().await.add(job).await
+        })
+        .await
+        .map_err(|_| {
+            anyhow!(
+                "Timed out adding scheduled job for discovery {}",
+                discovery_id
+            )
+        })?
+        .map_err(|e| {
+            anyhow!(
+                "Failed to add scheduled job for discovery {}: {}",
+                discovery_id,
+                e
+            )
+        })?;
 
         // Store the mapping so we can remove the job later when the schedule is updated
         service.job_ids.write().await.insert(discovery_id, job_id);
@@ -1366,6 +1356,43 @@ impl DiscoveryService {
         }
     }
 
+    /// Remove a scheduled job with a timeout to prevent deadlocks.
+    /// The scheduler's `remove()` can hang if the background task is blocked,
+    /// so we wrap the entire lock acquisition + remove in a timeout.
+    /// Always cleans up the job_id mapping, even on error/timeout.
+    async fn remove_scheduled_job(&self, discovery_id: &Uuid) {
+        if let Some(scheduler) = &self.scheduler
+            && let Some(job_id) = self.job_ids.read().await.get(discovery_id).copied()
+        {
+            let result = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+                scheduler.write().await.remove(&job_id).await
+            })
+            .await;
+
+            match result {
+                Ok(Ok(())) => {}
+                Ok(Err(e)) => {
+                    tracing::warn!(
+                        discovery_id = %discovery_id,
+                        job_id = %job_id,
+                        error = ?e,
+                        "Failed to remove scheduled job"
+                    );
+                }
+                Err(_) => {
+                    tracing::warn!(
+                        discovery_id = %discovery_id,
+                        job_id = %job_id,
+                        "Timed out removing scheduled job"
+                    );
+                }
+            }
+
+            // Always clean up the mapping, even on error/timeout
+            self.job_ids.write().await.remove(discovery_id);
+        }
+    }
+
     /// Track consecutive stall failures for scheduled discoveries.
     /// On Complete: resets the counter. On Failed with stall error: increments and
     /// auto-disables after 3 consecutive failures.
@@ -1420,20 +1447,8 @@ impl DiscoveryService {
                     );
                 }
 
-                // Remove cron job from scheduler
-                if let Some(scheduler) = &self.scheduler
-                    && let Some(job_id) = self.job_ids.read().await.get(&discovery_id).copied()
-                {
-                    if let Err(e) = scheduler.write().await.remove(&job_id).await {
-                        tracing::warn!(
-                            discovery_id = %discovery_id,
-                            error = ?e,
-                            "Failed to remove cron job for auto-disabled discovery"
-                        );
-                    } else {
-                        self.job_ids.write().await.remove(&discovery_id);
-                    }
-                }
+                // Remove cron job from scheduler (with timeout to prevent deadlock)
+                self.remove_scheduled_job(&discovery_id).await;
 
                 // Look up network name and org_id for the email event
                 let (network_name, org_id) = match self
