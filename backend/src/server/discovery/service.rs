@@ -162,8 +162,8 @@ impl DiscoveryService {
         daemon_pull_cancellations.remove(daemon_id);
     }
 
-    /// Check if daemon has an active (non-terminal, non-pending) discovery session.
-    /// This is used to prevent dispatching new work while a session is in progress.
+    /// Check if daemon has an active (dispatched, non-terminal) discovery session.
+    /// Both Queued and Pending are excluded — neither has been dispatched yet.
     pub async fn has_active_session_for_daemon(&self, daemon_id: &Uuid) -> bool {
         let daemon_session_ids = self.daemon_sessions.read().await;
         let session_ids = daemon_session_ids
@@ -176,7 +176,11 @@ impl DiscoveryService {
         session_ids.iter().any(|session_id| {
             all_sessions
                 .get(session_id)
-                .map(|s| !s.phase.is_terminal() && s.phase != DiscoveryPhase::Pending)
+                .map(|s| {
+                    !s.phase.is_terminal()
+                        && s.phase != DiscoveryPhase::Queued
+                        && s.phase != DiscoveryPhase::Pending
+                })
                 .unwrap_or(false)
         })
     }
@@ -650,18 +654,12 @@ impl DiscoveryService {
             discovery.base.discovery_type
         };
 
-        let session_payload = DiscoveryUpdatePayload::new(
+        let mut session_payload = DiscoveryUpdatePayload::new(
             session_id,
             discovery.base.daemon_id,
             discovery.base.network_id,
             discovery_type,
         );
-
-        // Add to session map
-        self.sessions
-            .write()
-            .await
-            .insert(session_id, session_payload.clone());
 
         // Track discovery -> session mapping
         self.discovery_sessions
@@ -681,6 +679,21 @@ impl DiscoveryService {
             false
         };
 
+        // Promote Queued → Pending if daemon has no other sessions
+        if !daemon_is_running_discovery {
+            session_payload.phase = DiscoveryPhase::Pending;
+            self.session_last_updated
+                .write()
+                .await
+                .insert(session_id, Utc::now());
+        }
+
+        // Add to session map
+        self.sessions
+            .write()
+            .await
+            .insert(session_id, session_payload.clone());
+
         // Add session to queue
         self.daemon_sessions
             .write()
@@ -689,7 +702,7 @@ impl DiscoveryService {
             .or_default()
             .push(session_id);
 
-        // Publish Started event if no other sessions are running for daemon
+        // Publish event if no other sessions are running for daemon
         // DaemonService subscribes to this event and sends the request to the daemon.
         if !daemon_is_running_discovery {
             self.event_bus()
@@ -854,12 +867,13 @@ impl DiscoveryService {
             {
                 daemon_sessions.retain(|s| *s != session.session_id);
 
-                // Get info about next session if it exists
+                // Promote next Queued session to Pending and start its stall clock
                 daemon_sessions
                     .first()
                     .and_then(|next_session_id| sessions.get_mut(next_session_id))
                     .map(|next_session| {
                         next_session.phase = DiscoveryPhase::Pending;
+                        last_updated.insert(next_session.session_id, Utc::now());
                         (next_session.discovery_type.clone(), next_session.session_id)
                     })
             } else {
@@ -896,8 +910,9 @@ impl DiscoveryService {
             // Publish event which will trigger notifying any daemons in ServerPoll to start session
             // If daemon is daemon_poll mode, it will request next session on its next poll
             if let Some((discovery_type, session_id)) = next_session_info {
-                let started_payload =
+                let mut started_payload =
                     DiscoveryUpdatePayload::new(session_id, daemon_id, network_id, discovery_type);
+                started_payload.phase = DiscoveryPhase::Pending;
 
                 self.event_bus()
                     .publish_discovery(started_payload.into_discovery_event())
@@ -941,10 +956,12 @@ impl DiscoveryService {
 
         // Handle based on current phase
         match phase {
-            // Pending sessions: just remove from queue
-            DiscoveryPhase::Pending => {
+            // Queued/Pending sessions: just remove from queue
+            DiscoveryPhase::Queued | DiscoveryPhase::Pending => {
                 let mut sessions = self.sessions.write().await;
                 let mut daemon_sessions = self.daemon_sessions.write().await;
+
+                let was_pending = phase == DiscoveryPhase::Pending;
 
                 // Remove from sessions map
                 sessions.remove(&session_id);
@@ -952,6 +969,18 @@ impl DiscoveryService {
                 // Remove from daemon queue
                 if let Some(queue) = daemon_sessions.get_mut(&daemon_id) {
                     queue.retain(|id| *id != session_id);
+
+                    // If we removed the Pending session, promote next Queued → Pending
+                    if was_pending
+                        && let Some(next_session) =
+                            queue.first().and_then(|next_id| sessions.get_mut(next_id))
+                    {
+                        next_session.phase = DiscoveryPhase::Pending;
+                        self.session_last_updated
+                            .write()
+                            .await
+                            .insert(next_session.session_id, Utc::now());
+                    }
                 }
 
                 // Remove from discovery_sessions map
@@ -966,7 +995,7 @@ impl DiscoveryService {
                 // Broadcast cancellation update so frontend knows
                 let _ = self.update_tx.send(cancelled_update);
 
-                tracing::info!("Cancelled pending session {} from queue", session_id);
+                tracing::info!("Cancelled {} session {} from queue", phase, session_id);
                 Ok(())
             }
 
@@ -1057,8 +1086,8 @@ impl DiscoveryService {
             sessions
                 .iter()
                 .filter_map(|(session_id, session)| {
-                    // Skip terminal states
-                    if session.phase.is_terminal() {
+                    // Only check phases that are subject to stall cleanup
+                    if !session.phase.can_be_cleaned_up() {
                         return None;
                     }
 
@@ -1067,12 +1096,8 @@ impl DiscoveryService {
                         now.signed_duration_since(*last_update_time) > stall_threshold
                     } else if let Some(started_at) = session.started_at {
                         now.signed_duration_since(started_at) > stall_threshold
-                    } else if session.phase == DiscoveryPhase::Pending {
-                        // Pending sessions with no timestamps are normal — just created,
-                        // waiting for dispatch. Not stalled.
-                        false
                     } else {
-                        // Non-Pending session with no tracking timestamps at all —
+                        // Session with no tracking timestamps at all —
                         // it was dispatched but never reported back. Treat as stalled.
                         tracing::warn!(
                             session_id = %session_id,
@@ -1185,9 +1210,18 @@ impl DiscoveryService {
                         .await;
                 }
 
-                // Remove from daemon sessions queue
+                // Remove from daemon sessions queue and promote next Queued → Pending
                 if let Some(queue) = daemon_sessions.get_mut(&daemon_id) {
                     queue.retain(|id| *id != session_id);
+
+                    // Promote next Queued session to Pending
+                    if let Some(next_session) =
+                        queue.first().and_then(|next_id| sessions.get_mut(next_id))
+                        && next_session.phase == DiscoveryPhase::Queued
+                    {
+                        next_session.phase = DiscoveryPhase::Pending;
+                        last_updated.insert(next_session.session_id, Utc::now());
+                    }
                 }
 
                 // Remove from discovery_sessions map

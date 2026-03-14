@@ -12,6 +12,7 @@
 		badge = '',
 		href = '',
 		pill = false,
+		title = '',
 		removable = false,
 		onRemove
 	}: {
@@ -22,6 +23,7 @@
 		badge?: string;
 		href?: string;
 		pill?: boolean;
+		title?: string;
 		removable?: boolean;
 		onRemove?: () => void;
 	} = $props();
@@ -36,6 +38,7 @@
 
 {#snippet content()}
 	<span
+		{title}
 		class="inline-flex items-center gap-1 {pill
 			? 'rounded-full'
 			: 'rounded'} px-2 py-0.5 text-xs font-medium
