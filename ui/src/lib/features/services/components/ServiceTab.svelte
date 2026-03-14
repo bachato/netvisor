@@ -311,7 +311,7 @@
 	<TabHeader title={common_services()} subtitle={services_subtitle()} />
 
 	{#if !hasDaemon(onboarding)}
-		<PreDaemonEmptyState entityName="Services" />
+		<PreDaemonEmptyState title="Install a daemon to start discovering services on your network." />
 	{:else if isInitialLoading}
 		<!-- Loading state (only on initial load) -->
 		<Loading />

@@ -378,7 +378,7 @@
 	</TabHeader>
 
 	{#if !hasDaemon(onboarding)}
-		<PreDaemonEmptyState entityName="Hosts" />
+		<PreDaemonEmptyState title="Install a daemon to start discovering hosts on your network." />
 	{:else if isInitialLoading}
 		<!-- Loading state (only on initial load) -->
 		<Loading />

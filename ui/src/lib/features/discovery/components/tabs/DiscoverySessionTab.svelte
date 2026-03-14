@@ -120,7 +120,7 @@
 		/>
 	{/if}
 	{#if !hasDaemon(onboarding)}
-		<PreDaemonEmptyState entityName="Discovery sessions" />
+		<PreDaemonEmptyState title="Install a daemon to start running discoveries on your network." />
 	{:else if isLoading}
 		<Loading />
 	{:else if sessionsList.length === 0}

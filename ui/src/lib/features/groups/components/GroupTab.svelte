@@ -4,6 +4,7 @@
 	import GroupCard from './GroupCard.svelte';
 	import GroupEditModal from './GroupEditModal/GroupEditModal.svelte';
 	import EmptyState from '$lib/shared/components/layout/EmptyState.svelte';
+	import PreDaemonEmptyState from '$lib/shared/components/layout/PreDaemonEmptyState.svelte';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import DataControls from '$lib/shared/components/data/DataControls.svelte';
 	import { defineFields } from '$lib/shared/components/data/types';
@@ -21,6 +22,8 @@
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
+	import { useOrganizationQuery } from '$lib/features/organizations/queries';
+	import { hasDaemon } from '$lib/shared/onboarding/checklist';
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import {
@@ -42,8 +45,13 @@
 	} from '$lib/paraglide/messages';
 
 	type GroupOrderField = components['schemas']['GroupOrderField'];
+	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 
 	let { isReadOnly = false }: TabProps = $props();
+
+	// Organization query for onboarding state
+	const organizationQuery = useOrganizationQuery();
+	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
 
 	// Queries
 	const tagsQuery = useTagsQuery();
@@ -183,7 +191,7 @@
 <div class="space-y-6">
 	<TabHeader title={common_groupsLabel()} subtitle={groups_subtitle()}>
 		<svelte:fragment slot="actions">
-			{#if !isReadOnly}
+			{#if hasDaemon(onboarding) && !isReadOnly}
 				<button class="btn-primary flex items-center" onclick={handleCreateGroup}
 					><Plus class="h-5 w-5" />{common_create()}</button
 				>
@@ -191,7 +199,9 @@
 		</svelte:fragment>
 	</TabHeader>
 
-	{#if isLoading}
+	{#if !hasDaemon(onboarding)}
+		<PreDaemonEmptyState title="Install a daemon to start organizing groups on your network." />
+	{:else if isLoading}
 		<Loading />
 	{:else if groupsData.length === 0}
 		<!-- Empty state -->

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { components } from '$lib/api/schema';
-	import { Check, Circle, Info, Loader2 } from 'lucide-svelte';
+	import { Check, ChevronDown, Circle, Info, Loader2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import {
 		CHECKLIST_STEPS,
@@ -96,6 +96,7 @@
 							></span>
 						{/each}
 					</div>
+					<ChevronDown class="h-3.5 w-3.5 transition-transform {expanded ? '' : '-rotate-90'}" />
 				</div>
 			</button>
 

@@ -196,7 +196,7 @@
 	</TabHeader>
 
 	{#if !hasDaemon(onboarding)}
-		<PreDaemonEmptyState entityName="Subnets" />
+		<PreDaemonEmptyState title="Install a daemon to start discovering subnets on your network." />
 	{:else if isLoading}
 		<!-- Loading state -->
 		<Loading />

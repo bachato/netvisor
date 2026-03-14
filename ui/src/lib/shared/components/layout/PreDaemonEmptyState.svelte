@@ -4,7 +4,7 @@
 	import { openModal } from '$lib/shared/stores/modal-registry';
 	import type { IconComponent } from '$lib/shared/utils/types';
 
-	let { entityName }: { entityName: string } = $props();
+	let { title }: { title: string } = $props();
 
 	function handleClick() {
 		window.location.hash = 'daemons';
@@ -14,7 +14,7 @@
 
 <EmptyState
 	IconComponent={Server as IconComponent}
-	title="Install a daemon to start discovering {entityName.toLowerCase()} on your network."
+	{title}
 	onClick={handleClick}
 	cta="Install a Daemon"
 />

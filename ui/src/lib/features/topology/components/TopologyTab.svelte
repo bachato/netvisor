@@ -395,7 +395,7 @@
 
 <SvelteFlowProvider>
 	{#if !hasDaemon(onboarding)}
-		<PreDaemonEmptyState entityName="Your network topology" />
+		<PreDaemonEmptyState title="Install a daemon to start mapping your network topology." />
 	{:else}
 		<div class="space-y-6">
 			<!-- Header -->

@@ -173,7 +173,7 @@
 	<TabHeader title={discovery_historyTitle()} />
 
 	{#if !hasDaemon(onboarding)}
-		<PreDaemonEmptyState entityName="Discoveries" />
+		<PreDaemonEmptyState title="Install a daemon to start running discoveries on your network." />
 	{:else if isLoading}
 		<Loading />
 	{:else if historicalDiscoveries.length === 0}
