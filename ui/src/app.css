@@ -479,6 +479,10 @@
 	animation: pulse-highlight 1s ease-in-out 2;
 }
 
+.animate-pulse-highlight-once {
+	animation: pulse-highlight 1s ease-in-out 1;
+}
+
 @keyframes text-pulse-highlight {
 	0%,
 	100% {

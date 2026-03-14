@@ -212,6 +212,35 @@
 		return `box-shadow: 0 0 0 3px ${colorHelper.rgb};`;
 	});
 
+	// Check if any service in this node matches the hovered tag/category — for card shadow
+	let serviceHoverShadowStyle = $derived.by(() => {
+		if (!nodeRenderData?.showServices) return '';
+		const services = nodeRenderData.services;
+		if (currentHoveredTag && currentHoveredTag.entityType === 'service') {
+			const { tagId, color } = currentHoveredTag;
+			for (const service of services) {
+				const isUntagged = service.tags.length === 0;
+				const hasTag = tagId === UNTAGGED_SENTINEL ? isUntagged : service.tags.includes(tagId);
+				if (hasTag) {
+					const colorHelper = createColorHelper(color as Parameters<typeof createColorHelper>[0]);
+					return `--pulse-color: ${colorHelper.rgb};`;
+				}
+			}
+		}
+		if (currentHoveredCategory) {
+			for (const service of services) {
+				const serviceCategory = serviceDefinitions.getCategory(service.service_definition);
+				if (serviceCategory === currentHoveredCategory.category) {
+					const colorHelper = createColorHelper(
+						currentHoveredCategory.color as Parameters<typeof createColorHelper>[0]
+					);
+					return `--pulse-color: ${colorHelper.rgb};`;
+				}
+			}
+		}
+		return '';
+	});
+
 	let cardClass = $derived(
 		`card ${isNodeSelected ? 'card-selected' : ''} ${nodeRenderData?.isVirtualized ? `border-color: ${virtualizationColorHelper.border}` : ''}`
 	);
@@ -238,8 +267,8 @@
 
 {#if nodeRenderData}
 	<div
-		class={`${cardClass} ${isNewNode ? 'animate-pulse-highlight' : ''}`}
-		style={`width: ${effectiveWidth}px; height: ${effectiveHeight}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${isNewNode ? `--pulse-color: ${discoveryColorHelper.rgb};` : ''} ${tagHoverRingStyle}`}
+		class={`${cardClass} ${isNewNode ? 'animate-pulse-highlight' : ''} ${serviceHoverShadowStyle ? 'animate-pulse-highlight-once' : ''}`}
+		style={`width: ${effectiveWidth}px; height: ${effectiveHeight}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${isNewNode ? `--pulse-color: ${discoveryColorHelper.rgb};` : ''} ${serviceHoverShadowStyle} ${tagHoverRingStyle}`}
 	>
 		<!-- Rest of component stays the same -->
 		<!-- Header section with gradient transition to body -->
