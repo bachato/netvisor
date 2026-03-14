@@ -1,17 +1,19 @@
 <script lang="ts">
-	import { Terminal } from 'lucide-svelte';
+	import { fade, scale } from 'svelte/transition';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
-	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { useConfigQuery, isCloud } from '$lib/shared/stores/config-query';
 	import { trackEvent } from '$lib/shared/utils/analytics';
+	import { createForm } from '@tanstack/svelte-form';
+	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
+	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import {
-		common_install,
 		common_other,
 		common_reddit,
 		common_youtube,
 		daemons_promptTitle,
 		daemons_promptBody,
 		daemons_promptSkip,
+		daemons_promptGetStarted,
 		onboarding_howDidYouHear,
 		onboarding_referralSource_blogArticle,
 		onboarding_referralSource_hackerNews,
@@ -36,9 +38,6 @@
 	const configQuery = useConfigQuery();
 	let showReferralSource = $derived(configQuery.data != null && isCloud(configQuery.data));
 
-	let referralSource = $state('');
-	let referralSourceOther = $state('');
-
 	const referralSourceOptions = [
 		{ value: '', label: onboarding_howDidYouHear(), disabled: true },
 		{ value: 'search_engine', label: onboarding_referralSource_searchEngine() },
@@ -53,11 +52,20 @@
 		{ value: 'prefer_not_to_say', label: onboarding_referralSource_preferNotToSay() }
 	];
 
+	const form = createForm(() => ({
+		defaultValues: {
+			referralSource: '',
+			referralSourceOther: ''
+		},
+		onSubmit: async () => {}
+	}));
+
 	function trackReferralSource() {
-		if (referralSource) {
+		const source = form.state.values.referralSource;
+		if (source) {
 			trackEvent('onboarding_referral_source', {
-				referral_source: referralSource,
-				referral_source_other: referralSourceOther || undefined
+				referral_source: source,
+				referral_source_other: form.state.values.referralSourceOther || undefined
 			});
 		}
 	}
@@ -81,35 +89,90 @@
 	showCloseButton={false}
 	preventCloseOnClickOutside={true}
 >
-	{#snippet headerIcon()}
-		<ModalHeaderIcon Icon={Terminal} color="Blue" />
-	{/snippet}
-
 	<div class="flex min-h-0 flex-1 flex-col">
 		<div class="flex-1 overflow-auto p-6">
 			<div class="space-y-6">
+				<!-- Animated node discovery visual -->
+				<div class="flex h-32 items-center justify-center">
+					<svg width="200" height="100" viewBox="0 0 200 100">
+						<!-- Lines (drawn with CSS animation) -->
+						<line
+							x1="40"
+							y1="30"
+							x2="100"
+							y2="50"
+							class="discovery-line"
+							style="animation-delay: 0.8s"
+						/>
+						<line
+							x1="100"
+							y1="50"
+							x2="160"
+							y2="25"
+							class="discovery-line"
+							style="animation-delay: 1.2s"
+						/>
+						<line
+							x1="100"
+							y1="50"
+							x2="130"
+							y2="80"
+							class="discovery-line"
+							style="animation-delay: 1.6s"
+						/>
+
+						<!-- Nodes -->
+						{#if isOpen}
+							<g in:fade={{ delay: 200, duration: 400 }}>
+								<g in:scale={{ start: 0, delay: 200, duration: 400 }}>
+									<circle cx="40" cy="30" r="6" class="fill-primary-500" />
+								</g>
+							</g>
+							<g in:fade={{ delay: 500, duration: 400 }}>
+								<g in:scale={{ start: 0, delay: 500, duration: 400 }}>
+									<circle cx="100" cy="50" r="6" class="fill-primary-500" />
+								</g>
+							</g>
+							<g in:fade={{ delay: 800, duration: 400 }}>
+								<g in:scale={{ start: 0, delay: 800, duration: 400 }}>
+									<circle cx="160" cy="25" r="6" class="fill-primary-500" />
+								</g>
+							</g>
+							<g in:fade={{ delay: 1100, duration: 400 }}>
+								<g in:scale={{ start: 0, delay: 1100, duration: 400 }}>
+									<circle cx="130" cy="80" r="6" class="fill-primary-500" />
+								</g>
+							</g>
+						{/if}
+					</svg>
+				</div>
+
 				<p class="text-secondary text-sm">{daemons_promptBody()}</p>
 
 				{#if showReferralSource}
 					<div class="card card-static">
-						<label class="text-secondary mb-1 block text-sm font-medium" for="referral-source">
-							{onboarding_howDidYouHear()}
-						</label>
-						<select id="referral-source" class="input w-full" bind:value={referralSource}>
-							{#each referralSourceOptions as option (option.value)}
-								<option value={option.value} disabled={option.disabled}>
-									{option.label}
-								</option>
-							{/each}
-						</select>
-						{#if referralSource === 'other'}
-							<div class="mt-3">
-								<input
-									type="text"
-									class="input w-full"
-									placeholder={onboarding_referralSource_otherPlaceholder()}
-									bind:value={referralSourceOther}
+						<form.Field name="referralSource">
+							{#snippet children(field)}
+								<SelectInput
+									label={onboarding_howDidYouHear()}
+									id="referral-source"
+									{field}
+									options={referralSourceOptions}
 								/>
+							{/snippet}
+						</form.Field>
+						{#if form.state.values.referralSource === 'other'}
+							<div class="mt-3">
+								<form.Field name="referralSourceOther">
+									{#snippet children(field)}
+										<TextInput
+											label=""
+											id="referral-source-other"
+											{field}
+											placeholder={onboarding_referralSource_otherPlaceholder()}
+										/>
+									{/snippet}
+								</form.Field>
 							</div>
 						{/if}
 					</div>
@@ -123,9 +186,25 @@
 					{daemons_promptSkip()}
 				</button>
 				<button type="button" class="btn-primary" onclick={handleInstall}>
-					{common_install()}
+					{daemons_promptGetStarted()}
 				</button>
 			</div>
 		</div>
 	</div>
 </GenericModal>
+
+<style>
+	.discovery-line {
+		stroke: rgb(var(--color-primary-500));
+		stroke-width: 1.5;
+		stroke-dasharray: 100;
+		stroke-dashoffset: 100;
+		animation: draw-line 0.6s ease-out forwards;
+	}
+
+	@keyframes draw-line {
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
+</style>
