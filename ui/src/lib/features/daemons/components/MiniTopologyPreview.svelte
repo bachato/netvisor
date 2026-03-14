@@ -83,32 +83,10 @@
 		{ from: 6, to: 7, appearAt: 0.55 }
 	];
 
-	let hoveredNode: number | null = null;
-
-	function getConnectedNodes(nodeId: number): Set<number> {
-		const connected = new Set<number>();
-		connected.add(nodeId);
-		for (const e of edges) {
-			if (e.from === nodeId) connected.add(e.to);
-			if (e.to === nodeId) connected.add(e.from);
-		}
-		return connected;
-	}
-
 	function handleMouseMove(e: MouseEvent) {
 		const rect = canvas.getBoundingClientRect();
 		mouseX = e.clientX - rect.left;
 		mouseY = e.clientY - rect.top;
-
-		// Hit test nodes (check from top to bottom for overlap)
-		hoveredNode = null;
-		for (let i = nodes.length - 1; i >= 0; i--) {
-			const n = nodes[i];
-			if (mouseX >= n.x && mouseX <= n.x + n.w && mouseY >= n.y && mouseY <= n.y + n.h) {
-				hoveredNode = n.id;
-				break;
-			}
-		}
 	}
 
 	function handleMouseLeave() {
@@ -190,10 +168,8 @@
 		const nodeBg = isDark ? '#1a1d29' : '#ffffff';
 		const borderColor = isDark ? '#374151' : '#e2e8f0';
 		const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)';
-		const textPrimary = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)';
 		const dotColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)';
 		const edgeColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)';
-		const edgeHighlight = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
 
 		// Background
 		ctx.fillStyle = bgColor;
@@ -208,8 +184,6 @@
 				ctx.fill();
 			}
 		}
-
-		const connectedSet = hoveredNode !== null ? getConnectedNodes(hoveredNode) : null;
 
 		// Subnets
 		for (const subnet of subnets) {
@@ -247,17 +221,13 @@
 			const tx = to.x + to.w / 2;
 			const ty = to.y + to.h / 2;
 
-			const isHighlighted = connectedSet && connectedSet.has(edge.from) && connectedSet.has(edge.to);
-			const isFaded = connectedSet && !isHighlighted;
-
 			ctx.save();
-			ctx.globalAlpha = ea * (isFaded ? 0.08 : 1);
+			ctx.globalAlpha = ea;
 			ctx.beginPath();
 			ctx.moveTo(fx, fy);
-			// Draw partially for appear animation
 			ctx.lineTo(fx + (tx - fx) * ea, fy + (ty - fy) * ea);
-			ctx.strokeStyle = isHighlighted ? edgeHighlight : edgeColor;
-			ctx.lineWidth = isHighlighted ? 1.5 : 1;
+			ctx.strokeStyle = edgeColor;
+			ctx.lineWidth = 1;
 			ctx.stroke();
 			ctx.restore();
 		}
@@ -267,11 +237,8 @@
 			const na = easeOut(Math.max(0, Math.min(1, (appearProgress - node.appearAt) / 0.2)));
 			if (na <= 0) continue;
 
-			const isHovered = hoveredNode === node.id;
-			const isConnected = connectedSet?.has(node.id) ?? true;
-
 			ctx.save();
-			ctx.globalAlpha = na * (isConnected ? 1 : 0.2);
+			ctx.globalAlpha = na;
 
 			// Scale from center for appear animation
 			const cx = node.x + node.w / 2;
@@ -281,22 +248,13 @@
 			const sx = cx - sw / 2;
 			const sy = cy - sh / 2;
 
-			// Shadow/glow for hovered
-			if (isHovered) {
-				ctx.shadowColor = COLORS[node.color];
-				ctx.shadowBlur = 12;
-				ctx.shadowOffsetX = 0;
-				ctx.shadowOffsetY = 0;
-			}
-
 			// Card background
 			drawRoundedRect(ctx, sx, sy, sw, sh, 5);
 			ctx.fillStyle = nodeBg;
 			ctx.fill();
-			ctx.strokeStyle = isHovered ? COLORS[node.color] : borderColor;
-			ctx.lineWidth = isHovered ? 1.5 : 1;
+			ctx.strokeStyle = borderColor;
+			ctx.lineWidth = 1;
 			ctx.stroke();
-			ctx.shadowBlur = 0;
 
 			if (na > 0.7) {
 				// Color accent bar at top
@@ -311,7 +269,7 @@
 
 				// Label
 				ctx.font = '600 8px ui-sans-serif, system-ui, sans-serif';
-				ctx.fillStyle = isHovered ? textPrimary : textMuted;
+				ctx.fillStyle = textMuted;
 				ctx.textAlign = 'center';
 				ctx.fillText(node.label, cx, cy + 1);
 
