@@ -76,6 +76,13 @@
 		}
 	}));
 
+	let selectedSource = $state('');
+	$effect(() => {
+		return form.store.subscribe(() => {
+			selectedSource = form.state.values.referral_source;
+		});
+	});
+
 	function dismiss() {
 		// Submit prefer_not_to_say so the milestone is recorded
 		referralSourceMutation.mutate({
@@ -94,9 +101,7 @@
 			<div class="flex items-center justify-between">
 				<div>
 					<h3 class="text-primary text-sm font-semibold">{onboarding_howDidYouHear()}</h3>
-					<p class="text-secondary mt-1 text-xs">
-						Helps us understand how people find Scanopy.
-					</p>
+					<p class="text-secondary mt-1 text-xs">Helps us understand how people find Scanopy.</p>
 				</div>
 				<button onclick={dismiss} class="text-tertiary hover:text-secondary text-sm">
 					Dismiss
@@ -109,7 +114,7 @@
 					handleSubmit();
 				}}
 			>
-				<div class="mt-3 grid gap-3" class:sm:grid-cols-2={form.state.values.referral_source === 'other'}>
+				<div class="mt-3 grid gap-3" class:sm:grid-cols-2={selectedSource === 'other'}>
 					<form.Field name="referral_source">
 						{#snippet children(field)}
 							<SelectInput
@@ -120,7 +125,7 @@
 							/>
 						{/snippet}
 					</form.Field>
-					{#if form.state.values.referral_source === 'other'}
+					{#if selectedSource === 'other'}
 						<form.Field name="referral_source_other">
 							{#snippet children(field)}
 								<TextInput
@@ -133,11 +138,7 @@
 						</form.Field>
 					{/if}
 				</div>
-				<button
-					type="submit"
-					class="btn-primary mt-3 text-sm"
-					disabled={!form.state.values.referral_source}
-				>
+				<button type="submit" class="btn-primary mt-3 text-sm" disabled={!selectedSource}>
 					Submit
 				</button>
 			</form>
