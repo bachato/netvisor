@@ -249,7 +249,7 @@
 			const sy = cy - sh / 2;
 
 			// Card background
-			drawRoundedRect(ctx, sx, sy, sw, sh, 5);
+			drawRoundedRect(ctx, sx, sy, sw, sh, 7);
 			ctx.fillStyle = nodeBg;
 			ctx.fill();
 			ctx.strokeStyle = borderColor;
@@ -284,6 +284,14 @@
 			ctx.restore();
 		}
 
+		// Bottom gradient fade — signals this is decorative, not a real UI
+		const fadeH = h * 0.4;
+		const grad = ctx.createLinearGradient(0, h - fadeH, 0, h);
+		grad.addColorStop(0, 'rgba(0,0,0,0)');
+		grad.addColorStop(1, bgColor);
+		ctx.fillStyle = grad;
+		ctx.fillRect(0, h - fadeH, w, fadeH);
+
 		if (active) {
 			animationId = requestAnimationFrame(render);
 		}
@@ -301,7 +309,7 @@
 
 <canvas
 	bind:this={canvas}
-	class="h-48 w-full cursor-default rounded-lg"
+	class="h-48 w-full cursor-default rounded-lg opacity-90"
 	style="background: var(--color-topology-bg)"
 	onmousemove={handleMouseMove}
 	onmouseleave={handleMouseLeave}
