@@ -9571,14 +9571,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-03-11T20:23:01.407675Z",
-              "id": "f9a27ae4-c73e-467c-8cf6-523d951ef48c",
+              "created_at": "2026-03-14T00:54:45.951710Z",
+              "id": "ac28e9de-95f3-4496-8880-6dd3df217749",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-11T20:23:01.407675Z"
+              "updated_at": "2026-03-14T00:54:45.951710Z"
             }
           },
           "error": {
@@ -10394,14 +10394,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-03-11T20:23:01.390038Z",
-                      "id": "a23f5ea7-03c8-49cb-950b-fb7b490cf77c",
+                      "created_at": "2026-03-14T00:54:45.929218Z",
+                      "id": "6559ff08-ceff-494e-9eb4-5b28327597f9",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-03-11T20:23:01.390038Z"
+                      "updated_at": "2026-03-14T00:54:45.929218Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10410,7 +10410,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Rocket.Chat",
+                  "service_definition": "Caddy",
                   "source": {
                     "type": "Manual"
                   },
@@ -11112,14 +11112,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-03-11T20:23:01.402243Z",
-                  "id": "9f321238-23ad-43fb-82bb-28323cf41fda",
+                  "created_at": "2026-03-14T00:54:45.945038Z",
+                  "id": "570cce41-8d30-4803-8d4a-dafea71d6823",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-11T20:23:01.402243Z"
+                  "updated_at": "2026-03-14T00:54:45.945038Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11128,7 +11128,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Rocket.Chat",
+              "service_definition": "Caddy",
               "source": {
                 "type": "Manual"
               },
@@ -12343,14 +12343,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-03-11T20:23:01.390247Z",
-          "id": "d389ff8c-e7a6-410f-ad0c-5202cbfc70c0",
+          "created_at": "2026-03-14T00:54:45.929588Z",
+          "id": "5140f614-d0a8-4fa1-aeaf-9627a91ce0d4",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-03-11T20:23:01.390247Z"
+          "updated_at": "2026-03-14T00:54:45.929588Z"
         }
       },
       "BindingBase": {
@@ -12857,7 +12857,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Rocket.Chat",
+              "service_definition": "Caddy",
               "tags": [],
               "virtualization": null
             }
@@ -13627,6 +13627,7 @@
       "DiscoveryPhase": {
         "type": "string",
         "enum": [
+          "Queued",
           "Pending",
           "Starting",
           "Started",
@@ -14753,14 +14754,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-03-11T20:23:01.389757Z",
-                  "id": "97904a36-115f-4963-a878-c727fbfaf42e",
+                  "created_at": "2026-03-14T00:54:45.928701Z",
+                  "id": "4f957468-f7ba-4a3a-a772-cc848bf0654c",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-11T20:23:01.389757Z"
+                  "updated_at": "2026-03-14T00:54:45.928701Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14769,7 +14770,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Rocket.Chat",
+              "service_definition": "Caddy",
               "source": {
                 "type": "Manual"
               },
@@ -16640,14 +16641,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-03-11T20:23:01.376461Z",
-                        "id": "af426736-e5fd-48b3-a17a-825efb988662",
+                        "created_at": "2026-03-14T00:54:45.915395Z",
+                        "id": "44a7d0ce-ff70-40b2-99ac-a64a2c85888b",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-03-11T20:23:01.376461Z"
+                        "updated_at": "2026-03-14T00:54:45.915395Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16656,7 +16657,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Rocket.Chat",
+                    "service_definition": "Caddy",
                     "source": {
                       "type": "Manual"
                     },
@@ -16733,14 +16734,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-03-11T20:23:01.401278Z",
-                    "id": "be3d8394-6647-4639-b66d-bc1ef6b5e007",
+                    "created_at": "2026-03-14T00:54:45.943386Z",
+                    "id": "7d873afa-5815-4148-aa1f-4f56e454db15",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-03-11T20:23:01.401278Z"
+                    "updated_at": "2026-03-14T00:54:45.943386Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16749,7 +16750,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Rocket.Chat",
+                "service_definition": "Caddy",
                 "source": {
                   "type": "Manual"
                 },
@@ -17843,14 +17844,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-03-11T20:23:01.390178Z",
-              "id": "ebc84d62-03d1-4ac8-9202-bf661351a49d",
+              "created_at": "2026-03-14T00:54:45.929454Z",
+              "id": "ca1a9e22-81a9-430b-a1aa-c8dbbb16f61a",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-11T20:23:01.390178Z"
+              "updated_at": "2026-03-14T00:54:45.929454Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17859,7 +17860,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Rocket.Chat",
+          "service_definition": "Caddy",
           "source": {
             "type": "Manual"
           },

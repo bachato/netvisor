@@ -9,9 +9,10 @@ use crate::server::discovery::r#impl::types::DiscoveryType;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Copy, PartialEq, Eq, Hash, ToSchema)]
 pub enum DiscoveryPhase {
-    Pending, // Initial state, set by server; all subsequent states until Finished are set by Daemon
-    Starting,
-    Started,
+    Queued,   // Waiting in daemon queue behind another session
+    Pending,  // Front of queue, eligible for dispatch. Clock ticking.
+    Starting, // get_pending_work() picked it up, dispatching to daemon
+    Started,  // Daemon acknowledged, actively running
     Scanning,
     Complete,
     Failed,
@@ -23,6 +24,23 @@ impl DiscoveryPhase {
         matches!(
             self,
             DiscoveryPhase::Complete | DiscoveryPhase::Cancelled | DiscoveryPhase::Failed
+        )
+    }
+
+    /// Whether this phase is subject to stall cleanup.
+    ///
+    /// - `Queued`: No — waiting in queue, no dispatch attempted, no clock running
+    /// - `Pending`: Yes — promoted to front of queue, dispatch expected within a poll cycle.
+    ///   If still here after 5 min, daemon is unreachable.
+    /// - `Starting`/`Started`/`Scanning`: Yes — dispatched, should be progressing
+    /// - Terminal states: No — already done
+    pub fn can_be_cleaned_up(&self) -> bool {
+        matches!(
+            self,
+            DiscoveryPhase::Pending
+                | DiscoveryPhase::Starting
+                | DiscoveryPhase::Started
+                | DiscoveryPhase::Scanning
         )
     }
 }
@@ -59,6 +77,7 @@ impl DiscoverySessionUpdate {
 impl std::fmt::Display for DiscoveryPhase {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            DiscoveryPhase::Queued => write!(f, "Waiting in queue behind another session"),
             DiscoveryPhase::Pending => {
                 write!(f, "Session created, waiting for daemon availability")
             }

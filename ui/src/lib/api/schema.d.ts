@@ -2787,14 +2787,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-11T20:23:01.407674Z",
-             *       "id": "7ea169e5-7a0f-4d1a-a687-d1799b2d9501",
+             *       "created_at": "2026-03-14T00:54:45.951550Z",
+             *       "id": "c91f03e3-9bea-4802-835d-9b5efda97f57",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-11T20:23:01.407674Z"
+             *       "updated_at": "2026-03-14T00:54:45.951550Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3046,14 +3046,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-11T20:23:01.390050Z",
-             *               "id": "e8e0e592-0ee6-4d20-a178-c9b89f324d2e",
+             *               "created_at": "2026-03-14T00:54:45.929382Z",
+             *               "id": "f8127bfb-296b-483a-a652-44249a423edc",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-11T20:23:01.390050Z"
+             *               "updated_at": "2026-03-14T00:54:45.929382Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3062,7 +3062,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Rocket.Chat",
+             *           "service_definition": "Caddy",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3318,14 +3318,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-11T20:23:01.402236Z",
-             *           "id": "7185ed8f-6553-484a-9409-8f008c60786c",
+             *           "created_at": "2026-03-14T00:54:45.945075Z",
+             *           "id": "15eadb53-565c-4dcc-ab48-6f42801784cc",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-11T20:23:01.402236Z"
+             *           "updated_at": "2026-03-14T00:54:45.945075Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3334,7 +3334,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Rocket.Chat",
+             *       "service_definition": "Caddy",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3641,14 +3641,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-11T20:23:01.390267Z",
-         *       "id": "3cee12c6-e7fd-4108-beb5-ee3e5cdd8ea9",
+         *       "created_at": "2026-03-14T00:54:45.929767Z",
+         *       "id": "dadd4152-13f7-4f61-9972-b5061e69bea2",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-11T20:23:01.390267Z"
+         *       "updated_at": "2026-03-14T00:54:45.929767Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3830,7 +3830,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Rocket.Chat",
+         *           "service_definition": "Caddy",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4125,7 +4125,7 @@ export interface components {
             date: string;
         };
         /** @enum {string} */
-        DiscoveryPhase: "Pending" | "Starting" | "Started" | "Scanning" | "Complete" | "Failed" | "Cancelled";
+        DiscoveryPhase: "Queued" | "Pending" | "Starting" | "Started" | "Scanning" | "Complete" | "Failed" | "Cancelled";
         /**
          * @description Protocol that discovered the physical link between network devices
          * @enum {string}
@@ -4478,14 +4478,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-11T20:23:01.389761Z",
-         *               "id": "6f9c2e64-1700-4ac8-89d5-c5453dffc1cc",
+         *               "created_at": "2026-03-14T00:54:45.928844Z",
+         *               "id": "7c7ae69a-8f24-4340-9890-93502ed0b599",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-11T20:23:01.389761Z"
+         *               "updated_at": "2026-03-14T00:54:45.928844Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4494,7 +4494,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Rocket.Chat",
+         *           "service_definition": "Caddy",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5479,14 +5479,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-11T20:23:01.390195Z",
-         *           "id": "411ff4fc-2652-472c-9703-de5a9bb90920",
+         *           "created_at": "2026-03-14T00:54:45.929633Z",
+         *           "id": "54491103-f362-43fb-9c0e-134b0527ba47",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-11T20:23:01.390195Z"
+         *           "updated_at": "2026-03-14T00:54:45.929633Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5495,7 +5495,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Rocket.Chat",
+         *       "service_definition": "Caddy",
          *       "source": {
          *         "type": "Manual"
          *       },

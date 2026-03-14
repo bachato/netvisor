@@ -130,7 +130,7 @@ impl DiscoveryUpdatePayload {
             session_id,
             daemon_id,
             network_id,
-            phase: DiscoveryPhase::Pending,
+            phase: DiscoveryPhase::Queued,
             progress: 0,
             discovery_type,
             error: None,

@@ -6,6 +6,8 @@
 	import { optionsPanelExpanded } from '$lib/features/topology/queries';
 	import { entities, billingPlans } from '$lib/shared/stores/metadata';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
+	import { useDiscoveriesQuery } from '$lib/features/discovery/queries';
+	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { IconComponent } from '$lib/shared/utils/types';
 	import { onMount } from 'svelte';
 	import {
@@ -29,8 +31,18 @@
 	} = $props();
 
 	const servicesQuery = useServicesCacheQuery();
+	const discoveriesQuery = useDiscoveriesQuery();
+	const daemonsQuery = useDaemonsQuery();
 	let hasUnclaimedPorts = $derived(
 		(servicesQuery.data ?? []).some((s) => s.service_definition === 'Unclaimed Open Ports')
+	);
+	let hasFailingDiscoveries = $derived(
+		(discoveriesQuery.data ?? []).some(
+			(d) => d.run_type.type === 'Scheduled' && (d.run_type.consecutive_failures ?? 0) > 0
+		)
+	);
+	let hasUnreachableDaemons = $derived(
+		(daemonsQuery.data ?? []).some((d) => d.standby === true || d.is_unreachable === true)
 	);
 
 	let mounted = $state(false);
@@ -76,6 +88,34 @@
 				visible: has('FirstDiscoveryCompleted') && hasUnclaimedPorts,
 				icon: entities.getIconComponent('Port'),
 				iconColor: entities.getColorHelper('Port').icon
+			},
+			{
+				id: 'scans-failing',
+				title: 'Scans are failing',
+				description: 'Some scheduled scans have consecutive failures and may be auto-paused.',
+				actionLabel: 'Troubleshoot',
+				action: () => {
+					window.open(
+						'https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/',
+						'_blank'
+					);
+				},
+				visible: hasFailingDiscoveries,
+				icon: entities.getIconComponent('Discovery'),
+				iconColor: entities.getColorHelper('Discovery').icon
+			},
+			{
+				id: 'daemon-attention',
+				title: 'Daemon needs attention',
+				description:
+					'One or more daemons are offline or unreachable. Scheduled scans targeting these daemons will fail.',
+				actionLabel: 'View Daemons',
+				action: () => {
+					onNavigate('daemons');
+				},
+				visible: hasUnreachableDaemons,
+				icon: entities.getIconComponent('Daemon'),
+				iconColor: entities.getColorHelper('Daemon').icon
 			},
 			{
 				id: 'tags',

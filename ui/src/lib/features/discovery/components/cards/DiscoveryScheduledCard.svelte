@@ -1,7 +1,7 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
-	import { Edit, Pause, Play, Power, Trash2 } from 'lucide-svelte';
+	import { Edit, Play, Power, Trash2 } from 'lucide-svelte';
 	import type { Discovery } from '../../types/base';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
@@ -41,19 +41,35 @@
 		onSelectionChange?: (selected: boolean) => void;
 	} = $props();
 
-	let isAutoDisabled = $derived(
-		discovery.run_type.type === 'Scheduled' &&
-			!discovery.run_type.enabled &&
-			(discovery.run_type.consecutive_failures ?? 0) >= 3
+	let failureCount = $derived(
+		discovery.run_type.type === 'Scheduled' ? (discovery.run_type.consecutive_failures ?? 0) : 0
 	);
+
+	let failureStatus = $derived.by(() => {
+		if (failureCount >= 3) {
+			return {
+				label: 'Auto-paused',
+				textColor: 'text-red-400',
+				bgColor: 'bg-red-400/10',
+				title: `Automatically paused after ${failureCount} consecutive stall failures`
+			};
+		}
+		if (failureCount >= 1) {
+			return {
+				label: `${failureCount} failure${failureCount > 1 ? 's' : ''}`,
+				textColor: 'text-amber-400',
+				bgColor: 'bg-amber-400/10',
+				title: 'Will auto-pause after 3 consecutive failures'
+			};
+		}
+		return null;
+	});
 
 	let cardData = $derived({
 		title: discovery.name,
 		iconColor: entities.getColorHelper('Discovery').icon,
 		Icon: entities.getIconComponent('Discovery'),
-		status: isAutoDisabled
-			? { label: 'Auto-paused', textColor: 'text-amber-400', bgColor: 'bg-amber-400/10' }
-			: null,
+		status: failureStatus,
 		fields: [
 			{
 				label: 'Daemon',
@@ -101,8 +117,8 @@
 				? [
 						{
 							label: discovery.run_type.enabled ? 'Disable' : 'Enable',
-							icon: discovery.run_type.enabled ? Pause : Power,
-							class: `btn-icon`,
+							icon: Power,
+							class: discovery.run_type.enabled ? 'btn-icon-success' : 'btn-icon',
 							onClick: () => onToggleEnabled(discovery)
 						}
 					]
