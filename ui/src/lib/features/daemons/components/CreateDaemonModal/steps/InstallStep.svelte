@@ -1,7 +1,9 @@
 <script lang="ts">
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
+	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
+	import InlineSuccess from '$lib/shared/components/feedback/InlineSuccess.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import SupportOptions from '$lib/features/support/SupportOptions.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
@@ -9,7 +11,7 @@
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { useTestReachabilityMutation } from '../../../queries';
 	import OsSelector from '../../OsSelector.svelte';
-	import { Loader2, CheckCircle2, AlertTriangle, SlidersHorizontal, XCircle } from 'lucide-svelte';
+	import { Loader2, CheckCircle2, AlertTriangle, SlidersHorizontal } from 'lucide-svelte';
 	import type { DaemonConnectionStatus } from '../../../stores/daemon-setup';
 	import {
 		common_advanced,
@@ -44,6 +46,7 @@
 		onAdvanced?: (() => void) | null;
 		daemonMode?: string;
 		daemonUrl?: string;
+		onTroubleshoot?: () => void;
 	}
 
 	let {
@@ -62,7 +65,8 @@
 		showTroubleshootingPanel = false,
 		onAdvanced = null,
 		daemonMode = 'daemon_poll',
-		daemonUrl = ''
+		daemonUrl = '',
+		onTroubleshoot
 	}: Props = $props();
 
 	const configQuery = useConfigQuery();
@@ -143,11 +147,25 @@
 		}
 	});
 
-	// Auto-run health check when entering trouble state for ServerPoll
+	// Clear health result when transitioning to connected
 	$effect(() => {
-		if (connectionStatus === 'trouble' && daemonMode === 'server_poll' && daemonUrl) {
+		if (connectionStatus === 'connected') {
+			healthResult = null;
+		}
+	});
+
+	// Auto-run health check once on transition into trouble state for ServerPoll
+	let prevConnectionStatus = $state<DaemonConnectionStatus>('idle');
+	$effect(() => {
+		if (
+			prevConnectionStatus !== 'trouble' &&
+			connectionStatus === 'trouble' &&
+			daemonMode === 'server_poll' &&
+			daemonUrl
+		) {
 			handleManualHealthCheck();
 		}
+		prevConnectionStatus = connectionStatus;
 	});
 
 	function handleOsSelect(os: DaemonOS) {
@@ -190,26 +208,22 @@
 				{#if daemonMode === 'server_poll' && healthResult}
 					<div class="text-sm">
 						{#if healthResult.reachable && healthResult.health}
-							<span class="flex items-center gap-1 text-green-400">
-								<CheckCircle2 class="h-4 w-4" />
-								Daemon is running and reachable
-							</span>
+							<InlineSuccess title="Daemon is running and reachable" />
 						{:else if healthResult.reachable && healthResult.health === false}
-							<span class="flex items-center gap-1 text-yellow-400">
-								<AlertTriangle class="h-4 w-4" />
-								Port is open but daemon may still be starting...
-							</span>
+							<InlineWarning title="Port is open but daemon may still be starting..." />
 						{:else if !healthResult.reachable}
-							<span class="flex items-center gap-1 text-red-400">
-								<XCircle class="h-4 w-4" />
-								Port not reachable — check firewall and port forwarding
-							</span>
+							<InlineDanger title="Port not reachable — check firewall and port forwarding" />
 						{/if}
 					</div>
 				{/if}
-				<button type="button" class="btn-link text-sm" onclick={() => onReviewCommands?.()}>
-					Review install commands
-				</button>
+				<div class="flex items-center gap-3">
+					<button type="button" class="btn-secondary text-sm" onclick={() => onReviewCommands?.()}>
+						Return to install commands
+					</button>
+					<button type="button" class="btn-secondary text-sm" onclick={() => onTroubleshoot?.()}>
+						Troubleshoot
+					</button>
+				</div>
 			</div>
 			{#if showTroubleshootingPanel}
 				<div bind:this={troubleshootingRef} class="pt-4">
@@ -253,20 +267,11 @@
 					<div class="flex flex-col items-center gap-2">
 						{#if healthResult}
 							{#if healthResult.reachable && healthResult.health}
-								<span class="flex items-center gap-1 text-sm text-green-400">
-									<CheckCircle2 class="h-4 w-4" />
-									Daemon is reachable and healthy
-								</span>
+								<InlineSuccess title="Daemon is reachable and healthy" />
 							{:else if healthResult.reachable}
-								<span class="flex items-center gap-1 text-sm text-yellow-400">
-									<AlertTriangle class="h-4 w-4" />
-									Port open but health check failed
-								</span>
+								<InlineWarning title="Port open but health check failed" />
 							{:else}
-								<span class="flex items-center gap-1 text-sm text-red-400">
-									<XCircle class="h-4 w-4" />
-									{healthResult.error ?? 'Not reachable'}
-								</span>
+								<InlineDanger title={healthResult.error ?? 'Not reachable'} />
 							{/if}
 						{/if}
 						<button
@@ -320,6 +325,10 @@
 				{/snippet}
 				{#if selectedOS === 'linux'}
 					{#if linuxMethod === 'binary'}
+						<p class="text-secondary text-sm">
+							This command will download and install the daemon, then start it with your
+							configuration.
+						</p>
 						<CodeContainer
 							language="bash"
 							expandable={false}
@@ -341,6 +350,10 @@
 						/>
 					{/if}
 				{:else if selectedOS === 'macos'}
+					<p class="text-secondary text-sm">
+						This command will download and install the daemon, then start it with your
+						configuration.
+					</p>
 					<CodeContainer
 						language="bash"
 						expandable={false}
@@ -350,6 +363,10 @@
 
 					<InlineInfo title={daemons_dockerLinuxOnly()} body={daemons_dockerLinuxOnlyBody()} />
 				{:else if selectedOS === 'windows'}
+					<p class="text-secondary text-sm">
+						This command will download and install the daemon, then start it with your
+						configuration.
+					</p>
 					<CodeContainer
 						language="powershell"
 						expandable={false}

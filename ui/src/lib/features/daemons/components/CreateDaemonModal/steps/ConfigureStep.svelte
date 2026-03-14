@@ -2,12 +2,13 @@
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import type { FormValue } from '$lib/shared/components/forms/validators';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
+	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
+	import InlineSuccess from '$lib/shared/components/feedback/InlineSuccess.svelte';
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import RadioGroup from '$lib/shared/components/forms/input/RadioGroup.svelte';
-	import { CheckCircle2, XCircle } from 'lucide-svelte';
 	import { fieldDefs } from '../../../config';
 	import {
 		common_apiKey,
@@ -209,15 +210,9 @@
 		<!-- Reachability result (driven by parent) -->
 		{#if reachabilityResult}
 			{#if reachabilityResult.reachable}
-				<span class="flex items-center gap-1 text-sm text-green-400">
-					<CheckCircle2 class="h-4 w-4" />
-					Port is reachable
-				</span>
+				<InlineSuccess title="Port is reachable" />
 			{:else}
-				<span class="flex items-center gap-1 text-sm text-red-400">
-					<XCircle class="h-4 w-4" />
-					{reachabilityResult.error ?? 'Port is not reachable'}
-				</span>
+				<InlineDanger title={reachabilityResult.error ?? 'Port is not reachable'} />
 				<InlineInfo title="" body={daemons_portForwardingHint()} />
 				<DocsHint
 					text="Having trouble? Check our %link% for common solutions."

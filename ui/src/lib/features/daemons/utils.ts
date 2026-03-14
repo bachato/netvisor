@@ -20,6 +20,9 @@ export function getDaemonStatusTag(daemon: Daemon): TagProps {
 	if (daemon.standby === true) {
 		return { label: 'Standby', color: toColor('purple'), ...docsTag };
 	}
+	if (!daemon.last_seen) {
+		return { label: 'Awaiting Connection', color: toColor('blue'), ...docsTag };
+	}
 	switch (daemon.version_status.status) {
 		case 'Deprecated':
 			return { label: 'Deprecated', color: toColor('orange'), ...docsTag };

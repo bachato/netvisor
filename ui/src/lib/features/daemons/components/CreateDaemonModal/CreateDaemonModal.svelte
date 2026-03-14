@@ -496,6 +496,7 @@
 						String(formValues.daemonUrl ?? ''),
 						Number(formValues.daemonPort) || 60073
 					)}
+					onTroubleshoot={handleTrouble}
 				/>
 			{/if}
 		</div>
@@ -515,7 +516,10 @@
 						onclick={handleNext}
 						disabled={isAutoGenerating || isTestingReachability}
 					>
-						{#if isAutoGenerating || isTestingReachability}
+						{#if isTestingReachability}
+							<Loader2 class="h-4 w-4 animate-spin" />
+							Testing connection to {formValues.daemonUrl}:{formValues.daemonPort || 60073}...
+						{:else if isAutoGenerating}
 							<Loader2 class="h-4 w-4 animate-spin" />
 						{:else}
 							{common_next()}
