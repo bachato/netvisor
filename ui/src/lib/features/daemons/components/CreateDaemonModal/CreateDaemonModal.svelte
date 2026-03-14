@@ -36,7 +36,6 @@
 	import InstallStep from './steps/InstallStep.svelte';
 	import AdvancedStep from './steps/AdvancedStep.svelte';
 	import {
-		common_back,
 		common_close,
 		common_configure,
 		common_failedGenerateApiKey,
@@ -197,13 +196,6 @@
 		}
 	}
 
-	function previousTab() {
-		const idx = (mainFlow as readonly string[]).indexOf(activeTab);
-		if (idx > 0) {
-			activeTab = mainFlow[idx - 1];
-		}
-	}
-
 	function handleTabChange(tabId: string) {
 		showAdvanced = false;
 		activeTab = tabId;
@@ -341,7 +333,6 @@
 	}
 
 	function handleInstalled() {
-		if (!startedAsFirstDaemon) return;
 		connectionStatus = 'waiting';
 		daemonSetupState.set({ connectionStatus: 'waiting' });
 		trackEvent('daemon_install_confirmed');
@@ -538,19 +529,12 @@
 						<button type="button" class="btn-secondary" onclick={handleOnClose}>
 							{common_close()}
 						</button>
-					{:else if startedAsFirstDaemon}
+					{:else}
 						<button type="button" class="btn-secondary" onclick={handleTrouble}>
 							I'm having trouble
 						</button>
 						<button type="button" class="btn-primary" onclick={handleInstalled}>
 							{installCtaLabel}
-						</button>
-					{:else}
-						<button type="button" class="btn-secondary" onclick={previousTab}>
-							{common_back()}
-						</button>
-						<button type="button" class="btn-secondary" onclick={handleOnClose}>
-							{common_close()}
 						</button>
 					{/if}
 				{/if}

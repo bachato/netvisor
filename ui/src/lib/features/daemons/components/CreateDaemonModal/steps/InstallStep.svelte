@@ -164,8 +164,8 @@
 		trackEvent('daemon_install_command_copied', { os: selectedOS, context });
 	}
 
-	// Show waiting UI when connection status is not idle (first daemon only)
-	let showWaitingUI = $derived(isFirstDaemon && connectionStatus !== 'idle');
+	// Show waiting UI when connection status is not idle
+	let showWaitingUI = $derived(connectionStatus !== 'idle');
 
 	// Progress bar for waiting state (0-100 over 60 seconds)
 	const WAIT_DURATION_MS = 60_000;
@@ -216,8 +216,32 @@
 							>
 						</div>
 						<InlineSuccess
-							title="Daemon is reachable and healthy — waiting for server to register it"
+							title="Daemon is reachable and healthy \u2014 waiting for server to register it"
 						/>
+						<div>
+							<h3 class="text-primary text-base font-semibold">
+								Waiting for server to register your daemon...
+							</h3>
+							<p class="text-secondary mt-1 text-sm">
+								Your daemon is running \u2014 the server will pick it up on its next polling cycle.
+							</p>
+						</div>
+						<div class="flex items-center gap-3">
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => onReviewCommands?.()}
+							>
+								Return to install commands
+							</button>
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => onTroubleshoot?.()}
+							>
+								Troubleshoot
+							</button>
+						</div>
 					{:else if healthResult}
 						<!-- Health check failed -->
 						{#if healthResult.reachable}
@@ -225,6 +249,12 @@
 						{:else}
 							<InlineDanger title={healthResult.error ?? 'Not reachable'} />
 						{/if}
+						<div>
+							<h3 class="text-primary text-base font-semibold">Connection test failed</h3>
+							<p class="text-secondary mt-1 text-sm">
+								Check that the daemon is running and the port is reachable.
+							</p>
+						</div>
 						<button
 							type="button"
 							class="btn-primary text-sm"
@@ -233,6 +263,22 @@
 						>
 							Test Daemon Reachability
 						</button>
+						<div class="flex items-center gap-3">
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => onReviewCommands?.()}
+							>
+								Return to install commands
+							</button>
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => onTroubleshoot?.()}
+							>
+								Troubleshoot
+							</button>
+						</div>
 					{/if}
 				{:else}
 					<!-- DaemonPoll: progress bar immediately -->
@@ -242,23 +288,27 @@
 						</ProgressTrack>
 						<span class="text-secondary text-xs tabular-nums">{Math.round(waitingProgress)}%</span>
 					</div>
+					<div>
+						<h3 class="text-primary text-base font-semibold">
+							Waiting for your daemon to connect...
+						</h3>
+						<p class="text-secondary mt-1 text-sm">
+							This usually takes less than a minute. Make sure the daemon is running.
+						</p>
+					</div>
+					<div class="flex items-center gap-3">
+						<button
+							type="button"
+							class="btn-secondary text-sm"
+							onclick={() => onReviewCommands?.()}
+						>
+							Return to install commands
+						</button>
+						<button type="button" class="btn-secondary text-sm" onclick={() => onTroubleshoot?.()}>
+							Troubleshoot
+						</button>
+					</div>
 				{/if}
-				<div>
-					<h3 class="text-primary text-base font-semibold">
-						Waiting for your daemon to connect...
-					</h3>
-					<p class="text-secondary mt-1 text-sm">
-						This usually takes less than a minute. Make sure the daemon is running.
-					</p>
-				</div>
-				<div class="flex items-center gap-3">
-					<button type="button" class="btn-secondary text-sm" onclick={() => onReviewCommands?.()}>
-						Return to install commands
-					</button>
-					<button type="button" class="btn-secondary text-sm" onclick={() => onTroubleshoot?.()}>
-						Troubleshoot
-					</button>
-				</div>
 			</div>
 			{#if showTroubleshootingPanel}
 				<div bind:this={troubleshootingRef} class="pt-4">
@@ -303,7 +353,7 @@
 						{#if healthResult}
 							{#if healthResult.reachable && healthResult.health}
 								<InlineSuccess
-									title="Daemon is reachable and healthy — waiting for server to register it"
+									title="Daemon is reachable and healthy \u2014 waiting for server to register it"
 								/>
 							{:else if healthResult.reachable}
 								<InlineWarning title="Port open but health check failed" />
