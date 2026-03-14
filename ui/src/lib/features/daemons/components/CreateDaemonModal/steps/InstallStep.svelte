@@ -11,6 +11,7 @@
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { useTestReachabilityMutation, useRetryDaemonConnectionMutation } from '../../../queries';
 	import AnimatedProgressBar from '$lib/features/discovery/components/cards/AnimatedProgressBar.svelte';
+	import ProgressTrack from '$lib/shared/components/data/ProgressTrack.svelte';
 	import OsSelector from '../../OsSelector.svelte';
 	import { Loader2, CheckCircle2, AlertTriangle, SlidersHorizontal } from 'lucide-svelte';
 	import type { DaemonConnectionStatus } from '../../../stores/daemon-setup';
@@ -180,10 +181,11 @@
 		<!-- Waiting / Connected / Trouble states -->
 		{#if connectionStatus === 'waiting'}
 			<div class="flex flex-col items-center gap-4 py-8 text-center">
-				<div class="w-full max-w-xs">
-					<div class="bg-tertiary h-2 w-full overflow-hidden rounded-full">
+				<div class="flex w-full max-w-xs items-center gap-2">
+					<ProgressTrack class="flex-1">
 						<AnimatedProgressBar progress={waitingProgress} />
-					</div>
+					</ProgressTrack>
+					<span class="text-secondary text-xs tabular-nums">{Math.round(waitingProgress)}%</span>
 				</div>
 				<div>
 					<h3 class="text-primary text-base font-semibold">
@@ -274,11 +276,6 @@
 						Troubleshoot
 					</button>
 				</div>
-				<DocsHint
-					text="See our %link% for common solutions."
-					href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/"
-					linkText="troubleshooting guide"
-				/>
 			</div>
 		{/if}
 	{:else}
