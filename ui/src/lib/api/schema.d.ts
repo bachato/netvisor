@@ -129,23 +129,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Update user profile with deferred marketing fields */
-        post: operations["update_profile"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -1732,6 +1715,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update user profile with deferred marketing fields */
+        post: operations["update_profile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/referral-source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit referral source (how did you hear about us) */
+        post: operations["submit_referral_source"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{id}": {
         parameters: {
             query?: never;
@@ -2808,14 +2825,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-13T07:24:59.970877Z",
-             *       "id": "b4b35a1c-30da-4dff-8d3e-7f8cb4394a3d",
+             *       "created_at": "2026-03-14T03:57:37.580537Z",
+             *       "id": "83a036f8-e9b2-44d8-af99-a77532f5f44d",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-13T07:24:59.970877Z"
+             *       "updated_at": "2026-03-14T03:57:37.580537Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3067,14 +3084,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-13T07:24:59.953894Z",
-             *               "id": "0aa368a2-57e9-492e-a4c3-6553d208a238",
+             *               "created_at": "2026-03-14T03:57:37.563376Z",
+             *               "id": "23e5292d-78d6-4a38-b7c1-86661dadc772",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-13T07:24:59.953894Z"
+             *               "updated_at": "2026-03-14T03:57:37.563376Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3083,7 +3100,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "FileZilla Server",
+             *           "service_definition": "CoolerControl",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3339,14 +3356,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-13T07:24:59.966188Z",
-             *           "id": "951640bd-df69-4773-9397-b8d2c750bf87",
+             *           "created_at": "2026-03-14T03:57:37.575728Z",
+             *           "id": "3df6a961-9ca8-4308-8d76-535816f6230a",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-13T07:24:59.966188Z"
+             *           "updated_at": "2026-03-14T03:57:37.575728Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3355,7 +3372,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "FileZilla Server",
+             *       "service_definition": "CoolerControl",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3676,14 +3693,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-13T07:24:59.954230Z",
-         *       "id": "f9af13a1-9a24-4183-bc95-e951f0e9fdbe",
+         *       "created_at": "2026-03-14T03:57:37.563730Z",
+         *       "id": "d65de1c1-6612-4fbe-a43a-b84bda0e4662",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-13T07:24:59.954230Z"
+         *       "updated_at": "2026-03-14T03:57:37.563730Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3865,7 +3882,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "FileZilla Server",
+         *           "service_definition": "CoolerControl",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4513,14 +4530,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-13T07:24:59.953437Z",
-         *               "id": "e934b442-a0cf-498a-8249-2502ceee9ef7",
+         *               "created_at": "2026-03-14T03:57:37.562910Z",
+         *               "id": "f0250492-fe3c-4fa5-b306-015f068019d0",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-13T07:24:59.953437Z"
+         *               "updated_at": "2026-03-14T03:57:37.562910Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4529,7 +4546,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "FileZilla Server",
+         *           "service_definition": "CoolerControl",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5008,7 +5025,7 @@ export interface components {
             snmp_version?: string | null;
         };
         /** @enum {string} */
-        OnboardingOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstGroupCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted" | "ProfileCompleted";
+        OnboardingOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstGroupCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "InviteSent" | "InviteAccepted" | "ProfileCompleted" | "ReferralSourceCompleted";
         /** @description Response from onboarding state endpoint */
         OnboardingStateResponse: {
             network?: null | components["schemas"]["OnboardingNetworkState"];
@@ -5449,6 +5466,11 @@ export interface components {
             options: components["schemas"]["ShareOptions"];
             requires_password: boolean;
         };
+        /** @description Request to submit referral source */
+        ReferralSourceRequest: {
+            referral_source: string;
+            referral_source_other?: string | null;
+        };
         /** @description Registration request from client */
         RegisterRequest: {
             /** Format: email */
@@ -5478,6 +5500,11 @@ export interface components {
             token: string;
         };
         RunType: {
+            /**
+             * Format: int32
+             * @description Number of consecutive stall failures. Auto-disables after 3.
+             */
+            readonly consecutive_failures?: number;
             cron_schedule: string;
             enabled: boolean;
             /** Format: date-time */
@@ -5509,14 +5536,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-13T07:24:59.954113Z",
-         *           "id": "b45080ca-f5bd-4c90-80ab-683239378a9a",
+         *           "created_at": "2026-03-14T03:57:37.563610Z",
+         *           "id": "13669e5a-c061-498a-ab4f-9562ca40bb3f",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-13T07:24:59.954113Z"
+         *           "updated_at": "2026-03-14T03:57:37.563610Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5525,7 +5552,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "FileZilla Server",
+         *       "service_definition": "CoolerControl",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6364,30 +6391,6 @@ export interface operations {
         };
         responses: {
             /** @description Step saved */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponse"];
-                };
-            };
-        };
-    };
-    update_profile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfileUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Profile updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -10097,6 +10100,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Profile updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+        };
+    };
+    submit_referral_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReferralSourceRequest"];
+            };
+        };
+        responses: {
+            /** @description Referral source recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
         };

@@ -49,7 +49,6 @@ use serde::Deserialize;
 use std::{net::IpAddr, sync::Arc};
 use tower_sessions::Session;
 use url::Url;
-use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
@@ -86,7 +85,6 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
         .routes(routes!(setup))
         .routes(routes!(onboarding_step))
         .routes(routes!(onboarding_state))
-        .routes(routes!(update_profile))
         .route("/oidc/providers", get(list_oidc_providers))
         .route("/oidc/{slug}/authorize", get(oidc_authorize))
         .route("/oidc/{slug}/callback", get(oidc_callback))
@@ -511,53 +509,6 @@ async fn onboarding_state(
     })))
 }
 
-/// Request to update user profile (deferred marketing fields)
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct ProfileUpdateRequest {
-    pub job_title: Option<String>,
-    pub company_size: Option<String>,
-}
-
-/// Update user profile with deferred marketing fields
-#[utoipa::path(
-    post,
-    path = "/profile",
-    tags = ["auth", "internal"],
-    request_body = ProfileUpdateRequest,
-    responses(
-        (status = 200, description = "Profile updated", body = EmptyApiResponse),
-    )
-)]
-async fn update_profile(
-    auth: Authorized<IsUser>,
-    State(state): State<Arc<AppState>>,
-    Json(request): Json<ProfileUpdateRequest>,
-) -> ApiResult<Json<ApiResponse<()>>> {
-    let org_id = auth.organization_id().unwrap();
-    let authentication: AuthenticatedEntity = auth.into();
-
-    // Publish ProfileCompleted milestone (auto-persisted by OrganizationSubscriber)
-    state
-        .services
-        .event_bus
-        .publish_onboarding(OnboardingEvent {
-            id: Uuid::new_v4(),
-            organization_id: org_id,
-            operation: OnboardingOperation::ProfileCompleted,
-            timestamp: Utc::now(),
-            authentication,
-            metadata: serde_json::json!({
-                "job_title": request.job_title,
-                "company_size": request.company_size,
-            }),
-        })
-        .await
-        .map_err(|e| {
-            ApiError::internal_error(&format!("Failed to publish profile event: {}", e))
-        })?;
-
-    Ok(Json(ApiResponse::success(())))
-}
 
 /// Apply pending setup after user registration: create network, topology, seed data
 /// Org name, onboarding status, and billing plan are now set in provision_user

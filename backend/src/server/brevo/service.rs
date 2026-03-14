@@ -172,7 +172,8 @@ impl BrevoService {
             | OnboardingOperation::FirstUserApiKeyCreated
             | OnboardingOperation::FirstSnmpCredentialCreated
             | OnboardingOperation::InviteSent
-            | OnboardingOperation::InviteAccepted => {
+            | OnboardingOperation::InviteAccepted
+            | OnboardingOperation::ReferralSourceCompleted => {
                 self.handle_engagement_event(event).await?;
             }
             _ => {}

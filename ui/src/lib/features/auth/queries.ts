@@ -272,7 +272,7 @@ export function useProfileUpdateMutation() {
 
 	return createMutation(() => ({
 		mutationFn: async (request: { job_title?: string; company_size?: string }) => {
-			const { data } = await apiClient.POST('/api/auth/profile', {
+			const { data } = await apiClient.POST('/api/v1/organizations/profile', {
 				body: request
 			});
 			if (!data?.success) {

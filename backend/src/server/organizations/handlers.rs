@@ -5,6 +5,7 @@ use crate::server::billing::types::base::BillingPlan;
 use crate::server::config::AppState;
 use crate::server::networks::r#impl::{Network, NetworkBase};
 use crate::server::organizations::r#impl::base::Organization;
+use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::handlers::traits::{CrudHandlers, update_handler};
 use crate::server::shared::services::traits::CrudService;
 use crate::server::shared::storage::filter::StorableFilter;
@@ -18,7 +19,10 @@ use anyhow::anyhow;
 use axum::Json;
 use axum::extract::Path;
 use axum::extract::State;
+use chrono::Utc;
 use email_address::EmailAddress;
+use serde::Deserialize;
+use utoipa::ToSchema;
 use std::sync::Arc;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
@@ -28,6 +32,8 @@ pub const DEMO_USER_ID: Uuid = Uuid::from_u128(0x550e8400_e29b_41d4_a716_4466554
 pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .routes(routes!(get_organization, update_org_name))
+        .routes(routes!(update_profile))
+        .routes(routes!(submit_referral_source))
         .routes(routes!(reset))
         .routes(routes!(populate_demo_data))
 }
@@ -94,6 +100,100 @@ pub async fn update_org_name(
         axum::extract::Json(org),
     )
     .await
+}
+
+/// Request to update user profile (deferred marketing fields)
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ProfileUpdateRequest {
+    pub job_title: Option<String>,
+    pub company_size: Option<String>,
+}
+
+/// Update user profile with deferred marketing fields
+#[utoipa::path(
+    post,
+    path = "/profile",
+    tag = Organization::ENTITY_NAME_PLURAL,
+    request_body = ProfileUpdateRequest,
+    responses(
+        (status = 200, description = "Profile updated", body = EmptyApiResponse),
+    )
+)]
+async fn update_profile(
+    auth: Authorized<IsUser>,
+    State(state): State<Arc<AppState>>,
+    Json(request): Json<ProfileUpdateRequest>,
+) -> ApiResult<Json<ApiResponse<()>>> {
+    let org_id = auth.organization_id().unwrap();
+    let authentication: AuthenticatedEntity = auth.into();
+
+    state
+        .services
+        .event_bus
+        .publish_onboarding(OnboardingEvent {
+            id: Uuid::new_v4(),
+            organization_id: org_id,
+            operation: OnboardingOperation::ProfileCompleted,
+            timestamp: Utc::now(),
+            authentication,
+            metadata: serde_json::json!({
+                "job_title": request.job_title,
+                "company_size": request.company_size,
+            }),
+        })
+        .await
+        .map_err(|e| {
+            ApiError::internal_error(&format!("Failed to publish profile event: {}", e))
+        })?;
+
+    Ok(Json(ApiResponse::success(())))
+}
+
+/// Request to submit referral source
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ReferralSourceRequest {
+    pub referral_source: String,
+    pub referral_source_other: Option<String>,
+}
+
+/// Submit referral source (how did you hear about us)
+#[utoipa::path(
+    post,
+    path = "/referral-source",
+    tag = Organization::ENTITY_NAME_PLURAL,
+    request_body = ReferralSourceRequest,
+    responses(
+        (status = 200, description = "Referral source recorded", body = EmptyApiResponse),
+    )
+)]
+async fn submit_referral_source(
+    auth: Authorized<IsUser>,
+    State(state): State<Arc<AppState>>,
+    Json(request): Json<ReferralSourceRequest>,
+) -> ApiResult<Json<ApiResponse<()>>> {
+    let org_id = auth.organization_id().unwrap();
+    let authentication: AuthenticatedEntity = auth.into();
+
+    state
+        .services
+        .event_bus
+        .publish_onboarding(OnboardingEvent {
+            id: Uuid::new_v4(),
+            organization_id: org_id,
+            operation: OnboardingOperation::ReferralSourceCompleted,
+            timestamp: Utc::now(),
+            authentication,
+            metadata: serde_json::json!({
+                "referral_source": request.referral_source,
+                "referral_source_other": request.referral_source_other,
+            }),
+        })
+        .await
+        .map_err(|e| {
+            ApiError::internal_error(&format!("Failed to publish referral source event: {}", e))
+        })?;
+
+    Ok(Json(ApiResponse::success(())))
 }
 
 /// Reset all organization data (delete all entities except organization and owner user)

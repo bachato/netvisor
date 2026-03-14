@@ -12,6 +12,7 @@
 	import FeatureNudges from './FeatureNudges.svelte';
 	import PlanUsage from './PlanUsage.svelte';
 	import ProfilePrompt from './ProfilePrompt.svelte';
+	import ReferralSourcePrompt from './ReferralSourcePrompt.svelte';
 	import type { TabProps } from '$lib/shared/types';
 	import type { components } from '$lib/api/schema';
 	import { onMount } from 'svelte';
@@ -62,6 +63,13 @@
 	const has = (op: OnboardingOperation) => onboarding.includes(op);
 	let showNudges = $derived(dashboard != null && organization != null);
 
+	// One prompt at a time: referral source first, then profile
+	let showReferralSource = $derived(
+		configData && configData.deployment_type === 'cloud' &&
+		has('FirstDaemonRegistered') && !has('ReferralSourceCompleted')
+	);
+	let showProfile = $derived(!showReferralSource);
+
 	// Navigation handler — sets the active tab via the URL hash
 	function navigateTo(tab: string) {
 		if (typeof window !== 'undefined') {
@@ -88,8 +96,12 @@
 			<GettingStartedChecklist {onboarding} {organization} onNavigate={navigateTo} {isActive} />
 		{/if}
 
-		<!-- Profile Prompt — shown after discovery for company/msp cloud users -->
-		<ProfilePrompt {organization} {configData} />
+		<!-- Onboarding prompts — one at a time -->
+		{#if showReferralSource}
+			<ReferralSourcePrompt {organization} {configData} />
+		{:else if showProfile}
+			<ProfilePrompt {organization} {configData} />
+		{/if}
 
 		<!-- Demo Topology Embed — shown before first topology rebuild -->
 		{#if configData && isCloud(configData) && !has('FirstDiscoveryCompleted') && !demoTopologyDismissed}
