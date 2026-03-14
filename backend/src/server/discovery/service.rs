@@ -40,7 +40,7 @@ pub struct DiscoveryService {
     daemon_pull_cancellations: RwLock<HashMap<Uuid, (bool, Uuid)>>, // daemon_id -> (boolean, session_id) mapping for pull mode cancellations of current session on daemon
     session_last_updated: RwLock<HashMap<Uuid, chrono::DateTime<Utc>>>,
     update_tx: broadcast::Sender<DiscoveryUpdatePayload>,
-    scheduler: Option<Arc<RwLock<JobScheduler>>>,
+    scheduler: Option<Arc<JobScheduler>>,
     job_ids: RwLock<HashMap<Uuid, Uuid>>, // discovery_id -> scheduler job_id mapping
     event_bus: Arc<EventBus>,
     entity_tag_service: Arc<EntityTagService>,
@@ -227,7 +227,7 @@ impl DiscoveryService {
     ) -> Result<Arc<Self>> {
         let (tx, _rx) = broadcast::channel(100); // Buffer 100 messages
         let scheduler = JobScheduler::new().await?;
-        let scheduler = Some(Arc::new(RwLock::new(scheduler)));
+        let scheduler = Some(Arc::new(scheduler));
 
         Ok(Arc::new_cyclic(|weak| Self {
             self_ref: weak.clone(),
@@ -524,7 +524,7 @@ impl DiscoveryService {
             }
         }
 
-        scheduler.write().await.start().await?;
+        scheduler.start().await?;
 
         if failed_count == 0 {
             tracing::info!(target: LOG_TARGET, "Discovery scheduler started with {} jobs", count);
@@ -593,6 +593,20 @@ impl DiscoveryService {
                 let service = service_clone.clone();
 
                 Box::pin(async move {
+                    // Check if discovery is still enabled before running — cron jobs
+                    // may linger after failed removals
+                    match storage.get_by_id(&discovery_id).await {
+                        Ok(Some(fresh))
+                            if matches!(
+                                fresh.base.run_type,
+                                RunType::Scheduled { enabled: true, .. }
+                            ) => {}
+                        _ => {
+                            tracing::debug!("Skipping disabled/deleted discovery {}", discovery_id);
+                            return;
+                        }
+                    }
+
                     tracing::info!("Running scheduled discovery {}", &discovery.id);
 
                     match service
@@ -633,17 +647,7 @@ impl DiscoveryService {
             }))
             .build()?;
 
-        let job_id = tokio::time::timeout(std::time::Duration::from_secs(5), async {
-            scheduler.write().await.add(job).await
-        })
-        .await
-        .map_err(|_| {
-            anyhow!(
-                "Timed out adding scheduled job for discovery {}",
-                discovery_id
-            )
-        })?
-        .map_err(|e| {
+        let job_id = scheduler.add(job).await.map_err(|e| {
             anyhow!(
                 "Failed to add scheduled job for discovery {}: {}",
                 discovery_id,
@@ -1356,40 +1360,29 @@ impl DiscoveryService {
         }
     }
 
-    /// Remove a scheduled job with a timeout to prevent deadlocks.
-    /// The scheduler's `remove()` can hang if the background task is blocked,
-    /// so we wrap the entire lock acquisition + remove in a timeout.
-    /// Always cleans up the job_id mapping, even on error/timeout.
+    /// Remove a scheduled job using fire-and-forget to prevent deadlocks.
+    /// The scheduler's `remove()` can hang indefinitely if the background task is blocked.
+    /// We clean up the job_id mapping immediately and spawn the actual removal as a
+    /// background task so it never blocks the critical path.
     async fn remove_scheduled_job(&self, discovery_id: &Uuid) {
         if let Some(scheduler) = &self.scheduler
             && let Some(job_id) = self.job_ids.read().await.get(discovery_id).copied()
         {
-            let result = tokio::time::timeout(std::time::Duration::from_secs(5), async {
-                scheduler.write().await.remove(&job_id).await
-            })
-            .await;
+            // Always clean up the mapping immediately
+            self.job_ids.write().await.remove(discovery_id);
 
-            match result {
-                Ok(Ok(())) => {}
-                Ok(Err(e)) => {
+            // Fire-and-forget the actual scheduler removal — it may hang
+            // but won't block the current task
+            let scheduler = Arc::clone(scheduler);
+            tokio::spawn(async move {
+                if let Err(e) = scheduler.remove(&job_id).await {
                     tracing::warn!(
-                        discovery_id = %discovery_id,
                         job_id = %job_id,
                         error = ?e,
                         "Failed to remove scheduled job"
                     );
                 }
-                Err(_) => {
-                    tracing::warn!(
-                        discovery_id = %discovery_id,
-                        job_id = %job_id,
-                        "Timed out removing scheduled job"
-                    );
-                }
-            }
-
-            // Always clean up the mapping, even on error/timeout
-            self.job_ids.write().await.remove(discovery_id);
+            });
         }
     }
 
