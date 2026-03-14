@@ -208,7 +208,9 @@
 				{#if daemonMode === 'server_poll' && healthResult}
 					<div class="text-sm">
 						{#if healthResult.reachable && healthResult.health}
-							<InlineSuccess title="Daemon is running and reachable" />
+							<InlineSuccess
+								title="Daemon is running and reachable — waiting for server to register it"
+							/>
 						{:else if healthResult.reachable && healthResult.health === false}
 							<InlineWarning title="Port is open but daemon may still be starting..." />
 						{:else if !healthResult.reachable}
@@ -267,7 +269,9 @@
 					<div class="flex flex-col items-center gap-2">
 						{#if healthResult}
 							{#if healthResult.reachable && healthResult.health}
-								<InlineSuccess title="Daemon is reachable and healthy" />
+								<InlineSuccess
+									title="Daemon is reachable and healthy — waiting for server to register it"
+								/>
 							{:else if healthResult.reachable}
 								<InlineWarning title="Port open but health check failed" />
 							{:else}
