@@ -10,6 +10,7 @@
 	import type { DaemonOS } from '../../../utils';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { useTestReachabilityMutation, useRetryDaemonConnectionMutation } from '../../../queries';
+	import AnimatedProgressBar from '$lib/features/discovery/components/cards/AnimatedProgressBar.svelte';
 	import OsSelector from '../../OsSelector.svelte';
 	import { Loader2, CheckCircle2, AlertTriangle, SlidersHorizontal } from 'lucide-svelte';
 	import type { DaemonConnectionStatus } from '../../../stores/daemon-setup';
@@ -146,6 +147,23 @@
 	// Show waiting UI when connection status is not idle (first daemon only)
 	let showWaitingUI = $derived(isFirstDaemon && connectionStatus !== 'idle');
 
+	// Progress bar for waiting state (0-100 over 60 seconds)
+	const WAIT_DURATION_MS = 60_000;
+	let waitingProgress = $state(0);
+	let waitingStartTime = $state<number | null>(null);
+	$effect(() => {
+		if (connectionStatus === 'waiting') {
+			waitingStartTime = Date.now();
+			waitingProgress = 0;
+			const interval = setInterval(() => {
+				const elapsed = Date.now() - (waitingStartTime ?? Date.now());
+				waitingProgress = Math.min(100, (elapsed / WAIT_DURATION_MS) * 100);
+				if (waitingProgress >= 100) clearInterval(interval);
+			}, 500);
+			return () => clearInterval(interval);
+		}
+	});
+
 	// Auto-scroll to troubleshooting panel when first shown
 	let troubleshootingRef: HTMLDivElement | undefined = $state(undefined);
 	let hasScrolledToTroubleshooting = $state(false);
@@ -162,7 +180,11 @@
 		<!-- Waiting / Connected / Trouble states -->
 		{#if connectionStatus === 'waiting'}
 			<div class="flex flex-col items-center gap-4 py-8 text-center">
-				<Loader2 class="text-primary h-10 w-10 animate-spin" />
+				<div class="w-full max-w-xs">
+					<div class="bg-tertiary h-2 w-full overflow-hidden rounded-full">
+						<AnimatedProgressBar progress={waitingProgress} />
+					</div>
+				</div>
 				<div>
 					<h3 class="text-primary text-base font-semibold">
 						Waiting for your daemon to connect...
@@ -233,7 +255,7 @@
 						{/if}
 						<button
 							type="button"
-							class="btn-secondary text-sm"
+							class="btn-primary text-sm"
 							disabled={isCheckingHealth}
 							onclick={handleHealthCheck}
 						>
@@ -244,6 +266,14 @@
 						</button>
 					</div>
 				{/if}
+				<div class="flex items-center gap-3">
+					<button type="button" class="btn-secondary text-sm" onclick={() => onReviewCommands?.()}>
+						Return to install commands
+					</button>
+					<button type="button" class="btn-secondary text-sm" onclick={() => onTroubleshoot?.()}>
+						Troubleshoot
+					</button>
+				</div>
 				<DocsHint
 					text="See our %link% for common solutions."
 					href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-setup/"

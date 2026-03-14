@@ -335,14 +335,14 @@
 		daemonSetupState.set({ connectionStatus: 'waiting' });
 		trackEvent('daemon_install_confirmed');
 
-		// Set 2-minute timeout for trouble state
+		// Set 60-second timeout for trouble state
 		troubleTimeoutId = setTimeout(() => {
 			if (connectionStatus === 'waiting') {
 				connectionStatus = 'trouble';
 				daemonSetupState.set({ connectionStatus: 'trouble' });
 				trackEvent('daemon_connection_timeout');
 			}
-		}, 120_000);
+		}, 60_000);
 	}
 
 	function handleReviewCommands() {
