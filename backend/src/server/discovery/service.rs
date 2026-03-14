@@ -588,7 +588,7 @@ impl DiscoveryService {
             .with_cron_job_type()
             .with_schedule(cron_schedule.as_str())?
             .with_run_async(Box::new(move |_uuid, _lock| {
-                let mut discovery = discovery.clone();
+                let discovery = discovery.clone();
                 let storage = storage.clone();
                 let service = service_clone.clone();
 
@@ -600,15 +600,28 @@ impl DiscoveryService {
                         .await
                     {
                         Ok(_) => {
-                            // Update last_run
-                            if let RunType::Scheduled {
-                                last_run: mut _last_run,
-                                ..
-                            } = discovery.base.run_type
-                            {
-                                _last_run = Some(Utc::now());
-                                if let Err(e) = storage.update(&mut discovery).await {
-                                    tracing::error!("Failed to update schedule times: {}", e);
+                            // Reload fresh discovery from DB to avoid overwriting fields
+                            // (closure captures a clone with stale consecutive_failures etc.)
+                            match storage.get_by_id(&discovery_id).await {
+                                Ok(Some(mut fresh)) => {
+                                    if let RunType::Scheduled {
+                                        ref mut last_run, ..
+                                    } = fresh.base.run_type
+                                    {
+                                        *last_run = Some(Utc::now());
+                                        if let Err(e) = storage.update(&mut fresh).await {
+                                            tracing::error!(
+                                                "Failed to update schedule times: {}",
+                                                e
+                                            );
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    tracing::warn!(
+                                        "Failed to reload discovery {} for last_run update",
+                                        discovery_id
+                                    );
                                 }
                             };
                         }
@@ -920,8 +933,9 @@ impl DiscoveryService {
                 .await
                 .retain(|_, sid| *sid != update.session_id);
 
-            // Drop the sessions lock before failure tracking (which acquires its own locks)
+            // Drop all write locks before failure tracking (which acquires its own locks)
             drop(sessions);
+            drop(last_updated);
 
             // Track consecutive failures after locks are released to avoid deadlock
             if let Some(discovery_id) = failure_discovery_id {
@@ -1371,6 +1385,15 @@ impl DiscoveryService {
             if count >= 3 {
                 discovery.disable();
 
+                // Persist immediately after disable + increment, before side effects
+                if let Err(e) = self.discovery_storage.update(&mut discovery).await {
+                    tracing::warn!(
+                        discovery_id = %discovery_id,
+                        error = %e,
+                        "Failed to persist auto-disabled discovery"
+                    );
+                }
+
                 // Remove cron job from scheduler
                 if let Some(scheduler) = &self.scheduler
                     && let Some(job_id) = self.job_ids.read().await.get(&discovery_id).copied()
@@ -1435,14 +1458,15 @@ impl DiscoveryService {
                     "Auto-disabled scheduled discovery after {} consecutive stall failures",
                     count
                 );
-            }
-
-            if let Err(e) = self.discovery_storage.update(&mut discovery).await {
-                tracing::warn!(
-                    discovery_id = %discovery_id,
-                    error = %e,
-                    "Failed to persist consecutive failure count"
-                );
+            } else {
+                // count < 3: just persist the incremented counter
+                if let Err(e) = self.discovery_storage.update(&mut discovery).await {
+                    tracing::warn!(
+                        discovery_id = %discovery_id,
+                        error = %e,
+                        "Failed to persist consecutive failure count"
+                    );
+                }
             }
         }
     }

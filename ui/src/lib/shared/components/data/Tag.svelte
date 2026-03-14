@@ -3,6 +3,7 @@
 	import { createColorHelper, type Color } from '$lib/shared/utils/styling';
 	import { common_unknown } from '$lib/paraglide/messages';
 	import type { IconComponent } from '$lib/shared/utils/types';
+	import { tooltip } from '$lib/shared/actions/tooltip';
 
 	let {
 		icon = null,
@@ -74,7 +75,8 @@
 		{href}
 		target="_blank"
 		rel="noopener noreferrer"
-		title={title || undefined}
+		use:tooltip
+		data-tooltip={title || null}
 		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125"
 		onclick={(e) => e.stopPropagation()}
 	>
@@ -82,7 +84,8 @@
 	</a>
 {:else}
 	<div
-		title={title || undefined}
+		use:tooltip
+		data-tooltip={title || null}
 		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded"
 	>
 		{@render content()}

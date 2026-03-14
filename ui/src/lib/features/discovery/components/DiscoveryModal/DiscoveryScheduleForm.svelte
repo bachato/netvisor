@@ -6,7 +6,6 @@
 	import TimeInput from '$lib/shared/components/forms/input/TimeInput.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
-	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import {
 		common_fri,
 		common_mon,
@@ -151,22 +150,6 @@
 
 {#if formData.run_type.type === 'Scheduled'}
 	<div class="space-y-4">
-		{#if (formData.run_type.consecutive_failures ?? 0) >= 3 && !formData.run_type.enabled}
-			<InlineWarning
-				title="Auto-paused"
-				body="This scan was automatically paused after {formData.run_type
-					.consecutive_failures} consecutive failures. The daemon may be offline or uninstalled. Re-enabling will reset the failure counter."
-			/>
-		{:else if (formData.run_type.consecutive_failures ?? 0) > 0}
-			<InlineWarning
-				title="{formData.run_type.consecutive_failures} consecutive failure{formData.run_type
-					.consecutive_failures === 1
-					? ''
-					: 's'}"
-				body="Will auto-pause after 3 consecutive failures."
-			/>
-		{/if}
-
 		<p class="text-tertiary text-sm">
 			{discovery_scheduleHelp()}
 		</p>
