@@ -263,6 +263,10 @@ Once running:
 - **Server API**: <http://localhost:60072>
 - **Daemon API**: <http://localhost:60073>
 
+### Known Limitations
+
+**Multi-tab SSE hang (local dev only):** Opening the same page in multiple browser tabs may cause the second tab to hang. This is caused by the browser's HTTP/1.1 connection limit (~6 per domain). Each page opens persistent SSE connections for real-time updates, which consume connection slots across all tabs. This does not affect production deployments (HTTP/2 via reverse proxy multiplexes all streams over one connection). Workaround: use separate browser profiles, or use a local reverse proxy with HTTP/2 support.
+
 ## Development Workflow
 
 ### Before You Start
