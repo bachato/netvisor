@@ -220,20 +220,11 @@
 							>
 						</div>
 						<div class="max-w-md text-left">
-							<InlineSuccess
-								title="Daemon is reachable and healthy — waiting for server to register it"
-							/>
-						</div>
-						<div>
-							<h3 class="text-primary text-base font-semibold">
-								Waiting for server to register your daemon...
-							</h3>
-							<p class="text-secondary mt-1 text-sm">
-								Your daemon is running — the server will pick it up on its next polling cycle.
-							</p>
+							<InlineSuccess title="Daemon is reachable and healthy" />
 						</div>
 					{:else if healthResult}
 						<!-- Health check failed -->
+						<h3 class="text-primary text-base font-semibold">Connection test failed</h3>
 						<div class="max-w-md text-left">
 							{#if healthResult.reachable}
 								<InlineWarning
@@ -311,9 +302,6 @@
 				<AlertTriangle class="h-10 w-10 text-yellow-400" />
 				<div>
 					<h3 class="text-primary text-base font-semibold">Your daemon hasn't connected yet</h3>
-					<p class="text-secondary mt-1 text-sm">
-						It's been a while. Check that the daemon is running and can reach this server.
-					</p>
 				</div>
 				<ol class="text-secondary list-decimal space-y-1 pl-5 text-left text-sm">
 					<li>Check that the daemon process is running</li>
@@ -332,9 +320,7 @@
 					<div class="flex max-w-md flex-col items-center gap-2 text-left">
 						{#if healthResult}
 							{#if healthResult.reachable && healthResult.health}
-								<InlineSuccess
-									title="Daemon is reachable and healthy — waiting for server to register it"
-								/>
+								<InlineSuccess title="Daemon is reachable and healthy" />
 							{:else if healthResult.reachable}
 								<InlineWarning
 									title="Port open but health check failed"
