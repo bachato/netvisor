@@ -11,7 +11,7 @@
 	} = $props();
 </script>
 
-<GenericModal title="Daemon Troubleshooting" {isOpen} {onClose} size="sm">
+<GenericModal title="Daemon Troubleshooting" {isOpen} {onClose} size="md">
 	<div class="p-6">
 		<SupportOptions isTroubleshooting={true} hasEmailSupport={false} />
 	</div>

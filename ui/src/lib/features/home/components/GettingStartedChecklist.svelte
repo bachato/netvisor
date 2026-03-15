@@ -8,7 +8,7 @@
 	import { daemonSetupState } from '$lib/features/daemons/stores/daemon-setup';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
-	import SupportOptions from '$lib/features/support/SupportOptions.svelte';
+	import DaemonTroubleshootingModal from '$lib/shared/components/layout/DaemonTroubleshootingModal.svelte';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import DiscoveryEstimation from '$lib/features/discovery/components/DiscoveryEstimation.svelte';
 	import {
@@ -44,7 +44,7 @@
 	let dismissed = $state(false);
 	let showCelebration = $state(false);
 	let celebrationDone = $state(false);
-	let showTroubleshootingPanel = $state(false);
+	let showTroubleshootingModal = $state(false);
 
 	// Subscribe to daemon setup state
 	let daemonStatus = $state<'idle' | 'waiting' | 'connected' | 'trouble'>('idle');
@@ -145,7 +145,7 @@
 
 	function handleTroubleTagClick(e: MouseEvent) {
 		e.stopPropagation();
-		showTroubleshootingPanel = !showTroubleshootingPanel;
+		showTroubleshootingModal = true;
 		trackEvent('checklist_trouble_tag_clicked');
 	}
 
@@ -395,12 +395,11 @@
 				{/each}
 			</div>
 
-			{#if showTroubleshootingPanel}
-				<div class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-700">
-					<p class="text-secondary mb-2 text-sm font-medium">Need help with daemon setup?</p>
-					<SupportOptions isTroubleshooting={true} hasEmailSupport={false} />
-				</div>
-			{/if}
 		</div>
 	</section>
 {/if}
+
+<DaemonTroubleshootingModal
+	isOpen={showTroubleshootingModal}
+	onClose={() => (showTroubleshootingModal = false)}
+/>
