@@ -15,7 +15,7 @@
 		useCreateApiKeyMutation
 	} from '$lib/features/daemon_api_keys/queries';
 	import { useProvisionDaemonMutation, useDaemonQuery, useDaemonsQuery } from '../../queries';
-	import { useConfigQuery } from '$lib/shared/stores/config-query';
+	import { useConfigQuery, isCloud } from '$lib/shared/stores/config-query';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { useTestReachabilityMutation } from '../../queries';
@@ -63,6 +63,7 @@
 
 	// Derived data
 	let serverUrl = $derived(configQuery.data?.public_url ?? '');
+	let isCloudDeployment = $derived(configQuery.data ? isCloud(configQuery.data) : false);
 	let currentUserId = $derived(currentUserQuery.data?.id ?? null);
 	let org = $derived(organizationQuery.data);
 	let isFirstDaemon = $derived(!org?.onboarding?.includes('FirstDaemonRegistered'));
@@ -272,8 +273,8 @@
 
 			if (!isValid) return;
 
-			// ServerPoll: run reachability test from Next button
-			if (formValues.mode === 'server_poll' && serverPollReachable !== true) {
+			// ServerPoll: run reachability test from Next button (cloud only — self-hosted doesn't need port forwarding)
+			if (formValues.mode === 'server_poll' && isCloudDeployment && serverPollReachable !== true) {
 				const daemonUrlBase = String(formValues.daemonUrl ?? '');
 				if (!daemonUrlBase) return;
 				const port = Number(formValues.daemonPort) || 60073;
