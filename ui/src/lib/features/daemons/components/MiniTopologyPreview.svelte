@@ -445,7 +445,8 @@
 		// Bottom gradient fade
 		const fadeH = h * 0.4;
 		const grad = ctx.createLinearGradient(0, h - fadeH, 0, h);
-		grad.addColorStop(0, 'rgba(0,0,0,0)');
+		const fadeBg = isDark ? 'rgba(21,19,30,0)' : 'rgba(248,250,252,0)';
+		grad.addColorStop(0, fadeBg);
 		grad.addColorStop(1, bgColor);
 		ctx.fillStyle = grad;
 		ctx.fillRect(0, h - fadeH, w, fadeH);
