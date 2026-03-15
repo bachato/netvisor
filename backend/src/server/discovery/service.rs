@@ -137,6 +137,12 @@ impl CrudService<Discovery> for DiscoveryService {
         let updated = if needs_reschedule
             && matches!(entity.base.run_type, RunType::Scheduled { .. })
         {
+            tracing::debug!(
+                discovery_id = %entity.id,
+                "Rescheduling discovery (schedule_changed={}, enabled_changed={})",
+                schedule_changed, enabled_changed
+            );
+
             // Remove old schedule first (with timeout to prevent deadlock)
             self.remove_scheduled_job(&entity.id).await;
 
@@ -690,13 +696,21 @@ impl DiscoveryService {
             }))
             .build()?;
 
-        let job_id = scheduler.add(job).await.map_err(|e| {
-            anyhow!(
-                "Failed to add scheduled job for discovery {}: {}",
-                discovery_id,
-                e
-            )
-        })?;
+        let job_id = tokio::time::timeout(std::time::Duration::from_secs(5), scheduler.add(job))
+            .await
+            .map_err(|_| {
+                anyhow!(
+                    "Timed out adding scheduled job for discovery {}",
+                    discovery_id
+                )
+            })?
+            .map_err(|e| {
+                anyhow!(
+                    "Failed to add scheduled job for discovery {}: {}",
+                    discovery_id,
+                    e
+                )
+            })?;
 
         // Store the mapping so we can remove the job later when the schedule is updated
         service.job_ids.write().await.insert(discovery_id, job_id);
@@ -1381,12 +1395,22 @@ impl DiscoveryService {
             // but won't block the current task
             let scheduler = Arc::clone(scheduler);
             tokio::spawn(async move {
-                if let Err(e) = scheduler.remove(&job_id).await {
-                    tracing::warn!(
+                match tokio::time::timeout(
+                    std::time::Duration::from_secs(5),
+                    scheduler.remove(&job_id),
+                )
+                .await
+                {
+                    Ok(Ok(())) => {}
+                    Ok(Err(e)) => tracing::warn!(
                         job_id = %job_id,
                         error = ?e,
                         "Failed to remove scheduled job"
-                    );
+                    ),
+                    Err(_) => tracing::warn!(
+                        job_id = %job_id,
+                        "Timed out removing scheduled job"
+                    ),
                 }
             });
         }
