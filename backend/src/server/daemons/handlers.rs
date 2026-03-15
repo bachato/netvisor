@@ -855,11 +855,12 @@ async fn test_reachability(
         )));
     }
 
-    // SSRF protection: reject private IPs unless server is in dev mode
-    let is_dev = state.config.public_url.starts_with("http://localhost")
-        || state.config.public_url.starts_with("http://127.");
+    // SSRF protection: reject private IPs in cloud mode only.
+    // Self-hosted deployments (Commercial/Community) need to reach LAN daemons.
+    let deployment_type = crate::server::config::get_deployment_type(state.clone());
+    let is_cloud = deployment_type == crate::server::config::DeploymentType::Cloud;
 
-    if !is_dev {
+    if is_cloud {
         for addr in &addrs {
             if is_private_ip(&addr.ip()) {
                 return Err(ApiError::bad_request(
