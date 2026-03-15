@@ -143,73 +143,7 @@ impl EventSubscriber for EmailService {
                         _ => {}
                     }
                 }
-                Event::Discovery(d) => {
-                    tracing::debug!(
-                        phase = ?d.phase,
-                        metadata = ?d.metadata,
-                        "Email subscriber received discovery event"
-                    );
-
-                    let is_auto_disabled = d
-                        .metadata
-                        .get("auto_disabled")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(false);
-
-                    if is_auto_disabled {
-                        let scan_name = d
-                            .metadata
-                            .get("scan_name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Unknown Scan");
-                        let network_name = d
-                            .metadata
-                            .get("network_name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Unknown Network");
-                        let org_id = d
-                            .metadata
-                            .get("org_id")
-                            .and_then(|v| v.as_str())
-                            .and_then(|s| uuid::Uuid::parse_str(s).ok());
-                        let failure_count = d
-                            .metadata
-                            .get("failure_count")
-                            .and_then(|v| v.as_u64())
-                            .unwrap_or(3) as u32;
-
-                        if let Some(org_id) = org_id {
-                            tracing::debug!(
-                                org_id = %org_id,
-                                scan_name = %scan_name,
-                                network_name = %network_name,
-                                failure_count = failure_count,
-                                "Sending scan auto-disabled email"
-                            );
-                            if let Err(e) = self
-                                .send_scan_auto_disabled_email(
-                                    &org_id,
-                                    scan_name,
-                                    network_name,
-                                    failure_count,
-                                )
-                                .await
-                            {
-                                tracing::warn!(
-                                    org_id = %org_id,
-                                    scan_name = %scan_name,
-                                    error = %e,
-                                    "Failed to send scan auto-disabled email"
-                                );
-                            }
-                        } else {
-                            tracing::debug!(
-                                scan_name = %scan_name,
-                                "Skipping auto-disabled email: org_id not found in metadata"
-                            );
-                        }
-                    }
-                }
+                Event::Discovery(_) => {}
                 _ => {}
             }
         }

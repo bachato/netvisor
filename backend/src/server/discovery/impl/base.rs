@@ -52,44 +52,6 @@ impl Discovery {
             *enabled = false;
         }
     }
-
-    /// Increment the consecutive failure counter and return the new value.
-    pub fn increment_failures(&mut self) -> u32 {
-        if let RunType::Scheduled {
-            ref mut consecutive_failures,
-            ..
-        } = self.base.run_type
-        {
-            *consecutive_failures += 1;
-            *consecutive_failures
-        } else {
-            0
-        }
-    }
-
-    /// Reset the consecutive failure counter to zero.
-    pub fn reset_failures(&mut self) {
-        if let RunType::Scheduled {
-            ref mut consecutive_failures,
-            ..
-        } = self.base.run_type
-        {
-            *consecutive_failures = 0;
-        }
-    }
-
-    /// Get the current consecutive failure count.
-    pub fn consecutive_failures(&self) -> u32 {
-        if let RunType::Scheduled {
-            consecutive_failures,
-            ..
-        } = &self.base.run_type
-        {
-            *consecutive_failures
-        } else {
-            0
-        }
-    }
 }
 
 impl Display for Discovery {

@@ -22,8 +22,8 @@ use axum::extract::State;
 use chrono::Utc;
 use email_address::EmailAddress;
 use serde::Deserialize;
-use utoipa::ToSchema;
 use std::sync::Arc;
+use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 

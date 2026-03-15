@@ -145,7 +145,7 @@ impl<T: Storable> StorableFilter<T> {
     }
 
     pub fn new_for_active_daemons() -> Self {
-        Self::new().standby(false)
+        Self::new().standby(false).is_unreachable(false)
     }
 
     /// Qualify a column name with the table name.

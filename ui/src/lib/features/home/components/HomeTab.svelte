@@ -65,8 +65,10 @@
 
 	// One prompt at a time: referral source first, then profile
 	let showReferralSource = $derived(
-		configData && configData.deployment_type === 'cloud' &&
-		has('FirstDaemonRegistered') && !has('ReferralSourceCompleted')
+		configData &&
+			configData.deployment_type === 'cloud' &&
+			has('FirstDaemonRegistered') &&
+			!has('ReferralSourceCompleted')
 	);
 	let showProfile = $derived(!showReferralSource);
 

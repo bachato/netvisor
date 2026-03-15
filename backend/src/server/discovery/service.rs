@@ -3,13 +3,14 @@ use crate::daemon::discovery::types::base::DiscoveryPhase;
 use crate::daemon::runtime::service::LOG_TARGET;
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::daemons::r#impl::api::DiscoveryUpdatePayload;
+use crate::server::daemons::service::DaemonService;
 use crate::server::discovery::r#impl::base::Discovery;
-use crate::server::discovery::r#impl::types::{DiscoveryType, RunType, SESSION_STALLED_ERROR};
+use crate::server::discovery::r#impl::types::{DiscoveryType, RunType};
 use crate::server::networks::service::NetworkService;
 use crate::server::organizations::service::OrganizationService;
 use crate::server::shared::entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants};
 use crate::server::shared::events::bus::EventBus;
-use crate::server::shared::events::types::{DiscoverySessionEvent, EntityEvent, EntityOperation};
+use crate::server::shared::events::types::{EntityEvent, EntityOperation};
 use crate::server::shared::events::types::{OnboardingEvent, OnboardingOperation};
 use crate::server::shared::services::traits::{CrudService, EventBusService};
 use crate::server::shared::storage::filter::StorableFilter;
@@ -47,6 +48,8 @@ pub struct DiscoveryService {
     snmp_credential_service: Arc<SnmpCredentialService>,
     network_service: Arc<NetworkService>,
     organization_service: Arc<OrganizationService>,
+    // Lazy dependency (set after construction to break circular dependency)
+    daemon_service: std::sync::OnceLock<Arc<DaemonService>>,
 }
 
 impl EventBusService<Discovery> for DiscoveryService {
@@ -87,25 +90,14 @@ impl CrudService<Discovery> for DiscoveryService {
         // Preserve server-managed fields from current DB state
         // (the API client may send stale values for these read-only fields)
         if let RunType::Scheduled {
-            ref mut consecutive_failures,
-            ref mut last_run,
-            ..
+            ref mut last_run, ..
         } = entity.base.run_type
             && let RunType::Scheduled {
-                consecutive_failures: current_failures,
                 last_run: current_last_run,
                 ..
             } = &current.base.run_type
         {
-            *consecutive_failures = *current_failures;
             *last_run = *current_last_run;
-        }
-
-        // Reset consecutive failures when re-enabling a disabled scheduled discovery
-        if let RunType::Scheduled { enabled: true, .. } = &entity.base.run_type
-            && let RunType::Scheduled { enabled: false, .. } = &current.base.run_type
-        {
-            entity.reset_failures();
         }
 
         // If it's a scheduled discovery and schedule or timezone has changed, need to reschedule
@@ -245,7 +237,18 @@ impl DiscoveryService {
             snmp_credential_service,
             network_service,
             organization_service,
+            daemon_service: std::sync::OnceLock::new(),
         }))
+    }
+
+    /// Set the daemon service dependency after construction.
+    /// This breaks the circular dependency: DaemonService holds Arc<DiscoveryService>,
+    /// and DiscoveryService holds OnceLock<Arc<DaemonService>>.
+    pub fn set_daemon_service(
+        &self,
+        service: Arc<DaemonService>,
+    ) -> Result<(), Arc<DaemonService>> {
+        self.daemon_service.set(service)
     }
 
     /// Expose stream to handler
@@ -595,15 +598,56 @@ impl DiscoveryService {
                 Box::pin(async move {
                     // Check if discovery is still enabled before running — cron jobs
                     // may linger after failed removals
-                    match storage.get_by_id(&discovery_id).await {
+                    let fresh = match storage.get_by_id(&discovery_id).await {
                         Ok(Some(fresh))
                             if matches!(
                                 fresh.base.run_type,
                                 RunType::Scheduled { enabled: true, .. }
-                            ) => {}
+                            ) =>
+                        {
+                            fresh
+                        }
                         _ => {
                             tracing::debug!("Skipping disabled/deleted discovery {}", discovery_id);
                             return;
+                        }
+                    };
+
+                    // Check if daemon is reachable before starting session
+                    if let Some(daemon_service) = service.daemon_service.get() {
+                        match daemon_service
+                            .storage()
+                            .get_by_id(&fresh.base.daemon_id)
+                            .await
+                        {
+                            Ok(Some(daemon))
+                                if daemon.base.is_unreachable || daemon.base.standby =>
+                            {
+                                tracing::debug!(
+                                    discovery_id = %discovery_id,
+                                    daemon_id = %fresh.base.daemon_id,
+                                    is_unreachable = daemon.base.is_unreachable,
+                                    standby = daemon.base.standby,
+                                    "Skipping scheduled discovery — daemon is not available"
+                                );
+                                return;
+                            }
+                            Ok(None) => {
+                                tracing::debug!(
+                                    discovery_id = %discovery_id,
+                                    daemon_id = %fresh.base.daemon_id,
+                                    "Skipping scheduled discovery — daemon not found"
+                                );
+                                return;
+                            }
+                            Err(e) => {
+                                tracing::warn!(
+                                    discovery_id = %discovery_id,
+                                    error = %e,
+                                    "Failed to check daemon status, proceeding with discovery"
+                                );
+                            }
+                            _ => {} // daemon is reachable, proceed
                         }
                     }
 
@@ -615,7 +659,6 @@ impl DiscoveryService {
                     {
                         Ok(_) => {
                             // Reload fresh discovery from DB to avoid overwriting fields
-                            // (closure captures a clone with stale consecutive_failures etc.)
                             match storage.get_by_id(&discovery_id).await {
                                 Ok(Some(mut fresh)) => {
                                     if let RunType::Scheduled {
@@ -935,15 +978,6 @@ impl DiscoveryService {
                 None
             };
 
-            // Find discovery_id for failure tracking before removing mappings
-            let failure_discovery_id = {
-                let discovery_sessions = self.discovery_sessions.read().await;
-                discovery_sessions
-                    .iter()
-                    .find(|(_, sid)| **sid == update.session_id)
-                    .map(|(did, _)| *did)
-            };
-
             // Remove the completed session
             sessions.remove(&update.session_id);
 
@@ -953,15 +987,8 @@ impl DiscoveryService {
                 .await
                 .retain(|_, sid| *sid != update.session_id);
 
-            // Drop all write locks before failure tracking (which acquires its own locks)
             drop(sessions);
             drop(last_updated);
-
-            // Track consecutive failures after locks are released to avoid deadlock
-            if let Some(discovery_id) = failure_discovery_id {
-                self.handle_session_failure_tracking(&update, discovery_id)
-                    .await;
-            }
 
             // Publish event which will trigger notifying any daemons in ServerPoll to start session
             // If daemon is daemon_poll mode, it will request next session on its next poll
@@ -1238,7 +1265,6 @@ impl DiscoveryService {
         let mut discovery_sessions = self.discovery_sessions.write().await;
 
         let mut stalled_count = 0;
-        let mut failure_tracking: Vec<(DiscoveryUpdatePayload, Uuid)> = Vec::new();
 
         for session in stalled_sessions {
             if let Some(mut session) = sessions.remove(&session.session_id) {
@@ -1254,17 +1280,11 @@ impl DiscoveryService {
 
                 // Update to failed state
                 session.phase = DiscoveryPhase::Failed;
-                session.error = Some(SESSION_STALLED_ERROR.to_string());
+                session.error = Some(
+                    "Session stalled - no updates received from daemon for more than 5 minutes"
+                        .to_string(),
+                );
                 session.finished_at = Some(now);
-
-                // Collect failure tracking data before removing from discovery_sessions
-                if let Some(discovery_id) = discovery_sessions
-                    .iter()
-                    .find(|(_, sid)| **sid == session_id)
-                    .map(|(did, _)| *did)
-                {
-                    failure_tracking.push((session.clone(), discovery_id));
-                }
 
                 // Remove from daemon sessions queue and promote next Queued → Pending
                 if let Some(queue) = daemon_sessions.get_mut(&daemon_id) {
@@ -1344,20 +1364,6 @@ impl DiscoveryService {
         if stalled_count > 0 {
             tracing::info!("Cleaned up {} stalled discovery sessions", stalled_count);
         }
-
-        // Drop all write locks before calling handle_session_failure_tracking
-        // which acquires its own locks (job_ids, event_bus)
-        drop(sessions);
-        drop(last_updated);
-        drop(daemon_sessions);
-        drop(daemon_pull_cancellations);
-        drop(discovery_sessions);
-
-        // Track consecutive failures after all locks are released to avoid deadlock
-        for (session, discovery_id) in failure_tracking {
-            self.handle_session_failure_tracking(&session, discovery_id)
-                .await;
-        }
     }
 
     /// Remove a scheduled job using fire-and-forget to prevent deadlocks.
@@ -1383,125 +1389,6 @@ impl DiscoveryService {
                     );
                 }
             });
-        }
-    }
-
-    /// Track consecutive stall failures for scheduled discoveries.
-    /// On Complete: resets the counter. On Failed with stall error: increments and
-    /// auto-disables after 3 consecutive failures.
-    async fn handle_session_failure_tracking(
-        &self,
-        session: &DiscoveryUpdatePayload,
-        discovery_id: Uuid,
-    ) {
-        let mut discovery = match self.discovery_storage.get_by_id(&discovery_id).await {
-            Ok(Some(d)) => d,
-            _ => return,
-        };
-
-        if !matches!(discovery.base.run_type, RunType::Scheduled { .. }) {
-            return;
-        }
-
-        if session.phase == DiscoveryPhase::Complete && discovery.consecutive_failures() > 0 {
-            discovery.reset_failures();
-            if let Err(e) = self.discovery_storage.update(&mut discovery).await {
-                tracing::warn!(
-                    discovery_id = %discovery_id,
-                    error = %e,
-                    "Failed to reset consecutive failures"
-                );
-            }
-            return;
-        }
-
-        if session.phase == DiscoveryPhase::Failed {
-            let is_stall = session
-                .error
-                .as_deref()
-                .map(|e| e == SESSION_STALLED_ERROR)
-                .unwrap_or(false);
-
-            if !is_stall {
-                return;
-            }
-
-            let count = discovery.increment_failures();
-
-            if count >= 3 {
-                discovery.disable();
-
-                // Persist immediately after disable + increment, before side effects
-                if let Err(e) = self.discovery_storage.update(&mut discovery).await {
-                    tracing::warn!(
-                        discovery_id = %discovery_id,
-                        error = %e,
-                        "Failed to persist auto-disabled discovery"
-                    );
-                }
-
-                // Remove cron job from scheduler (with timeout to prevent deadlock)
-                self.remove_scheduled_job(&discovery_id).await;
-
-                // Look up network name and org_id for the email event
-                let (network_name, org_id) = match self
-                    .network_service
-                    .get_by_id(&discovery.base.network_id)
-                    .await
-                {
-                    Ok(Some(network)) => (
-                        network.base.name.clone(),
-                        Some(network.base.organization_id),
-                    ),
-                    _ => ("Unknown Network".to_string(), None),
-                };
-
-                // Publish auto-disabled event with metadata for email subscriber
-                let metadata = serde_json::json!({
-                    "auto_disabled": true,
-                    "scan_name": discovery.base.name,
-                    "network_name": network_name,
-                    "org_id": org_id.map(|id| id.to_string()),
-                    "failure_count": count,
-                });
-
-                let event = DiscoverySessionEvent::new(
-                    Uuid::new_v4(),
-                    session.session_id,
-                    session.network_id,
-                    session.daemon_id,
-                    DiscoveryPhase::Failed,
-                    session.discovery_type.clone(),
-                    Utc::now(),
-                    AuthenticatedEntity::System,
-                    metadata,
-                );
-
-                if let Err(e) = self.event_bus.publish_discovery(event).await {
-                    tracing::warn!(
-                        discovery_id = %discovery_id,
-                        error = %e,
-                        "Failed to publish auto-disabled discovery event"
-                    );
-                }
-
-                tracing::warn!(
-                    discovery_id = %discovery_id,
-                    scan_name = %discovery.base.name,
-                    consecutive_failures = count,
-                    "Auto-disabled scheduled discovery after {} consecutive stall failures",
-                    count
-                );
-            } else {
-                // count < 3: just persist the incremented counter
-                if let Err(e) = self.discovery_storage.update(&mut discovery).await {
-                    tracing::warn!(
-                        discovery_id = %discovery_id,
-                        error = %e,
-                        "Failed to persist consecutive failure count"
-                    );
-                }
-            }
         }
     }
 }

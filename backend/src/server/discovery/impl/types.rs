@@ -114,12 +114,6 @@ pub enum HostNamingFallback {
     BestService,
 }
 
-/// Error message used when a discovery session stalls (no daemon updates for 5+ minutes).
-/// Both `update_session()` and `cleanup_stalled_sessions()` check against this const
-/// to determine whether a failure should count toward auto-disable.
-pub const SESSION_STALLED_ERROR: &str =
-    "Session stalled - no updates received from daemon for more than 5 minutes";
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ToSchema)]
 #[serde(tag = "type")]
 pub enum RunType {
@@ -133,10 +127,6 @@ pub enum RunType {
         /// IANA timezone for cron evaluation, e.g. "America/New_York". None = UTC.
         #[serde(default)]
         timezone: Option<String>,
-        /// Number of consecutive stall failures. Auto-disables after 3.
-        #[serde(default)]
-        #[schema(read_only)]
-        consecutive_failures: u32,
     },
     #[schema(title = "Historical")]
     /// Historical discovery runs are created by the server and cannot be submitted via API

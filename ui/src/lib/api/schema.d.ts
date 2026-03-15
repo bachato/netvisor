@@ -2825,14 +2825,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-03-14T03:57:37.580537Z",
-             *       "id": "83a036f8-e9b2-44d8-af99-a77532f5f44d",
+             *       "created_at": "2026-03-15T02:51:16.558676Z",
+             *       "id": "0ae24fec-a689-4d06-af2f-9e3d1439a86a",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-03-14T03:57:37.580537Z"
+             *       "updated_at": "2026-03-15T02:51:16.558676Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3084,14 +3084,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-03-14T03:57:37.563376Z",
-             *               "id": "23e5292d-78d6-4a38-b7c1-86661dadc772",
+             *               "created_at": "2026-03-15T02:51:16.541115Z",
+             *               "id": "22881fa3-8831-4172-8782-6c65d10f5da1",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-03-14T03:57:37.563376Z"
+             *               "updated_at": "2026-03-15T02:51:16.541115Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3100,7 +3100,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "CoolerControl",
+             *           "service_definition": "Jaeger",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3356,14 +3356,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-03-14T03:57:37.575728Z",
-             *           "id": "3df6a961-9ca8-4308-8d76-535816f6230a",
+             *           "created_at": "2026-03-15T02:51:16.553956Z",
+             *           "id": "ee950848-69ed-4995-88a8-a9ad439cd2dc",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-03-14T03:57:37.575728Z"
+             *           "updated_at": "2026-03-15T02:51:16.553956Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3372,7 +3372,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "CoolerControl",
+             *       "service_definition": "Jaeger",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3693,14 +3693,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-03-14T03:57:37.563730Z",
-         *       "id": "d65de1c1-6612-4fbe-a43a-b84bda0e4662",
+         *       "created_at": "2026-03-15T02:51:16.541322Z",
+         *       "id": "e1c7e60d-d555-4fb5-a443-caff77467f74",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-03-14T03:57:37.563730Z"
+         *       "updated_at": "2026-03-15T02:51:16.541322Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3882,7 +3882,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "CoolerControl",
+         *           "service_definition": "Jaeger",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4177,7 +4177,7 @@ export interface components {
             date: string;
         };
         /** @enum {string} */
-        DiscoveryPhase: "Pending" | "Starting" | "Started" | "Scanning" | "Complete" | "Failed" | "Cancelled";
+        DiscoveryPhase: "Queued" | "Pending" | "Starting" | "Started" | "Scanning" | "Complete" | "Failed" | "Cancelled";
         /**
          * @description Protocol that discovered the physical link between network devices
          * @enum {string}
@@ -4530,14 +4530,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-03-14T03:57:37.562910Z",
-         *               "id": "f0250492-fe3c-4fa5-b306-015f068019d0",
+         *               "created_at": "2026-03-15T02:51:16.540834Z",
+         *               "id": "26f9e7a5-b838-4bd6-98b5-972182bb78c2",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-03-14T03:57:37.562910Z"
+         *               "updated_at": "2026-03-15T02:51:16.540834Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4546,7 +4546,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "CoolerControl",
+         *           "service_definition": "Jaeger",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5500,11 +5500,6 @@ export interface components {
             token: string;
         };
         RunType: {
-            /**
-             * Format: int32
-             * @description Number of consecutive stall failures. Auto-disables after 3.
-             */
-            readonly consecutive_failures?: number;
             cron_schedule: string;
             enabled: boolean;
             /** Format: date-time */
@@ -5536,14 +5531,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-03-14T03:57:37.563610Z",
-         *           "id": "13669e5a-c061-498a-ab4f-9562ca40bb3f",
+         *           "created_at": "2026-03-15T02:51:16.541254Z",
+         *           "id": "f53f8b3e-77e2-4516-b7a5-6375429d85ad",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-03-14T03:57:37.563610Z"
+         *           "updated_at": "2026-03-15T02:51:16.541254Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5552,7 +5547,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "CoolerControl",
+         *       "service_definition": "Jaeger",
          *       "source": {
          *         "type": "Manual"
          *       },

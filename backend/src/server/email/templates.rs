@@ -476,8 +476,13 @@ pub const DAEMON_STANDBY_BODY: &str = r#"                    <!-- Main Content -
                         <td style="padding: 0 40px 20px 40px;">
                             <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Daemon on Standby</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your daemon <strong>{daemon_name}</strong> on <strong>{network_name}</strong> has been placed on <a href="https://scanopy.net/docs/reference/daemon-status/" style="color: #2563eb; text-decoration: none;">standby</a> because it hasn't completed a discovery session in over 30 days.</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">{resume_instructions}</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your daemon <strong>{daemon_name}</strong> on <strong>{network_name}</strong> has been placed on <a href="https://scanopy.net/docs/reference/daemon-status/" style="color: #2563eb; text-decoration: none;">standby</a> because it hasn't completed a discovery session in over 30 days. While on standby, scheduled discoveries targeting this daemon will be skipped.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">To resume:</p>
+                            <ol style="margin: 0 0 20px 0; padding-left: 20px; font-size: 16px; line-height: 28px; color: #4a4a4a;">
+                                <li>Ensure your daemon is running and connected (<a href="https://scanopy.net/docs/setting-up-daemons/troubleshooting/" style="color: #2563eb; text-decoration: none;">troubleshooting guide</a>).</li>
+                                <li>Manually start a discovery by pressing the Play button on the Discoveries page.</li>
+                            </ol>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your daemon will come off standby and scheduled discoveries will resume automatically.</p>
                         </td>
                     </tr>
 
@@ -490,25 +495,30 @@ pub const DAEMON_STANDBY_BODY: &str = r#"                    <!-- Main Content -
 "#;
 
 // ============================================================================
-// Scan Auto-Disabled Templates
+// Daemon Unreachable Templates
 // ============================================================================
 
-pub const SCAN_AUTO_DISABLED_TITLE: &str = "Scheduled Scan Paused \u{2014} {scan_name}";
+pub const DAEMON_UNREACHABLE_TITLE: &str = "Your Daemon Is Unreachable";
 
-pub const SCAN_AUTO_DISABLED_BODY: &str = r#"                    <!-- Main Content -->
+pub const DAEMON_UNREACHABLE_BODY: &str = r#"                    <!-- Main Content -->
                     <tr>
                         <td style="padding: 0 40px 20px 40px;">
-                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Scheduled Scan Paused</h1>
+                            <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center;">Daemon Unreachable</h1>
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Hi there,</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your scheduled scan <strong>{scan_name}</strong> on <strong>{network_name}</strong> has failed {failure_count} times in a row and has been automatically paused.</p>
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">This usually means the daemon is offline or has been uninstalled. Check that your daemon is running and re-enable the scan when ready.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Your daemon <strong>{daemon_name}</strong> on <strong>{network_name}</strong> is unreachable. Scheduled discoveries targeting this daemon will be skipped until connectivity is restored.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">To resolve:</p>
+                            <ol style="margin: 0 0 20px 0; padding-left: 20px; font-size: 16px; line-height: 28px; color: #4a4a4a;">
+                                <li>Check that the daemon host is online and the daemon process is running.</li>
+                                <li>Verify network connectivity between the server and daemon (<a href="https://scanopy.net/docs/setting-up-daemons/troubleshooting/" style="color: #2563eb; text-decoration: none;">troubleshooting guide</a>).</li>
+                            </ol>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #4a4a4a;">Once connectivity is restored, your daemon will automatically resume and scheduled discoveries will run again.</p>
                         </td>
                     </tr>
 
                     <!-- CTA Button -->
                     <tr>
                         <td align="center" style="padding: 0 40px 30px 40px;">
-                            <a href="{base_url}/#discovery-scheduled" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">View Scheduled Scans</a>
+                            <a href="{base_url}/#daemons" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 500;">View Daemons</a>
                         </td>
                     </tr>
 "#;

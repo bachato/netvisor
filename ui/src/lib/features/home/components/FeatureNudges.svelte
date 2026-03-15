@@ -6,7 +6,6 @@
 	import { optionsPanelExpanded } from '$lib/features/topology/queries';
 	import { entities, billingPlans } from '$lib/shared/stores/metadata';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
-	import { useDiscoveriesQuery } from '$lib/features/discovery/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { IconComponent } from '$lib/shared/utils/types';
 	import { onMount } from 'svelte';
@@ -31,15 +30,9 @@
 	} = $props();
 
 	const servicesQuery = useServicesCacheQuery();
-	const discoveriesQuery = useDiscoveriesQuery();
 	const daemonsQuery = useDaemonsQuery();
 	let hasUnclaimedPorts = $derived(
 		(servicesQuery.data ?? []).some((s) => s.service_definition === 'Unclaimed Open Ports')
-	);
-	let hasAutoPausedDiscoveries = $derived(
-		(discoveriesQuery.data ?? []).some(
-			(d) => d.run_type.type === 'Scheduled' && (d.run_type.consecutive_failures ?? 0) >= 3
-		)
 	);
 	let hasUnreachableDaemons = $derived(
 		(daemonsQuery.data ?? []).some((d) => d.standby === true || d.is_unreachable === true)
@@ -90,23 +83,10 @@
 				iconColor: entities.getColorHelper('Port').icon
 			},
 			{
-				id: 'scans-auto-paused',
-				title: 'Scans have been auto-paused',
-				description:
-					'Some scheduled scans were automatically paused after repeated failures. <a href="https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/auto-pause/" target="_blank" class="text-blue-400 hover:text-blue-300">Learn how to troubleshoot</a>.',
-				actionLabel: 'Go to Discoveries',
-				action: () => {
-					onNavigate('discoveries');
-				},
-				visible: hasAutoPausedDiscoveries,
-				icon: entities.getIconComponent('Discovery'),
-				iconColor: entities.getColorHelper('Discovery').icon
-			},
-			{
 				id: 'daemon-attention',
 				title: 'Daemon needs attention',
 				description:
-					'One or more daemons are offline or unreachable. Scheduled scans targeting these daemons will fail.',
+					'One or more daemons are offline or unreachable. Scheduled scans targeting these daemons will be skipped until connectivity is restored.',
 				actionLabel: 'View Daemons',
 				action: () => {
 					onNavigate('daemons');

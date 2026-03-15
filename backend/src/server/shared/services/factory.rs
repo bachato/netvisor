@@ -224,10 +224,11 @@ impl ServiceFactory {
             entity_tag_service.clone(),
         ));
 
-        // Set HostService where there's a circular reference
+        // Set lazy dependencies to break circular references
         let _ = service_service.set_host_service(host_service.clone());
         let _ = daemon_service.set_host_service(host_service.clone());
         let _ = snmp_credential_service.set_host_service(host_service.clone());
+        let _ = discovery_service.set_daemon_service(daemon_service.clone());
 
         let topology_service = Arc::new(TopologyService::new(
             host_service.clone(),

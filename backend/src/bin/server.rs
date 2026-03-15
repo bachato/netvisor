@@ -135,8 +135,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Start daemon polling loop for ServerPoll mode daemons
     let daemon_service = state.services.daemon_service.clone();
+    let poll_email_service = state.services.email_service.clone();
     tokio::spawn(async move {
-        daemon_service.start_polling_loop().await;
+        daemon_service.start_polling_loop(poll_email_service).await;
     });
 
     // Check for inactive daemons and put them on standby (daily)

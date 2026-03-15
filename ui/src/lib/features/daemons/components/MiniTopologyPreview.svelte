@@ -71,14 +71,118 @@
 	const NODE_H = 36;
 
 	const nodes: TopoNode[] = [
-		{ id: 0, homeX: 42, homeY: 60, x: 42, y: 60, w: NODE_W, h: NODE_H, color: 'Blue', label: 'gateway', sublabel: '.1', subnet: 0, revealedAt: 0 },
-		{ id: 1, homeX: 132, homeY: 56, x: 132, y: 56, w: NODE_W, h: NODE_H, color: 'Emerald', label: 'web-srv', sublabel: '.10', subnet: 0, revealedAt: 0 },
-		{ id: 2, homeX: 42, homeY: 120, x: 42, y: 120, w: NODE_W, h: NODE_H, color: 'Emerald', label: 'db-01', sublabel: '.20', subnet: 0, revealedAt: 0 },
-		{ id: 3, homeX: 132, homeY: 120, x: 132, y: 120, w: NODE_W, h: NODE_H, color: 'Orange', label: 'nas', sublabel: '.30', subnet: 0, revealedAt: 0 },
-		{ id: 4, homeX: 264, homeY: 52, x: 264, y: 52, w: NODE_W, h: NODE_H, color: 'Blue', label: 'core-sw', sublabel: '.1', subnet: 1, revealedAt: 0 },
-		{ id: 5, homeX: 354, homeY: 52, x: 354, y: 52, w: NODE_W, h: NODE_H, color: 'Pink', label: 'monitor', sublabel: '.5', subnet: 1, revealedAt: 0 },
-		{ id: 6, homeX: 264, homeY: 122, x: 264, y: 122, w: NODE_W, h: NODE_H, color: 'Emerald', label: 'app-srv', sublabel: '.11', subnet: 1, revealedAt: 0 },
-		{ id: 7, homeX: 354, homeY: 122, x: 354, y: 122, w: NODE_W, h: NODE_H, color: 'Orange', label: 'printer', sublabel: '.50', subnet: 1, revealedAt: 0 }
+		{
+			id: 0,
+			homeX: 42,
+			homeY: 60,
+			x: 42,
+			y: 60,
+			w: NODE_W,
+			h: NODE_H,
+			color: 'Blue',
+			label: 'gateway',
+			sublabel: '.1',
+			subnet: 0,
+			revealedAt: 0
+		},
+		{
+			id: 1,
+			homeX: 132,
+			homeY: 56,
+			x: 132,
+			y: 56,
+			w: NODE_W,
+			h: NODE_H,
+			color: 'Emerald',
+			label: 'web-srv',
+			sublabel: '.10',
+			subnet: 0,
+			revealedAt: 0
+		},
+		{
+			id: 2,
+			homeX: 42,
+			homeY: 120,
+			x: 42,
+			y: 120,
+			w: NODE_W,
+			h: NODE_H,
+			color: 'Emerald',
+			label: 'db-01',
+			sublabel: '.20',
+			subnet: 0,
+			revealedAt: 0
+		},
+		{
+			id: 3,
+			homeX: 132,
+			homeY: 120,
+			x: 132,
+			y: 120,
+			w: NODE_W,
+			h: NODE_H,
+			color: 'Orange',
+			label: 'nas',
+			sublabel: '.30',
+			subnet: 0,
+			revealedAt: 0
+		},
+		{
+			id: 4,
+			homeX: 264,
+			homeY: 52,
+			x: 264,
+			y: 52,
+			w: NODE_W,
+			h: NODE_H,
+			color: 'Blue',
+			label: 'core-sw',
+			sublabel: '.1',
+			subnet: 1,
+			revealedAt: 0
+		},
+		{
+			id: 5,
+			homeX: 354,
+			homeY: 52,
+			x: 354,
+			y: 52,
+			w: NODE_W,
+			h: NODE_H,
+			color: 'Pink',
+			label: 'monitor',
+			sublabel: '.5',
+			subnet: 1,
+			revealedAt: 0
+		},
+		{
+			id: 6,
+			homeX: 264,
+			homeY: 122,
+			x: 264,
+			y: 122,
+			w: NODE_W,
+			h: NODE_H,
+			color: 'Emerald',
+			label: 'app-srv',
+			sublabel: '.11',
+			subnet: 1,
+			revealedAt: 0
+		},
+		{
+			id: 7,
+			homeX: 354,
+			homeY: 122,
+			x: 354,
+			y: 122,
+			w: NODE_W,
+			h: NODE_H,
+			color: 'Orange',
+			label: 'printer',
+			sublabel: '.50',
+			subnet: 1,
+			revealedAt: 0
+		}
 	];
 
 	const edges: Edge[] = [
@@ -106,7 +210,14 @@
 		return 1 - (1 - t) * (1 - t);
 	}
 
-	function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+	function drawRoundedRect(
+		ctx: CanvasRenderingContext2D,
+		x: number,
+		y: number,
+		w: number,
+		h: number,
+		r: number
+	) {
 		ctx.beginPath();
 		ctx.moveTo(x + r, y);
 		ctx.lineTo(x + w - r, y);

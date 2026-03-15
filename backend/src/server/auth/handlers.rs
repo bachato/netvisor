@@ -508,7 +508,6 @@ async fn onboarding_state(
     })))
 }
 
-
 /// Apply pending setup after user registration: create network, topology, seed data
 /// Org name, onboarding status, and billing plan are now set in provision_user
 async fn apply_pending_setup(

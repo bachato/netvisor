@@ -1,7 +1,7 @@
 <script lang="ts">
 	import GenericCard from '$lib/shared/components/data/GenericCard.svelte';
 	import { entities } from '$lib/shared/stores/metadata';
-	import { Edit, Play, Power, Trash2 } from 'lucide-svelte';
+	import { Edit, Play, Trash2 } from 'lucide-svelte';
 	import type { Discovery } from '../../types/base';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
@@ -27,7 +27,6 @@
 		onEdit,
 		onDelete,
 		onRun,
-		onToggleEnabled,
 		selected,
 		onSelectionChange = () => {}
 	}: {
@@ -36,40 +35,14 @@
 		onEdit?: (discovery: Discovery) => void;
 		onDelete?: (discovery: Discovery) => void;
 		onRun?: (discovery: Discovery) => void;
-		onToggleEnabled?: (discovery: Discovery) => void;
 		selected: boolean;
 		onSelectionChange?: (selected: boolean) => void;
 	} = $props();
-
-	let failureCount = $derived(
-		discovery.run_type.type === 'Scheduled' ? (discovery.run_type.consecutive_failures ?? 0) : 0
-	);
-
-	let failureStatus = $derived.by(() => {
-		if (failureCount >= 3) {
-			return {
-				label: 'Auto-paused',
-				color: 'Red' as const,
-				title: `Automatically paused after ${failureCount} consecutive stall failures`,
-				href: 'https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/auto-pause/'
-			};
-		}
-		if (failureCount >= 1) {
-			return {
-				label: `${failureCount} failure${failureCount > 1 ? 's' : ''}`,
-				color: 'Orange' as const,
-				title: 'Will auto-pause after 3 consecutive failures',
-				href: 'https://scanopy.net/docs/setting-up-daemons/troubleshooting-scans/auto-pause/'
-			};
-		}
-		return null;
-	});
 
 	let cardData = $derived({
 		title: discovery.name,
 		iconColor: entities.getColorHelper('Discovery').icon,
 		Icon: entities.getIconComponent('Discovery'),
-		status: failureStatus,
 		fields: [
 			{
 				label: 'Daemon',
@@ -112,16 +85,6 @@
 		actions: [
 			...(onDelete
 				? [{ label: 'Delete', icon: Trash2, class: `btn-icon`, onClick: () => onDelete(discovery) }]
-				: []),
-			...(onToggleEnabled && discovery.run_type.type === 'Scheduled'
-				? [
-						{
-							label: discovery.run_type.enabled ? 'Disable' : 'Enable',
-							icon: Power,
-							class: discovery.run_type.enabled ? 'btn-icon-success' : 'btn-icon',
-							onClick: () => onToggleEnabled(discovery)
-						}
-					]
 				: []),
 			...(onRun
 				? [{ label: 'Run', icon: Play, class: `btn-icon`, onClick: () => onRun(discovery) }]

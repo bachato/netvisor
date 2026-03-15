@@ -3906,8 +3906,7 @@ fn generate_shares(
     let mut shares = Vec::new();
 
     if let (Some(network), Some(topology)) = (hq_network, hq_topology) {
-
-        if let Ok(id) = Uuid::parse_str("a1b2c3d4-e5f6-7890-abcd-ef1234567890"){
+        if let Ok(id) = Uuid::parse_str("a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
             shares.push(Share {
                 // Fixed UUID for demo share — used in onboarding embed
                 id,
@@ -3932,7 +3931,7 @@ fn generate_shares(
             });
         }
 
-        if let Ok(id) = Uuid::parse_str("b1b2c3d4-e5f6-7890-abcd-ef1234567890"){
+        if let Ok(id) = Uuid::parse_str("b1b2c3d4-e5f6-7890-abcd-ef1234567890") {
             shares.push(Share {
                 // Fixed UUID for demo share — used on website
                 id,

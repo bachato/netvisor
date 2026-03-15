@@ -5560,6 +5560,68 @@
         ]
       }
     },
+    "/api/v1/organizations/profile": {
+      "post": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Update user profile with deferred marketing fields",
+        "operationId": "update_profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/referral-source": {
+      "post": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Submit referral source (how did you hear about us)",
+        "operationId": "submit_referral_source",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralSourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Referral source recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{id}": {
       "put": {
         "tags": [
@@ -9621,14 +9683,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-03-13T07:24:59.970873Z",
-              "id": "6679a925-5387-4173-aed1-ec52f4499e86",
+              "created_at": "2026-03-15T02:51:16.558682Z",
+              "id": "60297329-c818-42f1-9d0c-fa6553f1ebd1",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-13T07:24:59.970873Z"
+              "updated_at": "2026-03-15T02:51:16.558682Z"
             }
           },
           "error": {
@@ -10444,14 +10506,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-03-13T07:24:59.953851Z",
-                      "id": "35535805-14af-4e64-a4f4-1b613fc54d3e",
+                      "created_at": "2026-03-15T02:51:16.541100Z",
+                      "id": "4e07dacf-b0db-4273-9ac0-024b7a818b88",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-03-13T07:24:59.953851Z"
+                      "updated_at": "2026-03-15T02:51:16.541100Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10460,7 +10522,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "FileZilla Server",
+                  "service_definition": "Jaeger",
                   "source": {
                     "type": "Manual"
                   },
@@ -11162,14 +11224,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-03-13T07:24:59.966168Z",
-                  "id": "4c7ebaef-8709-438e-8f8c-fa7f04b46ef6",
+                  "created_at": "2026-03-15T02:51:16.553883Z",
+                  "id": "6e54d34c-a8aa-4709-8d0e-a156a0fccdbf",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-13T07:24:59.966168Z"
+                  "updated_at": "2026-03-15T02:51:16.553883Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11178,7 +11240,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "FileZilla Server",
+              "service_definition": "Jaeger",
               "source": {
                 "type": "Manual"
               },
@@ -12441,14 +12503,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-03-13T07:24:59.954176Z",
-          "id": "06273874-6bcd-498d-ad86-1b4fc460d100",
+          "created_at": "2026-03-15T02:51:16.541306Z",
+          "id": "e1b068fd-bbcf-4dfa-bc23-ae1c84af9ce9",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-03-13T07:24:59.954176Z"
+          "updated_at": "2026-03-15T02:51:16.541306Z"
         }
       },
       "BindingBase": {
@@ -12955,7 +13017,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "FileZilla Server",
+              "service_definition": "Jaeger",
               "tags": [],
               "virtualization": null
             }
@@ -13725,6 +13787,7 @@
       "DiscoveryPhase": {
         "type": "string",
         "enum": [
+          "Queued",
           "Pending",
           "Starting",
           "Started",
@@ -14851,14 +14914,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-03-13T07:24:59.953389Z",
-                  "id": "030c57d6-4129-481d-8579-d66b245e7c15",
+                  "created_at": "2026-03-15T02:51:16.540821Z",
+                  "id": "bf162e81-a3a6-4d49-85c8-b9cc35252bae",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-03-13T07:24:59.953389Z"
+                  "updated_at": "2026-03-15T02:51:16.540821Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14867,7 +14930,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "FileZilla Server",
+              "service_definition": "Jaeger",
               "source": {
                 "type": "Manual"
               },
@@ -16169,7 +16232,8 @@
           "FirstSnmpCredentialCreated",
           "InviteSent",
           "InviteAccepted",
-          "ProfileCompleted"
+          "ProfileCompleted",
+          "ReferralSourceCompleted"
         ]
       },
       "OnboardingStateResponse": {
@@ -16738,14 +16802,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-03-13T07:24:59.942154Z",
-                        "id": "6ad6684c-ad8d-4f66-9d1d-12169d84c19a",
+                        "created_at": "2026-03-15T02:51:16.528474Z",
+                        "id": "833a9e0a-1398-49c2-84f3-286514637903",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-03-13T07:24:59.942154Z"
+                        "updated_at": "2026-03-15T02:51:16.528474Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -16754,7 +16818,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "FileZilla Server",
+                    "service_definition": "Jaeger",
                     "source": {
                       "type": "Manual"
                     },
@@ -16831,14 +16895,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-03-13T07:24:59.964893Z",
-                    "id": "9fbcbbaf-e800-4f35-87c8-6b2293cad327",
+                    "created_at": "2026-03-15T02:51:16.552762Z",
+                    "id": "9dc21ea5-2571-41f0-a167-7bbca7d43ac7",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-03-13T07:24:59.964893Z"
+                    "updated_at": "2026-03-15T02:51:16.552762Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -16847,7 +16911,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "FileZilla Server",
+                "service_definition": "Jaeger",
                 "source": {
                   "type": "Manual"
                 },
@@ -17712,6 +17776,24 @@
           }
         }
       },
+      "ReferralSourceRequest": {
+        "type": "object",
+        "description": "Request to submit referral source",
+        "required": [
+          "referral_source"
+        ],
+        "properties": {
+          "referral_source": {
+            "type": "string"
+          },
+          "referral_source_other": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "RegisterRequest": {
         "type": "object",
         "description": "Registration request from client",
@@ -17934,14 +18016,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-03-13T07:24:59.954065Z",
-              "id": "d523bf99-e2ac-41b3-9010-0d42e88fbb08",
+              "created_at": "2026-03-15T02:51:16.541239Z",
+              "id": "270d1e9b-4e0a-47ee-b79d-2217f69b6c36",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-03-13T07:24:59.954065Z"
+              "updated_at": "2026-03-15T02:51:16.541239Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -17950,7 +18032,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "FileZilla Server",
+          "service_definition": "Jaeger",
           "source": {
             "type": "Manual"
           },
