@@ -143,14 +143,11 @@ impl CrudService<Discovery> for DiscoveryService {
                 schedule_changed, enabled_changed
             );
 
-            // Remove old schedule first (with timeout to prevent deadlock)
-            tracing::trace!(discovery_id = %entity.id, "Removing old scheduled job");
+            // Remove old schedule first
             self.remove_scheduled_job(&entity.id).await;
-            tracing::trace!(discovery_id = %entity.id, "Removed old scheduled job, updating DB");
 
-            // Update in DB first
+            // Update in DB
             let mut updated = self.discovery_storage.update(entity).await?;
-            tracing::trace!(discovery_id = %entity.id, "DB updated, rescheduling");
 
             // Re-add cron job (schedule_discovery guards on !enabled, so disabling skips re-add)
             if let Some(arc_self) = self.self_ref.upgrade()
@@ -170,8 +167,6 @@ impl CrudService<Discovery> for DiscoveryService {
                         e
                     );
                 }
-            } else if self.self_ref.upgrade().is_none() {
-                tracing::warn!(discovery_id = %entity.id, "Cannot reschedule: self_ref upgrade failed");
             }
 
             updated
@@ -701,7 +696,6 @@ impl DiscoveryService {
             }))
             .build()?;
 
-        tracing::trace!(discovery_id = %discovery_id, "Adding job to scheduler");
         let job_id = tokio::time::timeout(std::time::Duration::from_secs(5), scheduler.add(job))
             .await
             .map_err(|_| {
@@ -718,10 +712,7 @@ impl DiscoveryService {
                 )
             })?;
 
-        tracing::trace!(discovery_id = %discovery_id, job_id = %job_id, "Job added to scheduler successfully");
-
         // Store the mapping so we can remove the job later when the schedule is updated
-        tracing::trace!(discovery_id = %discovery_id, "Acquiring job_ids write lock for insert");
         service.job_ids.write().await.insert(discovery_id, job_id);
 
         tracing::debug!(
@@ -1394,14 +1385,14 @@ impl DiscoveryService {
     /// We clean up the job_id mapping immediately and spawn the actual removal as a
     /// background task so it never blocks the critical path.
     async fn remove_scheduled_job(&self, discovery_id: &Uuid) {
-        tracing::trace!(discovery_id = %discovery_id, "Acquiring job_ids read lock for removal lookup");
+        // Read the job_id first, then drop the read lock before acquiring write lock.
+        // Holding a RwLock read guard while awaiting .write() deadlocks.
+        let job_id = self.job_ids.read().await.get(discovery_id).copied();
         if let Some(scheduler) = &self.scheduler
-            && let Some(job_id) = self.job_ids.read().await.get(discovery_id).copied()
+            && let Some(job_id) = job_id
         {
-            tracing::trace!(discovery_id = %discovery_id, job_id = %job_id, "Acquiring job_ids write lock for removal");
             // Always clean up the mapping immediately
             self.job_ids.write().await.remove(discovery_id);
-            tracing::trace!(discovery_id = %discovery_id, job_id = %job_id, "Spawning scheduler removal");
 
             // Fire-and-forget the actual scheduler removal — it may hang
             // but won't block the current task
