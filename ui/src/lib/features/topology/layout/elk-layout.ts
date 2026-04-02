@@ -172,6 +172,43 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 		}
 	}
 
+	// Add hierarchy-enforcing edges between layer tiers for disconnected containers.
+	// Without these, containers with no cross-container leaf edges (e.g., Docker Bridge)
+	// float as disconnected components and ignore layerId ordering.
+	const connectedContainers = new Set<string>();
+	for (const key of seenContainerEdges) {
+		const [src, tgt] = key.split('->');
+		connectedContainers.add(src);
+		connectedContainers.add(tgt);
+	}
+
+	// Group containers by layer, sorted by layerId
+	const containersByLayer = new Map<number, string[]>();
+	for (const [id, container] of containers) {
+		const layerId = parseInt(container.layoutOptions?.['elk.layered.layering.layerId'] ?? '999');
+		if (!containersByLayer.has(layerId)) containersByLayer.set(layerId, []);
+		containersByLayer.get(layerId)!.push(id);
+	}
+	const sortedLayers = Array.from(containersByLayer.entries()).sort((a, b) => a[0] - b[0]);
+
+	// Chain adjacent layers with invisible edges to enforce vertical ordering
+	for (let i = 0; i < sortedLayers.length - 1; i++) {
+		const currentLayerContainers = sortedLayers[i][1];
+		const nextLayerContainers = sortedLayers[i + 1][1];
+		// Connect first container of each layer to first of next layer
+		const src = currentLayerContainers[0];
+		const tgt = nextLayerContainers[0];
+		const key = `${src}->${tgt}`;
+		if (!seenContainerEdges.has(key)) {
+			seenContainerEdges.add(key);
+			edges.push({
+				id: `elk-edge-${edgeIndex++}`,
+				sources: [src],
+				targets: [tgt]
+			});
+		}
+	}
+
 	const graph: ElkNode = {
 		id: 'root',
 		layoutOptions: ROOT_LAYOUT_OPTIONS,
