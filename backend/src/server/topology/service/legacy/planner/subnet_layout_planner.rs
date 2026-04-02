@@ -10,7 +10,7 @@ use crate::server::{
     topology::{
         service::{
             context::TopologyContext,
-            planner::{
+            legacy::planner::{
                 anchor_planner::ChildAnchorPlanner,
                 child_planner::ChildNodePlanner,
                 utils::{NODE_PADDING, PlannerUtils, SUBNET_PADDING},
@@ -462,6 +462,7 @@ impl SubnetLayoutPlanner {
                             node_type: NodeType::ContainerNode {
                                 container_type: ContainerType::Subnet,
                                 infra_width: layout.infra_width,
+                                layer_hint: None,
                             },
                             position: *position,
                             size: layout.size,
@@ -474,6 +475,7 @@ impl SubnetLayoutPlanner {
                         node_type: NodeType::ContainerNode {
                             container_type: ContainerType::Subnet,
                             infra_width: layout.infra_width,
+                            layer_hint: None,
                         },
                         position: *position,
                         size: layout.size,

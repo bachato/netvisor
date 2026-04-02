@@ -33,14 +33,15 @@ use crate::server::{
     topology::{
         service::{
             context::TopologyContext, edge_builder::EdgeBuilder,
-            optimizer::main::TopologyOptimizer,
-            planner::subnet_layout_planner::SubnetLayoutPlanner,
+            legacy::optimizer::main::TopologyOptimizer,
+            legacy::planner::subnet_layout_planner::SubnetLayoutPlanner,
         },
         types::{
-            base::{SetEntitiesParams, Topology, TopologyOptions},
+            base::{LayoutMode, SetEntitiesParams, Topology, TopologyOptions},
             edges::{Edge, EdgeHandle},
             grouping::GroupingConfig,
-            nodes::Node,
+            layout::Ixy,
+            nodes::{Node, NodeType},
         },
     },
 };
@@ -366,6 +367,12 @@ impl TopologyService {
         // Create physical link edges from LLDP/CDP neighbor discovery
         all_edges.extend(EdgeBuilder::create_physical_link_edges(&ctx));
 
+        // Set edge classification based on perspective
+        let perspective = options.request.perspective;
+        for edge in &mut all_edges {
+            edge.classification = edge.edge_type.classification(perspective);
+        }
+
         // Create nodes with layout
         let mut layout_planner = SubnetLayoutPlanner::new();
         let (subnet_layouts, child_nodes) = layout_planner.create_subnet_child_nodes(
@@ -375,13 +382,39 @@ impl TopologyService {
             docker_bridge_host_subnet_id_to_group_on,
         );
 
-        let subnet_nodes = layout_planner.create_subnet_nodes(&ctx, &subnet_layouts);
+        let mut subnet_nodes = layout_planner.create_subnet_nodes(&ctx, &subnet_layouts);
 
-        // Optimize node positions and handle edge adjustments
-        let optimizer = TopologyOptimizer::new(&ctx);
+        // Set layer_hint on container nodes from subnet vertical_order
+        let subnet_type_map: HashMap<Uuid, i32> = ctx
+            .subnets
+            .iter()
+            .map(|s| (s.id, s.base.subnet_type.vertical_order() as i32))
+            .collect();
+        for node in &mut subnet_nodes {
+            if let NodeType::ContainerNode {
+                ref mut layer_hint, ..
+            } = node.node_type
+            {
+                *layer_hint = subnet_type_map.get(&node.id).copied();
+            }
+        }
+
         let mut all_nodes: Vec<Node> = subnet_nodes.into_iter().chain(child_nodes).collect();
 
-        let optimized_edges = optimizer.optimize_graph(&mut all_nodes, &all_edges);
+        let final_edges = match options.request.layout_mode {
+            LayoutMode::ClientSide => {
+                // Zero out positions — client will compute layout via elkjs
+                for node in &mut all_nodes {
+                    node.position = Ixy { x: 0, y: 0 };
+                }
+                all_edges
+            }
+            LayoutMode::Legacy => {
+                // Optimize node positions and handle edge adjustments
+                let optimizer = TopologyOptimizer::new(&ctx);
+                optimizer.optimize_graph(&mut all_nodes, &all_edges)
+            }
+        };
 
         // Build graph
         let mut graph: Graph<Node, Edge> = Graph::new();
@@ -395,7 +428,7 @@ impl TopologyService {
             .collect();
 
         // Add edges to graph
-        EdgeBuilder::add_edges_to_graph(&mut graph, &node_indices, optimized_edges);
+        EdgeBuilder::add_edges_to_graph(&mut graph, &node_indices, final_edges);
 
         // Build previous graph to compare and deterine if user edits should be persisted
         // If nodes have changed edges, assume they have moved and user edits are no longer applicable

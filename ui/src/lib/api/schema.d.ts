@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-02T19:16:37.457325Z",
-             *       "id": "4e8c002d-23a2-414a-8c47-47b6089902ca",
+             *       "created_at": "2026-04-02T21:32:15.163834Z",
+             *       "id": "8738a8dd-6316-4aad-88de-28bd69f5c965",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-02T19:16:37.457325Z"
+             *       "updated_at": "2026-04-02T21:32:15.163834Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3153,14 +3153,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-02T19:16:37.440528Z",
-             *               "id": "e29c3741-e0a3-47dc-afa2-9151ea35bae2",
+             *               "created_at": "2026-04-02T21:32:15.145068Z",
+             *               "id": "02df3435-dd6e-4edd-bd89-62833f465ca2",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-02T19:16:37.440528Z"
+             *               "updated_at": "2026-04-02T21:32:15.145068Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3169,7 +3169,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "AWX",
+             *           "service_definition": "Elastic APM",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3425,14 +3425,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-02T19:16:37.452603Z",
-             *           "id": "0b8e912c-a9de-4b40-ae8a-2869277fffef",
+             *           "created_at": "2026-04-02T21:32:15.158749Z",
+             *           "id": "c93d7afd-5edf-43d2-b3f3-cd68b029c5d7",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-02T19:16:37.452603Z"
+             *           "updated_at": "2026-04-02T21:32:15.158749Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3441,7 +3441,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "AWX",
+             *       "service_definition": "Elastic APM",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3768,14 +3768,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-02T19:16:37.440895Z",
-         *       "id": "90a13b15-c3da-49aa-b435-1e2b61f1f97c",
+         *       "created_at": "2026-04-02T21:32:15.145452Z",
+         *       "id": "515bb95c-a9df-443f-81fa-a355cde4d459",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-02T19:16:37.440895Z"
+         *       "updated_at": "2026-04-02T21:32:15.145452Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3960,7 +3960,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "AWX",
+         *           "service_definition": "Elastic APM",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4421,6 +4421,7 @@ export interface components {
             service_id: string;
         };
         Edge: components["schemas"]["EdgeType"] & {
+            classification?: components["schemas"]["EdgeClassification"];
             /** Format: uuid */
             id: string;
             is_multi_hop: boolean;
@@ -4432,6 +4433,11 @@ export interface components {
             target: string;
             target_handle: components["schemas"]["EdgeHandle"];
         };
+        /**
+         * @description Whether an edge affects layout (primary) or is drawn after layout (overlay)
+         * @enum {string}
+         */
+        EdgeClassification: "primary" | "overlay";
         /** @enum {string} */
         EdgeHandle: "Top" | "Bottom" | "Left" | "Right";
         /** @enum {string} */
@@ -4734,14 +4740,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-02T19:16:37.440058Z",
-         *               "id": "d1ad83dc-b7c0-4632-adac-fc08ec140338",
+         *               "created_at": "2026-04-02T21:32:15.144536Z",
+         *               "id": "7e12defd-e7fe-4258-b2e6-c1b16eadcb15",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-02T19:16:37.440058Z"
+         *               "updated_at": "2026-04-02T21:32:15.144536Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4750,7 +4756,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "AWX",
+         *           "service_definition": "Elastic APM",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5007,6 +5013,11 @@ export interface components {
             x: number;
             y: number;
         };
+        /**
+         * @description Whether the server computes layout positions or returns graph structure for client-side layout
+         * @enum {string}
+         */
+        LayoutMode: "legacy" | "client_side";
         /** @enum {string} */
         LeafEntityType: "Interface";
         /**
@@ -5199,6 +5210,11 @@ export interface components {
         NodeType: {
             container_type?: components["schemas"]["ContainerType"];
             infra_width: number;
+            /**
+             * Format: int32
+             * @description Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)
+             */
+            layer_hint?: number | null;
             /** @enum {string} */
             node_type: "ContainerNode";
         } | {
@@ -5801,14 +5817,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-02T19:16:37.440776Z",
-         *           "id": "39429580-c46d-407b-80dd-2e8e488fa30b",
+         *           "created_at": "2026-04-02T21:32:15.145313Z",
+         *           "id": "9ab0398b-379f-4040-9b79-20bd3d0d1952",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-02T19:16:37.440776Z"
+         *           "updated_at": "2026-04-02T21:32:15.145313Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5817,7 +5833,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "AWX",
+         *       "service_definition": "Elastic APM",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6192,6 +6208,11 @@ export interface components {
             request: components["schemas"]["TopologyRequestOptions"];
         };
         /**
+         * @description Which topology perspective is being rendered
+         * @enum {string}
+         */
+        TopologyPerspective: "l2_physical" | "l3_logical" | "infrastructure" | "application";
+        /**
          * @description Lightweight request type for topology rebuild/refresh operations.
          *
          *     This type only includes the fields actually needed by the server - entity data
@@ -6217,7 +6238,9 @@ export interface components {
             hide_ports: boolean;
             hide_service_categories: components["schemas"]["ServiceCategory"][];
             hide_vm_title_on_docker_container: boolean;
+            layout_mode?: components["schemas"]["LayoutMode"];
             left_zone_service_categories: components["schemas"]["ServiceCategory"][];
+            perspective?: components["schemas"]["TopologyPerspective"];
             show_gateway_in_left_zone: boolean;
         };
         /** @description Filter settings for hiding entities by tag in topology visualization. */

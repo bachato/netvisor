@@ -3,7 +3,8 @@ use uuid::Uuid;
 
 use crate::server::topology::{
     service::{
-        context::TopologyContext, optimizer::utils::OptimizerUtils, planner::utils::NODE_PADDING,
+        context::TopologyContext, legacy::optimizer::utils::OptimizerUtils,
+        legacy::planner::utils::NODE_PADDING,
     },
     types::{
         edges::{Edge, EdgeHandle},

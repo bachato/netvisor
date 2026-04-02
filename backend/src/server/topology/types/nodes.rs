@@ -48,6 +48,9 @@ pub enum NodeType {
         #[serde(default)]
         container_type: ContainerType,
         infra_width: usize,
+        /// Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        layer_hint: Option<i32>,
     },
     #[serde(alias = "InterfaceNode")]
     LeafNode {
@@ -83,14 +86,27 @@ mod tests {
         let node_type = NodeType::ContainerNode {
             container_type: ContainerType::Subnet,
             infra_width: 3,
+            layer_hint: Some(2),
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "ContainerNode");
         assert_eq!(json["container_type"], "Subnet");
         assert_eq!(json["infra_width"], 3);
+        assert_eq!(json["layer_hint"], 2);
 
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
+    }
+
+    #[test]
+    fn test_container_node_no_layer_hint_omitted_in_json() {
+        let node_type = NodeType::ContainerNode {
+            container_type: ContainerType::Subnet,
+            infra_width: 3,
+            layer_hint: None,
+        };
+        let json = serde_json::to_value(&node_type).unwrap();
+        assert!(json.get("layer_hint").is_none());
     }
 
     #[test]
@@ -125,9 +141,11 @@ mod tests {
             NodeType::ContainerNode {
                 container_type,
                 infra_width,
+                layer_hint,
             } => {
                 assert_eq!(container_type, ContainerType::Subnet);
                 assert_eq!(infra_width, 2);
+                assert_eq!(layer_hint, None);
             }
             _ => panic!("Expected ContainerNode"),
         }

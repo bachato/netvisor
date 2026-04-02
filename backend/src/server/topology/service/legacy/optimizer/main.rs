@@ -3,7 +3,7 @@
 use crate::server::topology::{
     service::{
         context::TopologyContext,
-        optimizer::{
+        legacy::optimizer::{
             child_positioner::ChildPositioner, subnet_positioner::SubnetPositioner,
             utils::OptimizerUtils,
         },

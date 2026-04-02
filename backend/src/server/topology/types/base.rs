@@ -9,7 +9,9 @@ use crate::server::services::r#impl::categories::ServiceCategory;
 use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::tags::r#impl::base::Tag;
-use crate::server::topology::types::edges::{Edge, EdgeHandle, EdgeTypeDiscriminants};
+use crate::server::topology::types::edges::{
+    Edge, EdgeHandle, EdgeTypeDiscriminants, TopologyPerspective,
+};
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
 use chrono::{DateTime, Utc};
@@ -245,6 +247,17 @@ impl Default for TopologyLocalOptions {
     }
 }
 
+/// Whether the server computes layout positions or returns graph structure for client-side layout
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, Default, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LayoutMode {
+    /// Server computes positions (current behavior)
+    #[default]
+    Legacy,
+    /// Server returns graph structure + hints, no positions
+    ClientSide,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, ToSchema)]
 pub struct TopologyRequestOptions {
     pub group_docker_bridges_by_host: bool,
@@ -253,6 +266,10 @@ pub struct TopologyRequestOptions {
     pub left_zone_service_categories: Vec<ServiceCategory>,
     pub hide_service_categories: Vec<ServiceCategory>,
     pub show_gateway_in_left_zone: bool,
+    #[serde(default)]
+    pub perspective: TopologyPerspective,
+    #[serde(default)]
+    pub layout_mode: LayoutMode,
 }
 
 impl Default for TopologyRequestOptions {
@@ -264,6 +281,8 @@ impl Default for TopologyRequestOptions {
             left_zone_service_categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
             hide_service_categories: vec![ServiceCategory::OpenPorts],
             show_gateway_in_left_zone: true,
+            perspective: TopologyPerspective::default(),
+            layout_mode: LayoutMode::default(),
         }
     }
 }

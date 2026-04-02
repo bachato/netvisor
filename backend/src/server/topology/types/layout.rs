@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::server::{
     bindings::r#impl::base::Binding, services::r#impl::base::Service,
-    topology::service::planner::utils::NODE_PADDING,
+    topology::service::legacy::planner::utils::NODE_PADDING,
 };
 
 const SUBNET_CHILD_HEADER_HEIGHT: usize = 25;

@@ -12577,14 +12577,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-02T19:16:37.457325Z",
-              "id": "4e8c002d-23a2-414a-8c47-47b6089902ca",
+              "created_at": "2026-04-02T21:32:15.163834Z",
+              "id": "8738a8dd-6316-4aad-88de-28bd69f5c965",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-02T19:16:37.457325Z"
+              "updated_at": "2026-04-02T21:32:15.163834Z"
             }
           },
           "error": {
@@ -13480,14 +13480,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-02T19:16:37.440528Z",
-                      "id": "e29c3741-e0a3-47dc-afa2-9151ea35bae2",
+                      "created_at": "2026-04-02T21:32:15.145068Z",
+                      "id": "02df3435-dd6e-4edd-bd89-62833f465ca2",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-02T19:16:37.440528Z"
+                      "updated_at": "2026-04-02T21:32:15.145068Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -13496,7 +13496,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "AWX",
+                  "service_definition": "Elastic APM",
                   "source": {
                     "type": "Manual"
                   },
@@ -14199,14 +14199,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-02T19:16:37.452603Z",
-                  "id": "0b8e912c-a9de-4b40-ae8a-2869277fffef",
+                  "created_at": "2026-04-02T21:32:15.158749Z",
+                  "id": "c93d7afd-5edf-43d2-b3f3-cd68b029c5d7",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-02T19:16:37.452603Z"
+                  "updated_at": "2026-04-02T21:32:15.158749Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14215,7 +14215,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "AWX",
+              "service_definition": "Elastic APM",
               "source": {
                 "type": "Manual"
               },
@@ -15489,14 +15489,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-02T19:16:37.440895Z",
-          "id": "90a13b15-c3da-49aa-b435-1e2b61f1f97c",
+          "created_at": "2026-04-02T21:32:15.145452Z",
+          "id": "515bb95c-a9df-443f-81fa-a355cde4d459",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-02T19:16:37.440895Z"
+          "updated_at": "2026-04-02T21:32:15.145452Z"
         }
       },
       "BindingBase": {
@@ -16009,7 +16009,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "AWX",
+              "service_definition": "Elastic APM",
               "tags": [],
               "virtualization": null
             }
@@ -17308,6 +17308,9 @@
               "is_multi_hop"
             ],
             "properties": {
+              "classification": {
+                "$ref": "#/components/schemas/EdgeClassification"
+              },
               "id": {
                 "type": "string",
                 "format": "uuid"
@@ -17337,6 +17340,14 @@
               }
             }
           }
+        ]
+      },
+      "EdgeClassification": {
+        "type": "string",
+        "description": "Whether an edge affects layout (primary) or is drawn after layout (overlay)",
+        "enum": [
+          "primary",
+          "overlay"
         ]
       },
       "EdgeHandle": {
@@ -18303,14 +18314,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-02T19:16:37.440058Z",
-                  "id": "d1ad83dc-b7c0-4632-adac-fc08ec140338",
+                  "created_at": "2026-04-02T21:32:15.144536Z",
+                  "id": "7e12defd-e7fe-4258-b2e6-c1b16eadcb15",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-02T19:16:37.440058Z"
+                  "updated_at": "2026-04-02T21:32:15.144536Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -18319,7 +18330,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "AWX",
+              "service_definition": "Elastic APM",
               "source": {
                 "type": "Manual"
               },
@@ -18897,6 +18908,14 @@
             "type": "integer"
           }
         }
+      },
+      "LayoutMode": {
+        "type": "string",
+        "description": "Whether the server computes layout positions or returns graph structure for client-side layout",
+        "enum": [
+          "legacy",
+          "client_side"
+        ]
       },
       "LeafEntityType": {
         "type": "string",
@@ -19519,6 +19538,14 @@
               "infra_width": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "layer_hint": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "int32",
+                "description": "Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)"
               },
               "node_type": {
                 "type": "string",
@@ -20278,14 +20305,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-02T19:16:37.429197Z",
-                        "id": "8117001f-0218-4766-836b-d233f57acac1",
+                        "created_at": "2026-04-02T21:32:15.132239Z",
+                        "id": "8e8a7ed3-fefd-4b32-ad7a-c29b6ce7df64",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-02T19:16:37.429197Z"
+                        "updated_at": "2026-04-02T21:32:15.132239Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -20294,7 +20321,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "AWX",
+                    "service_definition": "Elastic APM",
                     "source": {
                       "type": "Manual"
                     },
@@ -20371,14 +20398,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-02T19:16:37.451328Z",
-                    "id": "a9e38299-68c9-4f2e-b347-8bdbd2fc63da",
+                    "created_at": "2026-04-02T21:32:15.157304Z",
+                    "id": "333d9cb4-73cd-403e-8241-2688ac0636d2",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-02T19:16:37.451328Z"
+                    "updated_at": "2026-04-02T21:32:15.157304Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -20387,7 +20414,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "AWX",
+                "service_definition": "Elastic APM",
                 "source": {
                   "type": "Manual"
                 },
@@ -21546,14 +21573,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-02T19:16:37.440776Z",
-              "id": "39429580-c46d-407b-80dd-2e8e488fa30b",
+              "created_at": "2026-04-02T21:32:15.145313Z",
+              "id": "9ab0398b-379f-4040-9b79-20bd3d0d1952",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-02T19:16:37.440776Z"
+              "updated_at": "2026-04-02T21:32:15.145313Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -21562,7 +21589,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "AWX",
+          "service_definition": "Elastic APM",
           "source": {
             "type": "Manual"
           },
@@ -22618,6 +22645,16 @@
           }
         }
       },
+      "TopologyPerspective": {
+        "type": "string",
+        "description": "Which topology perspective is being rendered",
+        "enum": [
+          "l2_physical",
+          "l3_logical",
+          "infrastructure",
+          "application"
+        ]
+      },
       "TopologyRebuildRequest": {
         "type": "object",
         "description": "Lightweight request type for topology rebuild/refresh operations.\n\nThis type only includes the fields actually needed by the server - entity data\n(hosts, interfaces, services, etc.) is fetched fresh from the database.\nUsing this instead of the full Topology dramatically reduces payload size\nfor large networks (from MBs to KBs), fixing HTTP 413 errors.",
@@ -22677,11 +22714,17 @@
           "hide_vm_title_on_docker_container": {
             "type": "boolean"
           },
+          "layout_mode": {
+            "$ref": "#/components/schemas/LayoutMode"
+          },
           "left_zone_service_categories": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ServiceCategory"
             }
+          },
+          "perspective": {
+            "$ref": "#/components/schemas/TopologyPerspective"
           },
           "show_gateway_in_left_zone": {
             "type": "boolean"

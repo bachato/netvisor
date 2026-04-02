@@ -13,7 +13,7 @@ use crate::server::{
     topology::{
         service::context::TopologyContext,
         types::{
-            edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType},
+            edges::{DiscoveryProtocol, Edge, EdgeClassification, EdgeHandle, EdgeType},
             grouping::GroupingConfig,
             nodes::Node,
         },
@@ -155,6 +155,7 @@ impl EdgeBuilder {
                                 source_handle,
                                 target_handle,
                                 is_multi_hop,
+                                classification: EdgeClassification::default(),
                             }];
                         }
                     }
@@ -198,6 +199,7 @@ impl EdgeBuilder {
                                 source_handle,
                                 target_handle,
                                 is_multi_hop,
+                                classification: EdgeClassification::default(),
                             })
                         })
                         .collect();
@@ -285,6 +287,7 @@ impl EdgeBuilder {
                                     source_handle,
                                     target_handle,
                                     is_multi_hop,
+                                    classification: EdgeClassification::default(),
                                 });
                             }
                             None
@@ -358,6 +361,7 @@ impl EdgeBuilder {
                                 source_handle,
                                 target_handle,
                                 is_multi_hop,
+                                classification: EdgeClassification::default(),
                             })
                         })
                         .collect::<Vec<_>>()
@@ -430,6 +434,7 @@ impl EdgeBuilder {
                     source_handle,
                     target_handle,
                     is_multi_hop,
+                    classification: EdgeClassification::default(),
                 })
             })
             .collect()
@@ -549,6 +554,7 @@ impl EdgeBuilder {
             source_handle,
             target_handle,
             is_multi_hop,
+            classification: EdgeClassification::default(),
         })
     }
 }

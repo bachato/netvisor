@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use crate::server::topology::{
-    service::{context::TopologyContext, optimizer::utils::OptimizerUtils},
+    service::{context::TopologyContext, legacy::optimizer::utils::OptimizerUtils},
     types::{
         edges::Edge,
         nodes::{Node, NodeType},
