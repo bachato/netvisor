@@ -1156,7 +1156,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bulk delete Discoveries */
+        /** Bulk delete discoveries */
         post: operations["bulk_delete_discoveries"];
         delete?: never;
         options?: never;
@@ -1213,7 +1213,7 @@ export interface paths {
         /** Update Discovery */
         put: operations["update_discovery"];
         post?: never;
-        /** Delete Discovery */
+        /** Delete discovery */
         delete: operations["delete_discovery"];
         options?: never;
         head?: never;
@@ -2508,7 +2508,10 @@ export interface paths {
         get: operations["get_topology_by_id"];
         put: operations["update_topology"];
         post?: never;
-        /** Delete Topology */
+        /**
+         * Delete a topology
+         * @description Prevents deletion of the last topology on a network.
+         */
         delete: operations["delete_topology"];
         options?: never;
         head?: never;
@@ -2859,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-02T15:54:39.319001Z",
-             *       "id": "5e318f57-4052-4cf7-99fb-3bd7b4585354",
+             *       "created_at": "2026-04-02T19:16:37.457325Z",
+             *       "id": "4e8c002d-23a2-414a-8c47-47b6089902ca",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-02T15:54:39.319001Z"
+             *       "updated_at": "2026-04-02T19:16:37.457325Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3150,14 +3153,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-02T15:54:39.300355Z",
-             *               "id": "79cda34a-99d9-4d4c-9e08-bb02cb03b2d7",
+             *               "created_at": "2026-04-02T19:16:37.440528Z",
+             *               "id": "e29c3741-e0a3-47dc-afa2-9151ea35bae2",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-02T15:54:39.300355Z"
+             *               "updated_at": "2026-04-02T19:16:37.440528Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3166,7 +3169,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Prometheus Node Exporter",
+             *           "service_definition": "AWX",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3422,14 +3425,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-02T15:54:39.315610Z",
-             *           "id": "740af683-89fc-43dc-8805-b5ea6437728c",
+             *           "created_at": "2026-04-02T19:16:37.452603Z",
+             *           "id": "0b8e912c-a9de-4b40-ae8a-2869277fffef",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-02T15:54:39.315610Z"
+             *           "updated_at": "2026-04-02T19:16:37.452603Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3438,7 +3441,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Prometheus Node Exporter",
+             *       "service_definition": "AWX",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3765,14 +3768,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-02T15:54:39.300816Z",
-         *       "id": "356c8f89-70a2-489f-bef8-ed47e81d33a3",
+         *       "created_at": "2026-04-02T19:16:37.440895Z",
+         *       "id": "90a13b15-c3da-49aa-b435-1e2b61f1f97c",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-02T15:54:39.300816Z"
+         *       "updated_at": "2026-04-02T19:16:37.440895Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3891,6 +3894,8 @@ export interface components {
         };
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
+        /** @enum {string} */
+        ContainerType: "Subnet";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -3955,7 +3960,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Prometheus Node Exporter",
+         *           "service_definition": "AWX",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4729,14 +4734,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-02T15:54:39.299907Z",
-         *               "id": "22a60bce-70fc-4a25-8438-6b9faf9a617b",
+         *               "created_at": "2026-04-02T19:16:37.440058Z",
+         *               "id": "d1ad83dc-b7c0-4632-adac-fc08ec140338",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-02T15:54:39.299907Z"
+         *               "updated_at": "2026-04-02T19:16:37.440058Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4745,7 +4750,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Prometheus Node Exporter",
+         *           "service_definition": "AWX",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5002,6 +5007,8 @@ export interface components {
             x: number;
             y: number;
         };
+        /** @enum {string} */
+        LeafEntityType: "Interface";
         /**
          * @description LLDP Chassis ID subtypes per IEEE 802.1AB.
          *
@@ -5190,17 +5197,21 @@ export interface components {
             size: components["schemas"]["Uxy"];
         };
         NodeType: {
+            container_type?: components["schemas"]["ContainerType"];
             infra_width: number;
             /** @enum {string} */
-            node_type: "SubnetNode";
+            node_type: "ContainerNode";
         } | {
+            /** Format: uuid */
+            container_id?: string;
             /** Format: uuid */
             host_id: string;
             /** Format: uuid */
             interface_id?: string | null;
             is_infra: boolean;
+            leaf_type?: components["schemas"]["LeafEntityType"];
             /** @enum {string} */
-            node_type: "InterfaceNode";
+            node_type: "LeafNode";
             /** Format: uuid */
             subnet_id: string;
         };
@@ -5790,14 +5801,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-02T15:54:39.300611Z",
-         *           "id": "cbe9cb5a-a6c9-4f7e-bca9-d9a2e5b5afaf",
+         *           "created_at": "2026-04-02T19:16:37.440776Z",
+         *           "id": "39429580-c46d-407b-80dd-2e8e488fa30b",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-02T15:54:39.300611Z"
+         *           "updated_at": "2026-04-02T19:16:37.440776Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5806,7 +5817,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Prometheus Node Exporter",
+         *       "service_definition": "AWX",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -8915,20 +8926,29 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        /** @description Array of Discovery IDs to delete */
+        /** @description Array of discovery IDs to delete */
         requestBody: {
             content: {
                 "application/json": string[];
             };
         };
         responses: {
-            /** @description Discoveries deleted */
+            /** @description discoveries deleted */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_BulkDeleteResponse"];
+                };
+            };
+            /** @description discovery has active session */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -9077,14 +9097,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Discovery ID */
+                /** @description discovery ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Discovery deleted */
+            /** @description discovery deleted */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -9093,8 +9113,17 @@ export interface operations {
                     "application/json": components["schemas"]["ApiResponse"];
                 };
             };
-            /** @description Discovery not found */
+            /** @description discovery not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description discovery has active session */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12404,6 +12433,15 @@ export interface operations {
             };
             /** @description Topology not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Cannot delete last topology */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

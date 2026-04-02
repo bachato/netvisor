@@ -5,8 +5,8 @@
 
 	let { node }: { node: Node } = $props();
 
-	let isInterfaceNode = $derived(node.type === 'InterfaceNode');
-	let isSubnetNode = $derived(node.type === 'SubnetNode');
+	let isInterfaceNode = $derived(node.type === 'LeafNode');
+	let isSubnetNode = $derived(node.type === 'ContainerNode');
 </script>
 
 <div class="w-full space-y-4">

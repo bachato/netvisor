@@ -4294,10 +4294,10 @@
         "tags": [
           "Discoveries"
         ],
-        "summary": "Bulk delete Discoveries",
+        "summary": "Bulk delete discoveries",
         "operationId": "bulk_delete_discoveries",
         "requestBody": {
-          "description": "Array of Discovery IDs to delete",
+          "description": "Array of discovery IDs to delete",
           "content": {
             "application/json": {
               "schema": {
@@ -4313,11 +4313,21 @@
         },
         "responses": {
           "200": {
-            "description": "Discoveries deleted",
+            "description": "discoveries deleted",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "discovery has active session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -4589,13 +4599,13 @@
         "tags": [
           "Discoveries"
         ],
-        "summary": "Delete Discovery",
+        "summary": "Delete discovery",
         "operationId": "delete_discovery",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "Discovery ID",
+            "description": "discovery ID",
             "required": true,
             "schema": {
               "type": "string",
@@ -4605,7 +4615,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Discovery deleted",
+            "description": "discovery deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -4615,7 +4625,17 @@
             }
           },
           "404": {
-            "description": "Discovery not found",
+            "description": "discovery not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "discovery has active session",
             "content": {
               "application/json": {
                 "schema": {
@@ -11224,9 +11244,11 @@
       },
       "delete": {
         "tags": [
-          "Topologies"
+          "Topologies",
+          "internal"
         ],
-        "summary": "Delete Topology",
+        "summary": "Delete a topology",
+        "description": "Prevents deletion of the last topology on a network.",
         "operationId": "delete_topology",
         "parameters": [
           {
@@ -11253,6 +11275,16 @@
           },
           "404": {
             "description": "Topology not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cannot delete last topology",
             "content": {
               "application/json": {
                 "schema": {
@@ -12545,14 +12577,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-02T15:54:39.319001Z",
-              "id": "5e318f57-4052-4cf7-99fb-3bd7b4585354",
+              "created_at": "2026-04-02T19:16:37.457325Z",
+              "id": "4e8c002d-23a2-414a-8c47-47b6089902ca",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-02T15:54:39.319001Z"
+              "updated_at": "2026-04-02T19:16:37.457325Z"
             }
           },
           "error": {
@@ -13448,14 +13480,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-02T15:54:39.300355Z",
-                      "id": "79cda34a-99d9-4d4c-9e08-bb02cb03b2d7",
+                      "created_at": "2026-04-02T19:16:37.440528Z",
+                      "id": "e29c3741-e0a3-47dc-afa2-9151ea35bae2",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-02T15:54:39.300355Z"
+                      "updated_at": "2026-04-02T19:16:37.440528Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -13464,7 +13496,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Prometheus Node Exporter",
+                  "service_definition": "AWX",
                   "source": {
                     "type": "Manual"
                   },
@@ -14167,14 +14199,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-02T15:54:39.315610Z",
-                  "id": "740af683-89fc-43dc-8805-b5ea6437728c",
+                  "created_at": "2026-04-02T19:16:37.452603Z",
+                  "id": "0b8e912c-a9de-4b40-ae8a-2869277fffef",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-02T15:54:39.315610Z"
+                  "updated_at": "2026-04-02T19:16:37.452603Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14183,7 +14215,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Prometheus Node Exporter",
+              "service_definition": "AWX",
               "source": {
                 "type": "Manual"
               },
@@ -15457,14 +15489,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-02T15:54:39.300816Z",
-          "id": "356c8f89-70a2-489f-bef8-ed47e81d33a3",
+          "created_at": "2026-04-02T19:16:37.440895Z",
+          "id": "90a13b15-c3da-49aa-b435-1e2b61f1f97c",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-02T15:54:39.300816Z"
+          "updated_at": "2026-04-02T19:16:37.440895Z"
         }
       },
       "BindingBase": {
@@ -15745,6 +15777,12 @@
           "Yellow"
         ]
       },
+      "ContainerType": {
+        "type": "string",
+        "enum": [
+          "Subnet"
+        ]
+      },
       "CreateBindingInput": {
         "oneOf": [
           {
@@ -15971,7 +16009,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Prometheus Node Exporter",
+              "service_definition": "AWX",
               "tags": [],
               "virtualization": null
             }
@@ -18265,14 +18303,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-02T15:54:39.299907Z",
-                  "id": "22a60bce-70fc-4a25-8438-6b9faf9a617b",
+                  "created_at": "2026-04-02T19:16:37.440058Z",
+                  "id": "d1ad83dc-b7c0-4632-adac-fc08ec140338",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-02T15:54:39.299907Z"
+                  "updated_at": "2026-04-02T19:16:37.440058Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -18281,7 +18319,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Prometheus Node Exporter",
+              "service_definition": "AWX",
               "source": {
                 "type": "Manual"
               },
@@ -18859,6 +18897,12 @@
             "type": "integer"
           }
         }
+      },
+      "LeafEntityType": {
+        "type": "string",
+        "enum": [
+          "Interface"
+        ]
       },
       "LldpChassisId": {
         "oneOf": [
@@ -19469,6 +19513,9 @@
               "node_type"
             ],
             "properties": {
+              "container_type": {
+                "$ref": "#/components/schemas/ContainerType"
+              },
               "infra_width": {
                 "type": "integer",
                 "minimum": 0
@@ -19476,7 +19523,7 @@
               "node_type": {
                 "type": "string",
                 "enum": [
-                  "SubnetNode"
+                  "ContainerNode"
                 ]
               }
             }
@@ -19490,6 +19537,10 @@
               "node_type"
             ],
             "properties": {
+              "container_id": {
+                "type": "string",
+                "format": "uuid"
+              },
               "host_id": {
                 "type": "string",
                 "format": "uuid"
@@ -19504,10 +19555,13 @@
               "is_infra": {
                 "type": "boolean"
               },
+              "leaf_type": {
+                "$ref": "#/components/schemas/LeafEntityType"
+              },
               "node_type": {
                 "type": "string",
                 "enum": [
-                  "InterfaceNode"
+                  "LeafNode"
                 ]
               },
               "subnet_id": {
@@ -20224,14 +20278,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-02T15:54:39.291256Z",
-                        "id": "8d5d31a4-cf1d-43b3-abfe-eb789a148055",
+                        "created_at": "2026-04-02T19:16:37.429197Z",
+                        "id": "8117001f-0218-4766-836b-d233f57acac1",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-02T15:54:39.291256Z"
+                        "updated_at": "2026-04-02T19:16:37.429197Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -20240,7 +20294,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Prometheus Node Exporter",
+                    "service_definition": "AWX",
                     "source": {
                       "type": "Manual"
                     },
@@ -20317,14 +20371,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-02T15:54:39.312757Z",
-                    "id": "3f5a52ce-dd4d-4326-82fe-c3f4084c47a4",
+                    "created_at": "2026-04-02T19:16:37.451328Z",
+                    "id": "a9e38299-68c9-4f2e-b347-8bdbd2fc63da",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-02T15:54:39.312757Z"
+                    "updated_at": "2026-04-02T19:16:37.451328Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -20333,7 +20387,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Prometheus Node Exporter",
+                "service_definition": "AWX",
                 "source": {
                   "type": "Manual"
                 },
@@ -21492,14 +21546,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-02T15:54:39.300611Z",
-              "id": "cbe9cb5a-a6c9-4f7e-bca9-d9a2e5b5afaf",
+              "created_at": "2026-04-02T19:16:37.440776Z",
+              "id": "39429580-c46d-407b-80dd-2e8e488fa30b",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-02T15:54:39.300611Z"
+              "updated_at": "2026-04-02T19:16:37.440776Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -21508,7 +21562,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Prometheus Node Exporter",
+          "service_definition": "AWX",
           "source": {
             "type": "Manual"
           },

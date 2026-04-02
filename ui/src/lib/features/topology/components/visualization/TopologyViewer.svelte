@@ -103,7 +103,7 @@
 
 		if (isModifierClick && node) {
 			const nodeData = node.data as TopologyNode;
-			if (nodeData.node_type !== 'InterfaceNode') return;
+			if (nodeData.node_type !== 'LeafNode') return;
 
 			const current = get(selectedNodes);
 			const currentSingle = get(selectedNode);
@@ -127,7 +127,7 @@
 				if (current.length === 0 && currentSingle) {
 					// Transition from single-select to multi-select
 					const currentSingleData = currentSingle.data as TopologyNode;
-					if (currentSingleData.node_type === 'InterfaceNode') {
+					if (currentSingleData.node_type === 'LeafNode') {
 						selectedNodes.set([currentSingle, node]);
 					} else {
 						selectedNodes.set([node]);
@@ -182,7 +182,7 @@
 		// Box-select scenario (Shift+drag): use SvelteFlow's node set
 		const interfaceNodes = newNodes.filter((n) => {
 			const nodeData = n.data as TopologyNode;
-			return nodeData.node_type === 'InterfaceNode';
+			return nodeData.node_type === 'LeafNode';
 		});
 
 		if (interfaceNodes.length >= 2) {

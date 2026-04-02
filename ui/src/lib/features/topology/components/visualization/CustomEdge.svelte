@@ -225,7 +225,7 @@
 			}
 
 			// Check if this node is a subnet in the path
-			if (node.node_type == 'SubnetNode') {
+			if (node.node_type == 'ContainerNode') {
 				const nodeLeft = node.position.x;
 				const nodeRight = node.position.x + (node.size.x || 0);
 

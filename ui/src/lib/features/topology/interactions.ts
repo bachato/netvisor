@@ -242,10 +242,10 @@ export function updateConnectedNodes(
 		connected.add(selectedNode.id);
 		const nodeData = selectedNode.data as TopologyNode;
 
-		if (nodeData.node_type == 'SubnetNode') {
+		if (nodeData.node_type == 'ContainerNode') {
 			allNodes.forEach((n) => {
 				const nd = n.data as TopologyNode;
-				if (nd.node_type == 'InterfaceNode' && nd.subnet_id == nodeData.id) {
+				if (nd.node_type == 'LeafNode' && nd.subnet_id == nodeData.id) {
 					connected.add(nd.id);
 				}
 			});

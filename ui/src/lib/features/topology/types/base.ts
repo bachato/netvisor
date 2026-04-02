@@ -14,8 +14,8 @@ export type TopologyNode = components['schemas']['Node'];
 export type EdgeHandle = components['schemas']['EdgeHandle'];
 
 // Variant types from Node union
-export type InterfaceNode = Extract<TopologyNode, { node_type: 'InterfaceNode' }>;
-export type SubnetNode = Extract<TopologyNode, { node_type: 'SubnetNode' }>;
+export type InterfaceNode = Extract<TopologyNode, { node_type: 'LeafNode' }>;
+export type SubnetNode = Extract<TopologyNode, { node_type: 'ContainerNode' }>;
 
 // Frontend-specific render types (not from backend)
 export interface NodeRenderData {

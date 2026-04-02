@@ -103,8 +103,8 @@
 
 	// Define node types
 	const nodeTypes = {
-		SubnetNode: SubnetNode,
-		InterfaceNode: InterfaceNode
+		ContainerNode: SubnetNode,
+		LeafNode: InterfaceNode
 	};
 
 	const customEdgeTypes = {
@@ -179,9 +179,9 @@
 					height: node.size.y,
 					expandParent: true,
 					deletable: false,
-					selectable: node.node_type !== 'SubnetNode',
-					parentId: node.node_type == 'InterfaceNode' ? node.subnet_id : undefined,
-					extent: node.node_type == 'InterfaceNode' ? 'parent' : undefined,
+					selectable: node.node_type !== 'ContainerNode',
+					parentId: node.node_type == 'LeafNode' ? node.subnet_id : undefined,
+					extent: node.node_type == 'LeafNode' ? 'parent' : undefined,
 					data: node
 				}));
 

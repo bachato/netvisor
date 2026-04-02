@@ -17,11 +17,11 @@
 	let hostCount = $derived(
 		new Set(
 			topology.nodes
-				.filter((n) => n.node_type === 'InterfaceNode' && 'host_id' in n)
+				.filter((n) => n.node_type === 'LeafNode' && 'host_id' in n)
 				.map((n) => (n as { host_id: string }).host_id)
 		).size
 	);
-	let subnetCount = $derived(topology.nodes.filter((n) => n.node_type === 'SubnetNode').length);
+	let subnetCount = $derived(topology.nodes.filter((n) => n.node_type === 'ContainerNode').length);
 	let serviceCount = $derived(topology.services.length);
 	let groupCount = $derived(
 		new Set(
