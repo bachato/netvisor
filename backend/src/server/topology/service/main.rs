@@ -39,6 +39,7 @@ use crate::server::{
         types::{
             base::{SetEntitiesParams, Topology, TopologyOptions},
             edges::{Edge, EdgeHandle},
+            grouping::GroupingConfig,
             nodes::Node,
         },
     },
@@ -347,6 +348,9 @@ impl TopologyService {
             hosts, interfaces, subnets, services, groups, ports, bindings, if_entries, options,
         );
 
+        // Build grouping config from request options
+        let grouping = GroupingConfig::from_request_options(&options.request);
+
         // Create all edges (needed for anchor analysis)
         let mut all_edges = Vec::new();
 
@@ -355,10 +359,7 @@ impl TopologyService {
         all_edges.extend(EdgeBuilder::create_group_edges(&ctx));
         all_edges.extend(EdgeBuilder::create_vm_host_edges(&ctx));
         let (container_edges, docker_bridge_host_subnet_id_to_group_on) =
-            EdgeBuilder::create_containerized_service_edges(
-                &ctx,
-                options.request.group_docker_bridges_by_host,
-            );
+            EdgeBuilder::create_containerized_service_edges(&ctx, &grouping);
 
         all_edges.extend(container_edges);
 
@@ -370,7 +371,7 @@ impl TopologyService {
         let (subnet_layouts, child_nodes) = layout_planner.create_subnet_child_nodes(
             &ctx,
             &mut all_edges,
-            options.request.group_docker_bridges_by_host,
+            &grouping,
             docker_bridge_host_subnet_id_to_group_on,
         );
 

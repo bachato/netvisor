@@ -23,8 +23,8 @@ const SUBNET_PADDING: isize = 125;
 /// - Positions are updated incrementally as we sweep through layers
 /// - This breaks circular dependencies that cause oscillation
 ///
-/// CRITICAL: Edges connect InterfaceNodes (children), not SubnetNodes!
-/// - InterfaceNode absolute position = subnet.x + interface.x
+/// CRITICAL: Edges connect LeafNodes (children), not ContainerNodes!
+/// - LeafNode absolute position = subnet.x + interface.x
 /// - Handle center = subnet.x + interface.x + interface.width/2
 /// - For straight vertical edges, handle centers must align
 ///
@@ -66,7 +66,7 @@ impl<'a> SubnetPositioner<'a> {
         let subnet_ids: Vec<Uuid> = nodes
             .iter()
             .filter_map(|n| match n.node_type {
-                NodeType::SubnetNode { .. } => Some(n.id),
+                NodeType::ContainerNode { .. } => Some(n.id),
                 _ => None,
             })
             .collect();
@@ -184,8 +184,8 @@ impl<'a> SubnetPositioner<'a> {
     /// Calculate the barycenter (weighted median) position for a subnet
     /// based on its neighbors in other layers
     ///
-    /// CRITICAL: Edges connect InterfaceNodes (children), not SubnetNodes!
-    /// InterfaceNode absolute position = subnet.x + interface.x
+    /// CRITICAL: Edges connect LeafNodes (children), not ContainerNodes!
+    /// LeafNode absolute position = subnet.x + interface.x
     /// Handle center = subnet.x + interface.x + interface.width/2
     ///
     /// For straight vertical edges, we need to align handle centers:
@@ -253,7 +253,7 @@ impl<'a> SubnetPositioner<'a> {
                     let weight = self.calculate_edge_weight(edge);
 
                     if weight > 0.0 {
-                        // Get the actual nodes that connect (could be InterfaceNode or SubnetNode)
+                        // Get the actual nodes that connect (could be LeafNode or ContainerNode)
                         let my_node = nodes.iter().find(|n| n.id == my_node_id);
                         let other_node = nodes.iter().find(|n| n.id == other_node_id);
                         let other_subnet_node = nodes.iter().find(|n| n.id == other_subnet_id);
@@ -274,10 +274,10 @@ impl<'a> SubnetPositioner<'a> {
                             };
 
                             // Calculate the absolute X position of the other node's handle
-                            // Check if other_node is a SubnetNode or InterfaceNode
+                            // Check if other_node is a ContainerNode or LeafNode
                             let other_handle_absolute_x = match &other_node.node_type {
-                                NodeType::SubnetNode { .. } => {
-                                    // SubnetNode: position is already absolute, no parent offset
+                                NodeType::ContainerNode { .. } => {
+                                    // ContainerNode: position is already absolute, no parent offset
                                     match other_handle {
                                         crate::server::topology::types::edges::EdgeHandle::Left => {
                                             other_node.position.x
@@ -291,8 +291,8 @@ impl<'a> SubnetPositioner<'a> {
                                         }
                                     }
                                 }
-                                NodeType::InterfaceNode { .. } => {
-                                    // InterfaceNode: position is relative to parent subnet
+                                NodeType::LeafNode { .. } => {
+                                    // LeafNode: position is relative to parent subnet
                                     match other_handle {
                                         crate::server::topology::types::edges::EdgeHandle::Left => {
                                             other_subnet.position.x + other_node.position.x
@@ -309,10 +309,10 @@ impl<'a> SubnetPositioner<'a> {
                             };
 
                             // Calculate what our subnet.x should be to align our node's handle
-                            // Check if my_node is a SubnetNode or InterfaceNode
+                            // Check if my_node is a ContainerNode or LeafNode
                             let desired_subnet_x = match &my_node.node_type {
-                                NodeType::SubnetNode { .. } => {
-                                    // SubnetNode: we ARE the subnet, just align our center
+                                NodeType::ContainerNode { .. } => {
+                                    // ContainerNode: we ARE the subnet, just align our center
                                     match my_handle {
                                         crate::server::topology::types::edges::EdgeHandle::Left => {
                                             other_handle_absolute_x
@@ -326,8 +326,8 @@ impl<'a> SubnetPositioner<'a> {
                                         }
                                     }
                                 }
-                                NodeType::InterfaceNode { .. } => {
-                                    // InterfaceNode: we need to account for position within parent subnet
+                                NodeType::LeafNode { .. } => {
+                                    // LeafNode: we need to account for position within parent subnet
                                     let my_half_width = my_node.size.x as isize / 2;
                                     match my_handle {
                                         crate::server::topology::types::edges::EdgeHandle::Left => {
@@ -432,7 +432,7 @@ impl<'a> SubnetPositioner<'a> {
         let mut other_subnets: Vec<(Uuid, isize, isize)> = nodes
             .iter()
             .filter(|other| {
-                matches!(other.node_type, NodeType::SubnetNode { .. })
+                matches!(other.node_type, NodeType::ContainerNode { .. })
                     && other.id != subnet_id
                     && other.position.y == y
             })
@@ -511,7 +511,7 @@ impl<'a> SubnetPositioner<'a> {
             &nodes
                 .iter()
                 .filter_map(|n| match n.node_type {
-                    NodeType::SubnetNode { .. } => Some(n.id),
+                    NodeType::ContainerNode { .. } => Some(n.id),
                     _ => None,
                 })
                 .collect::<Vec<_>>(),
@@ -524,7 +524,7 @@ impl<'a> SubnetPositioner<'a> {
 
         // Snap all positions to grid
         for node in nodes.iter_mut() {
-            if matches!(node.node_type, NodeType::SubnetNode { .. }) {
+            if matches!(node.node_type, NodeType::ContainerNode { .. }) {
                 node.position.x = Self::snap_to_grid(node.position.x as f64);
             }
         }

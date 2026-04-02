@@ -309,13 +309,13 @@ impl OptimizerUtils {
         nodes
             .iter()
             .filter_map(|n| match n.node_type {
-                NodeType::SubnetNode { .. } => Some((n.id, n.position)),
+                NodeType::ContainerNode { .. } => Some((n.id, n.position)),
                 _ => None,
             })
             .collect()
     }
 
-    /// Get absolute center point of a node (including subnet offset for InterfaceNodes)
+    /// Get absolute center point of a node (including subnet offset for LeafNodes)
     pub fn get_absolute_node_center(
         &self,
         node: &Node,
@@ -326,7 +326,7 @@ impl OptimizerUtils {
             y: node.position.y + (node.size.y as isize / 2),
         };
 
-        if let NodeType::InterfaceNode { subnet_id, .. } = node.node_type
+        if let NodeType::LeafNode { subnet_id, .. } = node.node_type
             && let Some(subnet_pos) = subnet_positions.get(&subnet_id)
         {
             abs_pos.x += subnet_pos.x;

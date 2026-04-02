@@ -14,6 +14,7 @@ use crate::server::{
         service::context::TopologyContext,
         types::{
             edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType},
+            grouping::GroupingConfig,
             nodes::Node,
         },
     },
@@ -63,7 +64,7 @@ impl EdgeBuilder {
     // Create edges to connect a host that virtualizes containers via docker to the docker bridge subnets
     pub fn create_containerized_service_edges(
         ctx: &TopologyContext,
-        group_docker_bridges_by_host: bool,
+        grouping: &GroupingConfig,
     ) -> (Vec<Edge>, HashMap<Uuid, Uuid>) {
         // Host id to subnet id that will be used for grouping, if enabled
         let mut docker_bridge_host_subnet_id_to_group_on: HashMap<Uuid, Uuid> = HashMap::new();
@@ -121,7 +122,7 @@ impl EdgeBuilder {
                     })
                     .collect();
 
-                if group_docker_bridges_by_host {
+                if grouping.should_group_docker_bridges() {
                     // If subnets are grouped, pick an arbitrary subnet ID to use for grouping
                     if let (Some(first_interface_id), Some(first_subnet_id)) = (
                         container_subnet_interface_ids.first(),

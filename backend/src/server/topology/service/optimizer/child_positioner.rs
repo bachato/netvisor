@@ -57,7 +57,7 @@ impl<'a> ChildPositioner<'a> {
         let subnet_positions: HashMap<Uuid, Ixy> = nodes
             .iter()
             .filter_map(|n| match n.node_type {
-                NodeType::SubnetNode { .. } => Some((n.id, n.position)),
+                NodeType::ContainerNode { .. } => Some((n.id, n.position)),
                 _ => None,
             })
             .collect();
@@ -71,7 +71,7 @@ impl<'a> ChildPositioner<'a> {
         // Group nodes by (subnet, infra)
         let mut nodes_by_subnet_infra: HashMap<(Uuid, bool), Vec<Uuid>> = HashMap::new();
         for node in nodes.iter() {
-            if let NodeType::InterfaceNode {
+            if let NodeType::LeafNode {
                 subnet_id,
                 is_infra,
                 ..
@@ -121,7 +121,7 @@ impl<'a> ChildPositioner<'a> {
 
         // First, set infra status for all interface nodes
         for node in nodes {
-            if let NodeType::InterfaceNode { is_infra, .. } = node.node_type {
+            if let NodeType::LeafNode { is_infra, .. } = node.node_type {
                 let constraint = constraints.entry(node.id).or_default();
                 constraint.is_infra = is_infra;
             }
@@ -135,9 +135,10 @@ impl<'a> ChildPositioner<'a> {
             }
 
             // Check source node's handle
-            if nodes.iter().any(|n| {
-                n.id == edge.source && matches!(n.node_type, NodeType::InterfaceNode { .. })
-            }) {
+            if nodes
+                .iter()
+                .any(|n| n.id == edge.source && matches!(n.node_type, NodeType::LeafNode { .. }))
+            {
                 let constraint = constraints.entry(edge.source).or_default();
                 match edge.source_handle {
                     EdgeHandle::Top => constraint.pin_top = true,
@@ -148,9 +149,10 @@ impl<'a> ChildPositioner<'a> {
             }
 
             // Check target node's handle
-            if nodes.iter().any(|n| {
-                n.id == edge.target && matches!(n.node_type, NodeType::InterfaceNode { .. })
-            }) {
+            if nodes
+                .iter()
+                .any(|n| n.id == edge.target && matches!(n.node_type, NodeType::LeafNode { .. }))
+            {
                 let constraint = constraints.entry(edge.target).or_default();
                 match edge.target_handle {
                     EdgeHandle::Top => constraint.pin_top = true,
@@ -449,7 +451,7 @@ impl<'a> ChildPositioner<'a> {
 
         // Map node indices by subnet and x position
         nodes.iter().enumerate().for_each(|(idx, n)| {
-            if let NodeType::InterfaceNode { subnet_id, .. } = n.node_type {
+            if let NodeType::LeafNode { subnet_id, .. } = n.node_type {
                 nodes_by_subnet_and_x
                     .entry((subnet_id, n.position.x))
                     .or_default()

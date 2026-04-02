@@ -18,8 +18,9 @@ use crate::server::{
         },
         types::{
             edges::Edge,
+            grouping::GroupingConfig,
             layout::{Ixy, NodeLayout, SubnetLayout, Uxy},
-            nodes::{Node, NodeType, SubnetChild},
+            nodes::{ContainerType, LeafEntityType, Node, NodeType, SubnetChild},
         },
     },
 };
@@ -50,13 +51,13 @@ impl SubnetLayoutPlanner {
         &mut self,
         ctx: &TopologyContext,
         all_edges: &mut [Edge],
-        group_docker_bridges_by_host: bool,
+        grouping: &GroupingConfig,
         docker_bridge_host_subnet_id_to_group_on: HashMap<Uuid, Uuid>,
     ) -> (HashMap<Uuid, SubnetLayout>, Vec<Node>) {
         let children_by_subnet = self.group_children_by_subnet(
             ctx,
             all_edges,
-            group_docker_bridges_by_host,
+            grouping,
             docker_bridge_host_subnet_id_to_group_on,
         );
         let mut child_nodes = Vec::new();
@@ -200,7 +201,7 @@ impl SubnetLayoutPlanner {
         &mut self,
         ctx: &TopologyContext,
         all_edges: &mut [Edge],
-        group_docker_bridges_by_host: bool,
+        grouping: &GroupingConfig,
         docker_bridge_host_subnet_id_to_group_on: HashMap<Uuid, Uuid>,
     ) -> HashMap<Uuid, Vec<SubnetChild>> {
         let mut children_by_subnet: HashMap<Uuid, Vec<SubnetChild>> = HashMap::new();
@@ -258,7 +259,9 @@ impl SubnetLayoutPlanner {
             };
 
             // Special handling for DockerBridge (only if grouping is enabled)
-            if group_docker_bridges_by_host && matches!(subnet_type, SubnetType::DockerBridge) {
+            if grouping.should_group_docker_bridges()
+                && matches!(subnet_type, SubnetType::DockerBridge)
+            {
                 if let Some(subnet_grouping_id) =
                     docker_bridge_host_subnet_id_to_group_on.get(&host.id)
                 {
@@ -281,7 +284,7 @@ impl SubnetLayoutPlanner {
         }
 
         // Consolidate all DockerBridge children into their primary subnet (only if grouping is enabled)
-        if group_docker_bridges_by_host {
+        if grouping.should_group_docker_bridges() {
             for ((_, grouping_id), mut subnet_ids) in docker_subnets_by_host {
                 // Remove duplicates and sort for consistency
                 subnet_ids.sort();
@@ -375,7 +378,9 @@ impl SubnetLayoutPlanner {
             if let Some(layout) = infra_child_positions.get(&child.id) {
                 child_nodes.push(Node {
                     id: child.id,
-                    node_type: NodeType::InterfaceNode {
+                    node_type: NodeType::LeafNode {
+                        container_id: subnet_id,
+                        leaf_type: LeafEntityType::Interface,
                         subnet_id,
                         interface_id: child.interface_id,
                         host_id: child.host_id,
@@ -403,7 +408,9 @@ impl SubnetLayoutPlanner {
 
                 child_nodes.push(Node {
                     id: child.id,
-                    node_type: NodeType::InterfaceNode {
+                    node_type: NodeType::LeafNode {
+                        container_id: subnet_id,
+                        leaf_type: LeafEntityType::Interface,
                         subnet_id,
                         interface_id: child.interface_id,
                         host_id: child.host_id,
@@ -452,7 +459,8 @@ impl SubnetLayoutPlanner {
 
                         return Some(Node {
                             id: *subnet_id,
-                            node_type: NodeType::SubnetNode {
+                            node_type: NodeType::ContainerNode {
+                                container_type: ContainerType::Subnet,
                                 infra_width: layout.infra_width,
                             },
                             position: *position,
@@ -463,7 +471,8 @@ impl SubnetLayoutPlanner {
 
                     return Some(Node {
                         id: *subnet_id,
-                        node_type: NodeType::SubnetNode {
+                        node_type: NodeType::ContainerNode {
+                            container_type: ContainerType::Subnet,
                             infra_width: layout.infra_width,
                         },
                         position: *position,
