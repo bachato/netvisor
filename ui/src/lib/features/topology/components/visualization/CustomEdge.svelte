@@ -144,8 +144,15 @@
 	);
 	let isAnotherEdgeTypeHovered = $derived($hoveredEdgeType !== null && !isEdgeTypeHovered);
 
+	// Aggregated edge support
+	let isAggregated = $derived(!!(edgeData as Record<string, unknown> | undefined)?.isAggregated);
+	let aggregatedCount = $derived(
+		((edgeData as Record<string, unknown> | undefined)?.aggregatedCount as number) ?? 1
+	);
+
 	// Calculate base edge properties
 	let baseStrokeWidth = $derived.by(() => {
+		if (isAggregated) return Math.min(2 + aggregatedCount, 8);
 		if (isEdgeTypeHovered) return 3;
 		if (!$topologyOptions.local.no_fade_edges && (shouldShowFull || isPreview)) return 3;
 		if (isOverlay) return 1.5;

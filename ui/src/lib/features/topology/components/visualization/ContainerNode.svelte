@@ -8,9 +8,11 @@
 		type ResizeDragEvent,
 		type ResizeParams
 	} from '@xyflow/svelte';
+	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import { subnetTypes } from '$lib/shared/stores/metadata';
 	import { isContainerSubnet } from '$lib/features/subnets/queries';
+	import { topology_hostsCount } from '$lib/paraglide/messages';
 	import {
 		useTopologiesQuery,
 		useUpdateNodeResizeMutation,
@@ -31,6 +33,7 @@
 		hoveredTag,
 		UNTAGGED_SENTINEL
 	} from '../../interactions';
+	import { collapsedContainers, toggleCollapse } from '../../collapse';
 	import type { Node, Edge } from '@xyflow/svelte';
 
 	// Subscribe to connectedNodeIds for reactivity
@@ -61,6 +64,12 @@
 	let currentHoveredTag = $state(get(hoveredTag));
 	hoveredTag.subscribe((value) => {
 		currentHoveredTag = value;
+	});
+
+	// Subscribe to collapse state
+	let collapsedNodes = $state(get(collapsedContainers));
+	collapsedContainers.subscribe((value) => {
+		collapsedNodes = value;
 	});
 
 	let { id, data, selected, width, height }: NodeProps = $props();
@@ -123,9 +132,12 @@
 	let infra_width = $derived(resolved?.infraWidth ?? 0);
 	let subnet = $derived(resolved?.subnet);
 
+	let isCollapsed = $derived(collapsedNodes.has(id));
+	let childCount = $derived(((data as Record<string, unknown>)?.childCount as number) ?? 0);
+
 	let leftZoneTitle = $derived($topologyOptions.local.left_zone_title);
 	let nodeStyle = $derived(`width: ${width}px; height: ${height}px;`);
-	let hasInfra = $derived(infra_width > 0);
+	let hasInfra = $derived(infra_width > 0 && !isCollapsed);
 
 	const viewport = useViewport();
 	let resizeHandleZoomLevel = $derived(viewport.current.zoom > 0.5);
@@ -161,6 +173,11 @@
 				})()
 			: null
 	);
+	function handleChevronClick(event: MouseEvent) {
+		event.stopPropagation();
+		toggleCollapse(id);
+	}
+
 	async function onResize(event: ResizeDragEvent, params: ResizeParams) {
 		if (!topology) return;
 		let node = topology.nodes.find((n) => n.id == id);
@@ -199,6 +216,19 @@
 			<div
 				class="card text-secondary z-100 absolute -top-10 left-0 flex items-center gap-1 px-2 py-1 shadow-lg backdrop-blur-sm"
 			>
+				<!-- Collapse chevron -->
+				<button
+					class="nopan flex-shrink-0 cursor-pointer border-none bg-transparent p-0"
+					onclick={handleChevronClick}
+					onmousedown={(e) => e.stopPropagation()}
+				>
+					{#if isCollapsed}
+						<ChevronRight class="text-secondary h-4 w-4" />
+					{:else}
+						<ChevronDown class="text-secondary h-4 w-4" />
+					{/if}
+				</button>
+
 				<!-- Icon -->
 				{#if subnetRenderData.IconComponent}
 					<!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
@@ -215,28 +245,41 @@
 		<!-- Main container -->
 		<div
 			class="rounded-xl text-center text-sm font-semibold shadow-lg transition-all duration-200"
+			class:border-dashed={isCollapsed}
+			class:border={isCollapsed}
+			class:border-gray-400={isCollapsed}
+			class:dark:border-gray-500={isCollapsed}
 			style="background: var(--color-topology-node-bg); width: 100%; height: 100%; position: relative; overflow: hidden; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
 		>
-			<!-- Infrastructure background area with gradient centered at infra_width -->
-			{#if hasInfra}
-				<div
-					style={`position: absolute; top: 0; left: 0; width: ${infra_width + 20}px; height: 100%; border-radius: 0.75rem 0 0 0.75rem; pointer-events: none;
-						background: linear-gradient(to right,
-							var(--color-topology-zone) 0%,
-							var(--color-topology-zone) ${((infra_width - 20) / (infra_width + 20)) * 100}%,
-							transparent 100%);`}
-				>
-					<!-- Infrastructure title -->
-					<div
-						class="text-muted absolute left-1/2 top-0.5 -translate-x-1/2 transform text-[0.5rem] font-semibold"
-					>
-						{leftZoneTitle}
-					</div>
+			{#if isCollapsed}
+				<!-- Collapsed summary badge -->
+				<div class="flex h-full w-full items-center justify-center">
+					<span class="text-secondary text-sm font-medium">
+						{topology_hostsCount({ count: childCount })}
+					</span>
 				</div>
+			{:else}
+				<!-- Infrastructure background area with gradient centered at infra_width -->
+				{#if hasInfra}
+					<div
+						style={`position: absolute; top: 0; left: 0; width: ${infra_width + 20}px; height: 100%; border-radius: 0.75rem 0 0 0.75rem; pointer-events: none;
+							background: linear-gradient(to right,
+								var(--color-topology-zone) 0%,
+								var(--color-topology-zone) ${((infra_width - 20) / (infra_width + 20)) * 100}%,
+								transparent 100%);`}
+					>
+						<!-- Infrastructure title -->
+						<div
+							class="text-muted absolute left-1/2 top-0.5 -translate-x-1/2 transform text-[0.5rem] font-semibold"
+						>
+							{leftZoneTitle}
+						</div>
+					</div>
+				{/if}
 			{/if}
 		</div>
 
-		{#if resizeHandleZoomLevel && !$topologyOptions.local.hide_resize_handles}
+		{#if resizeHandleZoomLevel && !$topologyOptions.local.hide_resize_handles && !isCollapsed}
 			<NodeResizeControl
 				position="bottom-right"
 				onResizeEnd={onResize}

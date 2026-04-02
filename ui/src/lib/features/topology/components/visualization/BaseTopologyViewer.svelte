@@ -12,8 +12,13 @@
 		type Connection,
 		useSvelteFlow
 	} from '@xyflow/svelte';
-	import { Keyboard } from 'lucide-svelte';
-	import { topology_shortcutsTitle } from '$lib/paraglide/messages';
+	import { Keyboard, Minimize2, Maximize2 } from 'lucide-svelte';
+	import {
+		topology_shortcutsTitle,
+		topology_collapseAll,
+		topology_expandAll,
+		topology_connectionsCount
+	} from '$lib/paraglide/messages';
 	import { type Node, type Edge } from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
@@ -28,6 +33,14 @@
 	import type { TopologyEdge, Topology } from '../../types/base';
 	import { resolveLeafNode } from '../../resolvers';
 	import { computeElkLayout } from '../../layout/elk-layout';
+	import {
+		collapsedContainers,
+		collapseAll,
+		expandAll,
+		buildLeafToContainer,
+		buildContainerChildCounts,
+		computeCollapsedEdges
+	} from '../../collapse';
 	import { updateConnectedNodes, toggleEdgeHover, getEdgeDisplayState } from '../../interactions';
 	import { onMount, tick, setContext } from 'svelte';
 	import { useQueryClient } from '@tanstack/svelte-query';
@@ -123,8 +136,9 @@
 	// Store pending edges until nodes are ready
 	let pendingEdges: Edge[] = [];
 
-	// Load topology data when it changes
+	// Load topology data when it changes or collapse state changes
 	$: if (topology && (topology.edges || topology.nodes)) {
+		void $collapsedContainers;
 		void loadTopologyData();
 	}
 
@@ -172,23 +186,47 @@
 	async function loadTopologyData() {
 		try {
 			if (topology && (topology.edges || topology.nodes)) {
+				const collapsed = get(collapsedContainers);
+				const leafToContainer = buildLeafToContainer(topology.nodes);
+				const childCounts = buildContainerChildCounts(topology.nodes);
+				const hiddenEdgeTypes = $topologyOptions.local.hide_edge_types ?? [];
+
+				// Compute aggregated edges for collapsed containers
+				const aggregatedEdges = computeCollapsedEdges(
+					topology.edges,
+					collapsed,
+					leafToContainer,
+					hiddenEdgeTypes
+				);
+
+				// Filter out leaf nodes inside collapsed containers
+				const visibleNodes = topology.nodes.filter((node) => {
+					if (node.node_type === 'LeafNode') {
+						const parentId = leafToContainer.get(node.id);
+						if (parentId && collapsed.has(parentId)) return false;
+					}
+					return true;
+				});
+
 				// Compute client-side layout with elkjs
 				const layoutResult = await computeElkLayout({
-					nodes: topology.nodes,
+					nodes: visibleNodes,
 					edges: topology.edges,
-					topology: topology
+					topology: topology,
+					collapsedContainers: collapsed
 				});
 
 				// Create nodes using ELK-computed positions (fallback to server positions)
-				const allNodes: Node[] = topology.nodes.map((node) => {
+				const allNodes: Node[] = visibleNodes.map((node) => {
 					const elkPos = layoutResult.nodePositions.get(node.id);
 					const elkSize = layoutResult.containerSizes.get(node.id);
+					const isCollapsed = collapsed.has(node.id);
 					return {
 						id: node.id,
 						type: node.node_type,
 						position: elkPos ?? { x: node.position.x, y: node.position.y },
-						width: elkSize?.width ?? node.size.x,
-						height: elkSize?.height ?? node.size.y,
+						width: isCollapsed ? 200 : (elkSize?.width ?? node.size.x),
+						height: isCollapsed ? 80 : (elkSize?.height ?? node.size.y),
 						expandParent: true,
 						deletable: false,
 						selectable: node.node_type !== 'ContainerNode',
@@ -197,7 +235,9 @@
 								? resolveLeafNode(node.id, node, topology).subnetId
 								: undefined,
 						extent: node.node_type == 'LeafNode' ? 'parent' : undefined,
-						data: node
+						data: isCollapsed
+							? { ...node, isCollapsed: true, childCount: childCounts.get(node.id) ?? 0 }
+							: node
 					};
 				});
 
@@ -218,48 +258,52 @@
 				// Set nodes
 				nodes.set(sortedNodes);
 
-				// Create edges with markers
-				const flowEdges: Edge[] = topology.edges.map((edge: TopologyEdge, index: number) => {
-					const edgeType = edge.edge_type as string;
-					const edgeMetadata = edgeTypes.getMetadata(edgeType);
-					const edgeColorHelper = edgeTypes.getColorHelper(edgeType);
+				// Build flow edges — use aggregated edges when containers are collapsed
+				let flowEdges: Edge[];
 
-					const markerStart = !edgeMetadata.has_start_marker
-						? undefined
-						: ({
-								type: 'arrow',
-								color: edgeColorHelper.rgb
-							} as EdgeMarkerType);
-					const markerEnd = !edgeMetadata.has_end_marker
-						? undefined
-						: ({
-								type: 'arrow',
-								color: edgeColorHelper.rgb
-							} as EdgeMarkerType);
+				if (collapsed.size > 0 && aggregatedEdges.length > 0) {
+					// Mix: regular edges for non-collapsed endpoints + aggregated edges
+					const regularEdges: Edge[] = topology.edges
+						.filter((edge) => {
+							const srcContainer = leafToContainer.get(edge.source as string);
+							const tgtContainer = leafToContainer.get(edge.target as string);
+							const srcCollapsed = srcContainer && collapsed.has(srcContainer);
+							const tgtCollapsed = tgtContainer && collapsed.has(tgtContainer);
+							return !srcCollapsed && !tgtCollapsed;
+						})
+						.map((edge: TopologyEdge, index: number) => {
+							return createFlowEdge(edge, index, layoutResult, animatedStates);
+						});
 
-					const edgeId = `edge-${index}`;
+					const aggFlowEdges: Edge[] = aggregatedEdges.map((agg, index) => {
+						const edgeKey = `${agg.source}->${agg.target}`;
+						const handles = layoutResult.edgeHandles.get(edgeKey);
+						return {
+							id: agg.id,
+							source: agg.source,
+							target: agg.target,
+							sourceHandle: (handles?.sourceHandle ?? 'Bottom').toString(),
+							targetHandle: (handles?.targetHandle ?? 'Top').toString(),
+							type: 'custom',
+							label: agg.count > 1 ? topology_connectionsCount({ count: agg.count }) : undefined,
+							data: {
+								...agg.originalEdges[0],
+								isAggregated: true,
+								aggregatedCount: agg.count,
+								edgeIndex: 1000 + index
+							},
+							animated: false,
+							interactionWidth: 50
+						};
+					});
 
-					return {
-						id: `edge-${index}`,
-						source: edge.source,
-						target: edge.target,
-						markerEnd,
-						markerStart,
-						sourceHandle: (
-							layoutResult.edgeHandles.get(`${edge.source}->${edge.target}`)?.sourceHandle ??
-							edge.source_handle
-						).toString(),
-						targetHandle: (
-							layoutResult.edgeHandles.get(`${edge.source}->${edge.target}`)?.targetHandle ??
-							edge.target_handle
-						).toString(),
-						type: 'custom',
-						label: edge.label ?? undefined,
-						data: { ...edge, edgeIndex: index },
-						animated: animatedStates.get(edgeId) ?? false,
-						interactionWidth: 50
-					};
-				});
+					flowEdges = [...regularEdges, ...aggFlowEdges];
+				} else {
+					// No collapsed containers — standard edge creation
+					flowEdges = topology.edges.map((edge: TopologyEdge, index: number) => {
+						return createFlowEdge(edge, index, layoutResult, animatedStates);
+					});
+				}
 
 				pendingEdges = flowEdges;
 
@@ -273,6 +317,53 @@
 		} catch (err) {
 			pushError(`Failed to parse topology data ${err}`);
 		}
+	}
+
+	function createFlowEdge(
+		edge: TopologyEdge,
+		index: number,
+		layoutResult: import('../../layout/elk-layout').ElkLayoutResult,
+		animatedStates: Map<string, boolean | undefined>
+	): Edge {
+		const edgeType = edge.edge_type as string;
+		const edgeMetadata = edgeTypes.getMetadata(edgeType);
+		const edgeColorHelper = edgeTypes.getColorHelper(edgeType);
+
+		const markerStart = !edgeMetadata.has_start_marker
+			? undefined
+			: ({
+					type: 'arrow',
+					color: edgeColorHelper.rgb
+				} as EdgeMarkerType);
+		const markerEnd = !edgeMetadata.has_end_marker
+			? undefined
+			: ({
+					type: 'arrow',
+					color: edgeColorHelper.rgb
+				} as EdgeMarkerType);
+
+		const edgeId = `edge-${index}`;
+
+		return {
+			id: edgeId,
+			source: edge.source,
+			target: edge.target,
+			markerEnd,
+			markerStart,
+			sourceHandle: (
+				layoutResult.edgeHandles.get(`${edge.source}->${edge.target}`)?.sourceHandle ??
+				edge.source_handle
+			).toString(),
+			targetHandle: (
+				layoutResult.edgeHandles.get(`${edge.source}->${edge.target}`)?.targetHandle ??
+				edge.target_handle
+			).toString(),
+			type: 'custom',
+			label: edge.label ?? undefined,
+			data: { ...edge, edgeIndex: index },
+			animated: animatedStates.get(edgeId) ?? false,
+			interactionWidth: 50
+		};
 	}
 
 	function handleNodeDragStop({
@@ -368,6 +459,17 @@
 		}
 	}
 
+	function handleCollapseAll() {
+		const containerIds = topology.nodes
+			.filter((n) => n.node_type === 'ContainerNode')
+			.map((n) => n.id);
+		collapseAll(containerIds);
+	}
+
+	function handleExpandAll() {
+		expandAll();
+	}
+
 	// Merge preview edges into the edge store when they change
 	$: {
 		const preview = $previewEdges;
@@ -428,6 +530,24 @@
 
 		{#if showControls}
 			<Panel position="top-right" class="!m-[10px] !flex !flex-col !items-center !gap-2 !p-0">
+				<div
+					class="flex flex-col gap-0.5 rounded !border !border-gray-300 !bg-white !shadow-lg dark:!border-gray-600 dark:!bg-gray-800"
+				>
+					<button
+						class="flex items-center justify-center rounded-t p-1.5 !text-gray-700 hover:!bg-gray-100 dark:!text-gray-100 dark:hover:!bg-gray-600"
+						onclick={handleCollapseAll}
+						title={topology_collapseAll()}
+					>
+						<Minimize2 class="h-4 w-4" />
+					</button>
+					<button
+						class="flex items-center justify-center rounded-b p-1.5 !text-gray-700 hover:!bg-gray-100 dark:!text-gray-100 dark:hover:!bg-gray-600"
+						onclick={handleExpandAll}
+						title={topology_expandAll()}
+					>
+						<Maximize2 class="h-4 w-4" />
+					</button>
+				</div>
 				{#if onOpenShortcuts}
 					<button
 						class="flex items-center justify-center rounded !border !border-gray-300 !bg-gray-50 p-1.5 !text-gray-700 !shadow-lg hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600"

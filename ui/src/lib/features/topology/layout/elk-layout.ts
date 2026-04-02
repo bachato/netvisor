@@ -9,6 +9,7 @@ export interface ElkLayoutInput {
 	nodes: TopologyNode[];
 	edges: TopologyEdge[];
 	topology: Topology;
+	collapsedContainers?: Set<string>;
 }
 
 export type HandleSide = 'Top' | 'Bottom' | 'Left' | 'Right';
@@ -99,30 +100,47 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 	const containers: Map<string, ElkNode> = new Map();
 	const containerIds = new Set<string>();
 
+	const collapsed = input.collapsedContainers ?? new Set<string>();
+
 	// Create container (parent) nodes
 	for (const node of input.nodes) {
 		if (node.node_type === 'ContainerNode') {
 			containerIds.add(node.id);
 			const layerId = getLayerHint(node, input.topology);
-			containers.set(node.id, {
-				id: node.id,
-				children: [],
-				layoutOptions: {
-					'elk.algorithm': 'rectpacking',
-					'elk.padding': CONTAINER_PADDING,
-					'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-					'elk.rectpacking.desiredAspectRatio': '2.5',
-					'elk.spacing.nodeNode': '20',
-					'elk.layered.layering.layerId': String(layerId)
-				}
-			});
+			const isCollapsed = collapsed.has(node.id);
+			const elkNode: ElkNode = isCollapsed
+				? {
+						id: node.id,
+						width: 200,
+						height: 80,
+						children: [],
+						layoutOptions: {
+							'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+							'elk.nodeSize.minimum': '(200,80)',
+							'elk.layered.layering.layerId': String(layerId)
+						}
+					}
+				: {
+						id: node.id,
+						children: [],
+						layoutOptions: {
+							'elk.algorithm': 'rectpacking',
+							'elk.padding': CONTAINER_PADDING,
+							'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+							'elk.rectpacking.desiredAspectRatio': '2.5',
+							'elk.spacing.nodeNode': '20',
+							'elk.layered.layering.layerId': String(layerId)
+						}
+					};
+			containers.set(node.id, elkNode);
 		}
 	}
 
-	// Add leaf nodes as children of their containers
+	// Add leaf nodes as children of their containers (skip collapsed)
 	for (const node of input.nodes) {
 		if (node.node_type === 'LeafNode') {
 			const parentId = node.container_id ?? node.subnet_id;
+			if (collapsed.has(parentId)) continue;
 			const parent = containers.get(parentId);
 			if (parent && parent.children) {
 				parent.children.push({
