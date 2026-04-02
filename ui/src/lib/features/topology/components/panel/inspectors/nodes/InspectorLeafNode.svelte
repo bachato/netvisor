@@ -11,7 +11,8 @@
 		selectedTopologyId,
 		autoRebuild
 	} from '$lib/features/topology/queries';
-	import type { InterfaceNode, Topology } from '$lib/features/topology/types/base';
+	import type { TopologyNode, Topology } from '$lib/features/topology/types/base';
+	import { resolveLeafNode } from '$lib/features/topology/resolvers';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
@@ -46,24 +47,17 @@
 	let isReadonly = $derived(!!topologyContext);
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
-	let nodeData = $derived(node.data as InterfaceNode);
-
-	let host = $derived(topology ? topology.hosts.find((h) => h.id == nodeData.host_id) : null);
-
-	// Get the interface for this node from topology.interfaces
-	let thisInterface = $derived(
-		topology ? topology.interfaces.find((i) => i.id === nodeData.interface_id) : null
+	let resolved = $derived(
+		topology ? resolveLeafNode(node.id, node.data as TopologyNode, topology) : null
 	);
-
-	// Get all services for this host
-	let servicesForHost = $derived(
-		topology ? topology.services.filter((s) => s.host_id == nodeData.host_id) : []
-	);
+	let host = $derived(resolved?.host ?? null);
+	let thisInterface = $derived(resolved?.iface ?? null);
+	let servicesForHost = $derived(resolved?.services ?? []);
 
 	// Filter services bound to this specific interface
 	let servicesOnThisInterface = $derived(
 		servicesForHost.filter((s) =>
-			s.bindings.some((b) => b.interface_id === nodeData.interface_id || b.interface_id === null)
+			s.bindings.some((b) => b.interface_id === resolved?.interfaceId || b.interface_id === null)
 		)
 	);
 
@@ -71,7 +65,7 @@
 	let otherInterfaces = $derived(
 		topology
 			? topology.interfaces.filter(
-					(i) => i.host_id === nodeData.host_id && i.id !== nodeData.interface_id
+					(i) => i.host_id === resolved?.hostId && i.id !== resolved?.interfaceId
 				)
 			: []
 	);
@@ -87,7 +81,7 @@
 
 	// Context for service displays - include ports for actual port number display
 	let serviceContext = $derived({
-		interfaceId: nodeData.interface_id ?? null,
+		interfaceId: resolved?.interfaceId ?? null,
 		ports: topology?.ports ?? [],
 		showEntityTagPicker: true,
 		tagPickerDisabled: !editState.isEditable,

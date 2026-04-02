@@ -22,10 +22,11 @@
 	import { isExporting } from '../../interactions';
 
 	// Import custom node/edge components
-	import SubnetNode from './SubnetNode.svelte';
-	import InterfaceNode from './InterfaceNode.svelte';
+	import ContainerNode from './ContainerNode.svelte';
+	import LeafNode from './LeafNode.svelte';
 	import CustomEdge from './CustomEdge.svelte';
 	import type { TopologyEdge, Topology } from '../../types/base';
+	import { resolveLeafNode } from '../../resolvers';
 	import { updateConnectedNodes, toggleEdgeHover, getEdgeDisplayState } from '../../interactions';
 	import { onMount, tick, setContext } from 'svelte';
 	import { useQueryClient } from '@tanstack/svelte-query';
@@ -103,8 +104,8 @@
 
 	// Define node types
 	const nodeTypes = {
-		ContainerNode: SubnetNode,
-		LeafNode: InterfaceNode
+		ContainerNode: ContainerNode,
+		LeafNode: LeafNode
 	};
 
 	const customEdgeTypes = {
@@ -180,7 +181,10 @@
 					expandParent: true,
 					deletable: false,
 					selectable: node.node_type !== 'ContainerNode',
-					parentId: node.node_type == 'LeafNode' ? node.subnet_id : undefined,
+					parentId:
+						node.node_type == 'LeafNode'
+							? resolveLeafNode(node.id, node, topology).subnetId
+							: undefined,
 					extent: node.node_type == 'LeafNode' ? 'parent' : undefined,
 					data: node
 				}));

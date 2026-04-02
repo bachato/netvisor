@@ -19,7 +19,8 @@
 		selectedNode as globalSelectedNode,
 		selectedEdge as globalSelectedEdge
 	} from '../../queries';
-	import type { SubnetRenderData, Topology } from '../../types/base';
+	import type { TopologyNode, SubnetRenderData, Topology } from '../../types/base';
+	import { resolveContainerNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
 	import { getContext } from 'svelte';
 	import {
@@ -116,12 +117,15 @@
 		return `box-shadow: 0 0 0 3px ${colorHelper.rgb};`;
 	});
 
+	let resolved = $derived(
+		topology ? resolveContainerNode(id, data as TopologyNode, topology) : null
+	);
+	let infra_width = $derived(resolved?.infraWidth ?? 0);
+	let subnet = $derived(resolved?.subnet);
+
 	let leftZoneTitle = $derived($topologyOptions.local.left_zone_title);
-	let infra_width = $derived((data.infra_width as number) || 0);
 	let nodeStyle = $derived(`width: ${width}px; height: ${height}px;`);
 	let hasInfra = $derived(infra_width > 0);
-
-	let subnet = $derived(topology ? topology.subnets.find((s) => s.id == id) : undefined);
 
 	const viewport = useViewport();
 	let resizeHandleZoomLevel = $derived(viewport.current.zoom > 0.5);
@@ -142,8 +146,9 @@
 							: showLabel
 								? subnetTypes.getName(subnet.subnet_type)
 								: '';
-					let label = data.header
-						? (data.header as string)
+					let header = (data as TopologyNode).header;
+					let label = header
+						? header
 						: nameOrType +
 							(isContainerSubnet(subnet) ? '' : (nameOrType ? ': ' : '') + subnet.cidr);
 

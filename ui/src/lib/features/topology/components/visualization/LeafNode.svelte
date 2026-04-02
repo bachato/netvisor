@@ -9,11 +9,8 @@
 		topologyOptions,
 		useTopologiesQuery
 	} from '../../queries';
-	import type {
-		InterfaceNode as InterfaceNodeType,
-		NodeRenderData,
-		Topology
-	} from '../../types/base';
+	import type { TopologyNode, NodeRenderData, Topology } from '../../types/base';
+	import { resolveLeafNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
 	import { formatPort } from '$lib/shared/utils/formatting';
 	import {
@@ -99,24 +96,16 @@
 		selectedEdgeContext ? $selectedEdgeContext : $globalSelectedEdge
 	) as Edge | null;
 
-	let nodeData = $derived(data as InterfaceNodeType);
+	let resolved = $derived(topology ? resolveLeafNode(id, data as TopologyNode, topology) : null);
+	let host = $derived(resolved?.host);
+	let servicesForHost = $derived(resolved?.services ?? []);
+	let iface = $derived(resolved?.iface ?? null);
 
 	let effectiveHeight = $derived(height ? height : 0);
 	let effectiveWidth = $derived(width ? width : 0);
 
-	let host = $derived(topology ? topology.hosts.find((h) => h.id == nodeData.host_id) : undefined);
-
-	let servicesForHost = $derived(
-		topology ? topology.services.filter((s) => s.host_id == nodeData.host_id) : []
-	);
-
 	// Filter out services hidden by tag filter
 	let visibleServicesForHost = $derived(servicesForHost.filter((s) => !hiddenServices.has(s.id)));
-
-	// Get the interface for this node from topology.interfaces
-	let iface = $derived(
-		topology ? topology.interfaces.find((i) => i.id === data.interface_id) : null
-	);
 
 	// Reactively subscribe to the container subnet store
 	let isContainerSubnetValue = $derived(
@@ -129,7 +118,7 @@
 
 	// Compute nodeRenderData reactively
 	let nodeRenderData: NodeRenderData | null = $derived(
-		host && data.host_id
+		host && resolved?.hostId
 			? (() => {
 					// Use visibleServicesForHost to exclude services hidden by tag filter
 					const servicesOnInterface = visibleServicesForHost
@@ -142,7 +131,7 @@
 
 					let bodyText: string | null = null;
 					let footerText: string | null = null;
-					let headerText: string | null = data.header ? (data.header as string) : null;
+					let headerText: string | null = (data as TopologyNode).header ?? null;
 					let showServices = servicesOnInterface.length != 0;
 
 					if (iface && !isContainerSubnetValue) {
@@ -160,7 +149,7 @@
 						bodyText,
 						showServices,
 						isVirtualized: host.virtualization !== null,
-						interface_id: data.interface_id
+						interface_id: resolved?.interfaceId ?? ''
 					} as NodeRenderData;
 				})()
 			: null

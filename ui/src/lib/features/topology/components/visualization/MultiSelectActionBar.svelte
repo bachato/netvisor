@@ -3,7 +3,8 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { X, GitBranch, Network } from 'lucide-svelte';
 	import { selectedNodes, previewEdges, autoRebuild } from '../../queries';
-	import type { Topology, InterfaceNode as InterfaceNodeType } from '../../types/base';
+	import type { Topology, TopologyNode } from '../../types/base';
+	import { resolveLeafNode } from '../../resolvers';
 	import type { GroupType } from '$lib/features/groups/types/base';
 	import { getTopologyStateInfo } from '../../state';
 	import { computeCommonTags } from '$lib/shared/utils/tags';
@@ -48,9 +49,9 @@
 	let selectedHostIds = $derived.by(() => {
 		const hostIds: string[] = [];
 		for (const node of nodes) {
-			const data = node.data as InterfaceNodeType;
-			if (data.host_id && !hostIds.includes(data.host_id)) {
-				hostIds.push(data.host_id);
+			const resolved = resolveLeafNode(node.id, node.data as TopologyNode, topology);
+			if (resolved.hostId && !hostIds.includes(resolved.hostId)) {
+				hostIds.push(resolved.hostId);
 			}
 		}
 		return hostIds;

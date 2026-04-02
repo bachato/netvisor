@@ -10,7 +10,8 @@
 		selectedTopologyId,
 		useTopologiesQuery
 	} from '../../../queries';
-	import type { InterfaceNode as InterfaceNodeType } from '../../../types/base';
+	import type { TopologyNode } from '../../../types/base';
+	import { resolveLeafNode } from '../../../resolvers';
 	import type { GroupType, EdgeStyle } from '$lib/features/groups/types/base';
 	import { getTopologyEditState } from '../../../state';
 	import { computeCommonTags } from '$lib/shared/utils/tags';
@@ -77,11 +78,12 @@
 
 	// Get unique host IDs from selected interface nodes
 	let selectedHostIds = $derived.by(() => {
+		if (!topology) return [];
 		const hostIds: string[] = [];
 		for (const node of nodes) {
-			const data = node.data as InterfaceNodeType;
-			if (data.host_id && !hostIds.includes(data.host_id)) {
-				hostIds.push(data.host_id);
+			const resolved = resolveLeafNode(node.id, node.data as TopologyNode, topology);
+			if (resolved.hostId && !hostIds.includes(resolved.hostId)) {
+				hostIds.push(resolved.hostId);
 			}
 		}
 		return hostIds;
@@ -97,12 +99,12 @@
 		if (!topology) return [];
 		const serviceIds: string[] = [];
 		for (const node of nodes) {
-			const data = node.data as InterfaceNodeType;
-			if (!data.interface_id) continue;
+			const resolved = resolveLeafNode(node.id, node.data as TopologyNode, topology);
+			if (!resolved.interfaceId) continue;
 			for (const service of topology.services) {
 				if (serviceIds.includes(service.id)) continue;
 				for (const binding of service.bindings) {
-					if (binding.interface_id === data.interface_id || binding.interface_id === null) {
+					if (binding.interface_id === resolved.interfaceId || binding.interface_id === null) {
 						if (service.host_id && selectedHostIds.includes(service.host_id)) {
 							serviceIds.push(service.id);
 							break;
@@ -217,11 +219,11 @@
 		if (!topology) return [];
 		const choices: InterfaceBindingChoice[] = [];
 		for (const node of nodes) {
-			const data = node.data as InterfaceNodeType;
-			if (!data.interface_id) continue;
+			const resolved = resolveLeafNode(node.id, node.data as TopologyNode, topology);
+			if (!resolved.interfaceId) continue;
 
-			const iface = topology.interfaces.find((i) => i.id === data.interface_id);
-			const host = topology.hosts.find((h) => h.id === data.host_id);
+			const iface = resolved.iface;
+			const host = resolved.host;
 			if (!host) continue;
 
 			// Find bindings on this specific interface
@@ -230,7 +232,7 @@
 			for (const service of hostServices) {
 				for (const binding of service.bindings) {
 					// Only include bindings for this interface (or null = all interfaces)
-					if (binding.interface_id === data.interface_id || binding.interface_id === null) {
+					if (binding.interface_id === resolved.interfaceId || binding.interface_id === null) {
 						const portInfo =
 							binding.type === 'Port' && binding.port_id
 								? (() => {
@@ -248,10 +250,10 @@
 
 			const ifaceName = iface
 				? (iface.name ? iface.name + ': ' : '') + iface.ip_address
-				: data.interface_id;
+				: resolved.interfaceId;
 
 			choices.push({
-				interfaceId: data.interface_id,
+				interfaceId: resolved.interfaceId,
 				interfaceName: ifaceName,
 				hostName: host.name,
 				bindings: interfaceBindings

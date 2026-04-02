@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { entities } from '$lib/shared/stores/metadata';
-	import type { Topology } from '../../types/base';
+	import type { Topology, TopologyNode } from '../../types/base';
+	import { resolveLeafNode } from '../../resolvers';
 
 	let { topology }: { topology: Topology } = $props();
 
@@ -17,8 +18,9 @@
 	let hostCount = $derived(
 		new Set(
 			topology.nodes
-				.filter((n) => n.node_type === 'LeafNode' && 'host_id' in n)
-				.map((n) => (n as { host_id: string }).host_id)
+				.filter((n) => n.node_type === 'LeafNode')
+				.map((n) => resolveLeafNode(n.id, n as TopologyNode, topology).hostId)
+				.filter((id) => id !== undefined)
 		).size
 	);
 	let subnetCount = $derived(topology.nodes.filter((n) => n.node_type === 'ContainerNode').length);

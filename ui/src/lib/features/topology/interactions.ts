@@ -4,6 +4,7 @@ import type { Node } from '@xyflow/svelte';
 import type { QueryClient } from '@tanstack/svelte-query';
 import { edgeTypes, subnetTypes } from '$lib/shared/stores/metadata';
 import type { TopologyEdge, TopologyNode, Topology } from './types/base';
+import { resolveLeafNode } from './resolvers';
 import { getHostFromInterfaceIdFromCache } from '../hosts/queries';
 import {
 	getInterfacesForHostFromCache,
@@ -242,11 +243,14 @@ export function updateConnectedNodes(
 		connected.add(selectedNode.id);
 		const nodeData = selectedNode.data as TopologyNode;
 
-		if (nodeData.node_type == 'ContainerNode') {
+		if (nodeData.node_type == 'ContainerNode' && topology) {
 			allNodes.forEach((n) => {
 				const nd = n.data as TopologyNode;
-				if (nd.node_type == 'LeafNode' && nd.subnet_id == nodeData.id) {
-					connected.add(nd.id);
+				if (nd.node_type == 'LeafNode') {
+					const resolved = resolveLeafNode(nd.id, nd, topology);
+					if (resolved.subnetId == nodeData.id) {
+						connected.add(nd.id);
+					}
 				}
 			});
 		}

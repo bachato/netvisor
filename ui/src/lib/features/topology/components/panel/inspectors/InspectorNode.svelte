@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Node } from '@xyflow/svelte';
-	import InspectorInterfaceNode from './nodes/InspectorInterfaceNode.svelte';
-	import InspectorSubnetNode from './nodes/InspectorSubnetNode.svelte';
+	import InspectorLeafNode from './nodes/InspectorLeafNode.svelte';
+	import InspectorContainerNode from './nodes/InspectorContainerNode.svelte';
 
 	let { node }: { node: Node } = $props();
 
@@ -11,9 +11,9 @@
 
 <div class="w-full space-y-4">
 	{#if isInterfaceNode}
-		<InspectorInterfaceNode {node} />
+		<InspectorLeafNode {node} />
 	{:else if isSubnetNode}
-		<InspectorSubnetNode {node} />
+		<InspectorContainerNode {node} />
 	{:else}
 		<div class="space-y-3">
 			<p class="text-tertiary text-sm">Unable to display node details</p>
