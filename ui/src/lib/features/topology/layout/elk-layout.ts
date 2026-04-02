@@ -149,8 +149,17 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 		}
 	}
 
+	// Build container layerId lookup for edge direction enforcement
+	const containerLayerId = new Map<string, number>();
+	for (const [id, container] of containers) {
+		containerLayerId.set(
+			id,
+			parseInt(container.layoutOptions?.['elk.layered.layering.layerId'] ?? '999')
+		);
+	}
+
 	// With SEPARATE_CHILDREN, create container-level edges from cross-container
-	// leaf edges so the root layered algorithm can order containers properly.
+	// leaf edges. Direction is normalized to respect layer hierarchy (lower layerId → higher).
 	const edges: ElkExtendedEdge[] = [];
 	const seenContainerEdges = new Set<string>();
 	let edgeIndex = 0;
@@ -160,13 +169,19 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 		const srcContainer = leafToContainer.get(edge.source);
 		const tgtContainer = leafToContainer.get(edge.target);
 		if (srcContainer && tgtContainer && srcContainer !== tgtContainer) {
-			const key = `${srcContainer}->${tgtContainer}`;
+			// Normalize direction: source should have lower layerId (higher on screen)
+			const srcLayer = containerLayerId.get(srcContainer) ?? 999;
+			const tgtLayer = containerLayerId.get(tgtContainer) ?? 999;
+			const [from, to] =
+				srcLayer <= tgtLayer ? [srcContainer, tgtContainer] : [tgtContainer, srcContainer];
+
+			const key = `${from}->${to}`;
 			if (!seenContainerEdges.has(key)) {
 				seenContainerEdges.add(key);
 				edges.push({
 					id: `elk-edge-${edgeIndex++}`,
-					sources: [srcContainer],
-					targets: [tgtContainer]
+					sources: [from],
+					targets: [to]
 				});
 			}
 		}
