@@ -103,13 +103,14 @@ function getLayerHint(node: TopologyNode, topology: Topology): number {
 	return 999;
 }
 
-// Leaf node size constants (px)
+// Leaf node size constants (px) — tuned to match LeafNode.svelte CSS
 const LEAF_WIDTH = 250;
-const HEADER_HEIGHT = 25;
-const FOOTER_HEIGHT = 25;
-const SERVICE_ROW_HEIGHT = 50;
-const PORT_LINE_HEIGHT = 25;
-const OPEN_PORTS_PILL_HEIGHT = 30;
+const HEADER_HEIGHT = 22; // text-xs + pt-2
+const FOOTER_HEIGHT = 22; // text-xs + pb-2
+const BODY_PADDING = 16; // py-2 on body section
+const SERVICE_ROW_HEIGHT = 28; // h-5 icon (20px) + line-height padding
+const PORT_LINE_HEIGHT = 18; // mt-1 (4px) + text-xs (14px)
+const OPEN_PORTS_PILL_HEIGHT = 26; // pill + mt-1 + mb-2
 
 /**
  * Compute leaf node sizes based on visible services and display options.
@@ -146,7 +147,8 @@ export function computeLeafNodeSizes(
 		const hasHeader = node.header != null;
 		const hasFooter = true; // leaf nodes always have a footer area
 
-		let height = hasFooter ? FOOTER_HEIGHT : 0;
+		let height = BODY_PADDING; // py-2 on body section
+		if (hasFooter) height += FOOTER_HEIGHT;
 		if (hasHeader) height += HEADER_HEIGHT;
 
 		if (visibleServices.length === 0 && hiddenOpenPorts.length === 0) {
