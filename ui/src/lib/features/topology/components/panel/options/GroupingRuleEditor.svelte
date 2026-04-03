@@ -51,7 +51,7 @@
 		($topologyOptions.request.container_rules as ContainerGraphRule[] | undefined) ?? []
 	);
 
-	// Leaf rules from options
+	// Element rules from options
 	let elementRules = $derived(
 		($topologyOptions.request.element_rules as ElementGraphRule[] | undefined) ?? []
 	);
@@ -140,7 +140,7 @@
 		return containerRuleMeta[rule.rule]?.metadata?.is_user_editable ?? true;
 	}
 
-	// --- Leaf Rules ---
+	// --- Element Rules ---
 
 	let elementAddOptions = $derived(
 		typedElementRuleTypes.map((m) => ({
@@ -304,7 +304,7 @@
 	</ListManager>
 </div>
 
-<!-- Leaf grouping section -->
+<!-- Element grouping section -->
 <ListManager
 	label={topology_elementGrouping()}
 	helpText={topology_elementGroupingHelp()}

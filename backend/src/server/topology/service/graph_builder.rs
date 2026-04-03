@@ -261,7 +261,7 @@ impl GraphBuilder {
         children_by_subnet
     }
 
-    /// Create child (leaf) nodes for a subnet
+    /// Create child (element) nodes for a subnet
     fn create_child_nodes(
         &mut self,
         subnet_id: Uuid,
@@ -269,7 +269,7 @@ impl GraphBuilder {
         ctx: &TopologyContext,
         child_nodes: &mut Vec<Node>,
     ) {
-        // Create leaf nodes for all children
+        // Create element nodes for all children
         // Positions are zeroed — the frontend computes layout via elkjs
         for child in children.iter() {
             child_nodes.push(Node {
@@ -728,8 +728,8 @@ mod tests {
             .expect("Should have TagGroup");
 
         // Host should be in tag group (first rule wins)
-        let leaf = child_nodes.iter().find(|n| n.id == child_id).unwrap();
-        if let NodeType::Element { container_id, .. } = &leaf.node_type {
+        let element = child_nodes.iter().find(|n| n.id == child_id).unwrap();
+        if let NodeType::Element { container_id, .. } = &element.node_type {
             assert_eq!(
                 *container_id, tag_group.id,
                 "When ByTag is first, overlapping host should be in TagGroup"

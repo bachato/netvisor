@@ -125,7 +125,7 @@ function makeTopology(
 						{ id: '00000000-0000-0000-0000-000000000001', rule: 'BySubnet' },
 						{ id: '00000000-0000-0000-0000-000000000002', rule: 'ByVirtualizingService' }
 					],
-					leaf_rules: []
+					element_rules: []
 				}
 			}
 		} as ElkLayoutInput['topology']
@@ -178,11 +178,11 @@ describe('computeElkLayout', () => {
 		const subnetGw = uuid();
 		const subnetLan = uuid();
 
-		const leaf1 = uuid();
-		const leaf2 = uuid();
-		const leaf3 = uuid();
-		const leaf4 = uuid();
-		const leaf5 = uuid();
+		const elem1 = uuid();
+		const elem2 = uuid();
+		const elem3 = uuid();
+		const elem4 = uuid();
+		const elem5 = uuid();
 
 		const host1 = uuid();
 
@@ -190,17 +190,17 @@ describe('computeElkLayout', () => {
 			makeContainer(subnetExt),
 			makeContainer(subnetGw),
 			makeContainer(subnetLan),
-			makeElement(leaf1, subnetExt, host1),
-			makeElement(leaf2, subnetExt),
-			makeElement(leaf3, subnetGw, host1), // multi-homed: same host in different subnet
-			makeElement(leaf4, subnetLan),
-			makeElement(leaf5, subnetLan)
+			makeElement(elem1, subnetExt, host1),
+			makeElement(elem2, subnetExt),
+			makeElement(elem3, subnetGw, host1), // multi-homed: same host in different subnet
+			makeElement(elem4, subnetLan),
+			makeElement(elem5, subnetLan)
 		];
 
 		const edges: TopologyEdge[] = [
-			makeEdge(leaf1, leaf3, 'Interface'), // primary: ext -> gw
-			makeEdge(leaf3, leaf4, 'Interface'), // primary: gw -> lan
-			makeEdge(leaf1, leaf4, 'HostVirtualization') // overlay: should be ignored by layout
+			makeEdge(elem1, elem3, 'Interface'), // primary: ext -> gw
+			makeEdge(elem3, elem4, 'Interface'), // primary: gw -> lan
+			makeEdge(elem1, elem4, 'HostVirtualization') // overlay: should be ignored by layout
 		];
 
 		const subnets = [
@@ -237,22 +237,22 @@ describe('computeElkLayout', () => {
 		const subnetGw = uuid();
 		const subnetLan = uuid();
 
-		const leaf1 = uuid();
-		const leaf2 = uuid();
-		const leaf3 = uuid();
+		const elem1 = uuid();
+		const elem2 = uuid();
+		const elem3 = uuid();
 
 		const nodes: TopologyNode[] = [
 			makeContainer(subnetExt),
 			makeContainer(subnetGw),
 			makeContainer(subnetLan),
-			makeElement(leaf1, subnetExt),
-			makeElement(leaf2, subnetGw),
-			makeElement(leaf3, subnetLan)
+			makeElement(elem1, subnetExt),
+			makeElement(elem2, subnetGw),
+			makeElement(elem3, subnetLan)
 		];
 
 		const edges: TopologyEdge[] = [
-			makeEdge(leaf1, leaf2, 'Interface'),
-			makeEdge(leaf2, leaf3, 'Interface')
+			makeEdge(elem1, elem2, 'Interface'),
+			makeEdge(elem2, elem3, 'Interface')
 		];
 
 		const subnets = [
@@ -272,26 +272,26 @@ describe('computeElkLayout', () => {
 		expect(gwPos.y).toBeLessThan(lanPos.y);
 	});
 
-	it('positions leaf nodes with non-negative relative coordinates', async () => {
+	it('positions element nodes with non-negative relative coordinates', async () => {
 		const subnetId = uuid();
-		const leaf1 = uuid();
-		const leaf2 = uuid();
+		const elem1 = uuid();
+		const elem2 = uuid();
 
 		const nodes: TopologyNode[] = [
 			makeContainer(subnetId),
-			makeElement(leaf1, subnetId),
-			makeElement(leaf2, subnetId)
+			makeElement(elem1, subnetId),
+			makeElement(elem2, subnetId)
 		];
 
-		const edges: TopologyEdge[] = [makeEdge(leaf1, leaf2, 'Interface')];
+		const edges: TopologyEdge[] = [makeEdge(elem1, elem2, 'Interface')];
 		const subnets = [makeSubnet(subnetId, 'Lan')];
 
 		const input = makeTopology(nodes, edges, subnets);
 		const result = await computeElkLayout(input);
 
-		// Leaf positions should be non-negative (relative to parent)
-		const l1Pos = result.nodePositions.get(leaf1)!;
-		const l2Pos = result.nodePositions.get(leaf2)!;
+		// Element positions should be non-negative (relative to parent)
+		const l1Pos = result.nodePositions.get(elem1)!;
+		const l2Pos = result.nodePositions.get(elem2)!;
 
 		expect(l1Pos.x).toBeGreaterThanOrEqual(0);
 		expect(l1Pos.y).toBeGreaterThanOrEqual(0);
@@ -301,9 +301,9 @@ describe('computeElkLayout', () => {
 
 	it('handles single subnet with single host', async () => {
 		const subnetId = uuid();
-		const leafId = uuid();
+		const elementId = uuid();
 
-		const nodes: TopologyNode[] = [makeContainer(subnetId), makeElement(leafId, subnetId)];
+		const nodes: TopologyNode[] = [makeContainer(subnetId), makeElement(elementId, subnetId)];
 		const edges: TopologyEdge[] = [];
 		const subnets = [makeSubnet(subnetId, 'Lan')];
 
@@ -311,7 +311,7 @@ describe('computeElkLayout', () => {
 		const result = await computeElkLayout(input);
 
 		expect(result.nodePositions.has(subnetId)).toBe(true);
-		expect(result.nodePositions.has(leafId)).toBe(true);
+		expect(result.nodePositions.has(elementId)).toBe(true);
 
 		const containerSize = result.containerSizes.get(subnetId)!;
 		expect(containerSize.width).toBeGreaterThanOrEqual(180); // at least as wide as child
@@ -336,20 +336,20 @@ describe('computeElkLayout', () => {
 		const nodes: TopologyNode[] = subnetIds.map((id) => makeContainer(id));
 
 		// Add ~2-3 hosts per subnet
-		const leafIds: string[] = [];
+		const elementIds: string[] = [];
 		for (const subnetId of subnetIds) {
 			const count = 2 + Math.floor(subnetIds.indexOf(subnetId) % 3);
 			for (let j = 0; j < count; j++) {
-				const leafId = uuid();
-				leafIds.push(leafId);
-				nodes.push(makeElement(leafId, subnetId));
+				const elementId = uuid();
+				elementIds.push(elementId);
+				nodes.push(makeElement(elementId, subnetId));
 			}
 		}
 
 		// Create some primary edges between adjacent subnets
 		const edges: TopologyEdge[] = [];
-		for (let i = 0; i < leafIds.length - 1; i += 3) {
-			edges.push(makeEdge(leafIds[i], leafIds[i + 1], 'Interface'));
+		for (let i = 0; i < elementIds.length - 1; i += 3) {
+			edges.push(makeEdge(elementIds[i], elementIds[i + 1], 'Interface'));
 		}
 
 		const input = makeTopology(nodes, edges, subnets);
@@ -370,9 +370,9 @@ describe('computeElkLayout', () => {
 	it('handles nested sub-group containers inside a subnet', async () => {
 		const subnetId = uuid();
 		const groupId = uuid();
-		const leaf1 = uuid();
-		const leaf2 = uuid();
-		const leaf3 = uuid();
+		const elem1 = uuid();
+		const elem2 = uuid();
+		const elem3 = uuid();
 
 		const nodes: TopologyNode[] = [
 			makeContainer(subnetId),
@@ -380,12 +380,12 @@ describe('computeElkLayout', () => {
 				container_type: 'ServiceCategoryGroup',
 				parent_container_id: subnetId
 			}),
-			makeElement(leaf1, subnetId),
-			makeElement(leaf2, groupId),
-			makeElement(leaf3, groupId)
+			makeElement(elem1, subnetId),
+			makeElement(elem2, groupId),
+			makeElement(elem3, groupId)
 		];
 
-		const edges: TopologyEdge[] = [makeEdge(leaf1, leaf2, 'Interface')];
+		const edges: TopologyEdge[] = [makeEdge(elem1, elem2, 'Interface')];
 		const subnets = [makeSubnet(subnetId, 'Lan')];
 
 		const input = makeTopology(nodes, edges, subnets);
@@ -394,8 +394,8 @@ describe('computeElkLayout', () => {
 		// All nodes should have positions
 		expect(result.nodePositions.has(subnetId)).toBe(true);
 		expect(result.nodePositions.has(groupId)).toBe(true);
-		expect(result.nodePositions.has(leaf1)).toBe(true);
-		expect(result.nodePositions.has(leaf2)).toBe(true);
+		expect(result.nodePositions.has(elem1)).toBe(true);
+		expect(result.nodePositions.has(elem2)).toBe(true);
 
 		// Sub-group should have a size
 		expect(result.containerSizes.has(groupId)).toBe(true);
@@ -411,19 +411,19 @@ describe('computeElkLayout', () => {
 
 	it('does not pass overlay edges to ELK layout', async () => {
 		const subnetId = uuid();
-		const leaf1 = uuid();
-		const leaf2 = uuid();
+		const elem1 = uuid();
+		const elem2 = uuid();
 
 		const nodes: TopologyNode[] = [
 			makeContainer(subnetId),
-			makeElement(leaf1, subnetId),
-			makeElement(leaf2, subnetId)
+			makeElement(elem1, subnetId),
+			makeElement(elem2, subnetId)
 		];
 
 		// Only overlay edges — no primary edges to drive layout
 		const edges: TopologyEdge[] = [
-			makeEdge(leaf1, leaf2, 'HostVirtualization'),
-			makeEdge(leaf1, leaf2, 'RequestPath')
+			makeEdge(elem1, elem2, 'HostVirtualization'),
+			makeEdge(elem1, elem2, 'RequestPath')
 		];
 
 		const subnets = [makeSubnet(subnetId, 'Lan')];
