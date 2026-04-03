@@ -241,8 +241,8 @@
 		{/if}
 
 		<div
-			class="border-secondary/30 rounded-lg border border-dashed transition-all duration-200"
-			style="background: var(--color-topology-node-bg); opacity: 0.7; width: 100%; height: 100%; position: relative; overflow: hidden;"
+			class="rounded-lg border border-dashed border-gray-300 transition-all duration-200 dark:border-gray-600"
+			style="background: var(--color-topology-subgroup-bg); width: 100%; height: 100%; position: relative; overflow: hidden;"
 		>
 			{#if isCollapsed}
 				<div class="flex h-full w-full items-center justify-center">
