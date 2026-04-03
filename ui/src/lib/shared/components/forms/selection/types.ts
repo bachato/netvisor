@@ -6,7 +6,7 @@ import type { Component } from 'svelte';
 // @typescript-eslint/no-explicit-any
 export interface EntityDisplayComponent<T, C> {
 	// Required methods
-	getId(item: T, index?: number): string;
+	getId(item: T): string;
 	getLabel(item: T, context?: C): string;
 
 	// Optional methods with defaults

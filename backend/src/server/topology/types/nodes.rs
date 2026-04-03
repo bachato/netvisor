@@ -14,6 +14,9 @@ pub struct Node {
     pub position: Ixy,
     pub size: Uxy,
     pub header: Option<String>,
+    /// ID of the leaf rule that created this group container (for TagGroup/ServiceCategoryGroup)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub leaf_rule_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]

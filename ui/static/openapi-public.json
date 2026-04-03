@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-03T13:31:40.687688Z",
-              "id": "ca5c9cf6-c0a9-47e3-8df8-5deb0ed6e38d",
+              "created_at": "2026-04-03T17:18:36.946436Z",
+              "id": "89505d0a-4183-4fe6-b379-ec40a4d92694",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-03T13:31:40.687688Z"
+              "updated_at": "2026-04-03T17:18:36.946436Z"
             }
           },
           "error": {
@@ -10731,14 +10731,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-03T13:31:40.671683Z",
-                      "id": "c2e55592-cf25-4355-aa2e-26cd69d5328e",
+                      "created_at": "2026-04-03T17:18:36.930490Z",
+                      "id": "4a941047-f19f-4bff-9be1-66c729805ea9",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-03T13:31:40.671683Z"
+                      "updated_at": "2026-04-03T17:18:36.930490Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10747,7 +10747,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "WordPress",
+                  "service_definition": "Radarr",
                   "source": {
                     "type": "Manual"
                   },
@@ -11450,14 +11450,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-03T13:31:40.683239Z",
-                  "id": "027d63f5-b441-4dd3-ab7b-2f1931bd3558",
+                  "created_at": "2026-04-03T17:18:36.942012Z",
+                  "id": "c21a526e-d449-4234-8887-e707c3ad27cf",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-03T13:31:40.683239Z"
+                  "updated_at": "2026-04-03T17:18:36.942012Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11466,7 +11466,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "WordPress",
+              "service_definition": "Radarr",
               "source": {
                 "type": "Manual"
               },
@@ -12740,14 +12740,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-03T13:31:40.671982Z",
-          "id": "f72498b3-3f85-45e0-a01c-221ea2411199",
+          "created_at": "2026-04-03T17:18:36.930816Z",
+          "id": "9dd8914b-78f2-40af-933e-cf436f60c957",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-03T13:31:40.671982Z"
+          "updated_at": "2026-04-03T17:18:36.930816Z"
         }
       },
       "BindingBase": {
@@ -13028,14 +13028,6 @@
           "Yellow"
         ]
       },
-      "ContainerRule": {
-        "type": "string",
-        "description": "Rules that change which containers exist and how they nest.\nContainer titles are data-driven (subnet CIDR, host names), not user-configurable.",
-        "enum": [
-          "BySubnet",
-          "ByVirtualizingService"
-        ]
-      },
       "ContainerType": {
         "type": "string",
         "enum": [
@@ -13270,7 +13262,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "WordPress",
+              "service_definition": "Radarr",
               "tags": [],
               "virtualization": null
             }
@@ -15041,6 +15033,104 @@
           }
         }
       },
+      "GraphRule_ContainerRule": {
+        "type": "object",
+        "description": "Generic wrapper that gives any rule type a stable UUID identity.",
+        "required": [
+          "id",
+          "rule"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rule": {
+            "type": "string",
+            "description": "Rules that change which containers exist and how they nest.\nContainer titles are data-driven (subnet CIDR, host names), not user-configurable.",
+            "enum": [
+              "BySubnet",
+              "ByVirtualizingService"
+            ]
+          }
+        }
+      },
+      "GraphRule_LeafRule": {
+        "type": "object",
+        "description": "Generic wrapper that gives any rule type a stable UUID identity.",
+        "required": [
+          "id",
+          "rule"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rule": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "ByServiceCategory"
+                ],
+                "properties": {
+                  "ByServiceCategory": {
+                    "type": "object",
+                    "required": [
+                      "categories"
+                    ],
+                    "properties": {
+                      "categories": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/ServiceCategory"
+                        }
+                      },
+                      "title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "ByTag"
+                ],
+                "properties": {
+                  "ByTag": {
+                    "type": "object",
+                    "required": [
+                      "tag_ids"
+                    ],
+                    "properties": {
+                      "tag_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "description": "Rules that organize nodes within a container into sub-groups."
+          }
+        }
+      },
       "Group": {
         "allOf": [
           {
@@ -15575,14 +15665,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-03T13:31:40.671256Z",
-                  "id": "0a0439db-b134-4c15-a70f-d8341fead8e6",
+                  "created_at": "2026-04-03T17:18:36.930049Z",
+                  "id": "1c5ee5ce-3c96-4266-9902-0e744a2732f5",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-03T13:31:40.671256Z"
+                  "updated_at": "2026-04-03T17:18:36.930049Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15591,7 +15681,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "WordPress",
+              "service_definition": "Radarr",
               "source": {
                 "type": "Manual"
               },
@@ -16175,68 +16265,6 @@
         "enum": [
           "Interface"
         ]
-      },
-      "LeafRule": {
-        "oneOf": [
-          {
-            "type": "object",
-            "required": [
-              "ByServiceCategory"
-            ],
-            "properties": {
-              "ByServiceCategory": {
-                "type": "object",
-                "required": [
-                  "categories"
-                ],
-                "properties": {
-                  "categories": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/ServiceCategory"
-                    }
-                  },
-                  "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "ByTag"
-            ],
-            "properties": {
-              "ByTag": {
-                "type": "object",
-                "required": [
-                  "tag_ids"
-                ],
-                "properties": {
-                  "tag_ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    }
-                  },
-                  "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        ],
-        "description": "Rules that organize nodes within a container into sub-groups."
       },
       "LldpChassisId": {
         "oneOf": [
@@ -16827,6 +16855,14 @@
               "id": {
                 "type": "string",
                 "format": "uuid"
+              },
+              "leaf_rule_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid",
+                "description": "ID of the leaf rule that created this group container (for TagGroup/ServiceCategoryGroup)"
               },
               "position": {
                 "$ref": "#/components/schemas/Ixy"
@@ -17618,14 +17654,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-03T13:31:40.661316Z",
-                        "id": "0b20efcb-a3b1-4b92-967d-679bc64bd5f6",
+                        "created_at": "2026-04-03T17:18:36.920111Z",
+                        "id": "278c87bc-2626-45d0-9763-c06fd70bfca3",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-03T13:31:40.661316Z"
+                        "updated_at": "2026-04-03T17:18:36.920111Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17634,7 +17670,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "WordPress",
+                    "service_definition": "Radarr",
                     "source": {
                       "type": "Manual"
                     },
@@ -17711,14 +17747,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-03T13:31:40.682014Z",
-                    "id": "c2b3459d-d63c-40cf-970c-6cfbf76f9dce",
+                    "created_at": "2026-04-03T17:18:36.940806Z",
+                    "id": "cfad513a-f714-4d3f-9318-691b76acbc75",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-03T13:31:40.682014Z"
+                    "updated_at": "2026-04-03T17:18:36.940806Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17727,7 +17763,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "WordPress",
+                "service_definition": "Radarr",
                 "source": {
                   "type": "Manual"
                 },
@@ -18886,14 +18922,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-03T13:31:40.671877Z",
-              "id": "da8af8e8-63fb-4ae5-844e-100c7a65f15c",
+              "created_at": "2026-04-03T17:18:36.930709Z",
+              "id": "71dcd052-ba95-46f8-8a90-8772cd79db6b",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-03T13:31:40.671877Z"
+              "updated_at": "2026-04-03T17:18:36.930709Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -18902,7 +18938,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "WordPress",
+          "service_definition": "Radarr",
           "source": {
             "type": "Manual"
           },
@@ -20011,7 +20047,7 @@
           "container_rules": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ContainerRule"
+              "$ref": "#/components/schemas/GraphRule_ContainerRule"
             }
           },
           "hide_ports": {
@@ -20029,7 +20065,7 @@
           "leaf_rules": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LeafRule"
+              "$ref": "#/components/schemas/GraphRule_LeafRule"
             }
           },
           "perspective": {

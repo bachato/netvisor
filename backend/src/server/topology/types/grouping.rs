@@ -7,6 +7,22 @@ use strum_macros::{EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+/// Generic wrapper that gives any rule type a stable UUID identity.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
+pub struct GraphRule<T> {
+    pub id: Uuid,
+    pub rule: T,
+}
+
+impl<T> GraphRule<T> {
+    pub fn new(rule: T) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            rule,
+        }
+    }
+}
+
 /// Rules that change which containers exist and how they nest.
 /// Container titles are data-driven (subnet CIDR, host names), not user-configurable.
 #[derive(
@@ -139,8 +155,8 @@ pub enum NodeFilter {
 
 #[derive(Debug, Clone)]
 pub struct GroupingConfig {
-    pub container_rules: Vec<ContainerRule>,
-    pub leaf_rules: Vec<LeafRule>,
+    pub container_rules: Vec<GraphRule<ContainerRule>>,
+    pub leaf_rules: Vec<GraphRule<LeafRule>>,
     pub filters: Vec<NodeFilter>,
 }
 
@@ -167,7 +183,7 @@ impl GroupingConfig {
     pub fn should_group_docker_bridges(&self) -> bool {
         self.container_rules
             .iter()
-            .any(|r| matches!(r, ContainerRule::ByVirtualizingService))
+            .any(|r| matches!(r.rule, ContainerRule::ByVirtualizingService))
     }
 }
 
@@ -182,15 +198,15 @@ mod tests {
         let config = GroupingConfig::from_request_options(&options);
 
         assert!(config.should_group_docker_bridges());
-        assert_eq!(config.container_rules.len(), 2); // BySubnet + ByVirtualizingService
-        assert_eq!(config.leaf_rules.len(), 1); // ByServiceCategory
-        assert_eq!(config.filters.len(), 1); // HideServiceCategories(OpenPorts)
+        assert_eq!(config.container_rules.len(), 2);
+        assert_eq!(config.leaf_rules.len(), 1);
+        assert_eq!(config.filters.len(), 1);
     }
 
     #[test]
     fn test_no_docker_grouping() {
         let options = TopologyRequestOptions {
-            container_rules: vec![ContainerRule::BySubnet],
+            container_rules: vec![GraphRule::new(ContainerRule::BySubnet)],
             ..Default::default()
         };
         let config = GroupingConfig::from_request_options(&options);
@@ -201,15 +217,15 @@ mod tests {
     #[test]
     fn test_service_category_grouping() {
         let options = TopologyRequestOptions {
-            leaf_rules: vec![LeafRule::ByServiceCategory {
+            leaf_rules: vec![GraphRule::new(LeafRule::ByServiceCategory {
                 categories: vec![ServiceCategory::DNS],
                 title: Some("Infra".into()),
-            }],
+            })],
             ..Default::default()
         };
         let config = GroupingConfig::from_request_options(&options);
 
-        let has_category_rule = config.leaf_rules.iter().any(|r| match r {
+        let has_category_rule = config.leaf_rules.iter().any(|r| match &r.rule {
             LeafRule::ByServiceCategory { categories, .. } => {
                 categories.contains(&ServiceCategory::DNS)
             }
@@ -231,30 +247,30 @@ mod tests {
     #[test]
     fn test_serialization_round_trip_container_rules() {
         let rules = vec![
-            ContainerRule::BySubnet,
-            ContainerRule::ByVirtualizingService,
+            GraphRule::new(ContainerRule::BySubnet),
+            GraphRule::new(ContainerRule::ByVirtualizingService),
         ];
 
         let json = serde_json::to_string(&rules).unwrap();
-        let deserialized: Vec<ContainerRule> = serde_json::from_str(&json).unwrap();
+        let deserialized: Vec<GraphRule<ContainerRule>> = serde_json::from_str(&json).unwrap();
         assert_eq!(rules, deserialized);
     }
 
     #[test]
     fn test_serialization_round_trip_leaf_rules() {
         let rules = vec![
-            LeafRule::ByServiceCategory {
+            GraphRule::new(LeafRule::ByServiceCategory {
                 categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
                 title: Some("Infrastructure".into()),
-            },
-            LeafRule::ByTag {
+            }),
+            GraphRule::new(LeafRule::ByTag {
                 tag_ids: vec![Uuid::new_v4(), Uuid::new_v4()],
                 title: Some("Tagged".into()),
-            },
+            }),
         ];
 
         let json = serde_json::to_string(&rules).unwrap();
-        let deserialized: Vec<LeafRule> = serde_json::from_str(&json).unwrap();
+        let deserialized: Vec<GraphRule<LeafRule>> = serde_json::from_str(&json).unwrap();
         assert_eq!(rules, deserialized);
     }
 }

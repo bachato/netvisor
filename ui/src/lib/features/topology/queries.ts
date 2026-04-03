@@ -9,7 +9,8 @@ import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-qu
 import { queryClient, queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Topology, TopologyOptions } from './types/base';
-import type { ContainerRule, LeafRule } from './types/grouping';
+import type { ContainerGraphRule, LeafGraphRule } from './types/grouping';
+import { makeGraphRule } from './types/grouping';
 import type { Organization } from '$lib/features/organizations/types';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
@@ -18,29 +19,36 @@ import { UNTAGGED_SENTINEL } from './interactions';
 
 /** Strip UI-only sentinel values from options before sending to the API */
 export function sanitizeOptionsForApi(options: TopologyOptions): TopologyOptions {
-	const sanitized = JSON.parse(JSON.stringify(options)) as TopologyOptions;
-	const tf = sanitized.local?.tag_filter;
-	if (tf) {
-		if (tf.hidden_host_tag_ids) {
-			tf.hidden_host_tag_ids = tf.hidden_host_tag_ids.filter((id) => id !== UNTAGGED_SENTINEL);
+	const tf = options.local?.tag_filter;
+	return {
+		...options,
+		local: {
+			...options.local,
+			tag_filter: {
+				hidden_host_tag_ids: (tf?.hidden_host_tag_ids ?? []).filter(
+					(id) => id !== UNTAGGED_SENTINEL
+				),
+				hidden_service_tag_ids: (tf?.hidden_service_tag_ids ?? []).filter(
+					(id) => id !== UNTAGGED_SENTINEL
+				),
+				hidden_subnet_tag_ids: (tf?.hidden_subnet_tag_ids ?? []).filter(
+					(id) => id !== UNTAGGED_SENTINEL
+				)
+			}
 		}
-		if (tf.hidden_service_tag_ids) {
-			tf.hidden_service_tag_ids = tf.hidden_service_tag_ids.filter(
-				(id) => id !== UNTAGGED_SENTINEL
-			);
-		}
-		if (tf.hidden_subnet_tag_ids) {
-			tf.hidden_subnet_tag_ids = tf.hidden_subnet_tag_ids.filter((id) => id !== UNTAGGED_SENTINEL);
-		}
-	}
-	return sanitized;
+	};
 }
 
 // Default options for new topologies
-export const defaultContainerRules: ContainerRule[] = ['BySubnet', 'ByVirtualizingService'];
+export const defaultContainerRules: ContainerGraphRule[] = [
+	makeGraphRule('BySubnet' as const),
+	makeGraphRule('ByVirtualizingService' as const)
+];
 
-export const defaultLeafRules: LeafRule[] = [
-	{ ByServiceCategory: { categories: ['DNS', 'ReverseProxy'], title: 'Infrastructure' } }
+export const defaultLeafRules: LeafGraphRule[] = [
+	makeGraphRule({
+		ByServiceCategory: { categories: ['DNS', 'ReverseProxy'], title: 'Infrastructure' }
+	})
 ];
 
 export const defaultTopologyOptions: TopologyOptions = {

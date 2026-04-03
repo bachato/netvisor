@@ -9,8 +9,10 @@
 		type ResizeParams
 	} from '@xyflow/svelte';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
+	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
-	import { subnetTypes } from '$lib/shared/stores/metadata';
+	import type { Color } from '$lib/shared/utils/styling';
+	import { subnetTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { isContainerSubnet } from '$lib/features/subnets/queries';
 	import { topology_hostsCount } from '$lib/paraglide/messages';
 	import {
@@ -146,6 +148,43 @@
 	// Header for sub-group containers comes from node header
 	let groupHeader = $derived((data as TopologyNode).header ?? '');
 
+	// Resolve leaf rule for sub-group containers to render Tag pills
+	let leafRuleId = $derived((data as Record<string, unknown>)?.leaf_rule_id as string | undefined);
+	let leafRule = $derived.by(() => {
+		if (!leafRuleId) return null;
+		const rules = $topologyOptions.request.leaf_rules ?? [];
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		return (rules as any[]).find((r: { id: string }) => r.id === leafRuleId) ?? null;
+	});
+
+	// Build label pills from the leaf rule
+	let groupLabels = $derived.by((): { label: string; color: Color }[] => {
+		if (!leafRule?.rule) return [];
+		const rule = leafRule.rule;
+		if ('ByServiceCategory' in rule && topology) {
+			return (rule.ByServiceCategory.categories ?? []).map((cat: string) => {
+				// Find a service with this category to get its color
+				const svc = topology!.services?.find(
+					(s) => serviceDefinitions.getCategory(s.service_definition) === cat
+				);
+				const color = svc
+					? serviceDefinitions.getColorHelper(svc.service_definition).color
+					: ('Gray' as Color);
+				return { label: cat, color };
+			});
+		}
+		if ('ByTag' in rule && topology) {
+			return (rule.ByTag.tag_ids ?? []).map((tagId: string) => {
+				const tag = topology!.entity_tags?.find((t) => t.id === tagId);
+				return {
+					label: tag?.name ?? tagId,
+					color: (tag?.color as Color) ?? 'Gray'
+				};
+			});
+		}
+		return [];
+	});
+
 	const viewport = useViewport();
 	let resizeHandleZoomLevel = $derived(viewport.current.zoom > 0.5);
 
@@ -219,7 +258,7 @@
 		class="relative"
 		style="{nodeStyle} opacity: {nodeOpacity}; transition: opacity 0.2s ease-in-out;"
 	>
-		{#if groupHeader}
+		{#if groupHeader || groupLabels.length > 0}
 			<div
 				class="text-secondary z-100 absolute -top-7 left-0 flex items-center gap-1 rounded-t px-2 py-0.5"
 			>
@@ -234,9 +273,14 @@
 						<ChevronDown class="text-secondary h-3.5 w-3.5" />
 					{/if}
 				</button>
-				<span class="text-tertiary whitespace-nowrap text-xs font-medium">
-					{groupHeader}
-				</span>
+				{#if groupHeader}
+					<span class="text-tertiary whitespace-nowrap text-xs font-medium">
+						{groupHeader}{groupLabels.length > 0 ? ':' : ''}
+					</span>
+				{/if}
+				{#each groupLabels as pill (pill.label)}
+					<Tag label={pill.label} color={pill.color} />
+				{/each}
 			</div>
 		{/if}
 

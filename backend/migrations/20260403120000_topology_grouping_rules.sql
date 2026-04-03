@@ -1,5 +1,5 @@
 -- Convert legacy grouping boolean fields in topology options to container_rules + leaf_rules arrays
--- Also remove left_zone_title from local options (title now lives on LeafRule variants)
+-- Rules are wrapped in GraphRule with a stable UUID identity
 
 -- Step 1: Build container_rules and leaf_rules from legacy fields and update options.request
 UPDATE topologies
@@ -12,20 +12,24 @@ SET options = jsonb_set(
         - 'group_docker_bridges_by_host'
         - 'left_zone_service_categories'
         - 'show_gateway_in_left_zone'
-        -- Add container_rules array
+        -- Add container_rules array (GraphRule<ContainerRule>)
         || jsonb_build_object('container_rules',
             (
                 -- Always include BySubnet
-                '["BySubnet"]'::jsonb
+                jsonb_build_array(
+                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'BySubnet')
+                )
                 -- Conditionally include ByVirtualizingService (default was true)
                 || CASE
                     WHEN COALESCE((options->'request'->>'group_docker_bridges_by_host')::boolean, true)
-                    THEN '["ByVirtualizingService"]'::jsonb
+                    THEN jsonb_build_array(
+                        jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByVirtualizingService')
+                    )
                     ELSE '[]'::jsonb
                 END
             )
         )
-        -- Add leaf_rules array
+        -- Add leaf_rules array (GraphRule<LeafRule>)
         || jsonb_build_object('leaf_rules',
             (
                 -- Conditionally include ByServiceCategory
@@ -33,9 +37,12 @@ SET options = jsonb_set(
                     WHEN jsonb_array_length(COALESCE(options->'request'->'left_zone_service_categories', '["DNS","ReverseProxy"]'::jsonb)) > 0
                     THEN jsonb_build_array(
                         jsonb_build_object(
-                            'ByServiceCategory', jsonb_build_object(
-                                'categories', COALESCE(options->'request'->'left_zone_service_categories', '["DNS","ReverseProxy"]'::jsonb),
-                                'title', COALESCE(options->'local'->>'left_zone_title', 'Infrastructure')
+                            'id', gen_random_uuid(),
+                            'rule', jsonb_build_object(
+                                'ByServiceCategory', jsonb_build_object(
+                                    'categories', COALESCE(options->'request'->'left_zone_service_categories', '["DNS","ReverseProxy"]'::jsonb),
+                                    'title', COALESCE(options->'local'->>'left_zone_title', 'Infrastructure')
+                                )
                             )
                         )
                     )

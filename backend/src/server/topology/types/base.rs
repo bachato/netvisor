@@ -12,7 +12,7 @@ use crate::server::tags::r#impl::base::Tag;
 use crate::server::topology::types::edges::{
     Edge, EdgeHandle, EdgeTypeDiscriminants, TopologyPerspective,
 };
-use crate::server::topology::types::grouping::{ContainerRule, LeafRule};
+use crate::server::topology::types::grouping::{ContainerRule, GraphRule, LeafRule};
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
 use chrono::{DateTime, Utc};
@@ -255,25 +255,25 @@ pub struct TopologyRequestOptions {
     pub hide_ports: bool,
     pub hide_service_categories: Vec<ServiceCategory>,
     #[serde(default = "default_container_rules")]
-    pub container_rules: Vec<ContainerRule>,
+    pub container_rules: Vec<GraphRule<ContainerRule>>,
     #[serde(default = "default_leaf_rules")]
-    pub leaf_rules: Vec<LeafRule>,
+    pub leaf_rules: Vec<GraphRule<LeafRule>>,
     #[serde(default)]
     pub perspective: TopologyPerspective,
 }
 
-fn default_container_rules() -> Vec<ContainerRule> {
+fn default_container_rules() -> Vec<GraphRule<ContainerRule>> {
     vec![
-        ContainerRule::BySubnet,
-        ContainerRule::ByVirtualizingService,
+        GraphRule::new(ContainerRule::BySubnet),
+        GraphRule::new(ContainerRule::ByVirtualizingService),
     ]
 }
 
-fn default_leaf_rules() -> Vec<LeafRule> {
-    vec![LeafRule::ByServiceCategory {
+fn default_leaf_rules() -> Vec<GraphRule<LeafRule>> {
+    vec![GraphRule::new(LeafRule::ByServiceCategory {
         categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
         title: Some("Infrastructure".into()),
-    }]
+    })]
 }
 
 impl Default for TopologyRequestOptions {

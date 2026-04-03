@@ -48,7 +48,7 @@
 
 	// Target can be either a subnet (grouped) or a service (not grouped)
 	let isGrouped = $derived(
-		($topologyOptions.request.container_rules ?? []).includes('ByVirtualizingService')
+		($topologyOptions.request.container_rules ?? []).some((r) => r.rule === 'ByVirtualizingService')
 	);
 	// Get containerized services - all if grouped, or just the one in edge.target if not
 	let containerizedServices = $derived(
