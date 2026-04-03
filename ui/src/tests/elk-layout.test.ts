@@ -23,12 +23,15 @@ function resetIds() {
 	idCounter = 0;
 }
 
-function makeContainer(id: string, opts?: { width?: number; height?: number }): TopologyNode {
+function makeContainer(
+	id: string,
+	opts?: { width?: number; height?: number; container_type?: string; parent_container_id?: string }
+): TopologyNode {
 	return {
 		id,
 		node_type: 'ContainerNode',
-		container_type: 'Subnet',
-		infra_width: 0,
+		container_type: opts?.container_type ?? 'Subnet',
+		...(opts?.parent_container_id && { parent_container_id: opts.parent_container_id }),
 		position: { x: 0, y: 0 },
 		size: { x: opts?.width ?? 400, y: opts?.height ?? 300 }
 	} as TopologyNode;
@@ -41,7 +44,6 @@ function makeLeaf(id: string, subnetId: string, hostId?: string): TopologyNode {
 		leaf_type: 'Interface',
 		host_id: hostId ?? uuid(),
 		subnet_id: subnetId,
-		is_infra: false,
 		position: { x: 0, y: 0 },
 		size: { x: 180, y: 60 }
 	} as TopologyNode;
@@ -110,18 +112,22 @@ function makeTopology(
 			removed_if_entries: [],
 			options: {
 				local: {
-					left_zone_title: 'Infrastructure',
+					left_zone_title: '', // Deprecated field, kept for generated type compat
 					hide_edge_types: [],
 					no_fade_edges: false,
 					hide_resize_handles: false
 				},
 				request: {
-					group_docker_bridges_by_host: true,
+					group_docker_bridges_by_host: true, // Deprecated, kept for type compat
 					hide_ports: false,
 					hide_vm_title_on_docker_container: false,
-					show_gateway_in_left_zone: true,
-					left_zone_service_categories: [],
-					hide_service_categories: []
+					show_gateway_in_left_zone: false, // Deprecated, kept for type compat
+					left_zone_service_categories: [], // Deprecated, kept for type compat
+					hide_service_categories: [],
+					grouping_rules: [
+						{ BySubnet: { title: null } },
+						{ ByVirtualizingService: { title: null } }
+					]
 				}
 			}
 		} as ElkLayoutInput['topology']
@@ -361,6 +367,48 @@ describe('computeElkLayout', () => {
 			expect(Number.isFinite(pos.x)).toBe(true);
 			expect(Number.isFinite(pos.y)).toBe(true);
 		}
+	});
+
+	it('handles nested sub-group containers inside a subnet', async () => {
+		const subnetId = uuid();
+		const groupId = uuid();
+		const leaf1 = uuid();
+		const leaf2 = uuid();
+		const leaf3 = uuid();
+
+		const nodes: TopologyNode[] = [
+			makeContainer(subnetId),
+			makeContainer(groupId, {
+				container_type: 'ServiceCategoryGroup',
+				parent_container_id: subnetId
+			}),
+			makeLeaf(leaf1, subnetId),
+			makeLeaf(leaf2, groupId),
+			makeLeaf(leaf3, groupId)
+		];
+
+		const edges: TopologyEdge[] = [makeEdge(leaf1, leaf2, 'Interface')];
+		const subnets = [makeSubnet(subnetId, 'Lan')];
+
+		const input = makeTopology(nodes, edges, subnets);
+		const result = await computeElkLayout(input);
+
+		// All nodes should have positions
+		expect(result.nodePositions.has(subnetId)).toBe(true);
+		expect(result.nodePositions.has(groupId)).toBe(true);
+		expect(result.nodePositions.has(leaf1)).toBe(true);
+		expect(result.nodePositions.has(leaf2)).toBe(true);
+
+		// Sub-group should have a size
+		expect(result.containerSizes.has(groupId)).toBe(true);
+		const groupSize = result.containerSizes.get(groupId)!;
+		expect(groupSize.width).toBeGreaterThan(0);
+		expect(groupSize.height).toBeGreaterThan(0);
+
+		// Sub-group position should be non-negative (relative to parent)
+		const groupPos = result.nodePositions.get(groupId)!;
+		expect(groupPos.x).toBeGreaterThanOrEqual(0);
+		expect(groupPos.y).toBeGreaterThanOrEqual(0);
 	});
 
 	it('does not pass overlay edges to ELK layout', async () => {

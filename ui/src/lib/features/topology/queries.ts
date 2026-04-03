@@ -9,6 +9,7 @@ import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-qu
 import { queryClient, queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Topology, TopologyOptions } from './types/base';
+import type { GroupingRule } from './types/grouping';
 import type { Organization } from '$lib/features/organizations/types';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
@@ -36,9 +37,16 @@ export function sanitizeOptionsForApi(options: TopologyOptions): TopologyOptions
 }
 
 // Default options for new topologies
+// Default grouping rules for new topologies
+export const defaultGroupingRules: GroupingRule[] = [
+	{ BySubnet: { title: null } },
+	{ ByVirtualizingService: { title: null } },
+	{ ByServiceCategory: { categories: ['DNS', 'ReverseProxy'], title: 'Infrastructure' } }
+];
+
 export const defaultTopologyOptions: TopologyOptions = {
 	local: {
-		left_zone_title: 'Infrastructure',
+		left_zone_title: '', // Deprecated — kept for generated type compat
 		hide_edge_types: [
 			'HostVirtualization',
 			'ServiceVirtualization',
@@ -57,14 +65,15 @@ export const defaultTopologyOptions: TopologyOptions = {
 		show_minimap: true
 	},
 	request: {
-		group_docker_bridges_by_host: true,
+		group_docker_bridges_by_host: true, // Deprecated — replaced by grouping_rules
 		hide_ports: false,
 		hide_vm_title_on_docker_container: false,
-		show_gateway_in_left_zone: true,
-		left_zone_service_categories: ['DNS', 'ReverseProxy'],
-		hide_service_categories: ['OpenPorts']
+		show_gateway_in_left_zone: false, // Deprecated — replaced by grouping_rules
+		left_zone_service_categories: [], // Deprecated — replaced by grouping_rules
+		hide_service_categories: ['OpenPorts'],
+		grouping_rules: defaultGroupingRules
 	}
-};
+} as TopologyOptions; // Type assertion: grouping_rules not yet in generated types
 
 /**
  * Query hook for fetching all topologies

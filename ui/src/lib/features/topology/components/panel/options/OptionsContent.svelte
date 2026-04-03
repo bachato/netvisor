@@ -5,7 +5,7 @@
 		useTopologiesQuery,
 		autoRebuild
 	} from '../../../queries';
-	import { updateTagFilter, hoveredServiceCategory, hoveredEdgeType } from '../../../interactions';
+	import { updateTagFilter, hoveredEdgeType } from '../../../interactions';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '../../../state';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { Color } from '$lib/shared/utils/styling';
@@ -14,23 +14,19 @@
 	import OptionToggle from './OptionToggle.svelte';
 	import CategoryFilterGroup from './CategoryFilterGroup.svelte';
 	import FilterGroup from './FilterGroup.svelte';
+	import GroupingRuleEditor from './GroupingRuleEditor.svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
-		common_categories,
-		common_docker,
 		common_hosts,
-		common_infrastructure,
 		common_services,
 		common_subnets,
-		common_title,
 		common_visual,
 		topology_bundleEdges,
 		topology_bundleEdgesHelp,
 		topology_dontFadeEdges,
 		topology_dontFadeEdgesHelp,
-		topology_groupDockerBridges,
-		topology_groupDockerBridgesHelp,
+		topology_groupBy,
 		topology_hideEdgeTypes,
 		topology_hidePorts,
 		topology_hidePortsHelp,
@@ -41,10 +37,6 @@
 		topology_hideStuff,
 		topology_hideVmOnContainer,
 		topology_hideVmOnContainerHelp,
-		topology_leftZone,
-		topology_leftZoneTitleHelp,
-		topology_showGatewayInLeftZone,
-		topology_showGatewayInLeftZoneHelp,
 		topology_tagFilter,
 		topology_tagFilterHelp
 	} from '$lib/paraglide/messages';
@@ -160,24 +152,6 @@
 		});
 	}
 
-	function toggleLeftZoneCategory(category: string) {
-		topologyOptions.update((opts) => {
-			const current = opts.request.left_zone_service_categories ?? [];
-			const idx = current.indexOf(category as (typeof current)[number]);
-			const newCategories =
-				idx === -1
-					? [...current, category as (typeof current)[number]]
-					: current.filter((c) => c !== category);
-			return {
-				...opts,
-				request: {
-					...opts.request,
-					left_zone_service_categories: newCategories
-				}
-			};
-		});
-	}
-
 	function toggleEdgeType(edgeType: string) {
 		topologyOptions.update((opts) => {
 			const hidden = opts.local.hide_edge_types ?? [];
@@ -194,14 +168,6 @@
 				}
 			};
 		});
-	}
-
-	function handleLeftZoneCategoryHoverStart(value: string, color: Color) {
-		hoveredServiceCategory.set({ category: value, color: color as string });
-	}
-
-	function handleLeftZoneCategoryHoverEnd() {
-		hoveredServiceCategory.set(null);
 	}
 
 	function handleEdgeTypeHoverStart(value: string, color: Color) {
@@ -325,16 +291,6 @@
 			helpText: () => topology_showMinimapHelp(),
 			section: () => common_visual()
 		},
-		// Docker section
-		{
-			id: 'group_docker_bridges_by_host',
-			label: () => topology_groupDockerBridges(),
-			type: 'boolean',
-			path: 'request',
-			key: 'group_docker_bridges_by_host',
-			helpText: () => topology_groupDockerBridgesHelp(),
-			section: () => common_docker()
-		},
 		{
 			id: 'hide_vm_title_on_docker_container',
 			label: () => topology_hideVmOnContainer(),
@@ -342,27 +298,7 @@
 			path: 'request',
 			key: 'hide_vm_title_on_docker_container',
 			helpText: () => topology_hideVmOnContainerHelp(),
-			section: () => common_docker()
-		},
-		// Left Zone section
-		{
-			id: 'left_zone_title',
-			label: () => common_title(),
-			type: 'string',
-			path: 'local',
-			key: 'left_zone_title',
-			helpText: () => topology_leftZoneTitleHelp(),
-			section: () => topology_leftZone(),
-			placeholder: () => common_infrastructure()
-		},
-		{
-			id: 'show_gateway_in_left_zone',
-			label: () => topology_showGatewayInLeftZone(),
-			type: 'boolean',
-			path: 'request',
-			key: 'show_gateway_in_left_zone',
-			helpText: () => topology_showGatewayInLeftZoneHelp(),
-			section: () => topology_leftZone()
+			section: () => common_visual()
 		},
 		// Hide Stuff section
 		{
@@ -390,13 +326,9 @@
 	// Track expanded sections
 	let expandedSections = $state<Record<string, boolean>>(
 		Object.fromEntries(
-			[
-				common_visual(),
-				common_docker(),
-				topology_leftZone(),
-				topology_hideStuff(),
-				topology_tagFilter()
-			].map((name) => [name, true])
+			[common_visual(), topology_groupBy(), topology_hideStuff(), topology_tagFilter()].map(
+				(name) => [name, true]
+			)
 		)
 	);
 
@@ -488,6 +420,28 @@
 		{/if}
 	</div>
 
+	<!-- Group By Section -->
+	<div class="card card-static px-0 py-2">
+		<button
+			type="button"
+			class="text-secondary hover:text-primary flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
+			onclick={() => toggleSection(topology_groupBy())}
+		>
+			{#if expandedSections[topology_groupBy()]}
+				<ChevronDown class="h-4 w-4" />
+			{:else}
+				<ChevronRight class="h-4 w-4" />
+			{/if}
+			{topology_groupBy()}
+		</button>
+
+		{#if expandedSections[topology_groupBy()]}
+			<div class="px-3 pb-3">
+				<GroupingRuleEditor />
+			</div>
+		{/if}
+	</div>
+
 	{#each sections as section (section.name)}
 		<div class="card card-static px-0 py-2">
 			<button
@@ -536,18 +490,6 @@
 							</div>
 						{/if}
 					{/each}
-					{#if section.name === topology_leftZone()}
-						<FilterGroup
-							items={serviceCategoriesWithColors}
-							selectedValues={$topologyOptions.request.left_zone_service_categories ?? []}
-							mode="include"
-							onToggle={toggleLeftZoneCategory}
-							onHoverStart={handleLeftZoneCategoryHoverStart}
-							onHoverEnd={handleLeftZoneCategoryHoverEnd}
-							disabled={!editState.isEditable}
-							label={common_categories()}
-						/>
-					{/if}
 					{#if section.name === topology_hideStuff()}
 						<CategoryFilterGroup
 							categories={allServiceCategoriesWithColors}

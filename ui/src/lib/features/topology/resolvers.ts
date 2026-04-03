@@ -5,6 +5,9 @@ import type { Topology, TopologyNode } from './types/base';
 type ContainerType = components['schemas']['ContainerType']; // 'Subnet'
 type LeafEntityType = components['schemas']['LeafEntityType']; // 'Interface'
 
+// Extended container types (stub until generated types include them)
+type ExtendedContainerType = ContainerType | 'TagGroup' | 'ServiceCategoryGroup';
+
 // Resolver return types
 export interface LeafRenderContext {
 	host: Topology['hosts'][number] | undefined;
@@ -18,7 +21,7 @@ export interface LeafRenderContext {
 
 export interface ContainerRenderContext {
 	subnet: Topology['subnets'][number] | undefined;
-	infraWidth: number;
+	title: string | null;
 }
 
 // Exhaustive resolver maps — TypeScript errors if a variant is missing
@@ -46,15 +49,21 @@ const leafResolvers: Record<
 };
 
 const containerResolvers: Record<
-	ContainerType,
+	ExtendedContainerType,
 	(nodeId: string, node: TopologyNode, topology: Topology) => ContainerRenderContext
 > = {
-	Subnet: (nodeId, _node, topology) => {
+	Subnet: (nodeId, node, topology) => {
 		const subnet = topology.subnets.find((s) => s.id === nodeId);
-		// Currently reads infra_width from convenience field on the node.
-		// When removed, this could come from layout metadata or be computed.
-		const infraWidth = 'infra_width' in _node ? (_node.infra_width as number) : 0;
-		return { subnet, infraWidth };
+		const title = 'header' in node ? (node.header as string | null) : null;
+		return { subnet, title };
+	},
+	TagGroup: (_nodeId, node) => {
+		const title = 'header' in node ? (node.header as string | null) : null;
+		return { subnet: undefined, title };
+	},
+	ServiceCategoryGroup: (_nodeId, node) => {
+		const title = 'header' in node ? (node.header as string | null) : null;
+		return { subnet: undefined, title };
 	}
 };
 
@@ -76,6 +85,8 @@ export function resolveContainerNode(
 ): ContainerRenderContext {
 	if (node.node_type !== 'ContainerNode')
 		throw new Error(`Expected ContainerNode, got ${node.node_type}`);
-	const containerType = node.container_type ?? 'Subnet'; // Default for backward compat
-	return containerResolvers[containerType](nodeId, node, topology);
+	const containerType = (node.container_type ?? 'Subnet') as ExtendedContainerType;
+	const resolver = containerResolvers[containerType];
+	if (!resolver) return containerResolvers['Subnet'](nodeId, node, topology);
+	return resolver(nodeId, node, topology);
 }

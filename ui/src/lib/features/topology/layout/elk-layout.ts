@@ -77,6 +77,12 @@ const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
 /** Container node padding (extra top for header). */
 const CONTAINER_PADDING = '[top=50,left=25,bottom=25,right=25]';
 
+/** Sub-group container padding (smaller header). */
+const SUBGROUP_PADDING = '[top=30,left=15,bottom=15,right=15]';
+
+/** Container types that represent sub-groups within a subnet. */
+const SUBGROUP_CONTAINER_TYPES = new Set(['TagGroup', 'ServiceCategoryGroup']);
+
 function getLayerHint(node: TopologyNode, topology: Topology): number {
 	// Future: use layer_hint if present
 	if ('layer_hint' in node && typeof (node as Record<string, unknown>).layer_hint === 'number') {
@@ -102,12 +108,22 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 
 	const collapsed = input.collapsedContainers ?? new Set<string>();
 
+	// Track parent relationships for nested containers
+	const parentContainerMap = new Map<string, string>();
+
 	// Create container (parent) nodes
 	for (const node of input.nodes) {
 		if (node.node_type === 'ContainerNode') {
 			containerIds.add(node.id);
-			const layerId = getLayerHint(node, input.topology);
 			const isCollapsed = collapsed.has(node.id);
+			const containerType = (node as Record<string, unknown>).container_type as string | undefined;
+			const isSubgroup = containerType ? SUBGROUP_CONTAINER_TYPES.has(containerType) : false;
+			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
+			if (parentId) parentContainerMap.set(node.id, parentId);
+
+			const layerId = isSubgroup ? undefined : getLayerHint(node, input.topology);
+			const padding = isSubgroup ? SUBGROUP_PADDING : CONTAINER_PADDING;
+
 			const elkNode: ElkNode = isCollapsed
 				? {
 						id: node.id,
@@ -117,7 +133,9 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 						layoutOptions: {
 							'elk.nodeSize.constraints': 'MINIMUM_SIZE',
 							'elk.nodeSize.minimum': '(200,80)',
-							'elk.layered.layering.layerId': String(layerId)
+							...(layerId !== undefined && {
+								'elk.layered.layering.layerId': String(layerId)
+							})
 						}
 					}
 				: {
@@ -125,14 +143,25 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 						children: [],
 						layoutOptions: {
 							'elk.algorithm': 'rectpacking',
-							'elk.padding': CONTAINER_PADDING,
+							'elk.padding': padding,
 							'elk.nodeSize.constraints': 'MINIMUM_SIZE',
 							'elk.rectpacking.desiredAspectRatio': '2.5',
 							'elk.spacing.nodeNode': '20',
-							'elk.layered.layering.layerId': String(layerId)
+							...(layerId !== undefined && {
+								'elk.layered.layering.layerId': String(layerId)
+							})
 						}
 					};
 			containers.set(node.id, elkNode);
+		}
+	}
+
+	// Nest sub-group containers inside their parent containers
+	for (const [childId, parentId] of parentContainerMap) {
+		const parent = containers.get(parentId);
+		const child = containers.get(childId);
+		if (parent && child && parent.children) {
+			parent.children.push(child);
 		}
 	}
 
@@ -244,10 +273,15 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 		}
 	}
 
+	// Only add root-level containers (not nested sub-groups) to root children
+	const rootContainers = Array.from(containers.entries())
+		.filter(([id]) => !parentContainerMap.has(id))
+		.map(([, node]) => node);
+
 	const graph: ElkNode = {
 		id: 'root',
 		layoutOptions: ROOT_LAYOUT_OPTIONS,
-		children: Array.from(containers.values()),
+		children: rootContainers,
 		edges
 	};
 
@@ -305,30 +339,36 @@ function mapElkResults(
 	// Track absolute positions for handle computation (leaves need container offset)
 	const absolutePositions = new Map<string, { x: number; y: number }>();
 
-	// Map container positions and sizes
-	if (layoutResult.children) {
-		for (const container of layoutResult.children) {
-			if (!containerIds.has(container.id)) continue;
-			const cx = container.x ?? 0;
-			const cy = container.y ?? 0;
-			nodePositions.set(container.id, { x: cx, y: cy });
-			absolutePositions.set(container.id, { x: cx, y: cy });
-			containerSizes.set(container.id, {
-				width: container.width ?? 0,
-				height: container.height ?? 0
-			});
+	// Recursively map container and child positions
+	function processChildren(children: ElkNode[], parentAbsX: number, parentAbsY: number) {
+		for (const child of children) {
+			const cx = child.x ?? 0;
+			const cy = child.y ?? 0;
+			const absX = parentAbsX + cx;
+			const absY = parentAbsY + cy;
 
-			// Map leaf node positions (relative to parent for SvelteFlow)
-			if (container.children) {
-				for (const leaf of container.children) {
-					const lx = leaf.x ?? 0;
-					const ly = leaf.y ?? 0;
-					nodePositions.set(leaf.id, { x: lx, y: ly });
-					// Absolute = container pos + leaf offset
-					absolutePositions.set(leaf.id, { x: cx + lx, y: cy + ly });
+			if (containerIds.has(child.id)) {
+				// Container node: position relative to parent, track absolute
+				nodePositions.set(child.id, { x: cx, y: cy });
+				absolutePositions.set(child.id, { x: absX, y: absY });
+				containerSizes.set(child.id, {
+					width: child.width ?? 0,
+					height: child.height ?? 0
+				});
+				// Recurse into children (nested containers or leaves)
+				if (child.children) {
+					processChildren(child.children, absX, absY);
 				}
+			} else {
+				// Leaf node: position relative to parent for SvelteFlow
+				nodePositions.set(child.id, { x: cx, y: cy });
+				absolutePositions.set(child.id, { x: absX, y: absY });
 			}
 		}
+	}
+
+	if (layoutResult.children) {
+		processChildren(layoutResult.children, 0, 0);
 	}
 
 	// Compute optimal edge handles using absolute positions

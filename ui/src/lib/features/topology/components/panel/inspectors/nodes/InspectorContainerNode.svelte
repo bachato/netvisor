@@ -10,20 +10,11 @@
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
-	import { getTopologyEditState, getOptionDisabledTooltip } from '$lib/features/topology/state';
+	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import { subnetTypes } from '$lib/shared/stores/metadata';
-	import OptionToggle from '../../options/OptionToggle.svelte';
-	import OptionsCard from '../../options/OptionsCard.svelte';
 	import { useUpdateSubnetMutation } from '$lib/features/subnets/queries';
-	import {
-		topology_showGatewayInLeftZone,
-		topology_showGatewayInLeftZoneHelp,
-		topology_groupDockerBridges,
-		topology_groupDockerBridgesHelp,
-		topology_focusNode
-	} from '$lib/paraglide/messages';
+	import { topology_focusNode } from '$lib/paraglide/messages';
 
 	let { node }: { node: Node } = $props();
 
@@ -49,10 +40,6 @@
 
 	let subnet = $derived(topology ? topology.subnets.find((s) => s.id == node.id) : null);
 
-	let isContainerSubnet = $derived(
-		subnet ? subnetTypes.getMetadata(subnet.subnet_type).is_for_containers : false
-	);
-
 	// Context for subnet display with description
 	let subnetContext = $derived({
 		showEntityTagPicker: true,
@@ -70,29 +57,6 @@
 </script>
 
 <div class="space-y-4">
-	{#if !editState.isReadonly}
-		<OptionsCard>
-			<OptionToggle
-				label={topology_showGatewayInLeftZone()}
-				helpText={topology_showGatewayInLeftZoneHelp()}
-				path="request"
-				optionKey="show_gateway_in_left_zone"
-				disabled={!editState.isEditable}
-				disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
-			/>
-			{#if isContainerSubnet}
-				<OptionToggle
-					label={topology_groupDockerBridges()}
-					helpText={topology_groupDockerBridgesHelp()}
-					path="request"
-					optionKey="group_docker_bridges_by_host"
-					disabled={!editState.isEditable}
-					disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
-				/>
-			{/if}
-		</OptionsCard>
-	{/if}
-
 	{#if subnet}
 		<div>
 			<div class="mb-2 flex items-center gap-2">

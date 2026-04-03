@@ -235,7 +235,8 @@
 				});
 
 				// Run ELK on structure/collapse changes, skip for edge-only re-renders
-				const structureKey = getStructureKey(topology) + ':' + Array.from(collapsed).sort().join(',');
+				const structureKey =
+					getStructureKey(topology) + ':' + Array.from(collapsed).sort().join(',');
 				const isNewStructure = sessionStructureKey !== structureKey;
 
 				if (isNewStructure) {
@@ -263,7 +264,10 @@
 				const liveNodes = getNodes();
 				const currentPositions = new Map(liveNodes.map((n) => [n.id, n.position]));
 				const currentSizes = new Map(
-					liveNodes.map((n) => [n.id, { width: n.computed?.width ?? n.width, height: n.computed?.height ?? n.height }])
+					liveNodes.map((n) => [
+						n.id,
+						{ width: n.computed?.width ?? n.width, height: n.computed?.height ?? n.height }
+					])
 				);
 
 				const allNodes: Node[] = visibleNodes.map((node) => {

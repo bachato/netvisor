@@ -126,18 +126,25 @@
 		return `box-shadow: 0 0 0 3px ${colorHelper.rgb};`;
 	});
 
+	let containerType = $derived(
+		((data as Record<string, unknown>)?.container_type as string) ?? 'Subnet'
+	);
+	let isSubgroup = $derived(
+		containerType === 'TagGroup' || containerType === 'ServiceCategoryGroup'
+	);
+
 	let resolved = $derived(
 		topology ? resolveContainerNode(id, data as TopologyNode, topology) : null
 	);
-	let infra_width = $derived(resolved?.infraWidth ?? 0);
 	let subnet = $derived(resolved?.subnet);
 
 	let isCollapsed = $derived(collapsedNodes.has(id));
 	let childCount = $derived(((data as Record<string, unknown>)?.childCount as number) ?? 0);
 
-	let leftZoneTitle = $derived($topologyOptions.local.left_zone_title);
 	let nodeStyle = $derived(`width: ${width}px; height: ${height}px;`);
-	let hasInfra = $derived(infra_width > 0 && !isCollapsed);
+
+	// Header for sub-group containers comes from node header
+	let groupHeader = $derived((data as TopologyNode).header ?? '');
 
 	const viewport = useViewport();
 	let resizeHandleZoomLevel = $derived(viewport.current.zoom > 0.5);
@@ -206,7 +213,47 @@
 	}
 </script>
 
-{#if subnetRenderData}
+{#if isSubgroup}
+	<!-- Sub-group container (TagGroup / ServiceCategoryGroup) -->
+	<div
+		class="relative"
+		style="{nodeStyle} opacity: {nodeOpacity}; transition: opacity 0.2s ease-in-out;"
+	>
+		{#if groupHeader}
+			<div
+				class="text-secondary z-100 absolute -top-7 left-0 flex items-center gap-1 rounded-t px-2 py-0.5"
+			>
+				<button
+					class="nopan flex-shrink-0 cursor-pointer border-none bg-transparent p-0"
+					onclick={handleChevronClick}
+					onmousedown={(e) => e.stopPropagation()}
+				>
+					{#if isCollapsed}
+						<ChevronRight class="text-secondary h-3.5 w-3.5" />
+					{:else}
+						<ChevronDown class="text-secondary h-3.5 w-3.5" />
+					{/if}
+				</button>
+				<span class="text-tertiary whitespace-nowrap text-xs font-medium">
+					{groupHeader}
+				</span>
+			</div>
+		{/if}
+
+		<div
+			class="border-secondary/30 rounded-lg border border-dashed transition-all duration-200"
+			style="background: var(--color-topology-node-bg); opacity: 0.7; width: 100%; height: 100%; position: relative; overflow: hidden;"
+		>
+			{#if isCollapsed}
+				<div class="flex h-full w-full items-center justify-center">
+					<span class="text-tertiary text-xs font-medium">
+						{topology_hostsCount({ count: childCount })}
+					</span>
+				</div>
+			{/if}
+		</div>
+	</div>
+{:else if subnetRenderData}
 	<div
 		class="relative"
 		style="{nodeStyle} opacity: {nodeOpacity}; transition: opacity 0.2s ease-in-out;"
@@ -258,24 +305,6 @@
 						{topology_hostsCount({ count: childCount })}
 					</span>
 				</div>
-			{:else}
-				<!-- Infrastructure background area with gradient centered at infra_width -->
-				{#if hasInfra}
-					<div
-						style={`position: absolute; top: 0; left: 0; width: ${infra_width + 20}px; height: 100%; border-radius: 0.75rem 0 0 0.75rem; pointer-events: none;
-							background: linear-gradient(to right,
-								var(--color-topology-zone) 0%,
-								var(--color-topology-zone) ${((infra_width - 20) / (infra_width + 20)) * 100}%,
-								transparent 100%);`}
-					>
-						<!-- Infrastructure title -->
-						<div
-							class="text-muted absolute left-1/2 top-0.5 -translate-x-1/2 transform text-[0.5rem] font-semibold"
-						>
-							{leftZoneTitle}
-						</div>
-					</div>
-				{/if}
 			{/if}
 		</div>
 
@@ -370,7 +399,7 @@
 		{/if}
 	</div>
 {/if}
-
+<!-- Sub-group containers don't get handles; subnet containers do -->
 <Handle type="target" id="Top" position={Position.Top} style="opacity: 0" />
 <Handle type="target" id="Right" position={Position.Right} style="opacity: 0" />
 <Handle type="target" id="Bottom" position={Position.Bottom} style="opacity: 0" />
