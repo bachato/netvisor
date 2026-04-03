@@ -386,11 +386,11 @@
 		</button>
 
 		{#if expandedSections[common_filters()]}
-			<div class="space-y-4 px-3 pb-3">
+			<div class="space-y-2 px-3 pb-3">
 				<p class="text-tertiary text-xs">{topology_filtersHelp()}</p>
 
 				<!-- Hosts -->
-				<div class="space-y-2">
+				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">
 					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
 						{common_hosts()}
 					</div>
@@ -405,7 +405,7 @@
 				</div>
 
 				<!-- Services -->
-				<div class="space-y-2">
+				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">
 					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
 						{common_services()}
 					</div>
@@ -427,7 +427,7 @@
 				</div>
 
 				<!-- Subnets -->
-				<div class="space-y-2">
+				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">
 					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
 						{common_subnets()}
 					</div>
@@ -442,7 +442,7 @@
 				</div>
 
 				<!-- Edges -->
-				<div class="space-y-2">
+				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">
 					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
 						{common_edges()}
 					</div>
