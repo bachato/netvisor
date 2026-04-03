@@ -217,8 +217,12 @@ function buildElkGraph(input: ElkLayoutInput): {
 	const hiddenEdgeSet = new Set(input.hiddenEdgeTypes ?? []);
 	for (const edge of input.edges) {
 		if (hiddenEdgeSet.has(edge.edge_type)) continue;
-		const srcContainer = leafToContainer.get(edge.source);
-		const tgtContainer = leafToContainer.get(edge.target);
+		// Resolve container: leaf→parent container, or the node itself if it IS a container
+		// (ServiceVirtualization edges can target a container node directly)
+		const srcContainer =
+			leafToContainer.get(edge.source) ?? (containerIds.has(edge.source) ? edge.source : undefined);
+		const tgtContainer =
+			leafToContainer.get(edge.target) ?? (containerIds.has(edge.target) ? edge.target : undefined);
 		if (srcContainer && tgtContainer && srcContainer !== tgtContainer) {
 			const srcLayer = containerLayerId.get(srcContainer) ?? 999;
 			const tgtLayer = containerLayerId.get(tgtContainer) ?? 999;
