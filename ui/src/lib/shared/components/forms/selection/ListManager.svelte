@@ -49,8 +49,10 @@
 		allowItemEdit?: (item: T) => boolean;
 		allowItemRemove?: (item: T) => boolean;
 		allowItemReorder?: (item: T) => boolean;
+		isItemEditing?: (item: T, index: number) => boolean;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		editIcon?: (item: T, index: number) => any;
+		editButtonClass?: (item: T, index: number) => string;
 		selectedItems?: T[];
 
 		// Interaction handlers
@@ -112,7 +114,9 @@
 		allowItemEdit = () => true,
 		allowItemRemove = () => true,
 		allowItemReorder = () => true,
+		isItemEditing = () => false,
 		editIcon = undefined,
+		editButtonClass = undefined,
 
 		// Interaction handlers
 		onCreateNew = null,
@@ -336,7 +340,6 @@
 				<div
 					class="
 						card flex flex-wrap items-center gap-3 rounded-lg border p-3 transition-all
-						{itemClickAction != null ? 'cursor-pointer' : ''}
 						{isHighlighted ? 'card-focused' : isItemSelected(item) ? 'card-selected' : ''}"
 					onclick={() => {
 						onClick(item, index);
@@ -393,6 +396,7 @@
 					<div class="flex items-center gap-1">
 						{#if allowItemEdit(item) && itemClickAction != 'edit'}
 							{@const EditIconComponent = editIcon ? editIcon(item, index) : Edit}
+							{@const btnClass = editButtonClass ? editButtonClass(item, index) : 'btn-icon'}
 							<button
 								type="button"
 								onclick={(e) => {
@@ -403,14 +407,14 @@
 										onEdit(item, index);
 									}
 								}}
-								class="btn-icon"
+								class={btnClass}
 								title="Edit"
 							>
 								<EditIconComponent size={16} />
 							</button>
 						{/if}
 
-						{#if allowReorder && allowItemReorder(item)}
+						{#if !isItemEditing(item, index) && allowReorder && allowItemReorder(item)}
 							<button
 								type="button"
 								onclick={(e) => {
@@ -438,7 +442,7 @@
 							</button>
 						{/if}
 
-						{#if allowItemRemove(item)}
+						{#if !isItemEditing(item, index) && allowItemRemove(item)}
 							<button
 								type="button"
 								onclick={(e) => {

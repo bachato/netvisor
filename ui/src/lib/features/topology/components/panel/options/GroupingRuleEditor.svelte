@@ -68,8 +68,9 @@
 		}
 	});
 
-	// Editing state tracked by stable ID
+	// Editing state tracked by stable ID + buffered rule
 	let editingLeafId = $state<number | null>(null);
+	let editingRule = $state<LeafRule | null>(null);
 
 	// Metadata lookups
 	const containerRuleMeta = Object.fromEntries(typedContainerRuleTypes.map((m) => [m.id, m]));
@@ -206,6 +207,7 @@
 		leafStableIds = [...leafStableIds, newId];
 		updateLeafRules([...leafRules, newRule]);
 		editingLeafId = newId;
+		editingRule = structuredClone(newRule);
 	}
 
 	function handleLeafRemove(index: number) {
@@ -237,7 +239,20 @@
 
 	function handleLeafEdit(_item: LeafRule, index: number) {
 		const stableId = leafStableIds[index];
-		editingLeafId = editingLeafId === stableId ? null : stableId;
+		if (editingLeafId === stableId) {
+			// Closing edit — flush buffered rule to store
+			if (editingRule) {
+				const newRules = [...leafRules];
+				newRules[index] = editingRule;
+				updateLeafRules(newRules);
+			}
+			editingLeafId = null;
+			editingRule = null;
+		} else {
+			// Opening edit — buffer the current rule
+			editingLeafId = stableId;
+			editingRule = structuredClone(leafRules[index]);
+		}
 	}
 
 	function isLeafEditing(index: number): boolean {
@@ -248,36 +263,39 @@
 		return isLeafEditing(index) ? Check : Edit;
 	}
 
-	function handleLeafTitleChange(index: number, title: string | null) {
-		const newRules = [...leafRules];
-		newRules[index] = setLeafRuleTitle(newRules[index], title);
-		updateLeafRules(newRules);
+	function getLeafEditButtonClass(_item: LeafRule, index: number): string {
+		return isLeafEditing(index) ? 'btn-icon text-green-500' : 'btn-icon';
 	}
 
-	function handleTagToggle(index: number, tagId: string) {
-		const rule = leafRules[index];
-		if ('ByTag' in rule) {
-			const current = rule.ByTag.tag_ids;
-			const idx = current.indexOf(tagId);
-			const newTagIds = idx === -1 ? [...current, tagId] : current.filter((id) => id !== tagId);
-			const newRules = [...leafRules];
-			newRules[index] = { ByTag: { ...rule.ByTag, tag_ids: newTagIds } };
-			updateLeafRules(newRules);
+	function isLeafItemEditing(_item: LeafRule, index: number): boolean {
+		return isLeafEditing(index);
+	}
+
+	// These edit handlers modify the local buffer, NOT the store
+	function handleLeafTitleChange(title: string | null) {
+		if (editingRule) {
+			editingRule = setLeafRuleTitle(editingRule, title);
 		}
 	}
 
-	function toggleCategory(index: number, category: ServiceCategory) {
-		const rule = leafRules[index];
-		if ('ByServiceCategory' in rule) {
-			const current = rule.ByServiceCategory.categories;
+	function handleTagToggle(tagId: string) {
+		if (editingRule && 'ByTag' in editingRule) {
+			const current = editingRule.ByTag.tag_ids;
+			const idx = current.indexOf(tagId);
+			const newTagIds = idx === -1 ? [...current, tagId] : current.filter((id) => id !== tagId);
+			editingRule = { ByTag: { ...editingRule.ByTag, tag_ids: newTagIds } };
+		}
+	}
+
+	function toggleCategory(category: ServiceCategory) {
+		if (editingRule && 'ByServiceCategory' in editingRule) {
+			const current = editingRule.ByServiceCategory.categories;
 			const idx = current.indexOf(category);
 			const newCategories: ServiceCategory[] =
 				idx === -1 ? [...current, category] : current.filter((c) => c !== category);
-			const newRules = [...leafRules];
-			newRules[index] = {
-				ByServiceCategory: { ...rule.ByServiceCategory, categories: newCategories }
+			editingRule = {
+				ByServiceCategory: { ...editingRule.ByServiceCategory, categories: newCategories }
 			};
-			updateLeafRules(newRules);
 		}
 	}
 </script>
@@ -323,6 +341,8 @@
 	allowDuplicates={true}
 	allowItemEdit={() => true}
 	editIcon={getLeafEditIcon}
+	editButtonClass={getLeafEditButtonClass}
+	isItemEditing={isLeafItemEditing}
 	onAdd={handleLeafAdd}
 	onRemove={handleLeafRemove}
 	onMoveUp={handleLeafMoveUp}
@@ -332,39 +352,40 @@
 	{#snippet itemSnippet({ item })}
 		<GroupingRuleItem label={getLeafRuleLabel(item)} />
 	{/snippet}
-	{#snippet itemExpandedSnippet({ item, index })}
-		{#if isLeafEditing(index)}
+	{#snippet itemExpandedSnippet({ index })}
+		{#if isLeafEditing(index) && editingRule}
+			{@const rule = editingRule}
 			<div class="mt-2 w-full space-y-3 border-t border-gray-200 pt-2 dark:border-gray-700">
 				<!-- Title input -->
 				<input
 					type="text"
 					class="input-field w-full py-1 text-sm"
 					placeholder={topology_groupRuleTitlePlaceholder()}
-					value={('ByServiceCategory' in item
-						? item.ByServiceCategory.title
-						: 'ByTag' in item
-							? item.ByTag.title
+					value={('ByServiceCategory' in rule
+						? rule.ByServiceCategory.title
+						: 'ByTag' in rule
+							? rule.ByTag.title
 							: null) ?? ''}
 					oninput={(e) =>
-						handleLeafTitleChange(index, (e.currentTarget as HTMLInputElement).value || null)}
+						handleLeafTitleChange((e.currentTarget as HTMLInputElement).value || null)}
 					disabled={!editState.isEditable}
 				/>
 
 				<!-- Selection pills -->
-				{#if 'ByServiceCategory' in item}
+				{#if 'ByServiceCategory' in rule}
 					<FilterGroup
 						items={serviceCategoriesWithColors}
-						selectedValues={item.ByServiceCategory.categories}
+						selectedValues={rule.ByServiceCategory.categories}
 						mode="include"
-						onToggle={(cat) => toggleCategory(index, cat as ServiceCategory)}
+						onToggle={(cat) => toggleCategory(cat as ServiceCategory)}
 						disabled={!editState.isEditable}
 					/>
-				{:else if 'ByTag' in item}
+				{:else if 'ByTag' in rule}
 					<FilterGroup
 						items={allTagsWithColors}
-						selectedValues={item.ByTag.tag_ids}
+						selectedValues={rule.ByTag.tag_ids}
 						mode="include"
-						onToggle={(tagId) => handleTagToggle(index, tagId)}
+						onToggle={(tagId) => handleTagToggle(tagId)}
 						disabled={!editState.isEditable}
 					/>
 				{/if}
