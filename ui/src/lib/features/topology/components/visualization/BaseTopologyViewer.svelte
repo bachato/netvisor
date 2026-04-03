@@ -327,6 +327,12 @@
 					edges.set([]);
 					const measureNodes = sortFlowNodes(buildFlowNodes());
 					nodes.set(measureNodes);
+
+					// Wait for SvelteFlow to measure DOM via ResizeObserver.
+					// tick() flushes Svelte updates; two rAF frames ensure browser
+					// layout + ResizeObserver callbacks have fired.
+					await tick();
+					await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 					await tick();
 
 					// Phase 2: Read measured sizes from SvelteFlow
