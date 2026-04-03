@@ -23,7 +23,12 @@
 	import '@xyflow/svelte/dist/style.css';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { pushError } from '$lib/shared/stores/feedback';
-	import { previewEdges, selectedNodes, topologyOptions } from '../../queries';
+	import {
+		previewEdges,
+		selectedNodes,
+		topologyOptions,
+		useUpdateNodePositionMutation
+	} from '../../queries';
 	import { isExporting } from '../../interactions';
 
 	// Import custom node/edge components
@@ -144,8 +149,9 @@
 	// Store pending edges until nodes are ready
 	let pendingEdges: Edge[] = [];
 
-	// Track ELK layout state — only skip re-computation within the same mount
-	// when structure hasn't changed (e.g. bundle toggle, selection change)
+	// Track ELK layout state
+	const ELK_COMPUTED_KEY = 'scanopy_elk_computed';
+	const updateNodePosition = useUpdateNodePositionMutation();
 	let cachedLayoutResult: import('../../layout/elk-layout').ElkLayoutResult | null = null;
 	let sessionStructureKey = '';
 
@@ -154,6 +160,23 @@
 			.map((n) => n.id)
 			.sort()
 			.join(',')}`;
+	}
+
+	function isElkComputed(topologyId: string, structureKey: string): boolean {
+		try {
+			const state = JSON.parse(localStorage.getItem(ELK_COMPUTED_KEY) ?? '{}');
+			return state[topologyId] === structureKey;
+		} catch {
+			return false;
+		}
+	}
+
+	function markElkComputed(topologyId: string, structureKey: string) {
+		try {
+			const state = JSON.parse(localStorage.getItem(ELK_COMPUTED_KEY) ?? '{}');
+			state[topologyId] = structureKey;
+			localStorage.setItem(ELK_COMPUTED_KEY, JSON.stringify(state));
+		} catch { /* ignore */ }
 	}
 
 	// Clear expanded bundles when bundling is toggled off
@@ -239,14 +262,33 @@
 				const structureKey = getStructureKey(topology) + ':' + Array.from(collapsed).sort().join(',');
 
 				const isNewStructure = sessionStructureKey !== structureKey;
+				// Skip ELK if positions were already computed and saved to server
+				const alreadyPersisted = isElkComputed(topology.id, structureKey);
 
-				if (isNewStructure) {
+				if (isNewStructure && !alreadyPersisted) {
 					cachedLayoutResult = await computeElkLayout({
 						nodes: visibleNodes,
 						edges: topology.edges,
 						topology: topology,
 						collapsedContainers: collapsed
 					});
+					sessionStructureKey = structureKey;
+
+					// Persist all ELK positions to server so they survive page reload
+					for (const node of visibleNodes) {
+						const elkPos = cachedLayoutResult.nodePositions.get(node.id);
+						if (elkPos) {
+							updateNodePosition.mutate({
+								topologyId: topology.id,
+								networkId: topology.network_id,
+								nodeId: node.id,
+								position: elkPos
+							});
+						}
+					}
+					markElkComputed(topology.id, structureKey);
+				} else if (isNewStructure) {
+					// Structure matches persisted key — server has ELK positions, use them
 					sessionStructureKey = structureKey;
 				}
 
