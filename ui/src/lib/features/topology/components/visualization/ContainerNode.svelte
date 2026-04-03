@@ -148,7 +148,7 @@
 	// Header for sub-group containers comes from node header
 	let groupHeader = $derived((data as TopologyNode).header ?? '');
 
-	// Resolve leaf rule for sub-group containers to render Tag pills
+	// Resolve element rule for sub-group containers to render Tag pills
 	let elementRuleId = $derived(
 		(data as Record<string, unknown>)?.element_rule_id as string | undefined
 	);
@@ -159,7 +159,7 @@
 		return (rules as any[]).find((r: { id: string }) => r.id === elementRuleId) ?? null;
 	});
 
-	// Build label pills from the leaf rule
+	// Build label pills from the element rule
 	let groupLabels = $derived.by((): { label: string; color: Color }[] => {
 		if (!elementRule?.rule) return [];
 		const rule = elementRule.rule;

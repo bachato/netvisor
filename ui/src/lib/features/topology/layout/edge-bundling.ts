@@ -3,7 +3,7 @@ import type { TopologyEdge } from '../types/base';
 export interface BundledEdge {
 	/** Unique ID for the bundle */
 	id: string;
-	/** Container IDs (or leaf IDs if same container) */
+	/** Container IDs (or element IDs if same container) */
 	sourceContainerId: string;
 	targetContainerId: string;
 	/** The individual edges in this bundle */
@@ -22,19 +22,19 @@ export interface BundledEdge {
  * Edges between the same two containers of the same type are bundled together.
  *
  * - Intra-container edges (source and target in same container) are never bundled
- * - Edges with source/target not in leafToContainer are not bundled
+ * - Edges with source/target not in the element-to-container map are not bundled
  * - Groups with only 1 edge are treated as unbundled
  */
 export function bundleEdges(
 	edges: TopologyEdge[],
-	leafToContainer: Map<string, string>
+	elementToContainer: Map<string, string>
 ): { bundles: BundledEdge[]; unbundled: TopologyEdge[] } {
 	const groups = new Map<string, TopologyEdge[]>();
 	const unbundled: TopologyEdge[] = [];
 
 	for (const edge of edges) {
-		const sourceContainer = leafToContainer.get(edge.source);
-		const targetContainer = leafToContainer.get(edge.target);
+		const sourceContainer = elementToContainer.get(edge.source);
+		const targetContainer = elementToContainer.get(edge.target);
 
 		// Can't determine containers → unbundled
 		if (!sourceContainer || !targetContainer) {
@@ -71,8 +71,8 @@ export function bundleEdges(
 		}
 
 		const first = group[0];
-		const sourceContainer = leafToContainer.get(first.source)!;
-		const targetContainer = leafToContainer.get(first.target)!;
+		const sourceContainer = elementToContainer.get(first.source)!;
+		const targetContainer = elementToContainer.get(first.target)!;
 		const [c1, c2] =
 			sourceContainer < targetContainer
 				? [sourceContainer, targetContainer]

@@ -10,7 +10,7 @@ export interface ElkLayoutInput {
 	edges: TopologyEdge[];
 	topology: Topology;
 	collapsedContainers?: Set<string>;
-	/** Frontend-computed leaf node sizes (overrides backend node.size) */
+	/** Frontend-computed element node sizes (overrides backend node.size) */
 	elementNodeSizes?: Map<string, { x: number; y: number }>;
 	hiddenEdgeTypes?: string[];
 }
@@ -105,7 +105,7 @@ function getLayerHint(node: TopologyNode, topology: Topology): number {
 
 /**
  * Build an ELK graph from topology data.
- * Containers become parent nodes; leaves become children inside their container.
+ * Containers become parent nodes; elements become children inside their container.
  * Only primary edges are included (overlay edges don't affect layout).
  */
 function buildElkGraph(input: ElkLayoutInput): {
@@ -187,7 +187,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 		}
 	}
 
-	// Build leaf→container mapping
+	// Build element→container mapping
 	const elementToContainer = new Map<string, string>();
 	for (const node of input.nodes) {
 		if (node.node_type === 'Element') {
@@ -207,19 +207,19 @@ function buildElkGraph(input: ElkLayoutInput): {
 		);
 	}
 
-	// Build cross-container edge metadata per leaf node for edge-aware positioning
+	// Build cross-container edge metadata per element node for edge-aware positioning
 	const elementExternalEdgeInfo = new Map<
 		string,
 		{ hasUpwardEdge: boolean; hasDownwardEdge: boolean; externalEdgeCount: number }
 	>();
 	// Consider all VISIBLE edge types for positioning metadata (not just primary).
 	// Primary/overlay classification only matters for container-level ELK edges —
-	// for leaf positioning, any visible cross-container edge indicates the node
+	// for element positioning, any visible cross-container edge indicates the node
 	// should be near the boundary (e.g., ServiceVirtualization edges to Docker Bridge).
 	const hiddenEdgeSet = new Set(input.hiddenEdgeTypes ?? []);
 	for (const edge of input.edges) {
 		if (hiddenEdgeSet.has(edge.edge_type)) continue;
-		// Resolve container: leaf→parent container, or the node itself if it IS a container
+		// Resolve container: element→parent container, or the node itself if it IS a container
 		// (ServiceVirtualization edges can target a container node directly)
 		const srcContainer =
 			elementToContainer.get(edge.source) ??
@@ -230,11 +230,11 @@ function buildElkGraph(input: ElkLayoutInput): {
 		if (srcContainer && tgtContainer && srcContainer !== tgtContainer) {
 			const srcLayer = containerLayerId.get(srcContainer) ?? 999;
 			const tgtLayer = containerLayerId.get(tgtContainer) ?? 999;
-			for (const [leafId, myLayer, otherLayer] of [
+			for (const [elementId, myLayer, otherLayer] of [
 				[edge.source, srcLayer, tgtLayer],
 				[edge.target, tgtLayer, srcLayer]
 			] as [string, number, number][]) {
-				const info = elementExternalEdgeInfo.get(leafId) ?? {
+				const info = elementExternalEdgeInfo.get(elementId) ?? {
 					hasUpwardEdge: false,
 					hasDownwardEdge: false,
 					externalEdgeCount: 0
@@ -242,12 +242,12 @@ function buildElkGraph(input: ElkLayoutInput): {
 				info.externalEdgeCount++;
 				if (otherLayer < myLayer) info.hasUpwardEdge = true;
 				if (otherLayer > myLayer) info.hasDownwardEdge = true;
-				elementExternalEdgeInfo.set(leafId, info);
+				elementExternalEdgeInfo.set(elementId, info);
 			}
 		}
 	}
 
-	// Add leaf nodes as children of their containers (skip collapsed)
+	// Add element nodes as children of their containers (skip collapsed)
 	for (const node of input.nodes) {
 		if (node.node_type === 'Element') {
 			const parentId = node.container_id ?? node.subnet_id;
@@ -269,7 +269,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 	}
 
 	// With SEPARATE_CHILDREN, create container-level edges from cross-container
-	// leaf edges. Direction is normalized to respect layer hierarchy (lower layerId → higher).
+	// element edges. Direction is normalized to respect layer hierarchy (lower layerId → higher).
 	const edges: ElkExtendedEdge[] = [];
 	const seenContainerEdges = new Set<string>();
 	let edgeIndex = 0;
@@ -298,7 +298,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 	}
 
 	// Add hierarchy-enforcing edges between layer tiers for disconnected containers.
-	// Without these, containers with no cross-container leaf edges (e.g., Docker Bridge)
+	// Without these, containers with no cross-container element edges (e.g., Docker Bridge)
 	// float as disconnected components and ignore layerId ordering.
 	const connectedContainers = new Set<string>();
 	for (const key of seenContainerEdges) {
@@ -417,16 +417,16 @@ function applyEdgeAwareSwaps(
 	const bridgeNodeSides = new Map<string, HandleSide>();
 	if (!container.children || container.children.length < 2) return bridgeNodeSides;
 
-	// Only consider leaf nodes (not nested sub-group containers)
-	const leaves = container.children.filter((c) => !containerIds.has(c.id));
-	if (leaves.length < 2) return bridgeNodeSides;
+	// Only consider element nodes (not nested sub-group containers)
+	const elements = container.children.filter((c) => !containerIds.has(c.id));
+	if (elements.length < 2) return bridgeNodeSides;
 
-	// Group leaves by x-coordinate (same column)
+	// Group elements by x-coordinate (same column)
 	const columns = new Map<number, ElkNode[]>();
-	for (const leaf of leaves) {
-		const x = leaf.x ?? 0;
+	for (const element of elements) {
+		const x = element.x ?? 0;
 		if (!columns.has(x)) columns.set(x, []);
-		columns.get(x)!.push(leaf);
+		columns.get(x)!.push(element);
 	}
 
 	const spacing = parseInt(container.layoutOptions?.['elk.spacing.nodeNode'] ?? '20');
@@ -547,7 +547,7 @@ function mapElkResults(
 	const nodePositions = new Map<string, { x: number; y: number }>();
 	const containerSizes = new Map<string, { width: number; height: number }>();
 
-	// Track absolute positions for handle computation (leaves need container offset)
+	// Track absolute positions for handle computation (elements need container offset)
 	const absolutePositions = new Map<string, { x: number; y: number }>();
 
 	// Recursively map container and child positions
@@ -566,12 +566,12 @@ function mapElkResults(
 					width: child.width ?? 0,
 					height: child.height ?? 0
 				});
-				// Recurse into children (nested containers or leaves)
+				// Recurse into children (nested containers or elements)
 				if (child.children) {
 					processChildren(child.children, absX, absY);
 				}
 			} else {
-				// Leaf node: position relative to parent for SvelteFlow
+				// Element node: position relative to parent for SvelteFlow
 				nodePositions.set(child.id, { x: cx, y: cy });
 				absolutePositions.set(child.id, { x: absX, y: absY });
 			}
@@ -605,12 +605,12 @@ function mapElkResults(
 	const edgeHandles = new Map<string, EdgeHandles>();
 	const nodeSizes = new Map<string, { w: number; h: number }>();
 	for (const node of input.nodes) {
-		// Use ELK-computed size for containers, frontend-computed size for leaves
+		// Use ELK-computed size for containers, frontend-computed size for elements
 		const elkSize = containerSizes.get(node.id);
-		const leafSize = input.elementNodeSizes?.get(node.id);
+		const elementSize = input.elementNodeSizes?.get(node.id);
 		nodeSizes.set(node.id, {
-			w: elkSize?.width ?? leafSize?.x ?? node.size.x,
-			h: elkSize?.height ?? leafSize?.y ?? node.size.y
+			w: elkSize?.width ?? elementSize?.x ?? node.size.x,
+			h: elkSize?.height ?? elementSize?.y ?? node.size.y
 		});
 	}
 

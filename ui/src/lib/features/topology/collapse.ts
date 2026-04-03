@@ -114,7 +114,7 @@ export function expandAll(): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Build a mapping from leaf node ID to its parent container ID.
+ * Build a mapping from element node ID to its parent container ID.
  */
 export function buildElementToContainer(nodes: TopologyNode[]): Map<string, string> {
 	const map = new Map<string, string>();
@@ -152,14 +152,14 @@ export function buildContainerChildCounts(nodes: TopologyNode[]): Map<string, nu
 /**
  * Compute aggregated edges for collapsed containers.
  *
- * - Remaps edges whose source/target is a hidden leaf inside a collapsed container
+ * - Remaps edges whose source/target is a hidden element inside a collapsed container
  * - Groups edges between the same pair of (resolved) nodes
  * - Returns aggregated edges with count
  */
 export function computeCollapsedEdges(
 	edges: TopologyEdge[],
 	collapsed: Set<string>,
-	leafToContainer: Map<string, string>,
+	elementToContainer: Map<string, string>,
 	hiddenEdgeTypes: string[]
 ): AggregatedEdge[] {
 	if (collapsed.size === 0) return [];
@@ -173,12 +173,12 @@ export function computeCollapsedEdges(
 		let src = edge.source as string;
 		let tgt = edge.target as string;
 
-		// Remap if the leaf's container is collapsed
-		const srcContainer = leafToContainer.get(src);
+		// Remap if the element's container is collapsed
+		const srcContainer = elementToContainer.get(src);
 		if (srcContainer && collapsed.has(srcContainer)) {
 			src = srcContainer;
 		}
-		const tgtContainer = leafToContainer.get(tgt);
+		const tgtContainer = elementToContainer.get(tgt);
 		if (tgtContainer && collapsed.has(tgtContainer)) {
 			tgt = tgtContainer;
 		}

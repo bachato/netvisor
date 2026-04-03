@@ -229,7 +229,7 @@
 					hiddenEdgeTypes
 				);
 
-				// Filter out leaf nodes inside collapsed containers
+				// Filter out element nodes inside collapsed containers
 				const visibleNodes = topology.nodes.filter((node) => {
 					if (node.node_type === 'Element') {
 						const parentId = elementToContainer.get(node.id);
@@ -281,7 +281,7 @@
 							const elkPos = layoutResult.nodePositions.get(node.id);
 							const elkSize = layoutResult.containerSizes.get(node.id);
 							position = elkPos ?? { x: node.position.x, y: node.position.y };
-							// Leaf nodes: fixed width, auto height (content-driven)
+							// Element nodes: fixed width, auto height (content-driven)
 							// Containers: ELK-computed dimensions
 							width = isCollapsed ? 200 : isElement ? 250 : (elkSize?.width ?? undefined);
 							height = isCollapsed ? 80 : isElement ? undefined : (elkSize?.height ?? undefined);
