@@ -10,9 +10,6 @@ export interface ElkLayoutInput {
 	edges: TopologyEdge[];
 	topology: Topology;
 	collapsedContainers?: Set<string>;
-	/** Frontend-computed leaf node sizes (overrides backend node.size) */
-	leafNodeSizes?: Map<string, { x: number; y: number }>;
-	hiddenEdgeTypes?: string[];
 }
 
 export type HandleSide = 'Top' | 'Bottom' | 'Left' | 'Right';
@@ -25,7 +22,6 @@ export interface EdgeHandles {
 export interface ElkLayoutResult {
 	nodePositions: Map<string, { x: number; y: number }>;
 	containerSizes: Map<string, { width: number; height: number }>;
-	leafNodeSizes: Map<string, { x: number; y: number }>;
 	edgeHandles: Map<string, EdgeHandles>;
 }
 
@@ -205,18 +201,14 @@ function buildElkGraph(input: ElkLayoutInput): {
 		);
 	}
 
-	// Build cross-container edge metadata per leaf node for edge-aware positioning
+	// Build cross-container edge metadata per leaf node for edge-aware positioning.
+	// Uses ALL edges (not just visible) — even hidden edge types like ServiceVirtualization
+	// represent real structural relationships that should influence node placement.
 	const leafExternalEdgeInfo = new Map<
 		string,
 		{ hasUpwardEdge: boolean; hasDownwardEdge: boolean; externalEdgeCount: number }
 	>();
-	// Consider all VISIBLE edge types for positioning metadata (not just primary).
-	// Primary/overlay classification only matters for container-level ELK edges —
-	// for leaf positioning, any visible cross-container edge indicates the node
-	// should be near the boundary (e.g., ServiceVirtualization edges to Docker Bridge).
-	const hiddenEdgeSet = new Set(input.hiddenEdgeTypes ?? []);
 	for (const edge of input.edges) {
-		if (hiddenEdgeSet.has(edge.edge_type)) continue;
 		const srcContainer = leafToContainer.get(edge.source);
 		const tgtContainer = leafToContainer.get(edge.target);
 		if (srcContainer && tgtContainer && srcContainer !== tgtContainer) {
@@ -246,14 +238,13 @@ function buildElkGraph(input: ElkLayoutInput): {
 			if (collapsed.has(parentId)) continue;
 			const parent = containers.get(parentId);
 			if (parent && parent.children) {
-				const size = input.leafNodeSizes?.get(node.id) ?? node.size;
 				parent.children.push({
 					id: node.id,
-					width: size.x,
-					height: size.y,
+					width: node.size.x,
+					height: node.size.y,
 					layoutOptions: {
 						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.nodeSize.minimum': `(${size.x},${size.y})`
+						'elk.nodeSize.minimum': `(${node.size.x},${node.size.y})`
 					}
 				});
 			}
@@ -597,12 +588,11 @@ function mapElkResults(
 	const edgeHandles = new Map<string, EdgeHandles>();
 	const nodeSizes = new Map<string, { w: number; h: number }>();
 	for (const node of input.nodes) {
-		// Use ELK-computed size for containers, frontend-computed size for leaves
+		// Use ELK-computed size for containers, original size for leaves
 		const elkSize = containerSizes.get(node.id);
-		const leafSize = input.leafNodeSizes?.get(node.id);
 		nodeSizes.set(node.id, {
-			w: elkSize?.width ?? leafSize?.x ?? node.size.x,
-			h: elkSize?.height ?? leafSize?.y ?? node.size.y
+			w: elkSize?.width ?? node.size.x,
+			h: elkSize?.height ?? node.size.y
 		});
 	}
 
@@ -634,12 +624,7 @@ function mapElkResults(
 		}
 	}
 
-	return {
-		nodePositions,
-		containerSizes,
-		leafNodeSizes: input.leafNodeSizes ?? new Map(),
-		edgeHandles
-	};
+	return { nodePositions, containerSizes, edgeHandles };
 }
 
 /**
@@ -648,12 +633,7 @@ function mapElkResults(
  */
 export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayoutResult> {
 	if (input.nodes.length === 0) {
-		return {
-			nodePositions: new Map(),
-			containerSizes: new Map(),
-			leafNodeSizes: new Map(),
-			edgeHandles: new Map()
-		};
+		return { nodePositions: new Map(), containerSizes: new Map(), edgeHandles: new Map() };
 	}
 
 	const { graph, containerIds, leafExternalEdgeInfo } = buildElkGraph(input);
