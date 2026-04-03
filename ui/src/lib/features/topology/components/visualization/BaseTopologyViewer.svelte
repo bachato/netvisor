@@ -25,6 +25,7 @@
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { previewEdges, selectedNodes, topologyOptions } from '../../queries';
 	import { isExporting, expandedPortNodeIds } from '../../interactions';
+	import { applyLocalSizeAdjustment } from '../../layout/elk-layout';
 
 	// Import custom node/edge components
 	import ContainerNode from './ContainerNode.svelte';
@@ -148,6 +149,7 @@
 	let cachedLayoutResult: import('../../layout/elk-layout').ElkLayoutResult | null = null;
 	let sessionStructureKey = '';
 	let isMeasuring = false;
+	let prevExpandedPortIds = new Set<string>();
 
 	function getStructureKey(topo: Topology): string {
 		return `${topo.nodes.length}:${topo.edges.length}:${topo.nodes
@@ -239,7 +241,6 @@
 				// Run ELK on structure/collapse changes, skip for edge-only re-renders
 				const opts = get(topologyOptions);
 				const sizeKey = `${(opts.request.hide_service_categories ?? []).join(',')}:${opts.request.hide_ports}`;
-				const expandedPorts = get(expandedPortNodeIds);
 				const structureKey =
 					getStructureKey(topology) +
 					':' +
@@ -247,9 +248,7 @@
 					':' +
 					sizeKey +
 					':' +
-					hiddenEdgeTypes.join(',') +
-					':' +
-					Array.from(expandedPorts).sort().join(',');
+					hiddenEdgeTypes.join(',');
 				const isNewStructure = sessionStructureKey !== structureKey;
 
 				// Helper: build SvelteFlow node array from topology nodes
@@ -371,6 +370,50 @@
 					sessionStructureKey = structureKey;
 				}
 
+				// Local size adjustment for port expansion (no full ELK re-layout)
+				const currentExpandedPorts = get(expandedPortNodeIds);
+				const portsChanged =
+					currentExpandedPorts.size !== prevExpandedPortIds.size ||
+					[...currentExpandedPorts].some((id) => !prevExpandedPortIds.has(id)) ||
+					[...prevExpandedPortIds].some((id) => !currentExpandedPorts.has(id));
+
+				if (portsChanged && !isNewStructure && cachedLayoutResult) {
+					// Phase 1: Render with current positions to let DOM update port content
+					const measureNodes = sortFlowNodes(buildFlowNodes());
+					nodes.set(measureNodes);
+					await tick();
+					await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+					// Phase 2: Re-measure affected nodes
+					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
+					const updatedSizes = new Map<string, { x: number; y: number }>();
+					if (containerElement) {
+						const changedIds = new Set([...currentExpandedPorts, ...prevExpandedPortIds]);
+						for (const nodeId of changedIds) {
+							const el = containerElement.querySelector(`[data-id="${nodeId}"]`) as HTMLElement;
+							if (el) {
+								updatedSizes.set(nodeId, {
+									x: el.offsetWidth || 250,
+									y: el.offsetHeight || 100
+								});
+							}
+						}
+					}
+
+					// Phase 3: Apply local size adjustment
+					if (updatedSizes.size > 0) {
+						cachedLayoutResult = applyLocalSizeAdjustment(
+							cachedLayoutResult,
+							updatedSizes,
+							visibleNodes,
+							collapsed
+						);
+					}
+					prevExpandedPortIds = new Set(currentExpandedPorts);
+				} else if (isNewStructure) {
+					prevExpandedPortIds = new Set(currentExpandedPorts);
+				}
+
 				const layoutResult = cachedLayoutResult ?? {
 					nodePositions: new Map(),
 					containerSizes: new Map(),
@@ -383,8 +426,9 @@
 				const animatedStates = new Map(currentEdges.map((edge) => [edge.id, edge.animated]));
 
 				// Build final nodes with ELK positions
+				const useLayoutResult = isNewStructure || portsChanged;
 				const allNodes = sortFlowNodes(
-					isNewStructure ? buildFlowNodes(layoutResult) : buildFlowNodes()
+					useLayoutResult ? buildFlowNodes(layoutResult) : buildFlowNodes()
 				);
 
 				// Clear edges, set positioned nodes

@@ -223,7 +223,7 @@
 	);
 	function handleChevronClick(event: MouseEvent) {
 		event.stopPropagation();
-		toggleCollapse(id);
+		toggleCollapse(id, topology?.nodes);
 	}
 
 	async function onResize(event: ResizeDragEvent, params: ResizeParams) {
@@ -266,6 +266,7 @@
 				class="nopan text-secondary z-100 absolute left-2 top-1 flex cursor-pointer items-center gap-1 rounded px-2 py-1"
 				onclick={handleChevronClick}
 				onmousedown={(e) => e.stopPropagation()}
+				onpointerdown={(e) => e.stopPropagation()}
 			>
 				<ChevronRight class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
 				{#if groupHeader}
@@ -286,6 +287,7 @@
 					class="nopan text-secondary z-100 absolute left-2 top-1 flex cursor-pointer items-center gap-1 rounded-t px-2 py-0.5"
 					onclick={handleChevronClick}
 					onmousedown={(e) => e.stopPropagation()}
+					onpointerdown={(e) => e.stopPropagation()}
 				>
 					<ChevronDown class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
 					{#if groupHeader}
@@ -316,6 +318,7 @@
 				class="nopan card text-secondary z-100 absolute -top-10 left-0 flex cursor-pointer items-center gap-1 px-2 py-1 shadow-lg backdrop-blur-sm"
 				onclick={handleChevronClick}
 				onmousedown={(e) => e.stopPropagation()}
+				onpointerdown={(e) => e.stopPropagation()}
 			>
 				<!-- Collapse chevron -->
 				{#if isCollapsed}

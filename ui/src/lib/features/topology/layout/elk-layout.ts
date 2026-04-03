@@ -651,6 +651,149 @@ function mapElkResults(
 }
 
 /**
+ * Apply local size adjustments without full ELK re-layout.
+ *
+ * When a leaf node changes height (e.g., port expansion), this recomputes
+ * column positions within the affected container, resizes the container,
+ * and propagates to parent containers — without repositioning unrelated nodes.
+ */
+export function applyLocalSizeAdjustment(
+	cachedResult: ElkLayoutResult,
+	updatedLeafSizes: Map<string, { x: number; y: number }>,
+	nodes: TopologyNode[],
+	collapsed: Set<string>
+): ElkLayoutResult {
+	const nodePositions = new Map(cachedResult.nodePositions);
+	const containerSizes = new Map(cachedResult.containerSizes);
+	const leafNodeSizes = new Map(cachedResult.leafNodeSizes);
+
+	// Build leaf→container mapping and container→children mapping
+	const leafToContainer = new Map<string, string>();
+	const containerChildren = new Map<string, string[]>();
+	for (const node of nodes) {
+		if (node.node_type === 'LeafNode') {
+			const parentId = node.container_id ?? node.subnet_id;
+			if (parentId && !collapsed.has(parentId)) {
+				leafToContainer.set(node.id, parentId);
+				if (!containerChildren.has(parentId)) containerChildren.set(parentId, []);
+				containerChildren.get(parentId)!.push(node.id);
+			}
+		}
+	}
+
+	// Build parent container map for nested containers
+	const parentContainerMap = new Map<string, string>();
+	for (const node of nodes) {
+		if (node.node_type === 'ContainerNode') {
+			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
+			if (parentId) parentContainerMap.set(node.id, parentId);
+		}
+	}
+
+	// Find affected containers
+	const affectedContainers = new Set<string>();
+	for (const [leafId] of updatedLeafSizes) {
+		const containerId = leafToContainer.get(leafId);
+		if (containerId) affectedContainers.add(containerId);
+	}
+
+	// Update leaf sizes
+	for (const [id, size] of updatedLeafSizes) {
+		leafNodeSizes.set(id, size);
+	}
+
+	// For each affected container, rebuild column layout
+	for (const containerId of affectedContainers) {
+		const childIds = containerChildren.get(containerId) ?? [];
+		if (childIds.length === 0) continue;
+
+		// Group children by x-position (column), using ELK-computed positions
+		// (from cachedResult, never mutated) for Y sort order, and updated
+		// heights for spacing. recomputeColumnY sorts by y then re-stacks,
+		// so using computed Y preserves ELK's original column order.
+		const columns = new Map<number, ElkNode[]>();
+		for (const childId of childIds) {
+			const computedPos = cachedResult.nodePositions.get(childId);
+			const size = leafNodeSizes.get(childId);
+			if (!computedPos || !size) continue;
+			const x = computedPos.x;
+			if (!columns.has(x)) columns.set(x, []);
+			columns.get(x)!.push({
+				id: childId,
+				x: computedPos.x,
+				y: computedPos.y,
+				width: size.x,
+				height: size.y
+			});
+		}
+
+		// Detect container type for correct spacing/padding
+		const containerNode = nodes.find((n) => n.id === containerId);
+		const containerType = (containerNode as Record<string, unknown>)?.container_type as
+			| string
+			| undefined;
+		const isSubgroup = containerType ? SUBGROUP_CONTAINER_TYPES.has(containerType) : false;
+		const spacing = 30;
+		const bottomPad = isSubgroup ? 20 : 25;
+
+		// Reuse recomputeColumnY: sorts by y (= computed Y = stable order),
+		// then re-stacks with updated heights
+		let maxColumnBottom = 0;
+		for (const [, colNodes] of columns) {
+			recomputeColumnY(colNodes, spacing);
+			for (const node of colNodes) {
+				nodePositions.set(node.id, { x: node.x ?? 0, y: node.y ?? 0 });
+			}
+			const lastNode = colNodes[colNodes.length - 1];
+			const columnBottom = (lastNode.y ?? 0) + (lastNode.height ?? 0);
+			if (columnBottom > maxColumnBottom) maxColumnBottom = columnBottom;
+		}
+
+		// Update container height
+		const newHeight = maxColumnBottom + bottomPad;
+		const prevSize = containerSizes.get(containerId);
+		if (prevSize) {
+			const heightDelta = newHeight - prevSize.height;
+			containerSizes.set(containerId, { width: prevSize.width, height: newHeight });
+
+			// If nested in parent, grow parent and shift sibling containers
+			const parentId = parentContainerMap.get(containerId);
+			if (parentId && heightDelta !== 0) {
+				const siblingIds = nodes
+					.filter(
+						(n) =>
+							n.node_type === 'ContainerNode' &&
+							(n as Record<string, unknown>).parent_container_id === parentId &&
+							n.id !== containerId
+					)
+					.map((n) => n.id);
+
+				const myPos = nodePositions.get(containerId);
+				if (myPos) {
+					for (const sibId of siblingIds) {
+						const sibPos = nodePositions.get(sibId);
+						if (sibPos && sibPos.y > myPos.y) {
+							nodePositions.set(sibId, { x: sibPos.x, y: sibPos.y + heightDelta });
+						}
+					}
+				}
+
+				// Grow parent container
+				const parentSize = containerSizes.get(parentId);
+				if (parentSize) {
+					containerSizes.set(parentId, {
+						width: parentSize.width,
+						height: parentSize.height + heightDelta
+					});
+				}
+			}
+		}
+	}
+
+	return { nodePositions, containerSizes, leafNodeSizes, edgeHandles: cachedResult.edgeHandles };
+}
+
+/**
  * Compute layout positions using elkjs compound layered algorithm.
  * Returns positions for all nodes and computed sizes for containers.
  */
