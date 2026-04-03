@@ -27,13 +27,16 @@
 		topology_dontFadeEdges,
 		topology_dontFadeEdgesHelp,
 		topology_groupBy,
-		topology_hideEdgeTypes,
 		topology_hidePorts,
 		topology_hidePortsHelp,
 		topology_hideResizeHandles,
 		topology_hideResizeHandlesHelp,
 		topology_showMinimap,
 		topology_showMinimapHelp,
+		common_byCategory,
+		common_byTag,
+		common_byType,
+		common_edges,
 		common_filters,
 		topology_filtersHelp,
 		topology_hideVmOnContainer,
@@ -386,49 +389,73 @@
 			<div class="space-y-4 px-3 pb-3">
 				<p class="text-tertiary text-xs">{topology_filtersHelp()}</p>
 
-				<TagFilterGroup
-					label={common_hosts()}
-					tags={hostTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
-					onToggle={toggleHostTag}
-					entityType="host"
-					hasUntagged={hasUntaggedHosts}
-				/>
+				<!-- Hosts -->
+				<div class="space-y-2">
+					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+						{common_hosts()}
+					</div>
+					<TagFilterGroup
+						label={common_byTag()}
+						tags={hostTags}
+						hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
+						onToggle={toggleHostTag}
+						entityType="host"
+						hasUntagged={hasUntaggedHosts}
+					/>
+				</div>
 
-				<TagFilterGroup
-					label={common_services()}
-					tags={serviceTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
-					onToggle={toggleServiceTag}
-					entityType="service"
-					hasUntagged={hasUntaggedServices}
-				/>
+				<!-- Services -->
+				<div class="space-y-2">
+					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+						{common_services()}
+					</div>
+					<TagFilterGroup
+						label={common_byTag()}
+						tags={serviceTags}
+						hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
+						onToggle={toggleServiceTag}
+						entityType="service"
+						hasUntagged={hasUntaggedServices}
+					/>
+					<CategoryFilterGroup
+						categories={allServiceCategoriesWithColors}
+						hiddenCategories={$topologyOptions.request.hide_service_categories ?? []}
+						onToggle={toggleServiceCategory}
+						disabled={!editState.isEditable}
+						label={common_byCategory()}
+					/>
+				</div>
 
-				<TagFilterGroup
-					label={common_subnets()}
-					tags={subnetTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
-					onToggle={toggleSubnetTag}
-					entityType="subnet"
-					hasUntagged={hasUntaggedSubnets}
-				/>
+				<!-- Subnets -->
+				<div class="space-y-2">
+					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+						{common_subnets()}
+					</div>
+					<TagFilterGroup
+						label={common_byTag()}
+						tags={subnetTags}
+						hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
+						onToggle={toggleSubnetTag}
+						entityType="subnet"
+						hasUntagged={hasUntaggedSubnets}
+					/>
+				</div>
 
-				<CategoryFilterGroup
-					categories={allServiceCategoriesWithColors}
-					hiddenCategories={$topologyOptions.request.hide_service_categories ?? []}
-					onToggle={toggleServiceCategory}
-					disabled={!editState.isEditable}
-				/>
-
-				<FilterGroup
-					items={edgeTypesWithColors}
-					selectedValues={$topologyOptions.local.hide_edge_types ?? []}
-					mode="exclude"
-					onToggle={toggleEdgeType}
-					onHoverStart={handleEdgeTypeHoverStart}
-					onHoverEnd={handleEdgeTypeHoverEnd}
-					label={topology_hideEdgeTypes()}
-				/>
+				<!-- Edges -->
+				<div class="space-y-2">
+					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+						{common_edges()}
+					</div>
+					<FilterGroup
+						items={edgeTypesWithColors}
+						selectedValues={$topologyOptions.local.hide_edge_types ?? []}
+						mode="exclude"
+						onToggle={toggleEdgeType}
+						onHoverStart={handleEdgeTypeHoverStart}
+						onHoverEnd={handleEdgeTypeHoverEnd}
+						label={common_byType()}
+					/>
+				</div>
 			</div>
 		{/if}
 	</div>

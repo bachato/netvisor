@@ -7,12 +7,14 @@
 		categories,
 		hiddenCategories,
 		onToggle,
-		disabled = false
+		disabled = false,
+		label = undefined
 	}: {
 		categories: { value: string; label: string; color: Color }[];
 		hiddenCategories: string[];
 		onToggle: (category: string) => void;
 		disabled?: boolean;
+		label?: string;
 	} = $props();
 
 	function handleHoverStart(value: string, color: Color) {
@@ -32,5 +34,5 @@
 	onHoverStart={handleHoverStart}
 	onHoverEnd={handleHoverEnd}
 	{disabled}
-	label="Service Categories"
+	{label}
 />
