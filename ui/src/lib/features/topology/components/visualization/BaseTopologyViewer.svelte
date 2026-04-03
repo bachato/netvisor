@@ -21,7 +21,7 @@
 	} from '$lib/paraglide/messages';
 	import { type Node, type Edge } from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import { edgeTypes } from '$lib/shared/stores/metadata';
+	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { previewEdges, selectedNodes, topologyOptions } from '../../queries';
 	import { isExporting } from '../../interactions';
@@ -32,7 +32,7 @@
 	import CustomEdge from './CustomEdge.svelte';
 	import type { TopologyEdge, Topology } from '../../types/base';
 	import { resolveLeafNode } from '../../resolvers';
-	import { computeElkLayout } from '../../layout/elk-layout';
+	import { computeElkLayout, computeLeafNodeSizes } from '../../layout/elk-layout';
 	import {
 		collapsedContainers,
 		collapseAll,
@@ -235,16 +235,26 @@
 				});
 
 				// Run ELK on structure/collapse changes, skip for edge-only re-renders
+				const opts = get(topologyOptions);
+				const sizeKey = `${(opts.request.hide_service_categories ?? []).join(',')}:${opts.request.hide_ports}`;
 				const structureKey =
-					getStructureKey(topology) + ':' + Array.from(collapsed).sort().join(',');
+					getStructureKey(topology) + ':' + Array.from(collapsed).sort().join(',') + ':' + sizeKey;
 				const isNewStructure = sessionStructureKey !== structureKey;
 
 				if (isNewStructure) {
+					const leafNodeSizes = computeLeafNodeSizes(
+						visibleNodes,
+						topology,
+						opts.request.hide_service_categories ?? [],
+						opts.request.hide_ports ?? false,
+						(sd) => serviceDefinitions.getCategory(sd)
+					);
 					cachedLayoutResult = await computeElkLayout({
 						nodes: visibleNodes,
 						edges: topology.edges,
 						topology: topology,
-						collapsedContainers: collapsed
+						collapsedContainers: collapsed,
+						leafNodeSizes
 					});
 					sessionStructureKey = structureKey;
 				}

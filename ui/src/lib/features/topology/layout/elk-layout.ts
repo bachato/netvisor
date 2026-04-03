@@ -3,6 +3,8 @@ import type { TopologyNode, TopologyEdge, Topology } from '../types/base';
 import type { components } from '$lib/api/schema';
 import { classifyEdge } from './edge-classification';
 
+type ServiceCategory = components['schemas']['ServiceCategory'];
+
 type SubnetType = components['schemas']['SubnetType'];
 
 export interface ElkLayoutInput {
@@ -10,6 +12,8 @@ export interface ElkLayoutInput {
 	edges: TopologyEdge[];
 	topology: Topology;
 	collapsedContainers?: Set<string>;
+	/** Frontend-computed leaf node sizes (overrides backend node.size) */
+	leafNodeSizes?: Map<string, { x: number; y: number }>;
 }
 
 export type HandleSide = 'Top' | 'Bottom' | 'Left' | 'Right';
@@ -99,6 +103,83 @@ function getLayerHint(node: TopologyNode, topology: Topology): number {
 	return 999;
 }
 
+// Leaf node size constants (px)
+const LEAF_WIDTH = 250;
+const HEADER_HEIGHT = 25;
+const FOOTER_HEIGHT = 25;
+const SERVICE_ROW_HEIGHT = 50;
+const PORT_LINE_HEIGHT = 25;
+const OPEN_PORTS_PILL_HEIGHT = 30;
+
+/**
+ * Compute leaf node sizes based on visible services and display options.
+ * This replaces the backend size computation — the frontend knows which
+ * services are actually visible after category filtering.
+ */
+export function computeLeafNodeSizes(
+	nodes: TopologyNode[],
+	topology: Topology,
+	hiddenCategories: ServiceCategory[],
+	hidePorts: boolean,
+	getCategory: (serviceDefinition: string) => string
+): Map<string, { x: number; y: number }> {
+	const sizes = new Map<string, { x: number; y: number }>();
+
+	for (const node of nodes) {
+		if (node.node_type !== 'LeafNode') continue;
+		const interfaceId = node.interface_id ?? node.id;
+
+		// Find services bound to this interface
+		const boundServices = topology.services.filter((s) =>
+			s.bindings.some((b) => b.interface_id == null || b.interface_id === interfaceId)
+		);
+
+		// Split by visibility
+		const visibleServices = boundServices.filter(
+			(s) => !hiddenCategories.includes(getCategory(s.service_definition) as ServiceCategory)
+		);
+		const hiddenOpenPorts = boundServices.filter((s) => {
+			const cat = getCategory(s.service_definition);
+			return hiddenCategories.includes(cat as ServiceCategory) && cat === 'OpenPorts';
+		});
+
+		const hasHeader = node.header != null;
+		const hasFooter = true; // leaf nodes always have a footer area
+
+		let height = hasFooter ? FOOTER_HEIGHT : 0;
+		if (hasHeader) height += HEADER_HEIGHT;
+
+		if (visibleServices.length === 0 && hiddenOpenPorts.length === 0) {
+			// Body text only (host name)
+			height += SERVICE_ROW_HEIGHT;
+		} else {
+			// Service rows
+			for (const service of visibleServices) {
+				height += SERVICE_ROW_HEIGHT;
+				if (
+					!hidePorts &&
+					service.bindings.some(
+						(b) =>
+							(b.interface_id === interfaceId || b.interface_id == null) &&
+							b.type === 'Port' &&
+							b.port_id
+					)
+				) {
+					height += PORT_LINE_HEIGHT;
+				}
+			}
+			// Open ports pill (when hidden ports exist)
+			if (hiddenOpenPorts.length > 0) {
+				height += OPEN_PORTS_PILL_HEIGHT;
+			}
+		}
+
+		sizes.set(node.id, { x: LEAF_WIDTH, y: height });
+	}
+
+	return sizes;
+}
+
 /**
  * Build an ELK graph from topology data.
  * Containers become parent nodes; leaves become children inside their container.
@@ -174,13 +255,14 @@ function buildElkGraph(input: ElkLayoutInput): { graph: ElkNode; containerIds: S
 			if (collapsed.has(parentId)) continue;
 			const parent = containers.get(parentId);
 			if (parent && parent.children) {
+				const size = input.leafNodeSizes?.get(node.id) ?? node.size;
 				parent.children.push({
 					id: node.id,
-					width: node.size.x,
-					height: node.size.y,
+					width: size.x,
+					height: size.y,
 					layoutOptions: {
 						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.nodeSize.minimum': `(${node.size.x},${node.size.y})`
+						'elk.nodeSize.minimum': `(${size.x},${size.y})`
 					}
 				});
 			}
@@ -377,11 +459,12 @@ function mapElkResults(
 	const edgeHandles = new Map<string, EdgeHandles>();
 	const nodeSizes = new Map<string, { w: number; h: number }>();
 	for (const node of input.nodes) {
-		// Use ELK-computed size for containers, original size for leaves
+		// Use ELK-computed size for containers, frontend-computed size for leaves
 		const elkSize = containerSizes.get(node.id);
+		const leafSize = input.leafNodeSizes?.get(node.id);
 		nodeSizes.set(node.id, {
-			w: elkSize?.width ?? node.size.x,
-			h: elkSize?.height ?? node.size.y
+			w: elkSize?.width ?? leafSize?.x ?? node.size.x,
+			h: elkSize?.height ?? leafSize?.y ?? node.size.y
 		});
 	}
 

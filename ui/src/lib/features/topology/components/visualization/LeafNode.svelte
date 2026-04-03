@@ -412,14 +412,14 @@
 								</div>
 							{/each}
 							<button
-								class="text-tertiary hover:text-secondary mt-1 cursor-pointer text-xs"
+								class="text-tertiary hover:text-secondary mb-2 mt-1 cursor-pointer text-xs underline"
 								onclick={() => (expandedOpenPorts = false)}
 							>
 								{m.topology_hideOpenPorts()}
 							</button>
 						{:else}
 							<button
-								class="bg-surface-secondary text-tertiary hover:text-secondary mt-1 cursor-pointer rounded-full px-2 py-0.5 text-xs"
+								class="bg-surface-secondary text-tertiary hover:text-secondary mb-2 mt-1 cursor-pointer rounded-full px-2 py-0.5 text-xs underline"
 								onclick={() => (expandedOpenPorts = true)}
 							>
 								{m.topology_openPortsSummary({ count: nodeRenderData.hiddenOpenPorts.length })}

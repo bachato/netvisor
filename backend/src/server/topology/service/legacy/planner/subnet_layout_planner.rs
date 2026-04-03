@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::server::{
     hosts::r#impl::base::Host,
     interfaces::r#impl::base::Interface,
-    services::r#impl::base::Service,
     subnets::r#impl::types::SubnetType,
     topology::{
         service::{
@@ -216,21 +215,6 @@ impl SubnetLayoutPlanner {
                 continue;
             }
             let subnet_type = subnet.map(|s| s.base.subnet_type).unwrap_or_default();
-            let services = ctx.services;
-
-            let interface_bound_services: Vec<&Service> = services
-                .iter()
-                .filter(|s| {
-                    // Services with a binding to the interface
-                    s.base.bindings.iter().any(|b| match b.interface_id() {
-                        // Service is bound to interface if ID matches
-                        Some(binding_interface_id) if binding_interface_id == interface.id => true,
-                        // If there's no interface, it's an L4 binding bound to all interfaces
-                        None => true,
-                        _ => false,
-                    })
-                })
-                .collect();
 
             // Update source/target handles for edges
             let edges = ChildAnchorPlanner::plan_anchors(interface.id, all_edges, ctx);
@@ -241,10 +225,7 @@ impl SubnetLayoutPlanner {
             let child = SubnetChild {
                 id: interface.id,
                 host_id: host.id,
-                size: Uxy::subnet_child_size_from_service_count(
-                    &interface_bound_services,
-                    header_text.is_some(),
-                ),
+                size: Uxy::default(),
                 header: header_text,
                 interface_id: Some(interface.id),
                 edges,
