@@ -147,6 +147,7 @@
 	// Track ELK layout — only skip within same session when structure unchanged
 	let cachedLayoutResult: import('../../layout/elk-layout').ElkLayoutResult | null = null;
 	let sessionStructureKey = '';
+	let isMeasuring = false;
 
 	function getStructureKey(topo: Topology): string {
 		return `${topo.nodes.length}:${topo.edges.length}:${topo.nodes
@@ -265,23 +266,26 @@
 						let width: number | undefined;
 						let height: number | undefined;
 
+						const isLeaf = node.node_type === 'LeafNode';
+
 						if (layoutResult) {
 							const elkPos = layoutResult.nodePositions.get(node.id);
 							const elkSize = layoutResult.containerSizes.get(node.id);
-							const leafSize = layoutResult.leafNodeSizes.get(node.id);
 							position = elkPos ?? { x: node.position.x, y: node.position.y };
-							width = isCollapsed ? 200 : (elkSize?.width ?? leafSize?.x ?? undefined);
-							height = isCollapsed ? 80 : (elkSize?.height ?? leafSize?.y ?? undefined);
+							// Leaf nodes: fixed width, auto height (content-driven)
+							// Containers: ELK-computed dimensions
+							width = isCollapsed ? 200 : isLeaf ? 250 : (elkSize?.width ?? undefined);
+							height = isCollapsed ? 80 : isLeaf ? undefined : (elkSize?.height ?? undefined);
 						} else if (!isNewStructure) {
 							const curPos = currentPositions.get(node.id);
 							const curSize = currentSizes.get(node.id);
 							position = curPos ?? { x: node.position.x, y: node.position.y };
-							width = isCollapsed ? 200 : (curSize?.width ?? undefined);
-							height = isCollapsed ? 80 : (curSize?.height ?? undefined);
+							width = isCollapsed ? 200 : isLeaf ? 250 : (curSize?.width ?? undefined);
+							height = isCollapsed ? 80 : isLeaf ? undefined : (curSize?.height ?? undefined);
 						} else {
 							// Measurement pass: place at origin, let content determine size
 							position = { x: 0, y: 0 };
-							width = node.node_type === 'ContainerNode' ? undefined : 250;
+							width = isLeaf ? 250 : undefined;
 							height = undefined;
 						}
 
@@ -318,7 +322,8 @@
 					flowNodes.sort((a, b) => depthOf(a) - depthOf(b));
 
 				if (isNewStructure) {
-					// Phase 1: Render nodes for DOM measurement (no ELK yet)
+					// Phase 1: Render nodes for DOM measurement (hidden, no ELK yet)
+					isMeasuring = true;
 					edges.set([]);
 					const measureNodes = sortFlowNodes(buildFlowNodes());
 					nodes.set(measureNodes);
@@ -366,6 +371,7 @@
 				// Clear edges, set positioned nodes
 				edges.set([]);
 				nodes.set(allNodes);
+				isMeasuring = false;
 
 				// Build base edges: filter out edges with collapsed endpoints
 				let baseEdges: TopologyEdge[];
@@ -663,6 +669,7 @@
 	class="h-full w-full overflow-hidden !p-0"
 	class:card={!isEmbed}
 	class:card-static={!isEmbed}
+	style:visibility={isMeasuring ? 'hidden' : 'visible'}
 	bind:this={containerElement}
 >
 	<SvelteFlow
