@@ -65,6 +65,7 @@
 
 		// Snippets (slots)
 		itemSnippet?: Snippet<[{ item: T; index: number }]>;
+		itemExpandedSnippet?: Snippet<[{ item: T; index: number }]>;
 	}
 
 	let {
@@ -123,7 +124,8 @@
 		onClick = () => {},
 		onItemUpdate = () => {},
 
-		itemSnippet
+		itemSnippet,
+		itemExpandedSnippet
 	}: Props = $props();
 
 	// Internal state
@@ -333,8 +335,8 @@
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 				<div
 					class="
-						card flex items-center gap-3 rounded-lg border p-3 transition-all
-						{itemClickAction != null ? 'cursor-pointer' : ''} 
+						card flex flex-wrap items-center gap-3 rounded-lg border p-3 transition-all
+						{itemClickAction != null ? 'cursor-pointer' : ''}
 						{isHighlighted ? 'card-focused' : isItemSelected(item) ? 'card-selected' : ''}"
 					onclick={() => {
 						onClick(item, index);
@@ -450,6 +452,13 @@
 							</button>
 						{/if}
 					</div>
+
+					<!-- Expanded content panel — full card width, below the header row -->
+					{#if itemExpandedSnippet}
+						<div class="w-full">
+							{@render itemExpandedSnippet({ item, index })}
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>
