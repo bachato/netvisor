@@ -369,9 +369,24 @@ function computeOptimalHandles(
 	}
 }
 
+/** Recompute y-coordinates for a column of nodes based on actual heights. */
+function recomputeColumnY(colNodes: ElkNode[], spacing: number): void {
+	colNodes.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
+	const startY = colNodes[0].y ?? 0;
+	let y = startY;
+	for (const node of colNodes) {
+		node.y = y;
+		y += (node.height ?? 0) + spacing;
+	}
+}
+
 /**
  * Post-layout swap: move nodes with external edges to container boundary positions.
- * Groups children by x-coordinate (column), then swaps edge-aware nodes to top/bottom.
+ * - Upward-only edges: move to top of their column
+ * - Downward-only edges: move to bottom of their column
+ * - Bridge nodes (both up+down): move to left/right edge column, handles face outward
+ *
+ * Returns a map of bridge node IDs → outward-facing handle side.
  */
 function applyEdgeAwareSwaps(
 	container: ElkNode,
@@ -380,12 +395,13 @@ function applyEdgeAwareSwaps(
 		{ hasUpwardEdge: boolean; hasDownwardEdge: boolean; externalEdgeCount: number }
 	>,
 	containerIds: Set<string>
-): void {
-	if (!container.children || container.children.length < 2) return;
+): Map<string, HandleSide> {
+	const bridgeNodeSides = new Map<string, HandleSide>();
+	if (!container.children || container.children.length < 2) return bridgeNodeSides;
 
 	// Only consider leaf nodes (not nested sub-group containers)
 	const leaves = container.children.filter((c) => !containerIds.has(c.id));
-	if (leaves.length < 2) return;
+	if (leaves.length < 2) return bridgeNodeSides;
 
 	// Group leaves by x-coordinate (same column)
 	const columns = new Map<number, ElkNode[]>();
@@ -395,23 +411,93 @@ function applyEdgeAwareSwaps(
 		columns.get(x)!.push(leaf);
 	}
 
-	// Determine spacing from container layout options (default 20)
 	const spacing = parseInt(container.layoutOptions?.['elk.spacing.nodeNode'] ?? '20');
+	const sortedColumnXs = Array.from(columns.keys()).sort((a, b) => a - b);
 
+	// Phase 1: Move bridge nodes to edge columns
+	if (sortedColumnXs.length >= 2) {
+		const leftX = sortedColumnXs[0];
+		const rightX = sortedColumnXs[sortedColumnXs.length - 1];
+
+		// Collect bridge nodes from all columns
+		const bridgeNodes: { node: ElkNode; sourceColX: number }[] = [];
+		for (const [colX, colNodes] of columns) {
+			for (const n of colNodes) {
+				const info = leafExternalEdgeInfo.get(n.id);
+				if (info?.hasUpwardEdge && info?.hasDownwardEdge) {
+					bridgeNodes.push({ node: n, sourceColX: colX });
+				}
+			}
+		}
+
+		// Assign bridge nodes to edge columns, alternating right/left
+		for (let i = 0; i < bridgeNodes.length; i++) {
+			const { node: bridgeNode, sourceColX } = bridgeNodes[i];
+			const targetX = i % 2 === 0 ? rightX : leftX;
+			const side: HandleSide = targetX === leftX ? 'Left' : 'Right';
+
+			if (sourceColX === targetX) {
+				// Already in an edge column
+				bridgeNodeSides.set(bridgeNode.id, side);
+				continue;
+			}
+
+			const targetCol = columns.get(targetX)!;
+			const sourceCol = columns.get(sourceColX)!;
+
+			// Find closest-sized node in target column to swap with
+			let bestIdx = 0;
+			let bestDiff = Infinity;
+			const bridgeH = bridgeNode.height ?? 0;
+			for (let j = 0; j < targetCol.length; j++) {
+				const info = leafExternalEdgeInfo.get(targetCol[j].id);
+				// Don't swap with another bridge node
+				if (info?.hasUpwardEdge && info?.hasDownwardEdge) continue;
+				const diff = Math.abs((targetCol[j].height ?? 0) - bridgeH);
+				if (diff < bestDiff) {
+					bestDiff = diff;
+					bestIdx = j;
+				}
+			}
+
+			const displaced = targetCol[bestIdx];
+
+			// Swap column membership: bridge → target column, displaced → source column
+			targetCol[bestIdx] = bridgeNode;
+			const srcIdx = sourceCol.indexOf(bridgeNode);
+			sourceCol[srcIdx] = displaced;
+
+			// Update x-coordinates
+			bridgeNode.x = targetX;
+			displaced.x = sourceColX;
+
+			bridgeNodeSides.set(bridgeNode.id, side);
+		}
+
+		// Recompute y in all columns that were modified by bridge swaps
+		if (bridgeNodes.length > 0) {
+			for (const [, colNodes] of columns) {
+				recomputeColumnY(colNodes, spacing);
+			}
+		}
+	}
+
+	// Phase 2: Within each column, reorder upward-only to top, downward-only to bottom
 	for (const [, colNodes] of columns) {
 		if (colNodes.length < 2) continue;
 
-		// Sort by y to establish original column order
 		colNodes.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
 		const startY = colNodes[0].y ?? 0;
 
-		// Partition into edge-direction buckets
 		const upward: ElkNode[] = [];
 		const middle: ElkNode[] = [];
 		const downward: ElkNode[] = [];
 		for (const n of colNodes) {
 			const info = leafExternalEdgeInfo.get(n.id);
-			if (info?.hasUpwardEdge) {
+			// Bridge nodes already handled — treat them as middle here
+			if (info?.hasUpwardEdge && info?.hasDownwardEdge) {
+				middle.push(n);
+			} else if (info?.hasUpwardEdge) {
 				upward.push(n);
 			} else if (info?.hasDownwardEdge) {
 				downward.push(n);
@@ -420,16 +506,15 @@ function applyEdgeAwareSwaps(
 			}
 		}
 
-		// Reorder: upward at top, middle in between, downward at bottom
 		const reordered = [...upward, ...middle, ...downward];
-
-		// Recompute y-coordinates based on actual node heights to avoid overlaps
 		let y = startY;
 		for (const node of reordered) {
 			node.y = y;
 			y += (node.height ?? 0) + spacing;
 		}
 	}
+
+	return bridgeNodeSides;
 }
 
 function mapElkResults(
@@ -475,16 +560,21 @@ function mapElkResults(
 		}
 	}
 
+	// Collect bridge node handle overrides from all containers
+	const bridgeNodeSides = new Map<string, HandleSide>();
+
 	if (layoutResult.children) {
 		// Apply edge-aware position swaps before extracting positions
 		for (const child of layoutResult.children) {
 			if (containerIds.has(child.id)) {
-				applyEdgeAwareSwaps(child, leafExternalEdgeInfo, containerIds);
+				const sides = applyEdgeAwareSwaps(child, leafExternalEdgeInfo, containerIds);
+				for (const [id, side] of sides) bridgeNodeSides.set(id, side);
 				// Also apply to nested sub-group containers
 				if (child.children) {
 					for (const subChild of child.children) {
 						if (containerIds.has(subChild.id)) {
-							applyEdgeAwareSwaps(subChild, leafExternalEdgeInfo, containerIds);
+							const subSides = applyEdgeAwareSwaps(subChild, leafExternalEdgeInfo, containerIds);
+							for (const [id, side] of subSides) bridgeNodeSides.set(id, side);
 						}
 					}
 				}
@@ -515,6 +605,21 @@ function mapElkResults(
 				`${edge.source}->${edge.target}`,
 				computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize)
 			);
+		}
+	}
+
+	// Override handles for bridge nodes — edges should face outward from container edge
+	if (bridgeNodeSides.size > 0) {
+		for (const edge of input.edges) {
+			const key = `${edge.source}->${edge.target}`;
+			const handles = edgeHandles.get(key);
+			if (!handles) continue;
+
+			const srcSide = bridgeNodeSides.get(edge.source);
+			if (srcSide) handles.sourceHandle = srcSide;
+
+			const tgtSide = bridgeNodeSides.get(edge.target);
+			if (tgtSide) handles.targetHandle = tgtSide;
 		}
 	}
 
