@@ -23,7 +23,12 @@
 	import '@xyflow/svelte/dist/style.css';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { pushError } from '$lib/shared/stores/feedback';
-	import { previewEdges, selectedNodes, topologyOptions } from '../../queries';
+	import {
+		previewEdges,
+		selectedNodes,
+		topologyOptions,
+		useUpdateNodePositionMutation
+	} from '../../queries';
 	import { isExporting } from '../../interactions';
 
 	// Import custom node/edge components
@@ -144,16 +149,39 @@
 	// Store pending edges until nodes are ready
 	let pendingEdges: Edge[] = [];
 
-	// Track ELK layout state — only re-run when topology structure changes
-	let elkLayoutComputed = false;
-	let lastStructureKey = '';
+	// ELK layout persistence — track in localStorage so positions survive page refresh
+	const ELK_LAYOUT_STORAGE_KEY = 'scanopy_elk_layout_state';
+	const updateNodePosition = useUpdateNodePositionMutation();
 	let cachedLayoutResult: import('../../layout/elk-layout').ElkLayoutResult | null = null;
+
+	// Also track in-session to avoid redundant ELK calls within the same mount
+	let sessionStructureKey = '';
 
 	function getStructureKey(topo: Topology): string {
 		return `${topo.nodes.length}:${topo.edges.length}:${topo.nodes
 			.map((n) => n.id)
 			.sort()
 			.join(',')}`;
+	}
+
+	function getElkLayoutState(): Record<string, string> {
+		try {
+			return JSON.parse(localStorage.getItem(ELK_LAYOUT_STORAGE_KEY) ?? '{}');
+		} catch {
+			return {};
+		}
+	}
+
+	function shouldRunElkLayout(topologyId: string, structureKey: string): boolean {
+		if (sessionStructureKey === structureKey) return false;
+		return getElkLayoutState()[topologyId] !== structureKey;
+	}
+
+	function markElkLayoutComputed(topologyId: string, structureKey: string) {
+		sessionStructureKey = structureKey;
+		const state = getElkLayoutState();
+		state[topologyId] = structureKey;
+		localStorage.setItem(ELK_LAYOUT_STORAGE_KEY, JSON.stringify(state));
 	}
 
 	// Clear expanded bundles when bundling is toggled off
@@ -237,7 +265,7 @@
 
 				// Only run elkjs when topology structure or collapse state changes
 				const structureKey = getStructureKey(topology) + ':' + Array.from(collapsed).sort().join(',');
-				const needsElkLayout = !elkLayoutComputed || structureKey !== lastStructureKey;
+				const needsElkLayout = shouldRunElkLayout(topology.id, structureKey);
 
 				if (needsElkLayout) {
 					cachedLayoutResult = await computeElkLayout({
@@ -246,8 +274,19 @@
 						topology: topology,
 						collapsedContainers: collapsed
 					});
-					elkLayoutComputed = true;
-					lastStructureKey = structureKey;
+					markElkLayoutComputed(topology.id, structureKey);
+					// Save ELK positions to server so they persist across page loads
+					for (const node of topology.nodes) {
+						const elkPos = cachedLayoutResult.nodePositions.get(node.id);
+						if (elkPos) {
+							updateNodePosition.mutate({
+								topologyId: topology.id,
+								networkId: topology.network_id,
+								nodeId: node.id,
+								position: elkPos
+							});
+						}
+					}
 				}
 
 				const layoutResult = cachedLayoutResult;
@@ -483,6 +522,7 @@
 		if (!isModifierClick) {
 			selectedNode = node;
 			selectedEdge = null;
+			collapseAllBundles();
 		}
 		if (onNodeSelect) {
 			onNodeSelect(node, event);
@@ -492,6 +532,7 @@
 	function handleEdgeClick({ edge }: { edge: Edge; event: MouseEvent }) {
 		selectedEdge = edge;
 		selectedNode = null;
+		collapseAllBundles();
 		if (onEdgeSelect) {
 			onEdgeSelect(edge);
 		}
@@ -513,6 +554,7 @@
 	}
 
 	function handlePaneClick({ event }: { event: MouseEvent }) {
+		collapseAllBundles();
 		selectedEdge = null;
 		if (!viewportMoved) {
 			selectedNode = null;
