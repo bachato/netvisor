@@ -4,8 +4,8 @@
 	import { SimpleOptionDisplay } from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
 	import FilterGroup from './FilterGroup.svelte';
 	import GroupingRuleItem from './GroupingRuleItem.svelte';
-	import type { ContainerGraphRule, LeafGraphRule, LeafRule } from '../../../types/grouping';
-	import { setLeafRuleTitle, makeGraphRule } from '../../../types/grouping';
+	import type { ContainerGraphRule, ElementGraphRule, ElementRule } from '../../../types/grouping';
+	import { setElementRuleTitle, makeGraphRule } from '../../../types/grouping';
 	import { topologyOptions } from '../../../queries';
 	import { getTopologyEditState } from '../../../state';
 	import { useTopologiesQuery, selectedTopologyId, autoRebuild } from '../../../queries';
@@ -24,15 +24,15 @@
 		metadata: { is_user_editable: boolean } | null;
 	}
 	import _containerRuleTypes from '$lib/data/container-rule-types.json';
-	import _leafRuleTypes from '$lib/data/leaf-rule-types.json';
+	import _elementRuleTypes from '$lib/data/element-rule-types.json';
 	const typedContainerRuleTypes = _containerRuleTypes as RuleTypeMetadata[];
-	const typedLeafRuleTypes = _leafRuleTypes as RuleTypeMetadata[];
+	const typedElementRuleTypes = _elementRuleTypes as RuleTypeMetadata[];
 	import {
 		topology_containerGrouping,
-		topology_leafGrouping,
+		topology_elementGrouping,
 		topology_addContainerRule,
-		topology_addLeafRule,
-		topology_leafGroupingHelp,
+		topology_addElementRule,
+		topology_elementGroupingHelp,
 		topology_groupRuleTitlePlaceholder
 	} from '$lib/paraglide/messages';
 
@@ -52,16 +52,16 @@
 	);
 
 	// Leaf rules from options
-	let leafRules = $derived(
-		($topologyOptions.request.leaf_rules as LeafGraphRule[] | undefined) ?? []
+	let elementRules = $derived(
+		($topologyOptions.request.element_rules as ElementGraphRule[] | undefined) ?? []
 	);
 
 	// Editing state tracked by rule UUID
-	let editingLeafId = $state<string | null>(null);
+	let editingElementId = $state<string | null>(null);
 
 	// Metadata lookups
 	const containerRuleMeta = Object.fromEntries(typedContainerRuleTypes.map((m) => [m.id, m]));
-	const leafRuleMeta = Object.fromEntries(typedLeafRuleTypes.map((m) => [m.id, m]));
+	const elementRuleMeta = Object.fromEntries(typedElementRuleTypes.map((m) => [m.id, m]));
 
 	// Service categories available in topology
 	let serviceCategoriesWithColors = $derived.by(() => {
@@ -142,22 +142,22 @@
 
 	// --- Leaf Rules ---
 
-	let leafAddOptions = $derived(
-		typedLeafRuleTypes.map((m) => ({
+	let elementAddOptions = $derived(
+		typedElementRuleTypes.map((m) => ({
 			value: m.id,
 			label: m.name ?? m.id
 		}))
 	);
 
-	const leafRuleDisplayComponent = {
-		getId: (item: LeafGraphRule) => item.id,
-		getLabel: (item: LeafGraphRule) => {
+	const elementRuleDisplayComponent = {
+		getId: (item: ElementGraphRule) => item.id,
+		getLabel: (item: ElementGraphRule) => {
 			if ('ByServiceCategory' in item.rule) return 'ByServiceCategory';
 			return 'ByTag';
 		}
 	};
 
-	function getLeafRuleLabel(item: LeafGraphRule): string {
+	function getElementRuleLabel(item: ElementGraphRule): string {
 		const rule = item.rule;
 		const title =
 			'ByServiceCategory' in rule
@@ -166,19 +166,19 @@
 					? rule.ByTag.title
 					: null;
 		const typeName =
-			leafRuleMeta['ByServiceCategory' in rule ? 'ByServiceCategory' : 'ByTag']?.name ?? '';
+			elementRuleMeta['ByServiceCategory' in rule ? 'ByServiceCategory' : 'ByTag']?.name ?? '';
 		return title ?? typeName;
 	}
 
-	function updateLeafRules(newRules: LeafGraphRule[]) {
+	function updateElementRules(newRules: ElementGraphRule[]) {
 		topologyOptions.update((opts) => {
-			(opts.request as Record<string, unknown>).leaf_rules = newRules;
+			(opts.request as Record<string, unknown>).element_rules = newRules;
 			return opts;
 		});
 	}
 
-	function handleLeafAdd(optionId: string) {
-		let newRule: LeafRule;
+	function handleElementAdd(optionId: string) {
+		let newRule: ElementRule;
 		switch (optionId) {
 			case 'ByServiceCategory':
 				newRule = { ByServiceCategory: { categories: [], title: null } };
@@ -190,85 +190,88 @@
 				return;
 		}
 		const graphRule = makeGraphRule(newRule);
-		updateLeafRules([...leafRules, graphRule]);
-		editingLeafId = graphRule.id;
+		updateElementRules([...elementRules, graphRule]);
+		editingElementId = graphRule.id;
 	}
 
-	function handleLeafRemove(index: number) {
-		const removedId = leafRules[index]?.id;
-		updateLeafRules(leafRules.filter((_, i) => i !== index));
-		if (editingLeafId === removedId) editingLeafId = null;
+	function handleElementRemove(index: number) {
+		const removedId = elementRules[index]?.id;
+		updateElementRules(elementRules.filter((_, i) => i !== index));
+		if (editingElementId === removedId) editingElementId = null;
 	}
 
-	function handleLeafMoveUp(fromIndex: number) {
+	function handleElementMoveUp(fromIndex: number) {
 		if (fromIndex <= 0) return;
-		const newRules = [...leafRules];
+		const newRules = [...elementRules];
 		[newRules[fromIndex - 1], newRules[fromIndex]] = [newRules[fromIndex], newRules[fromIndex - 1]];
-		updateLeafRules(newRules);
+		updateElementRules(newRules);
 	}
 
-	function handleLeafMoveDown(fromIndex: number) {
-		if (fromIndex >= leafRules.length - 1) return;
-		const newRules = [...leafRules];
+	function handleElementMoveDown(fromIndex: number) {
+		if (fromIndex >= elementRules.length - 1) return;
+		const newRules = [...elementRules];
 		[newRules[fromIndex], newRules[fromIndex + 1]] = [newRules[fromIndex + 1], newRules[fromIndex]];
-		updateLeafRules(newRules);
+		updateElementRules(newRules);
 	}
 
-	function handleLeafEdit(_item: LeafGraphRule, index: number) {
-		const ruleId = leafRules[index]?.id;
-		editingLeafId = editingLeafId === ruleId ? null : ruleId;
+	function handleElementEdit(_item: ElementGraphRule, index: number) {
+		const ruleId = elementRules[index]?.id;
+		editingElementId = editingElementId === ruleId ? null : ruleId;
 	}
 
-	function isLeafEditing(item: LeafGraphRule): boolean {
-		return item.id === editingLeafId;
+	function isElementEditing(item: ElementGraphRule): boolean {
+		return item.id === editingElementId;
 	}
 
-	function getLeafEditIcon(item: LeafGraphRule) {
-		return isLeafEditing(item) ? Check : Edit;
+	function getElementEditIcon(item: ElementGraphRule) {
+		return isElementEditing(item) ? Check : Edit;
 	}
 
-	function getLeafEditButtonClass(item: LeafGraphRule): string {
-		return isLeafEditing(item) ? 'btn-icon-success' : 'btn-icon';
+	function getElementEditButtonClass(item: ElementGraphRule): string {
+		return isElementEditing(item) ? 'btn-icon-success' : 'btn-icon';
 	}
 
-	function isLeafItemEditing(item: LeafGraphRule): boolean {
-		return isLeafEditing(item);
+	function isElementItemEditing(item: ElementGraphRule): boolean {
+		return isElementEditing(item);
 	}
 
-	function handleLeafTitleChange(index: number, title: string | null) {
-		const newRules = [...leafRules];
-		newRules[index] = { ...newRules[index], rule: setLeafRuleTitle(newRules[index].rule, title) };
-		updateLeafRules(newRules);
+	function handleElementTitleChange(index: number, title: string | null) {
+		const newRules = [...elementRules];
+		newRules[index] = {
+			...newRules[index],
+			rule: setElementRuleTitle(newRules[index].rule, title)
+		};
+		updateElementRules(newRules);
 	}
 
 	function handleTagToggle(index: number, tagId: string) {
-		const item = leafRules[index];
+		const item = elementRules[index];
 		if ('ByTag' in item.rule) {
 			const current = item.rule.ByTag.tag_ids;
 			const idx = current.indexOf(tagId);
 			const newTagIds = idx === -1 ? [...current, tagId] : current.filter((id) => id !== tagId);
-			const newRules = [...leafRules];
+			const newRules = [...elementRules];
 			newRules[index] = {
 				...item,
 				rule: { ByTag: { ...item.rule.ByTag, tag_ids: newTagIds } }
 			};
-			updateLeafRules(newRules);
+			updateElementRules(newRules);
 		}
 	}
 
 	function toggleCategory(index: number, category: ServiceCategory) {
-		const item = leafRules[index];
+		const item = elementRules[index];
 		if ('ByServiceCategory' in item.rule) {
 			const current = item.rule.ByServiceCategory.categories;
 			const idx = current.indexOf(category);
 			const newCategories: ServiceCategory[] =
 				idx === -1 ? [...current, category] : current.filter((c) => c !== category);
-			const newRules = [...leafRules];
+			const newRules = [...elementRules];
 			newRules[index] = {
 				...item,
 				rule: { ByServiceCategory: { ...item.rule.ByServiceCategory, categories: newCategories } }
 			};
-			updateLeafRules(newRules);
+			updateElementRules(newRules);
 		}
 	}
 </script>
@@ -303,30 +306,30 @@
 
 <!-- Leaf grouping section -->
 <ListManager
-	label={topology_leafGrouping()}
-	helpText={topology_leafGroupingHelp()}
-	placeholder={topology_addLeafRule()}
-	items={leafRules}
-	options={leafAddOptions}
+	label={topology_elementGrouping()}
+	helpText={topology_elementGroupingHelp()}
+	placeholder={topology_addElementRule()}
+	items={elementRules}
+	options={elementAddOptions}
 	optionDisplayComponent={SimpleOptionDisplay}
-	itemDisplayComponent={leafRuleDisplayComponent}
+	itemDisplayComponent={elementRuleDisplayComponent}
 	allowReorder={true}
 	allowDuplicates={true}
 	allowItemEdit={() => true}
-	editIcon={getLeafEditIcon}
-	editButtonClass={getLeafEditButtonClass}
-	isItemEditing={isLeafItemEditing}
-	onAdd={handleLeafAdd}
-	onRemove={handleLeafRemove}
-	onMoveUp={handleLeafMoveUp}
-	onMoveDown={handleLeafMoveDown}
-	onEdit={handleLeafEdit}
+	editIcon={getElementEditIcon}
+	editButtonClass={getElementEditButtonClass}
+	isItemEditing={isElementItemEditing}
+	onAdd={handleElementAdd}
+	onRemove={handleElementRemove}
+	onMoveUp={handleElementMoveUp}
+	onMoveDown={handleElementMoveDown}
+	onEdit={handleElementEdit}
 >
 	{#snippet itemSnippet({ item })}
-		<GroupingRuleItem label={getLeafRuleLabel(item)} />
+		<GroupingRuleItem label={getElementRuleLabel(item)} />
 	{/snippet}
 	{#snippet itemExpandedSnippet({ item, index })}
-		{#if isLeafEditing(item)}
+		{#if isElementEditing(item)}
 			{@const rule = item.rule}
 			<div class="mt-2 w-full space-y-3 border-t border-gray-200 pt-2 dark:border-gray-700">
 				<!-- Title input -->
@@ -340,7 +343,7 @@
 							? rule.ByTag.title
 							: null) ?? ''}
 					oninput={(e) =>
-						handleLeafTitleChange(index, (e.currentTarget as HTMLInputElement).value || null)}
+						handleElementTitleChange(index, (e.currentTarget as HTMLInputElement).value || null)}
 					disabled={!editState.isEditable}
 				/>
 

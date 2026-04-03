@@ -37,10 +37,10 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
     let hosts: HashMap<Uuid, _> = topology.base.hosts.iter().map(|h| (h.id, h)).collect();
     let interfaces: HashMap<Uuid, _> = topology.base.interfaces.iter().map(|i| (i.id, i)).collect();
 
-    // Group LeafNodes by subnet_id
+    // Group Element nodes by subnet_id
     let mut nodes_by_subnet: HashMap<Uuid, Vec<_>> = HashMap::new();
     for node in &topology.base.nodes {
-        if let NodeType::LeafNode { subnet_id, .. } = &node.node_type {
+        if let NodeType::Element { subnet_id, .. } = &node.node_type {
             nodes_by_subnet.entry(*subnet_id).or_default().push(node);
         }
     }
@@ -62,7 +62,7 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
             .unwrap();
 
             for node in nodes {
-                if let NodeType::LeafNode {
+                if let NodeType::Element {
                     host_id,
                     interface_id,
                     ..
@@ -92,12 +92,12 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
         }
     }
 
-    // Build set of ContainerNode IDs (their node ID == subnet ID, rendered as subgraphs)
+    // Build set of Container IDs (their node ID == subnet ID, rendered as subgraphs)
     let subnet_node_ids: std::collections::HashSet<Uuid> = topology
         .base
         .nodes
         .iter()
-        .filter(|n| matches!(n.node_type, NodeType::ContainerNode { .. }))
+        .filter(|n| matches!(n.node_type, NodeType::Container { .. }))
         .map(|n| n.id)
         .collect();
 
@@ -222,16 +222,16 @@ pub fn topology_to_confluence(topology: &Topology) -> String {
         let source_host = nodes_map
             .get(&edge.source)
             .and_then(|n| match &n.node_type {
-                NodeType::LeafNode { host_id, .. } => hosts_map.get(host_id).copied(),
-                NodeType::ContainerNode { .. } => n.header.as_deref(),
+                NodeType::Element { host_id, .. } => hosts_map.get(host_id).copied(),
+                NodeType::Container { .. } => n.header.as_deref(),
             })
             .unwrap_or("Unknown");
 
         let target_host = nodes_map
             .get(&edge.target)
             .and_then(|n| match &n.node_type {
-                NodeType::LeafNode { host_id, .. } => hosts_map.get(host_id).copied(),
-                NodeType::ContainerNode { .. } => n.header.as_deref(),
+                NodeType::Element { host_id, .. } => hosts_map.get(host_id).copied(),
+                NodeType::Container { .. } => n.header.as_deref(),
             })
             .unwrap_or("Unknown");
 

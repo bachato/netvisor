@@ -4,7 +4,7 @@ import type { Node } from '@xyflow/svelte';
 import type { QueryClient } from '@tanstack/svelte-query';
 import { edgeTypes, subnetTypes } from '$lib/shared/stores/metadata';
 import type { TopologyEdge, TopologyNode, Topology } from './types/base';
-import { resolveLeafNode } from './resolvers';
+import { resolveElementNode } from './resolvers';
 import { getHostFromInterfaceIdFromCache } from '../hosts/queries';
 import {
 	getInterfacesForHostFromCache,
@@ -96,9 +96,9 @@ interface TagFilter {
 
 /**
  * Update hidden nodes/services based on tag filter settings.
- * - Hosts with hidden tags -> their InterfaceNodes fade out
+ * - Hosts with hidden tags -> their Element nodes fade out
  * - Services with hidden tags -> hidden from node display (node does NOT fade)
- * - Subnets with hidden tags -> SubnetNodes fade out
+ * - Subnets with hidden tags -> Container nodes fade out
  * - UNTAGGED_SENTINEL in hidden arrays -> hide entities with no tags
  */
 export function updateTagFilter(topology: Topology | undefined, tagFilter: TagFilter | undefined) {
@@ -125,12 +125,12 @@ export function updateTagFilter(topology: Topology | undefined, tagFilter: TagFi
 	const hiddenNodeIds = new Set<string>();
 	const hiddenServiceIds = new Set<string>();
 
-	// Host tags -> fade InterfaceNodes
+	// Host tags -> fade Element nodes
 	for (const host of topology.hosts) {
 		const isUntagged = host.tags.length === 0;
 		const hostHasHiddenTag = host.tags.some((t) => hiddenHostTagIds.includes(t));
 		if (hostHasHiddenTag || (isUntagged && hideUntaggedHosts)) {
-			// Add all InterfaceNodes for this host to hidden set
+			// Add all Element nodes for this host to hidden set
 			const hostInterfaces = topology.interfaces.filter((i) => i.host_id === host.id);
 			hostInterfaces.forEach((i) => hiddenNodeIds.add(i.id));
 		}
@@ -145,7 +145,7 @@ export function updateTagFilter(topology: Topology | undefined, tagFilter: TagFi
 		}
 	}
 
-	// Subnet tags -> fade SubnetNodes
+	// Subnet tags -> fade Container nodes
 	for (const subnet of topology.subnets) {
 		const isUntagged = subnet.tags.length === 0;
 		const subnetHasHiddenTag = subnet.tags.some((t) => hiddenSubnetTagIds.includes(t));
@@ -277,11 +277,11 @@ export function updateConnectedNodes(
 		connected.add(selectedNode.id);
 		const nodeData = selectedNode.data as TopologyNode;
 
-		if (nodeData.node_type == 'ContainerNode' && topology) {
+		if (nodeData.node_type == 'Container' && topology) {
 			allNodes.forEach((n) => {
 				const nd = n.data as TopologyNode;
-				if (nd.node_type == 'LeafNode') {
-					const resolved = resolveLeafNode(nd.id, nd, topology);
+				if (nd.node_type == 'Element') {
+					const resolved = resolveElementNode(nd.id, nd, topology);
 					if (resolved.subnetId == nodeData.id) {
 						connected.add(nd.id);
 					}

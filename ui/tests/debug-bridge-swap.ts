@@ -1,17 +1,20 @@
 import { chromium } from 'playwright';
 
 const SESSION_ID = '7RTvkKYWyLY2tI5FNUwg-w';
-const TOPO_OPTIONS = '{"local":{"hide_edge_types":["HostVirtualization","RequestPath","HubAndSpoke","PhysicalLink"],"no_fade_edges":false,"hide_resize_handles":false,"bundle_edges":true,"tag_filter":{"hidden_host_tag_ids":[],"hidden_service_tag_ids":[],"hidden_subnet_tag_ids":[]},"show_minimap":true},"request":{"hide_ports":false,"hide_vm_title_on_docker_container":false,"hide_service_categories":["NetworkCore","OpenPorts"],"container_rules":["BySubnet","ByVirtualizingService"],"leaf_rules":[{"ByServiceCategory":{"categories":[],"title":"Infrastructure"}},{"ByTag":{"tag_ids":["6cce763c-0d6f-44f7-a8e7-ca1004c73b08"],"title":"aaa"}}]}}';
+const TOPO_OPTIONS =
+	'{"local":{"hide_edge_types":["HostVirtualization","RequestPath","HubAndSpoke","PhysicalLink"],"no_fade_edges":false,"hide_resize_handles":false,"bundle_edges":true,"tag_filter":{"hidden_host_tag_ids":[],"hidden_service_tag_ids":[],"hidden_subnet_tag_ids":[]},"show_minimap":true},"request":{"hide_ports":false,"hide_vm_title_on_docker_container":false,"hide_service_categories":["NetworkCore","OpenPorts"],"container_rules":["BySubnet","ByVirtualizingService"],"leaf_rules":[{"ByServiceCategory":{"categories":[],"title":"Infrastructure"}},{"ByTag":{"tag_ids":["6cce763c-0d6f-44f7-a8e7-ca1004c73b08"],"title":"aaa"}}]}}';
 
 async function main() {
 	const browser = await chromium.launch({ headless: true });
 	const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
-	await ctx.addCookies([{
-		name: 'session_id',
-		value: SESSION_ID,
-		domain: 'localhost',
-		path: '/',
-	}]);
+	await ctx.addCookies([
+		{
+			name: 'session_id',
+			value: SESSION_ID,
+			domain: 'localhost',
+			path: '/'
+		}
+	]);
 
 	const page = await ctx.newPage();
 
@@ -22,7 +25,10 @@ async function main() {
 	}, TOPO_OPTIONS);
 
 	// Now navigate to topology
-	await page.goto('http://localhost:5173/#topology', { waitUntil: 'domcontentloaded', timeout: 15000 });
+	await page.goto('http://localhost:5173/#topology', {
+		waitUntil: 'domcontentloaded',
+		timeout: 15000
+	});
 	await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
 	await page.waitForTimeout(8000);
 
@@ -41,7 +47,7 @@ async function main() {
 		const nodes = document.querySelectorAll('.svelte-flow__node');
 		const edges = document.querySelectorAll('.svelte-flow__edge');
 
-		const nodeList = Array.from(nodes).map(node => {
+		const nodeList = Array.from(nodes).map((node) => {
 			const el = node as HTMLElement;
 			const id = el.getAttribute('data-id') || '';
 			const transform = el.style.transform || '';
@@ -53,23 +59,25 @@ async function main() {
 				width: Math.round(el.offsetWidth),
 				height: Math.round(el.offsetHeight),
 				parentId: el.getAttribute('data-parent') || null,
-				text: el.textContent?.substring(0, 100)?.trim() || '',
+				text: el.textContent?.substring(0, 100)?.trim() || ''
 			};
 		});
 
 		// Get edge data from the SVG elements
-		const edgeList: Array<{source: string; target: string; type: string}> = [];
+		const edgeList: Array<{ source: string; target: string; type: string }> = [];
 		const edgeSvgs = document.querySelectorAll('.svelte-flow__edge');
 		for (const edge of edgeSvgs) {
 			const el = edge as HTMLElement;
-			// SvelteFlow stores edge data in data attributes or we can try aria
-			const id = el.getAttribute('data-id') || '';
-			// Edge IDs in SvelteFlow often encode source-target
-			// Try to get from the element's dataset or class
 			edgeList.push({
-				source: el.getAttribute('data-source') || el.querySelector('[data-source]')?.getAttribute('data-source') || '',
-				target: el.getAttribute('data-target') || el.querySelector('[data-target]')?.getAttribute('data-target') || '',
-				type: el.getAttribute('data-testid') || el.className || '',
+				source:
+					el.getAttribute('data-source') ||
+					el.querySelector('[data-source]')?.getAttribute('data-source') ||
+					'',
+				target:
+					el.getAttribute('data-target') ||
+					el.querySelector('[data-target]')?.getAttribute('data-target') ||
+					'',
+				type: el.getAttribute('data-testid') || el.className || ''
 			});
 		}
 
@@ -79,7 +87,7 @@ async function main() {
 	console.log(`Edges: ${debugInfo.edgeCount}`);
 
 	// Find the bridge node candidate - the one with "en0: 192.168" in its text
-	const bridgeCandidate = debugInfo.nodes.find(n => n.text.includes('en0'));
+	const bridgeCandidate = debugInfo.nodes.find((n) => n.text.includes('en0'));
 	if (bridgeCandidate) {
 		console.log(`\nBridge candidate: ${bridgeCandidate.id}`);
 		console.log(`  Text: ${bridgeCandidate.text.substring(0, 60)}`);
@@ -87,7 +95,7 @@ async function main() {
 		console.log(`  Parent: ${bridgeCandidate.parentId}`);
 	} else {
 		console.log('\nNo node with "en0" found. Looking for Scanopy Daemon:');
-		const candidates = debugInfo.nodes.filter(n => n.text.includes('Scanopy Daemon'));
+		const candidates = debugInfo.nodes.filter((n) => n.text.includes('Scanopy Daemon'));
 		for (const c of candidates) {
 			console.log(`  ${c.id}: "${c.text.substring(0, 60)}" parent=${c.parentId} x=${c.x}`);
 		}
@@ -103,7 +111,7 @@ async function main() {
 		}
 	}
 	for (const [cid, children] of containers) {
-		const c = debugInfo.nodes.find(n => n.id === cid);
+		const c = debugInfo.nodes.find((n) => n.id === cid);
 		console.log(`${cid}: ${children.length} children "${c?.text?.substring(0, 50)}"`);
 
 		if (children.length >= 5) {
@@ -118,8 +126,10 @@ async function main() {
 			console.log(`  Columns: ${xs.length} at x=[${xs.join(',')}]`);
 
 			// Show bridge candidate position
-			if (bridgeCandidate && children.some(c => c.id === bridgeCandidate.id)) {
-				console.log(`  Bridge node at x=${bridgeCandidate.x} (leftX=${xs[0]}, rightX=${xs[xs.length-1]})`);
+			if (bridgeCandidate && children.some((c) => c.id === bridgeCandidate.id)) {
+				console.log(
+					`  Bridge node at x=${bridgeCandidate.x} (leftX=${xs[0]}, rightX=${xs[xs.length - 1]})`
+				);
 			}
 		}
 	}

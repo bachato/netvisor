@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-03T13:53:28.841265Z",
-              "id": "d4878a68-02a4-477d-a04a-21856d4e9266",
+              "created_at": "2026-04-03T18:25:51.955502Z",
+              "id": "56ae1d7f-75c4-4209-bfbd-4eb71b366415",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-03T13:53:28.841265Z"
+              "updated_at": "2026-04-03T18:25:51.955502Z"
             }
           },
           "error": {
@@ -10731,14 +10731,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-03T13:53:28.828395Z",
-                      "id": "8d46b6f5-78ff-46a2-8509-202f56c6f83d",
+                      "created_at": "2026-04-03T18:25:51.940053Z",
+                      "id": "7ce81bec-e0b5-4082-abf6-18705b707dbd",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-03T13:53:28.828395Z"
+                      "updated_at": "2026-04-03T18:25:51.940053Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10747,7 +10747,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Tyk",
+                  "service_definition": "BookLore",
                   "source": {
                     "type": "Manual"
                   },
@@ -11450,14 +11450,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-03T13:53:28.837387Z",
-                  "id": "b9578434-31aa-49db-83cf-a4828e27036b",
+                  "created_at": "2026-04-03T18:25:51.951270Z",
+                  "id": "ab439459-9d95-4cb9-875f-e343f889b43d",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-03T13:53:28.837387Z"
+                  "updated_at": "2026-04-03T18:25:51.951270Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11466,7 +11466,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Tyk",
+              "service_definition": "BookLore",
               "source": {
                 "type": "Manual"
               },
@@ -12740,14 +12740,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-03T13:53:28.828608Z",
-          "id": "7828d786-2378-42e9-af6b-32680a325d42",
+          "created_at": "2026-04-03T18:25:51.940260Z",
+          "id": "9565fcf1-adc5-448c-97c9-2c2b5b0bbf9b",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-03T13:53:28.828608Z"
+          "updated_at": "2026-04-03T18:25:51.940260Z"
         }
       },
       "BindingBase": {
@@ -13028,14 +13028,6 @@
           "Yellow"
         ]
       },
-      "ContainerRule": {
-        "type": "string",
-        "description": "Rules that change which containers exist and how they nest.\nContainer titles are data-driven (subnet CIDR, host names), not user-configurable.",
-        "enum": [
-          "BySubnet",
-          "ByVirtualizingService"
-        ]
-      },
       "ContainerType": {
         "type": "string",
         "enum": [
@@ -13270,7 +13262,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Tyk",
+              "service_definition": "BookLore",
               "tags": [],
               "virtualization": null
             }
@@ -14794,6 +14786,12 @@
           "PhysicalLink"
         ]
       },
+      "ElementEntityType": {
+        "type": "string",
+        "enum": [
+          "Interface"
+        ]
+      },
       "EmailInstallCommandRequest": {
         "type": "object",
         "description": "Request body for emailing an install command to the authenticated user.",
@@ -15038,6 +15036,104 @@
           "email": {
             "type": "string",
             "format": "email"
+          }
+        }
+      },
+      "GraphRule_ContainerRule": {
+        "type": "object",
+        "description": "Generic wrapper that gives any rule type a stable UUID identity.",
+        "required": [
+          "id",
+          "rule"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rule": {
+            "type": "string",
+            "description": "Rules that change which containers exist and how they nest.\nContainer titles are data-driven (subnet CIDR, host names), not user-configurable.",
+            "enum": [
+              "BySubnet",
+              "ByVirtualizingService"
+            ]
+          }
+        }
+      },
+      "GraphRule_ElementRule": {
+        "type": "object",
+        "description": "Generic wrapper that gives any rule type a stable UUID identity.",
+        "required": [
+          "id",
+          "rule"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rule": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "ByServiceCategory"
+                ],
+                "properties": {
+                  "ByServiceCategory": {
+                    "type": "object",
+                    "required": [
+                      "categories"
+                    ],
+                    "properties": {
+                      "categories": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/ServiceCategory"
+                        }
+                      },
+                      "title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "ByTag"
+                ],
+                "properties": {
+                  "ByTag": {
+                    "type": "object",
+                    "required": [
+                      "tag_ids"
+                    ],
+                    "properties": {
+                      "tag_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "description": "Rules that organize nodes within a container into sub-groups."
           }
         }
       },
@@ -15575,14 +15671,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-03T13:53:28.828086Z",
-                  "id": "b752ea6f-ba8b-4be0-b7ea-b9cb3a2fd3a3",
+                  "created_at": "2026-04-03T18:25:51.939759Z",
+                  "id": "8987e749-ad04-40e6-96ef-7c9dba1d51a0",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-03T13:53:28.828086Z"
+                  "updated_at": "2026-04-03T18:25:51.939759Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15591,7 +15687,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Tyk",
+              "service_definition": "BookLore",
               "source": {
                 "type": "Manual"
               },
@@ -16169,74 +16265,6 @@
             "type": "integer"
           }
         }
-      },
-      "LeafEntityType": {
-        "type": "string",
-        "enum": [
-          "Interface"
-        ]
-      },
-      "LeafRule": {
-        "oneOf": [
-          {
-            "type": "object",
-            "required": [
-              "ByServiceCategory"
-            ],
-            "properties": {
-              "ByServiceCategory": {
-                "type": "object",
-                "required": [
-                  "categories"
-                ],
-                "properties": {
-                  "categories": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/ServiceCategory"
-                    }
-                  },
-                  "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "ByTag"
-            ],
-            "properties": {
-              "ByTag": {
-                "type": "object",
-                "required": [
-                  "tag_ids"
-                ],
-                "properties": {
-                  "tag_ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    }
-                  },
-                  "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        ],
-        "description": "Rules that organize nodes within a container into sub-groups."
       },
       "LldpChassisId": {
         "oneOf": [
@@ -16818,6 +16846,14 @@
               "size"
             ],
             "properties": {
+              "element_rule_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid",
+                "description": "ID of the element rule that created this group container (for TagGroup/ServiceCategoryGroup)"
+              },
               "header": {
                 "type": [
                   "string",
@@ -16860,7 +16896,7 @@
               "node_type": {
                 "type": "string",
                 "enum": [
-                  "ContainerNode"
+                  "Container"
                 ]
               },
               "parent_container_id": {
@@ -16884,6 +16920,9 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "element_type": {
+                "$ref": "#/components/schemas/ElementEntityType"
+              },
               "host_id": {
                 "type": "string",
                 "format": "uuid"
@@ -16895,13 +16934,10 @@
                 ],
                 "format": "uuid"
               },
-              "leaf_type": {
-                "$ref": "#/components/schemas/LeafEntityType"
-              },
               "node_type": {
                 "type": "string",
                 "enum": [
-                  "LeafNode"
+                  "Element"
                 ]
               },
               "subnet_id": {
@@ -17618,14 +17654,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-03T13:53:28.821783Z",
-                        "id": "838f06c1-e79a-4b52-b565-9920f7a1d4aa",
+                        "created_at": "2026-04-03T18:25:51.930414Z",
+                        "id": "629142d2-1b7d-4483-8372-c2ae62dc5f01",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-03T13:53:28.821783Z"
+                        "updated_at": "2026-04-03T18:25:51.930414Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17634,7 +17670,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Tyk",
+                    "service_definition": "BookLore",
                     "source": {
                       "type": "Manual"
                     },
@@ -17711,14 +17747,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-03T13:53:28.836305Z",
-                    "id": "81238fcb-0db9-41aa-8197-6dab6d61df6a",
+                    "created_at": "2026-04-03T18:25:51.950294Z",
+                    "id": "adeb8ff0-eb11-4245-a912-4cbbb1655acd",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-03T13:53:28.836305Z"
+                    "updated_at": "2026-04-03T18:25:51.950294Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17727,7 +17763,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Tyk",
+                "service_definition": "BookLore",
                 "source": {
                   "type": "Manual"
                 },
@@ -18886,14 +18922,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-03T13:53:28.828532Z",
-              "id": "346ca13d-781e-4cb9-8b23-9fc0ce120915",
+              "created_at": "2026-04-03T18:25:51.940187Z",
+              "id": "f842270a-fc87-48f3-8b45-a6131fa397f4",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-03T13:53:28.828532Z"
+              "updated_at": "2026-04-03T18:25:51.940187Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -18902,7 +18938,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Tyk",
+          "service_definition": "BookLore",
           "source": {
             "type": "Manual"
           },
@@ -20011,7 +20047,13 @@
           "container_rules": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ContainerRule"
+              "$ref": "#/components/schemas/GraphRule_ContainerRule"
+            }
+          },
+          "element_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GraphRule_ElementRule"
             }
           },
           "hide_ports": {
@@ -20025,12 +20067,6 @@
           },
           "hide_vm_title_on_docker_container": {
             "type": "boolean"
-          },
-          "leaf_rules": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LeafRule"
-            }
           },
           "perspective": {
             "$ref": "#/components/schemas/TopologyPerspective"
@@ -20406,6 +20442,7 @@
       },
       "Uxy": {
         "type": "object",
+        "description": "2D unsigned coordinate. Used for node positions and sizes.\nLeaf node sizes are computed by the frontend (elkjs); the backend\nsets `Uxy::default()` for leaf nodes.",
         "required": [
           "x",
           "y"

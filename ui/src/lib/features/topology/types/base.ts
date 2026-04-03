@@ -14,11 +14,11 @@ export type TopologyNode = components['schemas']['Node'];
 export type EdgeHandle = components['schemas']['EdgeHandle'];
 
 // Variant types from Node union
-export type InterfaceNode = Extract<TopologyNode, { node_type: 'LeafNode' }>;
-export type SubnetNode = Extract<TopologyNode, { node_type: 'ContainerNode' }>;
+export type ElementNode = Extract<TopologyNode, { node_type: 'Element' }>;
+export type ContainerNode = Extract<TopologyNode, { node_type: 'Container' }>;
 
 // Frontend-specific render types (not from backend)
-export interface NodeRenderData {
+export interface ElementRenderData {
 	headerText: string | null;
 	footerText: string | null;
 	bodyText: string | null;
@@ -29,7 +29,7 @@ export interface NodeRenderData {
 	interface_id: string;
 }
 
-export interface SubnetRenderData {
+export interface ContainerRenderData {
 	headerText: string;
 	cidr: string;
 	IconComponent: IconComponent;

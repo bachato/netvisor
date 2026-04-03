@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { entities } from '$lib/shared/stores/metadata';
 	import type { Topology, TopologyNode } from '../../types/base';
-	import { resolveLeafNode } from '../../resolvers';
+	import { resolveElementNode } from '../../resolvers';
 
 	let { topology }: { topology: Topology } = $props();
 
@@ -18,12 +18,12 @@
 	let hostCount = $derived(
 		new Set(
 			topology.nodes
-				.filter((n) => n.node_type === 'LeafNode')
-				.map((n) => resolveLeafNode(n.id, n as TopologyNode, topology).hostId)
+				.filter((n) => n.node_type === 'Element')
+				.map((n) => resolveElementNode(n.id, n as TopologyNode, topology).hostId)
 				.filter((id) => id !== undefined)
 		).size
 	);
-	let subnetCount = $derived(topology.nodes.filter((n) => n.node_type === 'ContainerNode').length);
+	let subnetCount = $derived(topology.nodes.filter((n) => n.node_type === 'Container').length);
 	let serviceCount = $derived(topology.services.length);
 	let groupCount = $derived(
 		new Set(

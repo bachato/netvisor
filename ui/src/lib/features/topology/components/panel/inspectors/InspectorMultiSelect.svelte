@@ -11,7 +11,7 @@
 		useTopologiesQuery
 	} from '../../../queries';
 	import type { TopologyNode } from '../../../types/base';
-	import { resolveLeafNode } from '../../../resolvers';
+	import { resolveElementNode } from '../../../resolvers';
 	import type { GroupType, EdgeStyle } from '$lib/features/groups/types/base';
 	import { getTopologyEditState } from '../../../state';
 	import { computeCommonTags } from '$lib/shared/utils/tags';
@@ -81,7 +81,7 @@
 		if (!topology) return [];
 		const hostIds: string[] = [];
 		for (const node of nodes) {
-			const resolved = resolveLeafNode(node.id, node.data as TopologyNode, topology);
+			const resolved = resolveElementNode(node.id, node.data as TopologyNode, topology);
 			if (resolved.hostId && !hostIds.includes(resolved.hostId)) {
 				hostIds.push(resolved.hostId);
 			}
@@ -99,7 +99,7 @@
 		if (!topology) return [];
 		const serviceIds: string[] = [];
 		for (const node of nodes) {
-			const resolved = resolveLeafNode(node.id, node.data as TopologyNode, topology);
+			const resolved = resolveElementNode(node.id, node.data as TopologyNode, topology);
 			if (!resolved.interfaceId) continue;
 			for (const service of topology.services) {
 				if (serviceIds.includes(service.id)) continue;
@@ -219,7 +219,7 @@
 		if (!topology) return [];
 		const choices: InterfaceBindingChoice[] = [];
 		for (const node of nodes) {
-			const resolved = resolveLeafNode(node.id, node.data as TopologyNode, topology);
+			const resolved = resolveElementNode(node.id, node.data as TopologyNode, topology);
 			if (!resolved.interfaceId) continue;
 
 			const iface = resolved.iface;

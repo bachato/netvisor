@@ -433,7 +433,7 @@ impl TopologyService {
             .map(|s| (s.id, s.base.subnet_type.vertical_order() as i32))
             .collect();
         for node in &mut subnet_nodes {
-            if let NodeType::ContainerNode {
+            if let NodeType::Container {
                 ref mut layer_hint, ..
             } = node.node_type
             {

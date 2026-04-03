@@ -29,7 +29,7 @@ function makeContainer(
 ): TopologyNode {
 	return {
 		id,
-		node_type: 'ContainerNode',
+		node_type: 'Container',
 		container_type: opts?.container_type ?? 'Subnet',
 		...(opts?.parent_container_id && { parent_container_id: opts.parent_container_id }),
 		position: { x: 0, y: 0 },
@@ -37,11 +37,11 @@ function makeContainer(
 	} as TopologyNode;
 }
 
-function makeLeaf(id: string, subnetId: string, hostId?: string): TopologyNode {
+function makeElement(id: string, subnetId: string, hostId?: string): TopologyNode {
 	return {
 		id,
-		node_type: 'LeafNode',
-		leaf_type: 'Interface',
+		node_type: 'Element',
+		element_type: 'Interface',
 		host_id: hostId ?? uuid(),
 		subnet_id: subnetId,
 		position: { x: 0, y: 0 },
@@ -190,11 +190,11 @@ describe('computeElkLayout', () => {
 			makeContainer(subnetExt),
 			makeContainer(subnetGw),
 			makeContainer(subnetLan),
-			makeLeaf(leaf1, subnetExt, host1),
-			makeLeaf(leaf2, subnetExt),
-			makeLeaf(leaf3, subnetGw, host1), // multi-homed: same host in different subnet
-			makeLeaf(leaf4, subnetLan),
-			makeLeaf(leaf5, subnetLan)
+			makeElement(leaf1, subnetExt, host1),
+			makeElement(leaf2, subnetExt),
+			makeElement(leaf3, subnetGw, host1), // multi-homed: same host in different subnet
+			makeElement(leaf4, subnetLan),
+			makeElement(leaf5, subnetLan)
 		];
 
 		const edges: TopologyEdge[] = [
@@ -245,9 +245,9 @@ describe('computeElkLayout', () => {
 			makeContainer(subnetExt),
 			makeContainer(subnetGw),
 			makeContainer(subnetLan),
-			makeLeaf(leaf1, subnetExt),
-			makeLeaf(leaf2, subnetGw),
-			makeLeaf(leaf3, subnetLan)
+			makeElement(leaf1, subnetExt),
+			makeElement(leaf2, subnetGw),
+			makeElement(leaf3, subnetLan)
 		];
 
 		const edges: TopologyEdge[] = [
@@ -279,8 +279,8 @@ describe('computeElkLayout', () => {
 
 		const nodes: TopologyNode[] = [
 			makeContainer(subnetId),
-			makeLeaf(leaf1, subnetId),
-			makeLeaf(leaf2, subnetId)
+			makeElement(leaf1, subnetId),
+			makeElement(leaf2, subnetId)
 		];
 
 		const edges: TopologyEdge[] = [makeEdge(leaf1, leaf2, 'Interface')];
@@ -303,7 +303,7 @@ describe('computeElkLayout', () => {
 		const subnetId = uuid();
 		const leafId = uuid();
 
-		const nodes: TopologyNode[] = [makeContainer(subnetId), makeLeaf(leafId, subnetId)];
+		const nodes: TopologyNode[] = [makeContainer(subnetId), makeElement(leafId, subnetId)];
 		const edges: TopologyEdge[] = [];
 		const subnets = [makeSubnet(subnetId, 'Lan')];
 
@@ -342,7 +342,7 @@ describe('computeElkLayout', () => {
 			for (let j = 0; j < count; j++) {
 				const leafId = uuid();
 				leafIds.push(leafId);
-				nodes.push(makeLeaf(leafId, subnetId));
+				nodes.push(makeElement(leafId, subnetId));
 			}
 		}
 
@@ -380,9 +380,9 @@ describe('computeElkLayout', () => {
 				container_type: 'ServiceCategoryGroup',
 				parent_container_id: subnetId
 			}),
-			makeLeaf(leaf1, subnetId),
-			makeLeaf(leaf2, groupId),
-			makeLeaf(leaf3, groupId)
+			makeElement(leaf1, subnetId),
+			makeElement(leaf2, groupId),
+			makeElement(leaf3, groupId)
 		];
 
 		const edges: TopologyEdge[] = [makeEdge(leaf1, leaf2, 'Interface')];
@@ -416,8 +416,8 @@ describe('computeElkLayout', () => {
 
 		const nodes: TopologyNode[] = [
 			makeContainer(subnetId),
-			makeLeaf(leaf1, subnetId),
-			makeLeaf(leaf2, subnetId)
+			makeElement(leaf1, subnetId),
+			makeElement(leaf2, subnetId)
 		];
 
 		// Only overlay edges — no primary edges to drive layout
