@@ -262,6 +262,7 @@
 				const layoutResult = cachedLayoutResult ?? {
 					nodePositions: new Map(),
 					containerSizes: new Map(),
+					leafNodeSizes: new Map(),
 					edgeHandles: new Map()
 				};
 
@@ -295,9 +296,10 @@
 					if (isNewStructure) {
 						const elkPos = layoutResult.nodePositions.get(node.id);
 						const elkSize = layoutResult.containerSizes.get(node.id);
+						const leafSize = layoutResult.leafNodeSizes.get(node.id);
 						position = elkPos ?? { x: node.position.x, y: node.position.y };
-						width = isCollapsed ? 200 : (elkSize?.width ?? node.size.x);
-						height = isCollapsed ? 80 : (elkSize?.height ?? node.size.y);
+						width = isCollapsed ? 200 : (elkSize?.width ?? leafSize?.x ?? node.size.x);
+						height = isCollapsed ? 80 : (elkSize?.height ?? leafSize?.y ?? node.size.y);
 					} else {
 						const curPos = currentPositions.get(node.id);
 						const curSize = currentSizes.get(node.id);

@@ -26,6 +26,7 @@ export interface EdgeHandles {
 export interface ElkLayoutResult {
 	nodePositions: Map<string, { x: number; y: number }>;
 	containerSizes: Map<string, { width: number; height: number }>;
+	leafNodeSizes: Map<string, { x: number; y: number }>;
 	edgeHandles: Map<string, EdgeHandles>;
 }
 
@@ -103,14 +104,15 @@ function getLayerHint(node: TopologyNode, topology: Topology): number {
 	return 999;
 }
 
-// Leaf node size constants (px) — tuned to match LeafNode.svelte CSS
+// Leaf node size constants (px) — slightly generous estimates for ELK spacing.
+// Cards auto-size to content; these only affect space allocation between nodes.
 const LEAF_WIDTH = 250;
-const HEADER_HEIGHT = 22; // text-xs + pt-2
-const FOOTER_HEIGHT = 22; // text-xs + pb-2
-const BODY_PADDING = 16; // py-2 on body section
-const SERVICE_ROW_HEIGHT = 28; // h-5 icon (20px) + line-height padding
-const PORT_LINE_HEIGHT = 18; // mt-1 (4px) + text-xs (14px)
-const OPEN_PORTS_PILL_HEIGHT = 26; // pill + mt-1 + mb-2
+const HEADER_HEIGHT = 26;
+const FOOTER_HEIGHT = 26;
+const BODY_PADDING = 16;
+const SERVICE_ROW_HEIGHT = 38;
+const PORT_LINE_HEIGHT = 22;
+const OPEN_PORTS_PILL_HEIGHT = 26;
 
 /**
  * Compute leaf node sizes based on visible services and display options.
@@ -608,7 +610,12 @@ function mapElkResults(
 		}
 	}
 
-	return { nodePositions, containerSizes, edgeHandles };
+	return {
+		nodePositions,
+		containerSizes,
+		leafNodeSizes: input.leafNodeSizes ?? new Map(),
+		edgeHandles
+	};
 }
 
 /**
@@ -617,7 +624,12 @@ function mapElkResults(
  */
 export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayoutResult> {
 	if (input.nodes.length === 0) {
-		return { nodePositions: new Map(), containerSizes: new Map(), edgeHandles: new Map() };
+		return {
+			nodePositions: new Map(),
+			containerSizes: new Map(),
+			leafNodeSizes: new Map(),
+			edgeHandles: new Map()
+		};
 	}
 
 	const { graph, containerIds, leafExternalEdgeInfo } = buildElkGraph(input);

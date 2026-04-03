@@ -30,7 +30,7 @@
 	import type { Node, Edge } from '@xyflow/svelte';
 	import { topology_hideOpenPorts, topology_openPortsSummary } from '$lib/paraglide/messages';
 
-	let { id, data, width, height }: NodeProps = $props();
+	let { id, data, width }: NodeProps = $props();
 
 	// Subscribe to isExporting for reactivity
 	let isExportingValue = $state(get(isExporting));
@@ -102,7 +102,6 @@
 	let servicesForHost = $derived(resolved?.services ?? []);
 	let iface = $derived(resolved?.iface ?? null);
 
-	let effectiveHeight = $derived(height ? height : 0);
 	let effectiveWidth = $derived(width ? width : 0);
 
 	// Per-card toggle for expanding hidden open ports
@@ -278,7 +277,7 @@
 {#if nodeRenderData}
 	<div
 		class={`${cardClass} ${isNewNode ? 'animate-pulse-highlight' : ''} ${serviceHoverShadowStyle ? 'animate-pulse-highlight-once' : ''}`}
-		style={`width: ${effectiveWidth}px; height: ${effectiveHeight}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${isNewNode ? `--pulse-color: ${discoveryColorHelper.rgb};` : ''} ${serviceHoverShadowStyle} ${tagHoverRingStyle}`}
+		style={`width: ${effectiveWidth}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${isNewNode ? `--pulse-color: ${discoveryColorHelper.rgb};` : ''} ${serviceHoverShadowStyle} ${tagHoverRingStyle}`}
 	>
 		<!-- Rest of component stays the same -->
 		<!-- Header section with gradient transition to body -->
