@@ -17,8 +17,9 @@ use crate::server::{
             },
         },
         types::{
+            base::LayoutMode,
             edges::Edge,
-            grouping::GroupingConfig,
+            grouping::{GroupingConfig, GroupingRule},
             layout::{Ixy, NodeLayout, SubnetLayout, Uxy},
             nodes::{ContainerType, LeafEntityType, Node, NodeType, SubnetChild},
         },
@@ -65,9 +66,8 @@ impl SubnetLayoutPlanner {
         let subnet_sizes: HashMap<Uuid, SubnetLayout> = children_by_subnet
             .iter()
             .map(|(subnet_id, children)| {
-                let (size, infra_width) =
-                    self.calculate_subnet_size(*subnet_id, children, ctx, &mut child_nodes);
-                (*subnet_id, SubnetLayout { size, infra_width })
+                let size = self.calculate_subnet_size(*subnet_id, children, ctx, &mut child_nodes);
+                (*subnet_id, SubnetLayout { size })
             })
             .collect();
 
@@ -306,85 +306,29 @@ impl SubnetLayoutPlanner {
         children: &[SubnetChild],
         ctx: &TopologyContext,
         child_nodes: &mut Vec<Node>,
-    ) -> (Uxy, usize) {
-        // Separate infrastructure from regular nodes
-        let (infrastructure_children, regular_children) =
-            if let Some(subnet) = ctx.get_subnet_by_id(subnet_id) {
-                let infrastructure_interface_ids = ctx.get_interfaces_with_infra_service(subnet);
+    ) -> Uxy {
+        if children.is_empty() {
+            return Uxy { x: 0, y: 0 };
+        }
 
-                let (infrastructure, regular): (Vec<SubnetChild>, Vec<SubnetChild>) = children
-                    .iter()
-                    .sorted_by_key(|c| c.size.y)
-                    .cloned()
-                    .partition(|c| infrastructure_interface_ids.contains(&c.interface_id));
+        // All children laid out together (no infra partitioning)
+        let positions =
+            ChildNodePlanner::calculate_anchor_based_positions(children, &NODE_PADDING, ctx);
 
-                (infrastructure, regular)
-            } else {
-                (Vec::new(), children.to_vec())
-            };
+        let grid_size =
+            PlannerUtils::calculate_container_size_from_layouts(&positions, &NODE_PADDING);
 
-        // Calculate regular nodes layout using coordinate-based system
-        let (regular_child_positions, regular_grid_size) = if !regular_children.is_empty() {
-            let positions = ChildNodePlanner::calculate_anchor_based_positions(
-                &regular_children,
-                &NODE_PADDING,
-                ctx,
-            );
-
-            let container_size =
-                PlannerUtils::calculate_container_size_from_layouts(&positions, &NODE_PADDING);
-
-            (positions, container_size)
-        } else {
-            // Return 0 size when no regular children
-            (HashMap::new(), Uxy { x: 0, y: 0 })
-        };
-
-        // Calculate infrastructure nodes layout using coordinate-based system
-        let infra_cols = if infrastructure_children.is_empty() {
-            0
-        } else {
-            // Calculate infrastructure nodes layout
-            let positions = ChildNodePlanner::calculate_anchor_based_positions(
-                &infrastructure_children,
-                &NODE_PADDING,
-                ctx,
-            );
-
-            // Calculate how many "columns" of infra nodes we have
-            let mut x_positions: Vec<isize> = positions.values().map(|l| l.position.x).collect();
-            x_positions.sort_unstable();
-            x_positions.dedup();
-            x_positions.len()
-        };
-
-        let (infra_child_positions, infra_grid_size) = if !infrastructure_children.is_empty() {
-            let positions = ChildNodePlanner::calculate_anchor_based_positions(
-                &infrastructure_children,
-                &NODE_PADDING,
-                ctx,
-            );
-
-            let container_size =
-                PlannerUtils::calculate_container_size_from_layouts(&positions, &NODE_PADDING);
-
-            (positions, container_size)
-        } else {
-            (HashMap::new(), Uxy { x: 0, y: 0 })
-        };
-
-        // Create infrastructure nodes (using HashMap lookup instead of grid iteration)
-        for child in infrastructure_children.iter() {
-            if let Some(layout) = infra_child_positions.get(&child.id) {
+        // Create leaf nodes for all children
+        for child in children.iter() {
+            if let Some(layout) = positions.get(&child.id) {
                 child_nodes.push(Node {
                     id: child.id,
                     node_type: NodeType::LeafNode {
                         container_id: subnet_id,
                         leaf_type: LeafEntityType::Interface,
                         subnet_id,
-                        interface_id: child.interface_id,
                         host_id: child.host_id,
-                        is_infra: true,
+                        interface_id: child.interface_id,
                     },
                     position: layout.position,
                     size: child.size,
@@ -393,42 +337,107 @@ impl SubnetLayoutPlanner {
             }
         }
 
-        // Create regular nodes (offset by infrastructure width, using HashMap lookup)
-        for child in regular_children.iter() {
-            if let Some(layout) = regular_child_positions.get(&child.id) {
-                let node_position = Ixy {
-                    x: layout.position.x
-                        + if infra_cols > 0 {
-                            infra_grid_size.x as isize
-                        } else {
-                            0
-                        },
-                    y: layout.position.y,
-                };
-
-                child_nodes.push(Node {
-                    id: child.id,
-                    node_type: NodeType::LeafNode {
-                        container_id: subnet_id,
-                        leaf_type: LeafEntityType::Interface,
-                        subnet_id,
-                        interface_id: child.interface_id,
-                        host_id: child.host_id,
-                        is_infra: false,
-                    },
-                    position: node_position,
-                    size: child.size,
-                    header: child.header.clone(),
-                });
-            }
+        // For ClientSide layout, create nested group containers for ByServiceCategory and ByTag rules
+        if ctx.options.request.layout_mode == LayoutMode::ClientSide {
+            self.create_nested_group_containers(subnet_id, children, ctx, child_nodes);
         }
 
-        let total_size = Uxy {
-            x: regular_grid_size.x + infra_grid_size.x,
-            y: regular_grid_size.y.max(infra_grid_size.y),
-        };
+        grid_size
+    }
 
-        (total_size, infra_grid_size.x)
+    /// Create nested ContainerNodes for ByServiceCategory and ByTag grouping rules (ClientSide mode only)
+    fn create_nested_group_containers(
+        &self,
+        subnet_id: Uuid,
+        children: &[SubnetChild],
+        ctx: &TopologyContext,
+        child_nodes: &mut Vec<Node>,
+    ) {
+        let grouping = GroupingConfig::from_request_options(&ctx.options.request);
+
+        for rule in &grouping.primary {
+            match rule {
+                GroupingRule::ByServiceCategory { categories, title } => {
+                    // Find children whose host has a service in the specified categories
+                    let matched_child_ids: HashSet<Uuid> = children
+                        .iter()
+                        .filter(|child| {
+                            ctx.services.iter().any(|s| {
+                                s.base.host_id == child.host_id
+                                    && categories.contains(&s.base.service_definition.category())
+                            })
+                        })
+                        .map(|c| c.id)
+                        .collect();
+
+                    if matched_child_ids.is_empty() {
+                        continue;
+                    }
+
+                    let group_id = Uuid::new_v4();
+                    child_nodes.push(Node {
+                        id: group_id,
+                        node_type: NodeType::ContainerNode {
+                            container_type: ContainerType::ServiceCategoryGroup,
+                            parent_container_id: Some(subnet_id),
+                            layer_hint: None,
+                        },
+                        position: Ixy { x: 0, y: 0 },
+                        size: Uxy { x: 0, y: 0 },
+                        header: title.clone(),
+                    });
+
+                    // Reassign matched leaf nodes to the group container
+                    for node in child_nodes.iter_mut() {
+                        if matched_child_ids.contains(&node.id)
+                            && let NodeType::LeafNode {
+                                ref mut container_id,
+                                ..
+                            } = node.node_type
+                        {
+                            *container_id = group_id;
+                        }
+                    }
+                }
+                GroupingRule::ByTag { tag_ids, title } => {
+                    let matched_host_ids = ctx.get_host_ids_with_tags(tag_ids);
+                    let matched_child_ids: HashSet<Uuid> = children
+                        .iter()
+                        .filter(|child| matched_host_ids.contains(&child.host_id))
+                        .map(|c| c.id)
+                        .collect();
+
+                    if matched_child_ids.is_empty() {
+                        continue;
+                    }
+
+                    let group_id = Uuid::new_v4();
+                    child_nodes.push(Node {
+                        id: group_id,
+                        node_type: NodeType::ContainerNode {
+                            container_type: ContainerType::TagGroup,
+                            parent_container_id: Some(subnet_id),
+                            layer_hint: None,
+                        },
+                        position: Ixy { x: 0, y: 0 },
+                        size: Uxy { x: 0, y: 0 },
+                        header: title.clone(),
+                    });
+
+                    for node in child_nodes.iter_mut() {
+                        if matched_child_ids.contains(&node.id)
+                            && let NodeType::LeafNode {
+                                ref mut container_id,
+                                ..
+                            } = node.node_type
+                        {
+                            *container_id = group_id;
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 
     /// Create subnet container nodes with calculated positions
@@ -461,7 +470,7 @@ impl SubnetLayoutPlanner {
                             id: *subnet_id,
                             node_type: NodeType::ContainerNode {
                                 container_type: ContainerType::Subnet,
-                                infra_width: layout.infra_width,
+                                parent_container_id: None,
                                 layer_hint: None,
                             },
                             position: *position,
@@ -474,7 +483,7 @@ impl SubnetLayoutPlanner {
                         id: *subnet_id,
                         node_type: NodeType::ContainerNode {
                             container_type: ContainerType::Subnet,
-                            infra_width: layout.infra_width,
+                            parent_container_id: None,
                             layer_hint: None,
                         },
                         position: *position,

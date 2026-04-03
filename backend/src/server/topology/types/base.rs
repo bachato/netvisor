@@ -12,6 +12,7 @@ use crate::server::tags::r#impl::base::Tag;
 use crate::server::topology::types::edges::{
     Edge, EdgeHandle, EdgeTypeDiscriminants, TopologyPerspective,
 };
+use crate::server::topology::types::grouping::GroupingRule;
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
 use chrono::{DateTime, Utc};
@@ -220,7 +221,6 @@ pub struct TopologyTagFilter {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, ToSchema)]
 pub struct TopologyLocalOptions {
-    pub left_zone_title: String,
     pub no_fade_edges: bool,
     pub hide_resize_handles: bool,
     pub hide_edge_types: Vec<EdgeTypeDiscriminants>,
@@ -239,7 +239,6 @@ fn default_true() -> bool {
 impl Default for TopologyLocalOptions {
     fn default() -> Self {
         Self {
-            left_zone_title: "Infrastructure".to_string(),
             no_fade_edges: false,
             hide_resize_handles: false,
             hide_edge_types: vec![EdgeTypeDiscriminants::HostVirtualization],
@@ -263,27 +262,35 @@ pub enum LayoutMode {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, ToSchema)]
 pub struct TopologyRequestOptions {
-    pub group_docker_bridges_by_host: bool,
     pub hide_vm_title_on_docker_container: bool,
     pub hide_ports: bool,
-    pub left_zone_service_categories: Vec<ServiceCategory>,
     pub hide_service_categories: Vec<ServiceCategory>,
-    pub show_gateway_in_left_zone: bool,
+    #[serde(default = "default_grouping_rules")]
+    pub grouping_rules: Vec<GroupingRule>,
     #[serde(default)]
     pub perspective: TopologyPerspective,
     #[serde(default)]
     pub layout_mode: LayoutMode,
 }
 
+fn default_grouping_rules() -> Vec<GroupingRule> {
+    vec![
+        GroupingRule::BySubnet { title: None },
+        GroupingRule::ByVirtualizingService { title: None },
+        GroupingRule::ByServiceCategory {
+            categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
+            title: Some("Infrastructure".into()),
+        },
+    ]
+}
+
 impl Default for TopologyRequestOptions {
     fn default() -> Self {
         Self {
-            group_docker_bridges_by_host: true,
             hide_vm_title_on_docker_container: false,
             hide_ports: false,
-            left_zone_service_categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
             hide_service_categories: vec![ServiceCategory::OpenPorts],
-            show_gateway_in_left_zone: true,
+            grouping_rules: default_grouping_rules(),
             perspective: TopologyPerspective::default(),
             layout_mode: LayoutMode::default(),
         }

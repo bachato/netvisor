@@ -68,25 +68,6 @@ impl ChildNodePlanner {
             }
         }
 
-        // Analyze each VM cluster for cross-infra splitting
-        let mut cluster_crosses_infra: HashMap<Uuid, bool> = HashMap::new();
-        for (provider_iid, vm_iids) in vm_clusters.iter() {
-            let provider_is_infra = ctx.is_interface_infra(*provider_iid);
-
-            // Check if any VM is on opposite side of infra boundary
-            let mut has_cross_infra = false;
-            for vm_iid in vm_iids.iter() {
-                let vm_is_infra = ctx.is_interface_infra(*vm_iid);
-                if vm_is_infra != provider_is_infra {
-                    has_cross_infra = true;
-                }
-            }
-
-            if has_cross_infra {
-                cluster_crosses_infra.insert(*provider_iid, true);
-            }
-        }
-
         // Calculate "ideal position" for each VM cluster based on ALL cluster members' inter-subnet edges
         // This includes both the provider AND all VMs - whichever has external connections
         let mut cluster_target_positions: HashMap<Uuid, Ixy> = HashMap::new();
@@ -146,18 +127,6 @@ impl ChildNodePlanner {
             if edge_count > 0 {
                 total_force.x = (total_force.x as f32 / edge_count as f32) as isize;
                 total_force.y = (total_force.y as f32 / edge_count as f32) as isize;
-            }
-
-            // CRITICAL: If cluster crosses infra boundary, adjust horizontal force
-            // We don't want to pull the cluster apart - instead pull both sides toward boundary
-            let cluster_crosses_boundary = cluster_crosses_infra
-                .get(provider_iid)
-                .copied()
-                .unwrap_or(false);
-            if cluster_crosses_boundary {
-                // Neutralize any horizontal force that would split the cluster
-                // Instead, we'll apply boundary-specific forces to each side separately
-                total_force.x = 0;
             }
 
             cluster_target_positions.insert(*provider_iid, total_force);
@@ -260,30 +229,6 @@ impl ChildNodePlanner {
 
                         force_direction.x += cluster_x;
                         force_direction.y += cluster_y;
-
-                        // ADDITIONAL: If cluster crosses infra boundary, pull toward boundary (horizontal only)
-                        if !has_horizontal_inter_edge
-                            && cluster_crosses_infra
-                                .get(&provider_id)
-                                .copied()
-                                .unwrap_or(false)
-                        {
-                            let vm_is_infra = c
-                                .interface_id
-                                .map(|iid| ctx.is_interface_infra(iid))
-                                .unwrap_or(false);
-
-                            // STRONG boundary force to keep split clusters together
-                            let boundary_weight = 800.0; // Very strong - almost as strong as inter-subnet edges
-                            let boundary_force = if vm_is_infra {
-                                1.0 // Infra VMs get pulled right (toward boundary)
-                            } else {
-                                -1.0 // Non-infra VMs get pulled left (toward boundary)
-                            };
-
-                            let boundary_x = (boundary_force * boundary_weight) as isize;
-                            force_direction.x += boundary_x;
-                        }
                     }
                 } else if !has_horizontal_inter_edge || !has_vertical_inter_edge {
                     // Check if this is a VM provider (has outgoing VM edges)
@@ -304,31 +249,6 @@ impl ChildNodePlanner {
                             }
                             if !has_vertical_inter_edge {
                                 force_direction.y += cluster_pos.y * cluster_weight as isize;
-                            }
-
-                            // If cluster crosses infra boundary, provider should stay near boundary center
-                            if !has_horizontal_inter_edge
-                                && cluster_crosses_infra
-                                    .get(&c.interface_id.unwrap())
-                                    .copied()
-                                    .unwrap_or(false)
-                            {
-                                // Neutralize horizontal cluster force and apply boundary positioning force
-                                // Position provider at/near the infra boundary (between infra and non-infra sides)
-                                force_direction.x = 0; // Reset cluster force
-
-                                let provider_is_infra = c
-                                    .interface_id
-                                    .map(|iid| ctx.is_interface_infra(iid))
-                                    .unwrap_or(false);
-
-                                // Medium-strong force to position at boundary
-                                // This should be strong enough to position near the VMs but weaker than VM boundary forces
-                                let provider_boundary_weight = 500.0;
-                                let boundary_force = if provider_is_infra { 1.0 } else { -1.0 };
-
-                                force_direction.x +=
-                                    (boundary_force * provider_boundary_weight) as isize;
                             }
                         }
                     } else {
@@ -352,32 +272,7 @@ impl ChildNodePlanner {
                                 return acc;
                             };
 
-                            // Check if this edge crosses the infra/non-infra boundary
-                            let crosses_infra_boundary = if is_intra_subnet {
-                                let this_is_infra = c
-                                    .interface_id
-                                    .map(|iid| ctx.is_interface_infra(iid))
-                                    .unwrap_or(false);
-                                let other_is_infra = ctx.is_interface_infra(other_interface_id);
-                                this_is_infra != other_is_infra
-                            } else {
-                                false
-                            };
-
-                            if crosses_infra_boundary && !has_horizontal_inter_edge {
-                                // Edges crossing infra boundary get medium-high weight
-                                // and pull toward the boundary (horizontal force only)
-                                let this_is_infra = c
-                                    .interface_id
-                                    .map(|iid| ctx.is_interface_infra(iid))
-                                    .unwrap_or(false);
-                                let weight = 50.0;
-
-                                // Infra nodes get pulled right (toward boundary)
-                                // Non-infra nodes get pulled left (toward boundary)
-                                let boundary_force = if this_is_infra { 1.0 } else { -1.0 };
-                                acc.x += (boundary_force * weight) as isize;
-                            } else if !is_intra_subnet {
+                            if !is_intra_subnet {
                                 // Inter-subnet edge forces for axes not already controlled
                                 let other_subnet = ctx
                                     .get_interface_by_id(Some(other_interface_id))

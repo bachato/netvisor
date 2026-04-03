@@ -450,22 +450,9 @@ impl EdgeBuilder {
         let source_subnet = ctx.get_subnet_from_interface_id(*source_interface_id)?;
         let target_subnet = ctx.get_subnet_from_interface_id(*target_interface_id)?;
 
-        let source_is_infra = ctx
-            .get_interfaces_with_infra_service(source_subnet)
-            .contains(&Some(*source_interface_id));
-        let target_is_infra = ctx
-            .get_interfaces_with_infra_service(target_subnet)
-            .contains(&Some(*target_interface_id));
-
-        // Check if infra constraints are actually necessary
-        let source_needs_infra_constraint = ctx.subnet_has_mixed_infra(source_subnet);
-        let target_needs_infra_constraint = ctx.subnet_has_mixed_infra(target_subnet);
-
         Some(EdgeHandle::from_subnet_layers(
             source_subnet,
             target_subnet,
-            source_is_infra && source_needs_infra_constraint,
-            target_is_infra && target_needs_infra_constraint,
             is_multi_hop,
         ))
     }

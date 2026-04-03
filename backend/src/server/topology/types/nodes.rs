@@ -20,6 +20,8 @@ pub struct Node {
 pub enum ContainerType {
     #[default]
     Subnet,
+    TagGroup,
+    ServiceCategoryGroup,
 }
 
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]
@@ -47,7 +49,8 @@ pub enum NodeType {
     ContainerNode {
         #[serde(default)]
         container_type: ContainerType,
-        infra_width: usize,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        parent_container_id: Option<Uuid>,
         /// Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)
         #[serde(default, skip_serializing_if = "Option::is_none")]
         layer_hint: Option<i32>,
@@ -62,7 +65,6 @@ pub enum NodeType {
         subnet_id: Uuid,
         host_id: Uuid,
         interface_id: Option<Uuid>,
-        is_infra: bool,
     },
 }
 
@@ -85,14 +87,30 @@ mod tests {
     fn test_container_node_round_trip() {
         let node_type = NodeType::ContainerNode {
             container_type: ContainerType::Subnet,
-            infra_width: 3,
+            parent_container_id: None,
             layer_hint: Some(2),
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "ContainerNode");
         assert_eq!(json["container_type"], "Subnet");
-        assert_eq!(json["infra_width"], 3);
         assert_eq!(json["layer_hint"], 2);
+        assert!(json.get("parent_container_id").is_none());
+
+        let deserialized: NodeType = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, node_type);
+    }
+
+    #[test]
+    fn test_container_node_with_parent() {
+        let parent_id = Uuid::new_v4();
+        let node_type = NodeType::ContainerNode {
+            container_type: ContainerType::ServiceCategoryGroup,
+            parent_container_id: Some(parent_id),
+            layer_hint: None,
+        };
+        let json = serde_json::to_value(&node_type).unwrap();
+        assert_eq!(json["container_type"], "ServiceCategoryGroup");
+        assert_eq!(json["parent_container_id"], parent_id.to_string());
 
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
@@ -102,7 +120,7 @@ mod tests {
     fn test_container_node_no_layer_hint_omitted_in_json() {
         let node_type = NodeType::ContainerNode {
             container_type: ContainerType::Subnet,
-            infra_width: 3,
+            parent_container_id: None,
             layer_hint: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
@@ -120,7 +138,6 @@ mod tests {
             subnet_id: id,
             host_id,
             interface_id: Some(iface_id),
-            is_infra: true,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "LeafNode");
@@ -132,6 +149,7 @@ mod tests {
 
     #[test]
     fn test_backward_compat_subnet_node() {
+        // Old JSON with infra_width should still deserialize (serde ignores unknown fields)
         let json = json!({
             "node_type": "SubnetNode",
             "infra_width": 2
@@ -140,11 +158,11 @@ mod tests {
         match node_type {
             NodeType::ContainerNode {
                 container_type,
-                infra_width,
+                parent_container_id,
                 layer_hint,
             } => {
                 assert_eq!(container_type, ContainerType::Subnet);
-                assert_eq!(infra_width, 2);
+                assert_eq!(parent_container_id, None);
                 assert_eq!(layer_hint, None);
             }
             _ => panic!("Expected ContainerNode"),
@@ -153,6 +171,7 @@ mod tests {
 
     #[test]
     fn test_backward_compat_interface_node() {
+        // Old JSON with is_infra should still deserialize (serde ignores unknown fields)
         let subnet_id = Uuid::new_v4();
         let host_id = Uuid::new_v4();
         let json = json!({
@@ -170,17 +189,34 @@ mod tests {
                 subnet_id: sid,
                 host_id: hid,
                 interface_id,
-                is_infra,
             } => {
                 assert_eq!(container_id, Uuid::default()); // default since not in old JSON
                 assert_eq!(leaf_type, LeafEntityType::Interface);
                 assert_eq!(sid, subnet_id);
                 assert_eq!(hid, host_id);
                 assert_eq!(interface_id, None);
-                assert!(!is_infra);
             }
             _ => panic!("Expected LeafNode"),
         }
+    }
+
+    #[test]
+    fn test_new_container_types() {
+        let tag_group = NodeType::ContainerNode {
+            container_type: ContainerType::TagGroup,
+            parent_container_id: Some(Uuid::new_v4()),
+            layer_hint: None,
+        };
+        let json = serde_json::to_value(&tag_group).unwrap();
+        assert_eq!(json["container_type"], "TagGroup");
+
+        let svc_group = NodeType::ContainerNode {
+            container_type: ContainerType::ServiceCategoryGroup,
+            parent_container_id: Some(Uuid::new_v4()),
+            layer_hint: None,
+        };
+        let json = serde_json::to_value(&svc_group).unwrap();
+        assert_eq!(json["container_type"], "ServiceCategoryGroup");
     }
 }
 

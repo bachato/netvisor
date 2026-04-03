@@ -24,8 +24,6 @@ struct NodeConstraints {
     pin_left: bool,
     /// Must stay in right column
     pin_right: bool,
-    /// Is this node in the infra zone (cannot swap with non-infra)
-    is_infra: bool,
 }
 
 /// Parameters for zone optimization to reduce function argument count
@@ -69,24 +67,16 @@ impl<'a> ChildPositioner<'a> {
             .cloned()
             .collect();
 
-        // Group nodes by (subnet, infra)
-        let mut nodes_by_subnet_infra: HashMap<(Uuid, bool), Vec<Uuid>> = HashMap::new();
+        // Group nodes by subnet
+        let mut nodes_by_subnet: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
         for node in nodes.iter() {
-            if let NodeType::LeafNode {
-                subnet_id,
-                is_infra,
-                ..
-            } = node.node_type
-            {
-                nodes_by_subnet_infra
-                    .entry((subnet_id, is_infra))
-                    .or_default()
-                    .push(node.id);
+            if let NodeType::LeafNode { subnet_id, .. } = node.node_type {
+                nodes_by_subnet.entry(subnet_id).or_default().push(node.id);
             }
         }
 
-        // For each subnet+infra zone, optimize
-        for ((_, _), node_ids) in nodes_by_subnet_infra.iter() {
+        // For each subnet zone, optimize
+        for (_, node_ids) in nodes_by_subnet.iter() {
             if node_ids.len() < 2 {
                 continue;
             }
@@ -120,15 +110,7 @@ impl<'a> ChildPositioner<'a> {
     ) -> HashMap<Uuid, NodeConstraints> {
         let mut constraints: HashMap<Uuid, NodeConstraints> = HashMap::new();
 
-        // First, set infra status for all interface nodes
-        for node in nodes {
-            if let NodeType::LeafNode { is_infra, .. } = node.node_type {
-                let constraint = constraints.entry(node.id).or_default();
-                constraint.is_infra = is_infra;
-            }
-        }
-
-        // Then add edge handle constraints
+        // Add edge handle constraints
         for edge in edges {
             // Only consider inter-subnet edges (not intra-subnet)
             if self.context.edge_is_intra_subnet(edge) {
@@ -257,11 +239,6 @@ impl<'a> ChildPositioner<'a> {
         // Get constraints and info for both nodes
         let constraint_a = params.constraints.get(&node_a).cloned().unwrap_or_default();
         let constraint_b = params.constraints.get(&node_b).cloned().unwrap_or_default();
-
-        // Cannot swap across infra/non-infra boundary
-        if constraint_a.is_infra != constraint_b.is_infra {
-            return false;
-        }
 
         // Get current positions and sizes
         let mut node_a_info: Option<(Ixy, Uxy)> = None;

@@ -87,7 +87,6 @@ pub struct NodeLayout {
 #[derive(Debug, Copy, Clone)]
 pub struct SubnetLayout {
     pub size: Uxy,
-    pub infra_width: usize,
 }
 
 // Helper struct for tracking node bounds

@@ -27,9 +27,6 @@ impl ChildAnchorPlanner {
 
         // Only do anchor planning if there are inter-subnet edges
         if !inter_subnet_edges.is_empty() {
-            // Determine if this interface has infra services
-            let is_infra = ctx.is_interface_infra(interface_id);
-
             // Count anchors by handle direction (only for inter-subnet edges)
             let mut handle_counts: HashMap<EdgeHandle, usize> = HashMap::new();
 
@@ -46,7 +43,7 @@ impl ChildAnchorPlanner {
 
             // If we need to override handles, mutate ONLY inter-subnet edges
             if let Some(override_handle) =
-                Self::determine_override_handle(&handle_counts, is_infra, interface_id, edges, ctx)
+                Self::determine_override_handle(&handle_counts, interface_id, edges, ctx)
             {
                 edges.iter_mut().for_each(|edge| {
                     // Only mutate inter-subnet edges
@@ -71,7 +68,6 @@ impl ChildAnchorPlanner {
     /// Determine whether to override edge handles
     fn determine_override_handle(
         handle_counts: &HashMap<EdgeHandle, usize>,
-        is_infra: bool,
         interface_id: Uuid,
         edges: &[Edge],
         ctx: &TopologyContext,
@@ -112,14 +108,8 @@ impl ChildAnchorPlanner {
             let would_cross = Self::would_vertical_edges_cross_middle(interface_id, edges, ctx);
 
             if would_cross {
-                // Place on the appropriate edge to avoid crossing
-                let override_handle = if is_infra {
-                    EdgeHandle::Left
-                } else {
-                    EdgeHandle::Right
-                };
-
-                return Some(override_handle);
+                // Place on the right edge to avoid crossing through middle
+                return Some(EdgeHandle::Right);
             }
         }
 
