@@ -23,12 +23,7 @@
 	import '@xyflow/svelte/dist/style.css';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { pushError } from '$lib/shared/stores/feedback';
-	import {
-		previewEdges,
-		selectedNodes,
-		topologyOptions,
-		useUpdateNodePositionMutation
-	} from '../../queries';
+	import { previewEdges, selectedNodes, topologyOptions } from '../../queries';
 	import { isExporting } from '../../interactions';
 
 	// Import custom node/edge components
@@ -149,12 +144,9 @@
 	// Store pending edges until nodes are ready
 	let pendingEdges: Edge[] = [];
 
-	// ELK layout persistence — track in localStorage so positions survive page refresh
-	const ELK_LAYOUT_STORAGE_KEY = 'scanopy_elk_layout_state';
-	const updateNodePosition = useUpdateNodePositionMutation();
+	// Track ELK layout state — only skip re-computation within the same mount
+	// when structure hasn't changed (e.g. bundle toggle, selection change)
 	let cachedLayoutResult: import('../../layout/elk-layout').ElkLayoutResult | null = null;
-
-	// Also track in-session to avoid redundant ELK calls within the same mount
 	let sessionStructureKey = '';
 
 	function getStructureKey(topo: Topology): string {
@@ -162,26 +154,6 @@
 			.map((n) => n.id)
 			.sort()
 			.join(',')}`;
-	}
-
-	function getElkLayoutState(): Record<string, string> {
-		try {
-			return JSON.parse(localStorage.getItem(ELK_LAYOUT_STORAGE_KEY) ?? '{}');
-		} catch {
-			return {};
-		}
-	}
-
-	function shouldRunElkLayout(topologyId: string, structureKey: string): boolean {
-		if (sessionStructureKey === structureKey) return false;
-		return getElkLayoutState()[topologyId] !== structureKey;
-	}
-
-	function markElkLayoutComputed(topologyId: string, structureKey: string) {
-		sessionStructureKey = structureKey;
-		const state = getElkLayoutState();
-		state[topologyId] = structureKey;
-		localStorage.setItem(ELK_LAYOUT_STORAGE_KEY, JSON.stringify(state));
 	}
 
 	// Clear expanded bundles when bundling is toggled off
@@ -265,28 +237,15 @@
 
 				// Only run elkjs when topology structure or collapse state changes
 				const structureKey = getStructureKey(topology) + ':' + Array.from(collapsed).sort().join(',');
-				const needsElkLayout = shouldRunElkLayout(topology.id, structureKey);
 
-				if (needsElkLayout) {
+				if (sessionStructureKey !== structureKey) {
 					cachedLayoutResult = await computeElkLayout({
 						nodes: visibleNodes,
 						edges: topology.edges,
 						topology: topology,
 						collapsedContainers: collapsed
 					});
-					markElkLayoutComputed(topology.id, structureKey);
-					// Save ELK positions to server so they persist across page loads
-					for (const node of topology.nodes) {
-						const elkPos = cachedLayoutResult.nodePositions.get(node.id);
-						if (elkPos) {
-							updateNodePosition.mutate({
-								topologyId: topology.id,
-								networkId: topology.network_id,
-								nodeId: node.id,
-								position: elkPos
-							});
-						}
-					}
+					sessionStructureKey = structureKey;
 				}
 
 				const layoutResult = cachedLayoutResult ?? {
