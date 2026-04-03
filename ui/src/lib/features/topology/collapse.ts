@@ -67,13 +67,35 @@ if (browser) {
 // Actions
 // ---------------------------------------------------------------------------
 
-export function toggleCollapse(containerId: string): void {
+export function toggleCollapse(containerId: string, allNodes?: TopologyNode[]): void {
 	collapsedContainers.update((set) => {
 		const next = new Set(set);
 		if (next.has(containerId)) {
+			// Expanding: also expand child containers (subgroups)
 			next.delete(containerId);
+			if (allNodes) {
+				for (const node of allNodes) {
+					if (node.node_type === 'ContainerNode') {
+						const parentId = (node as Record<string, unknown>).parent_container_id as
+							| string
+							| undefined;
+						if (parentId === containerId) next.delete(node.id);
+					}
+				}
+			}
 		} else {
+			// Collapsing: also collapse child containers (subgroups)
 			next.add(containerId);
+			if (allNodes) {
+				for (const node of allNodes) {
+					if (node.node_type === 'ContainerNode') {
+						const parentId = (node as Record<string, unknown>).parent_container_id as
+							| string
+							| undefined;
+						if (parentId === containerId) next.add(node.id);
+					}
+				}
+			}
 		}
 		return next;
 	});

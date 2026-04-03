@@ -221,7 +221,7 @@
 	);
 	function handleChevronClick(event: MouseEvent) {
 		event.stopPropagation();
-		toggleCollapse(id);
+		toggleCollapse(id, topology?.nodes);
 	}
 
 	async function onResize(event: ResizeDragEvent, params: ResizeParams) {
