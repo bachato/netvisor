@@ -329,9 +329,10 @@
 	onMoveDown={handleLeafMoveDown}
 	onEdit={handleLeafEdit}
 >
-	{#snippet itemSnippet({ item, index })}
+	{#snippet itemSnippet({ item })}
 		<GroupingRuleItem label={getLeafRuleLabel(item)} />
-		<!-- Expanded edit state -->
+	{/snippet}
+	{#snippet itemExpandedSnippet({ item, index })}
 		{#if isLeafEditing(index)}
 			<div class="mt-2 space-y-3 border-t pt-2">
 				<!-- Title input -->
