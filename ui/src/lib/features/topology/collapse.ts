@@ -94,10 +94,10 @@ export function expandAll(): void {
 /**
  * Build a mapping from leaf node ID to its parent container ID.
  */
-export function buildLeafToContainer(nodes: TopologyNode[]): Map<string, string> {
+export function buildElementToContainer(nodes: TopologyNode[]): Map<string, string> {
 	const map = new Map<string, string>();
 	for (const node of nodes) {
-		if (node.node_type === 'LeafNode') {
+		if (node.node_type === 'Element') {
 			const parentId =
 				(node as Record<string, unknown>).container_id ??
 				(node as Record<string, unknown>).subnet_id;
@@ -115,7 +115,7 @@ export function buildLeafToContainer(nodes: TopologyNode[]): Map<string, string>
 export function buildContainerChildCounts(nodes: TopologyNode[]): Map<string, number> {
 	const counts = new Map<string, number>();
 	for (const node of nodes) {
-		if (node.node_type === 'LeafNode') {
+		if (node.node_type === 'Element') {
 			const parentId =
 				(node as Record<string, unknown>).container_id ??
 				(node as Record<string, unknown>).subnet_id;

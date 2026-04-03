@@ -10,9 +10,9 @@ use crate::server::{
         service::{anchor_planner::ChildAnchorPlanner, context::TopologyContext},
         types::{
             edges::Edge,
-            grouping::{GraphRule, GroupingConfig, LeafRule},
+            grouping::{ElementRule, GraphRule, GroupingConfig},
             layout::{Ixy, Uxy},
-            nodes::{ContainerType, LeafEntityType, Node, NodeType, SubnetChild},
+            nodes::{ContainerChild, ContainerType, ElementEntityType, Node, NodeType},
         },
     },
 };
@@ -185,8 +185,8 @@ impl GraphBuilder {
         all_edges: &mut [Edge],
         grouping: &GroupingConfig,
         docker_bridge_host_subnet_id_to_group_on: HashMap<Uuid, Uuid>,
-    ) -> HashMap<Uuid, Vec<SubnetChild>> {
-        let mut children_by_subnet: HashMap<Uuid, Vec<SubnetChild>> = HashMap::new();
+    ) -> HashMap<Uuid, Vec<ContainerChild>> {
+        let mut children_by_subnet: HashMap<Uuid, Vec<ContainerChild>> = HashMap::new();
 
         // Track DockerBridge interfaces by host (only used if grouping is enabled)
         // Map: (host_id, primary_subnet_id) -> Vec<subnet_id>)
@@ -211,7 +211,7 @@ impl GraphBuilder {
             let header_text =
                 self.determine_subnet_child_header_text(ctx, interface, host, &subnet_type);
 
-            let child = SubnetChild {
+            let child = ContainerChild {
                 id: interface.id,
                 host_id: host.id,
                 size: Uxy::default(),
@@ -265,7 +265,7 @@ impl GraphBuilder {
     fn create_child_nodes(
         &mut self,
         subnet_id: Uuid,
-        children: &[SubnetChild],
+        children: &[ContainerChild],
         ctx: &TopologyContext,
         child_nodes: &mut Vec<Node>,
     ) {
@@ -274,9 +274,9 @@ impl GraphBuilder {
         for child in children.iter() {
             child_nodes.push(Node {
                 id: child.id,
-                node_type: NodeType::LeafNode {
+                node_type: NodeType::Element {
                     container_id: subnet_id,
-                    leaf_type: LeafEntityType::Interface,
+                    element_type: ElementEntityType::Interface,
                     subnet_id,
                     host_id: child.host_id,
                     interface_id: child.interface_id,
@@ -284,7 +284,7 @@ impl GraphBuilder {
                 position: Ixy { x: 0, y: 0 },
                 size: child.size,
                 header: child.header.clone(),
-                leaf_rule_id: None,
+                element_rule_id: None,
             });
         }
 
@@ -292,21 +292,21 @@ impl GraphBuilder {
         self.create_nested_group_containers(subnet_id, children, ctx, child_nodes);
     }
 
-    /// Create nested ContainerNodes for ByServiceCategory and ByTag grouping rules (ClientSide mode only).
+    /// Create nested Container nodes for ByServiceCategory and ByTag grouping rules (ClientSide mode only).
     /// First-match-wins: nodes already claimed by an earlier rule are not reassigned.
     fn create_nested_group_containers(
         &self,
         subnet_id: Uuid,
-        children: &[SubnetChild],
+        children: &[ContainerChild],
         ctx: &TopologyContext,
         child_nodes: &mut Vec<Node>,
     ) {
         let grouping = GroupingConfig::from_request_options(&ctx.options.request);
         let mut claimed: HashSet<Uuid> = HashSet::new();
 
-        for GraphRule { id: rule_id, rule } in &grouping.leaf_rules {
+        for GraphRule { id: rule_id, rule } in &grouping.element_rules {
             match rule {
-                LeafRule::ByServiceCategory { categories, title } => {
+                ElementRule::ByServiceCategory { categories, title } => {
                     let matched_child_ids: HashSet<Uuid> = children
                         .iter()
                         .filter(|child| {
@@ -327,7 +327,7 @@ impl GraphBuilder {
                     let group_id = Uuid::new_v4();
                     child_nodes.push(Node {
                         id: group_id,
-                        node_type: NodeType::ContainerNode {
+                        node_type: NodeType::Container {
                             container_type: ContainerType::ServiceCategoryGroup,
                             parent_container_id: Some(subnet_id),
                             layer_hint: None,
@@ -335,12 +335,12 @@ impl GraphBuilder {
                         position: Ixy { x: 0, y: 0 },
                         size: Uxy { x: 0, y: 0 },
                         header: title.clone(),
-                        leaf_rule_id: Some(*rule_id),
+                        element_rule_id: Some(*rule_id),
                     });
 
                     for node in child_nodes.iter_mut() {
                         if matched_child_ids.contains(&node.id)
-                            && let NodeType::LeafNode {
+                            && let NodeType::Element {
                                 ref mut container_id,
                                 ..
                             } = node.node_type
@@ -350,7 +350,7 @@ impl GraphBuilder {
                     }
                     claimed.extend(&matched_child_ids);
                 }
-                LeafRule::ByTag { tag_ids, title } => {
+                ElementRule::ByTag { tag_ids, title } => {
                     let matched_host_ids = ctx.get_host_ids_with_tags(tag_ids);
                     let matched_child_ids: HashSet<Uuid> = children
                         .iter()
@@ -368,7 +368,7 @@ impl GraphBuilder {
                     let group_id = Uuid::new_v4();
                     child_nodes.push(Node {
                         id: group_id,
-                        node_type: NodeType::ContainerNode {
+                        node_type: NodeType::Container {
                             container_type: ContainerType::TagGroup,
                             parent_container_id: Some(subnet_id),
                             layer_hint: None,
@@ -376,12 +376,12 @@ impl GraphBuilder {
                         position: Ixy { x: 0, y: 0 },
                         size: Uxy { x: 0, y: 0 },
                         header: title.clone(),
-                        leaf_rule_id: Some(*rule_id),
+                        element_rule_id: Some(*rule_id),
                     });
 
                     for node in child_nodes.iter_mut() {
                         if matched_child_ids.contains(&node.id)
-                            && let NodeType::LeafNode {
+                            && let NodeType::Element {
                                 ref mut container_id,
                                 ..
                             } = node.node_type
@@ -420,7 +420,7 @@ impl GraphBuilder {
 
                 Node {
                     id: *subnet_id,
-                    node_type: NodeType::ContainerNode {
+                    node_type: NodeType::Container {
                         container_type: ContainerType::Subnet,
                         parent_container_id: None,
                         layer_hint: None,
@@ -428,7 +428,7 @@ impl GraphBuilder {
                     position: Ixy { x: 0, y: 0 },
                     size: Uxy { x: 0, y: 0 },
                     header,
-                    leaf_rule_id: None,
+                    element_rule_id: None,
                 }
             })
             .collect()
@@ -447,7 +447,7 @@ mod tests {
     use crate::server::tags::r#impl::base::{Tag, TagBase};
     use crate::server::topology::service::context::TopologyContext;
     use crate::server::topology::types::base::TopologyOptions;
-    use crate::server::topology::types::grouping::LeafRule;
+    use crate::server::topology::types::grouping::ElementRule;
     use chrono::Utc;
 
     /// Test service definition that returns ReverseProxy category
@@ -509,12 +509,12 @@ mod tests {
         }
     }
 
-    fn make_leaf_node(id: Uuid, host_id: Uuid, container_id: Uuid) -> Node {
+    fn make_element_node(id: Uuid, host_id: Uuid, container_id: Uuid) -> Node {
         Node {
             id,
-            node_type: NodeType::LeafNode {
+            node_type: NodeType::Element {
                 container_id,
-                leaf_type: LeafEntityType::Interface,
+                element_type: ElementEntityType::Interface,
                 subnet_id: container_id,
                 host_id,
                 interface_id: Some(id),
@@ -522,12 +522,12 @@ mod tests {
             position: Ixy { x: 0, y: 0 },
             size: Uxy { x: 100, y: 50 },
             header: None,
-            leaf_rule_id: None,
+            element_rule_id: None,
         }
     }
 
-    fn make_subnet_child(id: Uuid, host_id: Uuid) -> SubnetChild {
-        SubnetChild {
+    fn make_container_child(id: Uuid, host_id: Uuid) -> ContainerChild {
+        ContainerChild {
             id,
             host_id,
             interface_id: Some(id),
@@ -552,23 +552,23 @@ mod tests {
         let child_tag_id = Uuid::new_v4();
 
         let children = vec![
-            make_subnet_child(child_both_id, host_both.id),
-            make_subnet_child(child_tag_id, host_tag_only.id),
+            make_container_child(child_both_id, host_both.id),
+            make_container_child(child_tag_id, host_tag_only.id),
         ];
 
         let mut child_nodes = vec![
-            make_leaf_node(child_both_id, host_both.id, subnet_id),
-            make_leaf_node(child_tag_id, host_tag_only.id, subnet_id),
+            make_element_node(child_both_id, host_both.id, subnet_id),
+            make_element_node(child_tag_id, host_tag_only.id, subnet_id),
         ];
 
         // Rules: ByServiceCategory first, then ByTag
         let mut options = TopologyOptions::default();
-        options.request.leaf_rules = vec![
-            GraphRule::new(LeafRule::ByServiceCategory {
+        options.request.element_rules = vec![
+            GraphRule::new(ElementRule::ByServiceCategory {
                 categories: vec![ServiceCategory::ReverseProxy],
                 title: Some("Infra".to_string()),
             }),
-            GraphRule::new(LeafRule::ByTag {
+            GraphRule::new(ElementRule::ByTag {
                 tag_ids: vec![tag.id],
                 title: None,
             }),
@@ -597,7 +597,7 @@ mod tests {
         // Find group containers
         let groups: Vec<&Node> = child_nodes
             .iter()
-            .filter(|n| matches!(n.node_type, NodeType::ContainerNode { .. }))
+            .filter(|n| matches!(n.node_type, NodeType::Container { .. }))
             .collect();
         assert_eq!(groups.len(), 2, "Should create two group containers");
 
@@ -606,7 +606,7 @@ mod tests {
             .find(|n| {
                 matches!(
                     n.node_type,
-                    NodeType::ContainerNode {
+                    NodeType::Container {
                         container_type: ContainerType::ServiceCategoryGroup,
                         ..
                     }
@@ -619,7 +619,7 @@ mod tests {
             .find(|n| {
                 matches!(
                     n.node_type,
-                    NodeType::ContainerNode {
+                    NodeType::Container {
                         container_type: ContainerType::TagGroup,
                         ..
                     }
@@ -629,7 +629,7 @@ mod tests {
 
         // First-match-wins: host_both should be in the category group (first rule)
         let both_node = child_nodes.iter().find(|n| n.id == child_both_id).unwrap();
-        if let NodeType::LeafNode { container_id, .. } = &both_node.node_type {
+        if let NodeType::Element { container_id, .. } = &both_node.node_type {
             assert_eq!(
                 *container_id, cat_group.id,
                 "Overlapping host should be in first-match group (ServiceCategoryGroup)"
@@ -638,7 +638,7 @@ mod tests {
 
         // host_tag_only should be in the tag group (only matches tag rule)
         let tag_node = child_nodes.iter().find(|n| n.id == child_tag_id).unwrap();
-        if let NodeType::LeafNode { container_id, .. } = &tag_node.node_type {
+        if let NodeType::Element { container_id, .. } = &tag_node.node_type {
             assert_eq!(
                 *container_id, tag_group.id,
                 "Tag-only host should be in TagGroup"
@@ -656,14 +656,14 @@ mod tests {
             "Tag group with no custom title should have no header"
         );
 
-        // Verify leaf_rule_id is set
+        // Verify element_rule_id is set
         assert!(
-            cat_group.leaf_rule_id.is_some(),
-            "Category group should have leaf_rule_id"
+            cat_group.element_rule_id.is_some(),
+            "Category group should have element_rule_id"
         );
         assert!(
-            tag_group.leaf_rule_id.is_some(),
-            "Tag group should have leaf_rule_id"
+            tag_group.element_rule_id.is_some(),
+            "Tag group should have element_rule_id"
         );
     }
 
@@ -676,16 +676,16 @@ mod tests {
         let subnet_id = Uuid::new_v4();
         let child_id = Uuid::new_v4();
 
-        let children = vec![make_subnet_child(child_id, host.id)];
+        let children = vec![make_container_child(child_id, host.id)];
 
         // This time: ByTag FIRST, then ByServiceCategory
         let mut options = TopologyOptions::default();
-        options.request.leaf_rules = vec![
-            GraphRule::new(LeafRule::ByTag {
+        options.request.element_rules = vec![
+            GraphRule::new(ElementRule::ByTag {
                 tag_ids: vec![tag.id],
                 title: Some("Tagged".to_string()),
             }),
-            GraphRule::new(LeafRule::ByServiceCategory {
+            GraphRule::new(ElementRule::ByServiceCategory {
                 categories: vec![ServiceCategory::ReverseProxy],
                 title: Some("Infra".to_string()),
             }),
@@ -708,7 +708,7 @@ mod tests {
             &options,
         );
 
-        let mut child_nodes = vec![make_leaf_node(child_id, host.id, subnet_id)];
+        let mut child_nodes = vec![make_element_node(child_id, host.id, subnet_id)];
 
         let planner = GraphBuilder::new();
         planner.create_nested_group_containers(subnet_id, &children, &ctx, &mut child_nodes);
@@ -719,7 +719,7 @@ mod tests {
             .find(|n| {
                 matches!(
                     n.node_type,
-                    NodeType::ContainerNode {
+                    NodeType::Container {
                         container_type: ContainerType::TagGroup,
                         ..
                     }
@@ -729,7 +729,7 @@ mod tests {
 
         // Host should be in tag group (first rule wins)
         let leaf = child_nodes.iter().find(|n| n.id == child_id).unwrap();
-        if let NodeType::LeafNode { container_id, .. } = &leaf.node_type {
+        if let NodeType::Element { container_id, .. } = &leaf.node_type {
             assert_eq!(
                 *container_id, tag_group.id,
                 "When ByTag is first, overlapping host should be in TagGroup"
@@ -741,7 +741,7 @@ mod tests {
         let cat_group = child_nodes.iter().find(|n| {
             matches!(
                 n.node_type,
-                NodeType::ContainerNode {
+                NodeType::Container {
                     container_type: ContainerType::ServiceCategoryGroup,
                     ..
                 }

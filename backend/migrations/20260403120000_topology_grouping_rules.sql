@@ -1,7 +1,7 @@
--- Convert legacy grouping boolean fields in topology options to container_rules + leaf_rules arrays
+-- Convert legacy grouping boolean fields in topology options to container_rules + element_rules arrays
 -- Rules are wrapped in GraphRule with a stable UUID identity
 
--- Step 1: Build container_rules and leaf_rules from legacy fields and update options.request
+-- Step 1: Build container_rules and element_rules from legacy fields and update options.request
 UPDATE topologies
 SET options = jsonb_set(
     options,
@@ -29,8 +29,8 @@ SET options = jsonb_set(
                 END
             )
         )
-        -- Add leaf_rules array (GraphRule<LeafRule>)
-        || jsonb_build_object('leaf_rules',
+        -- Add element_rules array (GraphRule<LeafRule>)
+        || jsonb_build_object('element_rules',
             (
                 -- Conditionally include ByServiceCategory
                 CASE

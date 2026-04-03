@@ -23,7 +23,7 @@
 		selectedNode as globalSelectedNode,
 		selectedEdge as globalSelectedEdge
 	} from '../../queries';
-	import type { TopologyNode, SubnetRenderData, Topology } from '../../types/base';
+	import type { TopologyNode, ContainerRenderData, Topology } from '../../types/base';
 	import { resolveContainerNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
 	import { getContext } from 'svelte';
@@ -149,18 +149,20 @@
 	let groupHeader = $derived((data as TopologyNode).header ?? '');
 
 	// Resolve leaf rule for sub-group containers to render Tag pills
-	let leafRuleId = $derived((data as Record<string, unknown>)?.leaf_rule_id as string | undefined);
-	let leafRule = $derived.by(() => {
-		if (!leafRuleId) return null;
-		const rules = $topologyOptions.request.leaf_rules ?? [];
+	let elementRuleId = $derived(
+		(data as Record<string, unknown>)?.element_rule_id as string | undefined
+	);
+	let elementRule = $derived.by(() => {
+		if (!elementRuleId) return null;
+		const rules = $topologyOptions.request.element_rules ?? [];
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		return (rules as any[]).find((r: { id: string }) => r.id === leafRuleId) ?? null;
+		return (rules as any[]).find((r: { id: string }) => r.id === elementRuleId) ?? null;
 	});
 
 	// Build label pills from the leaf rule
 	let groupLabels = $derived.by((): { label: string; color: Color }[] => {
-		if (!leafRule?.rule) return [];
-		const rule = leafRule.rule;
+		if (!elementRule?.rule) return [];
+		const rule = elementRule.rule;
 		if ('ByServiceCategory' in rule && topology) {
 			return (rule.ByServiceCategory.categories ?? []).map((cat: string) => {
 				// Find a service with this category to get its color
@@ -190,7 +192,7 @@
 
 	const grayColorHelper = createColorHelper('Gray');
 
-	let subnetRenderData: SubnetRenderData | null = $derived(
+	let subnetRenderData: ContainerRenderData | null = $derived(
 		subnet
 			? (() => {
 					const subnetColorHelper = subnetTypes.getColorHelper(subnet.subnet_type);
@@ -215,7 +217,7 @@
 						colorHelper: subnetColorHelper,
 						cidr,
 						IconComponent
-					} as SubnetRenderData;
+					} as ContainerRenderData;
 				})()
 			: null
 	);

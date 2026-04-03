@@ -212,8 +212,8 @@ impl<'a> TopologyContext<'a> {
             .iter()
             .find(|n| n.id == node_id)
             .map(|node| match node.node_type {
-                NodeType::LeafNode { subnet_id, .. } => subnet_id,
-                NodeType::ContainerNode { .. } => node.id,
+                NodeType::Element { subnet_id, .. } => subnet_id,
+                NodeType::Container { .. } => node.id,
             })
     }
 

@@ -9,8 +9,8 @@
 		topologyOptions,
 		useTopologiesQuery
 	} from '../../queries';
-	import type { TopologyNode, NodeRenderData, Topology } from '../../types/base';
-	import { resolveLeafNode } from '../../resolvers';
+	import type { TopologyNode, ElementRenderData, Topology } from '../../types/base';
+	import { resolveElementNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
 	import { formatPort } from '$lib/shared/utils/formatting';
 	import {
@@ -97,7 +97,7 @@
 		selectedEdgeContext ? $selectedEdgeContext : $globalSelectedEdge
 	) as Edge | null;
 
-	let resolved = $derived(topology ? resolveLeafNode(id, data as TopologyNode, topology) : null);
+	let resolved = $derived(topology ? resolveElementNode(id, data as TopologyNode, topology) : null);
 	let host = $derived(resolved?.host);
 	let servicesForHost = $derived(resolved?.services ?? []);
 	let iface = $derived(resolved?.iface ?? null);
@@ -120,7 +120,7 @@
 	}
 
 	// Compute nodeRenderData reactively
-	let nodeRenderData: NodeRenderData | null = $derived(
+	let nodeRenderData: ElementRenderData | null = $derived(
 		host && resolved?.hostId
 			? (() => {
 					const hiddenCategories = $topologyOptions.request.hide_service_categories ?? [];
@@ -170,7 +170,7 @@
 						showServices,
 						isVirtualized: host.virtualization !== null,
 						interface_id: resolved?.interfaceId ?? ''
-					} as NodeRenderData;
+					} as ElementRenderData;
 				})()
 			: null
 	);

@@ -12,7 +12,7 @@
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { TopologyNode, Topology } from '$lib/features/topology/types/base';
-	import { resolveLeafNode } from '$lib/features/topology/resolvers';
+	import { resolveElementNode } from '$lib/features/topology/resolvers';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
@@ -48,7 +48,7 @@
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	let resolved = $derived(
-		topology ? resolveLeafNode(node.id, node.data as TopologyNode, topology) : null
+		topology ? resolveElementNode(node.id, node.data as TopologyNode, topology) : null
 	);
 	let host = $derived(resolved?.host ?? null);
 	let thisInterface = $derived(resolved?.iface ?? null);

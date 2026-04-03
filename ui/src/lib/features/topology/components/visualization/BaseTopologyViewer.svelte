@@ -28,16 +28,16 @@
 
 	// Import custom node/edge components
 	import ContainerNode from './ContainerNode.svelte';
-	import LeafNode from './LeafNode.svelte';
+	import ElementNode from './ElementNode.svelte';
 	import CustomEdge from './CustomEdge.svelte';
 	import type { TopologyEdge, Topology } from '../../types/base';
-	import { resolveLeafNode } from '../../resolvers';
+	import { resolveElementNode } from '../../resolvers';
 	import { computeElkLayout } from '../../layout/elk-layout';
 	import {
 		collapsedContainers,
 		collapseAll,
 		expandAll,
-		buildLeafToContainer,
+		buildElementToContainer,
 		buildContainerChildCounts,
 		computeCollapsedEdges
 	} from '../../collapse';
@@ -126,8 +126,8 @@
 
 	// Define node types
 	const nodeTypes = {
-		ContainerNode: ContainerNode,
-		LeafNode: LeafNode
+		Container: ContainerNode,
+		Element: ElementNode
 	};
 
 	const customEdgeTypes = {
@@ -214,7 +214,7 @@
 		try {
 			if (topology && (topology.edges || topology.nodes)) {
 				const collapsed = get(collapsedContainers);
-				const leafToContainer = buildLeafToContainer(topology.nodes);
+				const elementToContainer = buildElementToContainer(topology.nodes);
 				const childCounts = buildContainerChildCounts(topology.nodes);
 				const hiddenEdgeTypes = $topologyOptions.local.hide_edge_types ?? [];
 
@@ -222,14 +222,14 @@
 				const aggregatedEdges = computeCollapsedEdges(
 					topology.edges,
 					collapsed,
-					leafToContainer,
+					elementToContainer,
 					hiddenEdgeTypes
 				);
 
 				// Filter out leaf nodes inside collapsed containers
 				const visibleNodes = topology.nodes.filter((node) => {
-					if (node.node_type === 'LeafNode') {
-						const parentId = leafToContainer.get(node.id);
+					if (node.node_type === 'Element') {
+						const parentId = elementToContainer.get(node.id);
 						if (parentId && collapsed.has(parentId)) return false;
 					}
 					return true;
@@ -272,7 +272,7 @@
 						let width: number | undefined;
 						let height: number | undefined;
 
-						const isLeaf = node.node_type === 'LeafNode';
+						const isElement = node.node_type === 'Element';
 
 						if (layoutResult) {
 							const elkPos = layoutResult.nodePositions.get(node.id);
@@ -280,18 +280,18 @@
 							position = elkPos ?? { x: node.position.x, y: node.position.y };
 							// Leaf nodes: fixed width, auto height (content-driven)
 							// Containers: ELK-computed dimensions
-							width = isCollapsed ? 200 : isLeaf ? 250 : (elkSize?.width ?? undefined);
-							height = isCollapsed ? 80 : isLeaf ? undefined : (elkSize?.height ?? undefined);
+							width = isCollapsed ? 200 : isElement ? 250 : (elkSize?.width ?? undefined);
+							height = isCollapsed ? 80 : isElement ? undefined : (elkSize?.height ?? undefined);
 						} else if (!isNewStructure) {
 							const curPos = currentPositions.get(node.id);
 							const curSize = currentSizes.get(node.id);
 							position = curPos ?? { x: node.position.x, y: node.position.y };
-							width = isCollapsed ? 200 : isLeaf ? 250 : (curSize?.width ?? undefined);
-							height = isCollapsed ? 80 : isLeaf ? undefined : (curSize?.height ?? undefined);
+							width = isCollapsed ? 200 : isElement ? 250 : (curSize?.width ?? undefined);
+							height = isCollapsed ? 80 : isElement ? undefined : (curSize?.height ?? undefined);
 						} else {
 							// Measurement pass: place at origin, let content determine size
 							position = { x: 0, y: 0 };
-							width = isLeaf ? 250 : undefined;
+							width = isElement ? 250 : undefined;
 							height = undefined;
 						}
 
@@ -303,14 +303,14 @@
 							...(height !== undefined && { height }),
 							expandParent: true,
 							deletable: false,
-							selectable: node.node_type !== 'ContainerNode',
+							selectable: node.node_type !== 'Container',
 							parentId:
-								node.node_type == 'LeafNode'
-									? (node.container_id ?? resolveLeafNode(node.id, node, topology).subnetId)
-									: node.node_type == 'ContainerNode' && node.parent_container_id
+								node.node_type == 'Element'
+									? (node.container_id ?? resolveElementNode(node.id, node, topology).subnetId)
+									: node.node_type == 'Container' && node.parent_container_id
 										? (node.parent_container_id as string)
 										: undefined,
-							extent: node.node_type == 'LeafNode' ? 'parent' : undefined,
+							extent: node.node_type == 'Element' ? 'parent' : undefined,
 							data: isCollapsed
 								? { ...node, isCollapsed: true, childCount: childCounts.get(node.id) ?? 0 }
 								: node
@@ -321,7 +321,7 @@
 				// Sort helper: parents before children (SvelteFlow requirement)
 				const depthOf = (n: Node) => {
 					if (!n.parentId) return 0;
-					if (n.type === 'ContainerNode') return 1;
+					if (n.type === 'Container') return 1;
 					return 2;
 				};
 				const sortFlowNodes = (flowNodes: Node[]) =>
@@ -340,14 +340,14 @@
 
 					// Phase 2: Read actual DOM sizes directly (bypasses SvelteFlow timing)
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
-					const leafNodeSizes = new Map<string, { x: number; y: number }>();
+					const elementNodeSizes = new Map<string, { x: number; y: number }>();
 					if (containerElement) {
 						const nodeEls = containerElement.querySelectorAll('.svelte-flow__node');
 						for (const el of nodeEls) {
 							const id = (el as HTMLElement).dataset.id;
 							if (id) {
 								const htmlEl = el as HTMLElement;
-								leafNodeSizes.set(id, {
+								elementNodeSizes.set(id, {
 									x: htmlEl.offsetWidth || 250,
 									y: htmlEl.offsetHeight || 100
 								});
@@ -361,7 +361,7 @@
 						edges: topology.edges,
 						topology: topology,
 						collapsedContainers: collapsed,
-						leafNodeSizes,
+						elementNodeSizes,
 						hiddenEdgeTypes: hiddenEdgeTypes
 					});
 					sessionStructureKey = structureKey;
@@ -370,7 +370,7 @@
 				const layoutResult = cachedLayoutResult ?? {
 					nodePositions: new Map(),
 					containerSizes: new Map(),
-					leafNodeSizes: new Map(),
+					elementNodeSizes: new Map(),
 					edgeHandles: new Map()
 				};
 
@@ -395,8 +395,8 @@
 				if (collapsed.size > 0 && aggregatedEdges.length > 0) {
 					// Filter out edges where source or target is inside a collapsed container
 					baseEdges = topology.edges.filter((edge) => {
-						const srcContainer = leafToContainer.get(edge.source as string);
-						const tgtContainer = leafToContainer.get(edge.target as string);
+						const srcContainer = elementToContainer.get(edge.source as string);
+						const tgtContainer = elementToContainer.get(edge.target as string);
 						const srcCollapsed = srcContainer && collapsed.has(srcContainer);
 						const tgtCollapsed = tgtContainer && collapsed.has(tgtContainer);
 						return !srcCollapsed && !tgtCollapsed;
@@ -437,7 +437,7 @@
 				const currentExpandedBundles = get(expandedBundles);
 
 				if ($topologyOptions.local.bundle_edges) {
-					const { bundles, unbundled } = bundleEdges(visibleEdges, leafToContainer);
+					const { bundles, unbundled } = bundleEdges(visibleEdges, elementToContainer);
 					flowEdges = [];
 					let edgeIndex = 0;
 
@@ -650,9 +650,7 @@
 	}
 
 	function handleCollapseAll() {
-		const containerIds = topology.nodes
-			.filter((n) => n.node_type === 'ContainerNode')
-			.map((n) => n.id);
+		const containerIds = topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id);
 		collapseAll(containerIds);
 		setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 100);
 	}

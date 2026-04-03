@@ -91,7 +91,7 @@ impl TypeMetadataProvider for ContainerRule {
 #[derive(
     Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema, EnumIter, IntoStaticStr,
 )]
-pub enum LeafRule {
+pub enum ElementRule {
     ByServiceCategory {
         categories: Vec<ServiceCategory>,
         title: Option<String>,
@@ -102,42 +102,42 @@ pub enum LeafRule {
     },
 }
 
-impl HasId for LeafRule {
+impl HasId for ElementRule {
     fn id(&self) -> &'static str {
         self.into()
     }
 }
 
-impl EntityMetadataProvider for LeafRule {
+impl EntityMetadataProvider for ElementRule {
     fn color(&self) -> Color {
         match self {
-            LeafRule::ByServiceCategory { .. } => Color::Purple,
-            LeafRule::ByTag { .. } => Color::Orange,
+            ElementRule::ByServiceCategory { .. } => Color::Purple,
+            ElementRule::ByTag { .. } => Color::Orange,
         }
     }
 
     fn icon(&self) -> Icon {
         match self {
-            LeafRule::ByServiceCategory { .. } => Icon::Layers,
-            LeafRule::ByTag { .. } => Icon::Tag,
+            ElementRule::ByServiceCategory { .. } => Icon::Layers,
+            ElementRule::ByTag { .. } => Icon::Tag,
         }
     }
 }
 
-impl TypeMetadataProvider for LeafRule {
+impl TypeMetadataProvider for ElementRule {
     fn name(&self) -> &'static str {
         match self {
-            LeafRule::ByServiceCategory { .. } => "Service category",
-            LeafRule::ByTag { .. } => "Tag",
+            ElementRule::ByServiceCategory { .. } => "Service category",
+            ElementRule::ByTag { .. } => "Tag",
         }
     }
 
     fn description(&self) -> &'static str {
         match self {
-            LeafRule::ByServiceCategory { .. } => {
+            ElementRule::ByServiceCategory { .. } => {
                 "Group nodes by service category within a container"
             }
-            LeafRule::ByTag { .. } => "Group nodes by tag within a container",
+            ElementRule::ByTag { .. } => "Group nodes by tag within a container",
         }
     }
 
@@ -151,14 +151,14 @@ impl TypeMetadataProvider for LeafRule {
 #[derive(Debug, Clone)]
 pub struct GroupingConfig {
     pub container_rules: Vec<GraphRule<ContainerRule>>,
-    pub leaf_rules: Vec<GraphRule<LeafRule>>,
+    pub element_rules: Vec<GraphRule<ElementRule>>,
 }
 
 impl GroupingConfig {
     pub fn from_request_options(options: &TopologyRequestOptions) -> Self {
         GroupingConfig {
             container_rules: options.container_rules.clone(),
-            leaf_rules: options.leaf_rules.clone(),
+            element_rules: options.element_rules.clone(),
         }
     }
 
@@ -181,7 +181,7 @@ mod tests {
 
         assert!(config.should_group_docker_bridges());
         assert_eq!(config.container_rules.len(), 2);
-        assert_eq!(config.leaf_rules.len(), 1);
+        assert_eq!(config.element_rules.len(), 1);
     }
 
     #[test]
@@ -198,7 +198,7 @@ mod tests {
     #[test]
     fn test_service_category_grouping() {
         let options = TopologyRequestOptions {
-            leaf_rules: vec![GraphRule::new(LeafRule::ByServiceCategory {
+            element_rules: vec![GraphRule::new(ElementRule::ByServiceCategory {
                 categories: vec![ServiceCategory::DNS],
                 title: Some("Infra".into()),
             })],
@@ -206,8 +206,8 @@ mod tests {
         };
         let config = GroupingConfig::from_request_options(&options);
 
-        let has_category_rule = config.leaf_rules.iter().any(|r| match &r.rule {
-            LeafRule::ByServiceCategory { categories, .. } => {
+        let has_category_rule = config.element_rules.iter().any(|r| match &r.rule {
+            ElementRule::ByServiceCategory { categories, .. } => {
                 categories.contains(&ServiceCategory::DNS)
             }
             _ => false,
@@ -228,20 +228,20 @@ mod tests {
     }
 
     #[test]
-    fn test_serialization_round_trip_leaf_rules() {
+    fn test_serialization_round_trip_element_rules() {
         let rules = vec![
-            GraphRule::new(LeafRule::ByServiceCategory {
+            GraphRule::new(ElementRule::ByServiceCategory {
                 categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
                 title: Some("Infrastructure".into()),
             }),
-            GraphRule::new(LeafRule::ByTag {
+            GraphRule::new(ElementRule::ByTag {
                 tag_ids: vec![Uuid::new_v4(), Uuid::new_v4()],
                 title: Some("Tagged".into()),
             }),
         ];
 
         let json = serde_json::to_string(&rules).unwrap();
-        let deserialized: Vec<GraphRule<LeafRule>> = serde_json::from_str(&json).unwrap();
+        let deserialized: Vec<GraphRule<ElementRule>> = serde_json::from_str(&json).unwrap();
         assert_eq!(rules, deserialized);
     }
 }

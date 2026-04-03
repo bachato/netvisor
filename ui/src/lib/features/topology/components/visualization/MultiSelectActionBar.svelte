@@ -4,7 +4,7 @@
 	import { X, GitBranch, Network } from 'lucide-svelte';
 	import { selectedNodes, previewEdges, autoRebuild } from '../../queries';
 	import type { Topology, TopologyNode } from '../../types/base';
-	import { resolveLeafNode } from '../../resolvers';
+	import { resolveElementNode } from '../../resolvers';
 	import type { GroupType } from '$lib/features/groups/types/base';
 	import { getTopologyStateInfo } from '../../state';
 	import { computeCommonTags } from '$lib/shared/utils/tags';
@@ -49,7 +49,7 @@
 	let selectedHostIds = $derived.by(() => {
 		const hostIds: string[] = [];
 		for (const node of nodes) {
-			const resolved = resolveLeafNode(node.id, node.data as TopologyNode, topology);
+			const resolved = resolveElementNode(node.id, node.data as TopologyNode, topology);
 			if (resolved.hostId && !hostIds.includes(resolved.hostId)) {
 				hostIds.push(resolved.hostId);
 			}

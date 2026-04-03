@@ -9,7 +9,7 @@ import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-qu
 import { queryClient, queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Topology, TopologyOptions } from './types/base';
-import type { ContainerGraphRule, LeafGraphRule } from './types/grouping';
+import type { ContainerGraphRule, ElementGraphRule } from './types/grouping';
 import { makeGraphRule } from './types/grouping';
 import type { Organization } from '$lib/features/organizations/types';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
@@ -45,7 +45,7 @@ export const defaultContainerRules: ContainerGraphRule[] = [
 	makeGraphRule('ByVirtualizingService' as const)
 ];
 
-export const defaultLeafRules: LeafGraphRule[] = [
+export const defaultElementRules: ElementGraphRule[] = [
 	makeGraphRule({
 		ByServiceCategory: { categories: ['DNS', 'ReverseProxy'], title: 'Infrastructure' }
 	})
@@ -75,7 +75,7 @@ export const defaultTopologyOptions: TopologyOptions = {
 		hide_vm_title_on_docker_container: false,
 		hide_service_categories: ['OpenPorts'],
 		container_rules: defaultContainerRules,
-		leaf_rules: defaultLeafRules
+		element_rules: defaultElementRules
 	}
 };
 

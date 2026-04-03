@@ -3,10 +3,10 @@ import type { Topology, TopologyNode } from './types/base';
 
 // Type aliases for the discriminated union variants
 type ContainerType = components['schemas']['ContainerType'];
-type LeafEntityType = components['schemas']['LeafEntityType'];
+type ElementEntityType = components['schemas']['ElementEntityType'];
 
 // Resolver return types
-export interface LeafRenderContext {
+export interface ElementRenderContext {
 	host: Topology['hosts'][number] | undefined;
 	iface: Topology['interfaces'][number] | undefined;
 	services: Topology['services'][number][];
@@ -22,9 +22,9 @@ export interface ContainerRenderContext {
 }
 
 // Exhaustive resolver maps — TypeScript errors if a variant is missing
-const leafResolvers: Record<
-	LeafEntityType,
-	(nodeId: string, node: TopologyNode, topology: Topology) => LeafRenderContext
+const elementResolvers: Record<
+	ElementEntityType,
+	(nodeId: string, node: TopologyNode, topology: Topology) => ElementRenderContext
 > = {
 	Interface: (_nodeId, node, topology) => {
 		// Currently reads from convenience fields on the node.
@@ -65,14 +65,14 @@ const containerResolvers: Record<
 };
 
 // Public API
-export function resolveLeafNode(
+export function resolveElementNode(
 	nodeId: string,
 	node: TopologyNode,
 	topology: Topology
-): LeafRenderContext {
-	if (node.node_type !== 'LeafNode') throw new Error(`Expected LeafNode, got ${node.node_type}`);
-	const leafType = node.leaf_type ?? 'Interface'; // Default for backward compat
-	return leafResolvers[leafType](nodeId, node, topology);
+): ElementRenderContext {
+	if (node.node_type !== 'Element') throw new Error(`Expected Element, got ${node.node_type}`);
+	const elementType = node.element_type ?? 'Interface'; // Default for backward compat
+	return elementResolvers[elementType](nodeId, node, topology);
 }
 
 export function resolveContainerNode(
@@ -80,8 +80,7 @@ export function resolveContainerNode(
 	node: TopologyNode,
 	topology: Topology
 ): ContainerRenderContext {
-	if (node.node_type !== 'ContainerNode')
-		throw new Error(`Expected ContainerNode, got ${node.node_type}`);
+	if (node.node_type !== 'Container') throw new Error(`Expected Container, got ${node.node_type}`);
 	const containerType = (node.container_type ?? 'Subnet') as ContainerType;
 	const resolver = containerResolvers[containerType];
 	if (!resolver) return containerResolvers['Subnet'](nodeId, node, topology);
