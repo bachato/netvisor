@@ -455,9 +455,7 @@
 
 					<!-- Expanded content panel — full card width, below the header row -->
 					{#if itemExpandedSnippet}
-						<div class="w-full">
-							{@render itemExpandedSnippet({ item, index })}
-						</div>
+						{@render itemExpandedSnippet({ item, index })}
 					{/if}
 				</div>
 			{/each}

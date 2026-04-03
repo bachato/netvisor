@@ -323,7 +323,7 @@
 	{/snippet}
 	{#snippet itemExpandedSnippet({ item, index })}
 		{#if isLeafEditing(index)}
-			<div class="mt-2 space-y-3 border-t pt-2">
+			<div class="mt-2 w-full space-y-3 border-t border-gray-200 pt-2 dark:border-gray-700">
 				<!-- Title input -->
 				<input
 					type="text"
