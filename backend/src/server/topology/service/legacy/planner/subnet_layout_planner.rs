@@ -567,3 +567,316 @@ impl SubnetLayoutPlanner {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::server::hosts::r#impl::base::{Host, HostBase};
+    use crate::server::services::r#impl::base::{Service, ServiceBase};
+    use crate::server::services::r#impl::categories::ServiceCategory;
+    use crate::server::services::r#impl::definitions::ServiceDefinition;
+    use crate::server::services::r#impl::patterns::Pattern;
+    use crate::server::shared::types::Color;
+    use crate::server::tags::r#impl::base::{Tag, TagBase};
+    use crate::server::topology::service::context::TopologyContext;
+    use crate::server::topology::types::base::TopologyOptions;
+    use crate::server::topology::types::grouping::LeafRule;
+    use chrono::Utc;
+
+    /// Test service definition that returns ReverseProxy category
+    #[derive(PartialEq, Eq, Hash, Clone)]
+    struct ReverseProxyServiceDef;
+
+    impl ServiceDefinition for ReverseProxyServiceDef {
+        fn name(&self) -> &'static str {
+            "TestReverseProxy"
+        }
+        fn description(&self) -> &'static str {
+            "Test"
+        }
+        fn category(&self) -> ServiceCategory {
+            ServiceCategory::ReverseProxy
+        }
+        fn discovery_pattern(&self) -> Pattern<'_> {
+            Pattern::None
+        }
+    }
+
+    fn make_host(name: &str, tags: Vec<Uuid>) -> Host {
+        Host {
+            id: Uuid::new_v4(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: HostBase {
+                name: name.to_string(),
+                tags,
+                ..Default::default()
+            },
+        }
+    }
+
+    fn make_service(host_id: Uuid, def: Box<dyn ServiceDefinition>) -> Service {
+        Service {
+            id: Uuid::new_v4(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: ServiceBase {
+                host_id,
+                service_definition: def,
+                ..Default::default()
+            },
+        }
+    }
+
+    fn make_tag(name: &str) -> Tag {
+        Tag {
+            id: Uuid::new_v4(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: TagBase {
+                name: name.to_string(),
+                description: None,
+                color: Color::Yellow,
+                organization_id: Uuid::new_v4(),
+            },
+        }
+    }
+
+    fn make_leaf_node(id: Uuid, host_id: Uuid, container_id: Uuid) -> Node {
+        Node {
+            id,
+            node_type: NodeType::LeafNode {
+                container_id,
+                leaf_type: LeafEntityType::Interface,
+                subnet_id: container_id,
+                host_id,
+                interface_id: Some(id),
+            },
+            position: Ixy { x: 0, y: 0 },
+            size: Uxy { x: 100, y: 50 },
+            header: None,
+        }
+    }
+
+    fn make_subnet_child(id: Uuid, host_id: Uuid) -> SubnetChild {
+        SubnetChild {
+            id,
+            host_id,
+            interface_id: Some(id),
+            header: None,
+            size: Uxy { x: 100, y: 50 },
+            edges: vec![],
+        }
+    }
+
+    #[test]
+    fn test_nested_group_first_match_wins() {
+        let tag = make_tag("MyTag");
+        // Host that matches both ByServiceCategory(ReverseProxy) AND ByTag(tag)
+        let host_both = make_host("host-both", vec![tag.id]);
+        // Host that only matches the tag
+        let host_tag_only = make_host("host-tag-only", vec![tag.id]);
+
+        let svc = make_service(host_both.id, Box::new(ReverseProxyServiceDef));
+
+        let subnet_id = Uuid::new_v4();
+        let child_both_id = Uuid::new_v4();
+        let child_tag_id = Uuid::new_v4();
+
+        let children = vec![
+            make_subnet_child(child_both_id, host_both.id),
+            make_subnet_child(child_tag_id, host_tag_only.id),
+        ];
+
+        let mut child_nodes = vec![
+            make_leaf_node(child_both_id, host_both.id, subnet_id),
+            make_leaf_node(child_tag_id, host_tag_only.id, subnet_id),
+        ];
+
+        // Rules: ByServiceCategory first, then ByTag
+        let mut options = TopologyOptions::default();
+        options.request.leaf_rules = vec![
+            LeafRule::ByServiceCategory {
+                categories: vec![ServiceCategory::ReverseProxy],
+                title: Some("Infra".to_string()),
+            },
+            LeafRule::ByTag {
+                tag_ids: vec![tag.id],
+                title: None,
+            },
+        ];
+
+        let hosts = vec![host_both.clone(), host_tag_only.clone()];
+        let services = vec![svc];
+        let tags = vec![tag.clone()];
+
+        let ctx = TopologyContext::new(
+            &hosts,
+            &[],
+            &[],
+            &services,
+            &[],
+            &[],
+            &[],
+            &[],
+            &tags,
+            &options,
+        );
+
+        let planner = SubnetLayoutPlanner::new();
+        planner.create_nested_group_containers(subnet_id, &children, &ctx, &mut child_nodes);
+
+        // Find group containers
+        let groups: Vec<&Node> = child_nodes
+            .iter()
+            .filter(|n| matches!(n.node_type, NodeType::ContainerNode { .. }))
+            .collect();
+        assert_eq!(groups.len(), 2, "Should create two group containers");
+
+        let cat_group = groups
+            .iter()
+            .find(|n| {
+                matches!(
+                    n.node_type,
+                    NodeType::ContainerNode {
+                        container_type: ContainerType::ServiceCategoryGroup,
+                        ..
+                    }
+                )
+            })
+            .expect("Should have ServiceCategoryGroup");
+
+        let tag_group = groups
+            .iter()
+            .find(|n| {
+                matches!(
+                    n.node_type,
+                    NodeType::ContainerNode {
+                        container_type: ContainerType::TagGroup,
+                        ..
+                    }
+                )
+            })
+            .expect("Should have TagGroup");
+
+        // First-match-wins: host_both should be in the category group (first rule)
+        let both_node = child_nodes.iter().find(|n| n.id == child_both_id).unwrap();
+        if let NodeType::LeafNode { container_id, .. } = &both_node.node_type {
+            assert_eq!(
+                *container_id, cat_group.id,
+                "Overlapping host should be in first-match group (ServiceCategoryGroup)"
+            );
+        }
+
+        // host_tag_only should be in the tag group (only matches tag rule)
+        let tag_node = child_nodes.iter().find(|n| n.id == child_tag_id).unwrap();
+        if let NodeType::LeafNode { container_id, .. } = &tag_node.node_type {
+            assert_eq!(
+                *container_id, tag_group.id,
+                "Tag-only host should be in TagGroup"
+            );
+        }
+
+        // Verify headers contain names
+        assert!(
+            cat_group.header.as_ref().unwrap().contains("ReverseProxy"),
+            "Category group header should contain 'ReverseProxy', got: {:?}",
+            cat_group.header
+        );
+        assert!(
+            cat_group.header.as_ref().unwrap().contains("Infra"),
+            "Category group header should contain custom title 'Infra'"
+        );
+        assert!(
+            tag_group.header.as_ref().unwrap().contains("MyTag"),
+            "Tag group header should contain tag name 'MyTag', got: {:?}",
+            tag_group.header
+        );
+    }
+
+    #[test]
+    fn test_nested_group_reversed_order_flips_priority() {
+        let tag = make_tag("TestTag");
+        let host = make_host("overlap-host", vec![tag.id]);
+        let svc = make_service(host.id, Box::new(ReverseProxyServiceDef));
+
+        let subnet_id = Uuid::new_v4();
+        let child_id = Uuid::new_v4();
+
+        let children = vec![make_subnet_child(child_id, host.id)];
+
+        // This time: ByTag FIRST, then ByServiceCategory
+        let mut options = TopologyOptions::default();
+        options.request.leaf_rules = vec![
+            LeafRule::ByTag {
+                tag_ids: vec![tag.id],
+                title: Some("Tagged".to_string()),
+            },
+            LeafRule::ByServiceCategory {
+                categories: vec![ServiceCategory::ReverseProxy],
+                title: Some("Infra".to_string()),
+            },
+        ];
+
+        let hosts = vec![host.clone()];
+        let services = vec![svc];
+        let tags = vec![tag.clone()];
+
+        let ctx = TopologyContext::new(
+            &hosts,
+            &[],
+            &[],
+            &services,
+            &[],
+            &[],
+            &[],
+            &[],
+            &tags,
+            &options,
+        );
+
+        let mut child_nodes = vec![make_leaf_node(child_id, host.id, subnet_id)];
+
+        let planner = SubnetLayoutPlanner::new();
+        planner.create_nested_group_containers(subnet_id, &children, &ctx, &mut child_nodes);
+
+        // Find the tag group (should be first match now)
+        let tag_group = child_nodes
+            .iter()
+            .find(|n| {
+                matches!(
+                    n.node_type,
+                    NodeType::ContainerNode {
+                        container_type: ContainerType::TagGroup,
+                        ..
+                    }
+                )
+            })
+            .expect("Should have TagGroup");
+
+        // Host should be in tag group (first rule wins)
+        let leaf = child_nodes.iter().find(|n| n.id == child_id).unwrap();
+        if let NodeType::LeafNode { container_id, .. } = &leaf.node_type {
+            assert_eq!(
+                *container_id, tag_group.id,
+                "When ByTag is first, overlapping host should be in TagGroup"
+            );
+        }
+
+        // ServiceCategoryGroup should still be created but with no children
+        // (since the only matching host was claimed by tag rule)
+        let cat_group = child_nodes.iter().find(|n| {
+            matches!(
+                n.node_type,
+                NodeType::ContainerNode {
+                    container_type: ContainerType::ServiceCategoryGroup,
+                    ..
+                }
+            )
+        });
+        assert!(
+            cat_group.is_none(),
+            "ServiceCategoryGroup should not be created when all its matches are already claimed"
+        );
+    }
+}

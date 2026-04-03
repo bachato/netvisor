@@ -417,7 +417,7 @@
 									e.stopPropagation();
 									moveItemUp(index);
 								}}
-								disabled={index === 0}
+								disabled={index === 0 || !allowItemReorder(items[index - 1])}
 								class="btn-icon"
 								title="Move up"
 							>
@@ -430,7 +430,7 @@
 									e.stopPropagation();
 									moveItemDown(index);
 								}}
-								disabled={index === items.length - 1}
+								disabled={index === items.length - 1 || !allowItemReorder(items[index + 1])}
 								class="btn-icon"
 								title="Move down"
 							>
