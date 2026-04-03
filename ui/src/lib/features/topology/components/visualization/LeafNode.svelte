@@ -292,16 +292,10 @@
 		{/if}
 
 		<!-- Body section -->
-		<div
-			class="flex flex-col items-center justify-around px-3 py-2"
-			style="flex: 1 1 0; min-height: 0;"
-		>
+		<div class="flex flex-col items-center px-3 py-2">
 			{#if nodeRenderData.showServices}
 				<!-- Show services list -->
-				<div
-					class="flex w-full flex-1 flex-col items-center justify-evenly"
-					style="min-width: 0; max-width: 100%;"
-				>
+				<div class="flex w-full flex-col items-center" style="min-width: 0; max-width: 100%;">
 					{#each nodeRenderData.services as service (service.id)}
 						{@const ServiceIcon = serviceDefinitions.getIconComponent(service.service_definition)}
 						{@const serviceTagHighlight = (() => {
@@ -326,7 +320,7 @@
 							return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
 						})()}
 						<div
-							class="flex flex-1 flex-col items-center justify-center"
+							class="flex flex-col items-center justify-center py-2"
 							style="min-width: 0; max-width: 100%; width: 100%;"
 						>
 							<div
@@ -375,7 +369,7 @@
 									service.service_definition
 								)}
 								<div
-									class="flex flex-1 flex-col items-center justify-center"
+									class="flex flex-col items-center justify-center"
 									style="min-width: 0; max-width: 100%; width: 100%;"
 								>
 									<div
@@ -411,15 +405,21 @@
 								</div>
 							{/each}
 							<button
-								class="text-tertiary hover:text-secondary mb-2 mt-1 cursor-pointer text-xs underline"
-								onclick={() => (expandedOpenPorts = false)}
+								class="nopan text-tertiary hover:text-secondary mb-2 mt-1 cursor-pointer text-xs underline"
+								onclick={(e) => {
+									e.stopPropagation();
+									expandedOpenPorts = false;
+								}}
 							>
 								{topology_hideOpenPorts()}
 							</button>
 						{:else}
 							<button
-								class="bg-surface-secondary text-tertiary hover:text-secondary mb-2 mt-1 cursor-pointer rounded-full px-2 py-0.5 text-xs underline"
-								onclick={() => (expandedOpenPorts = true)}
+								class="nopan bg-surface-secondary text-tertiary hover:text-secondary mb-2 mt-1 cursor-pointer rounded-full px-2 py-0.5 text-xs underline"
+								onclick={(e) => {
+									e.stopPropagation();
+									expandedOpenPorts = true;
+								}}
 							>
 								{topology_openPortsSummary({ count: nodeRenderData.hiddenOpenPorts.length })}
 							</button>
