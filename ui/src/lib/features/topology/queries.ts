@@ -18,7 +18,7 @@ import { UNTAGGED_SENTINEL } from './interactions';
 
 /** Strip UI-only sentinel values from options before sending to the API */
 export function sanitizeOptionsForApi(options: TopologyOptions): TopologyOptions {
-	const sanitized = structuredClone(options);
+	const sanitized = JSON.parse(JSON.stringify(options)) as TopologyOptions;
 	const tf = sanitized.local?.tag_filter;
 	if (tf) {
 		if (tf.hidden_host_tag_ids) {
