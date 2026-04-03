@@ -1,7 +1,7 @@
--- Convert legacy grouping boolean fields in topology options to grouping_rules array
--- Also remove left_zone_title from local options (title now lives on GroupingRule variants)
+-- Convert legacy grouping boolean fields in topology options to container_rules + leaf_rules arrays
+-- Also remove left_zone_title from local options (title now lives on LeafRule variants)
 
--- Step 1: Build grouping_rules from legacy fields and update options.request
+-- Step 1: Build container_rules and leaf_rules from legacy fields and update options.request
 UPDATE topologies
 SET options = jsonb_set(
     options,
@@ -12,19 +12,24 @@ SET options = jsonb_set(
         - 'group_docker_bridges_by_host'
         - 'left_zone_service_categories'
         - 'show_gateway_in_left_zone'
-        -- Add grouping_rules array
-        || jsonb_build_object('grouping_rules',
+        -- Add container_rules array
+        || jsonb_build_object('container_rules',
             (
                 -- Always include BySubnet
-                '[{"BySubnet": {"title": null}}]'::jsonb
+                '["BySubnet"]'::jsonb
                 -- Conditionally include ByVirtualizingService (default was true)
                 || CASE
                     WHEN COALESCE((options->'request'->>'group_docker_bridges_by_host')::boolean, true)
-                    THEN '[{"ByVirtualizingService": {"title": null}}]'::jsonb
+                    THEN '["ByVirtualizingService"]'::jsonb
                     ELSE '[]'::jsonb
                 END
+            )
+        )
+        -- Add leaf_rules array
+        || jsonb_build_object('leaf_rules',
+            (
                 -- Conditionally include ByServiceCategory
-                || CASE
+                CASE
                     WHEN jsonb_array_length(COALESCE(options->'request'->'left_zone_service_categories', '["DNS","ReverseProxy"]'::jsonb)) > 0
                     THEN jsonb_build_array(
                         jsonb_build_object(

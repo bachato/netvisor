@@ -1,14 +1,10 @@
 <script lang="ts">
 	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
-	import {
-		SimpleOptionDisplay,
-		type SimpleOption
-	} from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
-	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
+	import { SimpleOptionDisplay } from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
 	import FilterGroup from './FilterGroup.svelte';
 	import GroupingRuleItem from './GroupingRuleItem.svelte';
-	import type { GroupingRule } from '../../../types/grouping';
-	import { getGroupingRuleType, setGroupingRuleTitle } from '../../../types/grouping';
+	import type { ContainerRule, LeafRule } from '../../../types/grouping';
+	import { setLeafRuleTitle } from '../../../types/grouping';
 	import { topologyOptions } from '../../../queries';
 	import { getTopologyEditState } from '../../../state';
 	import { useTopologiesQuery, selectedTopologyId, autoRebuild } from '../../../queries';
@@ -17,13 +13,25 @@
 	type ServiceCategory = components['schemas']['ServiceCategory'];
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import type { Color } from '$lib/shared/utils/styling';
+	interface RuleTypeMetadata {
+		id: string;
+		name: string | null;
+		description: string | null;
+		category: string | null;
+		icon: string | null;
+		color: string | null;
+		metadata: { is_user_editable: boolean } | null;
+	}
+	import _containerRuleTypes from '$lib/data/container-rule-types.json';
+	import _leafRuleTypes from '$lib/data/leaf-rule-types.json';
+	const typedContainerRuleTypes = _containerRuleTypes as RuleTypeMetadata[];
+	const typedLeafRuleTypes = _leafRuleTypes as RuleTypeMetadata[];
 	import {
-		common_tag,
-		common_subnet,
-		topology_groupBy,
-		topology_addGroupingRule,
-		topology_groupByServiceCategory,
-		topology_groupByVirtualizingService
+		topology_containerGrouping,
+		topology_leafGrouping,
+		topology_addContainerRule,
+		topology_addLeafRule,
+		topology_groupRuleTitlePlaceholder
 	} from '$lib/paraglide/messages';
 
 	// Topology for edit state
@@ -36,18 +44,20 @@
 	const tagsQuery = useTagsQuery();
 	let allTags = $derived(tagsQuery.data ?? []);
 
-	// Current grouping rules from options (with type assertion since not yet in generated types)
-	let allRules = $derived(
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		(($topologyOptions.request as any).grouping_rules as GroupingRule[] | undefined) ?? []
+	// Container rules from options
+	let containerRules = $derived(
+		($topologyOptions.request.container_rules as ContainerRule[] | undefined) ?? []
 	);
 
-	// BySubnet is always first and not editable in the list
-	let subnetRule = $derived(allRules.find((r) => 'BySubnet' in r));
-	let editableRules = $derived(allRules.filter((r) => !('BySubnet' in r)));
+	// Leaf rules from options
+	let leafRules = $derived(($topologyOptions.request.leaf_rules as LeafRule[] | undefined) ?? []);
 
-	// Editing state for tag/category pickers
-	let editingRuleIndex = $state<number | null>(null);
+	// Editing state for leaf rule expansion
+	let editingLeafIndex = $state<number | null>(null);
+
+	// Metadata lookups
+	const containerRuleMeta = Object.fromEntries(typedContainerRuleTypes.map((m) => [m.id, m]));
+	const leafRuleMeta = Object.fromEntries(typedLeafRuleTypes.map((m) => [m.id, m]));
 
 	// Service categories available in topology
 	let serviceCategoriesWithColors = $derived.by(() => {
@@ -65,44 +75,101 @@
 		return result.sort((a, b) => a.label.localeCompare(b.label));
 	});
 
-	// Options for the add dropdown
-	const addOptions: SimpleOption[] = [
-		{ value: 'ByServiceCategory', label: topology_groupByServiceCategory() },
-		{ value: 'ByVirtualizingService', label: topology_groupByVirtualizingService() },
-		{ value: 'ByTag', label: common_tag() }
-	];
+	// All tags as toggleable pills
+	let allTagsWithColors = $derived(
+		allTags.map((t) => ({
+			value: t.id,
+			label: t.name,
+			color: t.color as Color
+		}))
+	);
 
-	// A minimal display component for items (needed by ListManager even with itemSnippet)
-	const ruleDisplayComponent = {
-		getId: (_item: GroupingRule) => {
-			// Use rule type + index as a stable ID
-			const type = getGroupingRuleType(_item);
-			if ('ByServiceCategory' in _item)
-				return `${type}-${_item.ByServiceCategory.categories.join(',')}`;
-			if ('ByTag' in _item) return `${type}-${_item.ByTag.tag_ids.join(',')}`;
-			return type;
-		},
-		getLabel: (_item: GroupingRule) => getGroupingRuleType(_item)
+	// --- Container Rules ---
+
+	// Options for container add dropdown (only user-editable rules not already present)
+	let containerAddOptions = $derived.by(() => {
+		return typedContainerRuleTypes
+			.filter(
+				(m) => m.metadata?.is_user_editable && !containerRules.includes(m.id as ContainerRule)
+			)
+			.map((m) => ({
+				value: m.id,
+				label: m.name ?? m.id
+			}));
+	});
+
+	const containerRuleDisplayComponent = {
+		getId: (item: ContainerRule) => item,
+		getLabel: (item: ContainerRule) => containerRuleMeta[item]?.name ?? item
 	};
 
-	function updateRules(newEditableRules: GroupingRule[]) {
-		const subnetRules = subnetRule ? [subnetRule] : [{ BySubnet: { title: null } } as GroupingRule];
-		const newRules = [...subnetRules, ...newEditableRules];
+	function updateContainerRules(newRules: ContainerRule[]) {
 		topologyOptions.update((opts) => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(opts.request as any).grouping_rules = newRules;
+			(opts.request as Record<string, unknown>).container_rules = newRules;
 			return opts;
 		});
 	}
 
-	function handleAdd(optionId: string) {
-		let newRule: GroupingRule;
+	function handleContainerAdd(optionId: string) {
+		updateContainerRules([...containerRules, optionId as ContainerRule]);
+	}
+
+	function handleContainerRemove(index: number) {
+		updateContainerRules(containerRules.filter((_, i) => i !== index));
+	}
+
+	function handleContainerMoveUp(fromIndex: number) {
+		if (fromIndex <= 0) return;
+		const newRules = [...containerRules];
+		[newRules[fromIndex - 1], newRules[fromIndex]] = [newRules[fromIndex], newRules[fromIndex - 1]];
+		updateContainerRules(newRules);
+	}
+
+	function handleContainerMoveDown(fromIndex: number) {
+		if (fromIndex >= containerRules.length - 1) return;
+		const newRules = [...containerRules];
+		[newRules[fromIndex], newRules[fromIndex + 1]] = [newRules[fromIndex + 1], newRules[fromIndex]];
+		updateContainerRules(newRules);
+	}
+
+	function isContainerRuleEditable(rule: ContainerRule): boolean {
+		return containerRuleMeta[rule]?.metadata?.is_user_editable ?? true;
+	}
+
+	// --- Leaf Rules ---
+
+	let leafAddOptions = $derived(
+		typedLeafRuleTypes.map((m) => ({
+			value: m.id,
+			label: m.name ?? m.id
+		}))
+	);
+
+	const leafRuleDisplayComponent = {
+		getId: (item: LeafRule) => {
+			if ('ByServiceCategory' in item)
+				return `ByServiceCategory-${item.ByServiceCategory.categories.join(',')}`;
+			if ('ByTag' in item) return `ByTag-${item.ByTag.tag_ids.join(',')}`;
+			return 'unknown';
+		},
+		getLabel: (item: LeafRule) => {
+			if ('ByServiceCategory' in item) return 'ByServiceCategory';
+			return 'ByTag';
+		}
+	};
+
+	function updateLeafRules(newRules: LeafRule[]) {
+		topologyOptions.update((opts) => {
+			(opts.request as Record<string, unknown>).leaf_rules = newRules;
+			return opts;
+		});
+	}
+
+	function handleLeafAdd(optionId: string) {
+		let newRule: LeafRule;
 		switch (optionId) {
 			case 'ByServiceCategory':
 				newRule = { ByServiceCategory: { categories: [], title: null } };
-				break;
-			case 'ByVirtualizingService':
-				newRule = { ByVirtualizingService: { title: null } };
 				break;
 			case 'ByTag':
 				newRule = { ByTag: { tag_ids: [], title: null } };
@@ -110,120 +177,160 @@
 			default:
 				return;
 		}
-		const newRules = [...editableRules, newRule];
-		updateRules(newRules);
-		// Open editor for new rule
-		editingRuleIndex = newRules.length - 1;
+		const newRules = [...leafRules, newRule];
+		updateLeafRules(newRules);
+		editingLeafIndex = newRules.length - 1;
 	}
 
-	function handleRemove(index: number) {
-		const newRules = editableRules.filter((_, i) => i !== index);
-		updateRules(newRules);
-		if (editingRuleIndex === index) editingRuleIndex = null;
-		else if (editingRuleIndex !== null && editingRuleIndex > index) editingRuleIndex--;
+	function handleLeafRemove(index: number) {
+		const newRules = leafRules.filter((_, i) => i !== index);
+		updateLeafRules(newRules);
+		if (editingLeafIndex === index) editingLeafIndex = null;
+		else if (editingLeafIndex !== null && editingLeafIndex > index) editingLeafIndex--;
 	}
 
-	function handleMoveUp(fromIndex: number) {
+	function handleLeafMoveUp(fromIndex: number) {
 		if (fromIndex <= 0) return;
-		const newRules = [...editableRules];
+		const newRules = [...leafRules];
 		[newRules[fromIndex - 1], newRules[fromIndex]] = [newRules[fromIndex], newRules[fromIndex - 1]];
-		updateRules(newRules);
-		if (editingRuleIndex === fromIndex) editingRuleIndex = fromIndex - 1;
-		else if (editingRuleIndex === fromIndex - 1) editingRuleIndex = fromIndex;
+		updateLeafRules(newRules);
+		if (editingLeafIndex === fromIndex) editingLeafIndex = fromIndex - 1;
+		else if (editingLeafIndex === fromIndex - 1) editingLeafIndex = fromIndex;
 	}
 
-	function handleMoveDown(fromIndex: number) {
-		if (fromIndex >= editableRules.length - 1) return;
-		const newRules = [...editableRules];
+	function handleLeafMoveDown(fromIndex: number) {
+		if (fromIndex >= leafRules.length - 1) return;
+		const newRules = [...leafRules];
 		[newRules[fromIndex], newRules[fromIndex + 1]] = [newRules[fromIndex + 1], newRules[fromIndex]];
-		updateRules(newRules);
-		if (editingRuleIndex === fromIndex) editingRuleIndex = fromIndex + 1;
-		else if (editingRuleIndex === fromIndex + 1) editingRuleIndex = fromIndex;
+		updateLeafRules(newRules);
+		if (editingLeafIndex === fromIndex) editingLeafIndex = fromIndex + 1;
+		else if (editingLeafIndex === fromIndex + 1) editingLeafIndex = fromIndex;
 	}
 
-	function handleTitleChange(index: number, title: string | null) {
-		const newRules = [...editableRules];
-		newRules[index] = setGroupingRuleTitle(newRules[index], title);
-		updateRules(newRules);
+	function handleLeafTitleChange(index: number, title: string | null) {
+		const newRules = [...leafRules];
+		newRules[index] = setLeafRuleTitle(newRules[index], title);
+		updateLeafRules(newRules);
 	}
 
-	function handleTagChange(index: number, tagIds: string[]) {
-		const rule = editableRules[index];
+	function handleTagToggle(index: number, tagId: string) {
+		const rule = leafRules[index];
 		if ('ByTag' in rule) {
-			const newRules = [...editableRules];
-			newRules[index] = { ByTag: { ...rule.ByTag, tag_ids: tagIds } };
-			updateRules(newRules);
+			const current = rule.ByTag.tag_ids;
+			const idx = current.indexOf(tagId);
+			const newTagIds = idx === -1 ? [...current, tagId] : current.filter((id) => id !== tagId);
+			const newRules = [...leafRules];
+			newRules[index] = { ByTag: { ...rule.ByTag, tag_ids: newTagIds } };
+			updateLeafRules(newRules);
 		}
 	}
 
 	function toggleCategory(index: number, category: ServiceCategory) {
-		const rule = editableRules[index];
+		const rule = leafRules[index];
 		if ('ByServiceCategory' in rule) {
 			const current = rule.ByServiceCategory.categories;
 			const idx = current.indexOf(category);
 			const newCategories: ServiceCategory[] =
 				idx === -1 ? [...current, category] : current.filter((c) => c !== category);
-			const newRules = [...editableRules];
+			const newRules = [...leafRules];
 			newRules[index] = {
 				ByServiceCategory: { ...rule.ByServiceCategory, categories: newCategories }
 			};
-			updateRules(newRules);
+			updateLeafRules(newRules);
 		}
 	}
 
-	function handleRuleClick(_item: GroupingRule, index: number) {
-		const type = getGroupingRuleType(_item);
-		if (type === 'ByTag' || type === 'ByServiceCategory') {
-			editingRuleIndex = editingRuleIndex === index ? null : index;
-		}
+	function handleLeafRuleClick(_item: LeafRule, index: number) {
+		editingLeafIndex = editingLeafIndex === index ? null : index;
 	}
 </script>
 
-<!-- Fixed BySubnet header -->
-<div class="mb-2 flex items-center gap-2">
-	<span class="bg-primary/10 text-primary rounded px-2 py-0.5 text-xs font-medium">
-		{common_subnet()}
-	</span>
-	<span class="text-tertiary text-xs italic">{topology_groupBy()}</span>
+<!-- Container grouping section -->
+<div class="mb-4">
+	<ListManager
+		label={topology_containerGrouping()}
+		placeholder={topology_addContainerRule()}
+		items={containerRules}
+		options={containerAddOptions}
+		optionDisplayComponent={SimpleOptionDisplay}
+		itemDisplayComponent={containerRuleDisplayComponent}
+		allowReorder={true}
+		allowDuplicates={false}
+		allowItemEdit={() => false}
+		allowItemRemove={isContainerRuleEditable}
+		onAdd={handleContainerAdd}
+		onRemove={handleContainerRemove}
+		onMoveUp={handleContainerMoveUp}
+		onMoveDown={handleContainerMoveDown}
+	>
+		{#snippet itemSnippet({ item })}
+			<GroupingRuleItem
+				label={containerRuleMeta[item]?.name ?? item}
+				locked={!isContainerRuleEditable(item)}
+			/>
+		{/snippet}
+	</ListManager>
 </div>
 
+<!-- Leaf grouping section -->
 <ListManager
-	label={topology_groupBy()}
-	placeholder={topology_addGroupingRule()}
-	items={editableRules}
-	options={addOptions}
+	label={topology_leafGrouping()}
+	placeholder={topology_addLeafRule()}
+	items={leafRules}
+	options={leafAddOptions}
 	optionDisplayComponent={SimpleOptionDisplay}
-	itemDisplayComponent={ruleDisplayComponent}
+	itemDisplayComponent={leafRuleDisplayComponent}
 	allowReorder={true}
 	allowDuplicates={true}
-	onAdd={handleAdd}
-	onRemove={handleRemove}
-	onMoveUp={handleMoveUp}
-	onMoveDown={handleMoveDown}
-	onClick={handleRuleClick}
+	onAdd={handleLeafAdd}
+	onRemove={handleLeafRemove}
+	onMoveUp={handleLeafMoveUp}
+	onMoveDown={handleLeafMoveDown}
+	onClick={handleLeafRuleClick}
 >
 	{#snippet itemSnippet({ item, index })}
 		<GroupingRuleItem
-			rule={item}
-			{allTags}
-			disabled={!editState.isEditable}
-			onTitleChange={(title) => handleTitleChange(index, title)}
+			label={('ByServiceCategory' in item
+				? item.ByServiceCategory.title
+				: 'ByTag' in item
+					? item.ByTag.title
+					: null) ??
+				leafRuleMeta['ByServiceCategory' in item ? 'ByServiceCategory' : 'ByTag']?.name ??
+				''}
 		/>
-		<!-- Inline config editor for ByTag and ByServiceCategory -->
-		{#if editingRuleIndex === index}
-			<div class="mt-2 border-t pt-2">
-				{#if 'ByTag' in item}
-					<TagPicker
-						selectedTagIds={item.ByTag.tag_ids}
-						onChange={(tagIds) => handleTagChange(index, tagIds)}
-						disabled={!editState.isEditable}
-					/>
-				{:else if 'ByServiceCategory' in item}
+		<!-- Expanded edit state -->
+		{#if editingLeafIndex === index}
+			<div class="mt-2 space-y-3 border-t pt-2">
+				<!-- Title input -->
+				<input
+					type="text"
+					class="input-field w-full py-1 text-sm"
+					placeholder={topology_groupRuleTitlePlaceholder()}
+					value={('ByServiceCategory' in item
+						? item.ByServiceCategory.title
+						: 'ByTag' in item
+							? item.ByTag.title
+							: null) ?? ''}
+					oninput={(e) =>
+						handleLeafTitleChange(index, (e.currentTarget as HTMLInputElement).value || null)}
+					disabled={!editState.isEditable}
+				/>
+
+				<!-- Selection pills -->
+				{#if 'ByServiceCategory' in item}
 					<FilterGroup
 						items={serviceCategoriesWithColors}
 						selectedValues={item.ByServiceCategory.categories}
 						mode="include"
 						onToggle={(cat) => toggleCategory(index, cat as ServiceCategory)}
+						disabled={!editState.isEditable}
+					/>
+				{:else if 'ByTag' in item}
+					<FilterGroup
+						items={allTagsWithColors}
+						selectedValues={item.ByTag.tag_ids}
+						mode="include"
+						onToggle={(tagId) => handleTagToggle(index, tagId)}
 						disabled={!editState.isEditable}
 					/>
 				{/if}

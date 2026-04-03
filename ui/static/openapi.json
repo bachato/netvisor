@@ -12577,14 +12577,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-03T12:12:30.883118Z",
-              "id": "b14cbc23-b222-4cdb-babe-43ab385cdd2e",
+              "created_at": "2026-04-03T13:53:28.841282Z",
+              "id": "544f982b-d174-4d09-bf7e-d3d71205f996",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-03T12:12:30.883118Z"
+              "updated_at": "2026-04-03T13:53:28.841282Z"
             }
           },
           "error": {
@@ -13480,14 +13480,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-03T12:12:30.867203Z",
-                      "id": "703ea480-2d88-4018-82f8-55e653658956",
+                      "created_at": "2026-04-03T13:53:28.828506Z",
+                      "id": "d1c05ae6-21e2-4fe0-b49b-01a6c647f531",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-03T12:12:30.867203Z"
+                      "updated_at": "2026-04-03T13:53:28.828506Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -13496,7 +13496,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "ESPHome",
+                  "service_definition": "Tyk",
                   "source": {
                     "type": "Manual"
                   },
@@ -14199,14 +14199,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-03T12:12:30.878744Z",
-                  "id": "62201e75-06a9-4b6d-b20a-f227a209d90a",
+                  "created_at": "2026-04-03T13:53:28.837387Z",
+                  "id": "19e5e6af-fe0f-4129-89c3-da7507981d23",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-03T12:12:30.878744Z"
+                  "updated_at": "2026-04-03T13:53:28.837387Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14215,7 +14215,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "ESPHome",
+              "service_definition": "Tyk",
               "source": {
                 "type": "Manual"
               },
@@ -15489,14 +15489,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-03T12:12:30.867406Z",
-          "id": "bf81c1b6-1586-436a-be67-953cb860a31c",
+          "created_at": "2026-04-03T13:53:28.828730Z",
+          "id": "3f6ba480-b62a-44cd-98d2-edd52f1f138c",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-03T12:12:30.867406Z"
+          "updated_at": "2026-04-03T13:53:28.828730Z"
         }
       },
       "BindingBase": {
@@ -15777,6 +15777,14 @@
           "Yellow"
         ]
       },
+      "ContainerRule": {
+        "type": "string",
+        "description": "Rules that change which containers exist and how they nest.\nContainer titles are data-driven (subnet CIDR, host names), not user-configurable.",
+        "enum": [
+          "BySubnet",
+          "ByVirtualizingService"
+        ]
+      },
       "ContainerType": {
         "type": "string",
         "enum": [
@@ -16011,7 +16019,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "ESPHome",
+              "service_definition": "Tyk",
               "tags": [],
               "virtualization": null
             }
@@ -17903,105 +17911,6 @@
           "HubAndSpoke"
         ]
       },
-      "GroupingRule": {
-        "oneOf": [
-          {
-            "type": "object",
-            "required": [
-              "BySubnet"
-            ],
-            "properties": {
-              "BySubnet": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "ByServiceCategory"
-            ],
-            "properties": {
-              "ByServiceCategory": {
-                "type": "object",
-                "required": [
-                  "categories"
-                ],
-                "properties": {
-                  "categories": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/ServiceCategory"
-                    }
-                  },
-                  "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "ByVirtualizingService"
-            ],
-            "properties": {
-              "ByVirtualizingService": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "ByTag"
-            ],
-            "properties": {
-              "ByTag": {
-                "type": "object",
-                "required": [
-                  "tag_ids"
-                ],
-                "properties": {
-                  "tag_ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    }
-                  },
-                  "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        ]
-      },
       "Host": {
         "allOf": [
           {
@@ -18415,14 +18324,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-03T12:12:30.866921Z",
-                  "id": "f2ccb9d8-2689-4390-8cfe-b72c7a732622",
+                  "created_at": "2026-04-03T13:53:28.828192Z",
+                  "id": "063d5eea-ed77-47de-ad34-bfb6bdbbaaa1",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-03T12:12:30.866921Z"
+                  "updated_at": "2026-04-03T13:53:28.828192Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -18431,7 +18340,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "ESPHome",
+              "service_definition": "Tyk",
               "source": {
                 "type": "Manual"
               },
@@ -19015,6 +18924,68 @@
         "enum": [
           "Interface"
         ]
+      },
+      "LeafRule": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "ByServiceCategory"
+            ],
+            "properties": {
+              "ByServiceCategory": {
+                "type": "object",
+                "required": [
+                  "categories"
+                ],
+                "properties": {
+                  "categories": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ServiceCategory"
+                    }
+                  },
+                  "title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "ByTag"
+            ],
+            "properties": {
+              "ByTag": {
+                "type": "object",
+                "required": [
+                  "tag_ids"
+                ],
+                "properties": {
+                  "tag_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "description": "Rules that organize nodes within a container into sub-groups."
       },
       "LldpChassisId": {
         "oneOf": [
@@ -20396,14 +20367,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-03T12:12:30.859566Z",
-                        "id": "dfba04b6-d913-4b43-a600-d0061bbf49a2",
+                        "created_at": "2026-04-03T13:53:28.821781Z",
+                        "id": "dc49413c-0c19-44a3-99ec-2a39be3ef8c8",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-03T12:12:30.859566Z"
+                        "updated_at": "2026-04-03T13:53:28.821781Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -20412,7 +20383,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "ESPHome",
+                    "service_definition": "Tyk",
                     "source": {
                       "type": "Manual"
                     },
@@ -20489,14 +20460,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-03T12:12:30.877270Z",
-                    "id": "0c885ef3-d420-4af2-a138-7feae3e12595",
+                    "created_at": "2026-04-03T13:53:28.836309Z",
+                    "id": "c36dd8a8-e81f-485b-b925-f680ea8f5e26",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-03T12:12:30.877270Z"
+                    "updated_at": "2026-04-03T13:53:28.836309Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -20505,7 +20476,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "ESPHome",
+                "service_definition": "Tyk",
                 "source": {
                   "type": "Manual"
                 },
@@ -21664,14 +21635,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-03T12:12:30.867332Z",
-              "id": "3a4d858f-389c-430f-a7f7-dfdc533a9857",
+              "created_at": "2026-04-03T13:53:28.828647Z",
+              "id": "648bc4ab-3bb2-45e2-abdf-d8c6e7751764",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-03T12:12:30.867332Z"
+              "updated_at": "2026-04-03T13:53:28.828647Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -21680,7 +21651,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "ESPHome",
+          "service_definition": "Tyk",
           "source": {
             "type": "Manual"
           },
@@ -22786,10 +22757,10 @@
           "hide_service_categories"
         ],
         "properties": {
-          "grouping_rules": {
+          "container_rules": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GroupingRule"
+              "$ref": "#/components/schemas/ContainerRule"
             }
           },
           "hide_ports": {
@@ -22803,6 +22774,12 @@
           },
           "hide_vm_title_on_docker_container": {
             "type": "boolean"
+          },
+          "leaf_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeafRule"
+            }
           },
           "perspective": {
             "$ref": "#/components/schemas/TopologyPerspective"

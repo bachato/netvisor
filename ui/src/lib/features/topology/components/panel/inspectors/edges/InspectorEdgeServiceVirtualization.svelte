@@ -22,8 +22,6 @@
 		topology_hideVmOnContainer,
 		topology_hideVmOnContainerHelp
 	} from '$lib/paraglide/messages';
-	import { getGroupingRuleType } from '../../../../types/grouping';
-
 	let { edge, containerizingServiceId }: { edge: Edge; containerizingServiceId: string } = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
@@ -50,9 +48,7 @@
 
 	// Target can be either a subnet (grouped) or a service (not grouped)
 	let isGrouped = $derived(
-		($topologyOptions.request.grouping_rules ?? []).some(
-			(r) => getGroupingRuleType(r) === 'ByVirtualizingService'
-		)
+		($topologyOptions.request.container_rules ?? []).includes('ByVirtualizingService')
 	);
 	// Get containerized services - all if grouped, or just the one in edge.target if not
 	let containerizedServices = $derived(

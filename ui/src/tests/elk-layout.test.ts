@@ -118,16 +118,11 @@ function makeTopology(
 					hide_resize_handles: false
 				},
 				request: {
-					group_docker_bridges_by_host: true, // Deprecated, kept for type compat
 					hide_ports: false,
 					hide_vm_title_on_docker_container: false,
-					show_gateway_in_left_zone: false, // Deprecated, kept for type compat
-					left_zone_service_categories: [], // Deprecated, kept for type compat
 					hide_service_categories: [],
-					grouping_rules: [
-						{ BySubnet: { title: null } },
-						{ ByVirtualizingService: { title: null } }
-					]
+					container_rules: ['BySubnet', 'ByVirtualizingService'],
+					leaf_rules: []
 				}
 			}
 		} as ElkLayoutInput['topology']

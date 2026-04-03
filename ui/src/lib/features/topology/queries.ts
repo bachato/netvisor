@@ -9,7 +9,7 @@ import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-qu
 import { queryClient, queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
 import type { Topology, TopologyOptions } from './types/base';
-import type { GroupingRule } from './types/grouping';
+import type { ContainerRule, LeafRule } from './types/grouping';
 import type { Organization } from '$lib/features/organizations/types';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
@@ -37,10 +37,9 @@ export function sanitizeOptionsForApi(options: TopologyOptions): TopologyOptions
 }
 
 // Default options for new topologies
-// Default grouping rules for new topologies
-export const defaultGroupingRules: GroupingRule[] = [
-	{ BySubnet: { title: null } },
-	{ ByVirtualizingService: { title: null } },
+export const defaultContainerRules: ContainerRule[] = ['BySubnet', 'ByVirtualizingService'];
+
+export const defaultLeafRules: LeafRule[] = [
 	{ ByServiceCategory: { categories: ['DNS', 'ReverseProxy'], title: 'Infrastructure' } }
 ];
 
@@ -67,7 +66,8 @@ export const defaultTopologyOptions: TopologyOptions = {
 		hide_ports: false,
 		hide_vm_title_on_docker_container: false,
 		hide_service_categories: ['OpenPorts'],
-		grouping_rules: defaultGroupingRules
+		container_rules: defaultContainerRules,
+		leaf_rules: defaultLeafRules
 	}
 };
 

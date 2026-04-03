@@ -12,7 +12,7 @@ use crate::server::tags::r#impl::base::Tag;
 use crate::server::topology::types::edges::{
     Edge, EdgeHandle, EdgeTypeDiscriminants, TopologyPerspective,
 };
-use crate::server::topology::types::grouping::GroupingRule;
+use crate::server::topology::types::grouping::{ContainerRule, LeafRule};
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
 use chrono::{DateTime, Utc};
@@ -254,21 +254,26 @@ pub struct TopologyRequestOptions {
     pub hide_vm_title_on_docker_container: bool,
     pub hide_ports: bool,
     pub hide_service_categories: Vec<ServiceCategory>,
-    #[serde(default = "default_grouping_rules")]
-    pub grouping_rules: Vec<GroupingRule>,
+    #[serde(default = "default_container_rules")]
+    pub container_rules: Vec<ContainerRule>,
+    #[serde(default = "default_leaf_rules")]
+    pub leaf_rules: Vec<LeafRule>,
     #[serde(default)]
     pub perspective: TopologyPerspective,
 }
 
-fn default_grouping_rules() -> Vec<GroupingRule> {
+fn default_container_rules() -> Vec<ContainerRule> {
     vec![
-        GroupingRule::BySubnet { title: None },
-        GroupingRule::ByVirtualizingService { title: None },
-        GroupingRule::ByServiceCategory {
-            categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
-            title: Some("Infrastructure".into()),
-        },
+        ContainerRule::BySubnet,
+        ContainerRule::ByVirtualizingService,
     ]
+}
+
+fn default_leaf_rules() -> Vec<LeafRule> {
+    vec![LeafRule::ByServiceCategory {
+        categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
+        title: Some("Infrastructure".into()),
+    }]
 }
 
 impl Default for TopologyRequestOptions {
@@ -277,7 +282,8 @@ impl Default for TopologyRequestOptions {
             hide_vm_title_on_docker_container: false,
             hide_ports: false,
             hide_service_categories: vec![ServiceCategory::OpenPorts],
-            grouping_rules: default_grouping_rules(),
+            container_rules: default_container_rules(),
+            leaf_rules: default_leaf_rules(),
             perspective: TopologyPerspective::default(),
         }
     }
