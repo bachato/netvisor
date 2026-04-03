@@ -34,11 +34,10 @@
 		topology_hideResizeHandlesHelp,
 		topology_showMinimap,
 		topology_showMinimapHelp,
-		topology_hideStuff,
+		common_filters,
+		topology_filtersHelp,
 		topology_hideVmOnContainer,
-		topology_hideVmOnContainerHelp,
-		topology_tagFilter,
-		topology_tagFilterHelp
+		topology_hideVmOnContainerHelp
 	} from '$lib/paraglide/messages';
 
 	// Get topology for entity_tags
@@ -300,7 +299,6 @@
 			helpText: () => topology_hideVmOnContainerHelp(),
 			section: () => common_visual()
 		},
-		// Hide Stuff section
 		{
 			id: 'hide_ports',
 			label: () => topology_hidePorts(),
@@ -308,7 +306,7 @@
 			path: 'request',
 			key: 'hide_ports',
 			helpText: () => topology_hidePortsHelp(),
-			section: () => topology_hideStuff()
+			section: () => common_visual()
 		}
 	];
 
@@ -326,9 +324,7 @@
 	// Track expanded sections
 	let expandedSections = $state<Record<string, boolean>>(
 		Object.fromEntries(
-			[common_visual(), topology_groupBy(), topology_hideStuff(), topology_tagFilter()].map(
-				(name) => [name, true]
-			)
+			[common_visual(), topology_groupBy(), common_filters()].map((name) => [name, true])
 		)
 	);
 
@@ -371,24 +367,24 @@
 </script>
 
 <div class="space-y-4">
-	<!-- Tag Filter Section -->
+	<!-- Filters Section -->
 	<div class="card card-static px-0 py-2">
 		<button
 			type="button"
 			class="text-secondary hover:text-primary flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
-			onclick={() => toggleSection(topology_tagFilter())}
+			onclick={() => toggleSection(common_filters())}
 		>
-			{#if expandedSections[topology_tagFilter()]}
+			{#if expandedSections[common_filters()]}
 				<ChevronDown class="h-4 w-4" />
 			{:else}
 				<ChevronRight class="h-4 w-4" />
 			{/if}
-			{topology_tagFilter()}
+			{common_filters()}
 		</button>
 
-		{#if expandedSections[topology_tagFilter()]}
+		{#if expandedSections[common_filters()]}
 			<div class="space-y-4 px-3 pb-3">
-				<p class="text-tertiary text-xs">{topology_tagFilterHelp()}</p>
+				<p class="text-tertiary text-xs">{topology_filtersHelp()}</p>
 
 				<TagFilterGroup
 					label={common_hosts()}
@@ -415,6 +411,23 @@
 					onToggle={toggleSubnetTag}
 					entityType="subnet"
 					hasUntagged={hasUntaggedSubnets}
+				/>
+
+				<CategoryFilterGroup
+					categories={allServiceCategoriesWithColors}
+					hiddenCategories={$topologyOptions.request.hide_service_categories ?? []}
+					onToggle={toggleServiceCategory}
+					disabled={!editState.isEditable}
+				/>
+
+				<FilterGroup
+					items={edgeTypesWithColors}
+					selectedValues={$topologyOptions.local.hide_edge_types ?? []}
+					mode="exclude"
+					onToggle={toggleEdgeType}
+					onHoverStart={handleEdgeTypeHoverStart}
+					onHoverEnd={handleEdgeTypeHoverEnd}
+					label={topology_hideEdgeTypes()}
 				/>
 			</div>
 		{/if}
@@ -490,23 +503,6 @@
 							</div>
 						{/if}
 					{/each}
-					{#if section.name === topology_hideStuff()}
-						<CategoryFilterGroup
-							categories={allServiceCategoriesWithColors}
-							hiddenCategories={$topologyOptions.request.hide_service_categories ?? []}
-							onToggle={toggleServiceCategory}
-							disabled={!editState.isEditable}
-						/>
-						<FilterGroup
-							items={edgeTypesWithColors}
-							selectedValues={$topologyOptions.local.hide_edge_types ?? []}
-							mode="exclude"
-							onToggle={toggleEdgeType}
-							onHoverStart={handleEdgeTypeHoverStart}
-							onHoverEnd={handleEdgeTypeHoverEnd}
-							label={topology_hideEdgeTypes()}
-						/>
-					{/if}
 				</div>
 			{/if}
 		</div>
