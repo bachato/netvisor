@@ -253,7 +253,7 @@
 	}
 
 	function getLeafEditButtonClass(_item: LeafRule, index: number): string {
-		return isLeafEditing(index) ? 'btn-icon text-green-500' : 'btn-icon';
+		return isLeafEditing(index) ? 'btn-icon-success' : 'btn-icon';
 	}
 
 	function isLeafItemEditing(_item: LeafRule, index: number): boolean {
