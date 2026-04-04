@@ -1,4 +1,8 @@
+use crate::server::shared::types::metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider};
+use crate::server::shared::types::{Color, Icon};
 use crate::server::subnets::r#impl::types::SubnetType;
+// Note: Icon and Color are used by ContainerType's EntityMetadataProvider impl,
+// but the Node struct stores icon/color as String to avoid derive constraint issues.
 use crate::server::topology::types::edges::Edge;
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use serde::{Deserialize, Serialize};
@@ -14,17 +18,109 @@ pub struct Node {
     pub position: Ixy,
     pub size: Uxy,
     pub header: Option<String>,
-    /// ID of the element rule that created this group container (for TagGroup/ServiceCategoryGroup)
+    /// ID of the element rule that created this container (for TagContainer/ServiceCategoryContainer)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub element_rule_id: Option<Uuid>,
 }
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]
+/// How the container's title is rendered in the topology viewer.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]
+pub enum TitleStyle {
+    /// Card/pill positioned above the container (subnets)
+    External,
+    /// Inside the container's top padding area (subcontainers)
+    Inline,
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Default,
+    Serialize,
+    Deserialize,
+    Eq,
+    PartialEq,
+    Hash,
+    ToSchema,
+    EnumIter,
+    IntoStaticStr,
+)]
 pub enum ContainerType {
     #[default]
     Subnet,
-    TagGroup,
-    ServiceCategoryGroup,
+    #[serde(alias = "TagGroup")]
+    TagContainer,
+    #[serde(alias = "ServiceCategoryGroup")]
+    ServiceCategoryContainer,
+}
+
+impl HasId for ContainerType {
+    fn id(&self) -> &'static str {
+        self.into()
+    }
+}
+
+impl EntityMetadataProvider for ContainerType {
+    fn color(&self) -> Color {
+        match self {
+            ContainerType::Subnet => Color::Blue,
+            ContainerType::TagContainer => Color::Orange,
+            ContainerType::ServiceCategoryContainer => Color::Purple,
+        }
+    }
+
+    fn icon(&self) -> Icon {
+        match self {
+            ContainerType::Subnet => Icon::Network,
+            ContainerType::TagContainer => Icon::Tag,
+            ContainerType::ServiceCategoryContainer => Icon::Layers,
+        }
+    }
+}
+
+impl TypeMetadataProvider for ContainerType {
+    fn name(&self) -> &'static str {
+        match self {
+            ContainerType::Subnet => "Subnet",
+            ContainerType::TagContainer => "Tag container",
+            ContainerType::ServiceCategoryContainer => "Service category container",
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        match self {
+            ContainerType::Subnet => "Network subnet container",
+            ContainerType::TagContainer => "Elements grouped by tag",
+            ContainerType::ServiceCategoryContainer => "Elements grouped by service category",
+        }
+    }
+
+    fn metadata(&self) -> serde_json::Value {
+        let title_style = match self {
+            ContainerType::Subnet => TitleStyle::External,
+            ContainerType::TagContainer | ContainerType::ServiceCategoryContainer => {
+                TitleStyle::Inline
+            }
+        };
+        let is_subcontainer = !matches!(self, ContainerType::Subnet);
+        let (padding_top, padding_side) = match self {
+            ContainerType::Subnet => (25, 25),
+            ContainerType::TagContainer | ContainerType::ServiceCategoryContainer => (35, 20),
+        };
+        let (collapsed_width, collapsed_height) = match self {
+            ContainerType::Subnet => (200, 80),
+            _ => (250, 40),
+        };
+        serde_json::json!({
+            "title_style": title_style,
+            "is_subcontainer": is_subcontainer,
+            "is_collapsible": true,
+            "has_border": true,
+            "padding": { "top": padding_top, "left": padding_side, "bottom": padding_side, "right": padding_side },
+            "collapsed_size": { "width": collapsed_width, "height": collapsed_height },
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]
@@ -56,6 +152,12 @@ pub enum NodeType {
         /// Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)
         #[serde(default, skip_serializing_if = "Option::is_none")]
         layer_hint: Option<i32>,
+        /// Display icon name (set by graph builder from the source entity, e.g. subnet type)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        icon: Option<String>,
+        /// Display color name (set by graph builder from the source entity, e.g. subnet type)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        color: Option<String>,
     },
     Element {
         #[serde(default)]
@@ -89,6 +191,8 @@ mod tests {
             container_type: ContainerType::Subnet,
             parent_container_id: None,
             layer_hint: Some(2),
+            icon: None,
+            color: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "Container");
@@ -104,16 +208,29 @@ mod tests {
     fn test_container_with_parent() {
         let parent_id = Uuid::new_v4();
         let node_type = NodeType::Container {
-            container_type: ContainerType::ServiceCategoryGroup,
+            container_type: ContainerType::ServiceCategoryContainer,
             parent_container_id: Some(parent_id),
             layer_hint: None,
+            icon: None,
+            color: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
-        assert_eq!(json["container_type"], "ServiceCategoryGroup");
+        assert_eq!(json["container_type"], "ServiceCategoryContainer");
         assert_eq!(json["parent_container_id"], parent_id.to_string());
 
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
+    }
+
+    #[test]
+    fn test_backward_compat_old_container_type_names() {
+        let json = serde_json::json!({ "container_type": "TagGroup" });
+        let ct: ContainerType = serde_json::from_value(json["container_type"].clone()).unwrap();
+        assert_eq!(ct, ContainerType::TagContainer);
+
+        let json = serde_json::json!({ "container_type": "ServiceCategoryGroup" });
+        let ct: ContainerType = serde_json::from_value(json["container_type"].clone()).unwrap();
+        assert_eq!(ct, ContainerType::ServiceCategoryContainer);
     }
 
     #[test]
@@ -122,6 +239,8 @@ mod tests {
             container_type: ContainerType::Subnet,
             parent_container_id: None,
             layer_hint: None,
+            icon: None,
+            color: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert!(json.get("layer_hint").is_none());
@@ -149,21 +268,25 @@ mod tests {
 
     #[test]
     fn test_container_types() {
-        let tag_group = NodeType::Container {
-            container_type: ContainerType::TagGroup,
+        let tag = NodeType::Container {
+            container_type: ContainerType::TagContainer,
             parent_container_id: Some(Uuid::new_v4()),
             layer_hint: None,
+            icon: None,
+            color: None,
         };
-        let json = serde_json::to_value(&tag_group).unwrap();
-        assert_eq!(json["container_type"], "TagGroup");
+        let json = serde_json::to_value(&tag).unwrap();
+        assert_eq!(json["container_type"], "TagContainer");
 
-        let svc_group = NodeType::Container {
-            container_type: ContainerType::ServiceCategoryGroup,
+        let svc = NodeType::Container {
+            container_type: ContainerType::ServiceCategoryContainer,
             parent_container_id: Some(Uuid::new_v4()),
             layer_hint: None,
+            icon: None,
+            color: None,
         };
-        let json = serde_json::to_value(&svc_group).unwrap();
-        assert_eq!(json["container_type"], "ServiceCategoryGroup");
+        let json = serde_json::to_value(&svc).unwrap();
+        assert_eq!(json["container_type"], "ServiceCategoryContainer");
     }
 }
 

@@ -16,6 +16,7 @@ use crate::server::{
     interfaces::{r#impl::base::Interface, service::InterfaceService},
     ports::{r#impl::base::Port, service::PortService},
     services::{r#impl::base::Service, service::ServiceService},
+    shared::types::metadata::EntityMetadataProvider,
     shared::{
         events::{
             bus::EventBus,
@@ -28,7 +29,10 @@ use crate::server::{
             traits::{Entity, Storable, Storage},
         },
     },
-    subnets::{r#impl::base::Subnet, service::SubnetService},
+    subnets::{
+        r#impl::{base::Subnet, types::SubnetType},
+        service::SubnetService,
+    },
     tags::{entity_tags::EntityTagService, r#impl::base::Tag, service::TagService},
     topology::{
         service::{
@@ -426,18 +430,34 @@ impl TopologyService {
 
         let mut subnet_nodes = graph_builder.create_subnet_nodes(&ctx, &subnet_ids);
 
-        // Set layer_hint on container nodes from subnet vertical_order
-        let subnet_type_map: HashMap<Uuid, i32> = ctx
+        // Set layer_hint, icon, and color on container nodes from subnet metadata
+        let subnet_map: HashMap<Uuid, &SubnetType> = ctx
             .subnets
             .iter()
-            .map(|s| (s.id, s.base.subnet_type.vertical_order() as i32))
+            .map(|s| (s.id, &s.base.subnet_type))
             .collect();
         for node in &mut subnet_nodes {
             if let NodeType::Container {
-                ref mut layer_hint, ..
+                ref mut layer_hint,
+                ref mut icon,
+                ref mut color,
+                ..
             } = node.node_type
             {
-                *layer_hint = subnet_type_map.get(&node.id).copied();
+                if let Some(subnet_type) = subnet_map.get(&node.id) {
+                    *layer_hint = Some(subnet_type.vertical_order() as i32);
+                    // Serialize Icon/Color enums to their JSON string representation
+                    if let Ok(serde_json::Value::String(s)) =
+                        serde_json::to_value(subnet_type.icon())
+                    {
+                        *icon = Some(s);
+                    }
+                    if let Ok(serde_json::Value::String(s)) =
+                        serde_json::to_value(subnet_type.color())
+                    {
+                        *color = Some(s);
+                    }
+                }
             }
         }
 

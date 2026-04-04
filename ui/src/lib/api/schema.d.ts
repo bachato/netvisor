@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-03T18:25:51.955505Z",
-             *       "id": "8fdac4f8-df66-4e6a-bbeb-340cc74692e1",
+             *       "created_at": "2026-04-04T14:49:45.011401Z",
+             *       "id": "50cbeae8-9742-4edf-8938-b711f613e646",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-03T18:25:51.955505Z"
+             *       "updated_at": "2026-04-04T14:49:45.011401Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3153,14 +3153,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-03T18:25:51.939872Z",
-             *               "id": "3f023dd5-62ae-4bb8-ac9e-434a0692b20f",
+             *               "created_at": "2026-04-04T14:49:44.991994Z",
+             *               "id": "b8b97018-b765-4e01-ade5-959db2d2e1aa",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-03T18:25:51.939872Z"
+             *               "updated_at": "2026-04-04T14:49:44.991994Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3169,7 +3169,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "BookLore",
+             *           "service_definition": "FreeIPA",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3425,14 +3425,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-03T18:25:51.951260Z",
-             *           "id": "dfb96696-bb13-4d8b-9277-6904bdbfd713",
+             *           "created_at": "2026-04-04T14:49:45.006366Z",
+             *           "id": "a9b72bfd-0a1c-4769-b71a-a807fb262e2d",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-03T18:25:51.951260Z"
+             *           "updated_at": "2026-04-04T14:49:45.006366Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3441,7 +3441,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "BookLore",
+             *       "service_definition": "FreeIPA",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3768,14 +3768,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-03T18:25:51.940068Z",
-         *       "id": "1ffe41b6-5b95-46d2-9f30-36d79057caa5",
+         *       "created_at": "2026-04-04T14:49:44.992214Z",
+         *       "id": "164079b1-00bc-4cd0-8ec4-43d431866126",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-03T18:25:51.940068Z"
+         *       "updated_at": "2026-04-04T14:49:44.992214Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3895,7 +3895,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "TagGroup" | "ServiceCategoryGroup";
+        ContainerType: "Subnet" | "TagContainer" | "ServiceCategoryContainer";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -3960,7 +3960,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "BookLore",
+         *           "service_definition": "FreeIPA",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4770,14 +4770,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-03T18:25:51.939596Z",
-         *               "id": "c3a6fcc7-3b8b-46f3-ad47-419c7a1bf663",
+         *               "created_at": "2026-04-04T14:49:44.991623Z",
+         *               "id": "612a8107-02ed-4fe4-a735-5bb87ab42700",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-03T18:25:51.939596Z"
+         *               "updated_at": "2026-04-04T14:49:44.991623Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4786,7 +4786,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "BookLore",
+         *           "service_definition": "FreeIPA",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5226,7 +5226,7 @@ export interface components {
         Node: components["schemas"]["NodeType"] & {
             /**
              * Format: uuid
-             * @description ID of the element rule that created this group container (for TagGroup/ServiceCategoryGroup)
+             * @description ID of the element rule that created this container (for TagContainer/ServiceCategoryContainer)
              */
             element_rule_id?: string | null;
             header?: string | null;
@@ -5236,7 +5236,11 @@ export interface components {
             size: components["schemas"]["Uxy"];
         };
         NodeType: {
+            /** @description Display color name (set by graph builder from the source entity, e.g. subnet type) */
+            color?: string | null;
             container_type?: components["schemas"]["ContainerType"];
+            /** @description Display icon name (set by graph builder from the source entity, e.g. subnet type) */
+            icon?: string | null;
             /**
              * Format: int32
              * @description Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)
@@ -5845,14 +5849,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-03T18:25:51.940Z",
-         *           "id": "0015ccee-f43f-4692-ae09-8e7673a8d108",
+         *           "created_at": "2026-04-04T14:49:44.992140Z",
+         *           "id": "85918db4-2eaa-450d-9bbd-b6e829c3a7bc",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-03T18:25:51.940Z"
+         *           "updated_at": "2026-04-04T14:49:44.992140Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5861,7 +5865,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "BookLore",
+         *       "service_definition": "FreeIPA",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6394,8 +6398,8 @@ export interface components {
         UserOrgPermissions: "Owner" | "Admin" | "Member" | "Viewer";
         /**
          * @description 2D unsigned coordinate. Used for node positions and sizes.
-         *     Leaf node sizes are computed by the frontend (elkjs); the backend
-         *     sets `Uxy::default()` for leaf nodes.
+         *     Element node sizes are computed by the frontend (elkjs); the backend
+         *     sets `Uxy::default()` for element nodes.
          */
         Uxy: {
             x: number;

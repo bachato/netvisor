@@ -328,9 +328,11 @@ impl GraphBuilder {
                     child_nodes.push(Node {
                         id: group_id,
                         node_type: NodeType::Container {
-                            container_type: ContainerType::ServiceCategoryGroup,
+                            container_type: ContainerType::ServiceCategoryContainer,
                             parent_container_id: Some(subnet_id),
                             layer_hint: None,
+                            icon: None,
+                            color: None,
                         },
                         position: Ixy { x: 0, y: 0 },
                         size: Uxy { x: 0, y: 0 },
@@ -369,9 +371,11 @@ impl GraphBuilder {
                     child_nodes.push(Node {
                         id: group_id,
                         node_type: NodeType::Container {
-                            container_type: ContainerType::TagGroup,
+                            container_type: ContainerType::TagContainer,
                             parent_container_id: Some(subnet_id),
                             layer_hint: None,
+                            icon: None,
+                            color: None,
                         },
                         position: Ixy { x: 0, y: 0 },
                         size: Uxy { x: 0, y: 0 },
@@ -424,6 +428,8 @@ impl GraphBuilder {
                         container_type: ContainerType::Subnet,
                         parent_container_id: None,
                         layer_hint: None,
+                        icon: None,
+                        color: None,
                     },
                     position: Ixy { x: 0, y: 0 },
                     size: Uxy { x: 0, y: 0 },
@@ -607,12 +613,12 @@ mod tests {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::ServiceCategoryGroup,
+                        container_type: ContainerType::ServiceCategoryContainer,
                         ..
                     }
                 )
             })
-            .expect("Should have ServiceCategoryGroup");
+            .expect("Should have ServiceCategoryContainer");
 
         let tag_group = groups
             .iter()
@@ -620,19 +626,19 @@ mod tests {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::TagGroup,
+                        container_type: ContainerType::TagContainer,
                         ..
                     }
                 )
             })
-            .expect("Should have TagGroup");
+            .expect("Should have TagContainer");
 
         // First-match-wins: host_both should be in the category group (first rule)
         let both_node = child_nodes.iter().find(|n| n.id == child_both_id).unwrap();
         if let NodeType::Element { container_id, .. } = &both_node.node_type {
             assert_eq!(
                 *container_id, cat_group.id,
-                "Overlapping host should be in first-match group (ServiceCategoryGroup)"
+                "Overlapping host should be in first-match container (ServiceCategoryContainer)"
             );
         }
 
@@ -641,7 +647,7 @@ mod tests {
         if let NodeType::Element { container_id, .. } = &tag_node.node_type {
             assert_eq!(
                 *container_id, tag_group.id,
-                "Tag-only host should be in TagGroup"
+                "Tag-only host should be in TagContainer"
             );
         }
 
@@ -720,36 +726,36 @@ mod tests {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::TagGroup,
+                        container_type: ContainerType::TagContainer,
                         ..
                     }
                 )
             })
-            .expect("Should have TagGroup");
+            .expect("Should have TagContainer");
 
         // Host should be in tag group (first rule wins)
         let element = child_nodes.iter().find(|n| n.id == child_id).unwrap();
         if let NodeType::Element { container_id, .. } = &element.node_type {
             assert_eq!(
                 *container_id, tag_group.id,
-                "When ByTag is first, overlapping host should be in TagGroup"
+                "When ByTag is first, overlapping host should be in TagContainer"
             );
         }
 
-        // ServiceCategoryGroup should still be created but with no children
+        // ServiceCategoryContainer should not be created when all its matches are already claimed
         // (since the only matching host was claimed by tag rule)
         let cat_group = child_nodes.iter().find(|n| {
             matches!(
                 n.node_type,
                 NodeType::Container {
-                    container_type: ContainerType::ServiceCategoryGroup,
+                    container_type: ContainerType::ServiceCategoryContainer,
                     ..
                 }
             )
         });
         assert!(
             cat_group.is_none(),
-            "ServiceCategoryGroup should not be created when all its matches are already claimed"
+            "ServiceCategoryContainer should not be created when all its matches are already claimed"
         );
     }
 }

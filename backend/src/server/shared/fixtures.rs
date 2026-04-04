@@ -17,6 +17,7 @@ use crate::server::shared::types::metadata::{EntityMetadata, MetadataProvider, T
 use crate::server::subnets::r#impl::types::SubnetType;
 use crate::server::topology::types::edges::EdgeType;
 use crate::server::topology::types::grouping::{ContainerRule, ElementRule};
+use crate::server::topology::types::nodes::ContainerType;
 use crate::server::users::r#impl::permissions::UserOrgPermissions;
 use std::fs;
 use std::path::Path;
@@ -110,6 +111,10 @@ pub fn generate_ui_data_fixtures(output_dir: &Path) {
     let element_rule_types: Vec<TypeMetadata> =
         ElementRule::iter().map(|r| r.to_metadata()).collect();
     write_fixture(&element_rule_types, output_dir, "element-rule-types.json");
+
+    let container_types: Vec<TypeMetadata> =
+        ContainerType::iter().map(|r| r.to_metadata()).collect();
+    write_fixture(&container_types, output_dir, "container-types.json");
 
     println!("Done! Generated all metadata fixtures.");
 }

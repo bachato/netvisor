@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-03T18:25:51.955502Z",
-              "id": "56ae1d7f-75c4-4209-bfbd-4eb71b366415",
+              "created_at": "2026-04-04T14:49:45.011400Z",
+              "id": "5d94a6ef-8be5-4d93-a4b2-d0bea8e3aa10",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-03T18:25:51.955502Z"
+              "updated_at": "2026-04-04T14:49:45.011400Z"
             }
           },
           "error": {
@@ -10731,14 +10731,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-03T18:25:51.940053Z",
-                      "id": "7ce81bec-e0b5-4082-abf6-18705b707dbd",
+                      "created_at": "2026-04-04T14:49:44.992023Z",
+                      "id": "8c08222a-666a-4a24-a463-1ab7dbe4dcef",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-03T18:25:51.940053Z"
+                      "updated_at": "2026-04-04T14:49:44.992023Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10747,7 +10747,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "BookLore",
+                  "service_definition": "FreeIPA",
                   "source": {
                     "type": "Manual"
                   },
@@ -11450,14 +11450,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-03T18:25:51.951270Z",
-                  "id": "ab439459-9d95-4cb9-875f-e343f889b43d",
+                  "created_at": "2026-04-04T14:49:45.006230Z",
+                  "id": "fadff9d6-16a6-43ce-8f92-54081a744f76",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-03T18:25:51.951270Z"
+                  "updated_at": "2026-04-04T14:49:45.006230Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11466,7 +11466,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "BookLore",
+              "service_definition": "FreeIPA",
               "source": {
                 "type": "Manual"
               },
@@ -12740,14 +12740,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-03T18:25:51.940260Z",
-          "id": "9565fcf1-adc5-448c-97c9-2c2b5b0bbf9b",
+          "created_at": "2026-04-04T14:49:44.992241Z",
+          "id": "5febc12e-c4e1-4f40-bc52-698ed91499ea",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-03T18:25:51.940260Z"
+          "updated_at": "2026-04-04T14:49:44.992241Z"
         }
       },
       "BindingBase": {
@@ -13032,8 +13032,8 @@
         "type": "string",
         "enum": [
           "Subnet",
-          "TagGroup",
-          "ServiceCategoryGroup"
+          "TagContainer",
+          "ServiceCategoryContainer"
         ]
       },
       "CreateBindingInput": {
@@ -13262,7 +13262,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "BookLore",
+              "service_definition": "FreeIPA",
               "tags": [],
               "virtualization": null
             }
@@ -15671,14 +15671,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-03T18:25:51.939759Z",
-                  "id": "8987e749-ad04-40e6-96ef-7c9dba1d51a0",
+                  "created_at": "2026-04-04T14:49:44.991678Z",
+                  "id": "4c2f61f2-0474-4602-9940-41e208f77fb1",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-03T18:25:51.939759Z"
+                  "updated_at": "2026-04-04T14:49:44.991678Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15687,7 +15687,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "BookLore",
+              "service_definition": "FreeIPA",
               "source": {
                 "type": "Manual"
               },
@@ -16852,7 +16852,7 @@
                   "null"
                 ],
                 "format": "uuid",
-                "description": "ID of the element rule that created this group container (for TagGroup/ServiceCategoryGroup)"
+                "description": "ID of the element rule that created this container (for TagContainer/ServiceCategoryContainer)"
               },
               "header": {
                 "type": [
@@ -16882,8 +16882,22 @@
               "node_type"
             ],
             "properties": {
+              "color": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Display color name (set by graph builder from the source entity, e.g. subnet type)"
+              },
               "container_type": {
                 "$ref": "#/components/schemas/ContainerType"
+              },
+              "icon": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Display icon name (set by graph builder from the source entity, e.g. subnet type)"
               },
               "layer_hint": {
                 "type": [
@@ -17654,14 +17668,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-03T18:25:51.930414Z",
-                        "id": "629142d2-1b7d-4483-8372-c2ae62dc5f01",
+                        "created_at": "2026-04-04T14:49:44.980831Z",
+                        "id": "bfc565fb-4f5a-4e6b-8093-e91c443551d6",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-03T18:25:51.930414Z"
+                        "updated_at": "2026-04-04T14:49:44.980831Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17670,7 +17684,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "BookLore",
+                    "service_definition": "FreeIPA",
                     "source": {
                       "type": "Manual"
                     },
@@ -17747,14 +17761,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-03T18:25:51.950294Z",
-                    "id": "adeb8ff0-eb11-4245-a912-4cbbb1655acd",
+                    "created_at": "2026-04-04T14:49:45.005213Z",
+                    "id": "37ae314f-4685-4440-b254-4e703773c15b",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-03T18:25:51.950294Z"
+                    "updated_at": "2026-04-04T14:49:45.005213Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17763,7 +17777,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "BookLore",
+                "service_definition": "FreeIPA",
                 "source": {
                   "type": "Manual"
                 },
@@ -18922,14 +18936,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-03T18:25:51.940187Z",
-              "id": "f842270a-fc87-48f3-8b45-a6131fa397f4",
+              "created_at": "2026-04-04T14:49:44.992164Z",
+              "id": "43fe82b4-d788-4248-8cec-e104fe695cf5",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-03T18:25:51.940187Z"
+              "updated_at": "2026-04-04T14:49:44.992164Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -18938,7 +18952,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "BookLore",
+          "service_definition": "FreeIPA",
           "source": {
             "type": "Manual"
           },
@@ -20442,7 +20456,7 @@
       },
       "Uxy": {
         "type": "object",
-        "description": "2D unsigned coordinate. Used for node positions and sizes.\nLeaf node sizes are computed by the frontend (elkjs); the backend\nsets `Uxy::default()` for leaf nodes.",
+        "description": "2D unsigned coordinate. Used for node positions and sizes.\nElement node sizes are computed by the frontend (elkjs); the backend\nsets `Uxy::default()` for element nodes.",
         "required": [
           "x",
           "y"
