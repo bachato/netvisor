@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-04T14:49:45.011400Z",
-              "id": "5d94a6ef-8be5-4d93-a4b2-d0bea8e3aa10",
+              "created_at": "2026-04-04T17:27:36.649280Z",
+              "id": "4575a6c4-124f-49fd-bea7-939fcddb03b8",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T14:49:45.011400Z"
+              "updated_at": "2026-04-04T17:27:36.649280Z"
             }
           },
           "error": {
@@ -10731,14 +10731,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-04T14:49:44.992023Z",
-                      "id": "8c08222a-666a-4a24-a463-1ab7dbe4dcef",
+                      "created_at": "2026-04-04T17:27:36.636680Z",
+                      "id": "74c00f18-47ef-4703-850f-061e668b7f23",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-04T14:49:44.992023Z"
+                      "updated_at": "2026-04-04T17:27:36.636680Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10747,7 +10747,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "FreeIPA",
+                  "service_definition": "Ollama",
                   "source": {
                     "type": "Manual"
                   },
@@ -11450,14 +11450,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T14:49:45.006230Z",
-                  "id": "fadff9d6-16a6-43ce-8f92-54081a744f76",
+                  "created_at": "2026-04-04T17:27:36.645454Z",
+                  "id": "3cbf8811-beb4-480a-8423-5d6257ea702d",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T14:49:45.006230Z"
+                  "updated_at": "2026-04-04T17:27:36.645454Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11466,7 +11466,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "FreeIPA",
+              "service_definition": "Ollama",
               "source": {
                 "type": "Manual"
               },
@@ -12740,14 +12740,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-04T14:49:44.992241Z",
-          "id": "5febc12e-c4e1-4f40-bc52-698ed91499ea",
+          "created_at": "2026-04-04T17:27:36.636907Z",
+          "id": "bcfd1617-b813-4209-a1aa-6f204659d01e",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-04T14:49:44.992241Z"
+          "updated_at": "2026-04-04T17:27:36.636907Z"
         }
       },
       "BindingBase": {
@@ -13032,8 +13032,9 @@
         "type": "string",
         "enum": [
           "Subnet",
-          "TagContainer",
-          "ServiceCategoryContainer"
+          "ServiceCategory",
+          "NestedTag",
+          "NestedServiceCategory"
         ]
       },
       "CreateBindingInput": {
@@ -13262,7 +13263,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "FreeIPA",
+              "service_definition": "Ollama",
               "tags": [],
               "virtualization": null
             }
@@ -14787,9 +14788,47 @@
         ]
       },
       "ElementEntityType": {
-        "type": "string",
-        "enum": [
-          "Interface"
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "subnet_id",
+              "element_type"
+            ],
+            "properties": {
+              "element_type": {
+                "type": "string",
+                "enum": [
+                  "Interface"
+                ]
+              },
+              "interface_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "subnet_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "element_type"
+            ],
+            "properties": {
+              "element_type": {
+                "type": "string",
+                "enum": [
+                  "Service"
+                ]
+              }
+            }
+          }
         ]
       },
       "EmailInstallCommandRequest": {
@@ -15671,14 +15710,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T14:49:44.991678Z",
-                  "id": "4c2f61f2-0474-4602-9940-41e208f77fb1",
+                  "created_at": "2026-04-04T17:27:36.636373Z",
+                  "id": "51e6986a-f76b-4c51-bb7b-6bb5f363bbd8",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T14:49:44.991678Z"
+                  "updated_at": "2026-04-04T17:27:36.636373Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15687,7 +15726,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "FreeIPA",
+              "service_definition": "Ollama",
               "source": {
                 "type": "Manual"
               },
@@ -16852,7 +16891,7 @@
                   "null"
                 ],
                 "format": "uuid",
-                "description": "ID of the element rule that created this container (for TagContainer/ServiceCategoryContainer)"
+                "description": "ID of the element rule that created this container (for NestedTag/NestedServiceCategory)"
               },
               "header": {
                 "type": [
@@ -16923,42 +16962,41 @@
             }
           },
           {
-            "type": "object",
-            "required": [
-              "subnet_id",
-              "host_id",
-              "node_type"
-            ],
-            "properties": {
-              "container_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "element_type": {
+            "allOf": [
+              {
                 "$ref": "#/components/schemas/ElementEntityType"
               },
-              "host_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "interface_id": {
-                "type": [
-                  "string",
-                  "null"
+              {
+                "type": "object",
+                "required": [
+                  "host_id"
                 ],
-                "format": "uuid"
+                "properties": {
+                  "container_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "host_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
               },
-              "node_type": {
-                "type": "string",
-                "enum": [
-                  "Element"
-                ]
-              },
-              "subnet_id": {
-                "type": "string",
-                "format": "uuid"
+              {
+                "type": "object",
+                "required": [
+                  "node_type"
+                ],
+                "properties": {
+                  "node_type": {
+                    "type": "string",
+                    "enum": [
+                      "Element"
+                    ]
+                  }
+                }
               }
-            }
+            ]
           }
         ]
       },
@@ -17668,14 +17706,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-04T14:49:44.980831Z",
-                        "id": "bfc565fb-4f5a-4e6b-8093-e91c443551d6",
+                        "created_at": "2026-04-04T17:27:36.630124Z",
+                        "id": "99b6dbd0-93ac-4054-ac96-514c26726aec",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-04T14:49:44.980831Z"
+                        "updated_at": "2026-04-04T17:27:36.630124Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17684,7 +17722,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "FreeIPA",
+                    "service_definition": "Ollama",
                     "source": {
                       "type": "Manual"
                     },
@@ -17761,14 +17799,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-04T14:49:45.005213Z",
-                    "id": "37ae314f-4685-4440-b254-4e703773c15b",
+                    "created_at": "2026-04-04T17:27:36.644474Z",
+                    "id": "3e772fbf-ebe2-4310-8c89-8ddcf16087a6",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-04T14:49:45.005213Z"
+                    "updated_at": "2026-04-04T17:27:36.644474Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17777,7 +17815,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "FreeIPA",
+                "service_definition": "Ollama",
                 "source": {
                   "type": "Manual"
                 },
@@ -18175,6 +18213,38 @@
             "format": "int32",
             "description": "Number of results to skip. Default: 0.",
             "minimum": 0
+          }
+        }
+      },
+      "PerspectiveOptionOverrides": {
+        "type": "object",
+        "properties": {
+          "container_rules": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/GraphRule_ContainerRule"
+            }
+          },
+          "element_rules": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/GraphRule_ElementRule"
+            }
+          },
+          "hide_service_categories": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ServiceCategory"
+            }
           }
         }
       },
@@ -18936,14 +19006,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-04T14:49:44.992164Z",
-              "id": "43fe82b4-d788-4248-8cec-e104fe695cf5",
+              "created_at": "2026-04-04T17:27:36.636833Z",
+              "id": "69e259b7-6fa7-4856-8ba5-0d1cb14534ea",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T14:49:44.992164Z"
+              "updated_at": "2026-04-04T17:27:36.636833Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -18952,7 +19022,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "FreeIPA",
+          "service_definition": "Ollama",
           "source": {
             "type": "Manual"
           },
@@ -20084,6 +20154,25 @@
           },
           "perspective": {
             "$ref": "#/components/schemas/TopologyPerspective"
+          },
+          "perspective_overrides": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PerspectiveOptionOverrides"
+            },
+            "propertyNames": {
+              "type": "string",
+              "description": "Which topology perspective is being rendered",
+              "enum": [
+                "l2_physical",
+                "l3_logical",
+                "infrastructure",
+                "application"
+              ]
+            }
           }
         }
       },

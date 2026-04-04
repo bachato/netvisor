@@ -1,6 +1,6 @@
 use super::base::Topology;
 use super::edges::EdgeType;
-use super::nodes::NodeType;
+use super::nodes::{ElementEntityType, NodeType};
 use std::collections::HashMap;
 use std::fmt::Write;
 use uuid::Uuid;
@@ -37,10 +37,14 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
     let hosts: HashMap<Uuid, _> = topology.base.hosts.iter().map(|h| (h.id, h)).collect();
     let interfaces: HashMap<Uuid, _> = topology.base.interfaces.iter().map(|i| (i.id, i)).collect();
 
-    // Group Element nodes by subnet_id
+    // Group Element nodes by subnet_id (only Interface elements have subnet_id)
     let mut nodes_by_subnet: HashMap<Uuid, Vec<_>> = HashMap::new();
     for node in &topology.base.nodes {
-        if let NodeType::Element { subnet_id, .. } = &node.node_type {
+        if let NodeType::Element {
+            element: ElementEntityType::Interface { subnet_id, .. },
+            ..
+        } = &node.node_type
+        {
             nodes_by_subnet.entry(*subnet_id).or_default().push(node);
         }
     }
@@ -64,7 +68,7 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
             for node in nodes {
                 if let NodeType::Element {
                     host_id,
-                    interface_id,
+                    element: ElementEntityType::Interface { interface_id, .. },
                     ..
                 } = &node.node_type
                 {

@@ -272,20 +272,18 @@ impl GraphBuilder {
         // Create element nodes for all children
         // Positions are zeroed — the frontend computes layout via elkjs
         for child in children.iter() {
-            child_nodes.push(Node {
-                id: child.id,
-                node_type: NodeType::Element {
-                    container_id: subnet_id,
-                    element_type: ElementEntityType::Interface,
+            let mut node = Node::element(
+                child.id,
+                subnet_id,
+                child.host_id,
+                ElementEntityType::Interface {
                     subnet_id,
-                    host_id: child.host_id,
                     interface_id: child.interface_id,
                 },
-                position: Ixy { x: 0, y: 0 },
-                size: child.size,
-                header: child.header.clone(),
-                element_rule_id: None,
-            });
+            );
+            node.size = child.size;
+            node.header = child.header.clone();
+            child_nodes.push(node);
         }
 
         // Create nested group containers for ByServiceCategory and ByTag rules
@@ -328,7 +326,7 @@ impl GraphBuilder {
                     child_nodes.push(Node {
                         id: group_id,
                         node_type: NodeType::Container {
-                            container_type: ContainerType::ServiceCategoryContainer,
+                            container_type: ContainerType::NestedServiceCategory,
                             parent_container_id: Some(subnet_id),
                             layer_hint: None,
                             icon: None,
@@ -371,7 +369,7 @@ impl GraphBuilder {
                     child_nodes.push(Node {
                         id: group_id,
                         node_type: NodeType::Container {
-                            container_type: ContainerType::TagContainer,
+                            container_type: ContainerType::NestedTag,
                             parent_container_id: Some(subnet_id),
                             layer_hint: None,
                             icon: None,
@@ -536,20 +534,17 @@ mod tests {
     }
 
     fn make_element_node(id: Uuid, host_id: Uuid, container_id: Uuid) -> Node {
-        Node {
+        let mut node = Node::element(
             id,
-            node_type: NodeType::Element {
-                container_id,
-                element_type: ElementEntityType::Interface,
+            container_id,
+            host_id,
+            ElementEntityType::Interface {
                 subnet_id: container_id,
-                host_id,
                 interface_id: Some(id),
             },
-            position: Ixy { x: 0, y: 0 },
-            size: Uxy { x: 100, y: 50 },
-            header: None,
-            element_rule_id: None,
-        }
+        );
+        node.size = Uxy { x: 100, y: 50 };
+        node
     }
 
     fn make_container_child(id: Uuid, host_id: Uuid) -> ContainerChild {
@@ -633,12 +628,12 @@ mod tests {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::ServiceCategoryContainer,
+                        container_type: ContainerType::NestedServiceCategory,
                         ..
                     }
                 )
             })
-            .expect("Should have ServiceCategoryContainer");
+            .expect("Should have NestedServiceCategory");
 
         let tag_group = groups
             .iter()
@@ -646,19 +641,19 @@ mod tests {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::TagContainer,
+                        container_type: ContainerType::NestedTag,
                         ..
                     }
                 )
             })
-            .expect("Should have TagContainer");
+            .expect("Should have NestedTag");
 
         // First-match-wins: host_both should be in the category group (first rule)
         let both_node = child_nodes.iter().find(|n| n.id == child_both_id).unwrap();
         if let NodeType::Element { container_id, .. } = &both_node.node_type {
             assert_eq!(
                 *container_id, cat_group.id,
-                "Overlapping host should be in first-match container (ServiceCategoryContainer)"
+                "Overlapping host should be in first-match container (NestedServiceCategory)"
             );
         }
 
@@ -667,7 +662,7 @@ mod tests {
         if let NodeType::Element { container_id, .. } = &tag_node.node_type {
             assert_eq!(
                 *container_id, tag_group.id,
-                "Tag-only host should be in TagContainer"
+                "Tag-only host should be in NestedTag"
             );
         }
 
@@ -746,36 +741,36 @@ mod tests {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::TagContainer,
+                        container_type: ContainerType::NestedTag,
                         ..
                     }
                 )
             })
-            .expect("Should have TagContainer");
+            .expect("Should have NestedTag");
 
         // Host should be in tag group (first rule wins)
         let element = child_nodes.iter().find(|n| n.id == child_id).unwrap();
         if let NodeType::Element { container_id, .. } = &element.node_type {
             assert_eq!(
                 *container_id, tag_group.id,
-                "When ByTag is first, overlapping host should be in TagContainer"
+                "When ByTag is first, overlapping host should be in NestedTag"
             );
         }
 
-        // ServiceCategoryContainer should not be created when all its matches are already claimed
+        // NestedServiceCategory should not be created when all its matches are already claimed
         // (since the only matching host was claimed by tag rule)
         let cat_group = child_nodes.iter().find(|n| {
             matches!(
                 n.node_type,
                 NodeType::Container {
-                    container_type: ContainerType::ServiceCategoryContainer,
+                    container_type: ContainerType::NestedServiceCategory,
                     ..
                 }
             )
         });
         assert!(
             cat_group.is_none(),
-            "ServiceCategoryContainer should not be created when all its matches are already claimed"
+            "NestedServiceCategory should not be created when all its matches are already claimed"
         );
     }
 }

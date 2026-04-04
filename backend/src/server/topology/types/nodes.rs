@@ -1,8 +1,7 @@
+use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::types::metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider};
 use crate::server::shared::types::{Color, Icon};
 use crate::server::subnets::r#impl::types::SubnetType;
-// Note: Icon and Color are used by ContainerType's EntityMetadataProvider impl,
-// but the Node struct stores icon/color as String to avoid derive constraint issues.
 use crate::server::topology::types::edges::Edge;
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use serde::{Deserialize, Serialize};
@@ -18,9 +17,31 @@ pub struct Node {
     pub position: Ixy,
     pub size: Uxy,
     pub header: Option<String>,
-    /// ID of the element rule that created this container (for TagContainer/ServiceCategoryContainer)
+    /// ID of the element rule that created this container (for NestedTag/NestedServiceCategory)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub element_rule_id: Option<Uuid>,
+}
+
+impl Node {
+    pub fn element(
+        id: Uuid,
+        container_id: Uuid,
+        host_id: Uuid,
+        element: ElementEntityType,
+    ) -> Self {
+        Self {
+            id,
+            node_type: NodeType::Element {
+                container_id,
+                host_id,
+                element,
+            },
+            position: Ixy::default(),
+            size: Uxy::default(),
+            header: None,
+            element_rule_id: None,
+        }
+    }
 }
 
 /// How the container's title is rendered in the topology viewer.
@@ -47,12 +68,14 @@ pub enum TitleStyle {
     IntoStaticStr,
 )]
 pub enum ContainerType {
+    // Top-level containers
     #[default]
     Subnet,
-    #[serde(alias = "TagGroup")]
-    TagContainer,
-    #[serde(alias = "ServiceCategoryGroup")]
-    ServiceCategoryContainer,
+    ServiceCategory,
+
+    // Subcontainers (nested inside a top-level container)
+    NestedTag,
+    NestedServiceCategory,
 }
 
 impl HasId for ContainerType {
@@ -65,16 +88,18 @@ impl EntityMetadataProvider for ContainerType {
     fn color(&self) -> Color {
         match self {
             ContainerType::Subnet => Color::Blue,
-            ContainerType::TagContainer => Color::Orange,
-            ContainerType::ServiceCategoryContainer => Color::Purple,
+            ContainerType::ServiceCategory => EntityDiscriminants::Service.color(),
+            ContainerType::NestedTag => Color::Orange,
+            ContainerType::NestedServiceCategory => Color::Purple,
         }
     }
 
     fn icon(&self) -> Icon {
         match self {
             ContainerType::Subnet => Icon::Network,
-            ContainerType::TagContainer => Icon::Tag,
-            ContainerType::ServiceCategoryContainer => Icon::Layers,
+            ContainerType::ServiceCategory => EntityDiscriminants::Service.icon(),
+            ContainerType::NestedTag => Icon::Tag,
+            ContainerType::NestedServiceCategory => Icon::Layers,
         }
     }
 }
@@ -83,33 +108,36 @@ impl TypeMetadataProvider for ContainerType {
     fn name(&self) -> &'static str {
         match self {
             ContainerType::Subnet => "Subnet",
-            ContainerType::TagContainer => "Tag container",
-            ContainerType::ServiceCategoryContainer => "Service category container",
+            ContainerType::ServiceCategory => "Service category",
+            ContainerType::NestedTag => "Tag container",
+            ContainerType::NestedServiceCategory => "Service category container",
         }
     }
 
     fn description(&self) -> &'static str {
         match self {
             ContainerType::Subnet => "Network subnet container",
-            ContainerType::TagContainer => "Elements grouped by tag",
-            ContainerType::ServiceCategoryContainer => "Elements grouped by service category",
+            ContainerType::ServiceCategory => "Services grouped by category",
+            ContainerType::NestedTag => "Elements grouped by tag",
+            ContainerType::NestedServiceCategory => "Elements grouped by service category",
         }
     }
 
     fn metadata(&self) -> serde_json::Value {
         let title_style = match self {
-            ContainerType::Subnet => TitleStyle::External,
-            ContainerType::TagContainer | ContainerType::ServiceCategoryContainer => {
-                TitleStyle::Inline
-            }
+            ContainerType::Subnet | ContainerType::ServiceCategory => TitleStyle::External,
+            ContainerType::NestedTag | ContainerType::NestedServiceCategory => TitleStyle::Inline,
         };
-        let is_subcontainer = !matches!(self, ContainerType::Subnet);
+        let is_subcontainer = matches!(
+            self,
+            ContainerType::NestedTag | ContainerType::NestedServiceCategory
+        );
         let (padding_top, padding_side) = match self {
-            ContainerType::Subnet => (25, 25),
-            ContainerType::TagContainer | ContainerType::ServiceCategoryContainer => (45, 20),
+            ContainerType::Subnet | ContainerType::ServiceCategory => (25, 25),
+            ContainerType::NestedTag | ContainerType::NestedServiceCategory => (45, 20),
         };
         let (collapsed_width, collapsed_height) = match self {
-            ContainerType::Subnet => (200, 80),
+            ContainerType::Subnet | ContainerType::ServiceCategory => (200, 80),
             _ => (250, 40),
         };
         serde_json::json!({
@@ -123,10 +151,33 @@ impl TypeMetadataProvider for ContainerType {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]
+#[serde(tag = "element_type")]
 pub enum ElementEntityType {
-    #[default]
-    Interface,
+    Interface {
+        subnet_id: Uuid,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        interface_id: Option<Uuid>,
+    },
+    Service {},
+}
+
+impl Default for ElementEntityType {
+    fn default() -> Self {
+        Self::Interface {
+            subnet_id: Uuid::nil(),
+            interface_id: None,
+        }
+    }
+}
+
+impl From<&ElementEntityType> for EntityDiscriminants {
+    fn from(eet: &ElementEntityType) -> Self {
+        match eet {
+            ElementEntityType::Interface { .. } => EntityDiscriminants::Interface,
+            ElementEntityType::Service {} => EntityDiscriminants::Service,
+        }
+    }
 }
 
 #[derive(
@@ -162,11 +213,9 @@ pub enum NodeType {
     Element {
         #[serde(default)]
         container_id: Uuid,
-        #[serde(default)]
-        element_type: ElementEntityType,
-        subnet_id: Uuid,
         host_id: Uuid,
-        interface_id: Option<Uuid>,
+        #[serde(flatten)]
+        element: ElementEntityType,
     },
 }
 
@@ -208,29 +257,18 @@ mod tests {
     fn test_container_with_parent() {
         let parent_id = Uuid::new_v4();
         let node_type = NodeType::Container {
-            container_type: ContainerType::ServiceCategoryContainer,
+            container_type: ContainerType::NestedServiceCategory,
             parent_container_id: Some(parent_id),
             layer_hint: None,
             icon: None,
             color: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
-        assert_eq!(json["container_type"], "ServiceCategoryContainer");
+        assert_eq!(json["container_type"], "NestedServiceCategory");
         assert_eq!(json["parent_container_id"], parent_id.to_string());
 
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
-    }
-
-    #[test]
-    fn test_backward_compat_old_container_type_names() {
-        let json = serde_json::json!({ "container_type": "TagGroup" });
-        let ct: ContainerType = serde_json::from_value(json["container_type"].clone()).unwrap();
-        assert_eq!(ct, ContainerType::TagContainer);
-
-        let json = serde_json::json!({ "container_type": "ServiceCategoryGroup" });
-        let ct: ContainerType = serde_json::from_value(json["container_type"].clone()).unwrap();
-        assert_eq!(ct, ContainerType::ServiceCategoryContainer);
     }
 
     #[test]
@@ -247,46 +285,133 @@ mod tests {
     }
 
     #[test]
-    fn test_element_round_trip() {
-        let id = Uuid::new_v4();
+    fn test_element_interface_round_trip() {
+        let container_id = Uuid::new_v4();
         let host_id = Uuid::new_v4();
+        let subnet_id = Uuid::new_v4();
         let iface_id = Uuid::new_v4();
         let node_type = NodeType::Element {
-            container_id: id,
-            element_type: ElementEntityType::Interface,
-            subnet_id: id,
+            container_id,
             host_id,
-            interface_id: Some(iface_id),
+            element: ElementEntityType::Interface {
+                subnet_id,
+                interface_id: Some(iface_id),
+            },
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "Element");
         assert_eq!(json["element_type"], "Interface");
+        assert_eq!(json["subnet_id"], subnet_id.to_string());
+        assert_eq!(json["host_id"], host_id.to_string());
+        assert_eq!(json["interface_id"], iface_id.to_string());
 
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
     }
 
     #[test]
+    fn test_element_service_round_trip() {
+        let container_id = Uuid::new_v4();
+        let host_id = Uuid::new_v4();
+        let node_type = NodeType::Element {
+            container_id,
+            host_id,
+            element: ElementEntityType::Service {},
+        };
+        let json = serde_json::to_value(&node_type).unwrap();
+        assert_eq!(json["node_type"], "Element");
+        assert_eq!(json["element_type"], "Service");
+        // Service elements don't have subnet_id or interface_id
+        assert!(json.get("subnet_id").is_none());
+        assert!(json.get("interface_id").is_none());
+
+        let deserialized: NodeType = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, node_type);
+    }
+
+    #[test]
+    fn test_element_interface_backward_compat() {
+        // Verify that Interface elements serialize the same as before the restructure
+        let container_id = Uuid::new_v4();
+        let host_id = Uuid::new_v4();
+        let subnet_id = Uuid::new_v4();
+        let node_type = NodeType::Element {
+            container_id,
+            host_id,
+            element: ElementEntityType::Interface {
+                subnet_id,
+                interface_id: None,
+            },
+        };
+        let json = serde_json::to_value(&node_type).unwrap();
+        // All fields should be at the top level (flattened)
+        assert_eq!(json["container_id"], container_id.to_string());
+        assert_eq!(json["host_id"], host_id.to_string());
+        assert_eq!(json["subnet_id"], subnet_id.to_string());
+        assert!(json.get("interface_id").is_none());
+    }
+
+    #[test]
     fn test_container_types() {
         let tag = NodeType::Container {
-            container_type: ContainerType::TagContainer,
+            container_type: ContainerType::NestedTag,
             parent_container_id: Some(Uuid::new_v4()),
             layer_hint: None,
             icon: None,
             color: None,
         };
         let json = serde_json::to_value(&tag).unwrap();
-        assert_eq!(json["container_type"], "TagContainer");
+        assert_eq!(json["container_type"], "NestedTag");
 
         let svc = NodeType::Container {
-            container_type: ContainerType::ServiceCategoryContainer,
+            container_type: ContainerType::NestedServiceCategory,
             parent_container_id: Some(Uuid::new_v4()),
             layer_hint: None,
             icon: None,
             color: None,
         };
         let json = serde_json::to_value(&svc).unwrap();
-        assert_eq!(json["container_type"], "ServiceCategoryContainer");
+        assert_eq!(json["container_type"], "NestedServiceCategory");
+    }
+
+    #[test]
+    fn test_service_category_container() {
+        let node_type = NodeType::Container {
+            container_type: ContainerType::ServiceCategory,
+            parent_container_id: None,
+            layer_hint: None,
+            icon: Some("Zap".to_string()),
+            color: Some("Purple".to_string()),
+        };
+        let json = serde_json::to_value(&node_type).unwrap();
+        assert_eq!(json["container_type"], "ServiceCategory");
+        assert!(json.get("parent_container_id").is_none());
+    }
+
+    #[test]
+    fn test_node_element_constructor() {
+        let id = Uuid::new_v4();
+        let container_id = Uuid::new_v4();
+        let host_id = Uuid::new_v4();
+        let node = Node::element(id, container_id, host_id, ElementEntityType::Service {});
+        assert_eq!(node.id, id);
+        assert!(node.header.is_none());
+        assert!(matches!(node.node_type, NodeType::Element { .. }));
+    }
+
+    #[test]
+    fn test_entity_discriminant_mapping() {
+        assert_eq!(
+            EntityDiscriminants::from(&ElementEntityType::Interface {
+                subnet_id: Uuid::nil(),
+                interface_id: None,
+            }),
+            EntityDiscriminants::Interface
+        );
+        assert_eq!(
+            EntityDiscriminants::from(&ElementEntityType::Service {}),
+            EntityDiscriminants::Service
+        );
     }
 }
 

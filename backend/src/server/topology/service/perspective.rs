@@ -1,4 +1,6 @@
-use super::{context::TopologyContext, l3_builder::L3Builder};
+use super::{
+    application_builder::ApplicationBuilder, context::TopologyContext, l3_builder::L3Builder,
+};
 use crate::server::topology::types::{
     edges::{Edge, TopologyPerspective},
     grouping::GroupingConfig,
@@ -12,6 +14,7 @@ pub trait PerspectiveBuilder {
 pub fn builder_for_perspective(perspective: TopologyPerspective) -> Box<dyn PerspectiveBuilder> {
     match perspective {
         TopologyPerspective::L3Logical => Box::new(L3Builder),
+        TopologyPerspective::Application => Box::new(ApplicationBuilder),
         // Future perspectives will have their own builders
         _ => Box::new(L3Builder),
     }

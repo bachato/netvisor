@@ -401,7 +401,7 @@ describe('computeElkLayout', () => {
 		const nodes: TopologyNode[] = [
 			makeContainer(subnetId),
 			makeContainer(groupId, {
-				container_type: 'ServiceCategoryContainer',
+				container_type: 'NestedServiceCategory',
 				parent_container_id: subnetId
 			}),
 			makeElement(elem1, subnetId),

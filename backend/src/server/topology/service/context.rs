@@ -14,7 +14,7 @@ use crate::server::{
     topology::types::{
         base::TopologyOptions,
         edges::Edge,
-        nodes::{Node, NodeType},
+        nodes::{ElementEntityType, Node, NodeType},
     },
 };
 
@@ -211,9 +211,13 @@ impl<'a> TopologyContext<'a> {
         nodes
             .iter()
             .find(|n| n.id == node_id)
-            .map(|node| match node.node_type {
-                NodeType::Element { subnet_id, .. } => subnet_id,
-                NodeType::Container { .. } => node.id,
+            .and_then(|node| match &node.node_type {
+                NodeType::Element {
+                    element: ElementEntityType::Interface { subnet_id, .. },
+                    ..
+                } => Some(*subnet_id),
+                NodeType::Container { .. } => Some(node.id),
+                _ => None,
             })
     }
 

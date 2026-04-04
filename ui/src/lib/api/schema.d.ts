@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-04T14:49:45.011401Z",
-             *       "id": "50cbeae8-9742-4edf-8938-b711f613e646",
+             *       "created_at": "2026-04-04T17:27:36.649278Z",
+             *       "id": "ed70a49e-7652-4319-901b-7918122b5d6e",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-04T14:49:45.011401Z"
+             *       "updated_at": "2026-04-04T17:27:36.649278Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3153,14 +3153,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-04T14:49:44.991994Z",
-             *               "id": "b8b97018-b765-4e01-ade5-959db2d2e1aa",
+             *               "created_at": "2026-04-04T17:27:36.636669Z",
+             *               "id": "cbf66b46-e287-4e5b-a719-6277cf61d503",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-04T14:49:44.991994Z"
+             *               "updated_at": "2026-04-04T17:27:36.636669Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3169,7 +3169,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "FreeIPA",
+             *           "service_definition": "Ollama",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3425,14 +3425,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-04T14:49:45.006366Z",
-             *           "id": "a9b72bfd-0a1c-4769-b71a-a807fb262e2d",
+             *           "created_at": "2026-04-04T17:27:36.645519Z",
+             *           "id": "303c544e-d086-4b0b-b29c-4edc38ab5b14",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-04T14:49:45.006366Z"
+             *           "updated_at": "2026-04-04T17:27:36.645519Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3441,7 +3441,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "FreeIPA",
+             *       "service_definition": "Ollama",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3768,14 +3768,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-04T14:49:44.992214Z",
-         *       "id": "164079b1-00bc-4cd0-8ec4-43d431866126",
+         *       "created_at": "2026-04-04T17:27:36.636895Z",
+         *       "id": "e5754ecf-1810-4337-979a-92bd651ba714",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-04T14:49:44.992214Z"
+         *       "updated_at": "2026-04-04T17:27:36.636895Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3895,7 +3895,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "TagContainer" | "ServiceCategoryContainer";
+        ContainerType: "Subnet" | "ServiceCategory" | "NestedTag" | "NestedServiceCategory";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -3960,7 +3960,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "FreeIPA",
+         *           "service_definition": "Ollama",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4488,8 +4488,17 @@ export interface components {
         };
         /** @enum {string} */
         EdgeTypeDiscriminants: "Interface" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke" | "PhysicalLink";
-        /** @enum {string} */
-        ElementEntityType: "Interface";
+        ElementEntityType: {
+            /** @enum {string} */
+            element_type: "Interface";
+            /** Format: uuid */
+            interface_id?: string | null;
+            /** Format: uuid */
+            subnet_id: string;
+        } | {
+            /** @enum {string} */
+            element_type: "Service";
+        };
         /** @description Request body for emailing an install command to the authenticated user. */
         EmailInstallCommandRequest: {
             install_command: string;
@@ -4770,14 +4779,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-04T14:49:44.991623Z",
-         *               "id": "612a8107-02ed-4fe4-a735-5bb87ab42700",
+         *               "created_at": "2026-04-04T17:27:36.636371Z",
+         *               "id": "c7636c43-1b16-4e4a-8891-f1264333c25c",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-04T14:49:44.991623Z"
+         *               "updated_at": "2026-04-04T17:27:36.636371Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4786,7 +4795,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "FreeIPA",
+         *           "service_definition": "Ollama",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5226,7 +5235,7 @@ export interface components {
         Node: components["schemas"]["NodeType"] & {
             /**
              * Format: uuid
-             * @description ID of the element rule that created this container (for TagContainer/ServiceCategoryContainer)
+             * @description ID of the element rule that created this container (for NestedTag/NestedServiceCategory)
              */
             element_rule_id?: string | null;
             header?: string | null;
@@ -5250,19 +5259,15 @@ export interface components {
             node_type: "Container";
             /** Format: uuid */
             parent_container_id?: string | null;
-        } | {
+        } | (components["schemas"]["ElementEntityType"] & {
             /** Format: uuid */
             container_id?: string;
-            element_type?: components["schemas"]["ElementEntityType"];
             /** Format: uuid */
             host_id: string;
-            /** Format: uuid */
-            interface_id?: string | null;
+        } & {
             /** @enum {string} */
             node_type: "Element";
-            /** Format: uuid */
-            subnet_id: string;
-        };
+        });
         OidcProviderMetadata: {
             logo?: string | null;
             name: string;
@@ -5574,6 +5579,11 @@ export interface components {
              */
             offset?: number | null;
         };
+        PerspectiveOptionOverrides: {
+            container_rules?: components["schemas"]["GraphRule_ContainerRule"][] | null;
+            element_rules?: components["schemas"]["GraphRule_ElementRule"][] | null;
+            hide_service_categories?: components["schemas"]["ServiceCategory"][] | null;
+        };
         PlanConfig: {
             /** Format: int64 */
             base_cents: number;
@@ -5849,14 +5859,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-04T14:49:44.992140Z",
-         *           "id": "85918db4-2eaa-450d-9bbd-b6e829c3a7bc",
+         *           "created_at": "2026-04-04T17:27:36.636821Z",
+         *           "id": "9a3a1418-089d-478a-8f17-c9bb5bc3d7fb",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-04T14:49:44.992140Z"
+         *           "updated_at": "2026-04-04T17:27:36.636821Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5865,7 +5875,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "FreeIPA",
+         *       "service_definition": "Ollama",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6272,6 +6282,9 @@ export interface components {
             hide_service_categories: components["schemas"]["ServiceCategory"][];
             hide_vm_title_on_docker_container: boolean;
             perspective?: components["schemas"]["TopologyPerspective"];
+            perspective_overrides?: {
+                [key: string]: components["schemas"]["PerspectiveOptionOverrides"];
+            } | null;
         };
         /** @description Filter settings for hiding entities by tag in topology visualization. */
         TopologyTagFilter: {
