@@ -1,3 +1,5 @@
+use crate::server::shared::types::metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider};
+use crate::server::shared::types::{Color, Icon};
 use crate::server::subnets::r#impl::types::SubnetType;
 use crate::server::topology::types::edges::Edge;
 use crate::server::topology::types::layout::{Ixy, Uxy};
@@ -19,12 +21,92 @@ pub struct Node {
     pub element_rule_id: Option<Uuid>,
 }
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Default,
+    Serialize,
+    Deserialize,
+    Eq,
+    PartialEq,
+    Hash,
+    ToSchema,
+    EnumIter,
+    IntoStaticStr,
+)]
 pub enum ContainerType {
     #[default]
     Subnet,
     TagGroup,
     ServiceCategoryGroup,
+    Ungrouped,
+}
+
+impl HasId for ContainerType {
+    fn id(&self) -> &'static str {
+        self.into()
+    }
+}
+
+impl EntityMetadataProvider for ContainerType {
+    fn color(&self) -> Color {
+        match self {
+            ContainerType::Subnet => Color::Blue,
+            ContainerType::TagGroup => Color::Orange,
+            ContainerType::ServiceCategoryGroup => Color::Purple,
+            ContainerType::Ungrouped => Color::Gray,
+        }
+    }
+
+    fn icon(&self) -> Icon {
+        match self {
+            ContainerType::Subnet => Icon::Network,
+            ContainerType::TagGroup => Icon::Tag,
+            ContainerType::ServiceCategoryGroup => Icon::Layers,
+            ContainerType::Ungrouped => Icon::Box,
+        }
+    }
+}
+
+impl TypeMetadataProvider for ContainerType {
+    fn name(&self) -> &'static str {
+        match self {
+            ContainerType::Subnet => "Subnet",
+            ContainerType::TagGroup => "Tag group",
+            ContainerType::ServiceCategoryGroup => "Service category group",
+            ContainerType::Ungrouped => "Ungrouped",
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        match self {
+            ContainerType::Subnet => "Network subnet container",
+            ContainerType::TagGroup => "Nodes grouped by tag",
+            ContainerType::ServiceCategoryGroup => "Nodes grouped by service category",
+            ContainerType::Ungrouped => "Nodes not in any group",
+        }
+    }
+
+    fn metadata(&self) -> serde_json::Value {
+        let (padding_top, padding_side) = match self {
+            ContainerType::Subnet => (25, 25),
+            // All subgroup types use the same padding for grid alignment
+            ContainerType::TagGroup | ContainerType::ServiceCategoryGroup | ContainerType::Ungrouped => (30, 20),
+        };
+        let (collapsed_width, collapsed_height) = match self {
+            ContainerType::Subnet => (200, 80),
+            _ => (250, 40),
+        };
+        serde_json::json!({
+            "is_collapsible": matches!(self, ContainerType::Subnet | ContainerType::TagGroup | ContainerType::ServiceCategoryGroup),
+            "has_border": !matches!(self, ContainerType::Ungrouped),
+            "has_header": matches!(self, ContainerType::TagGroup | ContainerType::ServiceCategoryGroup),
+            "has_subnet": matches!(self, ContainerType::Subnet),
+            "padding": { "top": padding_top, "left": padding_side, "bottom": padding_side, "right": padding_side },
+            "collapsed_size": { "width": collapsed_width, "height": collapsed_height },
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]

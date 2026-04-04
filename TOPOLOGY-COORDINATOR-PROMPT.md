@@ -1,95 +1,215 @@
-# Topology: Grouping Architecture Rework
+# Topology: Platform Extraction + Perspectives
 
 ## Your Role
 
-You are the coordinator for reworking the grouping rule architecture. This is a focused refactor of existing functionality — no new features, no new perspectives.
+You are the coordinator for making the topology system perspective-ready and then implementing perspectives. This is a three-batch effort: platform extraction, first perspective, remaining perspectives.
 
 ## Background
 
 Read these documents first:
 
-1. **UX Design Doc**: `/Users/maya/.claude/projects/-Users-maya-dev-scanopy/planned-work/topology-visualization-redesign.md` — See "Grouping Rule" section for the container rule / leaf rule distinction.
-2. **Project Instructions**: `/Users/maya/dev/scanopy/CLAUDE.md` — Coding conventions, worktree workflow, coordinator responsibilities.
+1. **UX Design Doc**: `/Users/maya/.claude/projects/-Users-maya-dev-scanopy/planned-work/topology-visualization-redesign.md` — The full UX plan. Key sections: four perspectives, Perspective × C4 matrix, container rules vs leaf rules, primary/overlay edge classification, Layout Engine (elkjs + d3-force), Service Flows.
+2. **Project Instructions**: `/Users/maya/dev/scanopy/CLAUDE.md`
+3. **Architecture Audit**: `/Users/maya/.claude/plans/toasty-plotting-kahn.md` — Detailed audit of what needs fixing, with file paths, line numbers, and recommended fixes. **Read this carefully** — it's the basis for Batch 1.
 
-## The Problem
+## Current State
 
-The current `GroupingRule` enum mixes two independent dimensions into a single priority-ordered list:
+L3 topology is working with:
+- Generalized node types (Container / Element) with metadata-driven frontend rendering
+- GroupingConfig with container rules and leaf rules (independent dimensions)
+- Edge classification (primary/overlay per perspective, backend-driven)
+- elkjs compound layered layout (client-side)
+- C4-1 collapse, edge bundling, hull overlays
+- Clean backend/frontend separation (backend provides structure + hints, frontend owns layout)
+
+## Architecture audit findings
+
+The audit identified these issues blocking multi-perspective support:
+
+| Priority | Issue | Location |
+|---|---|---|
+| **P0** | `build_graph()` is monolithic L3 — no PerspectiveBuilder trait | `topology/service/main.rs`, `graph_builder.rs` |
+| **P1** | TopologyRequestOptions is flat, not perspective-indexed | `topology/types/base.rs`, frontend options store |
+| **P2** | No LayoutEngine interface — ELK called directly from viewer | `elk-layout.ts`, `BaseTopologyViewer.svelte` |
+| **P2** | Grouping rules have no `applicable_perspectives()` | `topology/types/grouping.rs` |
+| **P3** | `L3_OVERLAY_EDGE_TYPES` constant is L3-hardcoded | `edge-classification.ts` |
+| **P3** | Frontend classification fallback is L3-only (dead code) | `edge-classification.ts` |
+| **P3** | Structure key doesn't include perspective | `BaseTopologyViewer.svelte` |
+
+See the full audit at the path above for detailed code references and recommended fixes.
+
+---
+
+## Batch 1: Platform Extraction
+
+Pure refactoring. No new features, no visual changes. L3 topology should work identically before and after.
+
+### 1a. PerspectiveBuilder trait (P0)
+
+Extract a trait that each perspective implements:
 
 ```rust
-// Current state (backend/src/server/topology/types/grouping.rs)
-pub struct GroupingConfig {
-    pub primary: Vec<GroupingRule>,       // These compete in one list
-    pub cross_cutting: Vec<GroupingRule>, // Currently unused
-    pub filters: Vec<NodeFilter>,
-}
-
-pub enum GroupingRule {
-    BySubnet,                               // Container structure
-    ByServiceCategory(Vec<ServiceCategory>),// Leaf organization
-    ByVirtualizingService,                  // Container structure
-    ByTag { tag_ids: Vec<Uuid>, label: String }, // Leaf organization
+trait PerspectiveBuilder {
+    fn create_containers(&self, ctx: &TopologyContext) -> Vec<Node>;
+    fn create_elements(&self, ctx: &TopologyContext, containers: &[Node]) -> Vec<Node>;
+    fn create_edges(&self, ctx: &TopologyContext) -> Vec<Edge>;
+    fn classify_edge(&self, edge: &Edge) -> EdgeClassification;
+    fn layout_hints(&self, containers: &mut [Node]);
 }
 ```
 
-**ByVirtualizingService** changes which containers exist (merges Docker bridge subnets under their host). **ByServiceCategory** and **ByTag** organize nodes within an existing container into sub-groups. These are different operations that should be configured independently, not prioritized against each other.
+Move all current L3 logic (subnet-as-container, interface-as-element, SubnetType::vertical_order hints) into `L3Builder`. `build_graph()` becomes a generic orchestrator calling the trait. See audit Section 1 for specific code to refactor.
 
-## The Target
+### 1b. Perspective-indexed options (P1)
+
+Restructure TopologyRequestOptions:
 
 ```rust
-pub struct GroupingConfig {
-    pub container_rules: Vec<ContainerRule>,  // How containers relate / nest
-    pub leaf_rules: Vec<LeafRule>,            // How nodes within containers are sub-grouped
-    pub filters: Vec<NodeFilter>,
+pub struct TopologyRequestOptions {
+    pub perspective: TopologyPerspective,
+    pub per_perspective: HashMap<TopologyPerspective, PerspectiveOptions>,
+    // global options
+    pub hide_ports: bool,
+}
+
+pub struct PerspectiveOptions {
+    pub container_rules: Vec<GraphRule<ContainerRule>>,
+    pub element_rules: Vec<GraphRule<ElementRule>>,
+    pub hide_service_categories: Vec<ServiceCategory>,
+    // perspective-specific display toggles
 }
 ```
 
-**Container rules** — affect macro structure (which containers exist, how they merge/nest):
-- `ByVirtualizingService` — merge Docker bridge subnets under their host
-- The perspective's implicit primary (BySubnet for L3) is always present
-- Future: ByVLAN (nest subnets under VLAN groups)
+Frontend stores per-perspective options. Switching perspectives swaps the active set, preserving each perspective's customization.
 
-**Leaf rules** — affect micro organization within each container:
-- `ByServiceCategory(Vec<ServiceCategory>)` — sub-group infra services (replaces "left zone")
-- `ByTag { tag_ids, label }` — sub-group by user-defined tags
+### 1c. LayoutEngine interface (P2)
 
-A user configures both dimensions independently. "Merge Docker bridges by host" (container rule) + "group DNS and ReverseProxy into infra zone" (leaf rule) compose without conflict.
+```typescript
+interface LayoutEngine {
+    compute(input: LayoutInput): Promise<LayoutResult>;
+}
+```
 
-## What to build
+Rename `ElkLayoutInput`/`ElkLayoutResult` to `LayoutInput`/`LayoutResult`. Wrap current elkjs code in `ElkLayoutEngine`. `BaseTopologyViewer` calls `engine.compute()` without knowing which engine. Engine selected by perspective.
 
-### Backend
+### 1d. Grouping rule perspective scoping (P2)
 
-1. **Split the enum** — Create `ContainerRule` and `LeafRule` enums. Move each variant to its proper type.
-2. **Update GroupingConfig** — Replace `primary: Vec<GroupingRule>` with `container_rules: Vec<ContainerRule>` + `leaf_rules: Vec<LeafRule>`.
-3. **Update graph building** — Wherever `GroupingConfig` is consumed, process container rules and leaf rules in their respective phases of graph construction.
-4. **Update TopologyRequestOptions** — Persist the split structure. Backward-compatible deserialization so existing stored topologies (which have the old boolean flags or old GroupingRule format) still load correctly. Serde aliases or migration-on-read.
-5. **Update `GroupingConfig::from_request_options()`** — Map legacy fields to the new split structure.
+Add `applicable_perspectives()` to ContainerRule and ElementRule. Frontend filters available rules by current perspective. BySubnet only shows in L3. ByVirtualizingService only shows in L3. Future BySwitch only shows in L2.
 
-### Frontend
+### 1e. Small fixes (P3)
 
-1. **Rework the options panel** — Replace the current Docker section and Left Zone section with two "Group by" sections: one for container rules, one for leaf rules.
-2. **Generic UI for both** — Each section is an ordered list of active rules with add/remove/reorder. Not hardcoded toggles. The add control offers the available rule types for that dimension (container: ByVirtualizingService, future others; leaf: ByServiceCategory, ByTag).
-3. **Rule configuration** — When adding a ByServiceCategory rule, user selects which categories. When adding a ByTag rule, user selects tags and provides a label. ByVirtualizingService has no additional config.
-4. **Backward compatibility in UI** — Existing topologies with legacy options should display their grouping correctly in the new UI on first load.
+- Include `perspective` in structure key
+- Remove L3 fallback in `classifyEdge()` (backend always sends classification now)
+- Replace `L3_OVERLAY_EDGE_TYPES` with `getDefaultHiddenEdgeTypes(perspective)`
+- Skip old-node handle preservation on perspective change
 
-### What NOT to build
+### Batch 1 acceptance criteria
 
-- No new grouping rule types (ByVLAN, BySwitch, etc.) — those come with perspectives.
-- No perspective switching UI.
-- No Service Flow rework.
-- No changes to edge classification or layout algorithm.
+- L3 topology renders identically to before
+- `build_graph()` dispatches to `L3Builder` via trait
+- Options are perspective-indexed (switching to another perspective and back preserves L3 settings)
+- Layout goes through `LayoutEngine` interface
+- Grouping rules scoped to applicable perspectives
+- All tests pass
 
-## Step 1: Assess
+**After Batch 1: STOP. Merge to dev. Present to user. Verify L3 still works. Do not proceed until approved.**
 
-1. Check `dev` branch state, active worktrees, test status
-2. Read current GroupingConfig, GroupingRule enum, graph building code that consumes them
-3. Read the frontend options panel (OptionsContent.svelte and related)
-4. Read how TopologyRequestOptions is serialized/deserialized (serde attributes, stored JSONB format)
-5. Identify all call sites that pattern-match on GroupingRule variants — these all need updating
+---
 
-**Present assessment and task breakdown to user. Wait for approval before creating worktrees.**
+## Batch 2: Application Perspective + Service Flows
 
-## Step 2: Execute
+The Application perspective is the best first perspective to implement because:
+- All data exists (services, categories, RequestPath/HubAndSpoke groups, bindings)
+- Uses the same layout engine (elkjs compound layered) — no d3-force needed yet
+- Forces the Service Flow rework (Groups → Service Flows), which needs to happen regardless
+- Exercises the PerspectiveBuilder trait and perspective-indexed options with a real second perspective
 
-Break into worktree tasks (likely backend + frontend in parallel since the API contract between them is the GroupingConfig shape). Create worktrees per CLAUDE.md coordinator workflow.
+### 2a. ApplicationBuilder
 
-**After completion: merge to dev, confirm existing L3 topologies render identically. The user will want to do additional UI refinements after this lands, so keep the UI clean and extensible.**
+Implement the PerspectiveBuilder trait for Application:
+- **Containers:** Service categories (ByServiceCategory as implicit container rule)
+- **Elements:** Individual services, labeled with name + host
+- **Primary edges:** Service Flow edges (RequestPath, HubAndSpoke)
+- **Overlay edges:** ServiceVirtualization (which services are containerized)
+- **Layout hints:** Service categories could have a natural ordering (infrastructure services top, application services middle, end-user services bottom) — or no layer hints, letting elkjs optimize freely
+
+### 2b. Service Flow rework
+
+Rename "Groups" → "Service Flows" throughout UI and API:
+- Update entity name, API endpoints, UI labels, i18n keys
+- **Do NOT rename the backend `Group` entity/table yet if it's too invasive** — the user-facing rename is what matters. Backend can keep the name internally if needed.
+
+Rework the creation UX:
+- Current: user must specify port bindings (L3 implementation detail)
+- Target: user picks services (service A → service B), system resolves to bindings internally
+- Port binding selection becomes optional refinement for power users
+- Service Flows are created/managed from the Application perspective (or a global management view)
+
+### 2c. Perspective selector UI
+
+A control for switching perspectives. Progressive disclosure — L3 is default, others are discoverable.
+- Tabs, dropdown, or segmented control in the topology toolbar
+- Switching triggers: swap options set, rebuild graph via new PerspectiveBuilder, re-layout
+- Respect the P3 fixes from Batch 1 (structure key includes perspective, handle preservation skipped on switch)
+
+### Batch 2 acceptance criteria
+
+- User can switch between L3 and Application perspectives
+- Application perspective shows services grouped by category with Service Flow edges
+- Service Flows can be created at service level (not just port binding level)
+- UI says "Service Flows" everywhere, not "Groups"
+- Switching L3 → Application → L3 preserves each perspective's options
+- All tests pass
+
+**After Batch 2: STOP. Merge to dev. Present to user. Verify both perspectives work. Do not proceed until approved.**
+
+---
+
+## Batch 3: Infrastructure + L2 Perspectives
+
+### 3a. InfrastructureBuilder
+
+- **Containers:** Hypervisor hosts / Docker hosts
+- **Elements:** VMs / containers (as hosts or services depending on grouping)
+- **Primary relationship:** Virtualization expressed as containment (VM inside hypervisor container)
+- **Container rules:** ByHypervisor (default), ByHost, future ByWorkloadGroup
+- **Layout:** elkjs compound layered
+- **Data:** HostVirtualization and ServiceVirtualization relationships already exist
+
+### 3b. L2Builder + force-directed layout
+
+- **Containers:** Switches (hosts with IfEntry/SNMP data)
+- **Elements:** Ports (IfEntry records)
+- **Primary edges:** PhysicalLink (LLDP/CDP)
+- **Layout:** d3-force (new ForceLayoutEngine implementing the LayoutEngine interface)
+- **Container rules:** BySwitch (default), future ByVLAN
+- **Data:** LLDP/CDP neighbor data, IfEntry port info all exist
+
+This batch requires:
+- `ForceLayoutEngine` implementation (d3-force)
+- Two new PerspectiveBuilder implementations
+- New ContainerRule variants (ByHypervisor, BySwitch) with perspective scoping
+- New ElementEntityType variants (Port, Host-as-element) with resolver metadata
+
+### Batch 3 acceptance criteria
+
+- All four perspectives render and are switchable
+- L2 uses force-directed layout, others use elkjs
+- Infrastructure shows VMs inside hypervisor containers
+- Each perspective's grouping rules are scoped correctly
+- All tests pass
+
+---
+
+## Step 1: Assess and Plan
+
+Before starting Batch 1:
+
+1. Check `dev` branch state, worktrees, test status
+2. Read the architecture audit in detail — verify the code references are still accurate after the naming normalization + grouping rework
+3. Break Batch 1 into parallelizable worktree tasks. Likely:
+   - Backend: PerspectiveBuilder trait + L3Builder extraction + perspective-indexed options + rule scoping
+   - Frontend: LayoutEngine interface + perspective-indexed option store + P3 small fixes
+   - These may be parallelizable since they touch different layers
+
+**Present task breakdown to user and wait for approval before creating worktrees.**

@@ -12,6 +12,7 @@ import featuresJson from '$lib/data/features.json';
 import permissionsJson from '$lib/data/permissions.json';
 import credentialTypesJson from '$lib/data/credential-types.json';
 import conceptsJson from '$lib/data/concepts.json';
+import containerTypesJson from '$lib/data/container-types.json';
 import {
 	createColorHelper,
 	createIconComponent,
@@ -78,6 +79,7 @@ export interface MetadataRegistry {
 	permissions: TypeMetadata[];
 	concepts: EntityMetadata[];
 	credential_types: TypeMetadata[];
+	container_types: TypeMetadata[];
 }
 
 // Utility type to add proper typing to the metadata field
@@ -193,7 +195,8 @@ export const metadata = writable<MetadataRegistry>({
 	features: featuresJson,
 	permissions: permissionsJson,
 	concepts: conceptsJson,
-	credential_types: credentialTypesJson
+	credential_types: credentialTypesJson,
+	container_types: containerTypesJson
 } as unknown as MetadataRegistry);
 
 // Shared color helper functions that work for both TypeMetadata and EntityMetadata
@@ -377,6 +380,18 @@ export const credentialTypes = createTypeMetadataHelpers<
 	'credential_types',
 	CredentialTypeMetadata
 >('credential_types');
+
+export interface ContainerTypeMetadata {
+	is_collapsible: boolean;
+	has_border: boolean;
+	has_header: boolean;
+	has_subnet: boolean;
+	padding: { top: number; left: number; bottom: number; right: number };
+	collapsed_size: { width: number; height: number };
+}
+export const containerTypes = createTypeMetadataHelpers<'container_types', ContainerTypeMetadata>(
+	'container_types'
+);
 
 /**
  * Generic metadata item structure for static fixtures.

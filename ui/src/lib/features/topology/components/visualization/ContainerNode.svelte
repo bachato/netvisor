@@ -12,7 +12,7 @@
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Color } from '$lib/shared/utils/styling';
-	import { subnetTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { subnetTypes, serviceDefinitions, containerTypes } from '$lib/shared/stores/metadata';
 	import { isContainerSubnet } from '$lib/features/subnets/queries';
 	import { topology_hostsCount } from '$lib/paraglide/messages';
 	import {
@@ -131,9 +131,11 @@
 	let containerType = $derived(
 		((data as Record<string, unknown>)?.container_type as string) ?? 'Subnet'
 	);
-	let isSubgroup = $derived(
-		containerType === 'TagGroup' || containerType === 'ServiceCategoryGroup'
-	);
+	let containerMeta = $derived(containerTypes.getMetadata(containerType));
+	let isSubgroup = $derived(containerMeta.has_header || containerType === 'Ungrouped');
+	let isCollapsible = $derived(containerMeta.is_collapsible);
+	let hasBorder = $derived(containerMeta.has_border);
+	let hasHeader = $derived(containerMeta.has_header);
 
 	let resolved = $derived(
 		topology ? resolveContainerNode(id, data as TopologyNode, topology) : null
@@ -255,18 +257,22 @@
 </script>
 
 {#if isSubgroup}
-	<!-- Sub-group container (TagGroup / ServiceCategoryGroup) -->
+	<!-- Sub-group container (TagGroup / ServiceCategoryGroup / Ungrouped) -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="relative"
-		style="{nodeStyle} opacity: {nodeOpacity}; transition: opacity 0.2s ease-in-out; cursor: pointer;"
-		onpointerup={(e) => {
-			e.stopPropagation();
-			handleChevronClick(e);
-		}}
+		style="{nodeStyle} opacity: {nodeOpacity}; transition: opacity 0.2s ease-in-out;{isCollapsible
+			? ' cursor: pointer;'
+			: ''}"
+		onpointerup={isCollapsible
+			? (e) => {
+					e.stopPropagation();
+					handleChevronClick(e);
+				}
+			: undefined}
 	>
-		{#if isCollapsed}
-			<!-- Collapsed subgroup: compact inline header IS the entire representation -->
+		{#if isCollapsed && isCollapsible}
+			<!-- Collapsed subgroup: compact inline header -->
 			<div
 				class="nopan nodrag text-secondary z-100 absolute left-2 top-1 flex items-center gap-1 rounded px-2 py-1"
 			>
@@ -284,11 +290,13 @@
 				</span>
 			</div>
 		{:else}
-			{#if groupHeader || groupLabels.length > 0}
+			{#if hasHeader && (groupHeader || groupLabels.length > 0)}
 				<div
 					class="nopan nodrag text-secondary z-100 absolute left-2 top-1 flex items-center gap-1 rounded-t px-2 py-0.5"
 				>
-					<ChevronDown class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
+					{#if isCollapsible}
+						<ChevronDown class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
+					{/if}
 					{#if groupHeader}
 						<span class="text-tertiary whitespace-nowrap text-xs font-medium">
 							{groupHeader}{groupLabels.length > 0 ? ':' : ''}
@@ -300,10 +308,12 @@
 				</div>
 			{/if}
 
-			<div
-				class="rounded-lg border border-dashed border-gray-300 transition-all duration-200 dark:border-gray-600"
-				style="background: var(--color-topology-subgroup-bg); width: 100%; height: 100%; position: relative; overflow: hidden;"
-			></div>
+			{#if hasBorder}
+				<div
+					class="rounded-lg border border-dashed border-gray-300 transition-all duration-200 dark:border-gray-600"
+					style="background: var(--color-topology-subgroup-bg); width: 100%; height: 100%; position: relative; overflow: hidden;"
+				></div>
+			{/if}
 		{/if}
 	</div>
 {:else if subnetRenderData}
