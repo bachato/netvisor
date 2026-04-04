@@ -377,8 +377,8 @@
 		>
 			{#if isCollapsed}
 				<!-- Collapsed summary -->
-				<div class="flex flex-col items-center gap-1 px-4 py-3">
-					<span class="text-secondary text-sm font-medium">
+				<div class="flex min-w-48 flex-col items-center gap-2 px-6 py-4">
+					<span class="text-secondary text-base font-medium">
 						{topology_hostsCount({ count: childCount })}
 					</span>
 					{#each subgroupSummaries as summary (summary.groupId)}
