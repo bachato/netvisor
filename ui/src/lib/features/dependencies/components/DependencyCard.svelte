@@ -44,23 +44,25 @@
 	} = $props();
 
 	// Get services for this dependency via members
-	// Using $derived.by() for proper reactivity with complex computation
 	let dependencyServices = $derived.by(() => {
-		if (
-			dependency.dependency_type !== 'RequestPath' &&
-			dependency.dependency_type !== 'HubAndSpoke'
-		) {
-			return [];
-		}
-		if (servicesData.length === 0 || (dependency.members ?? []).length === 0) {
-			return [];
-		}
-		// Build a map of service.id -> service for lookup
+		if (servicesData.length === 0 || !dependency.members) return [];
 		const serviceMap = new Map(servicesData.map((s) => [s.id, s]));
+		const members = dependency.members;
 
-		return (dependency.members ?? [])
-			.map((member) => serviceMap.get(member.service_id))
-			.filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined);
+		if (members.type === 'Services') {
+			return members.service_ids
+				.map((id) => serviceMap.get(id))
+				.filter((s): s is NonNullable<typeof s> => s !== undefined);
+		} else {
+			// Bindings variant: derive services from binding IDs
+			return (
+				members.binding_ids
+					.map((bid) => servicesData.find((s) => s.bindings.some((b) => b.id === bid)))
+					.filter((s): s is NonNullable<typeof s> => s !== undefined)
+					// Deduplicate (a service could have multiple bindings in the chain)
+					.filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
+			);
+		}
 	});
 
 	let dependencyServiceLabels = $derived(

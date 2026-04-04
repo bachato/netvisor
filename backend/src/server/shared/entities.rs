@@ -158,7 +158,7 @@ impl EntityMetadataProvider for EntityDiscriminants {
             EntityDiscriminants::IfEntry => Icon::Cable,
             EntityDiscriminants::Credential => Icon::Asterisk,
             EntityDiscriminants::Subnet => Icon::Network,
-            EntityDiscriminants::Dependency => Icon::Group,
+            EntityDiscriminants::Dependency => Icon::Waypoints,
             EntityDiscriminants::Topology => Icon::ChartBarStacked,
 
             EntityDiscriminants::Unknown => Icon::CircleQuestionMark,

@@ -4046,6 +4046,7 @@ fn generate_user_api_keys(
 
 /// Generate demo dependencies using actual created services.
 /// This must be called AFTER services are created to ensure binding IDs are correct.
+#[allow(clippy::vec_init_then_push)]
 pub fn generate_dependencies(
     networks: &[Network],
     _services: &[Service],

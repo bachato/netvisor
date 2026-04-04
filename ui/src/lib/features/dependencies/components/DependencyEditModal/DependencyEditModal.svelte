@@ -6,7 +6,7 @@
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import { createEmptyDependencyFormData } from '../../queries';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
-	import type { Dependency, EdgeStyle } from '../../types/base';
+	import type { Dependency, DependencyMembers, EdgeStyle } from '../../types/base';
 	import type { Color } from '$lib/shared/utils/styling';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { entities, dependencyTypes } from '$lib/shared/stores/metadata';
@@ -17,7 +17,10 @@
 	import { usePortsQuery } from '$lib/features/ports/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import { BindingWithServiceDisplay } from '$lib/shared/components/forms/selection/display/BindingWithServiceDisplay.svelte';
+	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
+	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
+	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
 	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
 	import EdgeStyleForm from './EdgeStyleForm.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
@@ -25,6 +28,8 @@
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
+	import type { Service } from '$lib/features/services/types/base';
+	import { SvelteMap } from 'svelte/reactivity';
 	import {
 		common_back,
 		common_cancel,
@@ -37,6 +42,8 @@
 		common_next,
 		common_saving,
 		common_update,
+		dependencies_bindingLevel,
+		dependencies_bindingLevelHelp,
 		dependencies_createDependency,
 		dependencies_descriptionPlaceholder,
 		dependencies_edgeAppearance,
@@ -44,12 +51,16 @@
 		dependencies_dependencyNamePlaceholder,
 		dependencies_dependencyType,
 		dependencies_loadingServices,
-		dependencies_noBindingsYet,
-		dependencies_selectBinding,
-		dependencies_serviceBindings,
-		dependencies_serviceBindingsHelp,
-		dependencies_serviceBindingsInfoTitle,
-		dependencies_serviceBindingsInfoBody
+		dependencies_noServicesYet,
+		dependencies_selectBindingForService,
+		dependencies_selectBindingRequired,
+		dependencies_selectService,
+		dependencies_serviceLevel,
+		dependencies_serviceLevelHelp,
+		common_services,
+		dependencies_servicesHelp,
+		dependencies_servicesInfoTitle,
+		dependencies_servicesInfoBody
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -75,7 +86,6 @@
 	// TanStack Query hooks
 	const servicesQuery = useServicesCacheQuery();
 	const networksQuery = useNetworksQuery();
-	// Use limit: 0 to get all hosts for dependency edit modal
 	const hostsQuery = useHostsQuery({ limit: 0 });
 	const interfacesQuery = useInterfacesQuery();
 	const portsQuery = usePortsQuery();
@@ -90,13 +100,12 @@
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 	let defaultNetworkId = $derived(networksData[0]?.id ?? '');
 
-	// Helper to check if subnet is a container subnet
 	let isContainerSubnetFn = $derived((subnetId: string) => {
 		const subnet = subnetsData.find((s) => s.id === subnetId);
 		return subnet ? isContainerSubnet(subnet) : false;
 	});
 
-	// Context for BindingWithServiceDisplay
+	// Context for BindingWithServiceDisplay (used in per-service binding dropdowns)
 	let bindingContext = $derived({
 		services: servicesData,
 		hosts: hostsData,
@@ -120,9 +129,9 @@
 	let tabs = $derived([
 		{ id: 'details', label: common_details(), icon: Info },
 		{
-			id: 'bindings',
-			label: dependencies_serviceBindings(),
-			icon: entities.getIconComponent('Binding'),
+			id: 'services',
+			label: common_services(),
+			icon: entities.getIconComponent('Service'),
 			disabled: !isEditing && furthestReached < 1
 		},
 		{
@@ -148,11 +157,9 @@
 		}
 	}
 
-	// Wizard steps for progressive unlock in create mode
-	const wizardSteps = ['details', 'bindings', 'edge-style'];
+	const wizardSteps = ['details', 'services', 'edge-style'];
 	let isLastWizardStep = $derived(activeTab === wizardSteps[wizardSteps.length - 1]);
 
-	// Dynamic labels based on create/edit mode and tab position
 	let saveLabel = $derived(
 		isEditing ? common_update() : isLastWizardStep ? common_create() : common_next()
 	);
@@ -167,14 +174,22 @@
 	const form = createForm(() => ({
 		defaultValues: createEmptyDependencyFormData(''),
 		onSubmit: async ({ value }) => {
+			// Build members from local state
+			let members: DependencyMembers;
+			if (memberMode === 'Bindings') {
+				const bindingIds = selectedServiceIds
+					.map((svcId) => bindingSelections.get(svcId))
+					.filter((id): id is string => id !== undefined && id !== null);
+				members = { type: 'Bindings', binding_ids: bindingIds };
+			} else {
+				members = { type: 'Services', service_ids: [...selectedServiceIds] };
+			}
+
 			const dependencyData: Dependency = {
 				...(value as Dependency),
 				name: value.name.trim(),
 				description: value.description?.trim() || '',
-				// Use local state for values that need Svelte reactivity
-				members: memberBindingIds.length > 0
-					? { type: 'Bindings' as const, binding_ids: memberBindingIds }
-					: { type: 'Services' as const, service_ids: [] },
+				members,
 				color: edgeColor,
 				edge_style: edgeEdgeStyle
 			};
@@ -192,17 +207,26 @@
 		}
 	}));
 
-	// Local state to enable Svelte 5 reactivity
-	// (form.state.values is not tracked by $derived)
-	let memberBindingIds = $state<string[]>([]);
+	// Local state for Svelte 5 reactivity
+	let selectedServiceIds = $state<string[]>([]);
+	let memberMode = $state<'Services' | 'Bindings'>('Services');
+	let bindingSelections = new SvelteMap<string, string | null>();
 	let selectedNetworkId = $state<string>('');
 	let edgeColor = $state<Color>('Blue');
 	let edgeEdgeStyle = $state<EdgeStyle>('SmoothStep');
+
+	// Validation for binding mode: all services must have a binding selected
+	let bindingValidationError = $derived.by(() => {
+		if (memberMode !== 'Bindings' || selectedServiceIds.length === 0) return null;
+		const missing = selectedServiceIds.some((svcId) => !bindingSelections.get(svcId));
+		return missing ? dependencies_selectBindingRequired() : null;
+	});
 
 	// Reset form when modal opens
 	function handleOpen() {
 		const defaults = getDefaultValues();
 		form.reset(defaults);
+<<<<<<< HEAD
 		// Extract binding IDs from members for backward compatibility
 		const members = defaults.members;
 		if (members && 'binding_ids' in members) {
@@ -212,52 +236,119 @@
 		} else {
 			memberBindingIds = [];
 		}
+=======
+>>>>>>> feat/service-flow-rework
 		selectedNetworkId = defaults.network_id ?? '';
 		edgeColor = defaults.color || 'Blue';
 		edgeEdgeStyle = defaults.edge_style || 'SmoothStep';
 		activeTab = 'details';
 		furthestReached = 0;
+
+		// Initialize member state from existing dependency
+		const members = defaults.members;
+		if (members?.type === 'Bindings') {
+			memberMode = 'Bindings';
+			// Derive service IDs from binding IDs
+			const svcIds: string[] = [];
+			const bindings = new SvelteMap<string, string | null>();
+			for (const bindingId of members.binding_ids) {
+				const service = servicesData.find((s) => s.bindings.some((b) => b.id === bindingId));
+				if (service && !svcIds.includes(service.id)) {
+					svcIds.push(service.id);
+					bindings.set(service.id, bindingId);
+				}
+			}
+			selectedServiceIds = svcIds;
+			bindingSelections = bindings;
+		} else {
+			memberMode = 'Services';
+			selectedServiceIds = members?.service_ids ? [...members.service_ids] : [];
+			bindingSelections = new SvelteMap();
+		}
 	}
 
-	// Available service bindings (exclude already selected ones and Unclaimed Open Ports)
-	let availableServiceBindings = $derived.by(() => {
+	// Available services on the selected network (exclude already selected)
+	let availableServices = $derived.by(() => {
 		return servicesData
-			.filter((s) => s.network_id == selectedNetworkId)
+			.filter((s) => s.network_id === selectedNetworkId)
 			.filter((s) => s.service_definition !== 'Unclaimed Open Ports')
-			.flatMap((s) => s.bindings)
-			.filter((sb) => !memberBindingIds.some((binding) => binding === sb.id));
+			.filter((s) => !selectedServiceIds.includes(s.id));
 	});
 
-	let selectedServiceBindings = $derived.by(() => {
-		return memberBindingIds
-			.map((bindingId) => servicesData.flatMap((s) => s.bindings).find((sb) => sb.id === bindingId))
-			.filter(Boolean);
+	// Selected service objects (in order)
+	let selectedServices = $derived.by(() => {
+		return selectedServiceIds
+			.map((id) => servicesData.find((s) => s.id === id))
+			.filter((s): s is Service => s !== undefined);
 	});
 
-	// Handlers for service bindings
-	function handleAdd(bindingId: string) {
-		memberBindingIds = [...memberBindingIds, bindingId];
+	// Handlers for service list
+	function handleAddService(serviceId: string) {
+		selectedServiceIds = [...selectedServiceIds, serviceId];
 	}
 
-	function handleRemove(index: number) {
-		memberBindingIds = memberBindingIds.filter((_, i) => i !== index);
+	function handleRemoveService(index: number) {
+		const removedId = selectedServiceIds[index];
+		selectedServiceIds = selectedServiceIds.filter((_, i) => i !== index);
+		// Also remove any binding selection for this service
+		const newBindings = new SvelteMap(bindingSelections);
+		newBindings.delete(removedId);
+		bindingSelections = newBindings;
 	}
 
-	function handleServiceBindingsReorder(fromIndex: number, toIndex: number) {
+	function handleReorderServices(fromIndex: number, toIndex: number) {
 		if (fromIndex === toIndex) return;
-		const current = [...memberBindingIds];
-		const [movedBinding] = current.splice(fromIndex, 1);
-		current.splice(toIndex, 0, movedBinding);
-		memberBindingIds = current;
+		const current = [...selectedServiceIds];
+		const [moved] = current.splice(fromIndex, 1);
+		current.splice(toIndex, 0, moved);
+		selectedServiceIds = current;
+	}
+
+	// Handle member mode switch
+	function handleModeChange(mode: string) {
+		if (mode === 'Services') {
+			memberMode = 'Services';
+			// Clear binding selections but keep services
+			bindingSelections = new SvelteMap();
+		} else {
+			memberMode = 'Bindings';
+			// Initialize empty binding slots for existing services
+			const newBindings = new SvelteMap(bindingSelections);
+			for (const svcId of selectedServiceIds) {
+				if (!newBindings.has(svcId)) {
+					newBindings.set(svcId, null);
+				}
+			}
+			bindingSelections = newBindings;
+		}
+	}
+
+	// Handle binding selection for a specific service
+	function handleBindingSelect(serviceId: string, bindingId: string) {
+		const newBindings = new SvelteMap(bindingSelections);
+		newBindings.set(serviceId, bindingId);
+		bindingSelections = newBindings;
+	}
+
+	// Get available bindings for a specific service
+	function getBindingsForService(service: Service) {
+		return service.bindings.filter((b) => {
+			// Don't show bindings already selected for other services
+			for (const [svcId, bid] of bindingSelections) {
+				if (svcId !== service.id && bid === b.id) return false;
+			}
+			return true;
+		});
 	}
 
 	async function handleSubmit() {
 		await submitForm(form);
 	}
 
-	// Handle form-based submission for create flow with steps
 	async function handleFormSubmit() {
 		if (isEditing || isLastWizardStep) {
+			// Validate binding mode before submit
+			if (bindingValidationError) return;
 			handleSubmit();
 		} else {
 			const isValid = await validateForm(form);
@@ -290,7 +381,6 @@
 		}
 	}
 
-	// Dependency type options
 	let dependencyTypeOptions = $derived(
 		dependencyTypes.getItems().map((dt) => ({
 			value: dt.id,
@@ -300,11 +390,15 @@
 
 	let colorHelper = entities.getColorHelper('Dependency');
 
-	// Read-only formData for EdgeStyleForm display (uses callbacks for changes)
 	let edgeStyleFormData = $derived({
 		color: edgeColor,
 		edge_style: edgeEdgeStyle
 	} as Dependency);
+
+	let modeOptions = [
+		{ value: 'Services', label: dependencies_serviceLevel() },
+		{ value: 'Bindings', label: dependencies_bindingLevel() }
+	];
 </script>
 
 <GenericModal
@@ -407,36 +501,73 @@
 				</div>
 			{/if}
 
-			<!-- Bindings Tab -->
-			{#if activeTab === 'bindings'}
+			<!-- Services Tab -->
+			{#if activeTab === 'services'}
 				<div class="space-y-4 p-6">
 					<InlineInfo
-						title={dependencies_serviceBindingsInfoTitle()}
-						body={dependencies_serviceBindingsInfoBody()}
-						dismissableKey="dependency-bindings-info"
+						title={dependencies_servicesInfoTitle()}
+						body={dependencies_servicesInfoBody()}
+						dismissableKey="dependency-services-info"
 					/>
+
+					<!-- Mode selector -->
+					<div class="space-y-1">
+						<SegmentedControl
+							options={modeOptions}
+							selected={memberMode}
+							onchange={handleModeChange}
+							size="sm"
+						/>
+						<p class="text-tertiary text-xs">
+							{memberMode === 'Services'
+								? dependencies_serviceLevelHelp()
+								: dependencies_bindingLevelHelp()}
+						</p>
+					</div>
+
 					<div class="card">
 						<ListManager
-							label={dependencies_serviceBindings()}
-							helpText={dependencies_serviceBindingsHelp()}
+							label={common_services()}
+							helpText={dependencies_servicesHelp()}
 							placeholder={isServicesLoading
 								? dependencies_loadingServices()
-								: dependencies_selectBinding()}
-							emptyMessage={dependencies_noBindingsYet()}
+								: dependencies_selectService()}
+							emptyMessage={dependencies_noServicesYet()}
 							allowReorder={true}
 							allowItemEdit={() => false}
 							showSearch={true}
-							options={availableServiceBindings}
-							items={selectedServiceBindings}
-							optionDisplayComponent={BindingWithServiceDisplay}
-							itemDisplayComponent={BindingWithServiceDisplay}
-							getItemContext={() => bindingContext}
-							getOptionContext={() => bindingContext}
-							onAdd={handleAdd}
-							onRemove={handleRemove}
-							onMoveUp={(index) => handleServiceBindingsReorder(index, index - 1)}
-							onMoveDown={(index) => handleServiceBindingsReorder(index, index + 1)}
-						/>
+							options={availableServices}
+							items={selectedServices}
+							optionDisplayComponent={ServiceDisplay}
+							itemDisplayComponent={ServiceDisplay}
+							getItemContext={() => ({})}
+							getOptionContext={() => ({})}
+							onAdd={handleAddService}
+							onRemove={handleRemoveService}
+							onMoveUp={(index) => handleReorderServices(index, index - 1)}
+							onMoveDown={(index) => handleReorderServices(index, index + 1)}
+						>
+							{#snippet itemExpandedSnippet({ item })}
+								{#if memberMode === 'Bindings'}
+									{@const service = item as Service}
+									{@const serviceBindings = getBindingsForService(service)}
+									{@const selectedBindingId = bindingSelections.get(service.id) ?? null}
+									<div class="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
+										<RichSelect
+											options={serviceBindings}
+											selectedValue={selectedBindingId}
+											placeholder={dependencies_selectBindingForService()}
+											displayComponent={BindingWithServiceDisplay}
+											getOptionContext={() => bindingContext}
+											onSelect={(bindingId) => handleBindingSelect(service.id, bindingId)}
+										/>
+									</div>
+								{/if}
+							{/snippet}
+						</ListManager>
+						{#if bindingValidationError}
+							<p class="mt-2 text-xs text-red-500">{bindingValidationError}</p>
+						{/if}
 					</div>
 				</div>
 			{/if}
@@ -493,7 +624,12 @@
 					{/if}
 					<button
 						type="submit"
-						disabled={loading || deleting}
+						disabled={loading ||
+							deleting ||
+							(activeTab === 'services' &&
+								memberMode === 'Bindings' &&
+								!!bindingValidationError &&
+								isLastWizardStep)}
 						class="btn-primary {!isEditing && !isLastWizardStep ? 'btn-primary-lg' : ''}"
 					>
 						{loading ? common_saving() : saveLabel}
