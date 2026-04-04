@@ -418,7 +418,7 @@
 							}
 							return [];
 						})()}
-						<div class="flex items-center gap-1">
+						<div class="flex items-center gap-1 rounded-md border border-dashed border-gray-300 px-2 py-1 dark:border-gray-600" style="background: var(--color-topology-subgroup-bg);">
 							{#if header}
 								<span class="text-tertiary text-xs">{header}{labels.length > 0 ? ':' : ''}</span>
 							{/if}
