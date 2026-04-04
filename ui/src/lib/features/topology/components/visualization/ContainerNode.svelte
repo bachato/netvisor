@@ -12,7 +12,7 @@
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Color } from '$lib/shared/utils/styling';
-	import { subnetTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { subnetTypes, serviceDefinitions, containerTypes } from '$lib/shared/stores/metadata';
 	import { isContainerSubnet } from '$lib/features/subnets/queries';
 	import { topology_hostsCount } from '$lib/paraglide/messages';
 	import {
@@ -131,9 +131,7 @@
 	let containerType = $derived(
 		((data as Record<string, unknown>)?.container_type as string) ?? 'Subnet'
 	);
-	let isSubgroup = $derived(
-		containerType === 'TagGroup' || containerType === 'ServiceCategoryGroup'
-	);
+	let isSubcontainer = $derived(containerTypes.getMetadata(containerType).is_subcontainer);
 
 	let resolved = $derived(
 		topology ? resolveContainerNode(id, data as TopologyNode, topology) : null
@@ -263,8 +261,8 @@
 	}
 </script>
 
-{#if isSubgroup}
-	<!-- Sub-group container (TagGroup / ServiceCategoryGroup) -->
+{#if isSubcontainer}
+	<!-- Sub-container (TagContainer / ServiceCategoryContainer) -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="relative"
@@ -306,7 +304,7 @@
 		{:else}
 			{#if groupHeader || groupLabels.length > 0}
 				<div
-					class="nopan nodrag text-secondary z-100 absolute left-2 top-1 flex items-center gap-1 rounded-t px-2 py-0.5"
+					class="nopan nodrag text-secondary z-100 absolute left-2 top-1 mt-2 flex items-center gap-1 rounded-t px-2 py-1"
 				>
 					<ChevronDown class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
 					{#if groupHeader}
@@ -418,7 +416,10 @@
 							}
 							return [];
 						})()}
-						<div class="flex items-center gap-1 rounded-md border border-dashed border-gray-300 px-2 py-1 dark:border-gray-600" style="background: var(--color-topology-subgroup-bg);">
+						<div
+							class="flex items-center gap-1 rounded-md border border-dashed border-gray-300 px-2 py-1 dark:border-gray-600"
+							style="background: var(--color-topology-subgroup-bg);"
+						>
 							{#if header}
 								<span class="text-tertiary text-xs">{header}{labels.length > 0 ? ':' : ''}</span>
 							{/if}
@@ -525,7 +526,7 @@
 		{/if}
 	</div>
 {/if}
-<!-- Sub-group containers don't get handles; subnet containers do -->
+<!-- Sub-containers don't get handles; subnet containers do -->
 <Handle type="target" id="Top" position={Position.Top} style="opacity: 0" />
 <Handle type="target" id="Right" position={Position.Right} style="opacity: 0" />
 <Handle type="target" id="Bottom" position={Position.Bottom} style="opacity: 0" />

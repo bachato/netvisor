@@ -239,7 +239,9 @@
 				const visibleNodes = layoutGraph.getVisibleNodes(topology.nodes);
 
 				// Only root container collapses affect graph structure (need full ELK)
-				const rootCollapsed = new Set([...collapsed].filter((id) => !layoutGraph!.isSubgroup(id)));
+				const rootCollapsed = new Set(
+					[...collapsed].filter((id) => !layoutGraph!.isSubcontainer(id))
+				);
 
 				// Run ELK on structure/collapse changes, skip for edge-only re-renders
 				const opts = get(topologyOptions);
@@ -297,11 +299,7 @@
 							const curPos = currentPositions.get(node.id);
 							const curSize = currentSizes.get(node.id);
 							position = curPos ?? { x: node.position.x, y: node.position.y };
-							width = isNodeCollapsed
-								? undefined
-								: isElement
-									? 250
-									: (curSize?.width ?? undefined);
+							width = isNodeCollapsed ? undefined : isElement ? 250 : (curSize?.width ?? undefined);
 							height = isNodeCollapsed
 								? undefined
 								: isElement

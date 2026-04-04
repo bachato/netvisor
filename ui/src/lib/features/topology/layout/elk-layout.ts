@@ -1,6 +1,7 @@
 import type { ElkNode, ElkExtendedEdge } from 'elkjs';
 import type { TopologyNode, TopologyEdge, Topology } from '../types/base';
 import { classifyEdge } from './edge-classification';
+import { containerTypes } from '$lib/shared/stores/metadata';
 
 export interface ElkLayoutInput {
 	nodes: TopologyNode[];
@@ -57,15 +58,6 @@ const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
 	'elk.padding': '[top=20,left=20,bottom=20,right=20]'
 };
 
-/** Container node padding (extra top for header). */
-const CONTAINER_PADDING = '[top=25,left=25,bottom=25,right=25]';
-
-/** Sub-group container padding (smaller header). */
-const SUBGROUP_PADDING = '[top=40,left=20,bottom=20,right=20]';
-
-/** Container types that represent sub-groups within a subnet. */
-const SUBGROUP_CONTAINER_TYPES = new Set(['TagGroup', 'ServiceCategoryGroup']);
-
 function getLayerHint(node: TopologyNode): number {
 	if ('layer_hint' in node && typeof (node as Record<string, unknown>).layer_hint === 'number') {
 		return (node as Record<string, unknown>).layer_hint as number;
@@ -99,16 +91,19 @@ function buildElkGraph(input: ElkLayoutInput): {
 		if (node.node_type === 'Container') {
 			containerIds.add(node.id);
 			const isCollapsed = collapsed.has(node.id);
-			const containerType = (node as Record<string, unknown>).container_type as string | undefined;
-			const isSubgroup = containerType ? SUBGROUP_CONTAINER_TYPES.has(containerType) : false;
+			const containerType =
+				((node as Record<string, unknown>).container_type as string) ?? 'Subnet';
+			const meta = containerTypes.getMetadata(containerType);
+			const isSubcontainer = meta.is_subcontainer;
 			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
 			if (parentId) parentContainerMap.set(node.id, parentId);
 
-			const layerId = isSubgroup ? undefined : getLayerHint(node);
-			const padding = isSubgroup ? SUBGROUP_PADDING : CONTAINER_PADDING;
+			const layerId = isSubcontainer ? undefined : getLayerHint(node);
+			const p = meta.padding;
+			const padding = `[top=${p.top},left=${p.left},bottom=${p.bottom},right=${p.right}]`;
 
-			const collapsedWidth = isSubgroup ? 250 : 200;
-			const collapsedHeight = isSubgroup ? 40 : 80;
+			const collapsedWidth = meta.collapsed_size.width;
+			const collapsedHeight = meta.collapsed_size.height;
 			const elkNode: ElkNode = isCollapsed
 				? {
 						id: node.id,
@@ -710,9 +705,9 @@ export function applyLocalSizeAdjustment(
 		const containerType = (containerNode as Record<string, unknown>)?.container_type as
 			| string
 			| undefined;
-		const isSubgroup = containerType ? SUBGROUP_CONTAINER_TYPES.has(containerType) : false;
+		const ctMeta = containerTypes.getMetadata(containerType ?? 'Subnet');
 		const spacing = 30;
-		const bottomPad = isSubgroup ? 20 : 25;
+		const bottomPad = ctMeta.padding.bottom;
 
 		// Reuse recomputeColumnY: sorts by y (= computed Y = stable order),
 		// then re-stacks with updated heights

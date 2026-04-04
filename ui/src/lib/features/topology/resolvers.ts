@@ -54,11 +54,11 @@ const containerResolvers: Record<
 		const title = 'header' in node ? (node.header as string | null) : null;
 		return { subnet, title };
 	},
-	TagGroup: (_nodeId, node) => {
+	TagContainer: (_nodeId, node) => {
 		const title = 'header' in node ? (node.header as string | null) : null;
 		return { subnet: undefined, title };
 	},
-	ServiceCategoryGroup: (_nodeId, node) => {
+	ServiceCategoryContainer: (_nodeId, node) => {
 		const title = 'header' in node ? (node.header as string | null) : null;
 		return { subnet: undefined, title };
 	}

@@ -8,11 +8,9 @@
 
 import type { TopologyNode } from '../types/base';
 import type { EdgeHandles } from './elk-layout';
+import { containerTypes } from '$lib/shared/stores/metadata';
 
-const SUBGROUP_CONTAINER_TYPES = new Set(['TagGroup', 'ServiceCategoryGroup']);
 const CHILD_SPACING = 30;
-const CONTAINER_BOTTOM_PAD = 25;
-const SUBGROUP_BOTTOM_PAD = 20;
 
 export class LayoutElement {
 	id: string;
@@ -47,20 +45,19 @@ export class LayoutContainer {
 	/** Size computed by ELK when expanded */
 	expandedSize: { width: number; height: number } = { width: 0, height: 0 };
 	collapsed = false;
-	isSubgroup: boolean;
+	isSubcontainer: boolean;
 	containerType: string;
 
 	constructor(node: TopologyNode) {
 		this.id = node.id;
 		this.node = node;
 		this.containerType = ((node as Record<string, unknown>).container_type as string) ?? 'Subnet';
-		this.isSubgroup = SUBGROUP_CONTAINER_TYPES.has(this.containerType);
+		this.isSubcontainer = containerTypes.getMetadata(this.containerType).is_subcontainer;
 	}
 
 	get collapsedSize(): { width: number; height: number } {
-		// Minimum size for ELK space reservation. Actual height is content-driven.
-		if (this.isSubgroup) return { width: 250, height: 40 };
-		return { width: 200, height: 80 };
+		const meta = containerTypes.getMetadata(this.containerType);
+		return { ...meta.collapsed_size };
 	}
 
 	get size(): { width: number; height: number } {
@@ -140,7 +137,7 @@ export class LayoutContainer {
 			if (bottom > maxColumnBottom) maxColumnBottom = bottom;
 		}
 
-		const bottomPad = this.isSubgroup ? SUBGROUP_BOTTOM_PAD : CONTAINER_BOTTOM_PAD;
+		const bottomPad = containerTypes.getMetadata(this.containerType).padding.bottom;
 		const newHeight = maxColumnBottom + bottomPad;
 		const oldHeight = this.expandedSize.height;
 		this.expandedSize = { width: this.expandedSize.width, height: newHeight };
@@ -401,8 +398,8 @@ export class LayoutGraph {
 	/**
 	 * Check if a node ID belongs to a subgroup container.
 	 */
-	isSubgroup(nodeId: string): boolean {
-		return this.containers.get(nodeId)?.isSubgroup ?? false;
+	isSubcontainer(nodeId: string): boolean {
+		return this.containers.get(nodeId)?.isSubcontainer ?? false;
 	}
 
 	/**
