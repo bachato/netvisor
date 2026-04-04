@@ -283,12 +283,11 @@ export class LayoutGraph {
 		container.collapsed = false;
 		affected.add(containerId);
 
-		// Cascade: expand child containers
-		for (const child of container.childContainers) {
-			if (child.collapsed) {
-				child.collapsed = true; // Keep children collapsed when parent expands
-			}
-		}
+		// Children stay collapsed when parent expands — no cascade needed
+
+		// Recompute this container's expandedSize based on current child states,
+		// since children may have been collapsed during the earlier collapse cascade
+		container.reflowChildren();
 
 		// Reflow parent if this is a subgroup — keep this container in place, shift siblings
 		if (container.parent && !container.parent.collapsed) {

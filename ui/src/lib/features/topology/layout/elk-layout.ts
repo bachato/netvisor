@@ -600,14 +600,21 @@ function mapElkResults(
 		}
 	}
 
-	// Snap ALL node positions to the 25px grid so they align with SvelteFlow's snapGrid.
-	// Container positions must also be grid-aligned because element positions are relative
-	// to their parent container — if the parent is off-grid, child snap is offset.
+	// Snap ALL node positions and container sizes to the 25px grid so they align
+	// with SvelteFlow's snapGrid. Container positions must also be grid-aligned
+	// because element positions are relative to their parent container — if the
+	// parent is off-grid, child snap is offset. Sizes use ceil to ensure content fits.
 	const SNAP = 25;
 	for (const [id, pos] of nodePositions) {
 		nodePositions.set(id, {
 			x: Math.round(pos.x / SNAP) * SNAP,
 			y: Math.round(pos.y / SNAP) * SNAP
+		});
+	}
+	for (const [id, size] of containerSizes) {
+		containerSizes.set(id, {
+			width: Math.ceil(size.width / SNAP) * SNAP,
+			height: Math.ceil(size.height / SNAP) * SNAP
 		});
 	}
 

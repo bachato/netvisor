@@ -165,9 +165,9 @@
 	let groupLabels = $derived.by((): { label: string; color: Color }[] => {
 		if (!elementRule?.rule) return [];
 		const rule = elementRule.rule;
-		if ('ByServiceCategory' in rule && topology) {
+		if ('ByServiceCategory' in rule) {
 			return (rule.ByServiceCategory.categories ?? []).map((cat: string) => {
-				const svc = topology!.services?.find(
+				const svc = topology?.services?.find(
 					(s) => serviceDefinitions.getCategory(s.service_definition) === cat
 				);
 				const color = svc
@@ -176,9 +176,9 @@
 				return { label: cat, color };
 			});
 		}
-		if ('ByTag' in rule && topology) {
+		if ('ByTag' in rule) {
 			return (rule.ByTag.tag_ids ?? []).map((tagId: string) => {
-				const tag = topology!.entity_tags?.find((t) => t.id === tagId);
+				const tag = topology?.entity_tags?.find((t) => t.id === tagId);
 				return {
 					label: tag?.name ?? tagId,
 					color: (tag?.color as Color) ?? 'Gray'

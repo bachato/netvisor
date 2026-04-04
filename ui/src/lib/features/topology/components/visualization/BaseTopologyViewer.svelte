@@ -333,7 +333,8 @@
 									: node.node_type == 'Container' && node.parent_container_id
 										? (node.parent_container_id as string)
 										: undefined,
-							extent: node.node_type == 'Element' ? 'parent' : undefined,
+							extent:
+								node.node_type == 'Element' || node.parent_container_id ? 'parent' : undefined,
 							data: isNodeCollapsed
 								? {
 										...node,

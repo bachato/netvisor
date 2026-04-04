@@ -585,7 +585,8 @@ function loadOptionsFromStorage(): PerPerspectiveOptions {
 				const migrated: PerPerspectiveOptions = {
 					...defaults,
 					l3_logical: deepmerge(defaults.l3_logical, parsed, {
-						arrayMerge: (_, sourceArray) => sourceArray
+						arrayMerge: (destinationArray, sourceArray) =>
+							sourceArray.length > 0 ? sourceArray : destinationArray
 					})
 				};
 				return migrated;
@@ -596,7 +597,8 @@ function loadOptionsFromStorage(): PerPerspectiveOptions {
 			for (const perspective of ALL_PERSPECTIVES) {
 				if (parsed[perspective]) {
 					result[perspective] = deepmerge(defaults[perspective], parsed[perspective], {
-						arrayMerge: (_, sourceArray) => sourceArray
+						arrayMerge: (destinationArray, sourceArray) =>
+							sourceArray.length > 0 ? sourceArray : destinationArray
 					});
 				}
 			}
