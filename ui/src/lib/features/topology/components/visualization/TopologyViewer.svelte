@@ -54,15 +54,19 @@
 		if (!topology) return;
 		let movedNode = topology.nodes.find((node) => node.id == targetNode?.id);
 		if (movedNode && targetNode && targetNode.position) {
+			// Snap to 25px grid (matches SvelteFlow snapGrid and ELK post-layout snap)
+			const SNAP = 25;
+			const x = Math.round(targetNode.position.x / SNAP) * SNAP;
+			const y = Math.round(targetNode.position.y / SNAP) * SNAP;
 			// Update local state for immediate feedback
-			movedNode.position.x = targetNode.position.x;
-			movedNode.position.y = targetNode.position.y;
+			movedNode.position.x = x;
+			movedNode.position.y = y;
 			// Send lightweight update to server (fixes HTTP 413 for large topologies)
 			await updateNodePositionMutation.mutateAsync({
 				topologyId: topology.id,
 				networkId: topology.network_id,
 				nodeId: movedNode.id,
-				position: { x: targetNode.position.x, y: targetNode.position.y }
+				position: { x, y }
 			});
 		}
 	}
