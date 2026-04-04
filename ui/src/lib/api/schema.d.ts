@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-04T12:20:22.528298Z",
-             *       "id": "cb38ca5f-3271-420d-a84e-5e490ca8b9a0",
+             *       "created_at": "2026-04-03T18:25:51.955505Z",
+             *       "id": "8fdac4f8-df66-4e6a-bbeb-340cc74692e1",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-04T12:20:22.528298Z"
+             *       "updated_at": "2026-04-03T18:25:51.955505Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3153,14 +3153,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-04T12:20:22.511342Z",
-             *               "id": "58a7159d-127d-493f-96e6-b7f8a10b1021",
+             *               "created_at": "2026-04-03T18:25:51.939872Z",
+             *               "id": "3f023dd5-62ae-4bb8-ac9e-434a0692b20f",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-04T12:20:22.511342Z"
+             *               "updated_at": "2026-04-03T18:25:51.939872Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3169,7 +3169,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "MikroTik",
+             *           "service_definition": "BookLore",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3425,14 +3425,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-04T12:20:22.523624Z",
-             *           "id": "bfb3f31c-1fb1-4913-9743-351d1610926b",
+             *           "created_at": "2026-04-03T18:25:51.951260Z",
+             *           "id": "dfb96696-bb13-4d8b-9277-6904bdbfd713",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-04T12:20:22.523624Z"
+             *           "updated_at": "2026-04-03T18:25:51.951260Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3441,7 +3441,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "MikroTik",
+             *       "service_definition": "BookLore",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3768,14 +3768,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-04T12:20:22.511691Z",
-         *       "id": "13688e4e-dc79-466e-8f06-0c404bd3480f",
+         *       "created_at": "2026-04-03T18:25:51.940068Z",
+         *       "id": "1ffe41b6-5b95-46d2-9f30-36d79057caa5",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-04T12:20:22.511691Z"
+         *       "updated_at": "2026-04-03T18:25:51.940068Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3895,7 +3895,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "TagGroup" | "ServiceCategoryGroup" | "Ungrouped";
+        ContainerType: "Subnet" | "TagGroup" | "ServiceCategoryGroup";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -3960,7 +3960,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "MikroTik",
+         *           "service_definition": "BookLore",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4770,14 +4770,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-04T12:20:22.510851Z",
-         *               "id": "919805ab-8811-4f24-96ef-ae6bf4a3b634",
+         *               "created_at": "2026-04-03T18:25:51.939596Z",
+         *               "id": "c3a6fcc7-3b8b-46f3-ad47-419c7a1bf663",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-04T12:20:22.510851Z"
+         *               "updated_at": "2026-04-03T18:25:51.939596Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4786,7 +4786,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "MikroTik",
+         *           "service_definition": "BookLore",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5845,14 +5845,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-04T12:20:22.511567Z",
-         *           "id": "7d46ebf7-7ed4-4931-aef1-9c0d1a9ced1a",
+         *           "created_at": "2026-04-03T18:25:51.940Z",
+         *           "id": "0015ccee-f43f-4692-ae09-8e7673a8d108",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-04T12:20:22.511567Z"
+         *           "updated_at": "2026-04-03T18:25:51.940Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5861,7 +5861,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "MikroTik",
+         *       "service_definition": "BookLore",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6394,8 +6394,8 @@ export interface components {
         UserOrgPermissions: "Owner" | "Admin" | "Member" | "Viewer";
         /**
          * @description 2D unsigned coordinate. Used for node positions and sizes.
-         *     Element node sizes are computed by the frontend (elkjs); the backend
-         *     sets `Uxy::default()` for element nodes.
+         *     Leaf node sizes are computed by the frontend (elkjs); the backend
+         *     sets `Uxy::default()` for leaf nodes.
          */
         Uxy: {
             x: number;

@@ -393,45 +393,6 @@ impl GraphBuilder {
                 }
             }
         }
-
-        // If some elements were grouped, wrap each remaining ungrouped element
-        // in its own synthetic Ungrouped container. This ensures every element has
-        // the same padding shell, so ELK box-packing produces aligned grids.
-        if !claimed.is_empty() {
-            let ungrouped_ids: Vec<Uuid> = children
-                .iter()
-                .filter(|c| !claimed.contains(&c.id))
-                .map(|c| c.id)
-                .collect();
-
-            for ungrouped_element_id in ungrouped_ids {
-                let wrapper_id = Uuid::new_v4();
-
-                child_nodes.push(Node {
-                    id: wrapper_id,
-                    node_type: NodeType::Container {
-                        container_type: ContainerType::Ungrouped,
-                        parent_container_id: Some(subnet_id),
-                        layer_hint: None,
-                    },
-                    position: Ixy { x: 0, y: 0 },
-                    size: Uxy { x: 0, y: 0 },
-                    header: None,
-                    element_rule_id: None,
-                });
-
-                for node in child_nodes.iter_mut() {
-                    if node.id == ungrouped_element_id
-                        && let NodeType::Element {
-                            ref mut container_id,
-                            ..
-                        } = node.node_type
-                    {
-                        *container_id = wrapper_id;
-                    }
-                }
-            }
-        }
     }
 
     /// Create subnet container nodes

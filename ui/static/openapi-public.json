@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-04T12:20:22.528295Z",
-              "id": "6356476c-d9bd-48f9-bb3a-7e04bc294fe1",
+              "created_at": "2026-04-03T18:25:51.955502Z",
+              "id": "56ae1d7f-75c4-4209-bfbd-4eb71b366415",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T12:20:22.528295Z"
+              "updated_at": "2026-04-03T18:25:51.955502Z"
             }
           },
           "error": {
@@ -10731,14 +10731,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-04T12:20:22.511334Z",
-                      "id": "dfdf37e8-9e1a-422a-808f-a4f9dbca6f53",
+                      "created_at": "2026-04-03T18:25:51.940053Z",
+                      "id": "7ce81bec-e0b5-4082-abf6-18705b707dbd",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-04T12:20:22.511334Z"
+                      "updated_at": "2026-04-03T18:25:51.940053Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10747,7 +10747,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "MikroTik",
+                  "service_definition": "BookLore",
                   "source": {
                     "type": "Manual"
                   },
@@ -11450,14 +11450,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T12:20:22.523650Z",
-                  "id": "a7f1cfb7-35cb-445c-ad03-977b7c93e898",
+                  "created_at": "2026-04-03T18:25:51.951270Z",
+                  "id": "ab439459-9d95-4cb9-875f-e343f889b43d",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T12:20:22.523650Z"
+                  "updated_at": "2026-04-03T18:25:51.951270Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11466,7 +11466,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "MikroTik",
+              "service_definition": "BookLore",
               "source": {
                 "type": "Manual"
               },
@@ -12740,14 +12740,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-04T12:20:22.511686Z",
-          "id": "89094700-fd20-4719-8726-7c4db5429301",
+          "created_at": "2026-04-03T18:25:51.940260Z",
+          "id": "9565fcf1-adc5-448c-97c9-2c2b5b0bbf9b",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-04T12:20:22.511686Z"
+          "updated_at": "2026-04-03T18:25:51.940260Z"
         }
       },
       "BindingBase": {
@@ -13033,8 +13033,7 @@
         "enum": [
           "Subnet",
           "TagGroup",
-          "ServiceCategoryGroup",
-          "Ungrouped"
+          "ServiceCategoryGroup"
         ]
       },
       "CreateBindingInput": {
@@ -13263,7 +13262,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "MikroTik",
+              "service_definition": "BookLore",
               "tags": [],
               "virtualization": null
             }
@@ -15672,14 +15671,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T12:20:22.510845Z",
-                  "id": "a12f05a8-f649-4513-ac60-0f9f1acd309a",
+                  "created_at": "2026-04-03T18:25:51.939759Z",
+                  "id": "8987e749-ad04-40e6-96ef-7c9dba1d51a0",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T12:20:22.510845Z"
+                  "updated_at": "2026-04-03T18:25:51.939759Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15688,7 +15687,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "MikroTik",
+              "service_definition": "BookLore",
               "source": {
                 "type": "Manual"
               },
@@ -17655,14 +17654,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-04T12:20:22.500029Z",
-                        "id": "ae27d60d-d010-4412-a13b-65a01ce4aaaf",
+                        "created_at": "2026-04-03T18:25:51.930414Z",
+                        "id": "629142d2-1b7d-4483-8372-c2ae62dc5f01",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-04T12:20:22.500029Z"
+                        "updated_at": "2026-04-03T18:25:51.930414Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17671,7 +17670,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "MikroTik",
+                    "service_definition": "BookLore",
                     "source": {
                       "type": "Manual"
                     },
@@ -17748,14 +17747,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-04T12:20:22.522289Z",
-                    "id": "3bafba84-8a77-4189-937e-0ce7139092fc",
+                    "created_at": "2026-04-03T18:25:51.950294Z",
+                    "id": "adeb8ff0-eb11-4245-a912-4cbbb1655acd",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-04T12:20:22.522289Z"
+                    "updated_at": "2026-04-03T18:25:51.950294Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17764,7 +17763,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "MikroTik",
+                "service_definition": "BookLore",
                 "source": {
                   "type": "Manual"
                 },
@@ -18923,14 +18922,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-04T12:20:22.511561Z",
-              "id": "cbde8462-9846-4497-a003-982d9c5b298e",
+              "created_at": "2026-04-03T18:25:51.940187Z",
+              "id": "f842270a-fc87-48f3-8b45-a6131fa397f4",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T12:20:22.511561Z"
+              "updated_at": "2026-04-03T18:25:51.940187Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -18939,7 +18938,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "MikroTik",
+          "service_definition": "BookLore",
           "source": {
             "type": "Manual"
           },
@@ -20443,7 +20442,7 @@
       },
       "Uxy": {
         "type": "object",
-        "description": "2D unsigned coordinate. Used for node positions and sizes.\nElement node sizes are computed by the frontend (elkjs); the backend\nsets `Uxy::default()` for element nodes.",
+        "description": "2D unsigned coordinate. Used for node positions and sizes.\nLeaf node sizes are computed by the frontend (elkjs); the backend\nsets `Uxy::default()` for leaf nodes.",
         "required": [
           "x",
           "y"

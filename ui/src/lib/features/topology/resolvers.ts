@@ -1,8 +1,8 @@
 import type { components } from '$lib/api/schema';
 import type { Topology, TopologyNode } from './types/base';
-import { containerTypes } from '$lib/shared/stores/metadata';
 
 // Type aliases for the discriminated union variants
+type ContainerType = components['schemas']['ContainerType'];
 type ElementEntityType = components['schemas']['ElementEntityType'];
 
 // Resolver return types
@@ -45,17 +45,24 @@ const elementResolvers: Record<
 	}
 };
 
-function resolveContainer(
-	nodeId: string,
-	node: TopologyNode,
-	topology: Topology
-): ContainerRenderContext {
-	const containerType = ((node as Record<string, unknown>).container_type as string) ?? 'Subnet';
-	const meta = containerTypes.getMetadata(containerType);
-	const subnet = meta.has_subnet ? topology.subnets.find((s) => s.id === nodeId) : undefined;
-	const title = meta.has_header && 'header' in node ? (node.header as string | null) : null;
-	return { subnet, title };
-}
+const containerResolvers: Record<
+	ContainerType,
+	(nodeId: string, node: TopologyNode, topology: Topology) => ContainerRenderContext
+> = {
+	Subnet: (nodeId, node, topology) => {
+		const subnet = topology.subnets.find((s) => s.id === nodeId);
+		const title = 'header' in node ? (node.header as string | null) : null;
+		return { subnet, title };
+	},
+	TagGroup: (_nodeId, node) => {
+		const title = 'header' in node ? (node.header as string | null) : null;
+		return { subnet: undefined, title };
+	},
+	ServiceCategoryGroup: (_nodeId, node) => {
+		const title = 'header' in node ? (node.header as string | null) : null;
+		return { subnet: undefined, title };
+	}
+};
 
 // Public API
 export function resolveElementNode(
@@ -74,5 +81,8 @@ export function resolveContainerNode(
 	topology: Topology
 ): ContainerRenderContext {
 	if (node.node_type !== 'Container') throw new Error(`Expected Container, got ${node.node_type}`);
-	return resolveContainer(nodeId, node, topology);
+	const containerType = (node.container_type ?? 'Subnet') as ContainerType;
+	const resolver = containerResolvers[containerType];
+	if (!resolver) return containerResolvers['Subnet'](nodeId, node, topology);
+	return resolver(nodeId, node, topology);
 }

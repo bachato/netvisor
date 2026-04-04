@@ -8,9 +8,11 @@
 
 import type { TopologyNode } from '../types/base';
 import type { EdgeHandles } from './elk-layout';
-import { containerTypes } from '$lib/shared/stores/metadata';
 
+const SUBGROUP_CONTAINER_TYPES = new Set(['TagGroup', 'ServiceCategoryGroup']);
 const CHILD_SPACING = 30;
+const CONTAINER_BOTTOM_PAD = 25;
+const SUBGROUP_BOTTOM_PAD = 20;
 
 export class LayoutElement {
 	id: string;
@@ -52,11 +54,11 @@ export class LayoutContainer {
 		this.id = node.id;
 		this.node = node;
 		this.containerType = ((node as Record<string, unknown>).container_type as string) ?? 'Subnet';
-		this.isSubgroup = this.containerType !== 'Subnet';
+		this.isSubgroup = SUBGROUP_CONTAINER_TYPES.has(this.containerType);
 	}
 
 	get collapsedSize(): { width: number; height: number } {
-		return containerTypes.getMetadata(this.containerType).collapsed_size;
+		return this.isSubgroup ? { width: 250, height: 40 } : { width: 200, height: 80 };
 	}
 
 	get size(): { width: number; height: number } {
@@ -114,7 +116,7 @@ export class LayoutContainer {
 			if (bottom > maxColumnBottom) maxColumnBottom = bottom;
 		}
 
-		const bottomPad = containerTypes.getMetadata(this.containerType).padding.bottom;
+		const bottomPad = this.isSubgroup ? SUBGROUP_BOTTOM_PAD : CONTAINER_BOTTOM_PAD;
 		const newHeight = maxColumnBottom + bottomPad;
 		const oldHeight = this.expandedSize.height;
 		this.expandedSize = { width: this.expandedSize.width, height: newHeight };
