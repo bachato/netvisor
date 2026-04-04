@@ -289,10 +289,11 @@
 						if (useGraph && layoutGraph) {
 							const graphPos = layoutGraph.getPosition(node.id);
 							const containerSize = !isElement ? layoutGraph.getContainerSize(node.id) : undefined;
+							const expandedSize = !isElement ? layoutGraph.getExpandedSize(node.id) : undefined;
 							position = graphPos ?? { x: node.position.x, y: node.position.y };
-							// Collapsed containers: auto size from content (like elements)
+							// Collapsed containers keep expanded width to prevent overlap on expand
 							width = isNodeCollapsed
-								? undefined
+								? (expandedSize?.width ?? undefined)
 								: isElement
 									? 250
 									: (containerSize?.width ?? undefined);
