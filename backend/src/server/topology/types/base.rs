@@ -17,7 +17,7 @@ use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, hash::Hash};
+use std::{collections::HashMap, fmt::Display, hash::Hash};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -34,9 +34,7 @@ pub struct SetEntitiesParams {
     pub entity_tags: Vec<Tag>,
 }
 
-#[derive(
-    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default, ToSchema, Validate,
-)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, ToSchema, Validate)]
 pub struct Topology {
     #[serde(default)]
     #[schema(read_only, required)]
@@ -96,9 +94,7 @@ impl Topology {
     }
 }
 
-#[derive(
-    Debug, Clone, Validate, Serialize, Deserialize, Eq, PartialEq, Hash, Default, ToSchema,
-)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize, Eq, PartialEq, Default, ToSchema)]
 pub struct TopologyBase {
     #[validate(length(min = 0, max = 100))]
     pub name: String,
@@ -199,7 +195,7 @@ impl Display for Topology {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, Hash, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, ToSchema)]
 pub struct TopologyOptions {
     pub local: TopologyLocalOptions,
     pub request: TopologyRequestOptions,
@@ -249,7 +245,17 @@ impl Default for TopologyLocalOptions {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, Hash, ToSchema)]
+pub struct PerspectiveOptionOverrides {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub container_rules: Option<Vec<GraphRule<ContainerRule>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub element_rules: Option<Vec<GraphRule<ElementRule>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hide_service_categories: Option<Vec<ServiceCategory>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct TopologyRequestOptions {
     pub hide_vm_title_on_docker_container: bool,
     pub hide_ports: bool,
@@ -260,6 +266,8 @@ pub struct TopologyRequestOptions {
     pub element_rules: Vec<GraphRule<ElementRule>>,
     #[serde(default)]
     pub perspective: TopologyPerspective,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub perspective_overrides: Option<HashMap<TopologyPerspective, PerspectiveOptionOverrides>>,
 }
 
 fn default_container_rules() -> Vec<GraphRule<ContainerRule>> {
@@ -285,6 +293,7 @@ impl Default for TopologyRequestOptions {
             container_rules: default_container_rules(),
             element_rules: default_element_rules(),
             perspective: TopologyPerspective::default(),
+            perspective_overrides: None,
         }
     }
 }

@@ -35,14 +35,12 @@ use crate::server::{
     },
     tags::{entity_tags::EntityTagService, r#impl::base::Tag, service::TagService},
     topology::{
-        service::{
-            context::TopologyContext, edge_builder::EdgeBuilder, graph_builder::GraphBuilder,
-        },
+        service::{context::TopologyContext, edge_builder::EdgeBuilder},
         types::{
             base::{SetEntitiesParams, Topology, TopologyOptions},
-            edges::{Edge, EdgeHandle},
+            edges::{Edge, EdgeHandle, TopologyPerspective},
             grouping::GroupingConfig,
-            nodes::{Node, NodeType},
+            nodes::Node,
         },
     },
 };
@@ -118,6 +116,7 @@ impl CrudService<Topology> for TopologyService {
             old_edges: &[],
             old_nodes: &[],
             options: &topology.base.options,
+            old_perspective: None,
         };
 
         let (nodes, edges) = self.build_graph(params);
@@ -173,6 +172,7 @@ pub struct BuildGraphParams<'a> {
     pub entity_tags: &'a [Tag],
     pub old_nodes: &'a [Node],
     pub old_edges: &'a [Edge],
+    pub old_perspective: Option<TopologyPerspective>,
 }
 
 impl TopologyService {
@@ -343,6 +343,7 @@ impl TopologyService {
             entity_tags: &entity_tags,
             old_nodes: &[],
             old_edges: &[],
+            old_perspective: None,
         });
 
         topology.set_entities(SetEntitiesParams {
@@ -379,6 +380,7 @@ impl TopologyService {
             old_edges,
             old_nodes,
             options,
+            old_perspective,
         } = params;
 
         // Create context to avoid parameter passing
@@ -398,20 +400,9 @@ impl TopologyService {
         // Build grouping config from request options
         let grouping = GroupingConfig::from_request_options(&options.request);
 
-        // Create all edges (needed for anchor analysis)
-        let mut all_edges = Vec::new();
-
-        all_edges.extend(EdgeBuilder::create_interface_edges(&ctx));
-
-        all_edges.extend(EdgeBuilder::create_group_edges(&ctx));
-        all_edges.extend(EdgeBuilder::create_vm_host_edges(&ctx));
-        let (container_edges, docker_bridge_host_subnet_id_to_group_on) =
-            EdgeBuilder::create_containerized_service_edges(&ctx, &grouping);
-
-        all_edges.extend(container_edges);
-
-        // Create physical link edges from LLDP/CDP neighbor discovery
-        all_edges.extend(EdgeBuilder::create_physical_link_edges(&ctx));
+        // Select builder by perspective and build nodes + edges
+        let builder = super::perspective::builder_for_perspective(options.request.perspective);
+        let (all_nodes, mut all_edges) = builder.build(&ctx, &grouping);
 
         // Set edge classification based on perspective
         let perspective = options.request.perspective;
@@ -419,39 +410,6 @@ impl TopologyService {
             edge.classification = edge.edge_type.classification(perspective);
         }
 
-        // Create nodes (positions zeroed — frontend computes layout via elkjs)
-        let mut graph_builder = GraphBuilder::new();
-        let (subnet_ids, child_nodes) = graph_builder.create_subnet_child_nodes(
-            &ctx,
-            &mut all_edges,
-            &grouping,
-            docker_bridge_host_subnet_id_to_group_on,
-        );
-
-        let mut subnet_nodes = graph_builder.create_subnet_nodes(&ctx, &subnet_ids);
-
-        // Set layer_hint, icon, and color on container nodes from subnet metadata
-        let subnet_map: HashMap<Uuid, &SubnetType> = ctx
-            .subnets
-            .iter()
-            .map(|s| (s.id, &s.base.subnet_type))
-            .collect();
-        for node in &mut subnet_nodes {
-            if let NodeType::Container {
-                ref mut layer_hint,
-                ref mut icon,
-                ref mut color,
-                ..
-            } = node.node_type
-                && let Some(subnet_type) = subnet_map.get(&node.id)
-            {
-                *layer_hint = Some(subnet_type.vertical_order() as i32);
-                *icon = Some(subnet_type.icon().to_string());
-                *color = Some(subnet_type.color().to_string());
-            }
-        }
-
-        let all_nodes: Vec<Node> = subnet_nodes.into_iter().chain(child_nodes).collect();
         let final_edges = all_edges;
 
         // Build graph
@@ -468,62 +426,68 @@ impl TopologyService {
         // Add edges to graph
         EdgeBuilder::add_edges_to_graph(&mut graph, &node_indices, final_edges);
 
-        // Build previous graph to compare and deterine if user edits should be persisted
-        // If nodes have changed edges, assume they have moved and user edits are no longer applicable
-        let mut old_graph: Graph<Node, Edge> = Graph::new();
-        let old_node_indices: HashMap<Uuid, NodeIndex> = old_nodes
-            .iter()
-            .map(|node| {
-                let node_id = node.id;
-                let node_idx = old_graph.add_node(node.clone());
-                (node_id, node_idx)
-            })
-            .collect();
+        // Skip handle preservation when perspective has changed — old handles are not meaningful
+        let perspective_unchanged = match old_perspective {
+            Some(old_p) => old_p == perspective,
+            None => true,
+        };
 
-        EdgeBuilder::add_edges_to_graph(&mut old_graph, &old_node_indices, old_edges.to_vec());
+        if perspective_unchanged {
+            // Build previous graph to compare and determine if user edits should be persisted
+            // If nodes have changed edges, assume they have moved and user edits are no longer applicable
+            let mut old_graph: Graph<Node, Edge> = Graph::new();
+            let old_node_indices: HashMap<Uuid, NodeIndex> = old_nodes
+                .iter()
+                .map(|node| {
+                    let node_id = node.id;
+                    let node_idx = old_graph.add_node(node.clone());
+                    (node_id, node_idx)
+                })
+                .collect();
 
-        // Create a map of old edges by their source/target for quick lookup
-        let mut old_edges_map: HashMap<(Uuid, Uuid), &Edge> = HashMap::new();
-        for edge_ref in old_graph.edge_references() {
-            let edge = edge_ref.weight();
-            old_edges_map.insert((edge.source, edge.target), edge);
-        }
+            EdgeBuilder::add_edges_to_graph(&mut old_graph, &old_node_indices, old_edges.to_vec());
 
-        // Preserve handles for nodes with unchanged edge count
-        // First, collect all the edges that need updating
-        let mut edges_to_update: Vec<(petgraph::prelude::EdgeIndex, EdgeHandle, EdgeHandle)> =
-            Vec::new();
+            // Create a map of old edges by their source/target for quick lookup
+            let mut old_edges_map: HashMap<(Uuid, Uuid), &Edge> = HashMap::new();
+            for edge_ref in old_graph.edge_references() {
+                let edge = edge_ref.weight();
+                old_edges_map.insert((edge.source, edge.target), edge);
+            }
 
-        for node in graph.node_weights() {
-            if let Some(old_idx) = old_node_indices.get(&node.id)
-                && let Some(new_idx) = node_indices.get(&node.id)
-            {
-                let old_edge_count = old_graph.edges(*old_idx).count();
-                let new_edge_count = graph.edges(*new_idx).count();
+            // Preserve handles for nodes with unchanged edge count
+            let mut edges_to_update: Vec<(petgraph::prelude::EdgeIndex, EdgeHandle, EdgeHandle)> =
+                Vec::new();
 
-                if old_edge_count == new_edge_count {
-                    // Collect edges that match
-                    for edge_ref in graph.edges(*new_idx) {
-                        let new_edge = edge_ref.weight();
-                        if let Some(old_edge) =
-                            old_edges_map.get(&(new_edge.source, new_edge.target))
-                        {
-                            edges_to_update.push((
-                                edge_ref.id(),
-                                old_edge.source_handle,
-                                old_edge.target_handle,
-                            ));
+            for node in graph.node_weights() {
+                if let Some(old_idx) = old_node_indices.get(&node.id)
+                    && let Some(new_idx) = node_indices.get(&node.id)
+                {
+                    let old_edge_count = old_graph.edges(*old_idx).count();
+                    let new_edge_count = graph.edges(*new_idx).count();
+
+                    if old_edge_count == new_edge_count {
+                        for edge_ref in graph.edges(*new_idx) {
+                            let new_edge = edge_ref.weight();
+                            if let Some(old_edge) =
+                                old_edges_map.get(&(new_edge.source, new_edge.target))
+                            {
+                                edges_to_update.push((
+                                    edge_ref.id(),
+                                    old_edge.source_handle,
+                                    old_edge.target_handle,
+                                ));
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Now apply the updates
-        for (edge_idx, source_handle, target_handle) in edges_to_update {
-            if let Some(edge) = graph.edge_weight_mut(edge_idx) {
-                edge.source_handle = source_handle;
-                edge.target_handle = target_handle;
+            // Now apply the updates
+            for (edge_idx, source_handle, target_handle) in edges_to_update {
+                if let Some(edge) = graph.edge_weight_mut(edge_idx) {
+                    edge.source_handle = source_handle;
+                    edge.target_handle = target_handle;
+                }
             }
         }
 

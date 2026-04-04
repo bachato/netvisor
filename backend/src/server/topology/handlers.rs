@@ -246,6 +246,7 @@ async fn create_topology(
         entity_tags: &entity_tags,
         old_edges: &[],
         old_nodes: &[],
+        old_perspective: None,
     });
 
     topology.set_entities(SetEntitiesParams {
@@ -391,6 +392,9 @@ async fn rebuild(
         .await?
         .ok_or_else(|| ApiError::not_found(format!("Topology {} not found", id)))?;
 
+    // Capture the old perspective before overwriting options
+    let old_perspective = Some(topology.base.options.request.perspective);
+
     // Update options from request
     topology.base.options = request.options.clone();
 
@@ -414,6 +418,7 @@ async fn rebuild(
         entity_tags: &entity_tags,
         old_nodes: &request.nodes,
         old_edges: &request.edges,
+        old_perspective,
     });
 
     topology.set_entities(SetEntitiesParams {

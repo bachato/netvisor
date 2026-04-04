@@ -2,6 +2,7 @@ use crate::server::services::r#impl::categories::ServiceCategory;
 use crate::server::shared::types::metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider};
 use crate::server::shared::types::{Color, Icon};
 use crate::server::topology::types::base::TopologyRequestOptions;
+use crate::server::topology::types::edges::TopologyPerspective;
 use serde::{Deserialize, Serialize};
 use strum_macros::{EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
@@ -41,6 +42,18 @@ impl<T> GraphRule<T> {
 pub enum ContainerRule {
     BySubnet,
     ByVirtualizingService,
+}
+
+impl ContainerRule {
+    pub fn applicable_perspectives(&self) -> &'static [TopologyPerspective] {
+        match self {
+            ContainerRule::BySubnet => &[TopologyPerspective::L3Logical],
+            ContainerRule::ByVirtualizingService => &[
+                TopologyPerspective::L3Logical,
+                TopologyPerspective::Infrastructure,
+            ],
+        }
+    }
 }
 
 impl HasId for ContainerRule {
@@ -83,6 +96,7 @@ impl TypeMetadataProvider for ContainerRule {
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
             "is_user_editable": matches!(self, ContainerRule::ByVirtualizingService),
+            "perspectives": self.applicable_perspectives(),
         })
     }
 }
@@ -100,6 +114,23 @@ pub enum ElementRule {
         tag_ids: Vec<Uuid>,
         title: Option<String>,
     },
+}
+
+impl ElementRule {
+    pub fn applicable_perspectives(&self) -> &'static [TopologyPerspective] {
+        match self {
+            ElementRule::ByServiceCategory { .. } => &[
+                TopologyPerspective::L3Logical,
+                TopologyPerspective::Application,
+            ],
+            ElementRule::ByTag { .. } => &[
+                TopologyPerspective::L3Logical,
+                TopologyPerspective::L2Physical,
+                TopologyPerspective::Infrastructure,
+                TopologyPerspective::Application,
+            ],
+        }
+    }
 }
 
 impl HasId for ElementRule {
@@ -144,6 +175,7 @@ impl TypeMetadataProvider for ElementRule {
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
             "is_user_editable": true,
+            "perspectives": self.applicable_perspectives(),
         })
     }
 }
@@ -156,10 +188,24 @@ pub struct GroupingConfig {
 
 impl GroupingConfig {
     pub fn from_request_options(options: &TopologyRequestOptions) -> Self {
-        GroupingConfig {
+        let mut config = GroupingConfig {
             container_rules: options.container_rules.clone(),
             element_rules: options.element_rules.clone(),
+        };
+
+        // Apply perspective-specific overrides when present
+        if let Some(ref overrides_map) = options.perspective_overrides
+            && let Some(overrides) = overrides_map.get(&options.perspective)
+        {
+            if let Some(ref rules) = overrides.container_rules {
+                config.container_rules = rules.clone();
+            }
+            if let Some(ref rules) = overrides.element_rules {
+                config.element_rules = rules.clone();
+            }
         }
+
+        config
     }
 
     pub fn should_group_docker_bridges(&self) -> bool {
