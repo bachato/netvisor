@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-04T17:27:36.649280Z",
-              "id": "4575a6c4-124f-49fd-bea7-939fcddb03b8",
+              "created_at": "2026-04-04T17:42:34.954309Z",
+              "id": "7f709fb0-806f-4a6e-91d1-db33af24f520",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T17:27:36.649280Z"
+              "updated_at": "2026-04-04T17:42:34.954309Z"
             }
           },
           "error": {
@@ -10731,14 +10731,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-04T17:27:36.636680Z",
-                      "id": "74c00f18-47ef-4703-850f-061e668b7f23",
+                      "created_at": "2026-04-04T17:42:34.937319Z",
+                      "id": "99825e3c-6467-416d-87e2-4ee9eb81fa44",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-04T17:27:36.636680Z"
+                      "updated_at": "2026-04-04T17:42:34.937319Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10747,7 +10747,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Ollama",
+                  "service_definition": "Nest Thermostat",
                   "source": {
                     "type": "Manual"
                   },
@@ -11450,14 +11450,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T17:27:36.645454Z",
-                  "id": "3cbf8811-beb4-480a-8423-5d6257ea702d",
+                  "created_at": "2026-04-04T17:42:34.949494Z",
+                  "id": "30acad0f-923e-46fe-8341-812db992e4ad",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T17:27:36.645454Z"
+                  "updated_at": "2026-04-04T17:42:34.949494Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11466,7 +11466,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Ollama",
+              "service_definition": "Nest Thermostat",
               "source": {
                 "type": "Manual"
               },
@@ -12740,14 +12740,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-04T17:27:36.636907Z",
-          "id": "bcfd1617-b813-4209-a1aa-6f204659d01e",
+          "created_at": "2026-04-04T17:42:34.937651Z",
+          "id": "83cf7fa8-6c3c-446d-a9ca-ca804a005c5e",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-04T17:27:36.636907Z"
+          "updated_at": "2026-04-04T17:42:34.937651Z"
         }
       },
       "BindingBase": {
@@ -13263,7 +13263,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Ollama",
+              "service_definition": "Nest Thermostat",
               "tags": [],
               "virtualization": null
             }
@@ -15710,14 +15710,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T17:27:36.636373Z",
-                  "id": "51e6986a-f76b-4c51-bb7b-6bb5f363bbd8",
+                  "created_at": "2026-04-04T17:42:34.936851Z",
+                  "id": "7a7c74ee-3dbe-4260-9566-cd9f28476f96",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T17:27:36.636373Z"
+                  "updated_at": "2026-04-04T17:42:34.936851Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15726,7 +15726,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Ollama",
+              "service_definition": "Nest Thermostat",
               "source": {
                 "type": "Manual"
               },
@@ -17706,14 +17706,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-04T17:27:36.630124Z",
-                        "id": "99b6dbd0-93ac-4054-ac96-514c26726aec",
+                        "created_at": "2026-04-04T17:42:34.926315Z",
+                        "id": "43f254a7-2eb5-416f-9780-6e98442387ce",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-04T17:27:36.630124Z"
+                        "updated_at": "2026-04-04T17:42:34.926315Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17722,7 +17722,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Ollama",
+                    "service_definition": "Nest Thermostat",
                     "source": {
                       "type": "Manual"
                     },
@@ -17799,14 +17799,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-04T17:27:36.644474Z",
-                    "id": "3e772fbf-ebe2-4310-8c89-8ddcf16087a6",
+                    "created_at": "2026-04-04T17:42:34.948167Z",
+                    "id": "f2210542-6713-47f6-86b9-695b14150890",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-04T17:27:36.644474Z"
+                    "updated_at": "2026-04-04T17:42:34.948167Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17815,7 +17815,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Ollama",
+                "service_definition": "Nest Thermostat",
                 "source": {
                   "type": "Manual"
                 },
@@ -19006,14 +19006,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-04T17:27:36.636833Z",
-              "id": "69e259b7-6fa7-4856-8ba5-0d1cb14534ea",
+              "created_at": "2026-04-04T17:42:34.937533Z",
+              "id": "04207e9c-e5fe-4069-b722-460d50cbb42a",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T17:27:36.636833Z"
+              "updated_at": "2026-04-04T17:42:34.937533Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19022,7 +19022,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Ollama",
+          "service_definition": "Nest Thermostat",
           "source": {
             "type": "Manual"
           },

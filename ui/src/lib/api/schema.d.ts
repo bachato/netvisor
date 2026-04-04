@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-04T17:27:36.649278Z",
-             *       "id": "ed70a49e-7652-4319-901b-7918122b5d6e",
+             *       "created_at": "2026-04-04T17:42:34.954304Z",
+             *       "id": "57860ae7-196a-4180-a0b0-6c24288a2ba7",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-04T17:27:36.649278Z"
+             *       "updated_at": "2026-04-04T17:42:34.954304Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3153,14 +3153,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-04T17:27:36.636669Z",
-             *               "id": "cbf66b46-e287-4e5b-a719-6277cf61d503",
+             *               "created_at": "2026-04-04T17:42:34.937337Z",
+             *               "id": "a6dfa034-c505-433e-a5b4-5c08fcf473e6",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-04T17:27:36.636669Z"
+             *               "updated_at": "2026-04-04T17:42:34.937337Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3169,7 +3169,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Ollama",
+             *           "service_definition": "Nest Thermostat",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3425,14 +3425,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-04T17:27:36.645519Z",
-             *           "id": "303c544e-d086-4b0b-b29c-4edc38ab5b14",
+             *           "created_at": "2026-04-04T17:42:34.949480Z",
+             *           "id": "10cf6377-3b2b-4104-a992-a8bbb97f2fd3",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-04T17:27:36.645519Z"
+             *           "updated_at": "2026-04-04T17:42:34.949480Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3441,7 +3441,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Ollama",
+             *       "service_definition": "Nest Thermostat",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3768,14 +3768,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-04T17:27:36.636895Z",
-         *       "id": "e5754ecf-1810-4337-979a-92bd651ba714",
+         *       "created_at": "2026-04-04T17:42:34.937675Z",
+         *       "id": "c5eb7b4b-9b76-4224-8e02-6e6852fbb6db",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-04T17:27:36.636895Z"
+         *       "updated_at": "2026-04-04T17:42:34.937675Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3960,7 +3960,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Ollama",
+         *           "service_definition": "Nest Thermostat",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4779,14 +4779,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-04T17:27:36.636371Z",
-         *               "id": "c7636c43-1b16-4e4a-8891-f1264333c25c",
+         *               "created_at": "2026-04-04T17:42:34.936862Z",
+         *               "id": "9a00e4ce-ee06-4ad0-a480-a7a96a668287",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-04T17:27:36.636371Z"
+         *               "updated_at": "2026-04-04T17:42:34.936862Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4795,7 +4795,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Ollama",
+         *           "service_definition": "Nest Thermostat",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5859,14 +5859,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-04T17:27:36.636821Z",
-         *           "id": "9a3a1418-089d-478a-8f17-c9bb5bc3d7fb",
+         *           "created_at": "2026-04-04T17:42:34.937555Z",
+         *           "id": "72ee0e68-d26b-45f3-9fa8-f2691f002615",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-04T17:27:36.636821Z"
+         *           "updated_at": "2026-04-04T17:42:34.937555Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5875,7 +5875,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Ollama",
+         *       "service_definition": "Nest Thermostat",
          *       "source": {
          *         "type": "Manual"
          *       },
