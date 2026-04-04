@@ -817,13 +817,10 @@ export function applySubgroupCollapseAdjustment(
 			const pos = nodePositions.get(child.id);
 			if (!pos) continue;
 			const isCollapsed = collapsed.has(child.id);
+			const existingSize = containerSizes.get(child.id);
 			const size = isCollapsed
-				? { width: 250, height: 40 }
-				: (containerSizes.get(child.id) ?? { width: 250, height: 100 });
-			// Update the container size for collapsed state
-			if (isCollapsed) {
-				containerSizes.set(child.id, { width: 250, height: 40 });
-			}
+				? { width: existingSize?.width ?? 250, height: 40 }
+				: (existingSize ?? { width: 250, height: 100 });
 			const x = pos.x;
 			if (!columns.has(x)) columns.set(x, []);
 			columns.get(x)!.push({ id: child.id, x: pos.x, y: pos.y, height: size.height });
@@ -837,10 +834,10 @@ export function applySubgroupCollapseAdjustment(
 			let y = startY;
 			for (const node of colNodes) {
 				nodePositions.set(node.id, { x: node.x, y });
-				y += node.height + 30; // spacing between subgroups
+				y += node.height + 25; // spacing between subgroups (grid-aligned)
 			}
 			const lastNode = colNodes[colNodes.length - 1];
-			const columnBottom = y - 30 + lastNode.height; // undo last spacing
+			const columnBottom = y - 25 + lastNode.height; // undo last spacing
 			if (columnBottom > maxColumnBottom) maxColumnBottom = columnBottom;
 		}
 

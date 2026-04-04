@@ -234,6 +234,12 @@ export class LayoutGraph {
 		return this.containers.get(containerId)?.size;
 	}
 
+	/** Get container expanded size (ignores collapsed state) */
+	getExpandedSize(containerId: string): { width: number; height: number } | undefined {
+		const container = this.containers.get(containerId);
+		return container && container.expandedSize.width > 0 ? container.expandedSize : undefined;
+	}
+
 	/** Get expanded sizes for all containers (for preserving across rebuilds) */
 	getExpandedContainerSizes(): Map<string, { width: number; height: number }> {
 		const sizes = new Map<string, { width: number; height: number }>();
