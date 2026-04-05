@@ -240,8 +240,29 @@
 				const elementToContainer = buildElementToContainer(layoutNodes);
 				const hiddenEdgeTypes = $topologyOptions.local.hide_edge_types ?? [];
 
-				// Build/rebuild the layout graph when topology changes
-				if (!layoutGraph) {
+				// Run ELK on structure/collapse changes, skip for edge-only re-renders
+				const opts = get(topologyOptions);
+				const sizeKey = `${(opts.request.hide_service_categories ?? []).join(',')}:${opts.request.hide_ports}`;
+				const currentPerspective = get(activePerspective);
+				const rootCollapsedPreview = new Set(
+					[...collapsed].filter((id) => !layoutGraph || !layoutGraph.isSubcontainer(id))
+				);
+				const structureKey =
+					currentPerspective +
+					':' +
+					getStructureKey(topology) +
+					':' +
+					Array.from(rootCollapsedPreview).sort().join(',') +
+					':' +
+					sizeKey +
+					':' +
+					hiddenEdgeTypes.join(',') +
+					':h' +
+					hiddenServices.size;
+				const isNewStructure = sessionStructureKey !== structureKey;
+
+				// Build/rebuild the layout graph when topology or hidden services change
+				if (!layoutGraph || isNewStructure) {
 					layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 				}
 
@@ -263,30 +284,6 @@
 				const rootCollapsed = new Set(
 					[...collapsed].filter((id) => !layoutGraph!.isSubcontainer(id))
 				);
-
-				// Run ELK on structure/collapse changes, skip for edge-only re-renders
-				const opts = get(topologyOptions);
-				const sizeKey = `${(opts.request.hide_service_categories ?? []).join(',')}:${opts.request.hide_ports}`;
-				const currentPerspective = get(activePerspective);
-				const structureKey =
-					currentPerspective +
-					':' +
-					getStructureKey(topology) +
-					':' +
-					Array.from(rootCollapsed).sort().join(',') +
-					':' +
-					sizeKey +
-					':' +
-					hiddenEdgeTypes.join(',') +
-					':h' +
-					hiddenServices.size;
-				const isNewStructure = sessionStructureKey !== structureKey;
-
-				// Rebuild layout graph when hidden services change
-				if (isNewStructure) {
-					layoutGraph = LayoutGraph.fromTopology(layoutNodes);
-					layoutGraph.syncCollapseState(collapsed);
-				}
 
 				// Helper: build SvelteFlow node array from topology nodes
 				const buildFlowNodes = (useGraph: boolean): Node[] => {
