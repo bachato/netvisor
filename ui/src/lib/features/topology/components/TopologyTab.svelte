@@ -107,20 +107,23 @@
 
 	// Application wizard gate
 	let appGroupTags = $derived((tagsQuery.data ?? []).filter((t) => t.is_application_group));
-	let wizardActive = $state(false);
+	let wizardDismissed = $state(false);
 
-	// Auto-open wizard when entering Application perspective with no app-group tags
+	// Reset dismissed state when perspective changes away from application
+	let prevPerspective = $state($activePerspective);
 	$effect(() => {
-		if (isActive && $activePerspective === 'Application' && appGroupTags.length === 0) {
-			wizardActive = true;
-		}
-		// Hide wizard when leaving Application perspective or topology tab
-		if (!isActive || $activePerspective !== 'application') {
-			wizardActive = false;
+		if ($activePerspective !== prevPerspective) {
+			prevPerspective = $activePerspective;
+			wizardDismissed = false;
 		}
 	});
 
-	let showAppWizard = $derived(isActive && wizardActive);
+	let showAppWizard = $derived(
+		isActive &&
+			$activePerspective === 'Application' &&
+			appGroupTags.length === 0 &&
+			!wizardDismissed
+	);
 
 	// Selected topology (derived from ID + query data)
 	let currentTopology = $derived(
@@ -421,7 +424,7 @@
 	}
 
 	function handleWizardComplete() {
-		wizardActive = false;
+		wizardDismissed = true;
 		const tagIds = appGroupTags.map((t) => t.id);
 		updateTopologyOptions((current) => ({
 			...current,
