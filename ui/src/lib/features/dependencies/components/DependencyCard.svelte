@@ -13,12 +13,15 @@
 		common_delete,
 		common_description,
 		common_edit,
+		common_no,
 		common_noTypeSpecified,
 		common_services,
 		common_tags,
+		common_yes,
 		dependencies_edgeStyleLabel,
 		dependencies_dependencyType,
-		dependencies_noServicesInDependency
+		dependencies_noServicesInDependency,
+		dependencies_withPorts
 	} from '$lib/paraglide/messages';
 
 	// Queries
@@ -118,6 +121,10 @@
 					}
 				],
 				emptyText: common_noTypeSpecified()
+			},
+			{
+				label: dependencies_withPorts(),
+				value: dependency.members?.type === 'Bindings' ? common_yes() : common_no()
 			},
 			{
 				label: common_services(),
