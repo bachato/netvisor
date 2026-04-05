@@ -49,6 +49,7 @@
 		allowItemEdit?: (item: T) => boolean;
 		allowItemRemove?: (item: T) => boolean;
 		allowItemReorder?: (item: T) => boolean;
+		stickyHeader?: boolean;
 		isItemEditing?: (item: T, index: number) => boolean;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		editIcon?: (item: T, index: number) => any;
@@ -114,6 +115,7 @@
 		allowItemEdit = () => true,
 		allowItemRemove = () => true,
 		allowItemReorder = () => true,
+		stickyHeader = false,
 		isItemEditing = () => false,
 		editIcon = undefined,
 		editButtonClass = undefined,
@@ -239,8 +241,8 @@
 	}
 </script>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="mb-2 flex flex-shrink-0 items-start justify-between gap-4">
+<div class={stickyHeader ? 'flex min-h-0 flex-1 flex-col' : ''}>
+	<div class={`mb-2 flex items-start justify-between gap-4${stickyHeader ? ' flex-shrink-0' : ''}`}>
 		<div class="min-w-0 flex-1">
 			<div class="text-secondary block text-sm font-medium">
 				{label}
@@ -332,7 +334,7 @@
 
 	<!-- Current Items -->
 	{#if items.length > 0}
-		<div class="mb-3 min-h-0 flex-1 space-y-2 overflow-y-auto p-0.5">
+		<div class={`mb-3 space-y-2 p-0.5${stickyHeader ? ' min-h-0 flex-1 overflow-y-auto' : ''}`}>
 			{#each items as item, index (itemDisplayComponent.getId(item))}
 				{@const isHighlighted = highlightedIndex === index}
 

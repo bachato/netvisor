@@ -124,7 +124,7 @@
 	$: hiddenCount = tags.length - visibleTagCount;
 </script>
 
-<div class="list-select-item-container flex min-w-0 items-center gap-3">
+<div class="flex min-w-0 items-center gap-3" class:list-select-item-container={showTagPicker}>
 	<!-- Icon -->
 	{#if icon}
 		<div class="flex h-7 w-7 flex-shrink-0 items-center justify-center">

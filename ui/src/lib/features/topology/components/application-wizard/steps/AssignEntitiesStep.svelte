@@ -110,6 +110,7 @@
 		<ListManager
 			label=""
 			helpText={appWizard_assignDescription()}
+			stickyHeader={true}
 			items={allHosts}
 			itemDisplayComponent={HostDisplay}
 			getItemContext={(host) => getHostContext(host)}
