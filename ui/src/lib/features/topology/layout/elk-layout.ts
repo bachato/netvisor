@@ -222,7 +222,8 @@ function buildElkGraph(input: ElkLayoutInput): {
 					width: size.x,
 					height: size.y,
 					layoutOptions: {
-						'elk.nodeSize.constraints': 'SET_SIZE'
+						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+						'elk.nodeSize.minimum': `(${size.x},${size.y})`
 					}
 				});
 			}
@@ -609,15 +610,17 @@ function mapElkResults(
 		}
 	}
 
-	// Snap ALL node positions to the 25px grid so they align with SvelteFlow's snapGrid.
-	// Container positions must also be grid-aligned because element positions are relative
-	// to their parent container — if the parent is off-grid, child snap is offset.
+	// Snap container positions to the 25px grid so they align with SvelteFlow's snapGrid.
+	// Only snap containers — element positions are relative to their parent and snapping
+	// them independently would break the inter-node spacing ELK computed.
 	const SNAP = 25;
 	for (const [id, pos] of nodePositions) {
-		nodePositions.set(id, {
-			x: Math.round(pos.x / SNAP) * SNAP,
-			y: Math.round(pos.y / SNAP) * SNAP
-		});
+		if (containerIds.has(id)) {
+			nodePositions.set(id, {
+				x: Math.round(pos.x / SNAP) * SNAP,
+				y: Math.round(pos.y / SNAP) * SNAP
+			});
+		}
 	}
 
 	return {
