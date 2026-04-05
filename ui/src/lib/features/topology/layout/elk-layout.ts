@@ -576,7 +576,13 @@ function mapElkResults(
 		});
 	}
 
-	for (const edge of input.edges) {
+	// Only compute handles for edges that will actually be rendered (not hidden or disabled)
+	const hiddenEdgeSet = new Set(input.hiddenEdgeTypes ?? []);
+	const renderedEdges = input.edges.filter(
+		(e) => !hiddenEdgeSet.has(e.edge_type) && e.classification !== 'disabled'
+	);
+
+	for (const edge of renderedEdges) {
 		const srcPos = absolutePositions.get(edge.source);
 		const tgtPos = absolutePositions.get(edge.target);
 		const srcSize = nodeSizes.get(edge.source);
@@ -591,7 +597,7 @@ function mapElkResults(
 
 	// Override handles for bridge nodes — edges should face outward from container edge
 	if (bridgeNodeSides.size > 0) {
-		for (const edge of input.edges) {
+		for (const edge of renderedEdges) {
 			const key = `${edge.source}->${edge.target}`;
 			const handles = edgeHandles.get(key);
 			if (!handles) continue;
