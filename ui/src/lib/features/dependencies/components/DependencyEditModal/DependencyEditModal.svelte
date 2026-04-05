@@ -50,8 +50,7 @@
 		dependencies_dependencyType,
 		dependencies_loadingServices,
 		dependencies_noServicesYet,
-		dependencies_selectBindingForService,
-		dependencies_selectBindingRequired,
+		dependencies_selectPort,
 		dependencies_selectService,
 		dependencies_servicesOnly,
 		common_services,
@@ -208,16 +207,10 @@
 	let selectedServiceIds = $state<string[]>([]);
 	let memberMode = $state<'Services' | 'Bindings'>('Services');
 	let bindingSelections = new SvelteMap<string, string | null>();
+	let bindingsSubmitted = $state(false);
 	let selectedNetworkId = $state<string>('');
 	let edgeColor = $state<Color>('Blue');
 	let edgeEdgeStyle = $state<EdgeStyle>('SmoothStep');
-
-	// Validation for binding mode: all services must have a binding selected
-	let bindingValidationError = $derived.by(() => {
-		if (memberMode !== 'Bindings' || selectedServiceIds.length === 0) return null;
-		const missing = selectedServiceIds.some((svcId) => !bindingSelections.get(svcId));
-		return missing ? dependencies_selectBindingRequired() : null;
-	});
 
 	// Reset form when modal opens
 	function handleOpen() {
@@ -228,6 +221,7 @@
 		edgeEdgeStyle = defaults.edge_style || 'SmoothStep';
 		activeTab = 'details';
 		furthestReached = 0;
+		bindingsSubmitted = false;
 
 		// Initialize member state from existing dependency
 		const members = defaults.members;
@@ -297,6 +291,7 @@
 
 	// Handle member mode switch
 	function handleModeChange(mode: string) {
+		bindingsSubmitted = false;
 		if (mode === 'Services') {
 			memberMode = 'Services';
 			// Clear binding selections but keep services
@@ -338,8 +333,15 @@
 
 	async function handleFormSubmit() {
 		if (isEditing || isLastWizardStep) {
-			// Validate binding mode before submit
-			if (bindingValidationError) return;
+			// Validate all bindings are selected in With ports mode
+			if (memberMode === 'Bindings') {
+				const missing = selectedServiceIds.some((svcId) => !bindingSelections.get(svcId));
+				if (missing) {
+					// Trigger validation display by marking unselected bindings
+					bindingsSubmitted = true;
+					return;
+				}
+			}
 			handleSubmit();
 		} else {
 			const isValid = await validateForm(form);
@@ -557,22 +559,24 @@
 									{@const service = item as Service}
 									{@const serviceBindings = getBindingsForService(service)}
 									{@const selectedBindingId = bindingSelections.get(service.id) ?? null}
+									{@const showError = bindingsSubmitted && !selectedBindingId}
 									<div class="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
 										<RichSelect
 											options={serviceBindings}
 											selectedValue={selectedBindingId}
-											placeholder={dependencies_selectBindingForService()}
+											placeholder={dependencies_selectPort()}
 											displayComponent={BindingWithServiceDisplay}
 											getOptionContext={() => bindingContext}
-											onSelect={(bindingId) => handleBindingSelect(service.id, bindingId)}
+											onSelect={(bindingId) => {
+												handleBindingSelect(service.id, bindingId);
+											}}
+											required={true}
+											error={showError ? required(selectedBindingId) : null}
 										/>
 									</div>
 								{/if}
 							{/snippet}
 						</ListManager>
-						{#if bindingValidationError}
-							<p class="mt-2 text-xs text-red-500">{bindingValidationError}</p>
-						{/if}
 					</div>
 				</div>
 			{/if}
@@ -629,12 +633,7 @@
 					{/if}
 					<button
 						type="submit"
-						disabled={loading ||
-							deleting ||
-							(activeTab === 'services' &&
-								memberMode === 'Bindings' &&
-								!!bindingValidationError &&
-								isLastWizardStep)}
+						disabled={loading || deleting}
 						class="btn-primary {!isEditing && !isLastWizardStep ? 'btn-primary-lg' : ''}"
 					>
 						{loading ? common_saving() : saveLabel}
