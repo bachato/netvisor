@@ -23,7 +23,12 @@
 		updateSharedElementRules
 	} from '../../../queries';
 	import { getTopologyEditState } from '../../../state';
-	import { useTopologiesQuery, selectedTopologyId, autoRebuild } from '../../../queries';
+	import {
+		useTopologiesQuery,
+		useRebuildTopologyMutation,
+		selectedTopologyId,
+		autoRebuild
+	} from '../../../queries';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { components } from '$lib/api/schema';
 	type ServiceCategory = components['schemas']['ServiceCategory'];
@@ -52,8 +57,9 @@
 	} from '$lib/paraglide/messages';
 	import perspectivesJson from '$lib/data/perspectives.json';
 
-	// Topology for edit state
+	// Topology for edit state and rebuild
 	const topologiesQuery = useTopologiesQuery();
+	const rebuildMutation = useRebuildTopologyMutation();
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let topology = $derived(topologiesData.find((t) => t.id === $selectedTopologyId));
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, false));
@@ -267,10 +273,13 @@
 		editingElementId = wasEditing ? null : ruleId;
 
 		if (wasEditing) {
-			// Closing editor: flush pending edits to store (triggers rebuild)
+			// Closing editor: flush pending edits to store and rebuild
 			if (pendingElementRules) {
 				updateElementRules(pendingElementRules);
 				pendingElementRules = null;
+			}
+			if (topology) {
+				rebuildMutation.mutate(topology);
 			}
 		} else {
 			// Opening editor: start buffering edits

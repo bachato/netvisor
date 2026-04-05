@@ -798,43 +798,9 @@ if (browser) {
 	});
 
 	let elementRulesInitialized = false;
-	let elementRulesRebuildTimeout: ReturnType<typeof setTimeout>;
 	sharedElementRules.subscribe((rules) => {
-		console.debug('[sharedElementRules] subscriber fired', {
-			elementRulesInitialized,
-			rulesCount: rules.length,
-			autoRebuild: get(autoRebuild),
-			topologyId: get(selectedTopologyId)
-		});
 		if (elementRulesInitialized) {
 			saveElementRulesToStorage(rules);
-
-			clearTimeout(elementRulesRebuildTimeout);
-			elementRulesRebuildTimeout = setTimeout(() => {
-				console.debug('[sharedElementRules] rebuild timeout firing');
-				if (!get(autoRebuild)) return;
-				const topologyId = get(selectedTopologyId);
-				if (!topologyId) return;
-
-				const topologies = queryClient.getQueryData<Topology[]>(queryKeys.topology.all);
-				const topology = topologies?.find((t) => t.id === topologyId);
-				if (!topology) return;
-
-				const perspectiveOpts = get(perPerspectiveOptions)[get(activePerspective)];
-				const options = {
-					...perspectiveOpts,
-					request: { ...perspectiveOpts.request, element_rules: rules }
-				};
-				apiClient.POST('/api/v1/topology/{id}/rebuild', {
-					params: { path: { id: topologyId } },
-					body: {
-						network_id: topology.network_id,
-						options: sanitizeOptionsForApi(options),
-						nodes: topology.nodes,
-						edges: topology.edges
-					}
-				});
-			}, 500);
 		}
 		elementRulesInitialized = true;
 	});
