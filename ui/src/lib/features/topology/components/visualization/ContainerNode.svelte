@@ -328,7 +328,7 @@
 		{#if isSubcontainer}
 			<!-- Collapsed subcontainer: compact inline header with dashed border -->
 			<div
-				class="nopan nodrag flex items-center gap-1 rounded-lg border border-dashed border-gray-300 px-3 py-2 dark:border-gray-600"
+				class="nopan nodrag flex items-center gap-1 overflow-hidden rounded-lg border border-dashed border-gray-300 px-3 py-2 dark:border-gray-600"
 				style="background: var(--color-topology-subgroup-bg); width: 100%; height: 100%;"
 			>
 				<ChevronRight class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
