@@ -22,8 +22,11 @@
 		selectedTopologyId,
 		selectedNodes,
 		consumePreferredNetwork,
-		activePerspective
+		activePerspective,
+		updateTopologyOptions
 	} from '../queries';
+	import { makeGraphRule } from '../types/grouping';
+	import { get } from 'svelte/store';
 	import type { Topology } from '../types/base';
 	import TopologyModal from './TopologyModal.svelte';
 	import { newNodeIds } from '../interactions';
@@ -39,8 +42,10 @@
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { trackEvent } from '$lib/shared/utils/analytics';
 	import { useSubnetsQuery } from '$lib/features/subnets/queries';
+	import { useTagsQuery } from '$lib/features/tags/queries';
 	import { useActiveSessionsQuery } from '$lib/features/discovery/queries';
 	import { useDependenciesQuery } from '$lib/features/dependencies/queries';
+	import ApplicationSetupWizard from './application-wizard/ApplicationSetupWizard.svelte';
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
@@ -82,6 +87,7 @@
 	);
 
 	// Queries - TanStack Query handles deduplication
+	const tagsQuery = useTagsQuery();
 	const subnetsQuery = useSubnetsQuery();
 	const dependenciesQuery = useDependenciesQuery();
 	const usersQuery = useUsersQuery({ enabled: () => canViewUsers });
@@ -98,6 +104,10 @@
 	);
 
 	let hasEmail = $derived(configQuery.data?.has_email_service ?? false);
+
+	// Application wizard gate
+	let appGroupTags = $derived((tagsQuery.data ?? []).filter((t) => t.is_application_group));
+	let showAppWizard = $derived($activePerspective === 'application' && appGroupTags.length === 0);
 
 	// Selected topology (derived from ID + query data)
 	let currentTopology = $derived(
@@ -397,6 +407,27 @@
 		}
 	}
 
+	function handleWizardComplete() {
+		const tagIds = appGroupTags.map((t) => t.id);
+		updateTopologyOptions((current) => ({
+			...current,
+			request: {
+				...current.request,
+				container_rules: [
+					...(current.request.container_rules ?? []).filter(
+						(r) => typeof r.rule === 'string' || !('ByApplicationGroup' in r.rule)
+					),
+					makeGraphRule({ ByApplicationGroup: { tag_ids: tagIds } })
+				]
+			}
+		}));
+		// Auto-rebuild triggers via perPerspectiveOptions subscriber
+		// If autoRebuild is off, trigger manually
+		if (!get(autoRebuild) && currentTopology) {
+			rebuildTopologyMutation.mutate(currentTopology);
+		}
+	}
+
 	let stateConfig = $derived(
 		currentTopology
 			? getTopologyState(currentTopology, $autoRebuild, {
@@ -630,6 +661,9 @@
 						{isActive}
 					/>
 				</div>
+				{#if showAppWizard}
+					<ApplicationSetupWizard {appGroupTags} onComplete={handleWizardComplete} />
+				{/if}
 			{:else}
 				<div class="card card-static text-secondary">
 					{topology_noTopologySelected()}
