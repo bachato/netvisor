@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-05T22:49:16.896696Z",
-             *       "id": "d664c585-9bbf-473c-a17e-72a427d53740",
+             *       "created_at": "2026-04-05T23:31:07.154707Z",
+             *       "id": "6e943a05-a033-4fbb-823e-82666ee89ef4",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-05T22:49:16.896696Z"
+             *       "updated_at": "2026-04-05T23:31:07.154707Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-05T22:49:16.876967Z",
-             *               "id": "cbb46ea4-061a-44a8-8eed-f0afb0dcf443",
+             *               "created_at": "2026-04-05T23:31:07.137718Z",
+             *               "id": "843feddd-5067-4763-83be-df459f62b1b7",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-05T22:49:16.876967Z"
+             *               "updated_at": "2026-04-05T23:31:07.137718Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3172,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "HP Printer",
+             *           "service_definition": "Sonos Speaker",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-05T22:49:16.891481Z",
-             *           "id": "4748dc7b-9f6d-4096-b741-2c7b020fc985",
+             *           "created_at": "2026-04-05T23:31:07.150040Z",
+             *           "id": "463b124d-17e2-4965-b563-552719067b04",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-05T22:49:16.891481Z"
+             *           "updated_at": "2026-04-05T23:31:07.150040Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3444,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "HP Printer",
+             *       "service_definition": "Sonos Speaker",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3772,14 +3772,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-05T22:49:16.877373Z",
-         *       "id": "a5bf6292-9e14-4500-81b0-3d11e67f48f2",
+         *       "created_at": "2026-04-05T23:31:07.138077Z",
+         *       "id": "3742d53b-9304-460d-aa48-dccc4d070aa7",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-05T22:49:16.877373Z"
+         *       "updated_at": "2026-04-05T23:31:07.138077Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3899,7 +3899,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal";
+        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "Root" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -3964,7 +3964,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "HP Printer",
+         *           "service_definition": "Sonos Speaker",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4806,14 +4806,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-05T22:49:16.876407Z",
-         *               "id": "21fd136f-bb01-4404-8f44-7c87930c5a9f",
+         *               "created_at": "2026-04-05T23:31:07.137246Z",
+         *               "id": "36c089e4-174d-43ab-8102-8c481db6777b",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-05T22:49:16.876407Z"
+         *               "updated_at": "2026-04-05T23:31:07.137246Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4822,7 +4822,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "HP Printer",
+         *           "service_definition": "Sonos Speaker",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5886,14 +5886,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-05T22:49:16.877238Z",
-         *           "id": "b23d28fa-a3ea-4ee8-a896-56cfeb422262",
+         *           "created_at": "2026-04-05T23:31:07.137957Z",
+         *           "id": "e2be39da-70d1-4111-840c-16a8deb53a58",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-05T22:49:16.877238Z"
+         *           "updated_at": "2026-04-05T23:31:07.137957Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5902,7 +5902,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "HP Printer",
+         *       "service_definition": "Sonos Speaker",
          *       "source": {
          *         "type": "Manual"
          *       },

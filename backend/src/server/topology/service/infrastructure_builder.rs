@@ -12,7 +12,7 @@ use crate::server::{
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeClassification, EdgeHandle, EdgeType},
         grouping::GroupingConfig,
-        nodes::{ElementEntityType, Node, NodeType},
+        nodes::{ContainerType, ElementEntityType, Node, NodeType},
     },
 };
 
@@ -59,6 +59,22 @@ impl PerspectiveBuilder for InfrastructureBuilder {
     fn build(&self, ctx: &TopologyContext, grouping: &GroupingConfig) -> (Vec<Node>, Vec<Edge>) {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
+
+        // Root container — all host elements live here; element rules create subcontainers inside it
+        nodes.push(Node {
+            id: FLAT_ROOT_ID,
+            node_type: NodeType::Container {
+                container_type: ContainerType::Root,
+                parent_container_id: None,
+                layer_hint: None,
+                icon: None,
+                color: None,
+            },
+            position: Default::default(),
+            size: Default::default(),
+            header: None,
+            element_rule_id: None,
+        });
 
         // Pre-compute virtualizer_host_id for each host
         let virtualizer_map: HashMap<Uuid, Option<Uuid>> = ctx
@@ -269,7 +285,15 @@ mod tests {
         let ctx = TopologyContext::new(&[], &[], &[], &[], &[], &[], &[], &[], &[], &options);
         let builder = InfrastructureBuilder;
         let (nodes, edges) = builder.build(&ctx, &infra_grouping());
-        assert!(nodes.is_empty());
+        // Only the Root container, no elements
+        assert_eq!(nodes.len(), 1);
+        assert!(matches!(
+            nodes[0].node_type,
+            NodeType::Container {
+                container_type: ContainerType::Root,
+                ..
+            }
+        ));
         assert!(edges.is_empty());
     }
 
@@ -414,8 +438,8 @@ mod tests {
         let builder = InfrastructureBuilder;
         let (nodes, _edges) = builder.build(&ctx, &infra_grouping());
 
-        // 5 host elements + 1 Virtualizer + 1 BareMetal = 7
-        assert_eq!(nodes.len(), 7);
+        // 5 host elements + 1 Root + 1 Virtualizer + 1 BareMetal = 8
+        assert_eq!(nodes.len(), 8);
 
         let virtualizers: Vec<&Node> = nodes
             .iter()
