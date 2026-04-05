@@ -4,7 +4,6 @@
 	"appWizard_assignEntities": "Assign Hosts",
 	"appWizard_bulkAssign": "Assign to group:",
 	"appWizard_complete": "Complete Setup",
-	"appWizard_customGroupPlaceholder": "Custom group name",
 	"appWizard_defineGroups": "Define Groups",
 	"appWizard_defineGroupsDescription": "Application groups organize your hosts and services into logical applications. Start with suggestions or create your own.",
 	"appWizard_inheritanceNote": "Services inherit their host's application group. Override individual services by tagging them directly.",

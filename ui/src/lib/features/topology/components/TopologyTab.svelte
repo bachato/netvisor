@@ -107,7 +107,16 @@
 
 	// Application wizard gate
 	let appGroupTags = $derived((tagsQuery.data ?? []).filter((t) => t.is_application_group));
-	let showAppWizard = $derived($activePerspective === 'application' && appGroupTags.length === 0);
+	let wizardActive = $state(false);
+
+	// Auto-open wizard when entering Application perspective with no app-group tags
+	$effect(() => {
+		if (isActive && $activePerspective === 'application' && appGroupTags.length === 0) {
+			wizardActive = true;
+		}
+	});
+
+	let showAppWizard = $derived(isActive && wizardActive);
 
 	// Selected topology (derived from ID + query data)
 	let currentTopology = $derived(
@@ -411,7 +420,16 @@
 		}
 	}
 
+	function handleWizardClose() {
+		wizardActive = false;
+		if (appGroupTags.length === 0) {
+			// No groups created — switch back to L3
+			activePerspective.set('l3_logical');
+		}
+	}
+
 	function handleWizardComplete() {
+		wizardActive = false;
 		const tagIds = appGroupTags.map((t) => t.id);
 		updateTopologyOptions((current) => ({
 			...current,
@@ -682,7 +700,11 @@
 </SvelteFlowProvider>
 
 {#if showAppWizard}
-	<ApplicationSetupWizard {appGroupTags} onComplete={handleWizardComplete} />
+	<ApplicationSetupWizard
+		{appGroupTags}
+		onComplete={handleWizardComplete}
+		onClose={handleWizardClose}
+	/>
 {/if}
 
 <TopologyModal

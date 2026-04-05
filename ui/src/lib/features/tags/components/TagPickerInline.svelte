@@ -35,7 +35,9 @@
 		onAdd,
 		onRemove,
 		// Optional pre-resolved tags (e.g. from topology snapshot on share pages)
-		availableTags: availableTagsProp
+		availableTags: availableTagsProp,
+		// When true, tags created inline will have is_application_group set
+		createAsApplicationGroup = false
 	}: {
 		selectedTagIds?: string[];
 		disabled?: boolean;
@@ -44,6 +46,7 @@
 		onAdd?: (tagId: string) => void;
 		onRemove?: (tagId: string) => void;
 		availableTags?: import('$lib/features/tags/types/base').Tag[];
+		createAsApplicationGroup?: boolean;
 	} = $props();
 
 	// Entity mode: use generic mutations
@@ -184,6 +187,9 @@
 			const newTag = createDefaultTag(organization.id);
 			newTag.name = name;
 			newTag.color = getRandomColor();
+			if (createAsApplicationGroup) {
+				(newTag as typeof newTag & { is_application_group: boolean }).is_application_group = true;
+			}
 
 			const result = await createTagMutation.mutateAsync(newTag);
 			await handleAddTag(result.id);
