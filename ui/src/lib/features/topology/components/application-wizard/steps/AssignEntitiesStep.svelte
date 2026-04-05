@@ -16,7 +16,6 @@
 	import { concepts } from '$lib/shared/stores/metadata';
 	import {
 		appWizard_assignDescription,
-		appWizard_inheritanceNote,
 		appWizard_bulkAssign,
 		appWizard_selectedCount
 	} from '$lib/paraglide/messages';
@@ -78,19 +77,12 @@
 	}
 </script>
 
-<div class="flex h-full flex-col space-y-4">
-	<p class="text-secondary text-sm">
-		{appWizard_assignDescription()}
-	</p>
-
-	<p class="text-tertiary text-xs italic">
-		{appWizard_inheritanceNote()}
-	</p>
-
+<div class="flex h-full flex-col">
 	<!-- Host list with ListManager -->
-	<div class="min-h-0 flex-1 overflow-y-auto">
+	<div class="min-h-0 flex-1 overflow-y-auto px-1">
 		<ListManager
 			label=""
+			helpText={appWizard_assignDescription()}
 			items={allHosts}
 			itemDisplayComponent={HostDisplay}
 			getItemContext={(host) => getHostContext(host)}
@@ -144,13 +136,13 @@
 
 	<!-- Bulk assign bar -->
 	{#if selectedHosts.length > 0}
-		<div
-			class="card card-static sticky bottom-0 flex items-center gap-3 border-t px-4 py-3 shadow-lg"
-		>
-			<span class="text-secondary whitespace-nowrap text-sm font-medium">
-				{appWizard_selectedCount({ count: String(selectedHosts.length) })}
-			</span>
-			<span class="text-tertiary text-sm">{appWizard_bulkAssign()}</span>
+		<div class="card card-static flex items-center gap-3 border-t px-4 py-3 shadow-lg">
+			<div class="flex flex-col">
+				<span class="text-secondary whitespace-nowrap text-sm font-medium">
+					{appWizard_selectedCount({ count: String(selectedHosts.length) })}
+				</span>
+				<span class="text-tertiary text-sm">{appWizard_bulkAssign()}</span>
+			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each appGroupTags as tag (tag.id)}
 					<button

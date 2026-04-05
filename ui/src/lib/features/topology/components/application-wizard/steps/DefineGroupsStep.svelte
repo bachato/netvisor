@@ -40,9 +40,10 @@
 		suggestions.filter((s) => !existingNames.has(s.toLowerCase()))
 	);
 
-	// Stable color per suggestion so each is different
-	function getSuggestionColor(index: number): Color {
-		return AVAILABLE_COLORS[index % AVAILABLE_COLORS.length];
+	// Stable color per suggestion based on position in the full suggestions list
+	function getSuggestionColor(name: string): Color {
+		const idx = suggestions.indexOf(name);
+		return AVAILABLE_COLORS[(idx >= 0 ? idx : 0) % AVAILABLE_COLORS.length];
 	}
 
 	let isCreating = $state(false);
@@ -51,7 +52,7 @@
 		return AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)];
 	}
 
-	async function createAppGroupTag(name: string) {
+	async function createAppGroupTag(name: string, color?: Color) {
 		if (!organization || isCreating) return;
 		const trimmed = name.trim();
 		if (!trimmed || existingNames.has(trimmed.toLowerCase())) return;
@@ -60,7 +61,7 @@
 		try {
 			const tag = createDefaultTag(organization.id);
 			tag.name = trimmed;
-			tag.color = getRandomColor();
+			tag.color = color ?? getRandomColor();
 			(tag as TagType & { is_application_group: boolean }).is_application_group = true;
 			await createTagMutation.mutateAsync(tag);
 		} finally {
@@ -94,16 +95,17 @@
 				{appWizard_suggestedGroups()}
 			</h3>
 			<div class="flex flex-wrap gap-2">
-				{#each availableSuggestions as suggestion, i (suggestion)}
+				{#each availableSuggestions as suggestion (suggestion)}
+					{@const suggestionColor = getSuggestionColor(suggestion)}
 					<button
 						type="button"
 						class="cursor-pointer"
-						onclick={() => createAppGroupTag(suggestion)}
+						onclick={() => createAppGroupTag(suggestion, suggestionColor)}
 						disabled={isCreating}
 					>
 						<Tag
 							label={suggestion}
-							color={getSuggestionColor(i)}
+							color={suggestionColor}
 							icon={concepts.getIconComponent('Application')}
 							isShiny={true}
 							pill={true}

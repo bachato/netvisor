@@ -35,9 +35,11 @@
 		size="xl"
 		fixedHeight={true}
 	>
-		<div class="overflow-y-auto p-6">
+		<div class="flex min-h-0 flex-1 flex-col p-6">
 			{#if activeTab === 'define'}
-				<DefineGroupsStep {appGroupTags} />
+				<div class="overflow-y-auto">
+					<DefineGroupsStep {appGroupTags} />
+				</div>
 			{:else if activeTab === 'assign'}
 				<AssignEntitiesStep {appGroupTags} />
 			{/if}
