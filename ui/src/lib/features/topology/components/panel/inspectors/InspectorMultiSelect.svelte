@@ -39,7 +39,7 @@
 	import { AVAILABLE_COLORS, createColorHelper } from '$lib/shared/utils/styling';
 	import { browser } from '$app/environment';
 	import {
-		topology_multiSelectActionBarCount,
+		appWizard_selectedCount,
 		topology_multiSelectGroupName,
 		topology_multiSelectNoBindings,
 		topology_multiSelectPickBinding,
@@ -48,7 +48,7 @@
 		topology_multiSelectStaleHint,
 		topology_multiSelectReadOnlyHint,
 		common_clearSelection,
-		common_tags,
+		tags_entityTags,
 		dependencies_createDependency,
 		dependencies_serviceBindings,
 		dependencies_serviceBindingsInfoTitle,
@@ -149,6 +149,19 @@
 	});
 
 	let appGroupTagSet = $derived(new Set(appGroupTagIds));
+
+	// Filtered tag lists for pickers
+	let nonAppGroupTags = $derived(allTags.filter((t) => !t.is_application_group));
+	let appGroupTags = $derived(allTags.filter((t) => t.is_application_group));
+
+	// Common app-group tags across selected entities (for app-group picker selectedTagIds)
+	let commonAppGroupTags = $derived(commonTags.filter((id) => appGroupTagSet.has(id)));
+	let hasAppGroupTag = $derived(commonAppGroupTags.length > 0);
+
+	// App-group available tags: if already tagged, only show current tag (for removal)
+	let appGroupAvailableTags = $derived(
+		hasAppGroupTag ? appGroupTags.filter((t) => commonAppGroupTags.includes(t.id)) : appGroupTags
+	);
 
 	// Analyze each selected service's app-group status
 	type AppGroupInfo = { tagId: string; inherited: boolean } | null;
@@ -544,7 +557,7 @@
 	<!-- Header with count, focus, and clear -->
 	<div class="flex items-center justify-between">
 		<span class="text-secondary text-sm font-medium">
-			{topology_multiSelectActionBarCount({ count: nodes.length })}
+			{appWizard_selectedCount({ count: nodes.length })}
 		</span>
 		<div class="flex items-center gap-1">
 			<button
@@ -564,13 +577,16 @@
 	{#if editState.isEditable}
 		<!-- Tags section -->
 		<div class="space-y-2">
-			<span class="text-secondary block text-sm font-medium">{common_tags()}</span>
+			<span class="text-secondary block text-sm font-medium"
+				>{tags_entityTags({ entity: tagEntityType })}</span
+			>
 			<div class="card card-static space-y-2 p-2">
 				<div class="flex items-center gap-1.5">
 					<TagPickerInline
 						selectedTagIds={commonTags}
 						onAdd={handleAddTagWithTracking}
 						onRemove={handleRemoveTag}
+						availableTags={nonAppGroupTags}
 					/>
 				</div>
 				{#if recentlyAddedTagIds.length > 0 && !existingRuleCoversRecentTags}
@@ -614,9 +630,11 @@
 							{/if}
 						{/if}
 						<TagPickerInline
-							selectedTagIds={commonTags}
+							selectedTagIds={commonAppGroupTags}
 							onAdd={handleAddAppGroupTag}
 							onRemove={handleRemoveTag}
+							availableTags={appGroupAvailableTags}
+							allowCreate={false}
 						/>
 					{/if}
 				</div>

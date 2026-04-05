@@ -4,8 +4,16 @@
 	export const DependencyDisplay: EntityDisplayComponent<Dependency, object> = {
 		getId: (dependency: Dependency) => dependency.id,
 		getLabel: (dependency: Dependency) => dependency.name,
-		getDescription: (dependency: Dependency) =>
-			`${(dependency.members ?? []).length} member${(dependency.members ?? []).length !== 1 ? 's' : ''} in dependency`,
+		getDescription: (dependency: Dependency) => {
+			const members = dependency.members;
+			const count =
+				members?.type === 'Services'
+					? members.service_ids.length
+					: members?.type === 'Bindings'
+						? members.binding_ids.length
+						: 0;
+			return `${count} member${count !== 1 ? 's' : ''} in dependency`;
+		},
 		getIcon: (dependency: Dependency) =>
 			dependencyTypes.getIconComponent(dependency.dependency_type),
 		getIconColor: () => entities.getColorHelper('Dependency').icon,

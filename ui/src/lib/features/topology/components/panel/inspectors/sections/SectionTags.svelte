@@ -64,9 +64,25 @@
 		$activePerspective === 'Application' && entityType === 'Service'
 	);
 
-	// App-group tags for the picker (filtered from all tags)
+	// App-group tags for the picker
 	const tagsQuery = useTagsQuery();
-	let appGroupTags = $derived((tagsQuery.data ?? []).filter((t) => t.is_application_group));
+	let allTags = $derived(tagsQuery.data ?? []);
+	let appGroupTags = $derived(allTags.filter((t) => t.is_application_group));
+	let appGroupTagIds = $derived(new Set(appGroupTags.map((t) => t.id)));
+
+	// Non-app-group tags for the regular picker (filter out app-group tags)
+	let nonAppGroupTags = $derived(allTags.filter((t) => !t.is_application_group));
+
+	// App-group selected tags (only app-group tag IDs from entity's tags)
+	let selectedAppGroupTagIds = $derived(selectedTagIds.filter((id) => appGroupTagIds.has(id)));
+	let hasAppGroupTag = $derived(selectedAppGroupTagIds.length > 0);
+
+	// If already tagged, only show current tag (for removal). Otherwise show all app-group tags.
+	let appGroupAvailableTags = $derived(
+		hasAppGroupTag
+			? appGroupTags.filter((t) => selectedAppGroupTagIds.includes(t.id))
+			: appGroupTags
+	);
 </script>
 
 {#if entityId && entityType}
@@ -77,7 +93,7 @@
 			{entityId}
 			{entityType}
 			disabled={!editState.isEditable}
-			availableTags={isReadonly ? topology.entity_tags : undefined}
+			availableTags={isReadonly ? topology.entity_tags : nonAppGroupTags}
 		/>
 	</div>
 
@@ -85,12 +101,12 @@
 		<div>
 			<span class="text-secondary mb-2 block text-sm font-medium">{tags_applicationGroup()}</span>
 			<TagPickerInline
-				{selectedTagIds}
+				selectedTagIds={selectedAppGroupTagIds}
 				{entityId}
 				{entityType}
 				disabled={!editState.isEditable}
-				availableTags={appGroupTags}
-				createAsApplicationGroup={true}
+				availableTags={appGroupAvailableTags}
+				allowCreate={false}
 			/>
 		</div>
 	{/if}
