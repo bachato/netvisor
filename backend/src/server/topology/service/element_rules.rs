@@ -10,11 +10,14 @@ use crate::server::{
 };
 
 /// Data resolved from an element node for matching against element rules.
+#[derive(Clone)]
 pub struct ElementMatchData {
     pub categories: HashSet<ServiceCategory>,
     pub tag_ids: HashSet<Uuid>,
     /// The host ID of the virtualizer managing this element (for ByVirtualizer grouping).
     pub virtualizer_host_id: Option<Uuid>,
+    /// The Docker Compose project name (for ByStack grouping).
+    pub compose_project: Option<String>,
 }
 
 /// Apply element rules to nodes, creating nested subcontainers within each parent container.
@@ -106,7 +109,6 @@ pub fn apply_element_rules_with_titles(
                         };
                         let group_id = Uuid::new_v5(&Uuid::NAMESPACE_OID, group_key.as_bytes());
 
-                        // Title is set by the builder via virtualizer_titles
                         new_containers.push(Node {
                             id: group_id,
                             node_type: NodeType::Container {
@@ -131,25 +133,67 @@ pub fn apply_element_rules_with_titles(
                     }
                 }
             }
-            _ => {
-                // ByServiceCategory, ByTag: filter-based matching
+            ElementRule::ByStack => {
+                // ByStack groups elements by their compose_project.
+                // Elements with the same compose_project share a Stack subcontainer.
+                // Elements with no compose_project remain ungrouped.
+                for (parent_id, element_ids) in &elements_by_container {
+                    let unclaimed: Vec<Uuid> = element_ids
+                        .iter()
+                        .filter(|id| !claimed.contains(id))
+                        .copied()
+                        .collect();
+                    if unclaimed.is_empty() {
+                        continue;
+                    }
+
+                    // Group by compose_project (only Some values)
+                    let mut by_stack: HashMap<String, Vec<Uuid>> = HashMap::new();
+                    for id in &unclaimed {
+                        if let Some(project) =
+                            match_data.get(id).and_then(|d| d.compose_project.clone())
+                        {
+                            by_stack.entry(project).or_default().push(*id);
+                        }
+                    }
+
+                    for (project, ids) in by_stack {
+                        let group_id = Uuid::new_v5(
+                            &Uuid::NAMESPACE_OID,
+                            format!("stack:{project}:{parent_id}").as_bytes(),
+                        );
+
+                        new_containers.push(Node {
+                            id: group_id,
+                            node_type: NodeType::Container {
+                                container_type: ContainerType::Stack,
+                                parent_container_id: Some(*parent_id),
+                                layer_hint: None,
+                                icon: None,
+                                color: None,
+                            },
+                            position: Default::default(),
+                            size: Default::default(),
+                            header: Some(project),
+                            element_rule_id: Some(*rule_id),
+                        });
+
+                        for id in &ids {
+                            reassignments.insert(*id, group_id);
+                        }
+                        claimed.extend(ids);
+                    }
+                }
+            }
+            ElementRule::ByServiceCategory { categories, title } => {
                 for (parent_id, element_ids) in &elements_by_container {
                     let matched_ids: HashSet<Uuid> = element_ids
                         .iter()
                         .filter(|id| !claimed.contains(id))
                         .filter(|id| {
-                            let Some(data) = match_data.get(id) else {
-                                return false;
-                            };
-                            match rule {
-                                ElementRule::ByServiceCategory { categories, .. } => {
-                                    categories.iter().any(|c| data.categories.contains(c))
-                                }
-                                ElementRule::ByTag { tag_ids, .. } => {
-                                    tag_ids.iter().any(|t| data.tag_ids.contains(t))
-                                }
-                                ElementRule::ByVirtualizer => unreachable!(),
-                            }
+                            match_data.get(id).is_some_and(|d| {
+                                categories.iter().any(|c| d.categories.contains(c))
+                            })
                         })
                         .copied()
                         .collect();
@@ -163,20 +207,10 @@ pub fn apply_element_rules_with_titles(
                         format!("{parent_id}:{rule_id}").as_bytes(),
                     );
 
-                    let (container_type, title) = match rule {
-                        ElementRule::ByServiceCategory { title, .. } => {
-                            (ContainerType::NestedServiceCategory, title.clone())
-                        }
-                        ElementRule::ByTag { title, .. } => {
-                            (ContainerType::NestedTag, title.clone())
-                        }
-                        ElementRule::ByVirtualizer => unreachable!(),
-                    };
-
                     new_containers.push(Node {
                         id: group_id,
                         node_type: NodeType::Container {
-                            container_type,
+                            container_type: ContainerType::NestedServiceCategory,
                             parent_container_id: Some(*parent_id),
                             layer_hint: None,
                             icon: None,
@@ -184,7 +218,50 @@ pub fn apply_element_rules_with_titles(
                         },
                         position: Default::default(),
                         size: Default::default(),
-                        header: title,
+                        header: title.clone(),
+                        element_rule_id: Some(*rule_id),
+                    });
+
+                    for id in &matched_ids {
+                        reassignments.insert(*id, group_id);
+                    }
+                    claimed.extend(matched_ids);
+                }
+            }
+            ElementRule::ByTag { tag_ids, title } => {
+                for (parent_id, element_ids) in &elements_by_container {
+                    let matched_ids: HashSet<Uuid> = element_ids
+                        .iter()
+                        .filter(|id| !claimed.contains(id))
+                        .filter(|id| {
+                            match_data
+                                .get(id)
+                                .is_some_and(|d| tag_ids.iter().any(|t| d.tag_ids.contains(t)))
+                        })
+                        .copied()
+                        .collect();
+
+                    if matched_ids.is_empty() {
+                        continue;
+                    }
+
+                    let group_id = Uuid::new_v5(
+                        &Uuid::NAMESPACE_OID,
+                        format!("{parent_id}:{rule_id}").as_bytes(),
+                    );
+
+                    new_containers.push(Node {
+                        id: group_id,
+                        node_type: NodeType::Container {
+                            container_type: ContainerType::NestedTag,
+                            parent_container_id: Some(*parent_id),
+                            layer_hint: None,
+                            icon: None,
+                            color: None,
+                        },
+                        position: Default::default(),
+                        size: Default::default(),
+                        header: title.clone(),
                         element_rule_id: Some(*rule_id),
                     });
 
@@ -210,4 +287,158 @@ pub fn apply_element_rules_with_titles(
     }
 
     nodes.extend(new_containers);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::server::topology::types::{grouping::GraphRule, nodes::ElementEntityType};
+
+    fn make_element(id: Uuid, container_id: Uuid) -> Node {
+        Node::element(
+            id,
+            container_id,
+            Uuid::new_v4(),
+            ElementEntityType::Service {},
+        )
+    }
+
+    fn make_match_data(compose_project: Option<&str>) -> ElementMatchData {
+        ElementMatchData {
+            categories: HashSet::new(),
+            tag_ids: HashSet::new(),
+            virtualizer_host_id: None,
+            compose_project: compose_project.map(String::from),
+        }
+    }
+
+    #[test]
+    fn by_stack_groups_same_compose_project() {
+        let container_id = Uuid::new_v4();
+        let svc1 = Uuid::new_v4();
+        let svc2 = Uuid::new_v4();
+        let mut nodes = vec![
+            make_element(svc1, container_id),
+            make_element(svc2, container_id),
+        ];
+
+        let match_map: HashMap<Uuid, ElementMatchData> = [
+            (svc1, make_match_data(Some("media-stack"))),
+            (svc2, make_match_data(Some("media-stack"))),
+        ]
+        .into();
+
+        let rules = vec![GraphRule::new(ElementRule::ByStack)];
+        apply_element_rules(&mut nodes, &rules, |node| match_map.get(&node.id).cloned());
+
+        // Both services should be in the same new container
+        let svc1_container = nodes
+            .iter()
+            .find(|n| n.id == svc1)
+            .map(|n| match &n.node_type {
+                NodeType::Element { container_id, .. } => *container_id,
+                _ => panic!("expected element"),
+            })
+            .unwrap();
+        let svc2_container = nodes
+            .iter()
+            .find(|n| n.id == svc2)
+            .map(|n| match &n.node_type {
+                NodeType::Element { container_id, .. } => *container_id,
+                _ => panic!("expected element"),
+            })
+            .unwrap();
+        assert_eq!(svc1_container, svc2_container);
+        assert_ne!(svc1_container, container_id); // moved out of original container
+
+        // Verify the Stack subcontainer was created
+        let stack_container = nodes.iter().find(|n| n.id == svc1_container).unwrap();
+        assert!(matches!(
+            stack_container.node_type,
+            NodeType::Container {
+                container_type: ContainerType::Stack,
+                ..
+            }
+        ));
+        assert_eq!(stack_container.header.as_deref(), Some("media-stack"));
+    }
+
+    #[test]
+    fn by_stack_no_compose_project_stays_ungrouped() {
+        let container_id = Uuid::new_v4();
+        let svc1 = Uuid::new_v4();
+        let mut nodes = vec![make_element(svc1, container_id)];
+
+        let match_map: HashMap<Uuid, ElementMatchData> = [(svc1, make_match_data(None))].into();
+
+        let rules = vec![GraphRule::new(ElementRule::ByStack)];
+        apply_element_rules(&mut nodes, &rules, |node| match_map.get(&node.id).cloned());
+
+        // Should stay in original container
+        let svc1_container = match &nodes[0].node_type {
+            NodeType::Element { container_id, .. } => *container_id,
+            _ => panic!("expected element"),
+        };
+        assert_eq!(svc1_container, container_id);
+
+        // No new containers created
+        assert_eq!(nodes.len(), 1);
+    }
+
+    #[test]
+    fn by_stack_different_projects_get_different_containers() {
+        let container_id = Uuid::new_v4();
+        let svc1 = Uuid::new_v4();
+        let svc2 = Uuid::new_v4();
+        let svc3 = Uuid::new_v4();
+        let mut nodes = vec![
+            make_element(svc1, container_id),
+            make_element(svc2, container_id),
+            make_element(svc3, container_id),
+        ];
+
+        let match_map: HashMap<Uuid, ElementMatchData> = [
+            (svc1, make_match_data(Some("media-stack"))),
+            (svc2, make_match_data(Some("monitoring"))),
+            (svc3, make_match_data(Some("media-stack"))),
+        ]
+        .into();
+
+        let rules = vec![GraphRule::new(ElementRule::ByStack)];
+        apply_element_rules(&mut nodes, &rules, |node| match_map.get(&node.id).cloned());
+
+        let get_container = |id: Uuid| -> Uuid {
+            nodes
+                .iter()
+                .find(|n| n.id == id)
+                .map(|n| match &n.node_type {
+                    NodeType::Element { container_id, .. } => *container_id,
+                    _ => panic!("expected element"),
+                })
+                .unwrap()
+        };
+
+        // svc1 and svc3 share media-stack
+        assert_eq!(get_container(svc1), get_container(svc3));
+        // svc2 is in a different container (monitoring)
+        assert_ne!(get_container(svc1), get_container(svc2));
+        // Both are moved out of original
+        assert_ne!(get_container(svc1), container_id);
+        assert_ne!(get_container(svc2), container_id);
+
+        // Two Stack subcontainers created
+        let stack_count = nodes
+            .iter()
+            .filter(|n| {
+                matches!(
+                    n.node_type,
+                    NodeType::Container {
+                        container_type: ContainerType::Stack,
+                        ..
+                    }
+                )
+            })
+            .count();
+        assert_eq!(stack_count, 2);
+    }
 }

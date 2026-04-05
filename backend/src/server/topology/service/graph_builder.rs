@@ -5,6 +5,7 @@ use uuid::Uuid;
 use crate::server::{
     hosts::r#impl::base::Host,
     interfaces::r#impl::base::Interface,
+    services::r#impl::virtualization::ServiceVirtualization,
     subnets::r#impl::types::SubnetType,
     topology::{
         service::{
@@ -329,10 +330,31 @@ impl GraphBuilder {
             {
                 tag_ids.extend(service.base.tags.iter().copied());
             }
+            // Resolve compose_project from host's Docker services
+            let compose_project = {
+                let mut projects: HashSet<&str> = HashSet::new();
+                for service in ctx
+                    .services
+                    .iter()
+                    .filter(|s| s.base.host_id == child.host_id)
+                {
+                    if let Some(ServiceVirtualization::Docker(dv)) = &service.base.virtualization
+                        && let Some(ref project) = dv.compose_project
+                    {
+                        projects.insert(project.as_str());
+                    }
+                }
+                if projects.len() == 1 {
+                    projects.into_iter().next().map(String::from)
+                } else {
+                    None
+                }
+            };
             Some(ElementMatchData {
                 categories,
                 tag_ids,
                 virtualizer_host_id: None,
+                compose_project,
             })
         });
     }

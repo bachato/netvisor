@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-05T22:40:36.806613Z",
-             *       "id": "ac5c854c-d744-4ffc-8196-23f2e4e07fcb",
+             *       "created_at": "2026-04-05T23:42:37.285455Z",
+             *       "id": "7e168a59-9bbb-4d68-8d42-66d1e092f897",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-05T22:40:36.806613Z"
+             *       "updated_at": "2026-04-05T23:42:37.285455Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-05T22:40:36.786952Z",
-             *               "id": "6ef18121-d9eb-42af-99e0-2dcbc88296f1",
+             *               "created_at": "2026-04-05T23:42:37.265860Z",
+             *               "id": "676d8c3d-47c8-417b-84e4-f0ae62eb4c30",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-05T22:40:36.786952Z"
+             *               "updated_at": "2026-04-05T23:42:37.265860Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3172,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Amazon Echo",
+             *           "service_definition": "Docker Container",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-05T22:40:36.801301Z",
-             *           "id": "6688f0d5-c0a3-47e9-9a00-ebc70ba2bdaf",
+             *           "created_at": "2026-04-05T23:42:37.280366Z",
+             *           "id": "818cfab8-bd74-4127-93a1-fe27a0a0e112",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-05T22:40:36.801301Z"
+             *           "updated_at": "2026-04-05T23:42:37.280366Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3444,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Amazon Echo",
+             *       "service_definition": "Docker Container",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3772,14 +3772,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-05T22:40:36.787357Z",
-         *       "id": "c6b2f5cf-43a1-4e59-96eb-72b3cfde9c02",
+         *       "created_at": "2026-04-05T23:42:37.266256Z",
+         *       "id": "3125e817-eee1-4bfa-9751-7526c7a1be01",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-05T22:40:36.787357Z"
+         *       "updated_at": "2026-04-05T23:42:37.266256Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3899,7 +3899,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "NestedTag" | "NestedServiceCategory";
+        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -3964,7 +3964,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Amazon Echo",
+         *           "service_definition": "Docker Container",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4567,6 +4567,9 @@ export interface components {
         } | {
             /** @enum {string} */
             element_type: "Service";
+        } | {
+            /** @enum {string} */
+            element_type: "Host";
         };
         /** @description Request body for emailing an install command to the authenticated user. */
         EmailInstallCommandRequest: {
@@ -4659,7 +4662,7 @@ export interface components {
                     tag_ids: string[];
                     title?: string | null;
                 };
-            };
+            } | "ByVirtualizer" | "ByStack";
         };
         /**
          * @example {
@@ -4804,14 +4807,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-05T22:40:36.786422Z",
-         *               "id": "a7478375-b69c-4113-a759-9b513e440f4e",
+         *               "created_at": "2026-04-05T23:42:37.265297Z",
+         *               "id": "f643b3f3-fbec-4c4c-b88f-4ac574ba2bd9",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-05T22:40:36.786422Z"
+         *               "updated_at": "2026-04-05T23:42:37.265297Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4820,7 +4823,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Amazon Echo",
+         *           "service_definition": "Docker Container",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5884,14 +5887,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-05T22:40:36.787218Z",
-         *           "id": "a61e255f-45b3-4d0f-b10d-1902f8e24278",
+         *           "created_at": "2026-04-05T23:42:37.266116Z",
+         *           "id": "f3e140a1-3c03-4fba-a4f7-0eb9d296834a",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-05T22:40:36.787218Z"
+         *           "updated_at": "2026-04-05T23:42:37.266116Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5900,7 +5903,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Amazon Echo",
+         *       "service_definition": "Docker Container",
          *       "source": {
          *         "type": "Manual"
          *       },

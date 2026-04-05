@@ -9,6 +9,7 @@ use super::{
 use crate::server::{
     hosts::r#impl::virtualization::HostVirtualization,
     if_entries::r#impl::base::Neighbor,
+    services::r#impl::virtualization::ServiceVirtualization,
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeClassification, EdgeHandle, EdgeType},
         grouping::GroupingConfig,
@@ -41,6 +42,24 @@ impl InfrastructureBuilder {
         }
 
         None
+    }
+
+    /// Resolve the compose_project for a host from its Docker services.
+    /// Returns Some only if all Docker services on the host share one compose_project.
+    fn resolve_compose_project(host_id: Uuid, ctx: &TopologyContext) -> Option<String> {
+        let mut projects: HashSet<&str> = HashSet::new();
+        for service in ctx.services.iter().filter(|s| s.base.host_id == host_id) {
+            if let Some(ServiceVirtualization::Docker(dv)) = &service.base.virtualization
+                && let Some(ref project) = dv.compose_project
+            {
+                projects.insert(project.as_str());
+            }
+        }
+        if projects.len() == 1 {
+            projects.into_iter().next().map(String::from)
+        } else {
+            None
+        }
     }
 
     /// Build a map of virtualizer_host_id → hostname for subcontainer titles.
@@ -96,10 +115,12 @@ impl PerspectiveBuilder for InfrastructureBuilder {
                         .map(|s| s.base.service_definition.category())
                         .collect();
                     let tag_ids: HashSet<Uuid> = host.base.tags.iter().copied().collect();
+                    let compose_project = Self::resolve_compose_project(*host_id, ctx);
                     Some(ElementMatchData {
                         categories,
                         tag_ids,
                         virtualizer_host_id: virtualizer_map.get(host_id).copied().flatten(),
+                        compose_project,
                     })
                 } else {
                     None

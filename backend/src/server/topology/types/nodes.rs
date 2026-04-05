@@ -80,6 +80,7 @@ pub enum ContainerType {
     NestedServiceCategory,
     Virtualizer,
     BareMetal,
+    Stack,
 }
 
 impl HasId for ContainerType {
@@ -98,6 +99,7 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::NestedServiceCategory => Color::Purple,
             ContainerType::Virtualizer => Concept::Infrastructure.color(),
             ContainerType::BareMetal => EntityDiscriminants::Host.color(),
+            ContainerType::Stack => Concept::Virtualization.color(),
         }
     }
 
@@ -110,6 +112,7 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::NestedServiceCategory => Icon::Layers,
             ContainerType::Virtualizer => Concept::Infrastructure.icon(),
             ContainerType::BareMetal => Icon::Server,
+            ContainerType::Stack => Concept::Virtualization.icon(),
         }
     }
 }
@@ -124,6 +127,7 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::NestedServiceCategory => "Service category container",
             ContainerType::Virtualizer => "Virtualizer",
             ContainerType::BareMetal => "Bare metal",
+            ContainerType::Stack => "Docker stack",
         }
     }
 
@@ -136,6 +140,7 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::NestedServiceCategory => "Elements grouped by service category",
             ContainerType::Virtualizer => "Hosts grouped by virtualizer",
             ContainerType::BareMetal => "Hosts with no virtualization",
+            ContainerType::Stack => "Elements grouped by Docker Compose project",
         }
     }
 
@@ -147,7 +152,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::NestedTag
             | ContainerType::NestedServiceCategory
             | ContainerType::Virtualizer
-            | ContainerType::BareMetal => TitleStyle::Inline,
+            | ContainerType::BareMetal
+            | ContainerType::Stack => TitleStyle::Inline,
         };
         let is_subcontainer = matches!(
             self,
@@ -155,6 +161,7 @@ impl TypeMetadataProvider for ContainerType {
                 | ContainerType::NestedServiceCategory
                 | ContainerType::Virtualizer
                 | ContainerType::BareMetal
+                | ContainerType::Stack
         );
         let (padding_top, padding_side) = match self {
             ContainerType::Subnet
@@ -163,7 +170,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::NestedTag
             | ContainerType::NestedServiceCategory
             | ContainerType::Virtualizer
-            | ContainerType::BareMetal => (50, 25),
+            | ContainerType::BareMetal
+            | ContainerType::Stack => (50, 25),
         };
         let (collapsed_width, collapsed_height) = match self {
             ContainerType::Subnet
@@ -495,6 +503,22 @@ mod tests {
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["container_type"], "BareMetal");
+        let deserialized: NodeType = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, node_type);
+    }
+
+    #[test]
+    fn test_stack_container_round_trip() {
+        let parent_id = Uuid::new_v4();
+        let node_type = NodeType::Container {
+            container_type: ContainerType::Stack,
+            parent_container_id: Some(parent_id),
+            layer_hint: None,
+            icon: None,
+            color: None,
+        };
+        let json = serde_json::to_value(&node_type).unwrap();
+        assert_eq!(json["container_type"], "Stack");
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
     }

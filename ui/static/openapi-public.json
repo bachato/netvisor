@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-05T22:40:36.806611Z",
-              "id": "01bb70c1-0af4-4ed6-9f7b-ed838f54011a",
+              "created_at": "2026-04-05T23:42:37.285458Z",
+              "id": "31e16980-cc8d-4ac9-be6f-d01164d92fda",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-05T22:40:36.806611Z"
+              "updated_at": "2026-04-05T23:42:37.285458Z"
             }
           },
           "error": {
@@ -10734,14 +10734,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-05T22:40:36.786981Z",
-                      "id": "8e94b63f-9130-438d-8687-57edcf1d80df",
+                      "created_at": "2026-04-05T23:42:37.265815Z",
+                      "id": "22fe7974-e89e-4526-95f8-47e0d45b51b2",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-05T22:40:36.786981Z"
+                      "updated_at": "2026-04-05T23:42:37.265815Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10750,7 +10750,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Amazon Echo",
+                  "service_definition": "Docker Container",
                   "source": {
                     "type": "Manual"
                   },
@@ -11453,14 +11453,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-05T22:40:36.801300Z",
-                  "id": "8e248d0e-1730-4857-aae4-3ec2c1f2f333",
+                  "created_at": "2026-04-05T23:42:37.280327Z",
+                  "id": "29caf7d8-4aad-4b9f-ad47-0821dfafe99c",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-05T22:40:36.801300Z"
+                  "updated_at": "2026-04-05T23:42:37.280327Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11469,7 +11469,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Amazon Echo",
+              "service_definition": "Docker Container",
               "source": {
                 "type": "Manual"
               },
@@ -12744,14 +12744,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-05T22:40:36.787381Z",
-          "id": "93cbcb1d-d773-4591-85d3-b84665833808",
+          "created_at": "2026-04-05T23:42:37.266192Z",
+          "id": "7347e1c3-e817-4af1-956c-f155d5e097bf",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-05T22:40:36.787381Z"
+          "updated_at": "2026-04-05T23:42:37.266192Z"
         }
       },
       "BindingBase": {
@@ -13039,7 +13039,10 @@
           "ServiceCategory",
           "ApplicationGroup",
           "NestedTag",
-          "NestedServiceCategory"
+          "NestedServiceCategory",
+          "Virtualizer",
+          "BareMetal",
+          "Stack"
         ]
       },
       "CreateBindingInput": {
@@ -13268,7 +13271,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Amazon Echo",
+              "service_definition": "Docker Container",
               "tags": [],
               "virtualization": null
             }
@@ -15012,6 +15015,20 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "required": [
+              "element_type"
+            ],
+            "properties": {
+              "element_type": {
+                "type": "string",
+                "enum": [
+                  "Host"
+                ]
+              }
+            }
           }
         ]
       },
@@ -15383,6 +15400,18 @@
                     }
                   }
                 }
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "ByVirtualizer"
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "ByStack"
+                ]
               }
             ],
             "description": "Rules that organize nodes within a container into sub-groups."
@@ -15802,14 +15831,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-05T22:40:36.786436Z",
-                  "id": "bcb1a003-28b6-4ffc-9dc9-de38eca6d098",
+                  "created_at": "2026-04-05T23:42:37.265279Z",
+                  "id": "8daca484-db2c-439e-bf92-5efd744e7709",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-05T22:40:36.786436Z"
+                  "updated_at": "2026-04-05T23:42:37.265279Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15818,7 +15847,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Amazon Echo",
+              "service_definition": "Docker Container",
               "source": {
                 "type": "Manual"
               },
@@ -17801,14 +17830,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-05T22:40:36.773917Z",
-                        "id": "46dfae58-15d1-4b04-a7a0-b1c01cfa5377",
+                        "created_at": "2026-04-05T23:42:37.252797Z",
+                        "id": "c562bb10-3e8c-4d8f-83d6-99def077ee16",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-05T22:40:36.773917Z"
+                        "updated_at": "2026-04-05T23:42:37.252797Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17817,7 +17846,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Amazon Echo",
+                    "service_definition": "Docker Container",
                     "source": {
                       "type": "Manual"
                     },
@@ -17894,14 +17923,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-05T22:40:36.799698Z",
-                    "id": "561afc13-5a2c-4a41-b9b0-cdb6ae9f26a9",
+                    "created_at": "2026-04-05T23:42:37.278923Z",
+                    "id": "d0f192db-f5b7-4f9d-bd5e-5ed46ad7b607",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-05T22:40:36.799698Z"
+                    "updated_at": "2026-04-05T23:42:37.278923Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17910,7 +17939,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Amazon Echo",
+                "service_definition": "Docker Container",
                 "source": {
                   "type": "Manual"
                 },
@@ -19102,14 +19131,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-05T22:40:36.787246Z",
-              "id": "86d3b879-999a-4cd3-9b65-a3fbecf596af",
+              "created_at": "2026-04-05T23:42:37.266058Z",
+              "id": "c8276cac-7e76-4f7e-b43a-271136e84b44",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-05T22:40:36.787246Z"
+              "updated_at": "2026-04-05T23:42:37.266058Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19118,7 +19147,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Amazon Echo",
+          "service_definition": "Docker Container",
           "source": {
             "type": "Manual"
           },

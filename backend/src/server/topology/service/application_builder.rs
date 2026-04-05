@@ -227,10 +227,14 @@ impl PerspectiveBuilder for ApplicationBuilder {
             if let Some(host) = ctx.hosts.iter().find(|h| h.id == service.base.host_id) {
                 tag_ids.extend(host.base.tags.iter().copied());
             }
+            let compose_project = service.base.virtualization.as_ref().and_then(|v| match v {
+                ServiceVirtualization::Docker(dv) => dv.compose_project.clone(),
+            });
             Some(ElementMatchData {
                 categories,
                 tag_ids,
                 virtualizer_host_id: None,
+                compose_project,
             })
         });
 

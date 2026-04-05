@@ -115,6 +115,7 @@ pub enum ElementRule {
         title: Option<String>,
     },
     ByVirtualizer,
+    ByStack,
 }
 
 impl ElementRule {
@@ -131,6 +132,10 @@ impl ElementRule {
                 TopologyPerspective::Application,
             ],
             ElementRule::ByVirtualizer => &[TopologyPerspective::Infrastructure],
+            ElementRule::ByStack => &[
+                TopologyPerspective::Infrastructure,
+                TopologyPerspective::Application,
+            ],
         }
     }
 }
@@ -147,6 +152,7 @@ impl EntityMetadataProvider for ElementRule {
             ElementRule::ByServiceCategory { .. } => Color::Purple,
             ElementRule::ByTag { .. } => Color::Orange,
             ElementRule::ByVirtualizer => Concept::Infrastructure.color(),
+            ElementRule::ByStack => Concept::Virtualization.color(),
         }
     }
 
@@ -155,6 +161,7 @@ impl EntityMetadataProvider for ElementRule {
             ElementRule::ByServiceCategory { .. } => Icon::Layers,
             ElementRule::ByTag { .. } => Icon::Tag,
             ElementRule::ByVirtualizer => Concept::Infrastructure.icon(),
+            ElementRule::ByStack => Concept::Virtualization.icon(),
         }
     }
 }
@@ -165,6 +172,7 @@ impl TypeMetadataProvider for ElementRule {
             ElementRule::ByServiceCategory { .. } => "Service category",
             ElementRule::ByTag { .. } => "Tag",
             ElementRule::ByVirtualizer => "Virtualizer",
+            ElementRule::ByStack => "Docker Stack",
         }
     }
 
@@ -175,6 +183,7 @@ impl TypeMetadataProvider for ElementRule {
             }
             ElementRule::ByTag { .. } => "Group nodes by tag within a container",
             ElementRule::ByVirtualizer => "Group hosts by their virtualizer",
+            ElementRule::ByStack => "Group by Docker Compose project",
         }
     }
 
@@ -296,10 +305,20 @@ mod tests {
                 tag_ids: vec![Uuid::new_v4(), Uuid::new_v4()],
                 title: Some("Tagged".into()),
             }),
+            GraphRule::new(ElementRule::ByStack),
         ];
 
         let json = serde_json::to_string(&rules).unwrap();
         let deserialized: Vec<GraphRule<ElementRule>> = serde_json::from_str(&json).unwrap();
         assert_eq!(rules, deserialized);
+    }
+
+    #[test]
+    fn test_by_stack_serde_round_trip() {
+        let rule = GraphRule::new(ElementRule::ByStack);
+        let json = serde_json::to_string(&rule).unwrap();
+        assert!(json.contains("ByStack"));
+        let deserialized: GraphRule<ElementRule> = serde_json::from_str(&json).unwrap();
+        assert_eq!(rule, deserialized);
     }
 }
