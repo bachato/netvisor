@@ -134,7 +134,7 @@ impl TypeMetadataProvider for ContainerType {
         );
         let (padding_top, padding_side) = match self {
             ContainerType::Subnet | ContainerType::ServiceCategory => (25, 25),
-            ContainerType::NestedTag | ContainerType::NestedServiceCategory => (45, 20),
+            ContainerType::NestedTag | ContainerType::NestedServiceCategory => (50, 25),
         };
         let (collapsed_width, collapsed_height) = match self {
             ContainerType::Subnet | ContainerType::ServiceCategory => (200, 80),

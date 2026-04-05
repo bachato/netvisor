@@ -180,7 +180,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 	// should be near the boundary (e.g., ServiceVirtualization edges to Docker Bridge).
 	const hiddenEdgeSet = new Set(input.hiddenEdgeTypes ?? []);
 	for (const edge of input.edges) {
-		if (hiddenEdgeSet.has(edge.edge_type)) continue;
+		if (hiddenEdgeSet.has(edge.edge_type) || edge.classification === 'disabled') continue;
 		// Resolve container: element→parent container, or the node itself if it IS a container
 		// (ServiceVirtualization edges can target a container node directly)
 		const srcContainer =
