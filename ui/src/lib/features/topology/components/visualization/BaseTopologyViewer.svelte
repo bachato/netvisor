@@ -21,7 +21,7 @@
 	} from '$lib/paraglide/messages';
 	import { type Node, type Edge } from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import { edgeTypes } from '$lib/shared/stores/metadata';
+	import { edgeTypes, containerTypes } from '$lib/shared/stores/metadata';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import { previewEdges, selectedNodes, topologyOptions, activePerspective } from '../../queries';
 	import { isExporting, expandedPortNodeIds } from '../../interactions';
@@ -230,7 +230,7 @@
 				const hiddenServices = get(tagHiddenServiceIds);
 
 				// Filter out hidden service element nodes before layout
-				const layoutNodes =
+				let layoutNodes =
 					hiddenServices.size > 0
 						? topology.nodes.filter(
 								(n) =>
@@ -242,6 +242,38 @@
 									)
 							)
 						: topology.nodes;
+
+				// Remove subcontainers with no remaining element children
+				const subcontainerIds = new Set(
+					layoutNodes
+						.filter(
+							(n) =>
+								n.node_type === 'Container' &&
+								containerTypes.getMetadata(
+									((n as Record<string, unknown>).container_type as string) ?? 'Subnet'
+								).is_subcontainer
+						)
+						.map((n) => n.id)
+				);
+				if (subcontainerIds.size > 0) {
+					const childCounts = new Map<string, number>();
+					for (const n of layoutNodes) {
+						if (n.node_type === 'Element') {
+							const cid = (n as Record<string, unknown>).container_id as string;
+							if (subcontainerIds.has(cid)) {
+								childCounts.set(cid, (childCounts.get(cid) ?? 0) + 1);
+							}
+						}
+					}
+					layoutNodes = layoutNodes.filter(
+						(n) =>
+							!(
+								n.node_type === 'Container' &&
+								subcontainerIds.has(n.id) &&
+								!childCounts.has(n.id)
+							)
+					);
+				}
 
 				const elementToContainer = buildElementToContainer(layoutNodes);
 				const hiddenEdgeTypes = $topologyOptions.local.hide_edge_types ?? [];
