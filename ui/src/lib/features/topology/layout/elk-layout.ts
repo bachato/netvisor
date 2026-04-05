@@ -709,7 +709,7 @@ export function applyLocalSizeAdjustment(
 			| string
 			| undefined;
 		const ctMeta = containerTypes.getMetadata(containerType ?? 'Subnet');
-		const spacing = 30;
+		const spacing = 25;
 		const bottomPad = ctMeta.padding.bottom;
 
 		// Reuse recomputeColumnY: sorts by y (= computed Y = stable order),
