@@ -243,7 +243,13 @@
 
 	function handleElementEdit(_item: ElementGraphRule, index: number) {
 		const ruleId = elementRules[index]?.id;
-		editingElementId = editingElementId === ruleId ? null : ruleId;
+		const wasEditing = editingElementId === ruleId;
+		editingElementId = wasEditing ? null : ruleId;
+
+		// Closing editor: re-apply current rules to ensure rebuild fires
+		if (wasEditing) {
+			updateElementRules([...elementRules]);
+		}
 	}
 
 	function isElementEditing(item: ElementGraphRule): boolean {
