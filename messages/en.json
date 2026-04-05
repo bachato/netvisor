@@ -14,7 +14,7 @@
 	"appWizard_mspClientExplanation": "Add your clients to create a group for each one.",
 	"appWizard_mspClientPlaceholder": "Client name",
 	"appWizard_noGroupsYet": "Add at least one application group to continue.",
-	"appWizard_selectedCount": "{count} selected",
+	"appWizard_selectedCount": "{count} {label} selected",
 	"appWizard_suggestedGroups": "Suggested groups",
 	"appWizard_title": "Application Perspective Setup",
 	"auth_backToLogin": "Back to Login",

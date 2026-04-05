@@ -31,7 +31,7 @@
 		createEmptyDependencyFormData
 	} from '$lib/features/dependencies/queries';
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
-	import { entities, dependencyTypes, concepts } from '$lib/shared/stores/metadata';
+	import { entities, dependencyTypes, concepts, perspectives } from '$lib/shared/stores/metadata';
 	import { getInspectorConfig } from './perspective-config';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
@@ -115,6 +115,14 @@
 
 	// Perspective-driven config
 	let inspectorConfig = $derived(getInspectorConfig($activePerspective));
+	let perspectiveMeta = $derived(
+		perspectives.getMetadata($activePerspective) as Record<string, unknown> | null
+	);
+	let elementLabel = $derived.by(() => {
+		const count = nodes.length;
+		if (count === 1) return (perspectiveMeta?.element_label_singular as string) ?? 'element';
+		return (perspectiveMeta?.element_label as string) ?? 'elements';
+	});
 
 	// Tag entity type — fixed by perspective config (no user toggle)
 	let tagEntityType = $derived(inspectorConfig.bulk_tag_entity as 'Host' | 'Service');
@@ -556,7 +564,7 @@
 	<!-- Header with count, focus, and clear -->
 	<div class="flex items-center justify-between">
 		<span class="text-secondary text-sm font-medium">
-			{appWizard_selectedCount({ count: nodes.length })}
+			{appWizard_selectedCount({ count: nodes.length, label: elementLabel })}
 		</span>
 		<div class="flex items-center gap-1">
 			<button
