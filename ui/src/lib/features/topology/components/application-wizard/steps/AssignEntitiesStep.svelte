@@ -30,8 +30,14 @@
 	const servicesCacheQuery = useServicesCacheQuery();
 	const bulkAddTagMutation = useBulkAddTagMutation();
 
-	let allHosts = $derived(hostsQuery.data?.items ?? []);
 	let allServices = $derived(servicesCacheQuery.data ?? []);
+	let allHosts = $derived(
+		(hostsQuery.data?.items ?? []).toSorted(
+			(a, b) =>
+				allServices.filter((s) => s.host_id === b.id).length -
+				allServices.filter((s) => s.host_id === a.id).length
+		)
+	);
 
 	// Selection state
 	let selectedHosts: Host[] = $state([]);
