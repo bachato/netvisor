@@ -60,8 +60,9 @@
 	let serviceDisplayContext = $derived({
 		interfaceId: elementContext?.interfaceId ?? null,
 		ports: topology.ports,
-		showEntityTagPicker: false,
-		tagPickerDisabled: true
+		showEntityTagPicker: !editState.isReadonly,
+		tagPickerDisabled: !editState.isEditable,
+		entityTags: topology.entity_tags
 	});
 
 	// For containers: show the header/title
