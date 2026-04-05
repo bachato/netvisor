@@ -435,6 +435,54 @@ describe('computeElkLayout', () => {
 		expect(groupPos.y).toBeGreaterThanOrEqual(0);
 	});
 
+	it('containers with 5 elements use multi-column layout', async () => {
+		const subnetId = uuid();
+		const elemIds = Array.from({ length: 5 }, () => uuid());
+
+		const nodes: TopologyNode[] = [
+			makeContainer(subnetId),
+			...elemIds.map((id) => makeElement(id, subnetId))
+		];
+
+		const edges: TopologyEdge[] = [];
+		const subnets = [makeSubnet(subnetId, 'Lan')];
+		const input = makeTopology(nodes, edges, subnets);
+		const result = await computeElkLayout(input);
+
+		// Elements should NOT all have the same x position (i.e., not single column)
+		const xPositions = new Set(elemIds.map((id) => result.nodePositions.get(id)!.x));
+		expect(xPositions.size).toBeGreaterThan(1);
+
+		// Container should be wider than a single element (180px)
+		const containerSize = result.containerSizes.get(subnetId)!;
+		expect(containerSize.width).toBeGreaterThan(250);
+	});
+
+	it('containers with 20 elements wrap into multiple rows', async () => {
+		const subnetId = uuid();
+		const elemIds = Array.from({ length: 20 }, () => uuid());
+
+		const nodes: TopologyNode[] = [
+			makeContainer(subnetId),
+			...elemIds.map((id) => makeElement(id, subnetId))
+		];
+
+		const edges: TopologyEdge[] = [];
+		const subnets = [makeSubnet(subnetId, 'Lan')];
+		const input = makeTopology(nodes, edges, subnets);
+		const result = await computeElkLayout(input);
+
+		// Should have multiple distinct x AND y positions (grid, not single row)
+		const xPositions = new Set(elemIds.map((id) => result.nodePositions.get(id)!.x));
+		const yPositions = new Set(elemIds.map((id) => result.nodePositions.get(id)!.y));
+		expect(xPositions.size).toBeGreaterThan(1);
+		expect(yPositions.size).toBeGreaterThan(1);
+
+		// Container should not be excessively wide (no more than ~7 elements wide)
+		const containerSize = result.containerSizes.get(subnetId)!;
+		expect(containerSize.width).toBeLessThan(180 * 8 + 25 * 7); // ~1615px
+	});
+
 	it('does not pass overlay edges to ELK layout', async () => {
 		const subnetId = uuid();
 		const elem1 = uuid();
