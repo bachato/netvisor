@@ -199,7 +199,8 @@
 				currentNodes,
 				queryClient,
 				topology,
-				multiSelected
+				multiSelected,
+				$topologyOptions.local.hide_edge_types ?? []
 			);
 
 			// Update edge animated state based on selection
