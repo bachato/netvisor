@@ -3,7 +3,6 @@
 	import { submitForm, validateForm } from '$lib/shared/components/forms/form-context';
 	import { required, max } from '$lib/shared/components/forms/validators';
 	import { Info, Palette, ArrowRight } from 'lucide-svelte';
-	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import { createEmptyDependencyFormData } from '../../queries';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import type { Dependency, DependencyMembers, EdgeStyle } from '../../types/base';
@@ -15,13 +14,9 @@
 	import { useHostsQuery } from '$lib/features/hosts/queries';
 	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
-	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
-	import { BindingWithServiceDisplay } from '$lib/shared/components/forms/selection/display/BindingWithServiceDisplay.svelte';
-	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
-	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
-	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
 	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
+	import DependencyMemberSelector from '../DependencyMemberSelector.svelte';
 	import EdgeStyleForm from './EdgeStyleForm.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TextArea from '$lib/shared/components/forms/input/TextArea.svelte';
@@ -41,22 +36,13 @@
 		common_next,
 		common_saving,
 		common_update,
-		dependencies_withPorts,
 		dependencies_createDependency,
 		dependencies_descriptionPlaceholder,
 		dependencies_edgeAppearance,
 		dependencies_dependencyName,
 		dependencies_dependencyNamePlaceholder,
 		dependencies_dependencyType,
-		dependencies_loadingServices,
-		dependencies_noServicesYet,
-		dependencies_selectPort,
-		dependencies_selectService,
-		dependencies_servicesOnly,
-		common_services,
-		dependencies_servicesHelp,
-		dependencies_servicesInfoTitle,
-		dependencies_servicesInfoBody
+		common_services
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -85,7 +71,6 @@
 	const hostsQuery = useHostsQuery({ limit: 0 });
 	const interfacesQuery = useInterfacesQuery();
 	const portsQuery = usePortsQuery();
-	const subnetsQuery = useSubnetsQuery();
 
 	let servicesData = $derived(servicesQuery.data ?? []);
 	let isServicesLoading = $derived(hostsQuery.isPending);
@@ -93,22 +78,7 @@
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let interfacesData = $derived(interfacesQuery.data ?? []);
 	let portsData = $derived(portsQuery.data ?? []);
-	let subnetsData = $derived(subnetsQuery.data ?? []);
 	let defaultNetworkId = $derived(networksData[0]?.id ?? '');
-
-	let isContainerSubnetFn = $derived((subnetId: string) => {
-		const subnet = subnetsData.find((s) => s.id === subnetId);
-		return subnet ? isContainerSubnet(subnet) : false;
-	});
-
-	// Context for BindingWithServiceDisplay (used in per-service binding dropdowns)
-	let bindingContext = $derived({
-		services: servicesData,
-		hosts: hostsData,
-		interfaces: interfacesData,
-		ports: portsData,
-		isContainerSubnet: isContainerSubnetFn
-	});
 
 	let loading = $state(false);
 	let deleting = $state(false);
@@ -320,17 +290,6 @@
 		bindingSelections.set(serviceId, bindingId);
 	}
 
-	// Get available bindings for a specific service
-	function getBindingsForService(service: Service) {
-		return service.bindings.filter((b) => {
-			// Don't show bindings already selected for other services
-			for (const [svcId, bid] of bindingSelections) {
-				if (svcId !== service.id && bid === b.id) return false;
-			}
-			return true;
-		});
-	}
-
 	async function handleSubmit() {
 		await submitForm(form);
 	}
@@ -403,25 +362,12 @@
 	};
 
 	// Service display with host grouping for the service picker
-	const serviceDisplayWithHost = {
-		...ServiceDisplay,
-		getCategory: (service: Service) => {
-			const host = hostsData.find((h: { id: string }) => h.id === service.host_id);
-			return host?.name ?? null;
-		}
-	};
-
 	let colorHelper = entities.getColorHelper('Dependency');
 
 	let edgeStyleFormData = $derived({
 		color: edgeColor,
 		edge_style: edgeEdgeStyle
 	} as Dependency);
-
-	let modeOptions = [
-		{ value: 'Services', label: dependencies_servicesOnly() },
-		{ value: 'Bindings', label: dependencies_withPorts() }
-	];
 </script>
 
 <GenericModal
@@ -525,67 +471,21 @@
 			<!-- Services Tab -->
 			{#if activeTab === 'services'}
 				<div class="space-y-4 p-6">
-					<InlineInfo
-						title={dependencies_servicesInfoTitle()}
-						body={dependencies_servicesInfoBody()}
-						dismissableKey="dependency-services-info"
+					<DependencyMemberSelector
+						{selectedServiceIds}
+						{memberMode}
+						{bindingSelections}
+						{bindingsSubmitted}
+						{availableServices}
+						{selectedServices}
+						{hostsData}
+						isLoading={isServicesLoading}
+						onAddService={handleAddService}
+						onRemoveService={handleRemoveService}
+						onReorderServices={handleReorderServices}
+						onModeChange={handleModeChange}
+						onBindingSelect={handleBindingSelect}
 					/>
-
-					<!-- Mode selector -->
-					<SegmentedControl
-						options={modeOptions}
-						selected={memberMode}
-						onchange={handleModeChange}
-						size="sm"
-						fullWidth={true}
-					/>
-
-					<div class="card">
-						<ListManager
-							label={common_services()}
-							helpText={dependencies_servicesHelp()}
-							placeholder={isServicesLoading
-								? dependencies_loadingServices()
-								: dependencies_selectService()}
-							emptyMessage={dependencies_noServicesYet()}
-							allowReorder={true}
-							allowItemEdit={() => false}
-							showSearch={true}
-							options={availableServices}
-							items={selectedServices}
-							optionDisplayComponent={serviceDisplayWithHost}
-							itemDisplayComponent={serviceDisplayWithHost}
-							getItemContext={() => ({})}
-							getOptionContext={() => ({})}
-							onAdd={handleAddService}
-							onRemove={handleRemoveService}
-							onMoveUp={(index) => handleReorderServices(index, index - 1)}
-							onMoveDown={(index) => handleReorderServices(index, index + 1)}
-						>
-							{#snippet itemExpandedSnippet({ item })}
-								{#if memberMode === 'Bindings'}
-									{@const service = item as Service}
-									{@const serviceBindings = getBindingsForService(service)}
-									{@const selectedBindingId = bindingSelections.get(service.id) ?? null}
-									{@const showError = bindingsSubmitted && !selectedBindingId}
-									<div class="mt-2 w-full border-t border-gray-200 pt-2 dark:border-gray-700">
-										<RichSelect
-											options={serviceBindings}
-											selectedValue={selectedBindingId}
-											placeholder={dependencies_selectPort()}
-											displayComponent={BindingWithServiceDisplay}
-											getOptionContext={() => bindingContext}
-											onSelect={(bindingId) => {
-												handleBindingSelect(service.id, bindingId);
-											}}
-											required={true}
-											error={showError ? required(selectedBindingId) : null}
-										/>
-									</div>
-								{/if}
-							{/snippet}
-						</ListManager>
-					</div>
 				</div>
 			{/if}
 

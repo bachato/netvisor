@@ -25,11 +25,20 @@
 	import type { Writable } from 'svelte/store';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 
+	import type { components } from '$lib/api/schema';
+	type TopologyPerspective = components['schemas']['TopologyPerspective'];
+
 	let {
 		groupId,
 		sourceBindingId,
-		targetBindingId
-	}: { groupId: string; sourceBindingId: string; targetBindingId: string } = $props();
+		targetBindingId,
+		perspective = 'l3_logical'
+	}: {
+		groupId: string;
+		sourceBindingId: string;
+		targetBindingId: string;
+		perspective?: TopologyPerspective;
+	} = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');

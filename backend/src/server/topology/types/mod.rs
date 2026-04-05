@@ -4,6 +4,7 @@ pub mod edges;
 pub mod export;
 pub mod grouping;
 pub mod handlers;
+pub mod inspector;
 pub mod layout;
 pub mod nodes;
 pub mod storage;

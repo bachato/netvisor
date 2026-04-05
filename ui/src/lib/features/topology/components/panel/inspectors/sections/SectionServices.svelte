@@ -1,0 +1,60 @@
+<script lang="ts">
+	import type { Node } from '@xyflow/svelte';
+	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
+	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
+	import type { Topology } from '$lib/features/topology/types/base';
+	import type { TopologyEditState } from '$lib/features/topology/state';
+	import type { ElementRenderContext } from '$lib/features/topology/resolvers';
+	import { inspector_servicesOnInterface } from '$lib/paraglide/messages';
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let {
+		node,
+		topology,
+		editState,
+		elementContext
+	}: {
+		node: Node;
+		topology: Topology;
+		editState: TopologyEditState;
+		elementContext?: ElementRenderContext;
+	} = $props();
+
+	let isReadonly = $derived(editState.isReadonly);
+
+	// Filter services bound to this specific interface
+	let servicesOnInterface = $derived(
+		(elementContext?.services ?? []).filter((s) =>
+			s.bindings.some(
+				(b) => b.interface_id === elementContext?.interfaceId || b.interface_id === null
+			)
+		)
+	);
+
+	let serviceContext = $derived({
+		interfaceId: elementContext?.interfaceId ?? null,
+		ports: topology.ports,
+		showEntityTagPicker: true,
+		tagPickerDisabled: !editState.isEditable,
+		entityTags: isReadonly ? (topology.entity_tags ?? []) : undefined
+	});
+</script>
+
+{#if servicesOnInterface.length > 0}
+	<div>
+		<span class="text-secondary mb-2 block text-sm font-medium">
+			{inspector_servicesOnInterface()}
+		</span>
+		<div class="space-y-1">
+			{#each servicesOnInterface as service (service.id)}
+				<div class="card card-static">
+					<EntityDisplayWrapper
+						context={serviceContext}
+						item={service}
+						displayComponent={ServiceDisplay}
+					/>
+				</div>
+			{/each}
+		</div>
+	</div>
+{/if}

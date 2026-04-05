@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-04T23:12:56.077926Z",
-              "id": "831611d0-cf35-46a6-9a20-b411ad913386",
+              "created_at": "2026-04-05T03:08:32.146647Z",
+              "id": "a1e8ee73-66f7-47e1-9ca2-cd52733be89a",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T23:12:56.077926Z"
+              "updated_at": "2026-04-05T03:08:32.146647Z"
             }
           },
           "error": {
@@ -10734,14 +10734,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-04T23:12:56.066984Z",
-                      "id": "88a1637f-1a7d-405e-acb4-4a6d840922fb",
+                      "created_at": "2026-04-05T03:08:32.129771Z",
+                      "id": "584a41bc-d8c3-4659-8ebe-17b113289df9",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-04T23:12:56.066984Z"
+                      "updated_at": "2026-04-05T03:08:32.129771Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10750,7 +10750,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Kubernetes",
+                  "service_definition": "Jenkins",
                   "source": {
                     "type": "Manual"
                   },
@@ -11453,14 +11453,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T23:12:56.074766Z",
-                  "id": "dd3692d0-6b96-44a4-ba28-5cb55527569d",
+                  "created_at": "2026-04-05T03:08:32.142202Z",
+                  "id": "4ee56f7e-4a62-43d7-96d4-1894a981261b",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T23:12:56.074766Z"
+                  "updated_at": "2026-04-05T03:08:32.142202Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11469,7 +11469,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "Jenkins",
               "source": {
                 "type": "Manual"
               },
@@ -12743,14 +12743,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-04T23:12:56.067195Z",
-          "id": "c438ed19-6518-4987-9817-d2216f978daf",
+          "created_at": "2026-04-05T03:08:32.130119Z",
+          "id": "a3abc74c-7f78-4738-9528-cd74f6490c3d",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-04T23:12:56.067195Z"
+          "updated_at": "2026-04-05T03:08:32.130119Z"
         }
       },
       "BindingBase": {
@@ -13266,7 +13266,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "Jenkins",
               "tags": [],
               "virtualization": null
             }
@@ -15763,14 +15763,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T23:12:56.066699Z",
-                  "id": "7f268704-9ddf-43e4-8990-829c8bc2b950",
+                  "created_at": "2026-04-05T03:08:32.129296Z",
+                  "id": "cebd0675-4ea3-46d0-8ccf-e092614cf30a",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T23:12:56.066699Z"
+                  "updated_at": "2026-04-05T03:08:32.129296Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15779,7 +15779,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "Jenkins",
               "source": {
                 "type": "Manual"
               },
@@ -17762,14 +17762,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-04T23:12:56.061584Z",
-                        "id": "e0816355-5ca9-4eff-8f0a-c4c8283eea4a",
+                        "created_at": "2026-04-05T03:08:32.118334Z",
+                        "id": "d76919c4-c6c3-4ecc-8af7-335fb40ab9ab",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-04T23:12:56.061584Z"
+                        "updated_at": "2026-04-05T03:08:32.118334Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17778,7 +17778,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Kubernetes",
+                    "service_definition": "Jenkins",
                     "source": {
                       "type": "Manual"
                     },
@@ -17855,14 +17855,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-04T23:12:56.073856Z",
-                    "id": "31e72dff-6804-4224-b66a-f49f7493631e",
+                    "created_at": "2026-04-05T03:08:32.140897Z",
+                    "id": "31faf345-2495-4647-9cf5-991a4b093eef",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-04T23:12:56.073856Z"
+                    "updated_at": "2026-04-05T03:08:32.140897Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17871,7 +17871,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Kubernetes",
+                "service_definition": "Jenkins",
                 "source": {
                   "type": "Manual"
                 },
@@ -19062,14 +19062,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-04T23:12:56.067122Z",
-              "id": "3af1779c-2ba1-4e04-aa12-5c0b0135429e",
+              "created_at": "2026-04-05T03:08:32.130002Z",
+              "id": "9888ee76-f3c2-4613-b6a6-51dad599db3d",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T23:12:56.067122Z"
+              "updated_at": "2026-04-05T03:08:32.130002Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19078,7 +19078,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Kubernetes",
+          "service_definition": "Jenkins",
           "source": {
             "type": "Manual"
           },

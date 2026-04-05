@@ -8,7 +8,9 @@
 		previewEdges,
 		autoRebuild,
 		selectedTopologyId,
-		useTopologiesQuery
+		useTopologiesQuery,
+		activePerspective,
+		updateTopologyOptions
 	} from '../../../queries';
 	import type { TopologyNode } from '../../../types/base';
 	import { resolveElementNode } from '../../../resolvers';
@@ -25,6 +27,7 @@
 	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
 	import { entityRef } from '$lib/shared/components/data/types';
 	import { entities, dependencyTypes } from '$lib/shared/stores/metadata';
+	import { getInspectorConfig } from './perspective-config';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
 	import type { Node, Edge } from '@xyflow/svelte';
@@ -49,7 +52,9 @@
 		dependencies_serviceBindingsInfoTitle,
 		dependencies_serviceBindingsInfoBody,
 		topology_multiSelectPreviewEdge,
-		topology_focusSelection
+		topology_focusSelection,
+		inspector_appGroupPicker,
+		inspector_createGroupingRuleFromTag
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -123,8 +128,16 @@
 		topology ? topology.services.filter((s) => selectedServiceIds.includes(s.id)) : []
 	);
 
-	// Tag entity type toggle
+	// Perspective-driven config
+	let inspectorConfig = $derived(getInspectorConfig($activePerspective));
+
+	// Tag entity type toggle — default from perspective config
 	let tagEntityType: 'Host' | 'Service' = $state('Host');
+
+	// Update default tag entity type when perspective changes
+	$effect(() => {
+		tagEntityType = inspectorConfig.bulk_tag_entity as 'Host' | 'Service';
+	});
 
 	let tagEntityIds = $derived(tagEntityType === 'Host' ? selectedHostIds : selectedServiceIds);
 	let tagEntities = $derived(tagEntityType === 'Host' ? selectedHosts : selectedServices);
@@ -157,6 +170,45 @@
 			entity_type: tagEntityType,
 			tag_id: tagId
 		});
+	}
+
+	// Track recently added non-app-group tags for "create grouping rule" action
+	let recentlyAddedTagIds = $state<string[]>([]);
+
+	async function handleAddTagWithTracking(tagId: string) {
+		await handleAddTag(tagId);
+		// Only track non-app-group tags for grouping rule creation
+		// (is_application_group field will be on tag objects after feat/topo-app-group-backend merge)
+		recentlyAddedTagIds = [...recentlyAddedTagIds, tagId];
+	}
+
+	// App-group tag handler (no grouping rule tracking)
+	async function handleAddAppGroupTag(tagId: string) {
+		await handleAddTag(tagId);
+	}
+
+	function createGroupingRuleFromTags(tagIds: string[]) {
+		const tags = tagIds
+			.map((id) =>
+				tagEntities.length > 0 ? topology?.entity_tags?.find((t) => t.id === id) : null
+			)
+			.filter(Boolean);
+		const title = tags.map((t) => t?.name).join(' + ');
+
+		updateTopologyOptions((current) => ({
+			...current,
+			request: {
+				...current.request,
+				element_rules: [
+					...(current.request.element_rules ?? []),
+					{
+						id: crypto.randomUUID(),
+						rule: { ByTag: { tag_ids: tagIds, title } }
+					}
+				]
+			}
+		}));
+		recentlyAddedTagIds = [];
 	}
 
 	// Dependency creation state — always visible, no expand/collapse
@@ -298,15 +350,20 @@
 		const newDependency = createEmptyDependencyFormData(topology.network_id);
 		newDependency.name = groupName.trim();
 		newDependency.dependency_type = groupType;
-		// Convert binding IDs to members (service_id + binding_id)
-		const allServices = topology.services;
-		newDependency.members = bindingIds.map((bindingId) => {
-			const service = allServices.find((s) => s.bindings.some((b) => b.id === bindingId));
-			return {
-				service_id: service?.id ?? '',
-				binding_id: bindingId
-			};
-		});
+		// Build members as the correct tagged union based on perspective
+		if (inspectorConfig.dependency_creation === 'Services') {
+			// Derive service IDs from the selected bindings
+			const serviceIds: string[] = [];
+			for (const bindingId of bindingIds) {
+				const service = topology.services.find((s) => s.bindings.some((b) => b.id === bindingId));
+				if (service && !serviceIds.includes(service.id)) {
+					serviceIds.push(service.id);
+				}
+			}
+			newDependency.members = { type: 'Services', service_ids: serviceIds };
+		} else {
+			newDependency.members = { type: 'Bindings', binding_ids: bindingIds };
+		}
 		newDependency.color = groupColor;
 		newDependency.edge_style = groupEdgeStyle;
 
@@ -478,123 +535,150 @@
 					<span class="text-tertiary shrink-0 text-xs">{common_tags()}:</span>
 					<TagPickerInline
 						selectedTagIds={commonTags}
-						onAdd={handleAddTag}
+						onAdd={handleAddTagWithTracking}
+						onRemove={handleRemoveTag}
+					/>
+				</div>
+				{#if recentlyAddedTagIds.length > 0}
+					<button
+						class="btn-secondary w-full text-xs"
+						onclick={() => createGroupingRuleFromTags(recentlyAddedTagIds)}
+					>
+						{inspector_createGroupingRuleFromTag()}
+					</button>
+				{/if}
+			</div>
+		</div>
+
+		{#if inspectorConfig.show_application_group_picker}
+			<!-- App-group tag picker — highlights is_application_group tags -->
+			<div class="space-y-2">
+				<span class="text-secondary block text-sm font-medium">{inspector_appGroupPicker()}</span>
+				<div class="card card-static space-y-2 p-2">
+					<TagPickerInline
+						selectedTagIds={commonTags}
+						onAdd={handleAddAppGroupTag}
 						onRemove={handleRemoveTag}
 					/>
 				</div>
 			</div>
-		</div>
+		{/if}
 
-		<!-- Dependency creation section — always visible -->
-		<div class="space-y-2">
-			<span class="text-secondary block text-sm font-medium">{dependencies_createDependency()}</span
-			>
+		{#if inspectorConfig.dependency_creation}
+			<!-- Dependency creation section — conditionally shown based on perspective -->
+			<div class="space-y-2">
+				<span class="text-secondary block text-sm font-medium"
+					>{dependencies_createDependency()}</span
+				>
 
-			<div class="card card-static space-y-3 p-3">
-				<!-- Dependency type toggle + preview button -->
-				<div class="flex items-center gap-2">
-					<SegmentedControl
-						options={['RequestPath', 'HubAndSpoke'].map((type) => ({
-							value: type,
-							label: '',
-							icon: dependencyTypes.getIconComponent(type)
-						}))}
-						selected={groupType}
-						onchange={(v) => (groupType = v as DependencyType)}
-					/>
-					<span class="text-secondary text-xs">{dependencyTypes.getName(groupType)}</span>
-					<button
-						class="btn-secondary ml-auto flex items-center gap-1 p-1.5 text-xs"
-						onclick={togglePreview}
-						title={showPreview ? 'Hide preview' : 'Show preview'}
-					>
-						{#if showPreview}
-							<Eye class="h-3.5 w-3.5" />
-						{:else}
-							<EyeOff class="h-3.5 w-3.5" />
-						{/if}
-						{topology_multiSelectPreviewEdge()}
-					</button>
-				</div>
-
-				<!-- Name input -->
-				<input
-					type="text"
-					bind:value={groupName}
-					placeholder={topology_multiSelectGroupName()}
-					class="h-8 w-full rounded px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-					style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
-				/>
-
-				<!-- Edge style & color -->
-				<EdgeStyleForm
-					bind:formData={edgeStyleFormData}
-					collapsed={false}
-					editable={true}
-					showCollapseToggle={false}
-					onColorChange={(c) => (groupColor = c)}
-					onEdgeStyleChange={(s) => (groupEdgeStyle = s)}
-				/>
-
-				<!-- Binding selection -->
-				<div class="space-y-2">
-					<span class="text-secondary block text-xs font-medium">{dependencies_serviceBindings()}</span>
-					<InlineInfo
-						title={dependencies_serviceBindingsInfoTitle()}
-						body={dependencies_serviceBindingsInfoBody()}
-						dismissableKey="group-bindings-info"
-					/>
-					{#each interfaceBindingChoices as choice (choice.interfaceId)}
-						<div class="card card-static space-y-1 p-2">
-							<div class="text-primary truncate text-xs font-medium">
-								{choice.hostName}
-							</div>
-							<div class="text-tertiary truncate text-[10px]">
-								{choice.interfaceName}
-							</div>
-							{#if choice.bindings.length === 0}
-								<div class="text-tertiary text-xs italic">
-									{topology_multiSelectNoBindings()}
-								</div>
-							{:else if choice.bindings.length === 1}
-								<div class="text-secondary text-xs">
-									{choice.bindings[0].label}
-								</div>
+				<div class="card card-static space-y-3 p-3">
+					<!-- Dependency type toggle + preview button -->
+					<div class="flex items-center gap-2">
+						<SegmentedControl
+							options={['RequestPath', 'HubAndSpoke'].map((type) => ({
+								value: type,
+								label: '',
+								icon: dependencyTypes.getIconComponent(type)
+							}))}
+							selected={groupType}
+							onchange={(v) => (groupType = v as DependencyType)}
+						/>
+						<span class="text-secondary text-xs">{dependencyTypes.getName(groupType)}</span>
+						<button
+							class="btn-secondary ml-auto flex items-center gap-1 p-1.5 text-xs"
+							onclick={togglePreview}
+							title={showPreview ? 'Hide preview' : 'Show preview'}
+						>
+							{#if showPreview}
+								<Eye class="h-3.5 w-3.5" />
 							{:else}
-								<select
-									class="h-auto min-h-6 w-full rounded px-1 text-xs"
-									style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
-									value={bindingSelections.get(choice.interfaceId) ?? ''}
-									onchange={(e) => {
-										const target = e.target as HTMLSelectElement;
-										bindingSelections.set(choice.interfaceId, target.value || null);
-									}}
-								>
-									<option value="">{topology_multiSelectPickBinding()}</option>
-									{#each choice.bindings as binding (binding.id)}
-										<option value={binding.id}>{binding.label}</option>
-									{/each}
-								</select>
+								<EyeOff class="h-3.5 w-3.5" />
 							{/if}
-						</div>
-					{/each}
-				</div>
+							{topology_multiSelectPreviewEdge()}
+						</button>
+					</div>
 
-				<!-- Rebuild warning + Create button -->
-				<div class="space-y-2">
-					<p class="text-tertiary text-xs">
-						{topology_multiSelectCreateGroupRebuildWarning()}
-					</p>
-					<button
-						class="btn-primary w-full text-xs"
-						onclick={confirmGroupCreation}
-						disabled={!groupName.trim() || createDependencyMutation.isPending}
-					>
-						{dependencies_createDependency()}
-					</button>
+					<!-- Name input -->
+					<input
+						type="text"
+						bind:value={groupName}
+						placeholder={topology_multiSelectGroupName()}
+						class="h-8 w-full rounded px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+						style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
+					/>
+
+					<!-- Edge style & color -->
+					<EdgeStyleForm
+						bind:formData={edgeStyleFormData}
+						collapsed={false}
+						editable={true}
+						showCollapseToggle={false}
+						onColorChange={(c) => (groupColor = c)}
+						onEdgeStyleChange={(s) => (groupEdgeStyle = s)}
+					/>
+
+					<!-- Binding selection -->
+					<div class="space-y-2">
+						<span class="text-secondary block text-xs font-medium"
+							>{dependencies_serviceBindings()}</span
+						>
+						<InlineInfo
+							title={dependencies_serviceBindingsInfoTitle()}
+							body={dependencies_serviceBindingsInfoBody()}
+							dismissableKey="group-bindings-info"
+						/>
+						{#each interfaceBindingChoices as choice (choice.interfaceId)}
+							<div class="card card-static space-y-1 p-2">
+								<div class="text-primary truncate text-xs font-medium">
+									{choice.hostName}
+								</div>
+								<div class="text-tertiary truncate text-[10px]">
+									{choice.interfaceName}
+								</div>
+								{#if choice.bindings.length === 0}
+									<div class="text-tertiary text-xs italic">
+										{topology_multiSelectNoBindings()}
+									</div>
+								{:else if choice.bindings.length === 1}
+									<div class="text-secondary text-xs">
+										{choice.bindings[0].label}
+									</div>
+								{:else}
+									<select
+										class="h-auto min-h-6 w-full rounded px-1 text-xs"
+										style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
+										value={bindingSelections.get(choice.interfaceId) ?? ''}
+										onchange={(e) => {
+											const target = e.target as HTMLSelectElement;
+											bindingSelections.set(choice.interfaceId, target.value || null);
+										}}
+									>
+										<option value="">{topology_multiSelectPickBinding()}</option>
+										{#each choice.bindings as binding (binding.id)}
+											<option value={binding.id}>{binding.label}</option>
+										{/each}
+									</select>
+								{/if}
+							</div>
+						{/each}
+					</div>
+
+					<!-- Rebuild warning + Create button -->
+					<div class="space-y-2">
+						<p class="text-tertiary text-xs">
+							{topology_multiSelectCreateGroupRebuildWarning()}
+						</p>
+						<button
+							class="btn-primary w-full text-xs"
+							onclick={confirmGroupCreation}
+							disabled={!groupName.trim() || createDependencyMutation.isPending}
+						>
+							{dependencies_createDependency()}
+						</button>
+					</div>
 				</div>
 			</div>
-		</div>
+		{/if}
 	{:else}
 		<!-- Show reason why actions are unavailable -->
 		{#if mutateDisabledReason}

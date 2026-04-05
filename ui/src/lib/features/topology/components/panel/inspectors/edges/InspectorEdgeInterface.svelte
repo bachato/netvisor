@@ -13,7 +13,18 @@
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 
-	let { edge, hostId }: { edge: Edge; hostId: string } = $props();
+	import type { components } from '$lib/api/schema';
+	type TopologyPerspective = components['schemas']['TopologyPerspective'];
+
+	let {
+		edge,
+		hostId,
+		perspective = 'l3_logical'
+	}: {
+		edge: Edge;
+		hostId: string;
+		perspective?: TopologyPerspective;
+	} = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');

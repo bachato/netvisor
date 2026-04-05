@@ -2,7 +2,8 @@
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { X, GitBranch, Network } from 'lucide-svelte';
-	import { selectedNodes, previewEdges, autoRebuild } from '../../queries';
+	import { selectedNodes, previewEdges, autoRebuild, activePerspective } from '../../queries';
+	import { getInspectorConfig } from '../panel/inspectors/perspective-config';
 	import type { Topology, TopologyNode } from '../../types/base';
 	import { resolveElementNode } from '../../resolvers';
 	import type { DependencyType } from '$lib/features/dependencies/types/base';
@@ -166,14 +167,20 @@
 		const newDependency = createEmptyDependencyFormData(topology.network_id);
 		newDependency.name = groupName.trim();
 		newDependency.dependency_type = groupType;
-		// Convert binding IDs to members (service_id + binding_id)
-		newDependency.members = bindingIds.map((bindingId) => {
-			const service = topology.services.find((s) => s.bindings.some((b) => b.id === bindingId));
-			return {
-				service_id: service?.id ?? '',
-				binding_id: bindingId
-			};
-		});
+		// Build members as the correct tagged union based on perspective
+		const config = getInspectorConfig(get(activePerspective));
+		if (config.dependency_creation === 'Services') {
+			const serviceIds: string[] = [];
+			for (const bindingId of bindingIds) {
+				const service = topology.services.find((s) => s.bindings.some((b) => b.id === bindingId));
+				if (service && !serviceIds.includes(service.id)) {
+					serviceIds.push(service.id);
+				}
+			}
+			newDependency.members = { type: 'Services', service_ids: serviceIds };
+		} else {
+			newDependency.members = { type: 'Bindings', binding_ids: bindingIds };
+		}
 
 		const created = await createDependencyMutation.mutateAsync(newDependency);
 		previewEdges.set([]);

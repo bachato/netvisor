@@ -1,0 +1,52 @@
+<script lang="ts">
+	import type { Node } from '@xyflow/svelte';
+	import type { Topology } from '$lib/features/topology/types/base';
+	import type { ElementRenderContext } from '$lib/features/topology/resolvers';
+	import { common_portBindings } from '$lib/paraglide/messages';
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let {
+		node,
+		topology,
+		elementContext
+	}: {
+		node: Node;
+		topology: Topology;
+		elementContext?: ElementRenderContext;
+	} = $props();
+
+	// For Service elements, show port bindings
+	let service = $derived(
+		elementContext?.elementType === 'Service' && elementContext.services.length > 0
+			? elementContext.services[0]
+			: null
+	);
+
+	let portBindings = $derived.by(() => {
+		if (!service) return [];
+		return service.bindings
+			.filter((b) => b.type === 'Port')
+			.map((b) => {
+				const port = topology.ports.find((p) => p.id === b.port_id);
+				return { binding: b, port };
+			});
+	});
+</script>
+
+{#if portBindings.length > 0}
+	<div>
+		<span class="text-secondary mb-2 block text-sm font-medium">{common_portBindings()}</span>
+		<div class="card card-static space-y-1">
+			{#each portBindings as { binding, port } (binding.id)}
+				<div class="flex items-center gap-2 text-sm">
+					<span class="text-primary font-mono">
+						{port ? `${port.port_number}/${port.protocol.toLowerCase()}` : binding.port_id}
+					</span>
+					{#if port?.description}
+						<span class="text-tertiary truncate">{port.description}</span>
+					{/if}
+				</div>
+			{/each}
+		</div>
+	</div>
+{/if}
