@@ -164,16 +164,14 @@
 					<p class="text-tertiary mb-1 text-xs">{tags_inheritedOverrideHint()}</p>
 				{/if}
 			{/if}
-			{#if !isAppGroupInherited}
-				<TagPickerInline
-					selectedTagIds={selectedAppGroupTagIds}
+			<TagPickerInline
+					selectedTagIds={isAppGroupInherited ? [] : selectedAppGroupTagIds}
 					{entityId}
 					{entityType}
 					disabled={!editState.isEditable}
-					availableTags={appGroupAvailableTags}
+					availableTags={isAppGroupInherited ? appGroupTags : appGroupAvailableTags}
 					allowCreate={false}
 				/>
-			{/if}
 		</div>
 	{/if}
 {/if}

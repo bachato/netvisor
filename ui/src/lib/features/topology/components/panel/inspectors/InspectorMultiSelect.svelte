@@ -607,20 +607,19 @@
 				<div class="card card-static space-y-2 p-2">
 					{#if appGroupState.type === 'cross-group'}
 						<p class="text-tertiary text-xs">{tags_crossGroupSelectionHint()}</p>
-					{:else if appGroupState.type === 'single' && appGroupState.allInherited && currentAppGroupTag}
-						<!-- Inherited: show static badge, no picker (can't remove inherited tag) -->
-						<div class="flex flex-wrap items-center gap-1">
-							<Tag
-								label={currentAppGroupTag.name}
-								color={currentAppGroupTag.color}
-								icon={concepts.getIconComponent('Application')}
-								isShiny={true}
-							/>
-							<span class="text-tertiary text-xs">{tags_inheritedFromHost()}</span>
-						</div>
-						<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
 					{:else}
-						<!-- Direct or ungrouped: show picker -->
+						{#if appGroupState.type === 'single' && appGroupState.allInherited && currentAppGroupTag}
+							<div class="flex flex-wrap items-center gap-1">
+								<Tag
+									label={currentAppGroupTag.name}
+									color={currentAppGroupTag.color}
+									icon={concepts.getIconComponent('Application')}
+									isShiny={true}
+								/>
+								<span class="text-tertiary text-xs">{tags_inheritedFromHost()}</span>
+							</div>
+							<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
+						{/if}
 						<TagPickerInline
 							selectedTagIds={commonAppGroupTags}
 							onAdd={handleAddAppGroupTag}
