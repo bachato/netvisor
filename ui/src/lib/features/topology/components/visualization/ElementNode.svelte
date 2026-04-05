@@ -228,9 +228,11 @@
 		return !$connectedNodeIds.has(nodeRenderData.interface_id);
 	});
 
-	// Service-type element nodes should be fully hidden (not faded) when filtered out
+	// Service-type element nodes should be fully hidden (not faded) when filtered out.
+	// Check both hiddenServices (service tag filter) and hiddenNodes (perspective-aware node hiding).
 	let shouldHideEntirely = $derived(
-		nodeRenderData?.elementType === 'Service' && hiddenServices.has(id)
+		nodeRenderData?.elementType === 'Service' &&
+			(hiddenServices.has(id) || hiddenNodes.has(nodeRenderData.interface_id))
 	);
 
 	let nodeOpacity = $derived(shouldFadeOut ? 0.3 : 1);
