@@ -446,6 +446,14 @@ mod tests {
     }
 
     fn make_service(host_id: Uuid, def: Box<dyn ServiceDefinition>) -> Service {
+        make_service_with_tags(host_id, def, vec![])
+    }
+
+    fn make_service_with_tags(
+        host_id: Uuid,
+        def: Box<dyn ServiceDefinition>,
+        tags: Vec<Uuid>,
+    ) -> Service {
         Service {
             id: Uuid::new_v4(),
             created_at: Utc::now(),
@@ -453,6 +461,7 @@ mod tests {
             base: ServiceBase {
                 host_id,
                 service_definition: def,
+                tags,
                 ..Default::default()
             },
         }
@@ -711,6 +720,75 @@ mod tests {
         assert!(
             cat_group.is_none(),
             "NestedServiceCategory should not be created when all its matches are already claimed"
+        );
+    }
+
+    #[test]
+    fn test_bytag_inherits_service_tags_in_l3() {
+        // Tag assigned to SERVICE only, not to the host
+        let tag = make_tag("ServiceTag");
+        let host = make_host("host-no-tags", vec![]); // Host has NO tags
+        let svc = make_service_with_tags(host.id, Box::new(ReverseProxyServiceDef), vec![tag.id]);
+
+        let subnet_id = Uuid::new_v4();
+        let child_id = Uuid::new_v4();
+
+        let children = vec![make_container_child(child_id, host.id)];
+        let mut child_nodes = vec![make_element_node(child_id, host.id, subnet_id)];
+
+        let mut options = TopologyOptions::default();
+        options.request.element_rules = vec![GraphRule::new(ElementRule::ByTag {
+            tag_ids: vec![tag.id],
+            title: Some("ServiceTagGroup".to_string()),
+        })];
+
+        let hosts = vec![host.clone()];
+        let services = vec![svc];
+        let tags = vec![tag.clone()];
+
+        let ctx = TopologyContext::new(
+            &hosts,
+            &[],
+            &[],
+            &services,
+            &[],
+            &[],
+            &[],
+            &[],
+            &tags,
+            &options,
+        );
+
+        let planner = GraphBuilder::new();
+        planner.create_nested_group_containers(subnet_id, &children, &ctx, &mut child_nodes);
+
+        // Should create a NestedTag container via service tag inheritance
+        let tag_group = child_nodes
+            .iter()
+            .find(|n| {
+                matches!(
+                    n.node_type,
+                    NodeType::Container {
+                        container_type: ContainerType::NestedTag,
+                        ..
+                    }
+                )
+            })
+            .expect("Should create NestedTag from service tag inheritance");
+
+        // The interface element should be grouped under the tag container
+        let element = child_nodes.iter().find(|n| n.id == child_id).unwrap();
+        if let NodeType::Element { container_id, .. } = &element.node_type {
+            assert_eq!(
+                *container_id, tag_group.id,
+                "Interface should be grouped by service tag inheritance"
+            );
+        }
+
+        assert_eq!(
+            tag_group.header.as_deref(),
+            Some("ServiceTagGroup"),
+            "Tag group should have custom title"
         );
     }
 }
