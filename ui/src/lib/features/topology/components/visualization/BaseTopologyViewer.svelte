@@ -256,6 +256,7 @@
 						.map((n) => n.id)
 				);
 				if (subcontainerIds.size > 0) {
+					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 					const childCounts = new Map<string, number>();
 					for (const n of layoutNodes) {
 						if (n.node_type === 'Element') {
@@ -267,11 +268,7 @@
 					}
 					layoutNodes = layoutNodes.filter(
 						(n) =>
-							!(
-								n.node_type === 'Container' &&
-								subcontainerIds.has(n.id) &&
-								!childCounts.has(n.id)
-							)
+							!(n.node_type === 'Container' && subcontainerIds.has(n.id) && !childCounts.has(n.id))
 					);
 				}
 
