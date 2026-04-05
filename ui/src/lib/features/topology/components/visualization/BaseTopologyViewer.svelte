@@ -153,6 +153,8 @@
 	let isMeasuring = false;
 	let prevExpandedPortIds = new Set<string>();
 	let prevPerspective = get(activePerspective);
+	let lastRenderedTopoKey = '';
+	let lastRenderedPerspective = '';
 
 	function getStructureKey(topo: Topology): string {
 		// Include container assignments so membership changes (element rules) trigger re-layout
@@ -231,6 +233,18 @@
 	async function loadTopologyData() {
 		try {
 			if (topology && (topology.edges || topology.nodes)) {
+				const currentPerspective = get(activePerspective);
+				const topoKey = getStructureKey(topology);
+				const perspectiveChanged =
+					lastRenderedPerspective !== '' && currentPerspective !== lastRenderedPerspective;
+				const topologyChanged = topoKey !== lastRenderedTopoKey;
+
+				// When perspective changed but topology data hasn't been rebuilt yet,
+				// skip processing to avoid rendering old nodes with the new perspective (flicker)
+				if (perspectiveChanged && !topologyChanged) {
+					return;
+				}
+
 				const collapsed = get(collapsedContainers);
 				const hiddenServices = get(tagHiddenServiceIds);
 
@@ -283,14 +297,13 @@
 				// Run ELK on structure/collapse changes, skip for edge-only re-renders
 				const opts = get(topologyOptions);
 				const sizeKey = `${(opts.request.hide_service_categories ?? []).join(',')}:${opts.request.hide_ports}`;
-				const currentPerspective = get(activePerspective);
 				const rootCollapsedPreview = new Set(
 					[...collapsed].filter((id) => !layoutGraph || !layoutGraph.isSubcontainer(id))
 				);
 				const structureKey =
 					currentPerspective +
 					':' +
-					getStructureKey(topology) +
+					topoKey +
 					':' +
 					Array.from(rootCollapsedPreview).sort().join(',') +
 					':' +
@@ -662,6 +675,9 @@
 				await tick();
 				await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 				isMeasuring = false;
+
+				lastRenderedTopoKey = topoKey;
+				lastRenderedPerspective = currentPerspective;
 			}
 		} catch (err) {
 			pushError(`Failed to parse topology data ${err}`);
