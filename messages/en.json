@@ -1210,5 +1210,8 @@
 	"users_sensitiveLinkWarning": "Anyone with this link can join your organization with {permissions} permissions. Keep it secure and only share it with people you trust.",
 	"users_subtitle": "Manage users in your organization",
 	"users_updateFailed": "Failed to update user: {error}",
-	"users_updateSuccess": "User {email} updated successfully"
+	"users_updateSuccess": "User {email} updated successfully",
+	"dependencies_serviceBindings": "Service Bindings",
+	"dependencies_serviceBindingsInfoTitle": "Service bindings describe how services communicate across your network.",
+	"dependencies_serviceBindingsInfoBody": "A binding is a service on a specific host, interface, and port. By ordering bindings, you define the path requests take — which service sends them and which service receives them. For Request Path dependencies, bindings are connected in sequence. For Hub and Spoke, the first binding is the central service."
 }
