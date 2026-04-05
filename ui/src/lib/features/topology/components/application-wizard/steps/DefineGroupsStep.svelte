@@ -9,6 +9,7 @@
 	import { getSuggestions } from '../suggestions';
 	import { concepts } from '$lib/shared/stores/metadata';
 	import {
+		appWizard_createYourOwn,
 		appWizard_defineGroupsDescription,
 		appWizard_noGroupsYet,
 		appWizard_suggestedGroups,
@@ -38,6 +39,11 @@
 	let availableSuggestions = $derived(
 		suggestions.filter((s) => !existingNames.has(s.toLowerCase()))
 	);
+
+	// Stable color per suggestion so each is different
+	function getSuggestionColor(index: number): Color {
+		return AVAILABLE_COLORS[index % AVAILABLE_COLORS.length];
+	}
 
 	let isCreating = $state(false);
 
@@ -88,7 +94,7 @@
 				{appWizard_suggestedGroups()}
 			</h3>
 			<div class="flex flex-wrap gap-2">
-				{#each availableSuggestions as suggestion (suggestion)}
+				{#each availableSuggestions as suggestion, i (suggestion)}
 					<button
 						type="button"
 						class="cursor-pointer"
@@ -97,7 +103,7 @@
 					>
 						<Tag
 							label={suggestion}
-							color="Blue"
+							color={getSuggestionColor(i)}
 							icon={concepts.getIconComponent('Application')}
 							isShiny={true}
 							pill={true}
@@ -142,6 +148,9 @@
 
 	<!-- Custom group entry via TagPickerInline -->
 	<div>
+		<h3 class="text-secondary mb-2 text-xs font-medium uppercase tracking-wide">
+			{appWizard_createYourOwn()}
+		</h3>
 		<TagPickerInline
 			selectedTagIds={appGroupTags.map((t) => t.id)}
 			onAdd={() => {}}
