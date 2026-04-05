@@ -669,6 +669,7 @@ async fn receive_work_request(
                     tracing::error!("Failed to build daemon request: {}", e);
                     DaemonDiscoveryRequest {
                         session_id: payload.session_id,
+                        discovery_id: payload.discovery_id.unwrap_or_default(),
                         discovery_type: payload.discovery_type,
                         credential_mappings: vec![],
                     }

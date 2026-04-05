@@ -1829,6 +1829,7 @@ impl DaemonService {
                     tracing::error!("Failed to build daemon request: {}", e);
                     DaemonDiscoveryRequest {
                         session_id: work.session_id,
+                        discovery_id: work.discovery_id.unwrap_or_default(),
                         discovery_type: work.discovery_type,
                         credential_mappings: vec![],
                     }

@@ -52,6 +52,7 @@ pub struct DiscoverySessionInfo {
     pub daemon_id: Uuid,
     pub started_at: Option<DateTime<Utc>>,
     pub discovery_type: DiscoveryType,
+    pub discovery_id: Uuid,
 }
 
 #[derive(Debug, Clone)]

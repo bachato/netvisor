@@ -245,7 +245,7 @@ impl DaemonState {
                         .load(std::sync::atomic::Ordering::Relaxed);
                     if v != u32::MAX { Some(v) } else { None }
                 },
-                discovery_id: None,
+                discovery_id: Some(s.info.discovery_id),
             });
         }
         drop(session);
