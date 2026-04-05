@@ -25,7 +25,6 @@
 	import EdgeStyleForm from './EdgeStyleForm.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TextArea from '$lib/shared/components/forms/input/TextArea.svelte';
-	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import SelectNetwork from '$lib/features/networks/components/SelectNetwork.svelte';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
 	import type { Service } from '$lib/features/services/types/base';
@@ -42,8 +41,8 @@
 		common_next,
 		common_saving,
 		common_update,
-		dependencies_bindingLevel,
-		dependencies_bindingLevelHelp,
+		dependencies_withPorts,
+		dependencies_withPortsHelp,
 		dependencies_createDependency,
 		dependencies_descriptionPlaceholder,
 		dependencies_edgeAppearance,
@@ -55,8 +54,8 @@
 		dependencies_selectBindingForService,
 		dependencies_selectBindingRequired,
 		dependencies_selectService,
-		dependencies_serviceLevel,
-		dependencies_serviceLevelHelp,
+		dependencies_servicesOnly,
+		dependencies_servicesOnlyHelp,
 		common_services,
 		dependencies_servicesHelp,
 		dependencies_servicesInfoTitle,
@@ -369,12 +368,25 @@
 		}
 	}
 
-	let dependencyTypeOptions = $derived(
+	// Dependency type options for RichSelect
+	let dependencyTypeItems = $derived(
 		dependencyTypes.getItems().map((dt) => ({
-			value: dt.id,
-			label: dt.name ?? dt.id
+			id: dt.id,
+			name: dt.name ?? dt.id,
+			description: dt.description ?? '',
+			icon: dependencyTypes.getIconComponent(dt.id),
+			iconColor: dependencyTypes.getColorHelper(dt.id).icon
 		}))
 	);
+
+	type DepTypeItem = (typeof dependencyTypeItems)[number];
+	const dependencyTypeDisplay = {
+		getId: (item: DepTypeItem) => item.id,
+		getLabel: (item: DepTypeItem) => item.name,
+		getDescription: (item: DepTypeItem) => item.description,
+		getIcon: (item: DepTypeItem) => item.icon,
+		getIconColor: (item: DepTypeItem) => item.iconColor
+	};
 
 	let colorHelper = entities.getColorHelper('Dependency');
 
@@ -384,8 +396,8 @@
 	} as Dependency);
 
 	let modeOptions = [
-		{ value: 'Services', label: dependencies_serviceLevel() },
-		{ value: 'Bindings', label: dependencies_bindingLevel() }
+		{ value: 'Services', label: dependencies_servicesOnly() },
+		{ value: 'Bindings', label: dependencies_withPorts() }
 	];
 </script>
 
@@ -450,15 +462,13 @@
 
 					<form.Field name="dependency_type">
 						{#snippet children(field)}
-							<SelectInput
+							<RichSelect
 								label={dependencies_dependencyType()}
-								id="dependency_type"
-								{field}
-								options={dependencyTypeOptions}
+								options={dependencyTypeItems}
+								selectedValue={field.state.value}
+								displayComponent={dependencyTypeDisplay}
+								onSelect={(value) => field.handleChange(value)}
 							/>
-							<p class="text-tertiary text-xs">
-								{dependencyTypes.getDescription(field.state.value)}
-							</p>
 						{/snippet}
 					</form.Field>
 
@@ -508,8 +518,8 @@
 						/>
 						<p class="text-tertiary text-xs">
 							{memberMode === 'Services'
-								? dependencies_serviceLevelHelp()
-								: dependencies_bindingLevelHelp()}
+								? dependencies_servicesOnlyHelp()
+								: dependencies_withPortsHelp()}
 						</p>
 					</div>
 
