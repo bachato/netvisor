@@ -10,7 +10,10 @@
 		common_color,
 		common_delete,
 		common_description,
-		common_edit
+		common_edit,
+		common_no,
+		common_yes,
+		tags_applicationGroup
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -56,6 +59,10 @@
 						color: tag.color
 					}
 				]
+			},
+			{
+				label: tags_applicationGroup(),
+				value: tag.is_application_group ? common_yes() : common_no()
 			}
 		],
 		actions: [
