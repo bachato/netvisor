@@ -52,6 +52,7 @@ impl EventSubscriber for TopologyService {
             (EntityDiscriminants::Port, None),
             (EntityDiscriminants::Binding, None),
             (EntityDiscriminants::IfEntry, None), // LLDP neighbor changes trigger edge rebuild
+            (EntityDiscriminants::Tag, None),     // App-group tag changes trigger staleness
             (
                 EntityDiscriminants::Topology,
                 Some(vec![EntityOperation::Created, EntityOperation::Updated]),
@@ -70,88 +71,131 @@ impl EventSubscriber for TopologyService {
         // Group events by network_id -> topology changes
         let mut topology_updates: HashMap<Uuid, TopologyChanges> = HashMap::new();
 
+        // Track org-level staleness triggers (e.g., tag is_application_group changes)
+        let mut stale_org_ids: HashSet<Uuid> = HashSet::new();
+
         for event in events {
-            if let Event::Entity(entity_event) = event
-                && let Some(network_id) = entity_event.network_id
-            {
-                // Check if any event triggers staleness
-                let trigger_stale = entity_event
-                    .metadata
-                    .get("trigger_stale")
-                    .and_then(|v| serde_json::from_value::<bool>(v.clone()).ok())
-                    .unwrap_or(false);
-
-                // Check if any event clears staleness (only set on topology create to avoid showing topology as stale on first load)
-                let clear_stale = entity_event
-                    .metadata
-                    .get("clear_stale")
-                    .and_then(|v| serde_json::from_value::<bool>(v.clone()).ok())
-                    .unwrap_or(false);
-
-                // Topology updates from changes to options should be applied immediately and not processed alongside
-                // other changes, otherwise another call to topology_service.update will be made which will trigger
-                // an infinite loop
-                if let Entity::Topology(boxed_topology) = entity_event.entity_type.clone()
-                    && entity_event.operation == EntityOperation::Updated
-                {
-                    let topology = *boxed_topology;
-                    // Don't override is_stale — the handler already set the correct
-                    // value (rebuild clears it, refresh marks it).
-                    // Services were already set by the handler — no need to re-fetch.
-
-                    let _ = self.staleness_tx.send(topology).inspect_err(|e| {
-                        tracing::debug!("Staleness notification skipped (no receivers): {}", e)
-                    });
+            if let Event::Entity(entity_event) = event {
+                // Handle org-level entities without network_id (e.g., Tags)
+                if entity_event.network_id.is_none() {
+                    if let Some(org_id) = entity_event.organization_id {
+                        let trigger_stale = entity_event
+                            .metadata
+                            .get("trigger_stale")
+                            .and_then(|v| serde_json::from_value::<bool>(v.clone()).ok())
+                            .unwrap_or(false);
+                        if trigger_stale {
+                            stale_org_ids.insert(org_id);
+                        }
+                    }
                     continue;
                 }
 
-                network_ids.insert(network_id);
+                if let Some(network_id) = entity_event.network_id {
+                    // Check if any event triggers staleness
+                    let trigger_stale = entity_event
+                        .metadata
+                        .get("trigger_stale")
+                        .and_then(|v| serde_json::from_value::<bool>(v.clone()).ok())
+                        .unwrap_or(false);
 
-                let changes = topology_updates.entry(network_id).or_default();
+                    // Check if any event clears staleness (only set on topology create to avoid showing topology as stale on first load)
+                    let clear_stale = entity_event
+                        .metadata
+                        .get("clear_stale")
+                        .and_then(|v| serde_json::from_value::<bool>(v.clone()).ok())
+                        .unwrap_or(false);
 
-                // Track removed entities
-                if entity_event.operation == EntityOperation::Deleted {
-                    match entity_event.entity_type {
-                        Entity::Host(_) => changes.removed_hosts.insert(entity_event.entity_id),
-                        Entity::Interface(_) => {
-                            changes.removed_interfaces.insert(entity_event.entity_id)
-                        }
-                        Entity::Service(_) => {
-                            changes.removed_services.insert(entity_event.entity_id)
-                        }
-                        Entity::Subnet(_) => changes.removed_subnets.insert(entity_event.entity_id),
-                        Entity::Dependency(_) => {
-                            changes.removed_dependencies.insert(entity_event.entity_id)
-                        }
-                        Entity::Port(_) => changes.removed_ports.insert(entity_event.entity_id),
-                        Entity::Binding(_) => {
-                            changes.removed_bindings.insert(entity_event.entity_id)
-                        }
-                        Entity::IfEntry(_) => {
-                            changes.removed_if_entries.insert(entity_event.entity_id)
-                        }
-                        _ => false,
-                    };
+                    // Topology updates from changes to options should be applied immediately and not processed alongside
+                    // other changes, otherwise another call to topology_service.update will be made which will trigger
+                    // an infinite loop
+                    if let Entity::Topology(boxed_topology) = entity_event.entity_type.clone()
+                        && entity_event.operation == EntityOperation::Updated
+                    {
+                        let topology = *boxed_topology;
+                        // Don't override is_stale — the handler already set the correct
+                        // value (rebuild clears it, refresh marks it).
+                        // Services were already set by the handler — no need to re-fetch.
+
+                        let _ = self.staleness_tx.send(topology).inspect_err(|e| {
+                            tracing::debug!("Staleness notification skipped (no receivers): {}", e)
+                        });
+                        continue;
+                    }
+
+                    network_ids.insert(network_id);
+
+                    let changes = topology_updates.entry(network_id).or_default();
+
+                    // Track removed entities
+                    if entity_event.operation == EntityOperation::Deleted {
+                        match entity_event.entity_type {
+                            Entity::Host(_) => changes.removed_hosts.insert(entity_event.entity_id),
+                            Entity::Interface(_) => {
+                                changes.removed_interfaces.insert(entity_event.entity_id)
+                            }
+                            Entity::Service(_) => {
+                                changes.removed_services.insert(entity_event.entity_id)
+                            }
+                            Entity::Subnet(_) => {
+                                changes.removed_subnets.insert(entity_event.entity_id)
+                            }
+                            Entity::Dependency(_) => {
+                                changes.removed_dependencies.insert(entity_event.entity_id)
+                            }
+                            Entity::Port(_) => changes.removed_ports.insert(entity_event.entity_id),
+                            Entity::Binding(_) => {
+                                changes.removed_bindings.insert(entity_event.entity_id)
+                            }
+                            Entity::IfEntry(_) => {
+                                changes.removed_if_entries.insert(entity_event.entity_id)
+                            }
+                            _ => false,
+                        };
+                    }
+
+                    if trigger_stale {
+                        // User will be prompted to update entities
+                        changes.should_mark_stale = true;
+                    } else if clear_stale {
+                        changes.clear_stale = true;
+                    } else {
+                        // It's safe to automatically update entities
+                        match entity_event.entity_type {
+                            Entity::Host(_) => changes.updated_hosts = true,
+                            Entity::Interface(_) => changes.updated_interfaces = true,
+                            Entity::Service(_) => changes.updated_services = true,
+                            Entity::Subnet(_) => changes.updated_subnets = true,
+                            Entity::Dependency(_) => changes.updated_dependencies = true,
+                            Entity::Port(_) => changes.updated_ports = true,
+                            Entity::Binding(_) => changes.updated_bindings = true,
+                            Entity::IfEntry(_) => changes.updated_if_entries = true,
+                            _ => (),
+                        };
+                    }
                 }
+            }
+        }
 
-                if trigger_stale {
-                    // User will be prompted to update entities
-                    changes.should_mark_stale = true;
-                } else if clear_stale {
-                    changes.clear_stale = true;
-                } else {
-                    // It's safe to automatically update entities
-                    match entity_event.entity_type {
-                        Entity::Host(_) => changes.updated_hosts = true,
-                        Entity::Interface(_) => changes.updated_interfaces = true,
-                        Entity::Service(_) => changes.updated_services = true,
-                        Entity::Subnet(_) => changes.updated_subnets = true,
-                        Entity::Dependency(_) => changes.updated_dependencies = true,
-                        Entity::Port(_) => changes.updated_ports = true,
-                        Entity::Binding(_) => changes.updated_bindings = true,
-                        Entity::IfEntry(_) => changes.updated_if_entries = true,
-                        _ => (),
-                    };
+        // Mark all topologies in affected orgs as stale (for org-level entities like tags)
+        for org_id in &stale_org_ids {
+            // Tags are org-indexed but topologies are network-indexed — find networks in this org first
+            let network_filter =
+                StorageFilter::<crate::server::networks::r#impl::Network>::new_from_org_id(org_id);
+            let networks = self.network_service.get_all(network_filter).await?;
+            for network in &networks {
+                let topo_filter = StorageFilter::<Topology>::new_from_network_ids(&[network.id]);
+                let topologies = self.get_all(topo_filter).await?;
+                for mut topology in topologies {
+                    if !topology.base.is_stale {
+                        topology.base.is_stale = true;
+                        let updated = self
+                            .update(&mut topology, AuthenticatedEntity::System)
+                            .await?;
+                        let _ = self.staleness_tx.send(updated).inspect_err(|e| {
+                            tracing::debug!("Staleness notification skipped (no receivers): {}", e)
+                        });
+                    }
                 }
             }
         }

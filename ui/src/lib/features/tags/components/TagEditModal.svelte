@@ -13,6 +13,7 @@
 	import { pushError } from '$lib/shared/stores/feedback';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import TextArea from '$lib/shared/components/forms/input/TextArea.svelte';
+	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
 	import {
 		common_cancel,
 		common_color,
@@ -211,20 +212,12 @@
 					<!-- Application Group -->
 					<form.Field name="is_application_group">
 						{#snippet children(field)}
-							<div class="space-y-1">
-								<label class="flex items-center gap-2">
-									<input
-										type="checkbox"
-										checked={field.state.value}
-										onchange={(e) => field.handleChange((e.target as HTMLInputElement).checked)}
-										class="h-4 w-4 rounded accent-purple-500"
-									/>
-									<span class="text-secondary text-sm font-medium">{tags_applicationGroup()}</span>
-								</label>
-								<p class="text-tertiary text-xs">
-									{tags_applicationGroupHelp()}
-								</p>
-							</div>
+							<Checkbox
+								label={tags_applicationGroup()}
+								helpText={tags_applicationGroupHelp()}
+								{field}
+								id="is_application_group"
+							/>
 						{/snippet}
 					</form.Field>
 				</div>

@@ -52,6 +52,7 @@ pub struct TopologyService {
     binding_service: Arc<BindingService>,
     if_entry_service: Arc<IfEntryService>,
     tag_service: Arc<TagService>,
+    pub(crate) network_service: Arc<crate::server::networks::service::NetworkService>,
     event_bus: Arc<EventBus>,
     pub staleness_tx: broadcast::Sender<Topology>,
 }
@@ -183,6 +184,7 @@ impl TopologyService {
         binding_service: Arc<BindingService>,
         if_entry_service: Arc<IfEntryService>,
         tag_service: Arc<TagService>,
+        network_service: Arc<crate::server::networks::service::NetworkService>,
         storage: Arc<GenericPostgresStorage<Topology>>,
         event_bus: Arc<EventBus>,
     ) -> Self {
@@ -198,6 +200,7 @@ impl TopologyService {
             binding_service,
             if_entry_service,
             tag_service,
+            network_service,
             event_bus,
             staleness_tx,
         }

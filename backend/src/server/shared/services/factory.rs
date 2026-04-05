@@ -245,6 +245,7 @@ impl ServiceFactory {
             binding_service.clone(),
             if_entry_service.clone(),
             tag_service.clone(),
+            network_service.clone(),
             storage.topologies.clone(),
             event_bus.clone(),
         ));
