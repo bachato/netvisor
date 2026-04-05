@@ -800,18 +800,11 @@ if (browser) {
 	let elementRulesInitialized = false;
 	let elementRulesRebuildTimeout: ReturnType<typeof setTimeout>;
 	sharedElementRules.subscribe((rules) => {
-		console.debug('[sharedElementRules] subscriber fired', {
-			elementRulesInitialized,
-			rulesCount: rules.length,
-			autoRebuild: get(autoRebuild),
-			topologyId: get(selectedTopologyId)
-		});
 		if (elementRulesInitialized) {
 			saveElementRulesToStorage(rules);
 
 			clearTimeout(elementRulesRebuildTimeout);
 			elementRulesRebuildTimeout = setTimeout(() => {
-				console.debug('[sharedElementRules] rebuild timeout firing');
 				if (!get(autoRebuild)) return;
 				const topologyId = get(selectedTopologyId);
 				if (!topologyId) return;
