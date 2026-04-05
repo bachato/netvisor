@@ -233,7 +233,7 @@
 		if (!nodeRenderData) return false;
 
 		// Check if this node is in the connected set
-		return !$connectedNodeIds.has(nodeRenderData.interface_id);
+		return !$connectedNodeIds.has(id);
 	});
 
 	// Service-type element nodes should be fully hidden (not faded) when filtered out.
