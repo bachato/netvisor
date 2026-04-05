@@ -26,7 +26,6 @@
 		updateTopologyOptions
 	} from '../queries';
 	import { makeGraphRule } from '../types/grouping';
-	import { get } from 'svelte/store';
 	import type { Topology } from '../types/base';
 	import TopologyModal from './TopologyModal.svelte';
 	import { newNodeIds } from '../interactions';
@@ -436,11 +435,8 @@
 				]
 			}
 		}));
-		// Auto-rebuild triggers via perPerspectiveOptions subscriber
-		// If autoRebuild is off, trigger manually
-		if (!get(autoRebuild) && currentTopology) {
-			rebuildTopologyMutation.mutate(currentTopology);
-		}
+		// Refresh rather than rebuild — safer if topology entered conflict state during wizard
+		handleRefresh();
 	}
 
 	let stateConfig = $derived(
@@ -570,7 +566,7 @@
 									{/if}
 								</div>
 								<!-- State Badge / Action Button -->
-								{#if stateConfig && !currentTopology.is_locked && !$autoRebuild}
+								{#if stateConfig && !currentTopology.is_locked && !$autoRebuild && !showAppWizard}
 									<div class="flex flex-col items-center gap-2">
 										<div class="flex items-center">
 											<StateBadge
@@ -634,8 +630,8 @@
 				{/if}
 			</div>
 
-			<!-- Contextual Info Banner -->
-			{#if currentTopology && stateConfig}
+			<!-- Contextual Info Banner (hidden during wizard) -->
+			{#if currentTopology && stateConfig && !showAppWizard}
 				{#if stateConfig.type === 'locked'}
 					<InlineInfo
 						dismissableKey="topology-locked-info"
