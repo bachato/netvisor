@@ -19,22 +19,15 @@ const UNGROUPED_CONTAINER_ID: Uuid = Uuid::from_bytes([
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 ]);
 
+/// Namespace for deterministic topology container UUIDs.
+pub const TOPOLOGY_CONTAINER_NAMESPACE: Uuid = Uuid::from_bytes([
+    0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6, 0x47, 0x89, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56,
+    0x78,
+]);
+
 /// Create a deterministic container UUID from a tag UUID.
-/// XORs the tag UUID bytes with a fixed namespace to produce a stable, unique ID.
 fn container_id_for_tag(tag_id: &Uuid) -> Uuid {
-    const NAMESPACE: [u8; 16] = [
-        0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6, 0x47, 0x89, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56,
-        0x78,
-    ];
-    let tag_bytes = tag_id.as_bytes();
-    let mut result = [0u8; 16];
-    for i in 0..16 {
-        result[i] = tag_bytes[i] ^ NAMESPACE[i];
-    }
-    // Set version 4 and variant bits for a valid UUID
-    result[6] = (result[6] & 0x0f) | 0x40;
-    result[8] = (result[8] & 0x3f) | 0x80;
-    Uuid::from_bytes(result)
+    Uuid::new_v5(&TOPOLOGY_CONTAINER_NAMESPACE, tag_id.as_bytes())
 }
 
 pub struct ApplicationBuilder;
@@ -186,7 +179,10 @@ impl PerspectiveBuilder for ApplicationBuilder {
             }
 
             for (category, services) in &services_by_category {
-                let container_id = Uuid::new_v4();
+                let container_id = Uuid::new_v5(
+                    &TOPOLOGY_CONTAINER_NAMESPACE,
+                    format!("app-category:{category}").as_bytes(),
+                );
 
                 nodes.push(Node {
                     id: container_id,
