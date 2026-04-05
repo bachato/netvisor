@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { Plus } from 'lucide-svelte';
-	import { createForm } from '@tanstack/svelte-form';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
-	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
+	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
 	import { AVAILABLE_COLORS, type Color } from '$lib/shared/utils/styling';
 	import { createDefaultTag } from '$lib/features/tags/types/base';
 	import type { Tag as TagType } from '$lib/features/tags/types/base';
@@ -11,8 +9,6 @@
 	import { getSuggestions } from '../suggestions';
 	import { concepts } from '$lib/shared/stores/metadata';
 	import {
-		common_add,
-		appWizard_customGroupPlaceholder,
 		appWizard_defineGroupsDescription,
 		appWizard_noGroupsYet,
 		appWizard_suggestedGroups,
@@ -20,6 +16,8 @@
 		appWizard_mspClientPlaceholder,
 		appWizard_mspClientExplanation
 	} from '$lib/paraglide/messages';
+	import { createForm } from '@tanstack/svelte-form';
+	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 
 	let {
 		appGroupTags
@@ -68,15 +66,6 @@
 		await deleteTagMutation.mutateAsync(tagId);
 	}
 
-	// Custom group name form (TanStack Form required by coding rules)
-	const customForm = createForm(() => ({
-		defaultValues: { groupName: '' },
-		onSubmit: async ({ value }) => {
-			await createAppGroupTag(value.groupName);
-			customForm.reset();
-		}
-	}));
-
 	// MSP client name form
 	const clientForm = createForm(() => ({
 		defaultValues: { clientName: '' },
@@ -92,7 +81,7 @@
 		{appWizard_defineGroupsDescription()}
 	</p>
 
-	<!-- Suggested groups -->
+	<!-- Suggested groups as application-styled tags -->
 	{#if availableSuggestions.length > 0}
 		<div>
 			<h3 class="text-secondary mb-2 text-xs font-medium uppercase tracking-wide">
@@ -102,12 +91,17 @@
 				{#each availableSuggestions as suggestion (suggestion)}
 					<button
 						type="button"
-						class="btn-secondary flex items-center gap-1.5 text-sm"
+						class="cursor-pointer"
 						onclick={() => createAppGroupTag(suggestion)}
 						disabled={isCreating}
 					>
-						<Plus class="h-3.5 w-3.5" />
-						{suggestion}
+						<Tag
+							label={suggestion}
+							color="Blue"
+							icon={concepts.getIconComponent('Application')}
+							isShiny={true}
+							pill={true}
+						/>
 					</button>
 				{/each}
 			</div>
@@ -146,51 +140,18 @@
 		</div>
 	{/if}
 
-	<!-- Custom group name input -->
+	<!-- Custom group entry via TagPickerInline -->
 	<div>
-		<form
-			onsubmit={(e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				customForm.handleSubmit();
-			}}
-			class="flex items-end gap-2"
-		>
-			<div class="flex-1">
-				<customForm.Field name="groupName">
-					{#snippet children(field)}
-						<TextInput
-							label=""
-							id="group-name"
-							{field}
-							placeholder={appWizard_customGroupPlaceholder()}
-							disabled={isCreating}
-						/>
-					{/snippet}
-				</customForm.Field>
-			</div>
-			<button type="submit" class="btn-primary" disabled={isCreating}>
-				{common_add()}
-			</button>
-		</form>
+		<TagPickerInline
+			selectedTagIds={appGroupTags.map((t) => t.id)}
+			onAdd={() => {}}
+			onRemove={(tagId) => deleteAppGroupTag(tagId)}
+			createAsApplicationGroup={true}
+		/>
 	</div>
 
-	<!-- Created groups -->
-	{#if appGroupTags.length > 0}
-		<div class="flex flex-wrap gap-2">
-			{#each appGroupTags as tag (tag.id)}
-				<Tag
-					label={tag.name}
-					color={tag.color}
-					icon={concepts.getIconComponent('Application')}
-					isShiny={true}
-					pill={true}
-					removable={true}
-					onRemove={() => deleteAppGroupTag(tag.id)}
-				/>
-			{/each}
-		</div>
-	{:else}
+	<!-- Empty state -->
+	{#if appGroupTags.length === 0}
 		<p class="text-tertiary text-center text-sm italic">
 			{appWizard_noGroupsYet()}
 		</p>

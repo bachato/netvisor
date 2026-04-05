@@ -15,10 +15,12 @@
 
 	let {
 		appGroupTags,
-		onComplete
+		onComplete,
+		onClose
 	}: {
 		appGroupTags: Tag[];
 		onComplete: () => void;
+		onClose: () => void;
 	} = $props();
 
 	let activeTab = $state('define');
@@ -36,8 +38,8 @@
 <GenericModal
 	title={appWizard_title()}
 	isOpen={true}
-	showCloseButton={false}
-	preventCloseOnClickOutside={true}
+	{onClose}
+	showBackdrop={false}
 	size="xl"
 	{tabs}
 	{activeTab}
@@ -45,11 +47,13 @@
 	onTabChange={handleTabChange}
 	fixedHeight={true}
 >
-	{#if activeTab === 'define'}
-		<DefineGroupsStep {appGroupTags} />
-	{:else if activeTab === 'assign'}
-		<AssignEntitiesStep {appGroupTags} />
-	{/if}
+	<div class="p-6">
+		{#if activeTab === 'define'}
+			<DefineGroupsStep {appGroupTags} />
+		{:else if activeTab === 'assign'}
+			<AssignEntitiesStep {appGroupTags} />
+		{/if}
+	</div>
 
 	{#snippet footer()}
 		<div class="modal-footer flex items-center justify-between">
