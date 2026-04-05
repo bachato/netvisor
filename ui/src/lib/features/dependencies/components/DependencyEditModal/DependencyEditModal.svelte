@@ -226,18 +226,6 @@
 	function handleOpen() {
 		const defaults = getDefaultValues();
 		form.reset(defaults);
-<<<<<<< HEAD
-		// Extract binding IDs from members for backward compatibility
-		const members = defaults.members;
-		if (members && 'binding_ids' in members) {
-			memberBindingIds = members.binding_ids ?? [];
-		} else if (members && 'service_ids' in members) {
-			memberBindingIds = [];
-		} else {
-			memberBindingIds = [];
-		}
-=======
->>>>>>> feat/service-flow-rework
 		selectedNetworkId = defaults.network_id ?? '';
 		edgeColor = defaults.color || 'Blue';
 		edgeEdgeStyle = defaults.edge_style || 'SmoothStep';
