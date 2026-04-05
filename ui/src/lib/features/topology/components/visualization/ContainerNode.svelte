@@ -13,7 +13,7 @@
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Color, ColorStyle } from '$lib/shared/utils/styling';
 	import { serviceDefinitions, containerTypes, perspectives } from '$lib/shared/stores/metadata';
-	import { topology_elementCount, topology_includingCountInGroup } from '$lib/paraglide/messages';
+	import { topology_elementCount, topology_ungroupedCount } from '$lib/paraglide/messages';
 	import { activePerspective } from '../../queries';
 	import {
 		useTopologiesQuery,
@@ -350,10 +350,17 @@
 				class="rounded-xl border border-dashed border-gray-400 text-center text-sm font-semibold shadow-lg dark:border-gray-500"
 				style="background: var(--color-topology-node-bg); width: 100%; height: 100%; position: relative; overflow: visible; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
 			>
+				{@const subgroupTotal = subgroupSummaries.reduce((sum, s) => sum + s.childCount, 0)}
+				{@const ungroupedCount = childCount - subgroupTotal}
 				<div class="flex min-w-48 flex-col items-center gap-2 px-6 py-4">
-					<span class="text-secondary text-base font-medium">
+					<span class="text-secondary text-base font-medium underline">
 						{topology_elementCount({ count: childCount, label: elementLabel })}
 					</span>
+					{#if ungroupedCount > 0 && subgroupSummaries.length > 0}
+						<span class="text-tertiary text-xs">
+							{topology_ungroupedCount({ count: ungroupedCount, label: elementLabel })}
+						</span>
+					{/if}
 					{#each subgroupSummaries as summary (summary.groupId)}
 						{@const groupNode = topology?.nodes.find((n) => n.id === summary.groupId)}
 						{@const sHeader = groupNode?.header ?? ''}
@@ -402,9 +409,9 @@
 								<Tag label={pill.label} color={pill.color} />
 							{/each}
 							<span class="text-tertiary text-xs"
-								>({topology_includingCountInGroup({
+								>({topology_elementCount({
 									count: summary.childCount,
-									name: sHeader || labels.map((l) => l.label).join(', ')
+									label: elementLabel
 								})})</span
 							>
 						</div>

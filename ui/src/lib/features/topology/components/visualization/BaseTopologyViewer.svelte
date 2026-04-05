@@ -406,8 +406,10 @@
 					layoutGraph = LayoutGraph.fromTopology(topology.nodes);
 					layoutGraph.syncCollapseState(collapsed);
 					// Restore expanded sizes for collapsed containers before applying ELK
-					// results — applyElkResult skips them since ELK only has collapsed dims
-					if (expandedContainerSizes) {
+					// results — applyElkResult skips them since ELK only has collapsed dims.
+					// Only restore on non-structural changes (collapse/expand); on structural
+					// rebuilds the old sizes may be stale (different child sets).
+					if (expandedContainerSizes && !isNewStructure) {
 						layoutGraph.restoreExpandedSizes(expandedContainerSizes);
 					}
 					layoutGraph.applyElkResult(
@@ -521,8 +523,9 @@
 					baseEdges = topology.edges;
 				}
 
-				// Filter visible edges (hidden types excluded before bundling)
-				const visibleEdges = baseEdges.filter((e) => !hiddenEdgeTypes.includes(e.edge_type));
+				// Filter visible edges (disabled edges excluded entirely, hidden types excluded before bundling)
+				const nonDisabledEdges = baseEdges.filter((e) => e.classification !== 'disabled');
+				const visibleEdges = nonDisabledEdges.filter((e) => !hiddenEdgeTypes.includes(e.edge_type));
 
 				let flowEdges: Edge[];
 				const currentExpandedBundles = get(expandedBundles);
@@ -574,7 +577,7 @@
 				}
 
 				// Add hidden edges (they get filtered by CustomEdge's hideEdge logic)
-				const hiddenEdges = baseEdges.filter((e) => hiddenEdgeTypes.includes(e.edge_type));
+				const hiddenEdges = nonDisabledEdges.filter((e) => hiddenEdgeTypes.includes(e.edge_type));
 				for (const edge of hiddenEdges) {
 					flowEdges.push(createFlowEdge(edge, flowEdges.length, layoutResult, animatedStates));
 				}
@@ -592,8 +595,9 @@
 				}
 
 				// Reveal after positioned nodes + edges have painted
+				// Double rAF ensures the compositing pass completes before revealing
 				await tick();
-				await new Promise((r) => requestAnimationFrame(r));
+				await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 				isMeasuring = false;
 			}
 		} catch (err) {

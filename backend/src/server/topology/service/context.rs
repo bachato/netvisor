@@ -207,28 +207,6 @@ impl<'a> TopologyContext<'a> {
         None
     }
 
-    /// Find the Docker daemon service running on a host by looking for services
-    /// that other services reference via ServiceVirtualization::Docker
-    pub fn get_docker_service_for_host(&self, host_id: Uuid) -> Option<&'a Service> {
-        // Collect service IDs that are referenced as Docker containerizers
-        let docker_service_ids: HashSet<Uuid> = self
-            .services
-            .iter()
-            .filter_map(|s| {
-                if let Some(ServiceVirtualization::Docker(dv)) = &s.base.virtualization {
-                    Some(dv.service_id)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        // Find the service on this host that is a Docker containerizer
-        self.services
-            .iter()
-            .find(|s| s.base.host_id == host_id && docker_service_ids.contains(&s.id))
-    }
-
     pub fn get_node_subnet(&self, node_id: Uuid, nodes: &[Node]) -> Option<Uuid> {
         nodes
             .iter()

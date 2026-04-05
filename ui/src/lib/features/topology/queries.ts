@@ -18,6 +18,7 @@ import { writable, derived, get } from 'svelte/store';
 import { UNTAGGED_SENTINEL } from './interactions';
 import { getDefaultHiddenEdgeTypes } from './layout/edge-classification';
 import type { components } from '$lib/api/schema';
+import perspectivesJson from '$lib/data/perspectives.json';
 
 export type TopologyPerspective = components['schemas']['TopologyPerspective'];
 type PerPerspectiveOptions = Record<TopologyPerspective, TopologyOptions>;
@@ -84,12 +85,7 @@ export function getDefaultTopologyOptions(perspective: TopologyPerspective): Top
 /** @deprecated Use getDefaultTopologyOptions('L3Logical') */
 export const defaultTopologyOptions: TopologyOptions = getDefaultTopologyOptions('L3Logical');
 
-const ALL_PERSPECTIVES: TopologyPerspective[] = [
-	'L2Physical',
-	'L3Logical',
-	'Infrastructure',
-	'Application'
-] satisfies TopologyPerspective[];
+const ALL_PERSPECTIVES = perspectivesJson.map((p) => p.id) as TopologyPerspective[];
 
 function buildDefaultPerPerspectiveOptions(): PerPerspectiveOptions {
 	return Object.fromEntries(
