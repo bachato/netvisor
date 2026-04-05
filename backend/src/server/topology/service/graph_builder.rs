@@ -7,10 +7,14 @@ use crate::server::{
     interfaces::r#impl::base::Interface,
     subnets::r#impl::types::SubnetType,
     topology::{
-        service::{anchor_planner::ChildAnchorPlanner, context::TopologyContext},
+        service::{
+            anchor_planner::ChildAnchorPlanner,
+            context::TopologyContext,
+            element_rules::{ElementMatchData, apply_element_rules},
+        },
         types::{
             edges::Edge,
-            grouping::{ElementRule, GraphRule, GroupingConfig},
+            grouping::GroupingConfig,
             layout::{Ixy, Uxy},
             nodes::{ContainerChild, ContainerType, ElementEntityType, Node, NodeType},
         },
@@ -294,113 +298,34 @@ impl GraphBuilder {
     /// First-match-wins: nodes already claimed by an earlier rule are not reassigned.
     fn create_nested_group_containers(
         &self,
-        subnet_id: Uuid,
+        _subnet_id: Uuid,
         children: &[ContainerChild],
         ctx: &TopologyContext,
         child_nodes: &mut Vec<Node>,
     ) {
         let grouping = GroupingConfig::from_request_options(&ctx.options.request);
-        let mut claimed: HashSet<Uuid> = HashSet::new();
+        let children_by_id: HashMap<Uuid, &ContainerChild> =
+            children.iter().map(|c| (c.id, c)).collect();
 
-        for GraphRule { id: rule_id, rule } in &grouping.element_rules {
-            match rule {
-                ElementRule::ByServiceCategory { categories, title } => {
-                    let matched_child_ids: HashSet<Uuid> = children
-                        .iter()
-                        .filter(|child| {
-                            !claimed.contains(&child.id)
-                                && ctx.services.iter().any(|s| {
-                                    s.base.host_id == child.host_id
-                                        && categories
-                                            .contains(&s.base.service_definition.category())
-                                })
-                        })
-                        .map(|c| c.id)
-                        .collect();
-
-                    if matched_child_ids.is_empty() {
-                        continue;
-                    }
-
-                    let group_id = Uuid::new_v5(
-                        &Uuid::NAMESPACE_OID,
-                        format!("{subnet_id}:{rule_id}").as_bytes(),
-                    );
-                    child_nodes.push(Node {
-                        id: group_id,
-                        node_type: NodeType::Container {
-                            container_type: ContainerType::NestedServiceCategory,
-                            parent_container_id: Some(subnet_id),
-                            layer_hint: None,
-                            icon: None,
-                            color: None,
-                        },
-                        position: Ixy { x: 0, y: 0 },
-                        size: Uxy { x: 0, y: 0 },
-                        header: title.clone(),
-                        element_rule_id: Some(*rule_id),
-                    });
-
-                    for node in child_nodes.iter_mut() {
-                        if matched_child_ids.contains(&node.id)
-                            && let NodeType::Element {
-                                ref mut container_id,
-                                ..
-                            } = node.node_type
-                        {
-                            *container_id = group_id;
-                        }
-                    }
-                    claimed.extend(&matched_child_ids);
-                }
-                ElementRule::ByTag { tag_ids, title } => {
-                    let matched_host_ids = ctx.get_host_ids_with_tags(tag_ids);
-                    let matched_child_ids: HashSet<Uuid> = children
-                        .iter()
-                        .filter(|child| {
-                            !claimed.contains(&child.id)
-                                && matched_host_ids.contains(&child.host_id)
-                        })
-                        .map(|c| c.id)
-                        .collect();
-
-                    if matched_child_ids.is_empty() {
-                        continue;
-                    }
-
-                    let group_id = Uuid::new_v5(
-                        &Uuid::NAMESPACE_OID,
-                        format!("{subnet_id}:{rule_id}").as_bytes(),
-                    );
-                    child_nodes.push(Node {
-                        id: group_id,
-                        node_type: NodeType::Container {
-                            container_type: ContainerType::NestedTag,
-                            parent_container_id: Some(subnet_id),
-                            layer_hint: None,
-                            icon: None,
-                            color: None,
-                        },
-                        position: Ixy { x: 0, y: 0 },
-                        size: Uxy { x: 0, y: 0 },
-                        header: title.clone(),
-                        element_rule_id: Some(*rule_id),
-                    });
-
-                    for node in child_nodes.iter_mut() {
-                        if matched_child_ids.contains(&node.id)
-                            && let NodeType::Element {
-                                ref mut container_id,
-                                ..
-                            } = node.node_type
-                        {
-                            *container_id = group_id;
-                        }
-                    }
-                    claimed.extend(&matched_child_ids);
-                }
-            }
-        }
+        apply_element_rules(child_nodes, &grouping.element_rules, |node| {
+            let child = children_by_id.get(&node.id)?;
+            let categories = ctx
+                .services
+                .iter()
+                .filter(|s| s.base.host_id == child.host_id)
+                .map(|s| s.base.service_definition.category())
+                .collect();
+            let tag_ids = ctx
+                .hosts
+                .iter()
+                .find(|h| h.id == child.host_id)
+                .map(|h| h.base.tags.iter().copied().collect())
+                .unwrap_or_default();
+            Some(ElementMatchData {
+                categories,
+                tag_ids,
+            })
+        });
     }
 
     /// Create subnet container nodes
