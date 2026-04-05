@@ -192,6 +192,10 @@
 			const currentEdges = get(edges);
 			const currentNodes = get(nodes);
 			const multiSelected = get(selectedNodes);
+			// Read hide_edge_types imperatively to avoid making this $: block
+			// depend on $topologyOptions (which would cause a race with the
+			// loadTopologyData block that also depends on it).
+			const opts = get(topologyOptions);
 			updateConnectedNodes(
 				selectedNode,
 				selectedEdge,
@@ -200,7 +204,7 @@
 				queryClient,
 				topology,
 				multiSelected,
-				$topologyOptions.local.hide_edge_types ?? []
+				opts.local.hide_edge_types ?? []
 			);
 
 			// Update edge animated state based on selection
