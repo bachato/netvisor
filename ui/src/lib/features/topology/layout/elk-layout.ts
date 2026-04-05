@@ -222,8 +222,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 					width: size.x,
 					height: size.y,
 					layoutOptions: {
-						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.nodeSize.minimum': `(${size.x},${size.y})`
+						'elk.nodeSize.constraints': 'SET_SIZE'
 					}
 				});
 			}
