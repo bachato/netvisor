@@ -1,13 +1,10 @@
 <script lang="ts">
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
-	import type { ModalTab } from '$lib/shared/components/layout/GenericModal.svelte';
 	import DefineGroupsStep from './steps/DefineGroupsStep.svelte';
 	import AssignEntitiesStep from './steps/AssignEntitiesStep.svelte';
 	import type { Tag } from '$lib/features/tags/types/base';
 	import {
 		appWizard_title,
-		appWizard_defineGroups,
-		appWizard_assignEntities,
 		appWizard_complete,
 		common_back,
 		common_next
@@ -15,37 +12,27 @@
 
 	let {
 		appGroupTags,
-		onComplete,
-		onClose
+		onComplete
 	}: {
 		appGroupTags: Tag[];
 		onComplete: () => void;
-		onClose: () => void;
 	} = $props();
 
-	let activeTab = $state('define');
-
-	let tabs: ModalTab[] = $derived([
-		{ id: 'define', label: appWizard_defineGroups() },
-		{ id: 'assign', label: appWizard_assignEntities(), disabled: appGroupTags.length === 0 }
-	]);
-
-	function handleTabChange(tabId: string) {
-		activeTab = tabId;
-	}
+	let activeTab = $state<'define' | 'assign'>('define');
 </script>
 
+<!-- Shroud over the topology viewer -->
+<div class="absolute inset-0 z-20 bg-black/60 backdrop-blur-sm"></div>
+
+<!-- Modal anchored to topology view -->
 <div class="app-wizard-anchor">
 	<GenericModal
 		title={appWizard_title()}
 		isOpen={true}
-		{onClose}
+		showCloseButton={false}
+		preventCloseOnClickOutside={true}
 		showBackdrop={false}
 		size="xl"
-		{tabs}
-		{activeTab}
-		tabStyle="stepper"
-		onTabChange={handleTabChange}
 		fixedHeight={true}
 	>
 		<div class="overflow-y-auto p-6">

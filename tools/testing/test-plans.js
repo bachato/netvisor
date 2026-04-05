@@ -258,14 +258,14 @@ var TEST_PLANS = [
     {
       "id": "disabled-edge-not-in-toggles",
       "category": "Edge Classification",
-      "description": "ServiceVirtualization edges should not appear in edge type toggles when viewing L3 perspective",
+      "description": "ServiceVirtualization edges should not appear in edge type toggles or render on canvas when viewing L3 perspective",
       "steps": [
         "Open a topology in L3 perspective",
-        "Open the Options panel",
-        "Check the edge type toggles list"
+        "Open the Options panel and check edge type toggles",
+        "Look at the topology canvas for ServiceVirtualization edges"
       ],
       "setup": "Ensure topology has at least one Docker container service (produces ServiceVirtualization edges)",
-      "expected": "ServiceVirtualization should NOT appear in the edge type toggle list. Other edge types (Interface, HostVirtualization, etc.) should still appear.",
+      "expected": "ServiceVirtualization should NOT appear in the toggle list AND should NOT render on the canvas at all.",
       "flow": "setup",
       "sequence": 1,
       "status": null,
@@ -287,61 +287,33 @@ var TEST_PLANS = [
       "feedback": null
     },
     {
-      "id": "docker-bridge-label",
-      "category": "Container Labels",
-      "description": "Docker bridge containers show virtualizing service + host name",
+      "id": "collapsed-root-width",
+      "category": "Collapse State",
+      "description": "Collapsed root containers have reasonable width; subcontainers resize properly on membership change",
       "steps": [
-        "Open a topology that has Docker bridge subnet containers",
-        "Look at the container header text"
+        "Collapse a root container — check width is compact",
+        "Change service category or tag membership for a node",
+        "Trigger a rebuild",
+        "Verify subcontainer resized appropriately with correct node layout"
       ],
-      "setup": "Ensure topology has hosts running Docker with containerized services",
-      "expected": "Docker bridge containers should show 'Docker ({service-name}) on {host-name}' in the header instead of 'Docker @ {host-name}'",
+      "setup": "Ensure topology has both root subnet containers and nested subcontainers with element rules",
+      "expected": "Root containers collapse to compact width. After membership change + rebuild, subcontainers resize correctly and nodes don't stack.",
       "flow": "setup",
       "sequence": 3,
       "status": null,
       "feedback": null
     },
     {
-      "id": "collapse-persists-rebuild",
-      "category": "Collapse State",
-      "description": "Collapse state persists across topology rebuilds",
-      "steps": [
-        "Open a topology",
-        "Collapse a subnet container and a service category subcontainer",
-        "Trigger a rebuild (Cmd+R or rebuild button)"
-      ],
-      "expected": "Both collapsed containers should remain collapsed after rebuild. Container IDs are deterministic so collapse state persists.",
-      "flow": "setup",
-      "sequence": 4,
-      "status": null,
-      "feedback": null
-    },
-    {
-      "id": "collapsed-root-width",
-      "category": "Collapse State",
-      "description": "Collapsed root containers have reasonable width, sub-containers keep expanded width",
-      "steps": [
-        "Open a topology with both root subnet containers and nested subcontainers",
-        "Collapse a root container",
-        "Collapse a subcontainer inside an expanded root container"
-      ],
-      "expected": "Collapsed root containers should have a compact, content-fit width (not full canvas width). Collapsed sub-containers should maintain their expanded width to prevent layout overlap on re-expand.",
-      "flow": "setup",
-      "sequence": 5,
-      "status": null,
-      "feedback": null
-    },
-    {
       "id": "unambiguous-element-counts",
       "category": "Container Labels",
-      "description": "Collapsed element counts are unambiguous with subcontainer breakdown",
+      "description": "Collapsed element counts show total, ungrouped, and subgroup breakdown",
       "steps": [
-        "Open a topology with subnet containers that have nested subcontainers (e.g. ByServiceCategory groups)",
+        "Open a topology with subnet containers that have nested subcontainers",
         "Collapse a root container that has subcontainers"
       ],
-      "expected": "Top-level shows total count (e.g. '26 host interfaces'). Each subgroup line says 'including N in {name}' to clarify the breakdown.",
+      "expected": "Total count underlined at top (e.g. '26 host interfaces'). 'Ungrouped: 23 host interfaces' row below. Subgroup lines show just '(3 host interfaces)'.",
       "flow": "setup",
-      "sequence": 6,
+      "sequence": 4,
       "status": null,
       "feedback": null
     },
@@ -357,7 +329,7 @@ var TEST_PLANS = [
       ],
       "expected": "In L3: count says 'N host interfaces'. In Application: count says 'N services'.",
       "flow": "setup",
-      "sequence": 7,
+      "sequence": 5,
       "status": null,
       "feedback": null
     },
@@ -372,7 +344,24 @@ var TEST_PLANS = [
       ],
       "expected": "Topology should transition smoothly from hidden to visible. No flash of nodes at origin (0,0) or unpositioned layout.",
       "flow": "setup",
-      "sequence": 8,
+      "sequence": 6,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "perspective-switching-rebuild",
+      "category": "Layout",
+      "description": "Switching perspectives triggers a reliable rebuild",
+      "steps": [
+        "Clear localStorage and reload",
+        "Open a topology in L3 perspective",
+        "Switch to Application perspective",
+        "Switch back to L3"
+      ],
+      "setup": "Clear localStorage to remove stale snake_case options",
+      "expected": "Each perspective switch should trigger a rebuild automatically without needing to hit rebuild manually.",
+      "flow": "setup",
+      "sequence": 7,
       "status": null,
       "feedback": null
     },
@@ -384,24 +373,9 @@ var TEST_PLANS = [
         "Open a topology with multiple subnets at different vertical layers",
         "Observe edge connection points on nodes"
       ],
-      "expected": "Edges should connect at sensible handle positions: top/bottom for vertically separated nodes, left/right for horizontally separated nodes. Handles should look correct even without backend computation.",
+      "expected": "Edges connect at sensible handle positions based on relative node positions.",
       "flow": "setup",
-      "sequence": 9,
-      "status": null,
-      "feedback": null
-    },
-    {
-      "id": "icon-only-perspective-selector",
-      "category": "UI",
-      "description": "Perspective selector is icon-only with larger icons and hover tooltips",
-      "steps": [
-        "Open the topology tab",
-        "Look at the perspective selector in the toolbar",
-        "Hover over each perspective button"
-      ],
-      "expected": "Perspective buttons show only icons (no text labels). Icons should be larger (20px/h-5 w-5). Hovering shows tooltip with perspective name ('L3 Logical', 'Application').",
-      "flow": "setup",
-      "sequence": 10,
+      "sequence": 8,
       "status": null,
       "feedback": null
     }
@@ -510,44 +484,46 @@ var TEST_PLANS = [
     {
       "id": "generic-service-filter-default",
       "category": "Topology Filters",
-      "description": "Verify generic services are hidden by default in Application perspective",
+      "description": "Verify generic services are hidden by default in Application perspective and the filter works",
       "steps": [
         "Open topology in Application perspective",
-        "Open the Filters panel, expand the Services section",
-        "Verify 'Generic Services' pseudo-tag appears and is faded (excluded by default)",
-        "Toggle 'Generic Services' to show them",
-        "Verify generic services now appear in the topology"
+        "Open the Filters panel — verify 'Generic Services' section shows with 'Show' label",
+        "Verify generic services (e.g., Open Ports, SSH) are NOT visible in the topology",
+        "Click 'Show' to toggle generic services on",
+        "Verify generic services now appear in the topology and label changes to 'Hide'"
       ],
       "setup": "Ensure the network has hosts with both branded services (e.g., PostgreSQL, Nginx) and generic services (e.g., Open Ports, SSH).",
-      "expected": "Generic services hidden by default in Application perspective; toggling the filter shows them",
+      "expected": "Generic services hidden by default in Application perspective; clicking Show reveals them; label toggles between Show/Hide",
       "flow": "setup",
       "sequence": 7,
       "status": null,
       "feedback": null
     },
     {
-      "id": "generic-filter-not-in-other-perspectives",
+      "id": "generic-filter-all-perspectives",
       "category": "Topology Filters",
-      "description": "Verify 'Generic Services' filter only appears in Application perspective",
+      "description": "Verify 'Generic Services' filter appears in all perspectives with correct default state",
       "steps": [
         "Open topology in L3 Logical perspective",
-        "Open Filters panel, check Services section",
-        "Verify 'Generic Services' pseudo-tag does NOT appear",
-        "Switch to Application perspective and verify it DOES appear"
+        "Open Filters panel — verify 'Generic Services' section is visible with 'Hide' label (not hidden by default)",
+        "Switch to Application perspective — verify 'Generic Services' shows 'Show' label (hidden by default)",
+        "Switch to Infrastructure perspective — verify 'Generic Services' section is visible"
       ],
-      "expected": "'Generic Services' filter option only visible in Application perspective",
+      "expected": "Generic Services filter visible in all perspectives. Default hidden only in Application perspective.",
       "status": null,
       "feedback": null
     },
     {
-      "id": "perspective-concept-colors",
-      "category": "Topology Perspectives",
-      "description": "Verify perspective selector uses correct concept colors and icons",
+      "id": "tag-edit-modal-app-group-checkbox",
+      "category": "Tag Management",
+      "description": "Verify tag create/edit modal has Application Group checkbox",
       "steps": [
-        "Open topology perspective selector",
-        "Verify L2 Physical shows Emerald/Cable, L3 Logical shows Blue/Network, Infrastructure shows Orange/Server, Application shows Purple/AppWindow"
+        "Open tag create modal",
+        "Verify 'Application Group' checkbox is present with help text explaining what it does",
+        "Check the checkbox and create the tag",
+        "Edit the tag — verify checkbox reflects the saved state"
       ],
-      "expected": "Each perspective has its correct concept-derived color and icon",
+      "expected": "Checkbox present with description, persists correctly on create and edit",
       "status": null,
       "feedback": null
     },
@@ -571,22 +547,6 @@ var TEST_PLANS = [
 {
   "branch": "feat/topo-inspector-refactor",
   "tests": [
-    {
-      "id": "l3-element-inspector-sections",
-      "category": "Inspector Sections",
-      "description": "L3 perspective element inspector shows correct sections in order",
-      "steps": [
-        "Open a topology in L3 Logical perspective",
-        "Click on an interface element node",
-        "Verify inspector panel shows sections: Identity (interface), IfEntry Data, Services, Host Details, Other Interfaces, Tags"
-      ],
-      "setup": "Ensure a topology exists with at least one host that has SNMP IfEntry data, multiple interfaces, and services bound to interfaces.",
-      "expected": "Inspector shows all 6 L3 element sections in the correct order. IfEntry data shows SNMP status and speed. Services section shows services bound to the selected interface.",
-      "flow": "setup",
-      "sequence": 1,
-      "status": null,
-      "feedback": null
-    },
     {
       "id": "application-element-inspector-sections",
       "category": "Inspector Sections",
@@ -720,22 +680,6 @@ var TEST_PLANS = [
         "Repeat for L2 Physical perspective"
       ],
       "expected": "Dependency creation section is hidden in perspectives where dependency_creation is null.",
-      "status": null,
-      "feedback": null
-    },
-    {
-      "id": "edge-inspector-perspective-prop",
-      "category": "Edge Inspector",
-      "description": "Edge inspector receives perspective prop",
-      "steps": [
-        "Click on a dependency edge in L3 perspective",
-        "Verify the edge group inspector displays correctly",
-        "Click on an interface edge",
-        "Verify the interface edge inspector displays correctly"
-      ],
-      "expected": "Edge inspectors render correctly with the perspective prop passed through.",
-      "flow": "setup",
-      "sequence": 9,
       "status": null,
       "feedback": null
     }
