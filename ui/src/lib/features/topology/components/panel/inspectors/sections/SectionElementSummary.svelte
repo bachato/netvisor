@@ -2,8 +2,12 @@
 	import type { Node } from '@xyflow/svelte';
 	import { useSvelteFlow } from '@xyflow/svelte';
 	import type { Topology, TopologyNode } from '$lib/features/topology/types/base';
-	import { inspector_elementSummary } from '$lib/paraglide/messages';
-	import { entities } from '$lib/shared/stores/metadata';
+	import {
+		inspector_elementSummary,
+		common_hosts,
+		common_services,
+		common_interfaces
+	} from '$lib/paraglide/messages';
 
 	let {
 		node,
@@ -37,10 +41,6 @@
 			hasServices: serviceIds.size > 0
 		};
 	});
-
-	let hostLabel = $derived(entities.getName('Host'));
-	let serviceLabel = $derived(entities.getName('Service'));
-	let interfaceLabel = $derived(entities.getName('Interface'));
 </script>
 
 <div>
@@ -48,16 +48,16 @@
 	<div class="card card-static space-y-1 text-sm">
 		{#if summary.hasServices}
 			<div class="flex justify-between">
-				<span class="text-tertiary">{serviceLabel}s</span>
+				<span class="text-tertiary">{common_services()}</span>
 				<span class="text-primary">{summary.serviceCount}</span>
 			</div>
 		{:else}
 			<div class="flex justify-between">
-				<span class="text-tertiary">{hostLabel}s</span>
+				<span class="text-tertiary">{common_hosts()}</span>
 				<span class="text-primary">{summary.hostCount}</span>
 			</div>
 			<div class="flex justify-between">
-				<span class="text-tertiary">{interfaceLabel}s</span>
+				<span class="text-tertiary">{common_interfaces()}</span>
 				<span class="text-primary">{summary.elementCount}</span>
 			</div>
 		{/if}
