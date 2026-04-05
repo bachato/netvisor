@@ -252,12 +252,18 @@
 		}
 	}
 
-	// Available services on the selected network (exclude already selected)
+	// Available services on the selected network (exclude already selected), sorted by host then name
 	let availableServices = $derived.by(() => {
 		return servicesData
 			.filter((s) => s.network_id === selectedNetworkId)
 			.filter((s) => s.service_definition !== 'Unclaimed Open Ports')
-			.filter((s) => !selectedServiceIds.includes(s.id));
+			.filter((s) => !selectedServiceIds.includes(s.id))
+			.sort((a, b) => {
+				const hostA = hostsData.find((h: { id: string }) => h.id === a.host_id)?.name ?? '';
+				const hostB = hostsData.find((h: { id: string }) => h.id === b.host_id)?.name ?? '';
+				const hostCmp = hostA.localeCompare(hostB);
+				return hostCmp !== 0 ? hostCmp : a.name.localeCompare(b.name);
+			});
 	});
 
 	// Selected service objects (in order)
@@ -384,6 +390,15 @@
 		getDescription: (item: DepTypeItem) => item.description,
 		getIcon: (item: DepTypeItem) => item.icon,
 		getIconColor: (item: DepTypeItem) => item.iconColor
+	};
+
+	// Service display with host grouping for the service picker
+	const serviceDisplayWithHost = {
+		...ServiceDisplay,
+		getCategory: (service: Service) => {
+			const host = hostsData.find((h: { id: string }) => h.id === service.host_id);
+			return host?.name ?? null;
+		}
 	};
 
 	let colorHelper = entities.getColorHelper('Dependency');
@@ -528,8 +543,8 @@
 							showSearch={true}
 							options={availableServices}
 							items={selectedServices}
-							optionDisplayComponent={ServiceDisplay}
-							itemDisplayComponent={ServiceDisplay}
+							optionDisplayComponent={serviceDisplayWithHost}
+							itemDisplayComponent={serviceDisplayWithHost}
 							getItemContext={() => ({})}
 							getOptionContext={() => ({})}
 							onAdd={handleAddService}
