@@ -332,7 +332,7 @@
 
 	<!-- Current Items -->
 	{#if items.length > 0}
-		<div class="mb-3 min-h-0 flex-1 space-y-2 overflow-y-auto px-0.5">
+		<div class="mb-3 min-h-0 flex-1 space-y-2 overflow-y-auto p-0.5">
 			{#each items as item, index (itemDisplayComponent.getId(item))}
 				{@const isHighlighted = highlightedIndex === index}
 
