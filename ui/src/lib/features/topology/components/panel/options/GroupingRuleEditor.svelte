@@ -391,8 +391,10 @@
 </div>
 
 <!-- Element grouping section -->
+{@const elementLabel = (perspectiveMeta?.metadata as Record<string, unknown>)?.element_label as string ?? 'Element'}
+{@const capitalizedLabel = elementLabel.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
 <ListManager
-	label={topology_elementGrouping()}
+	label={topology_elementGrouping({ label: capitalizedLabel })}
 	helpText={topology_elementGroupingHelp()}
 	placeholder={topology_addElementRule()}
 	items={elementRules}
