@@ -664,9 +664,6 @@
 						{isActive}
 					/>
 				</div>
-				{#if showAppWizard}
-					<ApplicationSetupWizard {appGroupTags} onComplete={handleWizardComplete} />
-				{/if}
 			{:else}
 				<div class="card card-static text-secondary">
 					{topology_noTopologySelected()}
@@ -683,6 +680,10 @@
 		{/if}
 	{/if}
 </SvelteFlowProvider>
+
+{#if showAppWizard}
+	<ApplicationSetupWizard {appGroupTags} onComplete={handleWizardComplete} />
+{/if}
 
 <TopologyModal
 	name="topology-editor"
