@@ -321,6 +321,15 @@ export function updateConnectedNodes(
 			const edgeData = edge.data as TopologyEdge | undefined;
 			if (!edgeData) continue;
 
+			// Skip virtualization edges — these relationships are for the
+			// Infrastructure perspective, not for element selection highlighting.
+			if (
+				edgeData.edge_type === 'ServiceVirtualization' ||
+				edgeData.edge_type === 'HostVirtualization'
+			) {
+				continue;
+			}
+
 			// Add directly connected nodes (regular edges)
 			if (edgeData.source === selectedNode.id) {
 				connected.add(edgeData.target as string);
@@ -328,24 +337,22 @@ export function updateConnectedNodes(
 			if (edgeData.target === selectedNode.id) {
 				connected.add(edgeData.source as string);
 			}
+		}
 
-			// Include virtualized nodes
-			if (edgeData.edge_type === 'ServiceVirtualization') {
-				if (edgeData.source === selectedNode.id || edgeData.target === selectedNode.id) {
-					connected.add(edgeData.source as string);
+		// Add subcontainers that contain at least one connected element node
+		for (const node of allNodes) {
+			const nd = node.data as TopologyNode;
+			if (nd.node_type !== 'Container') continue;
+			const parentContainerId = (nd as Record<string, unknown>).parent_container_id as
+				| string
+				| undefined;
+			if (!parentContainerId) continue; // not a subcontainer
 
-					// Add all virtualized container nodes
-					const virtualizedNodes = getVirtualizedContainerNodes(
-						edgeData.source as string,
-						queryClient,
-						topology
-					);
-					virtualizedNodes.forEach((nodeId) => connected.add(nodeId));
-				}
-			} else if (edgeData.edge_type === 'HostVirtualization') {
-				if (edgeData.source === selectedNode.id || edgeData.target === selectedNode.id) {
-					connected.add(edgeData.source as string);
-					connected.add(edgeData.target as string);
+			const contents = getContainerContents(nd.id, allNodes);
+			for (const elementId of contents.elementNodeIds) {
+				if (connected.has(elementId)) {
+					connected.add(nd.id);
+					break;
 				}
 			}
 		}

@@ -128,9 +128,6 @@
 			? appGroupTags.filter((t) => selectedAppGroupTagIds.includes(t.id))
 			: appGroupTags
 	);
-
-
-
 </script>
 
 {#if entityId && entityType}
@@ -169,13 +166,13 @@
 				{/if}
 			{/if}
 			<TagPickerInline
-					selectedTagIds={isAppGroupInherited ? [] : selectedAppGroupTagIds}
-					{entityId}
-					{entityType}
-					disabled={!editState.isEditable}
-					availableTags={isAppGroupInherited ? appGroupTags : appGroupAvailableTags}
-					allowCreate={false}
-				/>
+				selectedTagIds={isAppGroupInherited ? [] : selectedAppGroupTagIds}
+				{entityId}
+				{entityType}
+				disabled={!editState.isEditable}
+				availableTags={isAppGroupInherited ? appGroupTags : appGroupAvailableTags}
+				allowCreate={false}
+			/>
 		</div>
 	{/if}
 {/if}
