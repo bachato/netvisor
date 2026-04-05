@@ -12,7 +12,7 @@
 		useRebuildTopologyMutation,
 		activePerspective,
 		topologyOptions,
-		updateTopologyOptions
+		updateSharedElementRules
 	} from '../../../queries';
 	import type { TopologyNode } from '../../../types/base';
 	import { resolveElementNode, getNodeSelectionIds } from '../../../resolvers';
@@ -263,19 +263,13 @@
 	);
 
 	function createGroupingRuleFromTags(tagIds: string[]) {
-		updateTopologyOptions((current) => ({
+		updateSharedElementRules((current) => [
 			...current,
-			request: {
-				...current.request,
-				element_rules: [
-					...(current.request.element_rules ?? []),
-					{
-						id: crypto.randomUUID(),
-						rule: { ByTag: { tag_ids: tagIds, title: null } }
-					}
-				]
+			{
+				id: crypto.randomUUID(),
+				rule: { ByTag: { tag_ids: tagIds, title: null } }
 			}
-		}));
+		]);
 		recentlyAddedTagIds = [];
 		// Rebuild topology to apply the new grouping rule
 		if (topology) {

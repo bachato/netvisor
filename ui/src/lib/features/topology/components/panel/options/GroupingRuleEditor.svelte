@@ -15,7 +15,13 @@
 		makeGraphRule,
 		getContainerRuleDiscriminant
 	} from '../../../types/grouping';
-	import { topologyOptions, updateTopologyOptions, activePerspective } from '../../../queries';
+	import {
+		topologyOptions,
+		updateTopologyOptions,
+		activePerspective,
+		sharedElementRules,
+		updateSharedElementRules
+	} from '../../../queries';
 	import { getTopologyEditState } from '../../../state';
 	import { useTopologiesQuery, selectedTopologyId, autoRebuild } from '../../../queries';
 	import { serviceDefinitions } from '$lib/shared/stores/metadata';
@@ -61,10 +67,8 @@
 		($topologyOptions.request.container_rules as ContainerGraphRule[] | undefined) ?? []
 	);
 
-	// Element rules from options (committed state)
-	let committedElementRules = $derived(
-		($topologyOptions.request.element_rules as ElementGraphRule[] | undefined) ?? []
-	);
+	// Element rules from shared store (committed state, cross-perspective)
+	let committedElementRules = $derived($sharedElementRules);
 
 	// Pending edits buffer: used while an editor is open so individual toggles
 	// don't trigger rebuilds. Flushed to the store on checkmark close.
@@ -217,10 +221,7 @@
 	}
 
 	function updateElementRules(newRules: ElementGraphRule[]) {
-		updateTopologyOptions((opts) => ({
-			...opts,
-			request: { ...opts.request, element_rules: newRules }
-		}));
+		updateSharedElementRules(() => newRules);
 	}
 
 	function handleElementAdd(optionId: string) {

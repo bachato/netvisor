@@ -9,6 +9,27 @@
 - **Edge inspector:** PhysicalLink edges should show source/target IfEntry details, discovery protocol (LLDP/CDP), and neighbor resolution details. The InspectorEdgePhysicalLink component already handles this.
 - **ElementEntityType:** Would likely be `Interface` (same as L3) but resolved differently — matching IfEntry rather than IP interface.
 
+## Cross-Perspective Platform Issues
+
+These systems were built for L3 and need generalizing before additional perspectives work well.
+
+### Element visibility/fading not perspective-aware
+
+- **Generic service filter:** `updateTagFilter()` hides services via `tagHiddenServiceIds`, which only works for services-within-interface-nodes (L3). In Application, services ARE element nodes — need `tagHiddenNodeIds`. Partially addressed in `fix/topo-perspective-switching` but needs a unified approach.
+- **Container selection fading:** Selecting a container should fade other containers but highlight elements inside the selected one. Works in L3 (interfaces in subnets) but broken in Application — selecting an ApplicationGroup fades its own service elements. The `connectedNodeIds` / selection fading logic assumes L3's Interface→Subnet parent structure.
+- **Root cause:** The visibility system assumes L3's entity model (interfaces inside subnets, services as sub-items of interfaces). Application inverts this — services are top-level elements in app-group containers. Any code determining "which nodes belong to this container" or "which should be visible/faded" needs to work with any element-in-container relationship.
+
+### Frontend perspective audit needed before adding perspectives
+
+Before implementing Infrastructure or L2, audit the frontend to ensure perspective concerns are properly abstracted:
+
+- **Perspective-specific logic in components:** Grep for hardcoded perspective string comparisons (`=== 'L3Logical'`, `=== 'Application'`) in components that should be reading from backend config/metadata instead. These are fragile — each new perspective requires touching every component with a comparison.
+- **Frontend mappings that belong on the backend:** Check for any TypeScript objects/maps that duplicate backend metadata (section orderings, element type labels, entity type mappings). These should flow through the API / fixtures via `TypeMetadataProvider`.
+- **L3 assumptions baked into shared code:** The visibility/fading, multi-select, and tag filter systems were built for L3. Audit `interactions.ts`, `resolvers.ts`, `ElementNode.svelte`, `ContainerNode.svelte` for code that assumes interfaces-in-subnets structure.
+- **Inspector section components:** Verify each section component works generically with any element/container type, not just the ones it was built for.
+
+This audit should produce a concrete list of changes needed, done as a single cleanup pass before the next perspective is built.
+
 ## Infrastructure
 - `ByVirtualizingService` already applies to Infrastructure perspective
 - Could add `ByHypervisor` container rule to group VMs under their hypervisor host

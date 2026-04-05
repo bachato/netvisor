@@ -89,7 +89,7 @@ export function getDefaultTopologyOptions(perspective: TopologyPerspective): Top
 			hide_vm_title_on_docker_container: false,
 			hide_service_categories: ['OpenPorts'],
 			container_rules: getDefaultContainerRules(perspective),
-			element_rules: defaultElementRules,
+			element_rules: [],
 			perspective
 		}
 	};
@@ -494,6 +494,7 @@ import { type Edge, type Node } from '@xyflow/svelte';
 import deepmerge from 'deepmerge';
 
 const OPTIONS_STORAGE_KEY = 'scanopy_topology_options';
+const ELEMENT_RULES_STORAGE_KEY = 'scanopy_topology_element_rules';
 const EXPANDED_STORAGE_KEY = 'scanopy_topology_options_expanded_state';
 const AUTO_REBUILD_STORAGE_KEY = 'scanopy_topology_auto_rebuild';
 const PREFERRED_NETWORK_KEY = 'scanopy_preferred_network_id';
@@ -510,10 +511,22 @@ export const activePerspective = writable<TopologyPerspective>('L3Logical');
 // Internal per-perspective options record
 const perPerspectiveOptions = writable<PerPerspectiveOptions>(loadOptionsFromStorage());
 
-// Public store: resolves to the active perspective's options
+// Shared element rules — cross-perspective, single source of truth
+export const sharedElementRules = writable<ElementGraphRule[]>(loadElementRulesFromStorage());
+
+// Public store: resolves to the active perspective's options with shared element rules merged in
 export const topologyOptions = derived(
-	[perPerspectiveOptions, activePerspective],
-	([$allOptions, $perspective]) => $allOptions[$perspective]
+	[perPerspectiveOptions, activePerspective, sharedElementRules],
+	([$allOptions, $perspective, $elementRules]) => {
+		const opts = $allOptions[$perspective];
+		return {
+			...opts,
+			request: {
+				...opts.request,
+				element_rules: $elementRules
+			}
+		};
+	}
 );
 
 // Helper to update the active perspective's options
@@ -534,6 +547,13 @@ export function setTopologyOptions(options: TopologyOptions): void {
 		...all,
 		[perspective]: options
 	}));
+}
+
+// Update shared element rules (cross-perspective)
+export function updateSharedElementRules(
+	updater: (current: ElementGraphRule[]) => ElementGraphRule[]
+): void {
+	sharedElementRules.update(updater);
 }
 
 export const optionsPanelExpanded = writable<boolean>(loadExpandedFromStorage());
@@ -562,8 +582,10 @@ export function consumePreferredNetwork(): string | null {
 
 export function resetTopologyOptions(): void {
 	perPerspectiveOptions.set(buildDefaultPerPerspectiveOptions());
+	sharedElementRules.set(defaultElementRules);
 	if (browser) {
 		localStorage.removeItem(OPTIONS_STORAGE_KEY);
+		localStorage.removeItem(ELEMENT_RULES_STORAGE_KEY);
 		localStorage.removeItem(EXPANDED_STORAGE_KEY);
 	}
 }
@@ -631,6 +653,45 @@ function saveOptionsToStorage(options: PerPerspectiveOptions): void {
 	}
 }
 
+function loadElementRulesFromStorage(): ElementGraphRule[] {
+	if (!browser) return defaultElementRules;
+
+	try {
+		// Check dedicated key first
+		const stored = localStorage.getItem(ELEMENT_RULES_STORAGE_KEY);
+		if (stored) return JSON.parse(stored);
+
+		// Fall back: extract from old per-perspective options
+		const oldStored = localStorage.getItem(OPTIONS_STORAGE_KEY);
+		if (oldStored) {
+			const parsed = JSON.parse(oldStored);
+			// Flat format (legacy)
+			if (parsed && 'request' in parsed && parsed.request?.element_rules?.length) {
+				return parsed.request.element_rules;
+			}
+			// Per-perspective format: take from L3Logical first, then any perspective
+			for (const key of ['L3Logical', ...ALL_PERSPECTIVES]) {
+				if (parsed[key]?.request?.element_rules?.length) {
+					return parsed[key].request.element_rules;
+				}
+			}
+		}
+	} catch (error) {
+		console.warn('Failed to load element rules from localStorage:', error);
+	}
+	return defaultElementRules;
+}
+
+function saveElementRulesToStorage(rules: ElementGraphRule[]): void {
+	if (!browser) return;
+
+	try {
+		localStorage.setItem(ELEMENT_RULES_STORAGE_KEY, JSON.stringify(rules));
+	} catch (error) {
+		console.error('Failed to save element rules to localStorage:', error);
+	}
+}
+
 function loadExpandedFromStorage(): boolean {
 	if (!browser) return false;
 
@@ -693,7 +754,11 @@ if (browser) {
 
 			// Trigger a rebuild when request options change (replaces the old
 			// debounced PUT that was lost in the TanStack migration)
-			const options = allOptions[get(activePerspective)];
+			const perspectiveOpts = allOptions[get(activePerspective)];
+			const options = {
+				...perspectiveOpts,
+				request: { ...perspectiveOpts.request, element_rules: get(sharedElementRules) }
+			};
 			clearTimeout(optionsRebuildTimeout);
 			optionsRebuildTimeout = setTimeout(() => {
 				if (!get(autoRebuild)) return;
@@ -732,6 +797,41 @@ if (browser) {
 		autoRebuildInitialized = true;
 	});
 
+	let elementRulesInitialized = false;
+	let elementRulesRebuildTimeout: ReturnType<typeof setTimeout>;
+	sharedElementRules.subscribe((rules) => {
+		if (elementRulesInitialized) {
+			saveElementRulesToStorage(rules);
+
+			clearTimeout(elementRulesRebuildTimeout);
+			elementRulesRebuildTimeout = setTimeout(() => {
+				if (!get(autoRebuild)) return;
+				const topologyId = get(selectedTopologyId);
+				if (!topologyId) return;
+
+				const topologies = queryClient.getQueryData<Topology[]>(queryKeys.topology.all);
+				const topology = topologies?.find((t) => t.id === topologyId);
+				if (!topology) return;
+
+				const perspectiveOpts = get(perPerspectiveOptions)[get(activePerspective)];
+				const options = {
+					...perspectiveOpts,
+					request: { ...perspectiveOpts.request, element_rules: rules }
+				};
+				apiClient.POST('/api/v1/topology/{id}/rebuild', {
+					params: { path: { id: topologyId } },
+					body: {
+						network_id: topology.network_id,
+						options: sanitizeOptionsForApi(options),
+						nodes: topology.nodes,
+						edges: topology.edges
+					}
+				});
+			}, 500);
+		}
+		elementRulesInitialized = true;
+	});
+
 	// Trigger a rebuild when the active perspective changes
 	activePerspective.subscribe((perspective) => {
 		if (perspectiveInitialized) {
@@ -742,7 +842,11 @@ if (browser) {
 			const topology = topologies?.find((t) => t.id === topologyId);
 			if (!topology) return;
 
-			const options = get(perPerspectiveOptions)[perspective];
+			const perspectiveOpts = get(perPerspectiveOptions)[perspective];
+			const options = {
+				...perspectiveOpts,
+				request: { ...perspectiveOpts.request, element_rules: get(sharedElementRules) }
+			};
 			apiClient.POST('/api/v1/topology/{id}/rebuild', {
 				params: { path: { id: topologyId } },
 				body: {
