@@ -577,6 +577,7 @@ function mapElkResults(
 	}
 
 	for (const edge of input.edges) {
+		if (classifyEdge(edge) === 'disabled') continue;
 		const srcPos = absolutePositions.get(edge.source);
 		const tgtPos = absolutePositions.get(edge.target);
 		const srcSize = nodeSizes.get(edge.source);
