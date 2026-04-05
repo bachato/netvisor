@@ -10,6 +10,7 @@
 	} from '$lib/features/topology/resolvers';
 	import type { EntityDiscriminants } from '$lib/features/tags/queries';
 	import { activePerspective } from '$lib/features/topology/queries';
+	import { getInspectorConfig } from '$lib/features/topology/components/panel/inspectors/perspective-config';
 	import { common_tags, tags_applicationGroup } from '$lib/paraglide/messages';
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -59,9 +60,9 @@
 		return [];
 	});
 
-	// Show app-group picker for Service elements in Application perspective
+	// Show app-group picker when perspective metadata enables it and element is a Service
 	let showAppGroupPicker = $derived(
-		$activePerspective === 'Application' && entityType === 'Service'
+		getInspectorConfig($activePerspective).show_application_group_picker && entityType === 'Service'
 	);
 
 	// App-group tags for the picker (filtered from all tags)

@@ -11,6 +11,7 @@ use crate::server::{
     topology::types::layout::Ixy,
 };
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -31,7 +32,10 @@ pub enum DiscoveryProtocol {
 pub enum EdgeClassification {
     #[default]
     Primary,
+    /// Overlay edge, visible by default in UI toggle
     Overlay,
+    /// Overlay edge, hidden by default in UI toggle
+    OverlayHidden,
     Disabled,
 }
 
@@ -104,6 +108,16 @@ impl TypeMetadataProvider for TopologyPerspective {
     }
 
     fn metadata(&self) -> serde_json::Value {
+        let edge_classifications: serde_json::Map<String, serde_json::Value> =
+            EdgeTypeDiscriminants::iter()
+                .map(|et| {
+                    (
+                        et.to_string(),
+                        serde_json::to_value(self.classify_edge(et)).unwrap(),
+                    )
+                })
+                .collect();
+
         serde_json::json!({
             "element_label": match self {
                 Self::L2Physical => "ports",
@@ -111,8 +125,61 @@ impl TypeMetadataProvider for TopologyPerspective {
                 Self::Infrastructure => "hosts",
                 Self::Application => "services",
             },
+            "services_are_elements": matches!(self, Self::Application),
+            "default_hide_generic_services": matches!(self, Self::Application),
+            "tag_filter_categories": match self {
+                Self::L3Logical => vec!["host", "service", "subnet"],
+                Self::Application => vec!["service"],
+                Self::L2Physical => vec!["host", "subnet"],
+                Self::Infrastructure => vec!["host", "service"],
+            },
+            "edge_classifications": edge_classifications,
             "inspector_config": self.inspector_config()
         })
+    }
+}
+
+impl TopologyPerspective {
+    /// Classify an edge type for this perspective.
+    /// All match arms are exhaustive — adding a new EdgeTypeDiscriminants variant
+    /// will cause a compile error here, forcing a classification decision.
+    pub fn classify_edge(&self, edge_type: EdgeTypeDiscriminants) -> EdgeClassification {
+        use EdgeClassification::*;
+        use EdgeTypeDiscriminants::*;
+        match self {
+            Self::L3Logical => match edge_type {
+                Interface => Primary,
+                ServiceVirtualization => Disabled,
+                HostVirtualization => OverlayHidden,
+                PhysicalLink => OverlayHidden,
+                RequestPath => Overlay,
+                HubAndSpoke => Overlay,
+            },
+            Self::L2Physical => match edge_type {
+                PhysicalLink => Primary,
+                Interface => Overlay,
+                HostVirtualization => OverlayHidden,
+                ServiceVirtualization => OverlayHidden,
+                RequestPath => OverlayHidden,
+                HubAndSpoke => OverlayHidden,
+            },
+            Self::Infrastructure => match edge_type {
+                HostVirtualization => Primary,
+                ServiceVirtualization => Primary,
+                Interface => Overlay,
+                RequestPath => OverlayHidden,
+                HubAndSpoke => OverlayHidden,
+                PhysicalLink => OverlayHidden,
+            },
+            Self::Application => match edge_type {
+                RequestPath => Primary,
+                HubAndSpoke => Primary,
+                Interface => OverlayHidden,
+                HostVirtualization => OverlayHidden,
+                ServiceVirtualization => OverlayHidden,
+                PhysicalLink => OverlayHidden,
+            },
+        }
     }
 }
 
@@ -255,35 +322,6 @@ impl HasId for EdgeType {
     }
 }
 
-impl EdgeType {
-    /// Returns whether this edge is primary (affects layout) or overlay for a given perspective
-    pub fn classification(&self, perspective: TopologyPerspective) -> EdgeClassification {
-        match perspective {
-            TopologyPerspective::L3Logical => match self {
-                EdgeType::Interface { .. } => EdgeClassification::Primary,
-                EdgeType::ServiceVirtualization { .. } => EdgeClassification::Disabled,
-                _ => EdgeClassification::Overlay,
-            },
-            TopologyPerspective::L2Physical => match self {
-                EdgeType::PhysicalLink { .. } => EdgeClassification::Primary,
-                _ => EdgeClassification::Overlay,
-            },
-            TopologyPerspective::Infrastructure => match self {
-                EdgeType::HostVirtualization { .. } | EdgeType::ServiceVirtualization { .. } => {
-                    EdgeClassification::Primary
-                }
-                _ => EdgeClassification::Overlay,
-            },
-            TopologyPerspective::Application => match self {
-                EdgeType::RequestPath { .. } | EdgeType::HubAndSpoke { .. } => {
-                    EdgeClassification::Primary
-                }
-                _ => EdgeClassification::Overlay,
-            },
-        }
-    }
-}
-
 impl EntityMetadataProvider for EdgeType {
     fn color(&self) -> Color {
         match self {
@@ -374,11 +412,9 @@ impl TypeMetadataProvider for EdgeType {
 
 #[cfg(test)]
 mod tests {
-    use strum::IntoEnumIterator;
-    use uuid::Uuid;
-
     use super::*;
     use crate::server::dependencies::r#impl::types::DependencyTypeDiscriminants;
+    use strum::IntoEnumIterator;
 
     #[test]
     fn edge_type_matches_dependency_type() {
@@ -396,154 +432,77 @@ mod tests {
         assert!(dependency_types.contains(&DependencyTypeDiscriminants::HubAndSpoke));
     }
 
-    fn dummy_id() -> Uuid {
-        Uuid::nil()
-    }
-
-    fn all_edge_types() -> Vec<EdgeType> {
-        vec![
-            EdgeType::Interface {
-                host_id: dummy_id(),
-            },
-            EdgeType::PhysicalLink {
-                source_if_entry_id: dummy_id(),
-                target_if_entry_id: dummy_id(),
-                protocol: DiscoveryProtocol::LLDP,
-            },
-            EdgeType::HostVirtualization {
-                vm_service_id: dummy_id(),
-            },
-            EdgeType::ServiceVirtualization {
-                host_id: dummy_id(),
-                containerizing_service_id: dummy_id(),
-            },
-            EdgeType::RequestPath {
-                group_id: dummy_id(),
-                source_binding_id: dummy_id(),
-                target_binding_id: dummy_id(),
-            },
-            EdgeType::HubAndSpoke {
-                group_id: dummy_id(),
-                source_binding_id: dummy_id(),
-                target_binding_id: dummy_id(),
-            },
-        ]
+    #[test]
+    fn classify_edge_l3() {
+        use EdgeClassification::*;
+        use EdgeTypeDiscriminants::*;
+        let p = TopologyPerspective::L3Logical;
+        assert_eq!(p.classify_edge(Interface), Primary);
+        assert_eq!(p.classify_edge(ServiceVirtualization), Disabled);
+        assert_eq!(p.classify_edge(HostVirtualization), OverlayHidden);
+        assert_eq!(p.classify_edge(PhysicalLink), OverlayHidden);
+        assert_eq!(p.classify_edge(RequestPath), Overlay);
+        assert_eq!(p.classify_edge(HubAndSpoke), Overlay);
     }
 
     #[test]
-    fn classification_l3_interface_is_primary() {
-        let edge = EdgeType::Interface {
-            host_id: dummy_id(),
-        };
-        assert_eq!(
-            edge.classification(TopologyPerspective::L3Logical),
-            EdgeClassification::Primary
-        );
+    fn classify_edge_l2() {
+        use EdgeClassification::*;
+        use EdgeTypeDiscriminants::*;
+        let p = TopologyPerspective::L2Physical;
+        assert_eq!(p.classify_edge(PhysicalLink), Primary);
+        assert_eq!(p.classify_edge(Interface), Overlay);
+        assert_eq!(p.classify_edge(HostVirtualization), OverlayHidden);
+        assert_eq!(p.classify_edge(ServiceVirtualization), OverlayHidden);
+        assert_eq!(p.classify_edge(RequestPath), OverlayHidden);
+        assert_eq!(p.classify_edge(HubAndSpoke), OverlayHidden);
     }
 
     #[test]
-    fn classification_l3_others_are_overlay() {
-        for edge in all_edge_types() {
-            if matches!(
-                edge,
-                EdgeType::Interface { .. } | EdgeType::ServiceVirtualization { .. }
-            ) {
-                continue;
-            }
-            assert_eq!(
-                edge.classification(TopologyPerspective::L3Logical),
-                EdgeClassification::Overlay,
-                "Expected Overlay for {:?} in L3",
-                edge
-            );
+    fn classify_edge_infrastructure() {
+        use EdgeClassification::*;
+        use EdgeTypeDiscriminants::*;
+        let p = TopologyPerspective::Infrastructure;
+        assert_eq!(p.classify_edge(HostVirtualization), Primary);
+        assert_eq!(p.classify_edge(ServiceVirtualization), Primary);
+        assert_eq!(p.classify_edge(Interface), Overlay);
+        assert_eq!(p.classify_edge(RequestPath), OverlayHidden);
+        assert_eq!(p.classify_edge(HubAndSpoke), OverlayHidden);
+        assert_eq!(p.classify_edge(PhysicalLink), OverlayHidden);
+    }
+
+    #[test]
+    fn classify_edge_application() {
+        use EdgeClassification::*;
+        use EdgeTypeDiscriminants::*;
+        let p = TopologyPerspective::Application;
+        assert_eq!(p.classify_edge(RequestPath), Primary);
+        assert_eq!(p.classify_edge(HubAndSpoke), Primary);
+        assert_eq!(p.classify_edge(Interface), OverlayHidden);
+        assert_eq!(p.classify_edge(HostVirtualization), OverlayHidden);
+        assert_eq!(p.classify_edge(ServiceVirtualization), OverlayHidden);
+        assert_eq!(p.classify_edge(PhysicalLink), OverlayHidden);
+    }
+
+    #[test]
+    fn edge_classification_serde_round_trips() {
+        // All variants round-trip correctly
+        for (classification, expected_str) in [
+            (EdgeClassification::Primary, "primary"),
+            (EdgeClassification::Overlay, "overlay"),
+            (EdgeClassification::OverlayHidden, "overlay_hidden"),
+            (EdgeClassification::Disabled, "disabled"),
+        ] {
+            let json = serde_json::to_value(classification).unwrap();
+            assert_eq!(json, expected_str);
+            let deserialized: EdgeClassification = serde_json::from_value(json).unwrap();
+            assert_eq!(deserialized, classification);
         }
-    }
-
-    #[test]
-    fn classification_l3_service_virtualization_is_disabled() {
-        let edge = EdgeType::ServiceVirtualization {
-            host_id: dummy_id(),
-            containerizing_service_id: dummy_id(),
-        };
-        assert_eq!(
-            edge.classification(TopologyPerspective::L3Logical),
-            EdgeClassification::Disabled
-        );
-    }
-
-    #[test]
-    fn edge_classification_disabled_serde_round_trip() {
-        let json = serde_json::to_value(EdgeClassification::Disabled).unwrap();
-        assert_eq!(json, "disabled");
-        let deserialized: EdgeClassification = serde_json::from_value(json).unwrap();
-        assert_eq!(deserialized, EdgeClassification::Disabled);
-    }
-
-    #[test]
-    fn classification_l2_physical_link_is_primary() {
-        let edge = EdgeType::PhysicalLink {
-            source_if_entry_id: dummy_id(),
-            target_if_entry_id: dummy_id(),
-            protocol: DiscoveryProtocol::LLDP,
-        };
-        assert_eq!(
-            edge.classification(TopologyPerspective::L2Physical),
-            EdgeClassification::Primary
-        );
-    }
-
-    #[test]
-    fn classification_infrastructure_virtualization_is_primary() {
-        let host_virt = EdgeType::HostVirtualization {
-            vm_service_id: dummy_id(),
-        };
-        let svc_virt = EdgeType::ServiceVirtualization {
-            host_id: dummy_id(),
-            containerizing_service_id: dummy_id(),
-        };
-        assert_eq!(
-            host_virt.classification(TopologyPerspective::Infrastructure),
-            EdgeClassification::Primary
-        );
-        assert_eq!(
-            svc_virt.classification(TopologyPerspective::Infrastructure),
-            EdgeClassification::Primary
-        );
-    }
-
-    #[test]
-    fn classification_application_dependency_edges_are_primary() {
-        let req = EdgeType::RequestPath {
-            group_id: dummy_id(),
-            source_binding_id: dummy_id(),
-            target_binding_id: dummy_id(),
-        };
-        let hub = EdgeType::HubAndSpoke {
-            group_id: dummy_id(),
-            source_binding_id: dummy_id(),
-            target_binding_id: dummy_id(),
-        };
-        assert_eq!(
-            req.classification(TopologyPerspective::Application),
-            EdgeClassification::Primary
-        );
-        assert_eq!(
-            hub.classification(TopologyPerspective::Application),
-            EdgeClassification::Primary
-        );
     }
 
     #[test]
     fn classification_default_is_primary() {
         assert_eq!(EdgeClassification::default(), EdgeClassification::Primary);
-    }
-
-    #[test]
-    fn edge_classification_serde_round_trip() {
-        let json = serde_json::to_value(EdgeClassification::Overlay).unwrap();
-        assert_eq!(json, "overlay");
-        let deserialized: EdgeClassification = serde_json::from_value(json).unwrap();
-        assert_eq!(deserialized, EdgeClassification::Overlay);
     }
 
     #[test]

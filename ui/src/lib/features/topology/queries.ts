@@ -21,6 +21,7 @@ import { UNTAGGED_SENTINEL, GENERIC_SENTINEL } from './interactions';
 import { getDefaultHiddenEdgeTypes } from './layout/edge-classification';
 import type { components } from '$lib/api/schema';
 import perspectivesJson from '$lib/data/perspectives.json';
+import { perspectives } from '$lib/shared/stores/metadata';
 
 export type TopologyPerspective = components['schemas']['TopologyPerspective'];
 type PerPerspectiveOptions = Record<TopologyPerspective, TopologyOptions>;
@@ -72,7 +73,13 @@ export function getDefaultTopologyOptions(perspective: TopologyPerspective): Top
 			bundle_edges: true,
 			tag_filter: {
 				hidden_host_tag_ids: [],
-				hidden_service_tag_ids: perspective === 'Application' ? [GENERIC_SENTINEL] : [],
+				hidden_service_tag_ids: (
+					perspectives.getMetadata(perspective) as {
+						default_hide_generic_services?: boolean;
+					} | null
+				)?.default_hide_generic_services
+					? [GENERIC_SENTINEL]
+					: [],
 				hidden_subnet_tag_ids: []
 			},
 			show_minimap: true

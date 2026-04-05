@@ -414,7 +414,7 @@ impl TopologyService {
         // Set edge classification based on perspective
         let perspective = options.request.perspective;
         for edge in &mut all_edges {
-            edge.classification = edge.edge_type.classification(perspective);
+            edge.classification = perspective.classify_edge((&edge.edge_type).into());
         }
 
         let final_edges = all_edges;

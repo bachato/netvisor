@@ -2,9 +2,14 @@ import { writable, get } from 'svelte/store';
 import type { Edge } from '@xyflow/svelte';
 import type { Node } from '@xyflow/svelte';
 import type { QueryClient } from '@tanstack/svelte-query';
-import { edgeTypes, serviceDefinitions, subnetTypes } from '$lib/shared/stores/metadata';
+import {
+	edgeTypes,
+	perspectives,
+	serviceDefinitions,
+	subnetTypes
+} from '$lib/shared/stores/metadata';
 import type { TopologyEdge, TopologyNode, Topology } from './types/base';
-import { resolveElementNode } from './resolvers';
+import { getContainerContents } from './resolvers';
 import { getHostFromInterfaceIdFromCache } from '../hosts/queries';
 import {
 	getInterfacesForHostFromCache,
@@ -120,6 +125,15 @@ export function updateTagFilter(
 		return;
 	}
 
+	const meta = perspective
+		? (perspectives.getMetadata(perspective) as {
+				tag_filter_categories?: string[];
+				services_are_elements?: boolean;
+			} | null)
+		: null;
+	const categories = meta?.tag_filter_categories ?? ['host', 'service', 'subnet'];
+	const servicesAreElements = meta?.services_are_elements ?? false;
+
 	const hiddenHostTagIds = tagFilter.hidden_host_tag_ids ?? [];
 	const hiddenServiceTagIds = tagFilter.hidden_service_tag_ids ?? [];
 	const hiddenSubnetTagIds = tagFilter.hidden_subnet_tag_ids ?? [];
@@ -132,41 +146,45 @@ export function updateTagFilter(
 	const hiddenNodeIds = new Set<string>();
 	const hiddenServiceIds = new Set<string>();
 
-	// Host tags -> fade Element nodes
-	for (const host of topology.hosts) {
-		const isUntagged = host.tags.length === 0;
-		const hostHasHiddenTag = host.tags.some((t) => hiddenHostTagIds.includes(t));
-		if (hostHasHiddenTag || (isUntagged && hideUntaggedHosts)) {
-			// Add all Element nodes for this host to hidden set
-			const hostInterfaces = topology.interfaces.filter((i) => i.host_id === host.id);
-			hostInterfaces.forEach((i) => hiddenNodeIds.add(i.id));
-		}
-	}
-
-	// Service tags -> hide services from display
-	// hiddenServiceIds: hides services within Interface elements (L3) and Service element nodes (Application)
-	for (const service of topology.services) {
-		const isUntagged = service.tags.length === 0;
-		const serviceHasHiddenTag = service.tags.some((t) => hiddenServiceTagIds.includes(t));
-		const isGeneric =
-			hideGenericServices &&
-			(serviceDefinitions.getMetadata(service.service_definition) as { is_generic?: boolean })
-				?.is_generic === true;
-		if (serviceHasHiddenTag || (isUntagged && hideUntaggedServices) || isGeneric) {
-			hiddenServiceIds.add(service.id);
-			// In Application perspective, services ARE element nodes — hide the node too
-			if (perspective === 'Application') {
-				hiddenNodeIds.add(service.id);
+	// Host tags -> fade Element nodes (only if host filtering applies to this perspective)
+	if (categories.includes('host')) {
+		for (const host of topology.hosts) {
+			const isUntagged = host.tags.length === 0;
+			const hostHasHiddenTag = host.tags.some((t) => hiddenHostTagIds.includes(t));
+			if (hostHasHiddenTag || (isUntagged && hideUntaggedHosts)) {
+				const hostInterfaces = topology.interfaces.filter((i) => i.host_id === host.id);
+				hostInterfaces.forEach((i) => hiddenNodeIds.add(i.id));
 			}
 		}
 	}
 
-	// Subnet tags -> fade Container nodes
-	for (const subnet of topology.subnets) {
-		const isUntagged = subnet.tags.length === 0;
-		const subnetHasHiddenTag = subnet.tags.some((t) => hiddenSubnetTagIds.includes(t));
-		if (subnetHasHiddenTag || (isUntagged && hideUntaggedSubnets)) {
-			hiddenNodeIds.add(subnet.id);
+	// Service tags -> hide services from display
+	if (categories.includes('service')) {
+		for (const service of topology.services) {
+			const isUntagged = service.tags.length === 0;
+			const serviceHasHiddenTag = service.tags.some((t) => hiddenServiceTagIds.includes(t));
+			const isGeneric =
+				hideGenericServices &&
+				(serviceDefinitions.getMetadata(service.service_definition) as { is_generic?: boolean })
+					?.is_generic === true;
+			if (serviceHasHiddenTag || (isUntagged && hideUntaggedServices) || isGeneric) {
+				hiddenServiceIds.add(service.id);
+				// When services are element nodes, hide the node too
+				if (servicesAreElements) {
+					hiddenNodeIds.add(service.id);
+				}
+			}
+		}
+	}
+
+	// Subnet tags -> fade Container nodes (only if subnet filtering applies)
+	if (categories.includes('subnet')) {
+		for (const subnet of topology.subnets) {
+			const isUntagged = subnet.tags.length === 0;
+			const subnetHasHiddenTag = subnet.tags.some((t) => hiddenSubnetTagIds.includes(t));
+			if (subnetHasHiddenTag || (isUntagged && hideUntaggedSubnets)) {
+				hiddenNodeIds.add(subnet.id);
+			}
 		}
 	}
 
@@ -293,16 +311,10 @@ export function updateConnectedNodes(
 		connected.add(selectedNode.id);
 		const nodeData = selectedNode.data as TopologyNode;
 
-		if (nodeData.node_type == 'Container' && topology) {
-			allNodes.forEach((n) => {
-				const nd = n.data as TopologyNode;
-				if (nd.node_type == 'Element') {
-					const resolved = resolveElementNode(nd.id, nd, topology);
-					if (resolved.subnetId == nodeData.id) {
-						connected.add(nd.id);
-					}
-				}
-			});
+		if (nodeData.node_type == 'Container') {
+			const contents = getContainerContents(nodeData.id, allNodes);
+			for (const id of contents.elementNodeIds) connected.add(id);
+			for (const id of contents.subcontainerIds) connected.add(id);
 		}
 
 		for (const edge of allEdges) {

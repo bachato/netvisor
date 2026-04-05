@@ -51,6 +51,7 @@
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import type { components } from '$lib/api/schema';
 	import { entities, permissions, perspectives } from '$lib/shared/stores/metadata';
+	import { getInspectorConfig } from './panel/inspectors/perspective-config';
 	import { modalState, openModal } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import {
@@ -68,9 +69,7 @@
 		topology_lockedTimestamp,
 		topology_noTopologySelected,
 		topology_staleData,
-		topology_staleDataBody,
-		topology_perspectiveL3,
-		common_application
+		topology_staleDataBody
 	} from '$lib/paraglide/messages';
 	import { useConfigQuery } from '$lib/shared/stores/config-query';
 
@@ -109,11 +108,13 @@
 	let appGroupTags = $derived((tagsQuery.data ?? []).filter((t) => t.is_application_group));
 	let wizardOpen = $state(false);
 
-	// Auto-open wizard when entering Application perspective with no app-group tags
+	let currentInspectorConfig = $derived(getInspectorConfig($activePerspective));
+
+	// Auto-open wizard when entering a perspective with app-group picker and no app-group tags
 	$effect(() => {
 		if (
 			isActive &&
-			$activePerspective === 'Application' &&
+			currentInspectorConfig.show_application_group_picker &&
 			appGroupTags.length === 0 &&
 			!wizardOpen
 		) {
@@ -121,7 +122,9 @@
 		}
 	});
 
-	let showAppWizard = $derived(isActive && $activePerspective === 'Application' && wizardOpen);
+	let showAppWizard = $derived(
+		isActive && currentInspectorConfig.show_application_group_picker && wizardOpen
+	);
 
 	// Selected topology (derived from ID + query data)
 	let currentTopology = $derived(
@@ -141,21 +144,15 @@
 	);
 	let discoveryColor = $derived(entities.getColorHelper('Discovery'));
 
-	// Perspective selector — hardcoded to L3 + Application for now
-	const perspectiveOptions = [
-		{
-			value: 'L3Logical',
-			label: '',
-			icon: perspectives.getIconComponent('L3Logical'),
-			tooltip: topology_perspectiveL3()
-		},
-		{
-			value: 'Application',
-			label: '',
-			icon: perspectives.getIconComponent('Application'),
-			tooltip: common_application()
-		}
-	];
+	// Perspective selector — built from fixture data
+	import perspectivesJson from '$lib/data/perspectives.json';
+
+	const perspectiveOptions = perspectivesJson.map((p) => ({
+		value: p.id,
+		label: '',
+		icon: perspectives.getIconComponent(p.id),
+		tooltip: p.name
+	}));
 	let perspectiveColorStyle = $derived(perspectives.getColorHelper($activePerspective));
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
