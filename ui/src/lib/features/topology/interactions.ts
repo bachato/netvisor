@@ -9,6 +9,7 @@ import {
 	subnetTypes
 } from '$lib/shared/stores/metadata';
 import type { TopologyEdge, TopologyNode, Topology } from './types/base';
+import { classifyEdge } from './layout/edge-classification';
 import { getContainerContents } from './resolvers';
 import { getHostFromInterfaceIdFromCache } from '../hosts/queries';
 import {
@@ -282,7 +283,8 @@ export function updateConnectedNodes(
 	allNodes: Node[],
 	queryClient: QueryClient,
 	topology?: Topology,
-	multiSelectedNodes?: Node[]
+	multiSelectedNodes?: Node[],
+	hiddenEdgeTypes?: string[]
 ) {
 	const connected = new Set<string>();
 
@@ -321,21 +323,28 @@ export function updateConnectedNodes(
 			const edgeData = edge.data as TopologyEdge | undefined;
 			if (!edgeData) continue;
 
-			// Skip virtualization edges — these relationships are for the
-			// Infrastructure perspective, not for element selection highlighting.
-			if (
-				edgeData.edge_type === 'ServiceVirtualization' ||
-				edgeData.edge_type === 'HostVirtualization'
-			) {
-				continue;
-			}
+			// Skip edges that are disabled (perspective-level) or hidden (user toggle)
+			if (classifyEdge(edgeData) === 'disabled') continue;
+			if (hiddenEdgeTypes?.includes(edgeData.edge_type)) continue;
 
-			// Add directly connected nodes (regular edges)
+			// Add directly connected nodes
 			if (edgeData.source === selectedNode.id) {
 				connected.add(edgeData.target as string);
 			}
 			if (edgeData.target === selectedNode.id) {
 				connected.add(edgeData.source as string);
+			}
+
+			// For visible virtualization edges, also add virtualized container nodes
+			if (edgeData.edge_type === 'ServiceVirtualization') {
+				if (edgeData.source === selectedNode.id || edgeData.target === selectedNode.id) {
+					const virtualizedNodes = getVirtualizedContainerNodes(
+						edgeData.source as string,
+						queryClient,
+						topology
+					);
+					virtualizedNodes.forEach((nodeId) => connected.add(nodeId));
+				}
 			}
 		}
 
