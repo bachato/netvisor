@@ -6,7 +6,7 @@
 	import type { Tag as TagType } from '$lib/features/tags/types/base';
 	import { useCreateTagMutation, useDeleteTagMutation } from '$lib/features/tags/queries';
 	import { useQueryClient } from '@tanstack/svelte-query';
-	import { queryKeys } from '$lib/shared/stores/query-keys';
+	import { queryKeys } from '$lib/api/query-client';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { getSuggestions } from '../suggestions';
 	import { concepts } from '$lib/shared/stores/metadata';
