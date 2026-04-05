@@ -10,7 +10,7 @@
 	import type { Host } from '$lib/features/hosts/types/base';
 	import type { Tag as TagType } from '$lib/features/tags/types/base';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
-	import { useServicesCacheQuery } from '$lib/features/services/queries';
+	import { useServicesQuery } from '$lib/features/services/queries';
 	import { useBulkAddTagMutation } from '$lib/features/tags/queries';
 	import TagBadge from '$lib/shared/components/data/Tag.svelte';
 	import { concepts } from '$lib/shared/stores/metadata';
@@ -21,16 +21,22 @@
 	} from '$lib/paraglide/messages';
 
 	let {
-		appGroupTags
+		appGroupTags,
+		networkId
 	}: {
 		appGroupTags: TagType[];
+		networkId: string;
 	} = $props();
 
-	const hostsQuery = useHostsQuery({ limit: 0 });
-	const servicesCacheQuery = useServicesCacheQuery();
+	const hostsQuery = useHostsQuery({ limit: 0, network_id: networkId });
+	const servicesQuery = useServicesQuery({
+		limit: 0,
+		network_id: networkId,
+		exclude_categories: ['OpenPorts']
+	});
 	const bulkAddTagMutation = useBulkAddTagMutation();
 
-	let allServices = $derived(servicesCacheQuery.data ?? []);
+	let allServices = $derived(servicesQuery.data?.items ?? []);
 	let allHosts = $derived(
 		(hostsQuery.data?.items ?? []).toSorted(
 			(a, b) =>
@@ -39,7 +45,7 @@
 		)
 	);
 
-	// App group tag IDs for checking if a host already has one
+	// Track which app-group tag IDs exist for filtering
 	let appGroupTagIds = $derived(new Set(appGroupTags.map((t) => t.id)));
 
 	function hasAppGroupTag(entity: { tags: string[] }): boolean {
@@ -60,12 +66,19 @@
 		}
 	}
 
+	function getEntityTags(entity: { tags: string[] }): TagType[] {
+		if (hasAppGroupTag(entity)) {
+			// Already has an app-group tag — only show that tag (for removal), no add options
+			return appGroupTags.filter((t) => entity.tags.includes(t.id));
+		}
+		return appGroupTags;
+	}
+
 	function getHostContext(host: Host): HostDisplayContext {
 		const hostServices = allServices.filter((s) => s.host_id === host.id);
 		return {
 			showEntityTagPicker: true,
-			tagPickerDisabled: hasAppGroupTag(host),
-			entityTags: appGroupTags,
+			entityTags: getEntityTags(host),
 			services: hostServices
 		};
 	}
@@ -73,8 +86,7 @@
 	function getServiceContext(service: { tags: string[] }): ServiceDisplayContext {
 		return {
 			showEntityTagPicker: true,
-			tagPickerDisabled: hasAppGroupTag(service),
-			entityTags: appGroupTags
+			entityTags: getEntityTags(service)
 		};
 	}
 

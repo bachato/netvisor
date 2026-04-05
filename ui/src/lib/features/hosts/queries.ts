@@ -136,6 +136,8 @@ function toCreateHostRequest(formData: HostFormData): CreateHostRequest {
 export interface HostQueryOptions {
 	limit?: number;
 	offset?: number;
+	/** Filter by network ID. */
+	network_id?: string;
 	/** Primary ordering field (used for grouping). Always sorts ASC to keep groups together. */
 	group_by?: components['schemas']['HostOrderField'];
 	/** Secondary ordering field (sorting within groups or standalone sort). */
@@ -187,6 +189,7 @@ export function useHostsQuery(optionsOrGetter: HostQueryOptions | (() => HostQue
 						query: {
 							limit: options.limit,
 							offset: options.offset,
+							network_id: options.network_id,
 							group_by: options.group_by,
 							order_by: options.order_by,
 							order_direction: options.order_direction,

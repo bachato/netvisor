@@ -679,7 +679,11 @@
 						{isActive}
 					/>
 					{#if showAppWizard}
-						<ApplicationSetupWizard {appGroupTags} onComplete={handleWizardComplete} />
+						<ApplicationSetupWizard
+							{appGroupTags}
+							networkId={currentTopology.network_id}
+							onComplete={handleWizardComplete}
+						/>
 					{/if}
 				</div>
 			{:else}

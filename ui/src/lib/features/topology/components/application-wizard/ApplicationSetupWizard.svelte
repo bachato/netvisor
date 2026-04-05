@@ -12,9 +12,11 @@
 
 	let {
 		appGroupTags,
+		networkId,
 		onComplete
 	}: {
 		appGroupTags: Tag[];
+		networkId: string;
 		onComplete: () => void;
 	} = $props();
 
@@ -41,7 +43,7 @@
 					<DefineGroupsStep {appGroupTags} />
 				</div>
 			{:else if activeTab === 'assign'}
-				<AssignEntitiesStep {appGroupTags} />
+				<AssignEntitiesStep {appGroupTags} {networkId} />
 			{/if}
 		</div>
 
