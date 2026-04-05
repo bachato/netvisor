@@ -16,7 +16,8 @@
 		tags_applicationGroup,
 		tags_inheritedFromHost,
 		tags_inheritedOverrideHint,
-		tags_overridesFromHost
+		common_overrides,
+		tags_fromHost
 	} from '$lib/paraglide/messages';
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -155,9 +156,14 @@
 					{#if isAppGroupInherited}
 						<span class="text-tertiary text-xs">{tags_inheritedFromHost()}</span>
 					{:else if isAppGroupOverride && hostAppGroupTag}
-						<span class="text-tertiary text-xs"
-							>{tags_overridesFromHost({ tag: hostAppGroupTag.name })}</span
-						>
+						<span class="text-tertiary text-xs">{common_overrides()}</span>
+						<Tag
+							label={hostAppGroupTag.name}
+							color={hostAppGroupTag.color}
+							icon={concepts.getIconComponent('Application')}
+							isShiny={true}
+						/>
+						<span class="text-tertiary text-xs">{tags_fromHost()}</span>
 					{/if}
 				</div>
 				{#if isAppGroupInherited}
