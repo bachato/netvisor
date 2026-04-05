@@ -14,7 +14,7 @@ use crate::server::{
         },
         types::{
             edges::Edge,
-            grouping::{GraphRule, GroupingConfig},
+            grouping::GroupingConfig,
             layout::{Ixy, Uxy},
             nodes::{ContainerChild, ContainerType, ElementEntityType, Node, NodeType},
         },

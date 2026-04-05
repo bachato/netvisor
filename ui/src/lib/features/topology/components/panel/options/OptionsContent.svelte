@@ -8,7 +8,8 @@
 	} from '../../../queries';
 	import { hoveredEdgeType, GENERIC_SENTINEL } from '../../../interactions';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '../../../state';
-	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { edgeTypes, perspectives, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { activePerspective } from '../../../queries';
 	import type { Color } from '$lib/shared/utils/styling';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import TagFilterGroup from './TagFilterGroup.svelte';
@@ -71,6 +72,15 @@
 	let hasUntaggedHosts = $derived(topology?.hosts.some((h) => h.tags.length === 0) ?? false);
 	let hasUntaggedServices = $derived(topology?.services.some((s) => s.tags.length === 0) ?? false);
 	let hasUntaggedSubnets = $derived(topology?.subnets.some((s) => s.tags.length === 0) ?? false);
+
+	// Which tag filter categories apply to this perspective
+	let tagFilterCategories = $derived(
+		(
+			perspectives.getMetadata($activePerspective) as {
+				tag_filter_categories?: string[];
+			} | null
+		)?.tag_filter_categories ?? ['host', 'service', 'subnet']
+	);
 
 	// Generic services filter state
 	let isGenericHidden = $derived(
@@ -392,61 +402,76 @@
 			<div class="space-y-2 px-3 pb-3">
 				<p class="text-tertiary text-xs">{topology_filtersHelp()}</p>
 
-				<!-- Hosts -->
-				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">
-					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-						{common_hosts()}
+				{#if tagFilterCategories.includes('host')}
+					<!-- Hosts -->
+					<div
+						class="space-y-1.5 rounded-lg p-2.5"
+						style="background: var(--color-bg-surface-hover)"
+					>
+						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+							{common_hosts()}
+						</div>
+						<TagFilterGroup
+							label={common_byTag()}
+							tags={hostTags}
+							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
+							onToggle={toggleHostTag}
+							entityType="host"
+							hasUntagged={hasUntaggedHosts}
+						/>
 					</div>
-					<TagFilterGroup
-						label={common_byTag()}
-						tags={hostTags}
-						hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
-						onToggle={toggleHostTag}
-						entityType="host"
-						hasUntagged={hasUntaggedHosts}
-					/>
-				</div>
+				{/if}
 
-				<!-- Services -->
-				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">
-					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-						{common_services()}
+				{#if tagFilterCategories.includes('service')}
+					<!-- Services -->
+					<div
+						class="space-y-1.5 rounded-lg p-2.5"
+						style="background: var(--color-bg-surface-hover)"
+					>
+						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+							{common_services()}
+						</div>
+						<TagFilterGroup
+							label={common_byTag()}
+							tags={serviceTags}
+							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
+							onToggle={toggleServiceTag}
+							entityType="service"
+							hasUntagged={hasUntaggedServices}
+						/>
+						<CategoryFilterGroup
+							categories={allServiceCategoriesWithColors}
+							hiddenCategories={$topologyOptions.request.hide_service_categories ?? []}
+							onToggle={toggleServiceCategory}
+							disabled={!editState.isEditable}
+							label={common_byCategory()}
+						/>
+						<GenericServiceFilter
+							hidden={isGenericHidden}
+							onToggle={() => toggleServiceTag(GENERIC_SENTINEL)}
+						/>
 					</div>
-					<TagFilterGroup
-						label={common_byTag()}
-						tags={serviceTags}
-						hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
-						onToggle={toggleServiceTag}
-						entityType="service"
-						hasUntagged={hasUntaggedServices}
-					/>
-					<CategoryFilterGroup
-						categories={allServiceCategoriesWithColors}
-						hiddenCategories={$topologyOptions.request.hide_service_categories ?? []}
-						onToggle={toggleServiceCategory}
-						disabled={!editState.isEditable}
-						label={common_byCategory()}
-					/>
-					<GenericServiceFilter
-						hidden={isGenericHidden}
-						onToggle={() => toggleServiceTag(GENERIC_SENTINEL)}
-					/>
-				</div>
+				{/if}
 
-				<!-- Subnets -->
-				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">
-					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-						{common_subnets()}
+				{#if tagFilterCategories.includes('subnet')}
+					<!-- Subnets -->
+					<div
+						class="space-y-1.5 rounded-lg p-2.5"
+						style="background: var(--color-bg-surface-hover)"
+					>
+						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+							{common_subnets()}
+						</div>
+						<TagFilterGroup
+							label={common_byTag()}
+							tags={subnetTags}
+							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
+							onToggle={toggleSubnetTag}
+							entityType="subnet"
+							hasUntagged={hasUntaggedSubnets}
+						/>
 					</div>
-					<TagFilterGroup
-						label={common_byTag()}
-						tags={subnetTags}
-						hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
-						onToggle={toggleSubnetTag}
-						entityType="subnet"
-						hasUntagged={hasUntaggedSubnets}
-					/>
-				</div>
+				{/if}
 
 				<!-- Edges -->
 				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">

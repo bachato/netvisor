@@ -1,3 +1,4 @@
+import type { Node } from '@xyflow/svelte';
 import type { components } from '$lib/api/schema';
 import type { Topology, TopologyNode } from './types/base';
 
@@ -120,6 +121,68 @@ export function getNodeSelectionIds(
 		)
 		.map((s) => s.id);
 	return { hostIds, serviceIds };
+}
+
+// Container contents — shared utility for fading, hiding, counting
+export interface ContainerContents {
+	hostIds: Set<string>;
+	serviceIds: Set<string>;
+	interfaceIds: Set<string>;
+	elementNodeIds: Set<string>;
+	subcontainerIds: Set<string>;
+}
+
+/**
+ * Walk the flow node tree and return all entities inside a container,
+ * including entities in nested subcontainers. Works generically across
+ * perspectives — uses container_id/subnet_id for elements and
+ * parent_container_id for subcontainers.
+ */
+export function getContainerContents(containerId: string, allNodes: Node[]): ContainerContents {
+	const hostIds = new Set<string>();
+	const serviceIds = new Set<string>();
+	const interfaceIds = new Set<string>();
+	const elementNodeIds = new Set<string>();
+	const subcontainerIds = new Set<string>();
+
+	// Collect subcontainer IDs (direct children of this container)
+	for (const n of allNodes) {
+		const nd = n.data as TopologyNode;
+		if (nd.node_type === 'Container') {
+			const parentContainerId = (nd as Record<string, unknown>).parent_container_id as
+				| string
+				| undefined;
+			if (parentContainerId === containerId) {
+				subcontainerIds.add(nd.id);
+			}
+		}
+	}
+
+	// Collect element nodes whose parent is this container or a subcontainer
+	const containerSet = new Set([containerId, ...subcontainerIds]);
+	for (const n of allNodes) {
+		const nd = n.data as TopologyNode;
+		if (nd.node_type !== 'Element') continue;
+
+		const parentId =
+			((nd as Record<string, unknown>).container_id as string | undefined) ??
+			((nd as Record<string, unknown>).subnet_id as string | undefined);
+		if (!parentId || !containerSet.has(parentId)) continue;
+
+		elementNodeIds.add(nd.id);
+
+		const hostId = (nd as Record<string, unknown>).host_id as string | undefined;
+		if (hostId) hostIds.add(hostId);
+
+		if (nd.element_type === 'Service') {
+			serviceIds.add(nd.id);
+		} else if (nd.element_type === 'Interface') {
+			const ifaceId = (nd as Record<string, unknown>).interface_id as string | undefined;
+			if (ifaceId) interfaceIds.add(ifaceId);
+		}
+	}
+
+	return { hostIds, serviceIds, interfaceIds, elementNodeIds, subcontainerIds };
 }
 
 // Public API

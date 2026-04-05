@@ -1,10 +1,11 @@
 import type { TopologyEdge } from '../types/base';
 import type { components } from '$lib/api/schema';
+import { perspectives } from '$lib/shared/stores/metadata';
 
 type EdgeTypeDiscriminants = components['schemas']['EdgeTypeDiscriminants'];
 type TopologyPerspective = components['schemas']['TopologyPerspective'];
 
-export type EdgeClassification = 'primary' | 'overlay' | 'disabled';
+export type EdgeClassification = 'primary' | 'overlay' | 'overlay_hidden' | 'disabled';
 
 /**
  * Classify an edge as primary (affects layout), overlay (drawn after layout),
@@ -19,25 +20,24 @@ export function classifyEdge(edge: TopologyEdge): EdgeClassification {
 }
 
 export function isOverlayEdge(edge: TopologyEdge): boolean {
-	return classifyEdge(edge) === 'overlay';
+	const c = classifyEdge(edge);
+	return c === 'overlay' || c === 'overlay_hidden';
 }
 
 export function isDisabledEdge(edge: TopologyEdge): boolean {
 	return classifyEdge(edge) === 'disabled';
 }
 
-/** Returns the edge types that should be hidden by default for a given perspective. */
+/** Returns the edge types that should be hidden by default for a given perspective.
+ * Reads from perspective metadata — edge types classified as `overlay_hidden`. */
 export function getDefaultHiddenEdgeTypes(
 	perspective: TopologyPerspective
 ): EdgeTypeDiscriminants[] {
-	switch (perspective) {
-		case 'L3Logical':
-			return ['HostVirtualization', 'PhysicalLink'];
-		case 'L2Physical':
-			return ['HostVirtualization', 'ServiceVirtualization', 'RequestPath', 'HubAndSpoke'];
-		case 'Infrastructure':
-			return ['RequestPath', 'HubAndSpoke', 'PhysicalLink'];
-		case 'Application':
-			return ['HostVirtualization', 'ServiceVirtualization', 'HubAndSpoke', 'PhysicalLink'];
-	}
+	const meta = perspectives.getMetadata(perspective) as {
+		edge_classifications?: Record<string, string>;
+	} | null;
+	if (!meta?.edge_classifications) return [];
+	return Object.entries(meta.edge_classifications)
+		.filter(([, c]) => c === 'overlay_hidden')
+		.map(([id]) => id as EdgeTypeDiscriminants);
 }
