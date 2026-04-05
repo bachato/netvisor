@@ -92,41 +92,17 @@
 	});
 
 	// Collect host and service IDs from all selected nodes via the resolver
-	// DIAGNOSTIC: try/catch + logging to debug Application perspective selection
 	let selectionIds = $derived.by(() => {
-		if (!topology) {
-			console.debug('[selectionIds] no topology');
-			return { hostIds: [] as string[], serviceIds: [] as string[] };
-		}
+		if (!topology) return { hostIds: [] as string[], serviceIds: [] as string[] };
 		const hostSet = new Set<string>();
 		const serviceSet = new Set<string>();
 		for (const node of nodes) {
-			try {
-				const data = node.data as TopologyNode;
-				const ids = getNodeSelectionIds(node.id, data, topology);
-				ids.hostIds.forEach((id) => hostSet.add(id));
-				ids.serviceIds.forEach((id) => serviceSet.add(id));
-			} catch (error) {
-				const data = node.data as TopologyNode;
-				console.error(
-					'[selectionIds] getNodeSelectionIds threw for node',
-					node.id,
-					'| xyflow type:', node.type,
-					'| data.node_type:', data?.node_type,
-					'| data.element_type:', (data as Record<string, unknown>)?.element_type,
-					'| error:', error
-				);
-			}
+			const data = node.data as TopologyNode;
+			const ids = getNodeSelectionIds(node.id, data, topology);
+			ids.hostIds.forEach((id) => hostSet.add(id));
+			ids.serviceIds.forEach((id) => serviceSet.add(id));
 		}
-		const result = { hostIds: [...hostSet], serviceIds: [...serviceSet] };
-		console.debug(
-			'[selectionIds]',
-			nodes.length, 'nodes →',
-			result.hostIds.length, 'hosts,',
-			result.serviceIds.length, 'services',
-			'| topology.services:', topology.services.length
-		);
-		return result;
+		return { hostIds: [...hostSet], serviceIds: [...serviceSet] };
 	});
 
 	let selectedHostIds = $derived(selectionIds.hostIds);
@@ -208,29 +184,6 @@
 				}
 			}
 			return null; // Ungrouped
-		});
-	});
-
-	// DIAGNOSTIC: log the entire app-group detection chain
-	$effect(() => {
-		const entityTags = topology?.entity_tags ?? [];
-		const entityAppGroupTags = entityTags.filter((t: { is_application_group: boolean }) => t.is_application_group);
-		console.debug('[app-group debug]', {
-			'allTags.length': allTags.length,
-			'allTags app-group': allTags.filter((t) => t.is_application_group).map((t) => t.name),
-			'entity_tags.length': entityTags.length,
-			'entity_tags app-group': entityAppGroupTags.map((t: { name: string }) => t.name),
-			'$topologyOptions.request.container_rules': $topologyOptions?.request?.container_rules,
-			appGroupTagIds,
-			'appGroupTagSet.size': appGroupTagSet.size,
-			'selectedServices.length': selectedServices.length,
-			'selectedServices tags': selectedServices.map((s) => ({ name: s.name, tags: s.tags })),
-			'selectedHosts tags': selectedHosts.map((h) => ({ name: h.name, tags: h.tags })),
-			commonTags,
-			commonAppGroupTags,
-			serviceAppGroupInfos,
-			appGroupState,
-			'inspectorConfig.show_application_group_picker': inspectorConfig.show_application_group_picker
 		});
 	});
 

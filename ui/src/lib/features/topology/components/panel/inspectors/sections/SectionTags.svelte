@@ -91,26 +91,6 @@
 			: appGroupTags
 	);
 
-	// DIAGNOSTIC: log the single-select app-group detection chain
-	$effect(() => {
-		if (!showAppGroupPicker) return;
-		const entityTags = topology?.entity_tags ?? [];
-		const entityAppGroupTags = entityTags.filter((t: { is_application_group: boolean }) => t.is_application_group);
-		console.debug('[SectionTags app-group debug]', {
-			showAppGroupPicker,
-			'allTags.length': allTags.length,
-			'allTags app-group': allTags.filter((t) => t.is_application_group).map((t) => t.name),
-			'entity_tags app-group': entityAppGroupTags.map((t: { name: string }) => t.name),
-			'appGroupTags.length': appGroupTags.length,
-			'appGroupTagIds (Set)': [...appGroupTagIds],
-			selectedTagIds,
-			selectedAppGroupTagIds,
-			hasAppGroupTag,
-			'appGroupAvailableTags': appGroupAvailableTags.map((t) => t.name),
-			'elementContext?.host?.tags': elementContext?.host?.tags,
-			entityType
-		});
-	});
 </script>
 
 {#if entityId && entityType}

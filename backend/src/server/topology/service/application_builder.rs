@@ -240,14 +240,6 @@ impl PerspectiveBuilder for ApplicationBuilder {
             .flat_map(|s| s.base.bindings.iter().map(move |b| (b.id, s.id)))
             .collect();
 
-        // DIAGNOSTIC: log service_node_ids count
-        tracing::debug!(
-            node_count = service_node_ids.len(),
-            binding_map_count = binding_to_service.len(),
-            dep_count = ctx.dependencies.len(),
-            "ApplicationBuilder: edge creation context"
-        );
-
         // Create service-level flow edges from dependencies
         for dep in ctx.dependencies {
             // Resolve to ordered service IDs based on member type
@@ -262,7 +254,6 @@ impl PerspectiveBuilder for ApplicationBuilder {
                         {
                             ids.push(service_id);
                         } else if !binding_to_service.contains_key(binding_id) {
-                            // DIAGNOSTIC
                             tracing::warn!(
                                 dep_id = %dep.id, dep_name = %dep.base.name,
                                 binding_id = %binding_id,
@@ -274,7 +265,6 @@ impl PerspectiveBuilder for ApplicationBuilder {
                 }
             };
 
-            // DIAGNOSTIC
             if is_bindings && service_ids.len() < 2 {
                 tracing::warn!(
                     dep_id = %dep.id, dep_name = %dep.base.name,
@@ -292,7 +282,6 @@ impl PerspectiveBuilder for ApplicationBuilder {
                         let source_has_node = service_node_ids.contains_key(&source_id);
                         let target_has_node = service_node_ids.contains_key(&target_id);
                         if !source_has_node || !target_has_node {
-                            // DIAGNOSTIC
                             tracing::warn!(
                                 dep_id = %dep.id, dep_name = %dep.base.name,
                                 source_id = %source_id, source_has_node,
