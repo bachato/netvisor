@@ -1,7 +1,11 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
-use super::{context::TopologyContext, perspective::PerspectiveBuilder};
+use super::{
+    context::TopologyContext,
+    element_rules::{ElementMatchData, apply_element_rules},
+    perspective::PerspectiveBuilder,
+};
 use crate::server::{
     dependencies::r#impl::{base::DependencyMembers, types::DependencyType},
     services::r#impl::virtualization::ServiceVirtualization,
@@ -211,6 +215,23 @@ impl PerspectiveBuilder for ApplicationBuilder {
                 }
             }
         }
+
+        // Apply element rules (ByServiceCategory, ByTag) to create nested subcontainers
+        let service_lookup: HashMap<Uuid, &crate::server::services::r#impl::base::Service> =
+            eligible_services.iter().map(|s| (s.id, *s)).collect();
+        apply_element_rules(&mut nodes, &grouping.element_rules, |node| {
+            let service = service_lookup.get(&node.id)?;
+            let categories = HashSet::from([service.base.service_definition.category()]);
+            let mut tag_ids: HashSet<Uuid> = service.base.tags.iter().copied().collect();
+            // Inherit host tags for ByTag matching
+            if let Some(host) = ctx.hosts.iter().find(|h| h.id == service.base.host_id) {
+                tag_ids.extend(host.base.tags.iter().copied());
+            }
+            Some(ElementMatchData {
+                categories,
+                tag_ids,
+            })
+        });
 
         // Build binding_id → service_id lookup (for Bindings variant backward compat)
         let binding_to_service: HashMap<Uuid, Uuid> = ctx
@@ -508,8 +529,8 @@ mod tests {
             &GroupingConfig::from_request_options(&options.request),
         );
 
-        // 3 containers + 3 elements
-        assert_eq!(nodes.len(), 6);
+        // 3 containers + 3 elements + 1 nested subcontainer (ReverseProxy matches default ByServiceCategory rule)
+        assert_eq!(nodes.len(), 7);
 
         // 2 request path edges: svc1→svc2, svc2→svc3
         let flow_edges: Vec<&Edge> = edges

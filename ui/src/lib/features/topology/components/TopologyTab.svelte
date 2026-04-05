@@ -23,12 +23,13 @@
 		selectedNodes,
 		consumePreferredNetwork,
 		activePerspective,
+		topologyOptions,
 		updateTopologyOptions
 	} from '../queries';
 	import { makeGraphRule } from '../types/grouping';
 	import type { Topology } from '../types/base';
 	import TopologyModal from './TopologyModal.svelte';
-	import { newNodeIds } from '../interactions';
+	import { newNodeIds, updateTagFilter } from '../interactions';
 	import { getTopologyState } from '../state';
 	import StateBadge from './StateBadge.svelte';
 	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
@@ -126,6 +127,11 @@
 	let currentTopology = $derived(
 		$selectedTopologyId ? topologiesData.find((t) => t.id === $selectedTopologyId) : null
 	);
+
+	// Update tag filter stores when topology or options change (always-mounted, unlike OptionsContent)
+	$effect(() => {
+		updateTagFilter(currentTopology, $topologyOptions.local.tag_filter, $activePerspective);
+	});
 
 	// Find active discovery session for current topology's network
 	let activeSession = $derived(

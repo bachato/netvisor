@@ -4,10 +4,9 @@
 		updateTopologyOptions,
 		selectedTopologyId,
 		useTopologiesQuery,
-		autoRebuild,
-		activePerspective
+		autoRebuild
 	} from '../../../queries';
-	import { updateTagFilter, hoveredEdgeType, GENERIC_SENTINEL } from '../../../interactions';
+	import { hoveredEdgeType, GENERIC_SENTINEL } from '../../../interactions';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '../../../state';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { Color } from '$lib/shared/utils/styling';
@@ -187,11 +186,6 @@
 	function handleEdgeTypeHoverEnd() {
 		hoveredEdgeType.set(null);
 	}
-
-	// Update tag filter stores when topology or options change
-	$effect(() => {
-		updateTagFilter(topology, $topologyOptions.local.tag_filter, $activePerspective);
-	});
 
 	// Build categories with colors from services present in the topology
 	let serviceCategoriesWithColors = $derived.by(() => {
