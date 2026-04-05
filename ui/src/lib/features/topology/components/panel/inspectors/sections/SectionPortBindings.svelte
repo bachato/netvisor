@@ -40,7 +40,7 @@
 			{#each portBindings as { binding, port } (binding.id)}
 				<div class="flex items-center gap-2 text-sm">
 					<span class="text-primary font-mono">
-						{port ? `${port.port_number}/${port.protocol.toLowerCase()}` : binding.port_id}
+						{port ? `${port.number}/${port.protocol.toLowerCase()}` : binding.port_id}
 					</span>
 					{#if port?.description}
 						<span class="text-tertiary truncate">{port.description}</span>
