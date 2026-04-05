@@ -47,7 +47,7 @@
 	onTabChange={handleTabChange}
 	fixedHeight={true}
 >
-	<div class="p-6">
+	<div class="overflow-y-auto p-6">
 		{#if activeTab === 'define'}
 			<DefineGroupsStep {appGroupTags} />
 		{:else if activeTab === 'assign'}

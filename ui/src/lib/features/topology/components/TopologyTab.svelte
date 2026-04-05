@@ -418,10 +418,7 @@
 
 	function handleWizardClose() {
 		wizardActive = false;
-		if (appGroupTags.length === 0) {
-			// No groups created — switch back to L3
-			activePerspective.set('l3_logical');
-		}
+		activePerspective.set('L3Logical');
 	}
 
 	function handleWizardComplete() {

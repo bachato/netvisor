@@ -105,14 +105,13 @@
 			120deg,
 			transparent 0%,
 			transparent 30%,
-			rgba(255, 255, 255, 0.25) 45%,
-			rgba(255, 255, 255, 0.35) 50%,
-			rgba(255, 255, 255, 0.25) 55%,
+			rgba(255, 255, 255, 0.08) 45%,
+			rgba(255, 255, 255, 0.12) 50%,
+			rgba(255, 255, 255, 0.08) 55%,
 			transparent 70%,
 			transparent 100%
 		);
 		transform: translateX(-100%);
-		animation: tag-sheen 0.8s ease-out 0.3s forwards;
 		pointer-events: none;
 	}
 
@@ -132,11 +131,11 @@
 	@keyframes tag-sheen-hover {
 		from {
 			transform: translateX(-100%);
-			opacity: 0.7;
+			opacity: 0.4;
 		}
 		to {
 			transform: translateX(100%);
-			opacity: 0.7;
+			opacity: 0.4;
 		}
 	}
 </style>

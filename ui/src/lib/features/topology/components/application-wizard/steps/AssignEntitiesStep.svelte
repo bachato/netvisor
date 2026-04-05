@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { ChevronDown, ChevronRight } from 'lucide-svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
 	import ListSelectItem from '$lib/shared/components/forms/selection/ListSelectItem.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
@@ -34,6 +36,17 @@
 
 	// Selection state
 	let selectedHosts: Host[] = $state([]);
+
+	// Expanded hosts (services visible)
+	const expandedHostIds = new SvelteSet<string>();
+
+	function toggleExpanded(hostId: string) {
+		if (expandedHostIds.has(hostId)) {
+			expandedHostIds.delete(hostId);
+		} else {
+			expandedHostIds.add(hostId);
+		}
+	}
 
 	function getHostContext(host: Host): HostDisplayContext {
 		const hostServices = allServices.filter((s) => s.host_id === host.id);
@@ -94,16 +107,35 @@
 				{@const host = item}
 				{@const hostServices = allServices.filter((s) => s.host_id === host.id)}
 				{#if hostServices.length > 0}
-					<div class="mt-2 w-full space-y-1 border-t border-gray-200 pt-2 dark:border-gray-700">
-						{#each hostServices as service (service.id)}
-							<div class="pl-8">
-								<ListSelectItem
-									item={service}
-									context={getServiceContext()}
-									displayComponent={ServiceDisplay}
-								/>
+					<div class="mt-2 w-full border-t border-gray-200 pt-2 dark:border-gray-700">
+						<button
+							type="button"
+							class="text-tertiary flex items-center gap-1 text-xs"
+							onclick={(e) => {
+								e.stopPropagation();
+								toggleExpanded(host.id);
+							}}
+						>
+							{#if expandedHostIds.has(host.id)}
+								<ChevronDown class="h-3.5 w-3.5" />
+							{:else}
+								<ChevronRight class="h-3.5 w-3.5" />
+							{/if}
+							{hostServices.length} services
+						</button>
+						{#if expandedHostIds.has(host.id)}
+							<div class="mt-1 space-y-1">
+								{#each hostServices as service (service.id)}
+									<div class="pl-6">
+										<ListSelectItem
+											item={service}
+											context={getServiceContext()}
+											displayComponent={ServiceDisplay}
+										/>
+									</div>
+								{/each}
 							</div>
-						{/each}
+						{/if}
 					</div>
 				{/if}
 			{/snippet}
