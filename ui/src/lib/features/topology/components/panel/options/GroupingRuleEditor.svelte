@@ -52,10 +52,17 @@
 		($topologyOptions.request.container_rules as ContainerGraphRule[] | undefined) ?? []
 	);
 
-	// Element rules from options
-	let elementRules = $derived(
+	// Element rules from options (committed state)
+	let committedElementRules = $derived(
 		($topologyOptions.request.element_rules as ElementGraphRule[] | undefined) ?? []
 	);
+
+	// Pending edits buffer: used while an editor is open so individual toggles
+	// don't trigger rebuilds. Flushed to the store on checkmark close.
+	let pendingElementRules = $state<ElementGraphRule[] | null>(null);
+
+	// Active rules: pending edits if editing, otherwise committed
+	let elementRules = $derived(pendingElementRules ?? committedElementRules);
 
 	// Editing state tracked by rule UUID
 	let editingElementId = $state<string | null>(null);
@@ -246,9 +253,15 @@
 		const wasEditing = editingElementId === ruleId;
 		editingElementId = wasEditing ? null : ruleId;
 
-		// Closing editor: re-apply current rules to ensure rebuild fires
 		if (wasEditing) {
-			updateElementRules([...elementRules]);
+			// Closing editor: flush pending edits to store (triggers rebuild)
+			if (pendingElementRules) {
+				updateElementRules(pendingElementRules);
+				pendingElementRules = null;
+			}
+		} else {
+			// Opening editor: start buffering edits
+			pendingElementRules = [...elementRules];
 		}
 	}
 
@@ -268,13 +281,19 @@
 		return isElementEditing(item);
 	}
 
+	function bufferElementEdit(updater: (rules: ElementGraphRule[]) => ElementGraphRule[]) {
+		pendingElementRules = updater(elementRules);
+	}
+
 	function handleElementTitleChange(index: number, title: string | null) {
-		const newRules = [...elementRules];
-		newRules[index] = {
-			...newRules[index],
-			rule: setElementRuleTitle(newRules[index].rule, title)
-		};
-		updateElementRules(newRules);
+		bufferElementEdit((rules) => {
+			const newRules = [...rules];
+			newRules[index] = {
+				...newRules[index],
+				rule: setElementRuleTitle(newRules[index].rule, title)
+			};
+			return newRules;
+		});
 	}
 
 	function handleTagToggle(index: number, tagId: string) {
@@ -283,12 +302,14 @@
 			const current = item.rule.ByTag.tag_ids;
 			const idx = current.indexOf(tagId);
 			const newTagIds = idx === -1 ? [...current, tagId] : current.filter((id) => id !== tagId);
-			const newRules = [...elementRules];
-			newRules[index] = {
-				...item,
-				rule: { ByTag: { ...item.rule.ByTag, tag_ids: newTagIds } }
-			};
-			updateElementRules(newRules);
+			bufferElementEdit((rules) => {
+				const newRules = [...rules];
+				newRules[index] = {
+					...item,
+					rule: { ByTag: { ...item.rule.ByTag, tag_ids: newTagIds } }
+				};
+				return newRules;
+			});
 		}
 	}
 
@@ -299,12 +320,16 @@
 			const idx = current.indexOf(category);
 			const newCategories: ServiceCategory[] =
 				idx === -1 ? [...current, category] : current.filter((c) => c !== category);
-			const newRules = [...elementRules];
-			newRules[index] = {
-				...item,
-				rule: { ByServiceCategory: { ...item.rule.ByServiceCategory, categories: newCategories } }
-			};
-			updateElementRules(newRules);
+			bufferElementEdit((rules) => {
+				const newRules = [...rules];
+				newRules[index] = {
+					...item,
+					rule: {
+						ByServiceCategory: { ...item.rule.ByServiceCategory, categories: newCategories }
+					}
+				};
+				return newRules;
+			});
 		}
 	}
 </script>
