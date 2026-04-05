@@ -124,7 +124,7 @@
 	$: hiddenCount = tags.length - visibleTagCount;
 </script>
 
-<div class="flex min-w-0 items-center gap-3">
+<div class="list-select-item-container flex min-w-0 items-center gap-3">
 	<!-- Icon -->
 	{#if icon}
 		<div class="flex h-7 w-7 flex-shrink-0 items-center justify-center">
@@ -185,30 +185,30 @@
 		{#if description.length > 0}
 			<span class="text-tertiary mt-1 block truncate text-xs">{description}</span>
 		{/if}
-		{#if (showEditableDescription && descriptionOnSave) || (showTagPicker && tagPickerProps && (!tagPickerDisabled || tagPickerProps.selectedTagIds.length > 0))}
-			<div class="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
-				{#if showTagPicker && tagPickerProps && (!tagPickerDisabled || tagPickerProps.selectedTagIds.length > 0)}
-					<div class="flex items-start gap-1.5">
-						<span class="text-tertiary shrink-0 text-xs leading-5">Tags:</span>
-						<TagPickerInline
-							selectedTagIds={tagPickerProps.selectedTagIds}
-							entityId={tagPickerProps.entityId}
-							entityType={tagPickerProps.entityType}
-							disabled={tagPickerDisabled}
-							availableTags={tagPickerProps.availableTags}
-						/>
-					</div>
-				{/if}
-				{#if showEditableDescription && descriptionOnSave}
-					<InlineDescription
-						value={descriptionValue}
-						editable={!descriptionDisabled}
-						onSave={descriptionOnSave}
-					/>
-				{/if}
+		{#if showEditableDescription && descriptionOnSave}
+			<div class="mt-2 border-t border-gray-700/50 pt-2">
+				<InlineDescription
+					value={descriptionValue}
+					editable={!descriptionDisabled}
+					onSave={descriptionOnSave}
+				/>
 			</div>
 		{/if}
 	</div>
+
+	<!-- Tag picker as direct child for container query positioning -->
+	{#if showTagPicker && tagPickerProps && (!tagPickerDisabled || tagPickerProps.selectedTagIds.length > 0)}
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div class="tag-picker-section flex items-start gap-1.5" onclick={(e) => e.stopPropagation()}>
+			<TagPickerInline
+				selectedTagIds={tagPickerProps.selectedTagIds}
+				entityId={tagPickerProps.entityId}
+				entityType={tagPickerProps.entityType}
+				disabled={tagPickerDisabled}
+				availableTags={tagPickerProps.availableTags}
+			/>
+		</div>
+	{/if}
 </div>
 
 <!-- Hidden measurement container -->
@@ -228,3 +228,30 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	.list-select-item-container {
+		container-type: inline-size;
+		flex-wrap: wrap;
+	}
+
+	/* Default (narrow): tag picker takes full width below */
+	.list-select-item-container :global(.tag-picker-section) {
+		width: 100%;
+		border-top: 1px solid rgb(55 65 81 / 0.5);
+		padding-top: 0.5rem;
+		margin-top: 0.25rem;
+	}
+
+	/* Wide: tag picker sits inline at the end */
+	@container (min-width: 500px) {
+		.list-select-item-container :global(.tag-picker-section) {
+			width: auto;
+			border-top: none;
+			padding-top: 0;
+			margin-top: 0;
+			margin-left: auto;
+			flex-shrink: 0;
+		}
+	}
+</style>
