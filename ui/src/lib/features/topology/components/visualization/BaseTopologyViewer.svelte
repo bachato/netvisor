@@ -154,10 +154,15 @@
 	let prevPerspective = get(activePerspective);
 
 	function getStructureKey(topo: Topology): string {
-		return `${topo.nodes.length}:${topo.edges.length}:${topo.nodes
-			.map((n) => n.id)
+		// Include container assignments so membership changes (element rules) trigger re-layout
+		const nodeKeys = topo.nodes
+			.map((n) => {
+				const parentId = n.node_type === 'Element' ? n.container_id : n.parent_container_id;
+				return `${n.id}@${parentId ?? ''}`;
+			})
 			.sort()
-			.join(',')}`;
+			.join(',');
+		return `${topo.nodes.length}:${topo.edges.length}:${nodeKeys}`;
 	}
 
 	// Clear expanded bundles when bundling is toggled off
