@@ -402,7 +402,7 @@ mod tests {
     use crate::server::tags::r#impl::base::{Tag, TagBase};
     use crate::server::topology::service::context::TopologyContext;
     use crate::server::topology::types::base::TopologyOptions;
-    use crate::server::topology::types::grouping::ElementRule;
+    use crate::server::topology::types::grouping::{ElementRule, GraphRule};
     use chrono::Utc;
 
     /// Test service definition that returns ReverseProxy category
