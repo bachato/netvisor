@@ -770,6 +770,7 @@ impl DiscoveryService {
         Ok(
             crate::server::daemons::r#impl::api::DaemonDiscoveryRequest {
                 session_id: session.session_id,
+                discovery_id: session.discovery_id.unwrap_or_default(),
                 discovery_type: session.discovery_type.clone(),
                 credential_mappings,
             },
@@ -960,6 +961,14 @@ impl DiscoveryService {
                 .or_default()
                 .push(update.session_id);
             drop(daemon_sessions);
+
+            // Track in discovery_sessions map so concurrent session guard works
+            if let Some(discovery_id) = update.discovery_id {
+                self.discovery_sessions
+                    .write()
+                    .await
+                    .insert(discovery_id, update.session_id);
+            }
 
             // Insert the session
             e.insert(update.clone());

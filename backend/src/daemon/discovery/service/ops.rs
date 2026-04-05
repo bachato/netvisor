@@ -314,6 +314,7 @@ impl DiscoveryOps {
             daemon_id,
             started_at: Some(Utc::now()),
             discovery_type: request.discovery_type.clone(),
+            discovery_id: request.discovery_id,
         };
 
         let session = super::base::DiscoverySession::new(session_info, gateway_ips);

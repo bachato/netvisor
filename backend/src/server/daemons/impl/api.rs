@@ -81,6 +81,9 @@ pub struct DaemonDiscoveryRequest {
     /// Generic credential mappings for unified discovery. Old daemons ignore this field.
     #[serde(default)]
     pub credential_mappings: Vec<CredentialMapping<CredentialQueryPayload>>,
+    /// The discovery configuration this session belongs to. Old daemons ignore this field.
+    #[serde(default)]
+    pub discovery_id: Uuid,
 }
 
 impl DaemonDiscoveryRequest {
@@ -99,6 +102,7 @@ impl DaemonDiscoveryRequest {
             "session_id": self.session_id,
             "discovery_type": self.discovery_type,
             "credential_mappings": self.credential_mappings,
+            "discovery_id": self.discovery_id,
         })
     }
 }
@@ -109,6 +113,7 @@ impl From<DiscoveryUpdatePayload> for DaemonDiscoveryRequest {
             session_id: payload.session_id,
             discovery_type: payload.discovery_type,
             credential_mappings: vec![],
+            discovery_id: payload.discovery_id.unwrap_or_default(),
         }
     }
 }
@@ -182,7 +187,7 @@ impl DiscoveryUpdatePayload {
             finished_at: update.finished_at,
             hosts_discovered: None,
             estimated_remaining_secs: None,
-            discovery_id: None,
+            discovery_id: Some(info.discovery_id),
         }
     }
 
