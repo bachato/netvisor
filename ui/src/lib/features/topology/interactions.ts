@@ -319,13 +319,51 @@ export function updateConnectedNodes(
 			for (const id of contents.subcontainerIds) connected.add(id);
 		}
 
+		// DEBUG: trace edge matching
+		console.log('[highlight-debug] selectedNode.id:', selectedNode.id);
+		console.log('[highlight-debug] allEdges count:', allEdges.length);
+		console.log('[highlight-debug] hiddenEdgeTypes:', hiddenEdgeTypes);
+
 		for (const edge of allEdges) {
 			const edgeData = edge.data as TopologyEdge | undefined;
 			if (!edgeData) continue;
 
 			// Skip edges that are disabled (perspective-level) or hidden (user toggle)
-			if (classifyEdge(edgeData) === 'disabled') continue;
-			if (hiddenEdgeTypes?.includes(edgeData.edge_type)) continue;
+			const classification = classifyEdge(edgeData);
+			if (classification === 'disabled') {
+				console.log(
+					'[highlight-debug] SKIP disabled edge:',
+					edgeData.edge_type,
+					edgeData.source,
+					'->',
+					edgeData.target
+				);
+				continue;
+			}
+			if (hiddenEdgeTypes?.includes(edgeData.edge_type)) {
+				console.log(
+					'[highlight-debug] SKIP hidden edge:',
+					edgeData.edge_type,
+					edgeData.source,
+					'->',
+					edgeData.target
+				);
+				continue;
+			}
+
+			const isBundle = (edgeData as Record<string, unknown>).isBundle;
+			console.log(
+				'[highlight-debug] edge:',
+				edgeData.edge_type,
+				'src:',
+				edgeData.source,
+				'tgt:',
+				edgeData.target,
+				'classification:',
+				classification,
+				'isBundle:',
+				isBundle
+			);
 
 			// Add directly connected nodes
 			if (edgeData.source === selectedNode.id) {
@@ -366,6 +404,7 @@ export function updateConnectedNodes(
 			}
 		}
 
+		console.log('[highlight-debug] connected set:', [...connected]);
 		connectedNodeIds.set(connected);
 		return;
 	}
