@@ -445,17 +445,9 @@
 					prevExpandedPortIds = new Set(currentExpandedPorts);
 				}
 
-				// Subgroup collapse/expand is handled locally by the graph's reflowChildren
-				// — no separate detection needed. The syncCollapseState + reflowChildren
-				// already updated positions when collapseChanged was true.
-				if (collapseChanged && !isNewStructure && layoutGraph) {
-					// Reflow all containers that might be affected
-					for (const container of layoutGraph.containers.values()) {
-						if (!container.collapsed && container.childContainers.length > 0) {
-							container.reflowChildren();
-						}
-					}
-				}
+				// Subgroup collapse/expand is handled by syncCollapseState which calls
+				// collapse()/expand() with proper targeted reflowChildren(changedChildId).
+				// No additional blanket reflow needed here.
 
 				let layoutResult = layoutGraph?.toLayoutResult() ?? {
 					nodePositions: new Map(),

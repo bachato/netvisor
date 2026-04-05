@@ -418,7 +418,11 @@ export class LayoutGraph {
 		for (const container of this.containers.values()) {
 			const shouldBeCollapsed = externalCollapsed.has(container.id);
 			if (container.collapsed !== shouldBeCollapsed) {
-				container.collapsed = shouldBeCollapsed;
+				if (shouldBeCollapsed) {
+					this.collapse(container.id);
+				} else {
+					this.expand(container.id);
+				}
 				changed = true;
 			}
 		}
