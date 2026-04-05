@@ -8,7 +8,7 @@
 		ElementRenderContext,
 		ContainerRenderContext
 	} from '$lib/features/topology/resolvers';
-	import type { EntityDiscriminants } from '$lib/features/tags/queries';
+	import { useTagsQuery, type EntityDiscriminants } from '$lib/features/tags/queries';
 	import { activePerspective } from '$lib/features/topology/queries';
 	import { getInspectorConfig } from '$lib/features/topology/components/panel/inspectors/perspective-config';
 	import { concepts } from '$lib/shared/stores/metadata';
@@ -72,8 +72,14 @@
 		getInspectorConfig($activePerspective).show_application_group_picker && entityType === 'Service'
 	);
 
-	// App-group tags from topology entity_tags
-	let entityTags = $derived(topology?.entity_tags ?? []);
+	// Merge topology entity_tags with tags query cache for newly created tags
+	const tagsQuery = useTagsQuery();
+	let entityTags = $derived.by(() => {
+		const topoTags = topology?.entity_tags ?? [];
+		const cachedTags = tagsQuery.data ?? [];
+		const topoIds = new Set(topoTags.map((t) => t.id));
+		return [...topoTags, ...cachedTags.filter((t) => !topoIds.has(t.id))];
+	});
 	let appGroupTags = $derived(entityTags.filter((t) => t.is_application_group));
 	let appGroupTagIds = $derived(new Set(appGroupTags.map((t) => t.id)));
 
@@ -139,7 +145,7 @@
 			{entityId}
 			{entityType}
 			disabled={!editState.isEditable}
-			availableTags={isReadonly ? topology.entity_tags : nonAppGroupTags}
+			availableTags={isReadonly ? entityTags : nonAppGroupTags}
 		/>
 	</div>
 

@@ -21,7 +21,11 @@
 	import { computeCommonTags } from '$lib/shared/utils/tags';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
-	import { useBulkAddTagMutation, useBulkRemoveTagMutation } from '$lib/features/tags/queries';
+	import {
+		useTagsQuery,
+		useBulkAddTagMutation,
+		useBulkRemoveTagMutation
+	} from '$lib/features/tags/queries';
 	import {
 		useCreateDependencyMutation,
 		createEmptyDependencyFormData
@@ -131,8 +135,14 @@
 		return topology_multiSelectStaleHint();
 	});
 
-	// App-group tag analysis — read from topology entity_tags
-	let topoEntityTags = $derived(topology?.entity_tags ?? []);
+	// Merge topology entity_tags with tags query cache for newly created tags
+	const tagsQuery = useTagsQuery();
+	let topoEntityTags = $derived.by(() => {
+		const topoTags = topology?.entity_tags ?? [];
+		const cachedTags = tagsQuery.data ?? [];
+		const topoIds = new Set(topoTags.map((t) => t.id));
+		return [...topoTags, ...cachedTags.filter((t) => !topoIds.has(t.id))];
+	});
 
 	let appGroupTagIds = $derived(
 		topoEntityTags.filter((t) => t.is_application_group).map((t) => t.id)
