@@ -603,27 +603,6 @@ function loadOptionsFromStorage(): PerPerspectiveOptions {
 				return migrated;
 			}
 
-			// Migration: if stored data uses old snake_case perspective keys, remap
-			const snakeToId: Record<string, TopologyPerspective> = {
-				l2_physical: 'L2Physical',
-				l3_logical: 'L3Logical',
-				infrastructure: 'Infrastructure',
-				application: 'Application'
-			};
-			const hasSnakeKeys = Object.keys(parsed).some((k) => k in snakeToId);
-			if (hasSnakeKeys) {
-				const migrated: PerPerspectiveOptions = { ...defaults };
-				for (const [oldKey, newKey] of Object.entries(snakeToId)) {
-					if (parsed[oldKey]) {
-						migrated[newKey] = deepmerge(defaults[newKey], parsed[oldKey], {
-							arrayMerge: (destinationArray, sourceArray) =>
-								sourceArray.length > 0 ? sourceArray : destinationArray
-						});
-					}
-				}
-				return migrated;
-			}
-
 			// Per-perspective format: deep merge each perspective with its defaults
 			const result = { ...defaults };
 			for (const perspective of ALL_PERSPECTIVES) {
