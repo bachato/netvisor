@@ -113,25 +113,21 @@
 	let discoveryColor = $derived(entities.getColorHelper('Discovery'));
 
 	// Perspective selector — hardcoded to L3 + Application for now
-	const perspectiveIdMap: Record<string, string> = {
-		l3_logical: 'L3Logical',
-		application: 'Application'
-	};
 	const perspectiveOptions = [
 		{
-			value: 'l3_logical',
-			label: topology_perspectiveL3(),
-			icon: perspectives.getIconComponent('L3Logical')
+			value: 'L3Logical',
+			label: '',
+			icon: perspectives.getIconComponent('L3Logical'),
+			tooltip: topology_perspectiveL3()
 		},
 		{
-			value: 'application',
-			label: common_application(),
-			icon: perspectives.getIconComponent('Application')
+			value: 'Application',
+			label: '',
+			icon: perspectives.getIconComponent('Application'),
+			tooltip: common_application()
 		}
 	];
-	let perspectiveColorStyle = $derived(
-		perspectives.getColorHelper(perspectiveIdMap[$activePerspective] ?? 'L3Logical')
-	);
+	let perspectiveColorStyle = $derived(perspectives.getColorHelper($activePerspective));
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
@@ -562,6 +558,7 @@
 							options={perspectiveOptions}
 							selected={$activePerspective}
 							onchange={(value) => activePerspective.set(value)}
+							iconSize="lg"
 						/>
 					{/if}
 				{/if}

@@ -131,33 +131,24 @@ impl EdgeBuilder {
                         let is_multi_hop =
                             ctx.edge_is_multi_hop(&origin_interface.id, first_interface_id);
 
-                        if let Some((source_handle, target_handle)) =
-                            EdgeBuilder::determine_interface_handles(
-                                ctx,
-                                &origin_interface.id,
-                                first_interface_id,
-                                is_multi_hop,
-                            )
-                        {
-                            docker_bridge_host_subnet_id_to_group_on
-                                .entry(host.id)
-                                .or_insert(*first_subnet_id);
+                        docker_bridge_host_subnet_id_to_group_on
+                            .entry(host.id)
+                            .or_insert(*first_subnet_id);
 
-                            return vec![Edge {
-                                id: Uuid::new_v4(),
-                                source: origin_interface.id,
-                                target: *first_subnet_id,
-                                edge_type: EdgeType::ServiceVirtualization {
-                                    containerizing_service_id: s.id,
-                                    host_id: host.id,
-                                },
-                                label: Some(format!("{} @ {}", s.base.name, host.base.name)),
-                                source_handle,
-                                target_handle,
-                                is_multi_hop,
-                                classification: EdgeClassification::default(),
-                            }];
-                        }
+                        return vec![Edge {
+                            id: Uuid::new_v4(),
+                            source: origin_interface.id,
+                            target: *first_subnet_id,
+                            edge_type: EdgeType::ServiceVirtualization {
+                                containerizing_service_id: s.id,
+                                host_id: host.id,
+                            },
+                            label: Some(format!("{} @ {}", s.base.name, host.base.name)),
+                            source_handle: EdgeHandle::Bottom,
+                            target_handle: EdgeHandle::Top,
+                            is_multi_hop,
+                            classification: EdgeClassification::default(),
+                        }];
                     }
                 } else {
                     return docker_service_to_containerized_service_ids
@@ -179,14 +170,6 @@ impl EdgeBuilder {
                                 &container_binding_interface_id,
                             );
 
-                            let (source_handle, target_handle) =
-                                EdgeBuilder::determine_interface_handles(
-                                    ctx,
-                                    &origin_interface.id,
-                                    &container_binding_interface_id,
-                                    is_multi_hop,
-                                )?;
-
                             Some(Edge {
                                 id: Uuid::new_v4(),
                                 source: origin_interface.id,
@@ -196,8 +179,8 @@ impl EdgeBuilder {
                                     host_id: host.id,
                                 },
                                 label: Some(format!("{} on {}", s.base.name, host.base.name)),
-                                source_handle,
-                                target_handle,
+                                source_handle: EdgeHandle::Bottom,
+                                target_handle: EdgeHandle::Top,
                                 is_multi_hop,
                                 classification: EdgeClassification::default(),
                             })
@@ -268,14 +251,6 @@ impl EdgeBuilder {
                                 let is_multi_hop =
                                     ctx.edge_is_multi_hop(proxmox_service_interface_id, &i.id);
 
-                                let (source_handle, target_handle) =
-                                    EdgeBuilder::determine_interface_handles(
-                                        ctx,
-                                        proxmox_service_interface_id,
-                                        &i.id,
-                                        is_multi_hop,
-                                    )?;
-
                                 return Some(Edge {
                                     id: Uuid::new_v4(),
                                     source: *proxmox_service_interface_id,
@@ -284,8 +259,8 @@ impl EdgeBuilder {
                                         vm_service_id: *proxmox_service_id,
                                     },
                                     label: None,
-                                    source_handle,
-                                    target_handle,
+                                    source_handle: EdgeHandle::Bottom,
+                                    target_handle: EdgeHandle::Top,
                                     is_multi_hop,
                                     classification: EdgeClassification::default(),
                                 });
@@ -336,14 +311,6 @@ impl EdgeBuilder {
                             let is_multi_hop =
                                 ctx.edge_is_multi_hop(&origin_interface.id, &interface.id);
 
-                            let (source_handle, target_handle) =
-                                EdgeBuilder::determine_interface_handles(
-                                    ctx,
-                                    &origin_interface.id,
-                                    &interface.id,
-                                    is_multi_hop,
-                                )?;
-
                             // Hide label if both interfaces are on the same subnet
                             let label =
                                 if origin_interface.base.subnet_id == interface.base.subnet_id {
@@ -358,8 +325,8 @@ impl EdgeBuilder {
                                 target: interface.id,
                                 edge_type: EdgeType::Interface { host_id: host.id },
                                 label,
-                                source_handle,
-                                target_handle,
+                                source_handle: EdgeHandle::Bottom,
+                                target_handle: EdgeHandle::Top,
                                 is_multi_hop,
                                 classification: EdgeClassification::default(),
                             })
@@ -407,13 +374,6 @@ impl EdgeBuilder {
                 let is_multi_hop =
                     ctx.edge_is_multi_hop(&source_interface_id, &target_interface_id);
 
-                let (source_handle, target_handle) = EdgeBuilder::determine_interface_handles(
-                    ctx,
-                    &source_interface_id,
-                    &target_interface_id,
-                    is_multi_hop,
-                )?;
-
                 // Build label from port descriptions: "Gi0/1 ↔ Gi0/2"
                 let label = Some(format!(
                     "{} ↔ {}",
@@ -431,30 +391,13 @@ impl EdgeBuilder {
                         protocol: DiscoveryProtocol::LLDP, // TODO: Support CDP when implemented
                     },
                     label,
-                    source_handle,
-                    target_handle,
+                    source_handle: EdgeHandle::Bottom,
+                    target_handle: EdgeHandle::Top,
                     is_multi_hop,
                     classification: EdgeClassification::default(),
                 })
             })
             .collect()
-    }
-
-    /// Figure out handles for two interfaces
-    pub fn determine_interface_handles(
-        ctx: &TopologyContext,
-        source_interface_id: &Uuid,
-        target_interface_id: &Uuid,
-        is_multi_hop: bool,
-    ) -> Option<(EdgeHandle, EdgeHandle)> {
-        let source_subnet = ctx.get_subnet_from_interface_id(*source_interface_id)?;
-        let target_subnet = ctx.get_subnet_from_interface_id(*target_interface_id)?;
-
-        Some(EdgeHandle::from_subnet_layers(
-            source_subnet,
-            target_subnet,
-            is_multi_hop,
-        ))
     }
 
     /// Add edges to a petgraph Graph
@@ -501,13 +444,6 @@ impl EdgeBuilder {
 
         let is_multi_hop = ctx.edge_is_multi_hop(&source_interface, &target_interface);
 
-        let (source_handle, target_handle) = EdgeBuilder::determine_interface_handles(
-            ctx,
-            &source_interface,
-            &target_interface,
-            is_multi_hop,
-        )?;
-
         // If edge is intra-subnet, don't label - gets too messy
         let label = if ctx
             .get_subnet_from_interface_id(source_interface)
@@ -538,8 +474,8 @@ impl EdgeBuilder {
                 },
             },
             label,
-            source_handle,
-            target_handle,
+            source_handle: EdgeHandle::Bottom,
+            target_handle: EdgeHandle::Top,
             is_multi_hop,
             classification: EdgeClassification::default(),
         })

@@ -129,12 +129,14 @@ impl GraphBuilder {
 
         let host_has_name = host.base.name != "Unknown Device" && !host.base.name.is_empty();
 
-        // P2: Show docker container header with host name
+        // P2: Show docker container header with service + host name
         if *subnet_type == SubnetType::DockerBridge {
-            let header_text = if host_has_name {
-                Some("Docker @ ".to_owned() + &host.base.name.clone())
+            let docker_service = ctx.get_docker_service_for_host(host.id);
+            let service_name = docker_service.map(|s| s.base.name.as_str());
+
+            let host_label = if host_has_name {
+                host.base.name.clone()
             } else {
-                // Generate a label from non-docker interface, if there is one
                 host_interfaces
                     .iter()
                     .find(|i| {
@@ -142,7 +144,15 @@ impl GraphBuilder {
                             .map(|s| s.base.subnet_type != SubnetType::DockerBridge)
                             .unwrap_or(false)
                     })
-                    .map(|i| "Docker @ ".to_owned() + &i.base.ip_address.to_string())
+                    .map(|i| i.base.ip_address.to_string())
+                    .unwrap_or_default()
+            };
+
+            let header_text = match (service_name, host_label.is_empty()) {
+                (Some(svc), false) => Some(format!("Docker ({svc}) on {host_label}")),
+                (None, false) => Some(format!("Docker @ {host_label}")),
+                (Some(svc), true) => Some(format!("Docker ({svc})")),
+                (None, true) => None,
             };
 
             return header_text;
@@ -322,7 +332,10 @@ impl GraphBuilder {
                         continue;
                     }
 
-                    let group_id = Uuid::new_v4();
+                    let group_id = Uuid::new_v5(
+                        &Uuid::NAMESPACE_OID,
+                        format!("{subnet_id}:{rule_id}").as_bytes(),
+                    );
                     child_nodes.push(Node {
                         id: group_id,
                         node_type: NodeType::Container {
@@ -365,7 +378,10 @@ impl GraphBuilder {
                         continue;
                     }
 
-                    let group_id = Uuid::new_v4();
+                    let group_id = Uuid::new_v5(
+                        &Uuid::NAMESPACE_OID,
+                        format!("{subnet_id}:{rule_id}").as_bytes(),
+                    );
                     child_nodes.push(Node {
                         id: group_id,
                         node_type: NodeType::Container {

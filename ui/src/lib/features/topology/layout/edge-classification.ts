@@ -4,10 +4,11 @@ import type { components } from '$lib/api/schema';
 type EdgeTypeDiscriminants = components['schemas']['EdgeTypeDiscriminants'];
 type TopologyPerspective = components['schemas']['TopologyPerspective'];
 
-export type EdgeClassification = 'primary' | 'overlay';
+export type EdgeClassification = 'primary' | 'overlay' | 'disabled';
 
 /**
- * Classify an edge as primary (affects layout) or overlay (drawn after layout).
+ * Classify an edge as primary (affects layout), overlay (drawn after layout),
+ * or disabled (not shown in this perspective).
  * Uses the backend-provided `classification` field; defaults to overlay if absent.
  */
 export function classifyEdge(edge: TopologyEdge): EdgeClassification {
@@ -21,24 +22,22 @@ export function isOverlayEdge(edge: TopologyEdge): boolean {
 	return classifyEdge(edge) === 'overlay';
 }
 
+export function isDisabledEdge(edge: TopologyEdge): boolean {
+	return classifyEdge(edge) === 'disabled';
+}
+
 /** Returns the edge types that should be hidden by default for a given perspective. */
 export function getDefaultHiddenEdgeTypes(
 	perspective: TopologyPerspective
 ): EdgeTypeDiscriminants[] {
 	switch (perspective) {
-		case 'l3_logical':
-			return [
-				'HostVirtualization',
-				'ServiceVirtualization',
-				'RequestPath',
-				'HubAndSpoke',
-				'PhysicalLink'
-			];
-		case 'l2_physical':
+		case 'L3Logical':
+			return ['HostVirtualization', 'ServiceVirtualization', 'PhysicalLink'];
+		case 'L2Physical':
 			return ['HostVirtualization', 'ServiceVirtualization', 'RequestPath', 'HubAndSpoke'];
-		case 'infrastructure':
+		case 'Infrastructure':
 			return ['RequestPath', 'HubAndSpoke', 'PhysicalLink'];
-		case 'application':
+		case 'Application':
 			return ['HostVirtualization', 'ServiceVirtualization', 'HubAndSpoke', 'PhysicalLink'];
 	}
 }

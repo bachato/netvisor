@@ -5,6 +5,7 @@
 		value: string;
 		label: string;
 		icon?: IconComponent;
+		tooltip?: string;
 	}
 
 	let {
@@ -12,6 +13,7 @@
 		selected,
 		onchange,
 		size = 'sm',
+		iconSize: iconSizeProp,
 		disabled = false,
 		fullWidth = false
 	}: {
@@ -19,12 +21,17 @@
 		selected: string;
 		onchange: (value: string) => void;
 		size?: 'sm' | 'md';
+		iconSize?: 'sm' | 'md' | 'lg';
 		disabled?: boolean;
 		fullWidth?: boolean;
 	} = $props();
 
 	let sizeClasses = $derived(size === 'sm' ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm');
-	let iconSize = $derived(size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4');
+
+	const iconSizeMap = { sm: 'h-3.5 w-3.5', md: 'h-4 w-4', lg: 'h-5 w-5' };
+	let iconSizeClass = $derived(
+		iconSizeProp ? iconSizeMap[iconSizeProp] : size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
+	);
 </script>
 
 <div
@@ -38,6 +45,7 @@
 		<button
 			type="button"
 			{disabled}
+			title={option.tooltip}
 			class="{sizeClasses} flex items-center justify-center gap-1 transition-colors {selected ===
 			option.value
 				? 'bg-blue-600 text-white'
@@ -49,7 +57,7 @@
 		>
 			{#if option.icon}
 				{@const Icon = option.icon}
-				<Icon class={iconSize} />
+				<Icon class={iconSizeClass} />
 			{/if}
 			{#if option.label}
 				{option.label}
