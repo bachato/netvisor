@@ -149,12 +149,16 @@ function buildElkGraph(input: ElkLayoutInput): {
 		}
 	}
 
-	// Build element→container mapping
+	// Build element→root container mapping (resolve through subcontainers)
 	const elementToContainer = new Map<string, string>();
 	for (const node of input.nodes) {
 		if (node.node_type === 'Element') {
-			const parentId = node.container_id ?? node.subnet_id;
-			if (containers.has(parentId)) {
+			let parentId = node.container_id ?? node.subnet_id;
+			if (typeof parentId === 'string' && containers.has(parentId)) {
+				// Walk up to root container for cross-container edge routing
+				while (parentContainerMap.has(parentId)) {
+					parentId = parentContainerMap.get(parentId)!;
+				}
 				elementToContainer.set(node.id, parentId);
 			}
 		}
@@ -269,9 +273,10 @@ function buildElkGraph(input: ElkLayoutInput): {
 		connectedContainers.add(tgt);
 	}
 
-	// Group containers by layer, sorted by layerId
+	// Group root-level containers by layer, sorted by layerId
 	const containersByLayer = new Map<number, string[]>();
 	for (const [id, container] of containers) {
+		if (parentContainerMap.has(id)) continue; // skip subcontainers
 		const layerId = parseInt(container.layoutOptions?.['elk.layered.layering.layerId'] ?? '999');
 		if (!containersByLayer.has(layerId)) containersByLayer.set(layerId, []);
 		containersByLayer.get(layerId)!.push(id);

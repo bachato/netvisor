@@ -346,15 +346,22 @@ mod tests {
     use crate::server::{
         bindings::r#impl::base::{Binding, BindingBase, BindingType},
         dependencies::r#impl::base::{Dependency, DependencyBase, DependencyMembers},
+        hosts::r#impl::base::{Host, HostBase},
         services::r#impl::{
             base::{Service, ServiceBase},
             categories::ServiceCategory,
             definitions::ServiceDefinition,
             patterns::Pattern,
         },
+        shared::types::Color,
+        tags::r#impl::base::{Tag, TagBase},
         topology::{
             service::context::TopologyContext,
-            types::{base::TopologyOptions, grouping::GroupingConfig, nodes::NodeType},
+            types::{
+                base::TopologyOptions,
+                grouping::{ContainerRule, ElementRule, GraphRule, GroupingConfig},
+                nodes::NodeType,
+            },
         },
     };
     use chrono::Utc;
@@ -654,5 +661,285 @@ mod tests {
             1,
             "Should deduplicate consecutive same-service bindings"
         );
+    }
+
+    #[test]
+    fn test_element_rules_across_app_groups() {
+        // 2 hosts with different app-group tags → 2 ApplicationGroup containers
+        // Both services have a shared non-app-group tag "monitoring"
+        // ByTag element rule should create subcontainers in BOTH containers
+        let monitoring_tag_id = Uuid::new_v4();
+        let app_tag_a_id = Uuid::new_v4();
+        let app_tag_b_id = Uuid::new_v4();
+
+        let host_a = Host {
+            id: Uuid::new_v4(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: HostBase {
+                name: "host-a".to_string(),
+                tags: vec![app_tag_a_id],
+                ..Default::default()
+            },
+        };
+        let host_b = Host {
+            id: Uuid::new_v4(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: HostBase {
+                name: "host-b".to_string(),
+                tags: vec![app_tag_b_id],
+                ..Default::default()
+            },
+        };
+
+        let b1 = make_binding(Uuid::nil());
+        let b2 = make_binding(Uuid::nil());
+
+        let mut svc_a = make_service(host_a.id, ServiceCategory::Development, "AppA", vec![b1]);
+        svc_a.base.tags = vec![monitoring_tag_id];
+
+        let mut svc_b = make_service(host_b.id, ServiceCategory::Development, "AppB", vec![b2]);
+        svc_b.base.tags = vec![monitoring_tag_id];
+
+        let app_tag_a = Tag {
+            id: app_tag_a_id,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: TagBase {
+                name: "Group A".to_string(),
+                description: None,
+                color: Color::Blue,
+                organization_id: Uuid::new_v4(),
+                is_application_group: true,
+            },
+        };
+        let app_tag_b = Tag {
+            id: app_tag_b_id,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: TagBase {
+                name: "Group B".to_string(),
+                description: None,
+                color: Color::Green,
+                organization_id: Uuid::new_v4(),
+                is_application_group: true,
+            },
+        };
+
+        let services = vec![svc_a, svc_b];
+        let hosts = vec![host_a, host_b];
+        let tags = vec![app_tag_a, app_tag_b];
+
+        let mut options = TopologyOptions::default();
+        options.request.container_rules = vec![GraphRule::new(ContainerRule::ByApplicationGroup {
+            tag_ids: vec![],
+        })];
+        options.request.element_rules = vec![GraphRule::new(ElementRule::ByTag {
+            tag_ids: vec![monitoring_tag_id],
+            title: Some("Monitored".to_string()),
+        })];
+
+        let ctx = TopologyContext::new(
+            &hosts,
+            &[],
+            &[],
+            &services,
+            &[],
+            &[],
+            &[],
+            &[],
+            &tags,
+            &options,
+        );
+
+        let builder = ApplicationBuilder;
+        let (nodes, _edges) = builder.build(
+            &ctx,
+            &GroupingConfig::from_request_options(&options.request),
+        );
+
+        // 2 AppGroup containers + 2 NestedTag subcontainers + 2 element nodes = 6
+        let containers: Vec<&Node> = nodes
+            .iter()
+            .filter(|n| matches!(n.node_type, NodeType::Container { .. }))
+            .collect();
+        let nested: Vec<&Node> = containers
+            .iter()
+            .filter(|n| {
+                matches!(
+                    n.node_type,
+                    NodeType::Container {
+                        container_type: ContainerType::NestedTag,
+                        ..
+                    }
+                )
+            })
+            .copied()
+            .collect();
+        assert_eq!(
+            containers.len(),
+            4,
+            "Should have 2 AppGroup + 2 NestedTag containers"
+        );
+        assert_eq!(nested.len(), 2, "Should have 2 NestedTag subcontainers");
+
+        // Both services should be inside their respective NestedTag subcontainers
+        let elements: Vec<&Node> = nodes
+            .iter()
+            .filter(|n| matches!(n.node_type, NodeType::Element { .. }))
+            .collect();
+        assert_eq!(elements.len(), 2);
+
+        for element in &elements {
+            if let NodeType::Element { container_id, .. } = &element.node_type {
+                assert!(
+                    nested.iter().any(|n| n.id == *container_id),
+                    "Element {} should be inside a NestedTag subcontainer, but container_id is {}",
+                    element.id,
+                    container_id
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_element_rules_with_host_inherited_tags() {
+        // Scenario from tester: 2 hosts with different app-group tags,
+        // both hosts also have a shared non-app-group tag used in ByTag rule.
+        // Tags are on the HOST, not on the services — tests host tag inheritance.
+        // Also includes default ByServiceCategory rule (matches DNS/ReverseProxy).
+        let monitoring_tag_id = Uuid::new_v4();
+        let app_tag_a_id = Uuid::new_v4();
+        let app_tag_b_id = Uuid::new_v4();
+
+        // Both hosts have the monitoring tag AND their app-group tag
+        let host_a = Host {
+            id: Uuid::new_v4(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: HostBase {
+                name: "host-a".to_string(),
+                tags: vec![app_tag_a_id, monitoring_tag_id],
+                ..Default::default()
+            },
+        };
+        let host_b = Host {
+            id: Uuid::new_v4(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: HostBase {
+                name: "host-b".to_string(),
+                tags: vec![app_tag_b_id, monitoring_tag_id],
+                ..Default::default()
+            },
+        };
+
+        let b1 = make_binding(Uuid::nil());
+        let b2 = make_binding(Uuid::nil());
+
+        // Services do NOT have the monitoring tag — they inherit from hosts
+        let svc_a = make_service(host_a.id, ServiceCategory::Development, "AppA", vec![b1]);
+        let svc_b = make_service(host_b.id, ServiceCategory::Development, "AppB", vec![b2]);
+
+        let app_tag_a = Tag {
+            id: app_tag_a_id,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: TagBase {
+                name: "Group A".to_string(),
+                description: None,
+                color: Color::Blue,
+                organization_id: Uuid::new_v4(),
+                is_application_group: true,
+            },
+        };
+        let app_tag_b = Tag {
+            id: app_tag_b_id,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: TagBase {
+                name: "Group B".to_string(),
+                description: None,
+                color: Color::Green,
+                organization_id: Uuid::new_v4(),
+                is_application_group: true,
+            },
+        };
+
+        let services = vec![svc_a, svc_b];
+        let hosts = vec![host_a, host_b];
+        let tags = vec![app_tag_a, app_tag_b];
+
+        let mut options = TopologyOptions::default();
+        options.request.container_rules = vec![GraphRule::new(ContainerRule::ByApplicationGroup {
+            tag_ids: vec![],
+        })];
+        // Default ByServiceCategory PLUS a ByTag rule
+        options.request.element_rules = vec![
+            GraphRule::new(ElementRule::ByServiceCategory {
+                categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
+                title: Some("Infrastructure".to_string()),
+            }),
+            GraphRule::new(ElementRule::ByTag {
+                tag_ids: vec![monitoring_tag_id],
+                title: Some("Monitored".to_string()),
+            }),
+        ];
+
+        let ctx = TopologyContext::new(
+            &hosts,
+            &[],
+            &[],
+            &services,
+            &[],
+            &[],
+            &[],
+            &[],
+            &tags,
+            &options,
+        );
+
+        let builder = ApplicationBuilder;
+        let (nodes, _edges) = builder.build(
+            &ctx,
+            &GroupingConfig::from_request_options(&options.request),
+        );
+
+        // Neither service is DNS/ReverseProxy, so ByServiceCategory creates nothing.
+        // ByTag should create 2 NestedTag subcontainers (one per AppGroup).
+        let nested_tags: Vec<&Node> = nodes
+            .iter()
+            .filter(|n| {
+                matches!(
+                    n.node_type,
+                    NodeType::Container {
+                        container_type: ContainerType::NestedTag,
+                        ..
+                    }
+                )
+            })
+            .collect();
+        assert_eq!(
+            nested_tags.len(),
+            2,
+            "Should have 2 NestedTag subcontainers (one per AppGroup)"
+        );
+
+        // Both services should be in NestedTag subcontainers
+        let elements: Vec<&Node> = nodes
+            .iter()
+            .filter(|n| matches!(n.node_type, NodeType::Element { .. }))
+            .collect();
+        for element in &elements {
+            if let NodeType::Element { container_id, .. } = &element.node_type {
+                assert!(
+                    nested_tags.iter().any(|n| n.id == *container_id),
+                    "Service {} should be in a NestedTag, but container_id is {}",
+                    element.header.as_deref().unwrap_or("?"),
+                    container_id
+                );
+            }
+        }
     }
 }
