@@ -130,15 +130,23 @@
 					// Service elements: simpler rendering — single service with host name
 					if (elementType === 'Service') {
 						const service = resolved.services[0];
+						const hiddenCategories = $topologyOptions.request.hide_service_categories ?? [];
+						type CategoryType = (typeof hiddenCategories)[number];
+						const isCategoryHidden =
+							service &&
+							hiddenCategories.includes(
+								serviceDefinitions.getCategory(service.service_definition) as CategoryType
+							);
 						return {
 							elementType,
 							footerText: host?.name ?? null,
-							services: service ? [service] : [],
+							services: service && !isCategoryHidden ? [service] : [],
 							hiddenOpenPorts: [],
 							headerText: null,
 							bodyText: service ? null : 'Unknown Service',
-							showServices: !!service,
+							showServices: !!service && !isCategoryHidden,
 							isVirtualized: false,
+							isCategoryHidden: !!isCategoryHidden,
 							interface_id: id
 						} as ElementRenderData;
 					}
@@ -229,10 +237,12 @@
 	});
 
 	// Service-type element nodes should be fully hidden (not faded) when filtered out.
-	// Check both hiddenServices (service tag filter) and hiddenNodes (perspective-aware node hiding).
+	// Check tag filter (hiddenServices/hiddenNodes) and category filter (isCategoryHidden).
 	let shouldHideEntirely = $derived(
 		nodeRenderData?.elementType === 'Service' &&
-			(hiddenServices.has(id) || hiddenNodes.has(nodeRenderData.interface_id))
+			(hiddenServices.has(id) ||
+				hiddenNodes.has(nodeRenderData.interface_id) ||
+				!!nodeRenderData.isCategoryHidden)
 	);
 
 	let nodeOpacity = $derived(shouldFadeOut ? 0.3 : 1);

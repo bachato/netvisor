@@ -26,6 +26,7 @@ export interface ElementRenderData {
 	services: Service[];
 	hiddenOpenPorts: Service[];
 	interface_id: string;
+	isCategoryHidden?: boolean;
 }
 
 // ContainerRenderData removed — ContainerNode now reads icon/color directly
