@@ -12,7 +12,7 @@
 		ContainerRenderContext
 	} from '$lib/features/topology/resolvers';
 	import { inspector_thisEntity, topology_focusNode } from '$lib/paraglide/messages';
-	import { entities, containerTypes } from '$lib/shared/stores/metadata';
+	import { containerTypes } from '$lib/shared/stores/metadata';
 
 	let {
 		node,
@@ -37,8 +37,7 @@
 	// Derive the section label from entity/container type metadata
 	let sectionLabel = $derived.by(() => {
 		if (elementContext) {
-			const name = entities.getName(elementContext.elementType);
-			return inspector_thisEntity({ name });
+			return inspector_thisEntity({ name: elementContext.elementType });
 		}
 		if (containerContext) {
 			const name = containerTypes.getName(containerContext.containerType);
