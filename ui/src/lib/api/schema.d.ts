@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-04T23:12:56.077845Z",
-             *       "id": "5333506f-34be-492e-990a-ba208b1ea680",
+             *       "created_at": "2026-04-05T03:40:33.312737Z",
+             *       "id": "3dba833a-5080-4c17-959a-11fc4fa7f8f6",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-04T23:12:56.077845Z"
+             *       "updated_at": "2026-04-05T03:40:33.312737Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-04T23:12:56.067012Z",
-             *               "id": "27d24a19-de1b-4809-859d-ea68798eebc3",
+             *               "created_at": "2026-04-05T03:40:33.300612Z",
+             *               "id": "29a68b1c-d93d-45da-90b7-9ce2456d261a",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-04T23:12:56.067012Z"
+             *               "updated_at": "2026-04-05T03:40:33.300612Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3172,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Kubernetes",
+             *           "service_definition": "Ring Doorbell",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-04T23:12:56.074665Z",
-             *           "id": "89064592-7800-4eda-9354-13cdce45eeb5",
+             *           "created_at": "2026-04-05T03:40:33.308991Z",
+             *           "id": "ee8ccf70-1ff0-49dd-b1c6-8ef5cf020adb",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-04T23:12:56.074665Z"
+             *           "updated_at": "2026-04-05T03:40:33.308991Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3444,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Kubernetes",
+             *       "service_definition": "Ring Doorbell",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3771,14 +3771,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-04T23:12:56.067221Z",
-         *       "id": "762a3885-fbb1-4978-a1d7-ad1b58df4a92",
+         *       "created_at": "2026-04-05T03:40:33.300807Z",
+         *       "id": "8556e2fb-87fe-42d9-a562-80adac23e852",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-04T23:12:56.067221Z"
+         *       "updated_at": "2026-04-05T03:40:33.300807Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3963,7 +3963,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Kubernetes",
+         *           "service_definition": "Ring Doorbell",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4504,7 +4504,7 @@ export interface components {
          * @description Whether an edge affects layout (primary) or is drawn after layout (overlay)
          * @enum {string}
          */
-        EdgeClassification: "primary" | "overlay";
+        EdgeClassification: "primary" | "overlay" | "disabled";
         /** @enum {string} */
         EdgeHandle: "Top" | "Bottom" | "Left" | "Right";
         /** @enum {string} */
@@ -4799,14 +4799,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-04T23:12:56.066726Z",
-         *               "id": "65e47d4d-3fcf-471b-889a-89fd97007088",
+         *               "created_at": "2026-04-05T03:40:33.300331Z",
+         *               "id": "2b416f6a-0753-4490-855d-40f8e01b5bf9",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-04T23:12:56.066726Z"
+         *               "updated_at": "2026-04-05T03:40:33.300331Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4815,7 +4815,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Kubernetes",
+         *           "service_definition": "Ring Doorbell",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5879,14 +5879,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-04T23:12:56.067149Z",
-         *           "id": "00816499-f54f-4e84-9b61-fe217af07450",
+         *           "created_at": "2026-04-05T03:40:33.300736Z",
+         *           "id": "91ad16aa-3cc5-4123-9e2e-f9c5e4a803f7",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-04T23:12:56.067149Z"
+         *           "updated_at": "2026-04-05T03:40:33.300736Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5895,7 +5895,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Kubernetes",
+         *       "service_definition": "Ring Doorbell",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6273,7 +6273,7 @@ export interface components {
          * @description Which topology perspective is being rendered
          * @enum {string}
          */
-        TopologyPerspective: "l2_physical" | "l3_logical" | "infrastructure" | "application";
+        TopologyPerspective: "L2Physical" | "L3Logical" | "Infrastructure" | "Application";
         /**
          * @description Lightweight request type for topology rebuild/refresh operations.
          *

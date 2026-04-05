@@ -538,7 +538,9 @@
 
 				<!-- Binding selection -->
 				<div class="space-y-2">
-					<span class="text-secondary block text-xs font-medium">{dependencies_serviceBindings()}</span>
+					<span class="text-secondary block text-xs font-medium"
+						>{dependencies_serviceBindings()}</span
+					>
 					<InlineInfo
 						title={dependencies_serviceBindingsInfoTitle()}
 						body={dependencies_serviceBindingsInfoBody()}

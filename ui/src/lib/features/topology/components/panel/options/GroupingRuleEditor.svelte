@@ -106,13 +106,13 @@
 	};
 
 	const CONTAINER_RULE_PERSPECTIVES: Record<string, TopologyPerspective[]> = {
-		BySubnet: ['l3_logical'],
-		ByVirtualizingService: ['l3_logical', 'infrastructure']
+		BySubnet: ['L3Logical'],
+		ByVirtualizingService: ['L3Logical', 'Infrastructure']
 	};
 
 	const ELEMENT_RULE_PERSPECTIVES: Record<string, TopologyPerspective[]> = {
-		ByServiceCategory: ['l3_logical', 'application'],
-		ByTag: ['l2_physical', 'l3_logical', 'infrastructure', 'application']
+		ByServiceCategory: ['L3Logical', 'Application'],
+		ByTag: ['L2Physical', 'L3Logical', 'Infrastructure', 'Application']
 	};
 
 	let currentPerspective = $derived($activePerspective);

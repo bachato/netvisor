@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-04T23:12:56.077926Z",
-              "id": "831611d0-cf35-46a6-9a20-b411ad913386",
+              "created_at": "2026-04-05T03:40:33.312736Z",
+              "id": "2bca2c2e-7188-4932-a69f-4e91c60102da",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T23:12:56.077926Z"
+              "updated_at": "2026-04-05T03:40:33.312736Z"
             }
           },
           "error": {
@@ -10734,14 +10734,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-04T23:12:56.066984Z",
-                      "id": "88a1637f-1a7d-405e-acb4-4a6d840922fb",
+                      "created_at": "2026-04-05T03:40:33.300635Z",
+                      "id": "e3b16b17-4507-4dc8-8101-8456ed3ff850",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-04T23:12:56.066984Z"
+                      "updated_at": "2026-04-05T03:40:33.300635Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10750,7 +10750,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Kubernetes",
+                  "service_definition": "Ring Doorbell",
                   "source": {
                     "type": "Manual"
                   },
@@ -11453,14 +11453,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T23:12:56.074766Z",
-                  "id": "dd3692d0-6b96-44a4-ba28-5cb55527569d",
+                  "created_at": "2026-04-05T03:40:33.309006Z",
+                  "id": "c3c054e3-5888-4e34-8d06-206fd67bcd66",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T23:12:56.074766Z"
+                  "updated_at": "2026-04-05T03:40:33.309006Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11469,7 +11469,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "Ring Doorbell",
               "source": {
                 "type": "Manual"
               },
@@ -12743,14 +12743,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-04T23:12:56.067195Z",
-          "id": "c438ed19-6518-4987-9817-d2216f978daf",
+          "created_at": "2026-04-05T03:40:33.300845Z",
+          "id": "2fb7d169-ffce-4ade-a34d-96690b4621f1",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-04T23:12:56.067195Z"
+          "updated_at": "2026-04-05T03:40:33.300845Z"
         }
       },
       "BindingBase": {
@@ -13266,7 +13266,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "Ring Doorbell",
               "tags": [],
               "virtualization": null
             }
@@ -14775,7 +14775,8 @@
         "description": "Whether an edge affects layout (primary) or is drawn after layout (overlay)",
         "enum": [
           "primary",
-          "overlay"
+          "overlay",
+          "disabled"
         ]
       },
       "EdgeHandle": {
@@ -15763,14 +15764,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-04T23:12:56.066699Z",
-                  "id": "7f268704-9ddf-43e4-8990-829c8bc2b950",
+                  "created_at": "2026-04-05T03:40:33.300337Z",
+                  "id": "08b057a8-ae6b-4615-b1eb-136107957919",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-04T23:12:56.066699Z"
+                  "updated_at": "2026-04-05T03:40:33.300337Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15779,7 +15780,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "Ring Doorbell",
               "source": {
                 "type": "Manual"
               },
@@ -17762,14 +17763,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-04T23:12:56.061584Z",
-                        "id": "e0816355-5ca9-4eff-8f0a-c4c8283eea4a",
+                        "created_at": "2026-04-05T03:40:33.294270Z",
+                        "id": "2c43e1c6-7046-4b6d-a6e1-48e67d1454f1",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-04T23:12:56.061584Z"
+                        "updated_at": "2026-04-05T03:40:33.294270Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17778,7 +17779,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Kubernetes",
+                    "service_definition": "Ring Doorbell",
                     "source": {
                       "type": "Manual"
                     },
@@ -17855,14 +17856,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-04T23:12:56.073856Z",
-                    "id": "31e72dff-6804-4224-b66a-f49f7493631e",
+                    "created_at": "2026-04-05T03:40:33.308031Z",
+                    "id": "4c01fd32-63bf-456e-a125-d62475f231b3",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-04T23:12:56.073856Z"
+                    "updated_at": "2026-04-05T03:40:33.308031Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17871,7 +17872,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Kubernetes",
+                "service_definition": "Ring Doorbell",
                 "source": {
                   "type": "Manual"
                 },
@@ -19062,14 +19063,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-04T23:12:56.067122Z",
-              "id": "3af1779c-2ba1-4e04-aa12-5c0b0135429e",
+              "created_at": "2026-04-05T03:40:33.300771Z",
+              "id": "1709ad99-45a3-4d3b-a885-6ee2135d0ca2",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-04T23:12:56.067122Z"
+              "updated_at": "2026-04-05T03:40:33.300771Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19078,7 +19079,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Kubernetes",
+          "service_definition": "Ring Doorbell",
           "source": {
             "type": "Manual"
           },
@@ -20137,10 +20138,10 @@
         "type": "string",
         "description": "Which topology perspective is being rendered",
         "enum": [
-          "l2_physical",
-          "l3_logical",
-          "infrastructure",
-          "application"
+          "L2Physical",
+          "L3Logical",
+          "Infrastructure",
+          "Application"
         ]
       },
       "TopologyRebuildRequest": {
@@ -20223,10 +20224,10 @@
               "type": "string",
               "description": "Which topology perspective is being rendered",
               "enum": [
-                "l2_physical",
-                "l3_logical",
-                "infrastructure",
-                "application"
+                "L2Physical",
+                "L3Logical",
+                "Infrastructure",
+                "Application"
               ]
             }
           }

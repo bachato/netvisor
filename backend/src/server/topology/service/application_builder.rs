@@ -43,7 +43,10 @@ impl PerspectiveBuilder for ApplicationBuilder {
         let mut service_node_ids: HashMap<Uuid, bool> = HashMap::new();
 
         for (category, services) in &services_by_category {
-            let container_id = Uuid::new_v4();
+            let container_id = Uuid::new_v5(
+                &Uuid::NAMESPACE_OID,
+                format!("app-category:{category}").as_bytes(),
+            );
             category_container_ids.insert(*category, container_id);
 
             nodes.push(Node {

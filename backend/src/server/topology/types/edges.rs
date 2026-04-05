@@ -8,7 +8,6 @@ use crate::server::{
             metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider},
         },
     },
-    subnets::r#impl::base::Subnet,
     topology::types::layout::Ixy,
 };
 use serde::{Deserialize, Serialize};
@@ -33,6 +32,7 @@ pub enum EdgeClassification {
     #[default]
     Primary,
     Overlay,
+    Disabled,
 }
 
 /// Which topology perspective is being rendered
@@ -50,7 +50,6 @@ pub enum EdgeClassification {
     EnumIter,
     IntoStaticStr,
 )]
-#[serde(rename_all = "snake_case")]
 pub enum TopologyPerspective {
     L2Physical,
     #[default]
@@ -102,6 +101,17 @@ impl TypeMetadataProvider for TopologyPerspective {
             Self::Infrastructure => "Infrastructure and virtualization topology",
             Self::Application => "Application and service dependency topology",
         }
+    }
+
+    fn metadata(&self) -> serde_json::Value {
+        serde_json::json!({
+            "element_label": match self {
+                Self::L2Physical => "ports",
+                Self::L3Logical => "host interfaces",
+                Self::Infrastructure => "hosts",
+                Self::Application => "services",
+            }
+        })
     }
 }
 
@@ -192,57 +202,6 @@ impl EdgeHandle {
     pub fn is_vertical(&self) -> bool {
         matches!(self, EdgeHandle::Top | EdgeHandle::Bottom)
     }
-
-    /// Determine edge handle orientations based on subnet layer and priority
-    pub fn from_subnet_layers(
-        source_subnet: &Subnet,
-        target_subnet: &Subnet,
-        is_multi_hop: bool,
-    ) -> (EdgeHandle, EdgeHandle) {
-        // Special case: edges within the same subnet
-        if source_subnet.id == target_subnet.id {
-            return Self::from_same_subnet();
-        }
-
-        let source_vertical_order = source_subnet.base.subnet_type.vertical_order();
-        let source_horizontal_order = source_subnet.base.subnet_type.horizontal_order();
-        let target_vertical_order = target_subnet.base.subnet_type.vertical_order();
-        let target_horizontal_order = target_subnet.base.subnet_type.horizontal_order();
-
-        match source_vertical_order.cmp(&target_vertical_order) {
-            // Different layers - vertical flow
-            std::cmp::Ordering::Less => {
-                if is_multi_hop {
-                    (EdgeHandle::Left, EdgeHandle::Left)
-                } else {
-                    (EdgeHandle::Bottom, EdgeHandle::Top)
-                }
-            }
-            std::cmp::Ordering::Greater => {
-                if is_multi_hop {
-                    (EdgeHandle::Left, EdgeHandle::Left)
-                } else {
-                    (EdgeHandle::Top, EdgeHandle::Bottom)
-                }
-            }
-            // Same layer - horizontal flow based on priority
-            std::cmp::Ordering::Equal => {
-                match source_horizontal_order.cmp(&target_horizontal_order) {
-                    std::cmp::Ordering::Less => (EdgeHandle::Right, EdgeHandle::Left),
-                    std::cmp::Ordering::Greater => (EdgeHandle::Left, EdgeHandle::Right),
-                    std::cmp::Ordering::Equal => (EdgeHandle::Right, EdgeHandle::Left),
-                }
-            }
-        }
-    }
-
-    /// Handle edges within the same subnet - defer to anchor analysis
-    fn from_same_subnet() -> (EdgeHandle, EdgeHandle) {
-        // For intra-subnet edges, use Top as a neutral default
-        // The anchor analyzer will determine the actual optimal placement
-        // based on the node's actual position and all its edges
-        (EdgeHandle::Top, EdgeHandle::Top)
-    }
 }
 
 #[derive(
@@ -301,6 +260,7 @@ impl EdgeType {
         match perspective {
             TopologyPerspective::L3Logical => match self {
                 EdgeType::Interface { .. } => EdgeClassification::Primary,
+                EdgeType::ServiceVirtualization { .. } => EdgeClassification::Disabled,
                 _ => EdgeClassification::Overlay,
             },
             TopologyPerspective::L2Physical => match self {
@@ -483,7 +443,10 @@ mod tests {
     #[test]
     fn classification_l3_others_are_overlay() {
         for edge in all_edge_types() {
-            if matches!(edge, EdgeType::Interface { .. }) {
+            if matches!(
+                edge,
+                EdgeType::Interface { .. } | EdgeType::ServiceVirtualization { .. }
+            ) {
                 continue;
             }
             assert_eq!(
@@ -493,6 +456,26 @@ mod tests {
                 edge
             );
         }
+    }
+
+    #[test]
+    fn classification_l3_service_virtualization_is_disabled() {
+        let edge = EdgeType::ServiceVirtualization {
+            host_id: dummy_id(),
+            containerizing_service_id: dummy_id(),
+        };
+        assert_eq!(
+            edge.classification(TopologyPerspective::L3Logical),
+            EdgeClassification::Disabled
+        );
+    }
+
+    #[test]
+    fn edge_classification_disabled_serde_round_trip() {
+        let json = serde_json::to_value(EdgeClassification::Disabled).unwrap();
+        assert_eq!(json, "disabled");
+        let deserialized: EdgeClassification = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, EdgeClassification::Disabled);
     }
 
     #[test]
@@ -565,7 +548,7 @@ mod tests {
     #[test]
     fn topology_perspective_serde_round_trip() {
         let json = serde_json::to_value(TopologyPerspective::L2Physical).unwrap();
-        assert_eq!(json, "l2_physical");
+        assert_eq!(json, "L2Physical");
         let deserialized: TopologyPerspective = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, TopologyPerspective::L2Physical);
     }

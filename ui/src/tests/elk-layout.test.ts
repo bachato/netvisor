@@ -164,19 +164,21 @@ describe('classifyEdge', () => {
 	});
 
 	it('getDefaultHiddenEdgeTypes returns correct types per perspective', () => {
-		const l3 = getDefaultHiddenEdgeTypes('l3_logical');
+		const l3 = getDefaultHiddenEdgeTypes('L3Logical');
 		expect(l3).toContain('HostVirtualization');
 		expect(l3).toContain('PhysicalLink');
+		expect(l3).not.toContain('RequestPath');
+		expect(l3).not.toContain('HubAndSpoke');
 
-		const l2 = getDefaultHiddenEdgeTypes('l2_physical');
+		const l2 = getDefaultHiddenEdgeTypes('L2Physical');
 		expect(l2).not.toContain('PhysicalLink');
 		expect(l2).toContain('RequestPath');
 
-		const infra = getDefaultHiddenEdgeTypes('infrastructure');
+		const infra = getDefaultHiddenEdgeTypes('Infrastructure');
 		expect(infra).not.toContain('HostVirtualization');
 		expect(infra).toContain('PhysicalLink');
 
-		const app = getDefaultHiddenEdgeTypes('application');
+		const app = getDefaultHiddenEdgeTypes('Application');
 		expect(app).not.toContain('RequestPath');
 		expect(app).toContain('PhysicalLink');
 	});

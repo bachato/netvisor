@@ -230,13 +230,14 @@
 	});
 
 	// Build edge types with colors from edges present in the topology
+	// Filter out edge types where all edges have classification === 'disabled'
 	let edgeTypesWithColors = $derived.by(() => {
 		if (!topology?.edges) return [];
 		const seen: Record<string, boolean> = {};
 		const result: { value: string; label: string; color: Color }[] = [];
 		for (const edge of topology.edges) {
 			const edgeType = edge.edge_type;
-			if (edgeType && !seen[edgeType]) {
+			if (edgeType && !seen[edgeType] && edge.classification !== 'disabled') {
 				seen[edgeType] = true;
 				const colorHelper = edgeTypes.getColorHelper(edgeType);
 				result.push({ value: edgeType, label: edgeType, color: colorHelper.color });

@@ -12,8 +12,9 @@
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Color, ColorStyle } from '$lib/shared/utils/styling';
-	import { serviceDefinitions, containerTypes } from '$lib/shared/stores/metadata';
-	import { topology_hostsCount } from '$lib/paraglide/messages';
+	import { serviceDefinitions, containerTypes, perspectives } from '$lib/shared/stores/metadata';
+	import { topology_elementCount, topology_includingCountInGroup } from '$lib/paraglide/messages';
+	import { activePerspective } from '../../queries';
 	import {
 		useTopologiesQuery,
 		useUpdateNodeResizeMutation,
@@ -124,6 +125,14 @@
 	// TODO(perspectives): subnet is used for tag hover. When containers represent other
 	// entity types, refactor to use a generic entity tags lookup instead.
 	let subnet = $derived(resolved?.subnet);
+
+	let currentPerspective = $state(get(activePerspective));
+	activePerspective.subscribe((v) => (currentPerspective = v));
+
+	let elementLabel = $derived(
+		(perspectives.getMetadata(currentPerspective) as { element_label?: string } | undefined)
+			?.element_label ?? 'hosts'
+	);
 
 	let isCollapsed = $derived(collapsedNodes.has(id));
 	let childCount = $derived(((data as Record<string, unknown>)?.childCount as number) ?? 0);
@@ -332,7 +341,7 @@
 					<Tag label={pill.label} color={pill.color} />
 				{/each}
 				<span class="text-tertiary whitespace-nowrap text-xs">
-					({topology_hostsCount({ count: childCount })})
+					({topology_elementCount({ count: childCount, label: elementLabel })})
 				</span>
 			</div>
 		{:else}
@@ -343,7 +352,7 @@
 			>
 				<div class="flex min-w-48 flex-col items-center gap-2 px-6 py-4">
 					<span class="text-secondary text-base font-medium">
-						{topology_hostsCount({ count: childCount })}
+						{topology_elementCount({ count: childCount, label: elementLabel })}
 					</span>
 					{#each subgroupSummaries as summary (summary.groupId)}
 						{@const groupNode = topology?.nodes.find((n) => n.id === summary.groupId)}
@@ -393,7 +402,10 @@
 								<Tag label={pill.label} color={pill.color} />
 							{/each}
 							<span class="text-tertiary text-xs"
-								>({topology_hostsCount({ count: summary.childCount })})</span
+								>({topology_includingCountInGroup({
+									count: summary.childCount,
+									name: sHeader || labels.map((l) => l.label).join(', ')
+								})})</span
 							>
 						</div>
 					{/each}

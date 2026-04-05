@@ -291,9 +291,14 @@
 							const containerSize = !isElement ? layoutGraph.getContainerSize(node.id) : undefined;
 							const expandedSize = !isElement ? layoutGraph.getExpandedSize(node.id) : undefined;
 							position = graphPos ?? { x: node.position.x, y: node.position.y };
-							// Collapsed containers keep expanded width to prevent overlap on expand
+							// Sub-containers keep expanded width when collapsed to prevent overlap on expand
+							// Root containers use content-fit width (min-w-48 in ContainerNode)
+							const isSubContainer =
+								!isElement && node.node_type === 'Container' && !!node.parent_container_id;
 							width = isNodeCollapsed
-								? (expandedSize?.width ?? undefined)
+								? isSubContainer
+									? (expandedSize?.width ?? undefined)
+									: undefined
 								: isElement
 									? 250
 									: (containerSize?.width ?? undefined);
@@ -470,10 +475,9 @@
 				const needsLayout = isNewStructure || portsChanged || collapseChanged;
 				const allNodes = sortFlowNodes(buildFlowNodes(needsLayout));
 
-				// Clear edges, set positioned nodes
+				// Clear edges, set positioned nodes (keep isMeasuring until paint completes)
 				edges.set([]);
 				nodes.set(allNodes);
-				isMeasuring = false;
 
 				// Build base edges: filter out edges with collapsed endpoints
 				let baseEdges: TopologyEdge[];
@@ -586,6 +590,11 @@
 					edges.set(pendingEdges);
 					pendingEdges = [];
 				}
+
+				// Reveal after positioned nodes + edges have painted
+				await tick();
+				await new Promise((r) => requestAnimationFrame(r));
+				isMeasuring = false;
 			}
 		} catch (err) {
 			pushError(`Failed to parse topology data ${err}`);
