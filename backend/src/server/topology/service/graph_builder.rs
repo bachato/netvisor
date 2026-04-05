@@ -315,12 +315,20 @@ impl GraphBuilder {
                 .filter(|s| s.base.host_id == child.host_id)
                 .map(|s| s.base.service_definition.category())
                 .collect();
-            let tag_ids = ctx
+            let mut tag_ids: HashSet<Uuid> = ctx
                 .hosts
                 .iter()
                 .find(|h| h.id == child.host_id)
                 .map(|h| h.base.tags.iter().copied().collect())
                 .unwrap_or_default();
+            // Inherit service tags so ByTag rules match via host→interface
+            for service in ctx
+                .services
+                .iter()
+                .filter(|s| s.base.host_id == child.host_id)
+            {
+                tag_ids.extend(service.base.tags.iter().copied());
+            }
             Some(ElementMatchData {
                 categories,
                 tag_ids,
