@@ -250,7 +250,15 @@
 		}
 		const graphRule = makeGraphRule(newRule);
 		updateElementRules([...elementRules, graphRule]);
-		editingElementId = graphRule.id;
+
+		if (typeof newRule === 'string') {
+			// Fieldless rule — no edit needed, flush immediately
+			if (topology) {
+				rebuildMutation.mutate(topology);
+			}
+		} else {
+			editingElementId = graphRule.id;
+		}
 	}
 
 	function handleElementRemove(index: number) {
@@ -407,7 +415,7 @@
 	itemDisplayComponent={elementRuleDisplayComponent}
 	allowReorder={true}
 	allowDuplicates={true}
-	allowItemEdit={() => true}
+	allowItemEdit={(item) => typeof item.rule !== 'string'}
 	editIcon={getElementEditIcon}
 	editButtonClass={getElementEditButtonClass}
 	isItemEditing={isElementItemEditing}
