@@ -132,7 +132,7 @@ impl TypeMetadataProvider for TopologyPerspective {
                 Self::Application => "service",
             },
             "services_are_elements": matches!(self, Self::Application),
-            "category_filter": matches!(self, Self::Application | Self::L3Logical),
+            "category_filter": matches!(self, Self::Application | Self::L3Logical | Self::Infrastructure),
             "tag_filter_categories": match self {
                 Self::L3Logical => vec!["host", "service", "subnet"],
                 Self::Application => vec!["service"],
