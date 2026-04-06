@@ -155,6 +155,9 @@
 	let prevPerspective = get(activePerspective);
 	let lastRenderedTopoKey = '';
 	let lastRenderedPerspective = '';
+	// Cache measured node sizes per perspective so return visits skip the measurement pass
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
+	const perspectiveSizeCache = new Map<string, Map<string, { x: number; y: number }>>();
 
 	function getStructureKey(topo: Topology): string {
 		// Include container assignments so membership changes (element rules) trigger re-layout
@@ -443,28 +446,20 @@
 				if (isNewStructure) {
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 					const elementNodeSizes = new Map<string, { x: number; y: number }>();
+					const cachedSizes = isPerspectiveTransition
+						? perspectiveSizeCache.get(currentPerspective)
+						: undefined;
 
-					if (isPerspectiveTransition) {
-						// Perspective switch: estimate sizes from current live nodes to avoid
-						// the measurement pass (which hides the container and causes a flash).
-						// Old layout stays visible while ELK computes the new one.
-						const liveNodes = getNodes();
-						for (const n of liveNodes) {
-							// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @xyflow Node has runtime .computed not in type defs
-							const computed = (n as Record<string, any>).computed;
-							elementNodeSizes.set(n.id, {
-								x: computed?.width ?? n.width ?? 250,
-								y: computed?.height ?? n.height ?? 100
-							});
-						}
-						// For new nodes not in the old layout, use defaults
+					if (isPerspectiveTransition && cachedSizes) {
+						// Return visit to a previously-measured perspective: use cached sizes
+						// so the old layout stays visible (no measurement pass / container hide)
 						for (const node of visibleNodes) {
-							if (!elementNodeSizes.has(node.id)) {
-								elementNodeSizes.set(node.id, { x: 250, y: 100 });
-							}
+							const cached = cachedSizes.get(node.id);
+							elementNodeSizes.set(node.id, cached ?? { x: 250, y: 100 });
 						}
 					} else {
-						// Non-perspective structural change: use DOM measurement pass
+						// First visit to perspective or non-perspective structural change:
+						// full DOM measurement pass
 						isMeasuring = true;
 						edges.set([]);
 						const measureNodes = sortFlowNodes(buildFlowNodes(false));
@@ -518,6 +513,9 @@
 						elkResult.elementNodeSizes,
 						elkResult.edgeHandles
 					);
+
+					// Cache measured sizes for this perspective so return visits skip measurement
+					perspectiveSizeCache.set(currentPerspective, new Map(elementNodeSizes));
 				}
 
 				// Local size adjustment for port expansion (no full ELK re-layout)
@@ -681,13 +679,14 @@
 				// Add aggregated collapse edges
 				flowEdges.push(...extraFlowEdges);
 
-				if (isPerspectiveTransition) {
-					// Perspective switch: set nodes and edges atomically in one synchronous
-					// batch so Svelte renders them in a single frame — no flash of nodes-without-edges
+				if (!isMeasuring) {
+					// Cached-size path (no measurement pass): set nodes and edges atomically
+					// in one synchronous batch — old layout swaps to new in a single frame
 					nodes.set(allNodes);
 					edges.set(flowEdges);
 				} else {
-					// Normal path: clear edges, set nodes, wait for render, then set edges
+					// Measurement path: container is hidden, set positioned nodes + edges,
+					// then reveal after paint completes
 					edges.set([]);
 					nodes.set(allNodes);
 
