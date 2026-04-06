@@ -439,33 +439,57 @@
 					flowNodes.sort((a, b) => depthOf(a) - depthOf(b));
 
 				if (isNewStructure) {
-					// Phase 1: Render nodes for DOM measurement (hidden, no ELK yet)
-					isMeasuring = true;
-					edges.set([]);
-					const measureNodes = sortFlowNodes(buildFlowNodes(false));
-					nodes.set(measureNodes);
+					const isPerspectiveTransition = perspectiveChanged && topologyChanged;
 
-					await tick();
-					await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-					// Phase 2: Read actual DOM sizes
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 					const elementNodeSizes = new Map<string, { x: number; y: number }>();
-					if (containerElement) {
-						const nodeEls = containerElement.querySelectorAll('.svelte-flow__node');
-						for (const el of nodeEls) {
-							const id = (el as HTMLElement).dataset.id;
-							if (id) {
-								const htmlEl = el as HTMLElement;
-								elementNodeSizes.set(id, {
-									x: htmlEl.offsetWidth || 250,
-									y: htmlEl.offsetHeight || 100
-								});
+
+					if (isPerspectiveTransition) {
+						// Perspective switch: estimate sizes from current live nodes to avoid
+						// the measurement pass (which hides the container and causes a flash).
+						// Old layout stays visible while ELK computes the new one.
+						const liveNodes = getNodes();
+						for (const n of liveNodes) {
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @xyflow Node has runtime .computed not in type defs
+							const computed = (n as Record<string, any>).computed;
+							elementNodeSizes.set(n.id, {
+								x: computed?.width ?? n.width ?? 250,
+								y: computed?.height ?? n.height ?? 100
+							});
+						}
+						// For new nodes not in the old layout, use defaults
+						for (const node of visibleNodes) {
+							if (!elementNodeSizes.has(node.id)) {
+								elementNodeSizes.set(node.id, { x: 250, y: 100 });
+							}
+						}
+					} else {
+						// Non-perspective structural change: use DOM measurement pass
+						isMeasuring = true;
+						edges.set([]);
+						const measureNodes = sortFlowNodes(buildFlowNodes(false));
+						nodes.set(measureNodes);
+
+						await tick();
+						await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+						// Read actual DOM sizes
+						if (containerElement) {
+							const nodeEls = containerElement.querySelectorAll('.svelte-flow__node');
+							for (const el of nodeEls) {
+								const id = (el as HTMLElement).dataset.id;
+								if (id) {
+									const htmlEl = el as HTMLElement;
+									elementNodeSizes.set(id, {
+										x: htmlEl.offsetWidth || 250,
+										y: htmlEl.offsetHeight || 100
+									});
+								}
 							}
 						}
 					}
 
-					// Phase 3: Run layout engine with real measured sizes
+					// Run layout engine
 					const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();
 					const elkResult = await layoutEngine.compute({
 						nodes: visibleNodes,
