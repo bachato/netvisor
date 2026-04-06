@@ -435,9 +435,9 @@ describe('computeElkLayout', () => {
 		expect(groupPos.y).toBeGreaterThanOrEqual(0);
 	});
 
-	it('containers with 5 elements use multi-column layout', async () => {
+	it('containers with 8 elements use multi-column layout', async () => {
 		const subnetId = uuid();
-		const elemIds = Array.from({ length: 5 }, () => uuid());
+		const elemIds = Array.from({ length: 8 }, () => uuid());
 
 		const nodes: TopologyNode[] = [
 			makeContainer(subnetId),
