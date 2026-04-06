@@ -174,6 +174,7 @@
 	let groupLabels = $derived.by((): { label: string; color: Color }[] => {
 		if (!elementRule?.rule) return [];
 		const rule = elementRule.rule;
+		if (typeof rule === 'string') return [];
 		if ('ByServiceCategory' in rule) {
 			return (rule.ByServiceCategory.categories ?? []).map((cat: string) => {
 				const svc = topology?.services?.find(
