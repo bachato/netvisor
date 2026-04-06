@@ -132,7 +132,7 @@ impl TypeMetadataProvider for TopologyPerspective {
                 Self::Application => "service",
             },
             "services_are_elements": matches!(self, Self::Application),
-            "category_filter": matches!(self, Self::Application),
+            "category_filter": matches!(self, Self::Application | Self::L3Logical),
             "tag_filter_categories": match self {
                 Self::L3Logical => vec!["host", "service", "subnet"],
                 Self::Application => vec!["service"],
@@ -155,7 +155,7 @@ impl TopologyPerspective {
         match self {
             Self::L3Logical => match edge_type {
                 Interface => Primary,
-                ServiceVirtualization => Disabled,
+                ServiceVirtualization => Primary,
                 HostVirtualization => OverlayHidden,
                 PhysicalLink => OverlayHidden,
                 RequestPath => Overlay,
@@ -444,7 +444,7 @@ mod tests {
         use EdgeTypeDiscriminants::*;
         let p = TopologyPerspective::L3Logical;
         assert_eq!(p.classify_edge(Interface), Primary);
-        assert_eq!(p.classify_edge(ServiceVirtualization), Disabled);
+        assert_eq!(p.classify_edge(ServiceVirtualization), Primary);
         assert_eq!(p.classify_edge(HostVirtualization), OverlayHidden);
         assert_eq!(p.classify_edge(PhysicalLink), OverlayHidden);
         assert_eq!(p.classify_edge(RequestPath), Overlay);

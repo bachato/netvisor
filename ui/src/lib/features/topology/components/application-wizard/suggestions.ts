@@ -3,7 +3,7 @@
  */
 export const USE_CASE_SUGGESTIONS: Record<string, string[]> = {
 	homelab: [
-		'Media Stack',
+		'Media',
 		'Home Automation',
 		'Monitoring',
 		'Network Infrastructure',
@@ -14,7 +14,8 @@ export const USE_CASE_SUGGESTIONS: Record<string, string[]> = {
 		'Security/Cameras',
 		'DNS/Ad Blocking',
 		'VPN',
-		'File Storage'
+		'File Storage',
+		'Other'
 	],
 	company: [
 		'Production',
@@ -28,7 +29,8 @@ export const USE_CASE_SUGGESTIONS: Record<string, string[]> = {
 		'API Gateway',
 		'Logging',
 		'Security',
-		'Backup'
+		'Backup',
+		'Other'
 	],
 	msp: [
 		'Shared Infrastructure',
@@ -40,7 +42,8 @@ export const USE_CASE_SUGGESTIONS: Record<string, string[]> = {
 		'Logging',
 		'Authentication',
 		'File Storage',
-		'Communication'
+		'Communication',
+		'Other'
 	]
 };
 
@@ -52,7 +55,8 @@ export const DEFAULT_SUGGESTIONS = [
 	'Infrastructure',
 	'Authentication',
 	'Logging',
-	'Backup'
+	'Backup',
+	'Other'
 ];
 
 export function getSuggestions(useCase: string | null | undefined): string[] {

@@ -1158,7 +1158,7 @@
 	"topology_hidePorts": "Hide Ports",
 	"topology_hidePortsHelp": "Don't show open ports next to services",
 	"topology_hideResizeHandles": "Hide Resize Handles",
-	"topology_hideResizeHandlesHelp": "Hide subnet resize handles",
+	"topology_hideResizeHandlesHelp": "Hide node resize handles",
 	"topology_hideVmOnContainer": "Hide VM provider on containers",
 	"topology_hideVmOnContainerHelp": "If a docker container is running on a host that is a VM, don't indicate this on the container node",
 	"topology_lastRebuild": "Last Rebuild: {timestamp}",
