@@ -116,6 +116,7 @@ impl ViewBuilder for ApplicationBuilder {
                         layer_hint: None,
                         icon: Some(Concept::Application.icon().to_string()),
                         color: Some(tag.base.color.to_string()),
+                        associated_service_definition: None,
                     },
                     position: Default::default(),
                     size: Default::default(),
@@ -146,6 +147,7 @@ impl ViewBuilder for ApplicationBuilder {
                         layer_hint: None,
                         icon: Some(Concept::Application.icon().to_string()),
                         color: Some(Concept::Application.color().to_string()),
+                        associated_service_definition: None,
                     },
                     position: Default::default(),
                     size: Default::default(),
@@ -195,6 +197,7 @@ impl ViewBuilder for ApplicationBuilder {
                         layer_hint: None,
                         icon: Some(category.icon().to_string()),
                         color: Some(category.color().to_string()),
+                        associated_service_definition: None,
                     },
                     position: Default::default(),
                     size: Default::default(),
@@ -237,6 +240,18 @@ impl ViewBuilder for ApplicationBuilder {
                 compose_project,
             })
         });
+
+        // Post-process: set associated_service_definition on Stack subcontainers (always Docker)
+        for node in nodes.iter_mut() {
+            if let NodeType::Container {
+                container_type: ContainerType::Stack,
+                associated_service_definition,
+                ..
+            } = &mut node.node_type
+            {
+                *associated_service_definition = Some("Docker".to_string());
+            }
+        }
 
         // Build binding_id → service_id lookup (for Bindings variant backward compat)
         let binding_to_service: HashMap<Uuid, Uuid> = ctx

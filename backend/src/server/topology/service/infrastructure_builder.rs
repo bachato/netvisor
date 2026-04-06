@@ -9,7 +9,7 @@ use super::{
 use crate::server::{
     hosts::r#impl::virtualization::HostVirtualization,
     if_entries::r#impl::base::Neighbor,
-    services::r#impl::virtualization::ServiceVirtualization,
+    services::r#impl::{definitions::ServiceDefinitionExt, virtualization::ServiceVirtualization},
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeClassification, EdgeHandle, EdgeType},
         grouping::GroupingConfig,
@@ -62,6 +62,67 @@ impl InfrastructureBuilder {
         }
     }
 
+    /// Set `associated_service_definition` on Virtualizer and Stack subcontainers.
+    ///
+    /// For Virtualizer: looks up the virtualizing service (manages_virtualization) on the
+    /// virtualizer host and uses its name. For Stack: always Docker.
+    fn set_subcontainer_service_definitions(
+        nodes: &mut [Node],
+        virtualizer_map: &HashMap<Uuid, Option<Uuid>>,
+        ctx: &TopologyContext,
+    ) {
+        // Build virtualizer_host_id → service definition name
+        let virt_svc_defs: HashMap<Uuid, String> = ctx
+            .services
+            .iter()
+            .filter(|s| s.base.service_definition.manages_virtualization().is_some())
+            .map(|s| (s.base.host_id, s.base.service_definition.name().to_string()))
+            .collect();
+
+        // First pass: collect container_id → any child's host_id (for Virtualizer lookup)
+        let container_to_child_host: HashMap<Uuid, Uuid> = nodes
+            .iter()
+            .filter_map(|n| {
+                if let NodeType::Element {
+                    container_id,
+                    host_id,
+                    ..
+                } = &n.node_type
+                {
+                    Some((*container_id, *host_id))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Second pass: set associated_service_definition on matching containers
+        for node in nodes.iter_mut() {
+            match &mut node.node_type {
+                NodeType::Container {
+                    container_type: ContainerType::Virtualizer,
+                    associated_service_definition,
+                    ..
+                } => {
+                    if let Some(&child_host_id) = container_to_child_host.get(&node.id)
+                        && let Some(&Some(vid)) = virtualizer_map.get(&child_host_id)
+                        && let Some(svc_def) = virt_svc_defs.get(&vid)
+                    {
+                        *associated_service_definition = Some(svc_def.clone());
+                    }
+                }
+                NodeType::Container {
+                    container_type: ContainerType::Stack,
+                    associated_service_definition,
+                    ..
+                } => {
+                    *associated_service_definition = Some("Docker".to_string());
+                }
+                _ => {}
+            }
+        }
+    }
+
     /// Build a map of virtualizer_host_id → hostname for subcontainer titles.
     fn build_virtualizer_titles(
         virtualizer_host_ids: &HashSet<Uuid>,
@@ -88,6 +149,7 @@ impl ViewBuilder for InfrastructureBuilder {
                 layer_hint: None,
                 icon: None,
                 color: None,
+                associated_service_definition: None,
             },
             position: Default::default(),
             size: Default::default(),
@@ -144,6 +206,9 @@ impl ViewBuilder for InfrastructureBuilder {
             },
             Some(&virtualizer_titles),
         );
+
+        // Post-process: set associated_service_definition on Virtualizer/Stack subcontainers
+        Self::set_subcontainer_service_definitions(&mut nodes, &virtualizer_map, ctx);
 
         // PhysicalLink overlay edges — connect hosts based on LLDP/CDP neighbor data.
         // Track processed pairs to avoid duplicate edges (A→B and B→A from bidirectional LLDP).

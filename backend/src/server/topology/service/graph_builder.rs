@@ -380,6 +380,18 @@ impl GraphBuilder {
                 compose_project,
             })
         });
+
+        // Post-process: set associated_service_definition on Stack subcontainers (always Docker)
+        for node in child_nodes.iter_mut() {
+            if let NodeType::Container {
+                container_type: ContainerType::Stack,
+                associated_service_definition,
+                ..
+            } = &mut node.node_type
+            {
+                *associated_service_definition = Some("Docker".to_string());
+            }
+        }
     }
 
     /// Create subnet container nodes
@@ -433,6 +445,7 @@ impl GraphBuilder {
                         layer_hint: None,
                         icon: None,
                         color: None,
+                        associated_service_definition: None,
                     },
                     position: Ixy { x: 0, y: 0 },
                     size: Uxy { x: 0, y: 0 },

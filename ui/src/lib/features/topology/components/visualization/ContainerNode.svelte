@@ -154,6 +154,14 @@
 	let iconComponent: IconComponent | null = $derived(
 		nodeIcon ? createIconComponent(nodeIcon) : null
 	);
+
+	// Service logo: from associated_service_definition (for Virtualizer/Stack subcontainers)
+	let serviceDefId = $derived(
+		(data as Record<string, unknown>)?.associated_service_definition as string | undefined
+	);
+	let logoComponent: IconComponent | null = $derived(
+		serviceDefId ? serviceDefinitions.getIconComponent(serviceDefId) : null
+	);
 	let colorHelper: ColorStyle = $derived(
 		nodeColor
 			? createColorHelper(nodeColor as Parameters<typeof createColorHelper>[0])
@@ -313,6 +321,10 @@
 			{#if isCollapsible}
 				<ChevronDown class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
 			{/if}
+			{#if logoComponent}
+				{@const LogoComp = logoComponent}
+				<LogoComp class="h-4 w-4 flex-shrink-0" />
+			{/if}
 			{#if headerText}
 				<span class="text-tertiary whitespace-nowrap text-xs font-medium">
 					{headerText}{groupLabels.length > 0 ? ':' : ''}
@@ -333,6 +345,10 @@
 				style="background: var(--color-topology-subgroup-bg); width: 100%; height: 100%;"
 			>
 				<ChevronRight class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
+				{#if logoComponent}
+					{@const LogoComp = logoComponent}
+					<LogoComp class="h-4 w-4 flex-shrink-0" />
+				{/if}
 				{#if headerText}
 					<span class="text-tertiary whitespace-nowrap text-xs font-medium">
 						{headerText}{groupLabels.length > 0 ? ':' : ''}

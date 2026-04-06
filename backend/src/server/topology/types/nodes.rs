@@ -259,6 +259,10 @@ pub enum NodeType {
         /// Display color name (set by graph builder from the source entity, e.g. subnet type)
         #[serde(default, skip_serializing_if = "Option::is_none")]
         color: Option<String>,
+        /// Service definition ID for logo rendering (e.g. "Docker", "Proxmox VE").
+        /// Used by Virtualizer and Stack subcontainers to show the virtualizing service's logo.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        associated_service_definition: Option<String>,
     },
     Element {
         #[serde(default)]
@@ -292,6 +296,7 @@ mod tests {
             layer_hint: Some(2),
             icon: None,
             color: None,
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "Container");
@@ -312,6 +317,7 @@ mod tests {
             layer_hint: None,
             icon: None,
             color: None,
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["container_type"], "NestedServiceCategory");
@@ -329,6 +335,7 @@ mod tests {
             layer_hint: None,
             icon: None,
             color: None,
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert!(json.get("layer_hint").is_none());
@@ -409,6 +416,7 @@ mod tests {
             layer_hint: None,
             icon: None,
             color: None,
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&tag).unwrap();
         assert_eq!(json["container_type"], "NestedTag");
@@ -419,6 +427,7 @@ mod tests {
             layer_hint: None,
             icon: None,
             color: None,
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&svc).unwrap();
         assert_eq!(json["container_type"], "NestedServiceCategory");
@@ -432,6 +441,7 @@ mod tests {
             layer_hint: None,
             icon: Some("Zap".to_string()),
             color: Some("Purple".to_string()),
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["container_type"], "ServiceCategory");
@@ -494,6 +504,7 @@ mod tests {
             layer_hint: None,
             icon: None,
             color: None,
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["container_type"], "Virtualizer");
@@ -509,6 +520,7 @@ mod tests {
             layer_hint: None,
             icon: None,
             color: None,
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["container_type"], "BareMetal");
@@ -525,6 +537,7 @@ mod tests {
             layer_hint: None,
             icon: None,
             color: None,
+            associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["container_type"], "Stack");
