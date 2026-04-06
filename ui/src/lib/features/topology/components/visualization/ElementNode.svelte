@@ -151,17 +151,16 @@
 						} as ElementRenderData;
 					}
 
-					// Host elements: show host name with service summary
+					// Host elements: show host name with service count
 					if (elementType === 'Host') {
 						if (!host || !resolved.hostId) return null;
 						const serviceCount = visibleServicesForHost.length;
 						return {
 							elementType,
-							footerText:
-								serviceCount > 0 ? `${serviceCount} service${serviceCount !== 1 ? 's' : ''}` : null,
+							footerText: `${serviceCount} service${serviceCount !== 1 ? 's' : ''}`,
 							services: [],
 							hiddenOpenPorts: [],
-							headerText: (data as TopologyNode).header ?? null,
+							headerText: null,
 							bodyText: host.name,
 							showServices: false,
 							isVirtualized: host.virtualization !== null,
