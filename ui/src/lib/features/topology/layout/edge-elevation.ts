@@ -7,8 +7,8 @@ import type { TopologyEdge, TopologyNode } from '../types/base';
  * elements inside it should visually attach to the container boundary instead.
  * If multiple nested containers absorb, the outermost absorber wins.
  *
- * After elevation, edges that share the same source+target+edge_type are
- * deduplicated (only the first is kept).
+ * All edges are preserved (no deduplication) so that downstream bundling
+ * can show correct edge counts.
  */
 export function elevateEdgesToContainers(
 	edges: TopologyEdge[],
@@ -54,8 +54,7 @@ export function elevateEdgesToContainers(
 
 	if (elevationMap.size === 0) return edges;
 
-	// Elevate edge endpoints and deduplicate
-	const seen = new Set<string>();
+	// Elevate edge endpoints — keep all edges so bundling can show correct counts
 	const result: TopologyEdge[] = [];
 
 	for (const edge of edges) {
@@ -64,11 +63,6 @@ export function elevateEdgesToContainers(
 
 		// Skip self-loops created by elevation
 		if (source === target) continue;
-
-		// Deduplicate by source+target+edge_type
-		const key = `${source}:${target}:${edge.edge_type}`;
-		if (seen.has(key)) continue;
-		seen.add(key);
 
 		if (source !== edge.source || target !== edge.target) {
 			result.push({ ...edge, source, target });
