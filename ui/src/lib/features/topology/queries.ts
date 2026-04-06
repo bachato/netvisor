@@ -13,6 +13,7 @@ import type { ContainerGraphRule, ElementGraphRule } from './types/grouping';
 import { makeGraphRule } from './types/grouping';
 import type { ContainerRule } from './types/grouping';
 import _containerRuleTypes from '$lib/data/container-rule-types.json';
+import _elementRuleTypes from '$lib/data/element-rule-types.json';
 import type { Organization } from '$lib/features/organizations/types';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
@@ -58,11 +59,24 @@ function getDefaultContainerRules(perspective: TopologyPerspective): ContainerGr
 // Legacy default for backward compatibility
 export const defaultContainerRules: ContainerGraphRule[] = getDefaultContainerRules('L3Logical');
 
-export const defaultElementRules: ElementGraphRule[] = [
-	makeGraphRule({
-		ByServiceCategory: { categories: ['DNS', 'ReverseProxy'], title: 'Infrastructure' }
-	})
-];
+// Default element rules, derived from fixture metadata per perspective
+function getDefaultElementRules(perspective: TopologyPerspective): ElementGraphRule[] {
+	return _elementRuleTypes
+		.filter((r) => (r.metadata as { perspectives?: string[] })?.perspectives?.includes(perspective))
+		.map((r) => {
+			if (r.id === 'ByServiceCategory') {
+				return makeGraphRule({ ByServiceCategory: { categories: [], title: null } });
+			}
+			if (r.id === 'ByTag') {
+				return makeGraphRule({ ByTag: { tag_ids: [], title: null } });
+			}
+			// Parameterless rules (e.g. ByVirtualizer)
+			return makeGraphRule(r.id as string);
+		});
+}
+
+// Legacy default for backward compatibility
+export const defaultElementRules: ElementGraphRule[] = getDefaultElementRules('L3Logical');
 
 export function getDefaultTopologyOptions(perspective: TopologyPerspective): TopologyOptions {
 	return {
@@ -89,7 +103,7 @@ export function getDefaultTopologyOptions(perspective: TopologyPerspective): Top
 			hide_vm_title_on_docker_container: false,
 			hide_service_categories: ['OpenPorts'],
 			container_rules: getDefaultContainerRules(perspective),
-			element_rules: [],
+			element_rules: getDefaultElementRules(perspective),
 			perspective
 		}
 	};

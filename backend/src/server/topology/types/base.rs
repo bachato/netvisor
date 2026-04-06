@@ -293,14 +293,7 @@ impl Default for TopologyRequestOptions {
             container_rules: default_container_rules(),
             element_rules: default_element_rules(),
             perspective: TopologyPerspective::default(),
-            perspective_overrides: Some(HashMap::from([(
-                TopologyPerspective::Infrastructure,
-                PerspectiveOptionOverrides {
-                    container_rules: Some(vec![]),
-                    element_rules: Some(vec![GraphRule::new(ElementRule::ByVirtualizer)]),
-                    hide_service_categories: None,
-                },
-            )])),
+            perspective_overrides: None,
         }
     }
 }

@@ -13,22 +13,27 @@ export function getContainerRuleDiscriminant(rule: ContainerRule): ContainerRule
 	return Object.keys(rule)[0] as ContainerRuleType;
 }
 
-export type ElementRuleType = 'ByServiceCategory' | 'ByTag';
+export type ElementRuleType = 'ByServiceCategory' | 'ByTag' | 'ByVirtualizer';
 
 export function getElementRuleType(rule: ElementRule): ElementRuleType {
-	if ('ByServiceCategory' in rule) return 'ByServiceCategory';
+	if (rule === 'ByVirtualizer') return 'ByVirtualizer';
+	if (typeof rule === 'object' && 'ByServiceCategory' in rule) return 'ByServiceCategory';
 	return 'ByTag';
 }
 
 export function getElementRuleTitle(rule: ElementRule): string | null | undefined {
-	if ('ByServiceCategory' in rule) return rule.ByServiceCategory.title;
-	return rule.ByTag.title;
+	if (rule === 'ByVirtualizer') return null;
+	if (typeof rule === 'object' && 'ByServiceCategory' in rule) return rule.ByServiceCategory.title;
+	if (typeof rule === 'object' && 'ByTag' in rule) return rule.ByTag.title;
+	return null;
 }
 
 export function setElementRuleTitle(rule: ElementRule, title: string | null): ElementRule {
-	if ('ByServiceCategory' in rule)
+	if (rule === 'ByVirtualizer') return rule;
+	if (typeof rule === 'object' && 'ByServiceCategory' in rule)
 		return { ByServiceCategory: { ...rule.ByServiceCategory, title } };
-	return { ByTag: { ...rule.ByTag, title } };
+	if (typeof rule === 'object' && 'ByTag' in rule) return { ByTag: { ...rule.ByTag, title } };
+	return rule;
 }
 
 export function makeGraphRule<T>(rule: T): GraphRule<T> {
