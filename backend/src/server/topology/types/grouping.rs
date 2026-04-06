@@ -132,10 +132,7 @@ impl ElementRule {
                 TopologyPerspective::Application,
             ],
             ElementRule::ByVirtualizer => &[TopologyPerspective::Infrastructure],
-            ElementRule::ByStack => &[
-                TopologyPerspective::Infrastructure,
-                TopologyPerspective::Application,
-            ],
+            ElementRule::ByStack => &[TopologyPerspective::L3Logical, TopologyPerspective::Application],
         }
     }
 }
@@ -252,8 +249,8 @@ mod tests {
 
         assert!(config.should_group_docker_bridges());
         assert_eq!(config.container_rules.len(), 2);
-        // L3Logical gets ByServiceCategory + ByTag (2 of the 4 default element rules)
-        assert_eq!(config.element_rules.len(), 2);
+        // L3Logical gets ByServiceCategory + ByTag + ByStack (3 of the 4 default element rules)
+        assert_eq!(config.element_rules.len(), 3);
     }
 
     #[test]
