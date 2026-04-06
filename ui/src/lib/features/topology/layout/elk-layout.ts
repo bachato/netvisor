@@ -227,7 +227,10 @@ function buildElkGraph(input: ElkLayoutInput): {
 
 /**
  * Compute optimal handle sides based on relative position of source and target.
- * Picks the pair of sides (Top/Bottom/Left/Right) that minimizes edge distance.
+ * Biases toward vertical handles (Top/Bottom) since containers are typically
+ * stacked vertically — horizontal handles cause edges to cross through
+ * adjacent elements. Only uses Left/Right when the edge is very horizontal
+ * (target at nearly the same vertical level).
  */
 function computeOptimalHandles(
 	srcPos: { x: number; y: number },
@@ -243,16 +246,19 @@ function computeOptimalHandles(
 	const dx = tgtCx - srcCx;
 	const dy = tgtCy - srcCy;
 
-	// Pick handle based on predominant direction
-	if (Math.abs(dy) >= Math.abs(dx)) {
-		// Vertical: target is below source → source Bottom, target Top (and vice versa)
+	// Bias toward vertical handles: use horizontal only when |dx| > 2.5 * |dy|
+	// (roughly 68° from vertical). This ensures edges to containers that are
+	// below-and-to-the-side use Bottom/Top handles, routing cleanly downward
+	// instead of horizontally through adjacent elements.
+	const useVertical = Math.abs(dy) * 2.5 >= Math.abs(dx);
+
+	if (useVertical) {
 		if (dy >= 0) {
 			return { sourceHandle: 'Bottom', targetHandle: 'Top' };
 		} else {
 			return { sourceHandle: 'Top', targetHandle: 'Bottom' };
 		}
 	} else {
-		// Horizontal: target is right of source → source Right, target Left
 		if (dx >= 0) {
 			return { sourceHandle: 'Right', targetHandle: 'Left' };
 		} else {
