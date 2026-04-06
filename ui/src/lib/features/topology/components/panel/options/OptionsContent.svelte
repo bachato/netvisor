@@ -8,7 +8,12 @@
 	} from '../../../queries';
 	import { hoveredEdgeType } from '../../../interactions';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '../../../state';
-	import { edgeTypes, perspectives, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import {
+		edgeTypes,
+		perspectives,
+		serviceCategories,
+		serviceDefinitions
+	} from '$lib/shared/stores/metadata';
 	import { activePerspective } from '../../../queries';
 	import type { Color } from '$lib/shared/utils/styling';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
@@ -18,7 +23,6 @@
 	import FilterGroup from './FilterGroup.svelte';
 	import GroupingRuleEditor from './GroupingRuleEditor.svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
-	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		common_hosts,
 		common_services,
@@ -130,30 +134,13 @@
 		});
 	}
 
-	// Track categories being unhidden to prevent flicker during topology rebuild
-	let pendingUnhideCategories = new SvelteSet<string>();
-
-	// Clear pending unhide categories when topology reference changes (rebuild completed)
-	$effect(() => {
-		// Access topology to create dependency
-		void topology;
-		if (pendingUnhideCategories.size > 0) {
-			pendingUnhideCategories.clear();
-		}
-	});
-
 	function toggleServiceCategory(category: string) {
 		updateTopologyOptions((opts) => {
 			const hidden = opts.request.hide_service_categories ?? [];
 			const idx = hidden.indexOf(category as (typeof hidden)[number]);
-			const isUnhiding = idx !== -1;
-			const newHidden = isUnhiding
+			const newHidden = idx !== -1
 				? hidden.filter((c) => c !== category)
 				: [...hidden, category as (typeof hidden)[number]];
-
-			if (isUnhiding) {
-				pendingUnhideCategories.add(category);
-			}
 
 			return {
 				...opts,
@@ -191,44 +178,29 @@
 		hoveredEdgeType.set(null);
 	}
 
-	// Build categories with colors from services present in the topology
-	let serviceCategoriesWithColors = $derived.by(() => {
-		if (!topology?.services) return [];
-		const seen: Record<string, boolean> = {};
-		const result: { value: string; label: string; color: Color }[] = [];
+	// Categories present in the topology's services
+	let topologyCategoryIds = $derived.by(() => {
+		if (!topology?.services) return new Set<string>();
+		const ids = new Set<string>();
 		for (const service of topology.services) {
 			const category = serviceDefinitions.getCategory(service.service_definition);
-			if (category && !seen[category]) {
-				seen[category] = true;
-				const color = serviceDefinitions.getColorHelper(service.service_definition).color;
-				result.push({ value: category, label: category, color });
-			}
+			if (category) ids.add(category);
 		}
-		return result.sort((a, b) => a.label.localeCompare(b.label));
+		return ids;
 	});
 
-	// All categories including hidden ones and pending unhides (for Hide Stuff section).
-	// Hidden categories are removed from topology.services by the backend,
-	// so we need to merge them back from the request options + service definitions.
-	// Pending unhide categories are kept visible during the rebuild debounce window.
+	// Stable category list: show categories present in topology OR in hidden list.
+	// Uses service-categories fixture for names/colors (not derived from topology data).
 	let allServiceCategoriesWithColors = $derived.by(() => {
-		const hiddenCategories = $topologyOptions.request.hide_service_categories ?? [];
-		const extraCategories = [...hiddenCategories, ...pendingUnhideCategories];
-		if (extraCategories.length === 0) return serviceCategoriesWithColors;
+		const hiddenCategories = new Set($topologyOptions.request.hide_service_categories ?? []);
+		const result: { value: string; label: string; color: Color }[] = [];
 
-		const seen = new SvelteSet(serviceCategoriesWithColors.map((c) => c.value));
-		const result = [...serviceCategoriesWithColors];
-
-		for (const category of extraCategories) {
-			if (seen.has(category)) continue;
-			seen.add(category);
-			// Find any service definition with this category to get the color
-			const allDefs = serviceDefinitions.getItems();
-			const def = allDefs.find((d) => d.category === category);
-			if (def) {
-				const color = serviceDefinitions.getColorHelper(def.id).color;
-				result.push({ value: category, label: category, color });
-			}
+		const allCats = serviceCategories.getItems();
+		for (const cat of allCats) {
+			if (!topologyCategoryIds.has(cat.id) && !hiddenCategories.has(cat.id)) continue;
+			const color = serviceCategories.getColorString(cat.id);
+			const label = cat.name ?? cat.id;
+			result.push({ value: cat.id, label, color });
 		}
 
 		return result.sort((a, b) => a.label.localeCompare(b.label));
