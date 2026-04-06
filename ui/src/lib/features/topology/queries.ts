@@ -644,6 +644,7 @@ function buildOptionsForApi(): TopologyOptions {
 		...opts,
 		request: {
 			...opts.request,
+			perspective: currentPerspective,
 			element_rules: get(sharedElementRules),
 			perspective_overrides: Object.keys(overrides).length > 0 ? overrides : undefined
 		}
