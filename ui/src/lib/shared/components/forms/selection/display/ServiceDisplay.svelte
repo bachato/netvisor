@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { concepts, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { concepts, serviceCategories, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { Port } from '$lib/features/hosts/types/base';
 
 	export interface ServiceDisplayContext {
@@ -66,6 +66,15 @@
 			serviceDefinitions.getColorHelper(service.service_definition).icon,
 		getTags: (service: Service) => {
 			let tags: TagProps[] = [];
+
+			const category = serviceDefinitions.getCategory(service.service_definition);
+			if (category) {
+				tags.push({
+					label: serviceCategories.getName(category),
+					color: serviceCategories.getColorString(category),
+					title: serviceCategories.getDescription(category) || undefined
+				});
+			}
 
 			if (service.virtualization) {
 				tags.push({

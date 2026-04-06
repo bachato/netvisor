@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { IconComponent } from '$lib/shared/utils/types';
+	import { tooltip } from '$lib/shared/actions/tooltip';
 
 	interface Option {
 		value: string;
@@ -45,7 +46,8 @@
 		<button
 			type="button"
 			{disabled}
-			title={option.tooltip}
+			use:tooltip
+			data-tooltip={option.tooltip || null}
 			class="{sizeClasses} flex items-center justify-center gap-1 transition-colors {selected ===
 			option.value
 				? 'bg-blue-600 text-white'

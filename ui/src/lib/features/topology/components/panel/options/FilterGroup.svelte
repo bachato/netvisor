@@ -9,6 +9,7 @@
 		color: Color;
 		icon?: IconComponent | null;
 		isShiny?: boolean;
+		tooltip?: string;
 	}
 
 	let {
@@ -60,7 +61,13 @@
 						? 'opacity-50 hover:opacity-75'
 						: 'opacity-100'}"
 			>
-				<Tag label={item.label} color={item.color} icon={item.icon} isShiny={item.isShiny} />
+				<Tag
+					label={item.label}
+					color={item.color}
+					icon={item.icon}
+					isShiny={item.isShiny}
+					title={item.tooltip ?? ''}
+				/>
 			</button>
 		{/each}
 	</div>

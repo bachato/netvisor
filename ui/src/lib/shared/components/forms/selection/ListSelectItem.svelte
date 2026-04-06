@@ -165,6 +165,7 @@
 									pill={tag.pill}
 									icon={tag.icon ?? null}
 									href={tag.href ?? ''}
+									title={tag.title ?? ''}
 								/>
 							</button>
 						{:else}
@@ -173,6 +174,7 @@
 								color={tag.color}
 								icon={tag.icon ?? null}
 								href={tag.href ?? ''}
+								title={tag.title ?? ''}
 							/>
 						{/if}
 					{/each}

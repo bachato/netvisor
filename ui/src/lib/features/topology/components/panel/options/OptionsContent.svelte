@@ -190,17 +190,18 @@
 	});
 
 	// Stable category list: show categories present in topology OR in hidden list.
-	// Uses service-categories fixture for names/colors (not derived from topology data).
+	// Uses service-categories fixture for names/colors and descriptions.
 	let allServiceCategoriesWithColors = $derived.by(() => {
 		const hiddenCategories = new Set($topologyOptions.request.hide_service_categories ?? []);
-		const result: { value: string; label: string; color: Color }[] = [];
+		const result: { value: string; label: string; color: Color; tooltip?: string }[] = [];
 
 		const allCats = serviceCategories.getItems();
 		for (const cat of allCats) {
 			if (!topologyCategoryIds.has(cat.id) && !hiddenCategories.has(cat.id)) continue;
 			const color = serviceCategories.getColorString(cat.id);
 			const label = cat.name ?? cat.id;
-			result.push({ value: cat.id, label, color });
+			const tooltip = cat.description || undefined;
+			result.push({ value: cat.id, label, color, tooltip });
 		}
 
 		return result.sort((a, b) => a.label.localeCompare(b.label));

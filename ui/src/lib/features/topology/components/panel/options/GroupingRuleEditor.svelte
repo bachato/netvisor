@@ -31,7 +31,7 @@
 		selectedTopologyId,
 		autoRebuild
 	} from '../../../queries';
-	import { serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { serviceCategories, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { components } from '$lib/api/schema';
 	type ServiceCategory = components['schemas']['ServiceCategory'];
 	import { useTagsQuery } from '$lib/features/tags/queries';
@@ -96,13 +96,18 @@
 	let serviceCategoriesWithColors = $derived.by(() => {
 		if (!topology?.services) return [];
 		const seen: Record<string, boolean> = {};
-		const result: { value: string; label: string; color: Color }[] = [];
+		const result: { value: string; label: string; color: Color; tooltip?: string }[] = [];
 		for (const service of topology.services) {
 			const category = serviceDefinitions.getCategory(service.service_definition);
 			if (category && !seen[category]) {
 				seen[category] = true;
 				const color = serviceDefinitions.getColorHelper(service.service_definition).color;
-				result.push({ value: category, label: category, color });
+				result.push({
+					value: category,
+					label: serviceCategories.getName(category),
+					color,
+					tooltip: serviceCategories.getDescription(category) || undefined
+				});
 			}
 		}
 		return result.sort((a, b) => a.label.localeCompare(b.label));

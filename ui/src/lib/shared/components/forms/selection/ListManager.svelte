@@ -347,8 +347,8 @@
 						onClick(item, index);
 						if (allowSelection && itemClickAction == 'select') {
 							toggleItemSelection(item);
-						} else if (!itemSnippet && allowItemEdit(item)) {
-							if (itemDisplayComponent.supportsInlineEdit) {
+						} else if (allowItemEdit(item)) {
+							if (!itemSnippet && itemDisplayComponent.supportsInlineEdit) {
 								// Toggle inline editing for this item
 								editingIndex = editingIndex === index ? null : index;
 							} else {

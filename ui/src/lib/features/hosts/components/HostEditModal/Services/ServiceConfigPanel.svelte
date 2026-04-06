@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { InterfaceBinding, PortBinding, Service } from '$lib/features/services/types/base';
-	import { serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { serviceCategories, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
 	import { pushWarning } from '$lib/shared/stores/feedback';
 	import { required, max } from '$lib/shared/components/forms/validators';
-	import ConfigHeader from '$lib/shared/components/forms/config/ConfigHeader.svelte';
 	import { v4 as uuidv4 } from 'uuid';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import { PortBindingDisplay } from '$lib/shared/components/forms/selection/display/PortBindingDisplay.svelte';
@@ -91,6 +91,8 @@
 	let serviceMetadata = $derived(
 		service ? serviceDefinitions.getItem(service.service_definition) : null
 	);
+
+	let categoryId = $derived(serviceMetadata?.category ?? null);
 
 	// Field name for this service's name in the form array
 	let nameFieldName = $derived(`services[${index}].name`);
@@ -339,7 +341,21 @@
 
 {#if service && serviceMetadata}
 	<div class="space-y-6">
-		<ConfigHeader title={serviceMetadata.name ?? ''} subtitle={serviceMetadata.description} />
+		<div class="flex items-start justify-between gap-2 border-b border-gray-600 pb-4">
+			<div>
+				<h3 class="text-primary text-sm font-medium">{serviceMetadata.name ?? ''}</h3>
+				{#if serviceMetadata.description}
+					<p class="text-secondary text-sm">{serviceMetadata.description}</p>
+				{/if}
+			</div>
+			{#if categoryId}
+				<Tag
+					label={serviceCategories.getName(categoryId)}
+					color={serviceCategories.getColorString(categoryId)}
+					title={serviceCategories.getDescription(categoryId) || ''}
+				/>
+			{/if}
+		</div>
 
 		{#if serviceMetadata.category === 'OpenPorts'}
 			<DocsHint
