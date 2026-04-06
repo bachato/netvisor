@@ -143,11 +143,13 @@
 		}>) ?? []
 	);
 
-	let nodeStyle = $derived(
-		[width != null ? `width: ${width}px` : '', height != null ? `height: ${height}px` : '']
-			.filter(Boolean)
-			.join('; ')
-	);
+	let nodeStyle = $derived.by(() => {
+		const parts = [
+			width != null ? `width: ${width}px` : '',
+			height != null ? `height: ${height}px` : ''
+		].filter(Boolean);
+		return parts.length > 0 ? parts.join('; ') + ';' : '';
+	});
 
 	// Title text: from node header (set by backend graph builder)
 	let headerText = $derived((data as TopologyNode).header ?? '');
