@@ -80,6 +80,11 @@ impl FromStr for SubnetType {
 }
 
 impl SubnetType {
+    /// Whether this subnet type represents a Docker/container network
+    pub fn is_docker_network(&self) -> bool {
+        matches!(self, SubnetType::DockerBridge | SubnetType::MacVlan | SubnetType::IpVlan)
+    }
+
     pub fn from_interface_name(interface_name: &str) -> Self {
         // Loopback interfaces (lo on Linux, lo0 on macOS)
         if Self::match_interface_names(&["lo"], interface_name) {

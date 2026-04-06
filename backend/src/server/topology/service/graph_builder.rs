@@ -330,9 +330,17 @@ impl GraphBuilder {
             {
                 tag_ids.extend(service.base.tags.iter().copied());
             }
-            // Resolve compose_project from services bound to this interface (preferred)
-            // or from all host Docker services if no interface
-            let compose_project = {
+            // Resolve compose_project only for elements inside Docker subnets.
+            // LAN interfaces shouldn't be grouped by stack.
+            let is_docker_subnet = ctx
+                .subnets
+                .iter()
+                .find(|s| s.id == _subnet_id)
+                .map(|s| s.base.subnet_type.is_docker_network())
+                .unwrap_or(false);
+            let compose_project = if !is_docker_subnet {
+                None
+            } else {
                 let mut projects: HashSet<&str> = HashSet::new();
                 let services_iter: Box<dyn Iterator<Item = _>> =
                     if let Some(iface_id) = child.interface_id {
