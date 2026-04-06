@@ -247,6 +247,7 @@ impl Default for TopologyLocalOptions {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct TopologyRequestOptions {
+    #[serde(default, skip_serializing)]
     pub hide_vm_title_on_docker_container: bool,
     pub hide_ports: bool,
     #[serde(default = "default_hide_service_categories")]
