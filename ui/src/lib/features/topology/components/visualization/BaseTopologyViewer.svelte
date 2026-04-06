@@ -388,24 +388,27 @@
 
 						const isElement = node.node_type === 'Element';
 
+						// Container size from layout graph (collapsed = metadata size, expanded = ELK size)
+						const containerSize =
+							!isElement && layoutGraph ? layoutGraph.getContainerSize(node.id) : undefined;
+
 						if (useGraph && layoutGraph) {
 							const graphPos = layoutGraph.getPosition(node.id);
-							const containerSize = !isElement ? layoutGraph.getContainerSize(node.id) : undefined;
 							const expandedSize = !isElement ? layoutGraph.getExpandedSize(node.id) : undefined;
 							position = graphPos ?? { x: node.position.x, y: node.position.y };
 							// Sub-containers keep expanded width when collapsed to prevent overlap on expand
-							// Root containers use content-fit width (min-w-48 in ContainerNode)
+							// Root containers use collapsed size from metadata
 							const isSubContainer =
 								!isElement && node.node_type === 'Container' && !!node.parent_container_id;
 							width = isNodeCollapsed
 								? isSubContainer
-									? (expandedSize?.width ?? undefined)
-									: undefined
+									? (expandedSize?.width ?? containerSize?.width ?? undefined)
+									: (containerSize?.width ?? undefined)
 								: isElement
 									? 250
 									: (containerSize?.width ?? undefined);
 							height = isNodeCollapsed
-								? undefined
+								? (containerSize?.height ?? undefined)
 								: isElement
 									? undefined
 									: (containerSize?.height ?? undefined);
@@ -413,9 +416,13 @@
 							const curPos = currentPositions.get(node.id);
 							const curSize = currentSizes.get(node.id);
 							position = curPos ?? { x: node.position.x, y: node.position.y };
-							width = isNodeCollapsed ? undefined : isElement ? 250 : (curSize?.width ?? undefined);
+							width = isNodeCollapsed
+								? (containerSize?.width ?? undefined)
+								: isElement
+									? 250
+									: (curSize?.width ?? undefined);
 							height = isNodeCollapsed
-								? undefined
+								? (containerSize?.height ?? undefined)
 								: isElement
 									? undefined
 									: (curSize?.height ?? undefined);
