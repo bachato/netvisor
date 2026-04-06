@@ -143,7 +143,11 @@
 		}>) ?? []
 	);
 
-	let nodeStyle = $derived(`width: ${width}px; height: ${height}px;`);
+	let nodeStyle = $derived(
+		[width != null ? `width: ${width}px` : '', height != null ? `height: ${height}px` : '']
+			.filter(Boolean)
+			.join('; ')
+	);
 
 	// Title text: from node header (set by backend graph builder)
 	let headerText = $derived((data as TopologyNode).header ?? '');
@@ -330,7 +334,7 @@
 			<!-- Collapsed subcontainer: compact inline header with dashed border -->
 			<div
 				class="nopan nodrag flex items-center gap-1 overflow-hidden rounded-lg border border-dashed border-gray-300 px-3 py-2 dark:border-gray-600"
-				style="background: var(--color-topology-subgroup-bg); width: 100%; height: 100%;"
+				style="background: var(--color-topology-subgroup-bg);"
 			>
 				<ChevronRight class="text-secondary h-3.5 w-3.5 flex-shrink-0" />
 				{#if headerText}
@@ -351,7 +355,7 @@
 			{@const ungroupedCount = childCount - subgroupTotal}
 			<div
 				class="rounded-xl border border-dashed border-gray-400 text-center text-sm font-semibold shadow-lg dark:border-gray-500"
-				style="background: var(--color-topology-node-bg); width: 100%; height: 100%; position: relative; overflow: visible; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
+				style="background: var(--color-topology-node-bg); position: relative; overflow: visible; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
 			>
 				<div class="flex min-w-48 flex-col items-center gap-2 px-6 py-4">
 					<span class="text-secondary text-base font-medium underline">

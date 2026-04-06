@@ -289,7 +289,12 @@
 					}
 					layoutNodes = layoutNodes.filter(
 						(n) =>
-							!(n.node_type === 'Container' && subcontainerIds.has(n.id) && !childCounts.has(n.id))
+							!(
+								n.node_type === 'Container' &&
+								subcontainerIds.has(n.id) &&
+								!childCounts.has(n.id) &&
+								!collapsed.has(n.id)
+							)
 					);
 				}
 
@@ -711,6 +716,7 @@
 				lastRenderedView = currentView;
 			}
 		} catch (err) {
+			isMeasuring = false;
 			pushError(`Failed to parse topology data ${err}`);
 		}
 	}
