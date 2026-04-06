@@ -85,7 +85,7 @@
 
 	<!-- MSP callout -->
 	{#if isMsp}
-		<InlineInfo title={appWizard_mspCallout()} />
+		<InlineInfo title={appWizard_mspCallout()} dismissableKey="msp-client-callout" />
 	{/if}
 
 	<!-- Suggested groups as application-styled tags -->
