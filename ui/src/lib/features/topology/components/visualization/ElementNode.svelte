@@ -155,18 +155,40 @@
 						} as ElementRenderData;
 					}
 
-					// Host elements: show host name with service count
+					// Host elements: show host name with services
 					if (elementType === 'Host') {
 						if (!host || !resolved.hostId) return null;
-						const serviceCount = visibleServicesForHost.length;
+
+						const hiddenCategories =
+							(
+								($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>
+							)[$activePerspective] ?? [];
+
+						type CategoryType = (typeof hiddenCategories)[number];
+						const servicesOnHost = visibleServicesForHost.filter(
+							(s) =>
+								!hiddenCategories.includes(
+									serviceDefinitions.getCategory(s.service_definition) as CategoryType
+								)
+						);
+
+						const hiddenOpenPorts = visibleServicesForHost.filter((s) => {
+							const category = serviceDefinitions.getCategory(s.service_definition);
+							return (
+								hiddenCategories.includes(category as CategoryType) && category === 'OpenPorts'
+							);
+						});
+
+						const showServices = servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0;
+
 						return {
 							elementType,
-							footerText: `${serviceCount} service${serviceCount !== 1 ? 's' : ''}`,
-							services: [],
-							hiddenOpenPorts: [],
+							footerText: null,
+							services: servicesOnHost,
+							hiddenOpenPorts,
 							headerText: null,
 							bodyText: host.name,
-							showServices: false,
+							showServices,
 							isVirtualized: host.virtualization !== null,
 							interface_id: id
 						} as ElementRenderData;
