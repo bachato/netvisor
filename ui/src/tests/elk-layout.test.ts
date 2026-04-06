@@ -126,7 +126,6 @@ function makeTopology(
 				},
 				request: {
 					hide_ports: false,
-					hide_vm_title_on_docker_container: false,
 					hide_service_categories: [],
 					container_rules: [
 						{ id: '00000000-0000-0000-0000-000000000001', rule: 'BySubnet' },

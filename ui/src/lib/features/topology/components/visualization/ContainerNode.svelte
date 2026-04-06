@@ -375,7 +375,7 @@
 				class="rounded-xl border border-dashed border-gray-400 text-center text-sm font-semibold shadow-lg dark:border-gray-500"
 				style="background: var(--color-topology-node-bg); position: relative; overflow: visible; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
 			>
-				<div class="flex min-w-48 flex-col items-center gap-2 px-6 py-4">
+				<div class="flex min-w-fit flex-col items-center gap-2 whitespace-nowrap px-6 py-4">
 					<span class="text-secondary text-base font-medium underline">
 						{topology_elementCount({ count: childCount, label: elementLabel })}
 					</span>
@@ -428,7 +428,7 @@
 							return [];
 						})()}
 						<div
-							class="flex items-center gap-1 rounded-md border border-dashed border-gray-300 px-2 py-1 dark:border-gray-600"
+							class="flex items-center gap-1 whitespace-nowrap rounded-md border border-dashed border-gray-300 px-2 py-1 dark:border-gray-600"
 							style="background: var(--color-topology-subgroup-bg);"
 						>
 							{#if groupLogoComponent}

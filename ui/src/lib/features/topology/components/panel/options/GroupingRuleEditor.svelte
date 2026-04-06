@@ -243,6 +243,13 @@
 		);
 	}
 
+	/** Whether an element rule is user-editable (not locked) — used for reorder */
+	function isElementRuleEditable(item: ElementGraphRule): boolean {
+		const ruleId = getElementRuleType(item.rule);
+		const meta = elementRuleMeta[ruleId];
+		return meta?.metadata?.is_user_editable ?? true;
+	}
+
 	// --- Element Rules ---
 
 	let elementAddOptions = $derived(
@@ -465,7 +472,7 @@
 	allowDuplicates={true}
 	allowItemEdit={(item) => typeof item.rule !== 'string' && isElementRuleApplicable(item)}
 	allowItemRemove={isElementRuleApplicable}
-	allowItemReorder={isElementRuleApplicable}
+	allowItemReorder={isElementRuleEditable}
 	editIcon={getElementEditIcon}
 	editButtonClass={getElementEditButtonClass}
 	isItemEditing={isElementItemEditing}
