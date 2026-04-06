@@ -305,6 +305,17 @@
 				// Elevate edges targeting elements inside absorbing containers
 				const elevatedEdges = elevateEdgesToContainers(topology.edges, layoutNodes);
 
+				// After elevation, edge endpoints may be container IDs (not element IDs).
+				// Add them to elementToContainer so bundling can resolve their parent container.
+				for (const node of layoutNodes) {
+					if (node.node_type === 'Container' && !elementToContainer.has(node.id)) {
+						const parentId = (node as Record<string, unknown>).parent_container_id as
+							| string
+							| undefined;
+						elementToContainer.set(node.id, parentId ?? node.id);
+					}
+				}
+
 				// Run ELK on structure/collapse changes, skip for edge-only re-renders
 				const opts = get(topologyOptions);
 				const hiddenCatsMap = (opts.request.hide_service_categories ?? {}) as Record<
