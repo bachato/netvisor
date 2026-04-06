@@ -673,33 +673,43 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 			sharedElementRules.set(opts.request.element_rules as ElementGraphRule[]);
 		}
 
-		// Build per-perspective options: current from topology, others from overrides or defaults
-		const allOpts = buildDefaultPerPerspectiveOptions();
-		allOpts[storedPerspective] = opts as TopologyOptions;
+		// Build per-perspective options
+		if (isInitial) {
+			// Full rebuild: start from defaults, apply topology + overrides
+			const allOpts = buildDefaultPerPerspectiveOptions();
+			allOpts[storedPerspective] = opts as TopologyOptions;
 
-		const overrides = (opts.request as Record<string, unknown>).perspective_overrides as
-			| Record<string, { container_rules?: ContainerGraphRule[] }>
-			| undefined;
-		if (overrides) {
-			for (const [p, pOverrides] of Object.entries(overrides)) {
-				const perspective = p as TopologyPerspective;
-				if (
-					perspective !== storedPerspective &&
-					allOpts[perspective] &&
-					pOverrides.container_rules
-				) {
-					allOpts[perspective] = {
-						...allOpts[perspective],
-						request: {
-							...allOpts[perspective].request,
-							container_rules: pOverrides.container_rules
-						}
-					};
+			const overrides = (opts.request as Record<string, unknown>).perspective_overrides as
+				| Record<string, { container_rules?: ContainerGraphRule[] }>
+				| undefined;
+			if (overrides) {
+				for (const [p, pOverrides] of Object.entries(overrides)) {
+					const perspective = p as TopologyPerspective;
+					if (
+						perspective !== storedPerspective &&
+						allOpts[perspective] &&
+						pOverrides.container_rules
+					) {
+						allOpts[perspective] = {
+							...allOpts[perspective],
+							request: {
+								...allOpts[perspective].request,
+								container_rules: pOverrides.container_rules
+							}
+						};
+					}
 				}
 			}
-		}
 
-		perPerspectiveOptions.set(allOpts);
+			perPerspectiveOptions.set(allOpts);
+		} else {
+			// SSE update: only update the perspective that was rebuilt,
+			// preserve all other perspectives' state
+			perPerspectiveOptions.update((current) => ({
+				...current,
+				[storedPerspective]: opts as TopologyOptions
+			}));
+		}
 	} finally {
 		hydrating = false;
 	}
