@@ -92,8 +92,11 @@ function buildElkGraph(input: ElkLayoutInput): {
 			const p = meta.padding;
 			const padding = `[top=${p.top},left=${p.left},bottom=${p.bottom},right=${p.right}]`;
 
-			const collapsedWidth = meta.collapsed_size.width;
-			const collapsedHeight = meta.collapsed_size.height;
+			// Use DOM-measured size for collapsed containers when available,
+			// falling back to static metadata for the initial render
+			const measured = input.elementNodeSizes?.get(node.id);
+			const collapsedWidth = measured?.x ?? meta.collapsed_size.width;
+			const collapsedHeight = measured?.y ?? meta.collapsed_size.height;
 			// Use expanded width for collapsed containers so ELK reserves horizontal
 			// space — prevents neighbors from being placed where they'd overlap on expand
 			const expandedWidth = input.expandedContainerSizes?.get(node.id)?.width;
@@ -191,9 +194,20 @@ function buildElkGraph(input: ElkLayoutInput): {
 			elementToImmediateContainer.get(edge.target) ??
 			(containerIds.has(edge.target) ? edge.target : undefined);
 		if (srcImm && tgtImm && srcImm !== tgtImm) {
-			// Use root container layers for vertical direction (subcontainers don't have layer hints)
-			const srcRoot = elementToRootContainer.get(edge.source) ?? srcImm;
-			const tgtRoot = elementToRootContainer.get(edge.target) ?? tgtImm;
+			// Use root container layers for vertical direction (subcontainers don't have layer hints).
+			// For container endpoints, walk up parentContainerMap to find root.
+			const resolveRootForPositioning = (id: string, fallback: string): string => {
+				const fromElem = elementToRootContainer.get(id);
+				if (fromElem) return fromElem;
+				if (!containerIds.has(id)) return fallback;
+				let rootId = id;
+				while (parentContainerMap.has(rootId)) {
+					rootId = parentContainerMap.get(rootId)!;
+				}
+				return rootId;
+			};
+			const srcRoot = resolveRootForPositioning(edge.source, srcImm);
+			const tgtRoot = resolveRootForPositioning(edge.target, tgtImm);
 			const srcLayer = containerLayerId.get(srcRoot) ?? 999;
 			const tgtLayer = containerLayerId.get(tgtRoot) ?? 999;
 			for (const [elementId, myLayer, otherLayer] of [
@@ -246,10 +260,27 @@ function buildElkGraph(input: ElkLayoutInput): {
 	for (const edge of input.edges) {
 		if (!affectsLayout(edge)) continue;
 
-		const srcImm = elementToImmediateContainer.get(edge.source);
-		const tgtImm = elementToImmediateContainer.get(edge.target);
-		const srcRoot = elementToRootContainer.get(edge.source);
-		const tgtRoot = elementToRootContainer.get(edge.target);
+		// Resolve edge endpoints: element → its immediate container, or container → itself
+		const srcImm =
+			elementToImmediateContainer.get(edge.source) ??
+			(containerIds.has(edge.source) ? edge.source : undefined);
+		const tgtImm =
+			elementToImmediateContainer.get(edge.target) ??
+			(containerIds.has(edge.target) ? edge.target : undefined);
+		// Root container: for elements, resolve through subcontainers; for containers,
+		// walk up parentContainerMap to root
+		const resolveRoot = (id: string): string | undefined => {
+			const fromElem = elementToRootContainer.get(id);
+			if (fromElem) return fromElem;
+			if (!containerIds.has(id)) return undefined;
+			let rootId = id;
+			while (parentContainerMap.has(rootId)) {
+				rootId = parentContainerMap.get(rootId)!;
+			}
+			return rootId;
+		};
+		const srcRoot = resolveRoot(edge.source);
+		const tgtRoot = resolveRoot(edge.target);
 
 		if (!srcImm || !tgtImm) continue;
 		if (srcImm === tgtImm) continue; // same immediate container — no edge needed
@@ -308,6 +339,40 @@ function buildElkGraph(input: ElkLayoutInput): {
 			container.layoutOptions['elk.layered.crossingMinimization.strategy'] = 'LAYER_SWEEP';
 			container.layoutOptions['elk.layered.layering.strategy'] = 'NETWORK_SIMPLEX';
 			delete container.layoutOptions['elk.box.packingMode'];
+		}
+	}
+
+	// For layered containers, add element↔element edges within the same container.
+	// The first pass only caught cross-child edges (different immediate containers).
+	// Elements directly in the root with edges to other direct children also need inner edges
+	// so the layered algorithm can position them adjacently (e.g., Portainer ↔ Docker).
+	if (rootsWithCrossChildEdges.size > 0) {
+		for (const edge of input.edges) {
+			if (!affectsLayout(edge)) continue;
+			const srcImm =
+				elementToImmediateContainer.get(edge.source) ??
+				(containerIds.has(edge.source) ? edge.source : undefined);
+			const tgtImm =
+				elementToImmediateContainer.get(edge.target) ??
+				(containerIds.has(edge.target) ? edge.target : undefined);
+			// Both in the same immediate container that was switched to layered
+			if (srcImm && tgtImm && srcImm === tgtImm && rootsWithCrossChildEdges.has(srcImm)) {
+				const key = `${edge.source}->${edge.target}`;
+				if (!seenInnerEdges.has(srcImm)) seenInnerEdges.set(srcImm, new Set());
+				const seen = seenInnerEdges.get(srcImm)!;
+				if (!seen.has(key) && !seen.has(`${edge.target}->${edge.source}`)) {
+					seen.add(key);
+					const container = containers.get(srcImm);
+					if (container) {
+						if (!container.edges) container.edges = [];
+						container.edges.push({
+							id: `elk-inner-edge-${edgeIndex++}`,
+							sources: [edge.source],
+							targets: [edge.target]
+						});
+					}
+				}
+			}
 		}
 	}
 
