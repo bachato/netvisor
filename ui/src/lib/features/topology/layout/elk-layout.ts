@@ -95,8 +95,11 @@ function buildElkGraph(input: ElkLayoutInput): {
 			const p = meta.padding;
 			const padding = `[top=${p.top},left=${p.left},bottom=${p.bottom},right=${p.right}]`;
 
-			const collapsedWidth = meta.collapsed_size.width;
-			const collapsedHeight = meta.collapsed_size.height;
+			// Use DOM-measured size for collapsed containers when available,
+			// falling back to static metadata for the initial render
+			const measured = input.elementNodeSizes?.get(node.id);
+			const collapsedWidth = measured?.x ?? meta.collapsed_size.width;
+			const collapsedHeight = measured?.y ?? meta.collapsed_size.height;
 			// Use expanded width for collapsed containers so ELK reserves horizontal
 			// space — prevents neighbors from being placed where they'd overlap on expand
 			const expandedWidth = input.expandedContainerSizes?.get(node.id)?.width;

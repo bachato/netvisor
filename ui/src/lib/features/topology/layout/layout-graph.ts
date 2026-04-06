@@ -45,6 +45,8 @@ export class LayoutContainer {
 	/** Size computed by ELK when expanded */
 	expandedSize: { width: number; height: number } = { width: 0, height: 0 };
 	collapsed = false;
+	/** DOM-measured size when collapsed, set after first layout pass */
+	measuredCollapsedSize: { width: number; height: number } | null = null;
 	isSubcontainer: boolean;
 	containerType: string;
 
@@ -56,6 +58,7 @@ export class LayoutContainer {
 	}
 
 	get collapsedSize(): { width: number; height: number } {
+		if (this.measuredCollapsedSize) return { ...this.measuredCollapsedSize };
 		const meta = containerTypes.getMetadata(this.containerType);
 		return { ...meta.collapsed_size };
 	}
@@ -207,9 +210,11 @@ export class LayoutGraph {
 			const container = this.containers.get(id);
 			if (container) {
 				container.position = { ...pos };
-				// Don't overwrite expandedSize for collapsed containers — ELK returns
-				// collapsed dimensions which would corrupt the stored expanded size
-				if (!container.collapsed) {
+				if (container.collapsed) {
+					// Store the ELK-assigned collapsed size (from DOM measurement)
+					const size = containerSizes.get(id);
+					if (size) container.measuredCollapsedSize = { ...size };
+				} else {
 					const size = containerSizes.get(id);
 					if (size) container.expandedSize = { ...size };
 				}
