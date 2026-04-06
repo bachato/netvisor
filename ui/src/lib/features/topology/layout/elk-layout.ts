@@ -35,10 +35,10 @@ async function getElk(): Promise<import('elkjs/lib/elk-api')['default']> {
 const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
 	'elk.algorithm': 'layered',
 	'elk.direction': 'DOWN',
-	'elk.layered.spacing.nodeNodeBetweenLayers': '60',
-	'elk.layered.spacing.edgeNodeBetweenLayers': '30',
-	'elk.spacing.componentComponent': '75',
-	'elk.spacing.nodeNode': '50',
+	'elk.layered.spacing.nodeNodeBetweenLayers': '40',
+	'elk.layered.spacing.edgeNodeBetweenLayers': '20',
+	'elk.spacing.componentComponent': '50',
+	'elk.spacing.nodeNode': '40',
 	'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
 	'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
 	'elk.hierarchyHandling': 'SEPARATE_CHILDREN',
@@ -125,18 +125,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 		}
 	}
 
-	// Sort children: elements first (alphabetical), then subcontainers (alphabetical).
-	// This groups subcontainers together in the box grid instead of interleaving them.
-	for (const [, parent] of containers) {
-		if (parent.children && parent.children.length > 0) {
-			parent.children.sort((a, b) => {
-				const aIsSub = containerIds.has(a.id) ? 1 : 0;
-				const bIsSub = containerIds.has(b.id) ? 1 : 0;
-				if (aIsSub !== bIsSub) return aIsSub - bIsSub;
-				return a.id.localeCompare(b.id);
-			});
-		}
-	}
+	// Subcontainer children sorted after elements are added (below)
 
 	// Build dual element→container mappings:
 	// - immediate: direct parent container (may be a subcontainer)
@@ -175,6 +164,19 @@ function buildElkGraph(input: ElkLayoutInput): {
 					}
 				});
 			}
+		}
+	}
+
+	// Sort children: elements first (alphabetical), then subcontainers (alphabetical).
+	// Must run AFTER elements are added above.
+	for (const [, parent] of containers) {
+		if (parent.children && parent.children.length > 1) {
+			parent.children.sort((a, b) => {
+				const aIsSub = containerIds.has(a.id) ? 1 : 0;
+				const bIsSub = containerIds.has(b.id) ? 1 : 0;
+				if (aIsSub !== bIsSub) return aIsSub - bIsSub;
+				return a.id.localeCompare(b.id);
+			});
 		}
 	}
 
