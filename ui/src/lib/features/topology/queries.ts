@@ -652,17 +652,21 @@ function buildOptionsForApi(): TopologyOptions {
 
 /**
  * Hydrate reactive stores from a topology's backend-stored options.
- * Called on initial topology selection and SSE updates.
+ * Called on initial topology selection. SSE updates only hydrate rules,
+ * not perspective (to avoid resetting user's perspective switch mid-flight).
  */
 let hydrating = false;
-export function hydrateStoresFromTopology(topology: Topology): void {
+export function hydrateStoresFromTopology(topology: Topology, isInitial = true): void {
 	hydrating = true;
 	try {
 		const opts = topology.options;
 		const storedPerspective = opts.request.perspective as TopologyPerspective;
 
-		// Set perspective
-		activePerspective.set(storedPerspective);
+		// Only set perspective on initial load — not on SSE updates, which would
+		// revert the user's perspective switch mid-flight
+		if (isInitial) {
+			activePerspective.set(storedPerspective);
+		}
 
 		// Set element rules from topology (the full unfiltered set)
 		if (opts.request.element_rules?.length) {
@@ -947,9 +951,10 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 			return old.map((topo) => (topo.id === update.id ? update : topo));
 		});
 
-		// Hydrate stores from the updated topology if it's the selected one
+		// Hydrate stores from the updated topology if it's the selected one.
+		// Not initial — don't reset perspective on SSE updates.
 		if (update.id === get(selectedTopologyId)) {
-			hydrateStoresFromTopology(update);
+			hydrateStoresFromTopology(update, false);
 		}
 
 		// Invalidate org cache until FirstTopologyRebuild milestone appears
