@@ -22,11 +22,11 @@ SET options = jsonb_set(
                     jsonb_build_array(
                         jsonb_build_object('id', gen_random_uuid(), 'rule', 'BySubnet')
                     )
-                    -- Conditionally include ByVirtualizingService (legacy default was true)
+                    -- Conditionally include MergeDockerBridges (legacy default was true)
                     || CASE
                         WHEN COALESCE((options->'request'->>'group_docker_bridges_by_host')::boolean, true)
                         THEN jsonb_build_array(
-                            jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByVirtualizingService')
+                            jsonb_build_object('id', gen_random_uuid(), 'rule', 'MergeDockerBridges')
                         )
                         ELSE '[]'::jsonb
                     END
@@ -36,7 +36,7 @@ SET options = jsonb_set(
                     CASE
                         WHEN COALESCE((options->'request'->>'group_docker_bridges_by_host')::boolean, true)
                         THEN jsonb_build_array(
-                            jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByVirtualizingService')
+                            jsonb_build_object('id', gen_random_uuid(), 'rule', 'MergeDockerBridges')
                         )
                         ELSE '[]'::jsonb
                     END

@@ -272,7 +272,7 @@ fn default_container_rules() -> HashMap<TopologyPerspective, Vec<GraphRule<Conta
     // Build from applicable_perspectives: for each rule type, add it to every perspective it applies to
     let all_rules: Vec<GraphRule<ContainerRule>> = vec![
         GraphRule::new(BySubnet),
-        GraphRule::new(ByVirtualizingService),
+        GraphRule::new(MergeDockerBridges),
         GraphRule::new(ByApplicationGroup { tag_ids: vec![] }),
     ];
 

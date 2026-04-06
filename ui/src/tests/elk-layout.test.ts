@@ -129,7 +129,7 @@ function makeTopology(
 					hide_service_categories: [],
 					container_rules: [
 						{ id: '00000000-0000-0000-0000-000000000001', rule: 'BySubnet' },
-						{ id: '00000000-0000-0000-0000-000000000002', rule: 'ByVirtualizingService' }
+						{ id: '00000000-0000-0000-0000-000000000002', rule: 'MergeDockerBridges' }
 					],
 					element_rules: []
 				}

@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-06T15:23:49.769397Z",
-             *       "id": "6ebe466c-e6b8-4587-b60b-4cdce212e536",
+             *       "created_at": "2026-04-06T16:17:26.063899Z",
+             *       "id": "4648441f-d196-4a0a-91cd-b7f7aaad99b3",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-06T15:23:49.769397Z"
+             *       "updated_at": "2026-04-06T16:17:26.063899Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-06T15:23:49.750135Z",
-             *               "id": "e95fdf95-52ae-4afe-8029-a70e4cb1aa3b",
+             *               "created_at": "2026-04-06T16:17:26.045090Z",
+             *               "id": "4e6714a1-6cb3-4143-be39-c664cc9d518e",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-06T15:23:49.750135Z"
+             *               "updated_at": "2026-04-06T16:17:26.045090Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-06T15:23:49.764127Z",
-             *           "id": "abc7185f-2fe2-4423-9c6a-4085c969bce7",
+             *           "created_at": "2026-04-06T16:17:26.058821Z",
+             *           "id": "898a1ae7-6291-4112-80f6-512f3d737adc",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-06T15:23:49.764127Z"
+             *           "updated_at": "2026-04-06T16:17:26.058821Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3772,14 +3772,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-06T15:23:49.750520Z",
-         *       "id": "19ab5719-4802-493c-a7bd-f32b5bd1fccd",
+         *       "created_at": "2026-04-06T16:17:26.045496Z",
+         *       "id": "4a8ad323-6740-41d2-9bf2-1d6219dd700b",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-06T15:23:49.750520Z"
+         *       "updated_at": "2026-04-06T16:17:26.045496Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4641,7 +4641,7 @@ export interface components {
              * @description Rules that change which containers exist and how they nest.
              *     Container titles are data-driven (subnet CIDR, host names), not user-configurable.
              */
-            rule: "BySubnet" | "ByVirtualizingService" | {
+            rule: "BySubnet" | "MergeDockerBridges" | {
                 ByApplicationGroup: {
                     tag_ids?: string[];
                 };
@@ -4807,14 +4807,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-06T15:23:49.749583Z",
-         *               "id": "eb7cea48-6667-41d1-8c70-8eb1d28d4639",
+         *               "created_at": "2026-04-06T16:17:26.044543Z",
+         *               "id": "cb8bc90d-6d69-406d-8bb6-11a8a44fceef",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-06T15:23:49.749583Z"
+         *               "updated_at": "2026-04-06T16:17:26.044543Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -5882,14 +5882,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-06T15:23:49.750386Z",
-         *           "id": "9cd49970-940d-4898-a7da-8a50ce5dd973",
+         *           "created_at": "2026-04-06T16:17:26.045361Z",
+         *           "id": "bdf0528b-9a45-4a0b-9680-8c3802047dec",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-06T15:23:49.750386Z"
+         *           "updated_at": "2026-04-06T16:17:26.045361Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",

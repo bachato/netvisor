@@ -32,7 +32,7 @@ impl<T> GraphRule<T> {
 )]
 pub enum ContainerRule {
     BySubnet,
-    ByVirtualizingService,
+    MergeDockerBridges,
     ByApplicationGroup {
         #[serde(default)]
         tag_ids: Vec<Uuid>,
@@ -43,7 +43,7 @@ impl ContainerRule {
     pub fn applicable_perspectives(&self) -> &'static [TopologyPerspective] {
         match self {
             ContainerRule::BySubnet => &[TopologyPerspective::L3Logical],
-            ContainerRule::ByVirtualizingService => &[
+            ContainerRule::MergeDockerBridges => &[
                 TopologyPerspective::L3Logical,
                 TopologyPerspective::Infrastructure,
             ],
@@ -62,7 +62,7 @@ impl EntityMetadataProvider for ContainerRule {
     fn color(&self) -> Color {
         match self {
             ContainerRule::BySubnet => Color::Blue,
-            ContainerRule::ByVirtualizingService => Color::Teal,
+            ContainerRule::MergeDockerBridges => Color::Teal,
             ContainerRule::ByApplicationGroup { .. } => Concept::Application.color(),
         }
     }
@@ -70,7 +70,7 @@ impl EntityMetadataProvider for ContainerRule {
     fn icon(&self) -> Icon {
         match self {
             ContainerRule::BySubnet => Icon::Network,
-            ContainerRule::ByVirtualizingService => Icon::Boxes,
+            ContainerRule::MergeDockerBridges => Icon::Boxes,
             ContainerRule::ByApplicationGroup { .. } => Concept::Application.icon(),
         }
     }
@@ -80,7 +80,7 @@ impl TypeMetadataProvider for ContainerRule {
     fn name(&self) -> &'static str {
         match self {
             ContainerRule::BySubnet => "Subnet",
-            ContainerRule::ByVirtualizingService => "Docker bridges",
+            ContainerRule::MergeDockerBridges => "Docker bridges",
             ContainerRule::ByApplicationGroup { .. } => "Application Group",
         }
     }
@@ -88,14 +88,14 @@ impl TypeMetadataProvider for ContainerRule {
     fn description(&self) -> &'static str {
         match self {
             ContainerRule::BySubnet => "Group nodes by network subnet",
-            ContainerRule::ByVirtualizingService => "Merge Docker bridge subnets under their host",
+            ContainerRule::MergeDockerBridges => "Merge Docker bridge subnets under their host",
             ContainerRule::ByApplicationGroup { .. } => "Group services by application group tag",
         }
     }
 
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
-            "is_user_editable": matches!(self, ContainerRule::ByVirtualizingService),
+            "is_user_editable": matches!(self, ContainerRule::MergeDockerBridges),
             "perspectives": self.applicable_perspectives(),
         })
     }
@@ -229,7 +229,7 @@ impl GroupingConfig {
     pub fn should_group_docker_bridges(&self) -> bool {
         self.container_rules
             .iter()
-            .any(|r| matches!(r.rule, ContainerRule::ByVirtualizingService))
+            .any(|r| matches!(r.rule, ContainerRule::MergeDockerBridges))
     }
 
     pub fn has_application_group_rule(&self) -> bool {
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_from_default_options() {
-        // Default perspective is L3Logical, which gets BySubnet + ByVirtualizingService
+        // Default perspective is L3Logical, which gets BySubnet + MergeDockerBridges
         let options = TopologyRequestOptions::default();
         let config = GroupingConfig::from_request_options(&options);
 
@@ -292,7 +292,7 @@ mod tests {
     fn test_serialization_round_trip_container_rules() {
         let rules = vec![
             GraphRule::new(ContainerRule::BySubnet),
-            GraphRule::new(ContainerRule::ByVirtualizingService),
+            GraphRule::new(ContainerRule::MergeDockerBridges),
         ];
 
         let json = serde_json::to_string(&rules).unwrap();

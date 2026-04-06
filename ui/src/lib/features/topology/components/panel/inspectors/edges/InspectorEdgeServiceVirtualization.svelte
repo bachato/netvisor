@@ -53,7 +53,7 @@
 			(($topologyOptions.request.container_rules ?? {}) as Record<string, { rule: unknown }[]>)[
 				$activePerspective
 			] ?? []
-		).some((r) => r.rule === 'ByVirtualizingService')
+		).some((r) => r.rule === 'MergeDockerBridges')
 	);
 	// Get containerized services - all if grouped, or just the one in edge.target if not
 	let containerizedServices = $derived(

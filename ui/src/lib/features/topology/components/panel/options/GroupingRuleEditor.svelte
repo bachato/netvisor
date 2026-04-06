@@ -214,7 +214,7 @@
 		if (optionId === 'ByApplicationGroup') {
 			rule = { ByApplicationGroup: { tag_ids: [] } };
 		} else {
-			rule = optionId as 'BySubnet' | 'ByVirtualizingService';
+			rule = optionId as 'BySubnet' | 'MergeDockerBridges';
 		}
 		updateContainerRules([...containerRules, makeGraphRule(rule)]);
 	}
