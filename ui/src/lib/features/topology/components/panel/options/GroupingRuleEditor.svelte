@@ -510,6 +510,7 @@
 						mode="include"
 						onToggle={(cat) => toggleCategory(index, cat as ServiceCategory)}
 						disabled={!editState.isEditable}
+						nativeTooltip={true}
 					/>
 				{:else if 'ByTag' in rule}
 					<FilterGroup

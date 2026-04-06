@@ -20,7 +20,8 @@
 		onHoverStart,
 		onHoverEnd,
 		disabled = false,
-		label
+		label,
+		nativeTooltip = false
 	}: {
 		items: FilterItem[];
 		selectedValues: string[];
@@ -30,6 +31,7 @@
 		onHoverEnd?: () => void;
 		disabled?: boolean;
 		label?: string;
+		nativeTooltip?: boolean;
 	} = $props();
 
 	function isItemFaded(value: string): boolean {
@@ -67,6 +69,7 @@
 					icon={item.icon}
 					isShiny={item.isShiny}
 					title={item.tooltip ?? ''}
+					{nativeTooltip}
 				/>
 			</button>
 		{/each}

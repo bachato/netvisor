@@ -35,4 +35,5 @@
 	onHoverEnd={handleHoverEnd}
 	{disabled}
 	{label}
+	nativeTooltip={true}
 />

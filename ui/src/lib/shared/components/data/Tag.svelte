@@ -16,6 +16,7 @@
 		title = '',
 		removable = false,
 		isShiny = false,
+		nativeTooltip = false,
 		onRemove
 	}: {
 		icon?: IconComponent | null;
@@ -28,6 +29,7 @@
 		title?: string;
 		removable?: boolean;
 		isShiny?: boolean;
+		nativeTooltip?: boolean;
 		onRemove?: () => void;
 	} = $props();
 
@@ -75,7 +77,8 @@
 		target="_blank"
 		rel="noopener noreferrer"
 		use:tooltip
-		data-tooltip={title || null}
+		data-tooltip={nativeTooltip ? null : title || null}
+		title={nativeTooltip ? title || undefined : undefined}
 		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125"
 		onclick={(e) => e.stopPropagation()}
 	>
@@ -84,7 +87,8 @@
 {:else}
 	<div
 		use:tooltip
-		data-tooltip={title || null}
+		data-tooltip={nativeTooltip ? null : title || null}
+		title={nativeTooltip ? title || undefined : undefined}
 		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded"
 	>
 		{@render content()}
