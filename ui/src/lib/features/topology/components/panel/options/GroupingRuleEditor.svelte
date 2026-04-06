@@ -262,8 +262,14 @@
 	}
 
 	function handleElementRemove(index: number) {
-		const removedId = elementRules[index]?.id;
-		updateElementRules(elementRules.filter((_, i) => i !== index));
+		// Always operate on committed state to avoid flushing pending edits
+		const rules = committedElementRules;
+		const removedId = rules[index]?.id;
+		updateElementRules(rules.filter((_, i) => i !== index));
+		// Keep pending buffer in sync if active
+		if (pendingElementRules) {
+			pendingElementRules = pendingElementRules.filter((r) => r.id !== removedId);
+		}
 		if (editingElementId === removedId) editingElementId = null;
 		if (topology) rebuildMutation.mutate(topology);
 	}

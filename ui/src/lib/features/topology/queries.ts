@@ -75,8 +75,28 @@ function getDefaultElementRules(perspective: TopologyPerspective): ElementGraphR
 		});
 }
 
+// Union of all perspective defaults — one rule per type across all perspectives.
+// Used as initial value before topology hydration.
+function getUnionDefaultElementRules(): ElementGraphRule[] {
+	const seen = new Set<string>();
+	const result: ElementGraphRule[] = [];
+	for (const r of _elementRuleTypes) {
+		if (!seen.has(r.id)) {
+			seen.add(r.id);
+			if (r.id === 'ByServiceCategory') {
+				result.push(makeGraphRule({ ByServiceCategory: { categories: [], title: null } }));
+			} else if (r.id === 'ByTag') {
+				result.push(makeGraphRule({ ByTag: { tag_ids: [], title: null } }));
+			} else {
+				result.push(makeGraphRule(r.id as string));
+			}
+		}
+	}
+	return result;
+}
+
 // Legacy default for backward compatibility
-export const defaultElementRules: ElementGraphRule[] = getDefaultElementRules('L3Logical');
+export const defaultElementRules: ElementGraphRule[] = getUnionDefaultElementRules();
 
 export function getDefaultTopologyOptions(perspective: TopologyPerspective): TopologyOptions {
 	return {
@@ -239,7 +259,7 @@ export function useRefreshTopologyMutation() {
 				params: { path: { id: topology.id } },
 				body: {
 					network_id: topology.network_id,
-					options: sanitizeOptionsForApi(get(topologyOptions)),
+					options: buildOptionsForApi(),
 					nodes: [],
 					edges: []
 				}
@@ -264,7 +284,7 @@ export function useRebuildTopologyMutation() {
 				params: { path: { id: topology.id } },
 				body: {
 					network_id: topology.network_id,
-					options: sanitizeOptionsForApi(get(topologyOptions)),
+					options: buildOptionsForApi(),
 					nodes: topology.nodes,
 					edges: topology.edges
 				}
@@ -505,10 +525,7 @@ export function createEmptyTopologyFormData(networkId: string): Topology {
 
 import { browser } from '$app/environment';
 import { type Edge, type Node } from '@xyflow/svelte';
-import deepmerge from 'deepmerge';
 
-const OPTIONS_STORAGE_KEY = 'scanopy_topology_options';
-const ELEMENT_RULES_STORAGE_KEY = 'scanopy_topology_element_rules';
 const EXPANDED_STORAGE_KEY = 'scanopy_topology_options_expanded_state';
 const AUTO_REBUILD_STORAGE_KEY = 'scanopy_topology_auto_rebuild';
 const PREFERRED_NETWORK_KEY = 'scanopy_preferred_network_id';
@@ -522,14 +539,15 @@ export const previewEdges = writable<Edge[]>([]);
 export const autoRebuild = writable<boolean>(loadAutoRebuildFromStorage());
 export const activePerspective = writable<TopologyPerspective>('L3Logical');
 
-// Internal per-perspective options record
-const perPerspectiveOptions = writable<PerPerspectiveOptions>(loadOptionsFromStorage());
+// Internal per-perspective options record (hydrated from topology on load)
+const perPerspectiveOptions = writable<PerPerspectiveOptions>(buildDefaultPerPerspectiveOptions());
 
-// Shared element rules — cross-perspective, single source of truth
-export const sharedElementRules = writable<ElementGraphRule[]>(loadElementRulesFromStorage());
+// Shared element rules — cross-perspective, single source of truth.
+// Initialized with union defaults; hydrated from topology on load.
+export const sharedElementRules = writable<ElementGraphRule[]>(getUnionDefaultElementRules());
 
-// Public store: resolves to the active perspective's options with shared element rules merged in.
-// Shared rules are filtered to only include rules applicable to the active perspective.
+// Public store: resolves to the active perspective's options with shared element rules
+// filtered to only those applicable to the active perspective (for display).
 export const topologyOptions = derived(
 	[perPerspectiveOptions, activePerspective, sharedElementRules],
 	([$allOptions, $perspective, $elementRules]) => {
@@ -539,19 +557,11 @@ export const topologyOptions = derived(
 			const meta = _elementRuleTypes.find((r) => r.id === ruleId);
 			return (meta?.metadata as { perspectives?: string[] })?.perspectives?.includes($perspective);
 		});
-		// Merge perspective defaults with applicable shared rules (shared overrides by type)
-		const sharedTypes = new Set(
-			applicableRules.map((gr) => (typeof gr.rule === 'string' ? gr.rule : Object.keys(gr.rule)[0]))
-		);
-		const perspectiveDefaults = (opts.request.element_rules ?? []).filter((gr) => {
-			const t = typeof gr.rule === 'string' ? gr.rule : Object.keys(gr.rule)[0];
-			return !sharedTypes.has(t);
-		});
 		return {
 			...opts,
 			request: {
 				...opts.request,
-				element_rules: [...perspectiveDefaults, ...applicableRules]
+				element_rules: applicableRules
 			}
 		};
 	}
@@ -584,6 +594,85 @@ export function updateSharedElementRules(
 	sharedElementRules.update(updater);
 }
 
+/**
+ * Build options for API requests. Sends ALL element rules (unfiltered) so the
+ * backend stores the full set. Includes perspective_overrides to persist
+ * per-perspective container rules.
+ */
+function buildOptionsForApi(): TopologyOptions {
+	const opts = get(topologyOptions);
+	const currentPerspective = get(activePerspective);
+	const allOpts = get(perPerspectiveOptions);
+
+	// Build perspective overrides for other perspectives' container rules
+	const overrides: Record<string, { container_rules?: unknown[] }> = {};
+	for (const [p, pOpts] of Object.entries(allOpts)) {
+		if (p !== currentPerspective) {
+			overrides[p] = { container_rules: pOpts.request.container_rules };
+		}
+	}
+
+	return sanitizeOptionsForApi({
+		...opts,
+		request: {
+			...opts.request,
+			element_rules: get(sharedElementRules),
+			perspective_overrides: Object.keys(overrides).length > 0 ? overrides : undefined
+		}
+	} as TopologyOptions);
+}
+
+/**
+ * Hydrate reactive stores from a topology's backend-stored options.
+ * Called on initial topology selection and SSE updates.
+ */
+let hydrating = false;
+export function hydrateStoresFromTopology(topology: Topology): void {
+	hydrating = true;
+	try {
+		const opts = topology.options;
+		const storedPerspective = opts.request.perspective as TopologyPerspective;
+
+		// Set perspective
+		activePerspective.set(storedPerspective);
+
+		// Set element rules from topology (the full unfiltered set)
+		if (opts.request.element_rules?.length) {
+			sharedElementRules.set(opts.request.element_rules as ElementGraphRule[]);
+		}
+
+		// Build per-perspective options: current from topology, others from overrides or defaults
+		const allOpts = buildDefaultPerPerspectiveOptions();
+		allOpts[storedPerspective] = opts as TopologyOptions;
+
+		const overrides = (opts.request as Record<string, unknown>).perspective_overrides as
+			| Record<string, { container_rules?: ContainerGraphRule[] }>
+			| undefined;
+		if (overrides) {
+			for (const [p, pOverrides] of Object.entries(overrides)) {
+				const perspective = p as TopologyPerspective;
+				if (
+					perspective !== storedPerspective &&
+					allOpts[perspective] &&
+					pOverrides.container_rules
+				) {
+					allOpts[perspective] = {
+						...allOpts[perspective],
+						request: {
+							...allOpts[perspective].request,
+							container_rules: pOverrides.container_rules
+						}
+					};
+				}
+			}
+		}
+
+		perPerspectiveOptions.set(allOpts);
+	} finally {
+		hydrating = false;
+	}
+}
+
 export const optionsPanelExpanded = writable<boolean>(loadExpandedFromStorage());
 
 /**
@@ -610,10 +699,8 @@ export function consumePreferredNetwork(): string | null {
 
 export function resetTopologyOptions(): void {
 	perPerspectiveOptions.set(buildDefaultPerPerspectiveOptions());
-	sharedElementRules.set(defaultElementRules);
+	sharedElementRules.set(getUnionDefaultElementRules());
 	if (browser) {
-		localStorage.removeItem(OPTIONS_STORAGE_KEY);
-		localStorage.removeItem(ELEMENT_RULES_STORAGE_KEY);
 		localStorage.removeItem(EXPANDED_STORAGE_KEY);
 	}
 }
@@ -628,96 +715,6 @@ export function hasConflicts(topology: Topology): boolean {
 		topology.removed_interfaces.length > 0 ||
 		topology.removed_dependencies.length > 0
 	);
-}
-
-// localStorage helpers
-function loadOptionsFromStorage(): PerPerspectiveOptions {
-	const defaults = buildDefaultPerPerspectiveOptions();
-	if (!browser) return defaults;
-
-	try {
-		const stored = localStorage.getItem(OPTIONS_STORAGE_KEY);
-		if (stored) {
-			const parsed = JSON.parse(stored);
-
-			// Migration: if stored data is flat TopologyOptions (no perspective key),
-			// wrap it as the L3Logical entry
-			if (parsed && 'local' in parsed && 'request' in parsed) {
-				const migrated: PerPerspectiveOptions = {
-					...defaults,
-					L3Logical: deepmerge(defaults.L3Logical, parsed, {
-						arrayMerge: (destinationArray, sourceArray) =>
-							sourceArray.length > 0 ? sourceArray : destinationArray
-					})
-				};
-				return migrated;
-			}
-
-			// Per-perspective format: deep merge each perspective with its defaults
-			const result = { ...defaults };
-			for (const perspective of ALL_PERSPECTIVES) {
-				if (parsed[perspective]) {
-					result[perspective] = deepmerge(defaults[perspective], parsed[perspective], {
-						arrayMerge: (destinationArray, sourceArray) =>
-							sourceArray.length > 0 ? sourceArray : destinationArray
-					});
-				}
-			}
-			return result;
-		}
-	} catch (error) {
-		console.warn('Failed to load topology options from localStorage:', error);
-	}
-	return defaults;
-}
-
-function saveOptionsToStorage(options: PerPerspectiveOptions): void {
-	if (!browser) return;
-
-	try {
-		localStorage.setItem(OPTIONS_STORAGE_KEY, JSON.stringify(options));
-	} catch (error) {
-		console.error('Failed to save topology options to localStorage:', error);
-	}
-}
-
-function loadElementRulesFromStorage(): ElementGraphRule[] {
-	if (!browser) return defaultElementRules;
-
-	try {
-		// Check dedicated key first
-		const stored = localStorage.getItem(ELEMENT_RULES_STORAGE_KEY);
-		if (stored) return JSON.parse(stored);
-
-		// Fall back: extract from old per-perspective options
-		const oldStored = localStorage.getItem(OPTIONS_STORAGE_KEY);
-		if (oldStored) {
-			const parsed = JSON.parse(oldStored);
-			// Flat format (legacy)
-			if (parsed && 'request' in parsed && parsed.request?.element_rules?.length) {
-				return parsed.request.element_rules;
-			}
-			// Per-perspective format: take from L3Logical first, then any perspective
-			for (const key of ['L3Logical', ...ALL_PERSPECTIVES]) {
-				if (parsed[key]?.request?.element_rules?.length) {
-					return parsed[key].request.element_rules;
-				}
-			}
-		}
-	} catch (error) {
-		console.warn('Failed to load element rules from localStorage:', error);
-	}
-	return defaultElementRules;
-}
-
-function saveElementRulesToStorage(rules: ElementGraphRule[]): void {
-	if (!browser) return;
-
-	try {
-		localStorage.setItem(ELEMENT_RULES_STORAGE_KEY, JSON.stringify(rules));
-	} catch (error) {
-		console.error('Failed to save element rules to localStorage:', error);
-	}
 }
 
 function loadExpandedFromStorage(): boolean {
@@ -768,7 +765,7 @@ function saveAutoRebuildToStorage(value: boolean): void {
 	}
 }
 
-// Set up subscriptions for localStorage persistence
+// Set up subscriptions for rebuild triggers and UI pref persistence
 let optionsInitialized = false;
 let expandedInitialized = false;
 let autoRebuildInitialized = false;
@@ -776,17 +773,9 @@ let perspectiveInitialized = false;
 
 if (browser) {
 	let optionsRebuildTimeout: ReturnType<typeof setTimeout>;
-	perPerspectiveOptions.subscribe((allOptions) => {
-		if (optionsInitialized) {
-			saveOptionsToStorage(allOptions);
-
-			// Trigger a rebuild when request options change (replaces the old
-			// debounced PUT that was lost in the TanStack migration)
-			const perspectiveOpts = allOptions[get(activePerspective)];
-			const options = {
-				...perspectiveOpts,
-				request: { ...perspectiveOpts.request, element_rules: get(sharedElementRules) }
-			};
+	perPerspectiveOptions.subscribe(() => {
+		if (optionsInitialized && !hydrating) {
+			// Trigger a debounced rebuild when options change
 			clearTimeout(optionsRebuildTimeout);
 			optionsRebuildTimeout = setTimeout(() => {
 				if (!get(autoRebuild)) return;
@@ -801,7 +790,7 @@ if (browser) {
 					params: { path: { id: topologyId } },
 					body: {
 						network_id: topology.network_id,
-						options: sanitizeOptionsForApi(options),
+						options: buildOptionsForApi(),
 						nodes: topology.nodes,
 						edges: topology.edges
 					}
@@ -825,17 +814,9 @@ if (browser) {
 		autoRebuildInitialized = true;
 	});
 
-	let elementRulesInitialized = false;
-	sharedElementRules.subscribe((rules) => {
-		if (elementRulesInitialized) {
-			saveElementRulesToStorage(rules);
-		}
-		elementRulesInitialized = true;
-	});
-
 	// Trigger a rebuild when the active perspective changes
-	activePerspective.subscribe((perspective) => {
-		if (perspectiveInitialized) {
+	activePerspective.subscribe(() => {
+		if (perspectiveInitialized && !hydrating) {
 			const topologyId = get(selectedTopologyId);
 			if (!topologyId) return;
 
@@ -843,16 +824,11 @@ if (browser) {
 			const topology = topologies?.find((t) => t.id === topologyId);
 			if (!topology) return;
 
-			const perspectiveOpts = get(perPerspectiveOptions)[perspective];
-			const options = {
-				...perspectiveOpts,
-				request: { ...perspectiveOpts.request, element_rules: get(sharedElementRules) }
-			};
 			apiClient.POST('/api/v1/topology/{id}/rebuild', {
 				params: { path: { id: topologyId } },
 				body: {
 					network_id: topology.network_id,
-					options: sanitizeOptionsForApi(options),
+					options: buildOptionsForApi(),
 					nodes: topology.nodes,
 					edges: topology.edges
 				}
@@ -895,7 +871,7 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 								params: { path: { id: update.id } },
 								body: {
 									network_id: update.network_id,
-									options: sanitizeOptionsForApi(get(topologyOptions)),
+									options: buildOptionsForApi(),
 									nodes: update.nodes,
 									edges: update.edges
 								}
@@ -942,6 +918,11 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 			if (!old) return [update];
 			return old.map((topo) => (topo.id === update.id ? update : topo));
 		});
+
+		// Hydrate stores from the updated topology if it's the selected one
+		if (update.id === get(selectedTopologyId)) {
+			hydrateStoresFromTopology(update);
+		}
 
 		// Invalidate org cache until FirstTopologyRebuild milestone appears
 		const org = queryClient.getQueryData<Organization>(queryKeys.organizations.current());

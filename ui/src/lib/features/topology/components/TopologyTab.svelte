@@ -24,7 +24,8 @@
 		consumePreferredNetwork,
 		activePerspective,
 		topologyOptions,
-		updateTopologyOptions
+		updateTopologyOptions,
+		hydrateStoresFromTopology
 	} from '../queries';
 	import { makeGraphRule } from '../types/grouping';
 	import type { Topology } from '../types/base';
@@ -171,6 +172,7 @@
 	const unlockTopologyMutation = useUnlockTopologyMutation();
 
 	// Initialize selected topology when data loads
+	let lastHydratedId: string | null = null;
 	$effect(() => {
 		if (topologiesData.length > 0 && !$selectedTopologyId) {
 			// Check for preferred network from onboarding
@@ -184,6 +186,14 @@
 			}
 			// Default to first topology
 			selectedTopologyId.set(topologiesData[0].id);
+		}
+	});
+
+	// Hydrate stores from topology options when a topology is first selected
+	$effect(() => {
+		if (currentTopology && currentTopology.id !== lastHydratedId) {
+			lastHydratedId = currentTopology.id;
+			hydrateStoresFromTopology(currentTopology);
 		}
 	});
 
