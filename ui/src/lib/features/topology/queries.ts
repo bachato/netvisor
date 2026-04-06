@@ -819,10 +819,10 @@ let perspectiveInitialized = false;
 if (browser) {
 	let rebuildTimeout: ReturnType<typeof setTimeout>;
 
-	function triggerRebuild(debounceMs = 500): void {
+	function triggerRebuild(debounceMs = 500, force = false): void {
 		clearTimeout(rebuildTimeout);
 		rebuildTimeout = setTimeout(() => {
-			if (!get(autoRebuild)) return;
+			if (!force && !get(autoRebuild)) return;
 			const topologyId = get(selectedTopologyId);
 			if (!topologyId) return;
 
@@ -865,7 +865,7 @@ if (browser) {
 
 	activePerspective.subscribe(() => {
 		if (perspectiveInitialized && !hydrating) {
-			triggerRebuild(0);
+			triggerRebuild(0, true);
 		}
 		perspectiveInitialized = true;
 	});
