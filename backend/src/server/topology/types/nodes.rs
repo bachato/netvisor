@@ -190,7 +190,7 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Subnet
             | ContainerType::ServiceCategory
             | ContainerType::ApplicationGroup
-            | ContainerType::Root => (200, 80),
+            | ContainerType::Root => (300, 80),
             _ => (250, 40),
         };
         serde_json::json!({

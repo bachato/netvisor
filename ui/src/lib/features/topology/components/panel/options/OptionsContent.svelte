@@ -40,9 +40,7 @@
 		common_byType,
 		common_edges,
 		common_filters,
-		topology_filtersHelp,
-		topology_hideVmOnContainer,
-		topology_hideVmOnContainerHelp
+		topology_filtersHelp
 	} from '$lib/paraglide/messages';
 
 	// Get topology for entity_tags
@@ -269,15 +267,6 @@
 			path: 'local',
 			key: 'show_minimap',
 			helpText: () => topology_showMinimapHelp(),
-			section: () => common_visual()
-		},
-		{
-			id: 'hide_vm_title_on_docker_container',
-			label: () => topology_hideVmOnContainer(),
-			type: 'boolean',
-			path: 'request',
-			key: 'hide_vm_title_on_docker_container',
-			helpText: () => topology_hideVmOnContainerHelp(),
 			section: () => common_visual()
 		},
 		{

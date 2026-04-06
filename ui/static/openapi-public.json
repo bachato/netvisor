@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-06T19:25:08.577130Z",
-              "id": "49a46435-e205-415c-b004-c47ac9adaf8d",
+              "created_at": "2026-04-06T21:15:47.937507Z",
+              "id": "6bc659a4-0634-43f7-9686-c5edd45e9ebf",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-06T19:25:08.577130Z"
+              "updated_at": "2026-04-06T21:15:47.937507Z"
             }
           },
           "error": {
@@ -10734,14 +10734,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-06T19:25:08.561642Z",
-                      "id": "a63dedf3-a4ed-4799-af34-b7edc3a62647",
+                      "created_at": "2026-04-06T21:15:47.918507Z",
+                      "id": "59fd4363-7824-4908-9205-03efac122e66",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-06T19:25:08.561642Z"
+                      "updated_at": "2026-04-06T21:15:47.918507Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10750,7 +10750,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Kubernetes",
+                  "service_definition": "MariaDB",
                   "source": {
                     "type": "Manual"
                   },
@@ -11453,14 +11453,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-06T19:25:08.572815Z",
-                  "id": "e6509a70-5950-4896-80c7-f79bcdf6585b",
+                  "created_at": "2026-04-06T21:15:47.932329Z",
+                  "id": "bec3c293-ab49-4235-82e4-e250af248083",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-06T19:25:08.572815Z"
+                  "updated_at": "2026-04-06T21:15:47.932329Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11469,7 +11469,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "MariaDB",
               "source": {
                 "type": "Manual"
               },
@@ -12744,14 +12744,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-06T19:25:08.561852Z",
-          "id": "7b329def-76ff-43ce-9e6c-c488609fbfb5",
+          "created_at": "2026-04-06T21:15:47.918913Z",
+          "id": "31fc1d8e-f4a2-40e9-8616-2f8ee1bd1754",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-06T19:25:08.561852Z"
+          "updated_at": "2026-04-06T21:15:47.918913Z"
         }
       },
       "BindingBase": {
@@ -13273,7 +13273,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "MariaDB",
               "tags": [],
               "virtualization": null
             }
@@ -15833,14 +15833,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-06T19:25:08.561342Z",
-                  "id": "1d696a92-6a8e-414d-a6ea-0938b60bedbb",
+                  "created_at": "2026-04-06T21:15:47.917959Z",
+                  "id": "ca79e602-b0ef-4471-9fc6-8b2d41286841",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-06T19:25:08.561342Z"
+                  "updated_at": "2026-04-06T21:15:47.917959Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15849,7 +15849,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Kubernetes",
+              "service_definition": "MariaDB",
               "source": {
                 "type": "Manual"
               },
@@ -17008,6 +17008,10 @@
               "size"
             ],
             "properties": {
+              "absorbs_edges": {
+                "type": "boolean",
+                "description": "When true, edges targeting elements inside this container are elevated to target\nthe container itself. Set by rules that declare `absorbs_edges` (e.g. MergeDockerBridges, ByStack)."
+              },
               "element_rule_id": {
                 "type": [
                   "string",
@@ -17836,14 +17840,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-06T19:25:08.552506Z",
-                        "id": "1756cafa-a1f3-4237-9284-bf5b9d27e649",
+                        "created_at": "2026-04-06T21:15:47.906535Z",
+                        "id": "796d0d67-c1be-4e3d-93c4-1494e31cd4c2",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-06T19:25:08.552506Z"
+                        "updated_at": "2026-04-06T21:15:47.906535Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17852,7 +17856,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Kubernetes",
+                    "service_definition": "MariaDB",
                     "source": {
                       "type": "Manual"
                     },
@@ -17929,14 +17933,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-06T19:25:08.571875Z",
-                    "id": "32058b8b-ca30-4d29-b0ab-057575e5cba0",
+                    "created_at": "2026-04-06T21:15:47.930884Z",
+                    "id": "41ffc0d6-50b4-43b4-baa2-2a254f5c2bda",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-06T19:25:08.571875Z"
+                    "updated_at": "2026-04-06T21:15:47.930884Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17945,7 +17949,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Kubernetes",
+                "service_definition": "MariaDB",
                 "source": {
                   "type": "Manual"
                 },
@@ -19105,14 +19109,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-06T19:25:08.561779Z",
-              "id": "9b6c2ee3-c5a7-418b-9a01-0d4737c51c03",
+              "created_at": "2026-04-06T21:15:47.918780Z",
+              "id": "d0519cae-ffd2-40ac-8f9e-101b2c4d3163",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-06T19:25:08.561779Z"
+              "updated_at": "2026-04-06T21:15:47.918780Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19121,7 +19125,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Kubernetes",
+          "service_definition": "MariaDB",
           "source": {
             "type": "Manual"
           },
@@ -20216,7 +20220,6 @@
       "TopologyRequestOptions": {
         "type": "object",
         "required": [
-          "hide_vm_title_on_docker_container",
           "hide_ports"
         ],
         "properties": {
@@ -20266,9 +20269,6 @@
                 "Application"
               ]
             }
-          },
-          "hide_vm_title_on_docker_container": {
-            "type": "boolean"
           },
           "view": {
             "$ref": "#/components/schemas/TopologyView"

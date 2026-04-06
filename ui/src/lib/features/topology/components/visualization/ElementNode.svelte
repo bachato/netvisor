@@ -187,7 +187,7 @@
 							services: servicesOnHost,
 							hiddenOpenPorts,
 							headerText: host.name || host.hostname || null,
-							bodyText: showServices ? null : (host.name || host.hostname),
+							bodyText: showServices ? null : host.name || host.hostname,
 							showServices,
 							isVirtualized: host.virtualization !== null,
 							interface_id: id
@@ -246,7 +246,10 @@
 						headerText,
 						bodyText,
 						showServices,
-						isVirtualized: host.virtualization !== null,
+						isVirtualized:
+							headerText?.startsWith('Docker @') || isContainerSubnetValue
+								? false
+								: host.virtualization !== null,
 						interface_id: resolved?.interfaceId ?? ''
 					} as ElementRenderData;
 				})()
@@ -372,7 +375,7 @@
 	>
 		<!-- Rest of component stays the same -->
 		<!-- Header section with gradient transition to body -->
-		{#if nodeRenderData.headerText && !($topologyOptions.request.hide_vm_title_on_docker_container && nodeRenderData.headerText.startsWith('VM:'))}
+		{#if nodeRenderData.headerText}
 			<div class="relative flex-shrink-0 px-2 pt-2 text-center">
 				<div
 					class={`truncate text-xs font-medium leading-none ${nodeRenderData.isVirtualized ? virtualizationColorHelper.text : 'text-tertiary'}`}

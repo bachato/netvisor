@@ -11,18 +11,12 @@
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
-	import { getTopologyEditState, getOptionDisabledTooltip } from '$lib/features/topology/state';
+	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import OptionToggle from '../../options/OptionToggle.svelte';
-	import OptionsCard from '../../options/OptionsCard.svelte';
-	import {
-		topology_hideVmOnContainer,
-		topology_hideVmOnContainerHelp
-	} from '$lib/paraglide/messages';
 	let { edge, containerizingServiceId }: { edge: Edge; containerizingServiceId: string } = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
@@ -112,19 +106,6 @@
 </script>
 
 <div class="space-y-3">
-	{#if !editState.isReadonly}
-		<OptionsCard>
-			<OptionToggle
-				label={topology_hideVmOnContainer()}
-				helpText={topology_hideVmOnContainerHelp()}
-				path="request"
-				optionKey="hide_vm_title_on_docker_container"
-				disabled={!editState.isEditable}
-				disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
-			/>
-		</OptionsCard>
-	{/if}
-
 	{#if containerizingHost}
 		<span class="text-secondary mb-2 block text-sm font-medium">Docker Host</span>
 		<div class="card card-static">

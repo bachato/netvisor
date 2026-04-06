@@ -247,7 +247,6 @@ impl Default for TopologyLocalOptions {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct TopologyRequestOptions {
-    pub hide_vm_title_on_docker_container: bool,
     pub hide_ports: bool,
     #[serde(default = "default_hide_service_categories")]
     pub hide_service_categories: HashMap<TopologyView, Vec<ServiceCategory>>,
@@ -305,7 +304,6 @@ fn default_element_rules() -> Vec<GraphRule<ElementRule>> {
 impl Default for TopologyRequestOptions {
     fn default() -> Self {
         Self {
-            hide_vm_title_on_docker_container: false,
             hide_ports: false,
             hide_service_categories: default_hide_service_categories(),
             container_rules: default_container_rules(),

@@ -14,12 +14,7 @@
 	import OptionToggle from '../../options/OptionToggle.svelte';
 	import OptionsCard from '../../options/OptionsCard.svelte';
 	import { getInspectorConfig, getSectionComponent } from '../view-config';
-	import {
-		topology_hidePorts,
-		topology_hidePortsHelp,
-		topology_hideVmOnContainer,
-		topology_hideVmOnContainerHelp
-	} from '$lib/paraglide/messages';
+	import { topology_hidePorts, topology_hidePortsHelp } from '$lib/paraglide/messages';
 
 	let { node }: { node: Node } = $props();
 
@@ -52,33 +47,20 @@
 	let hasPortBindings = $derived(
 		servicesOnThisInterface.some((s) => s.bindings.some((b) => b.type === 'Port'))
 	);
-	let isVirtualized = $derived(resolved?.host?.virtualization != null);
 </script>
 
 {#if topology && resolved}
 	<div class="space-y-4">
-		{#if !editState.isReadonly && (hasPortBindings || isVirtualized)}
+		{#if !editState.isReadonly && hasPortBindings}
 			<OptionsCard>
-				{#if hasPortBindings}
-					<OptionToggle
-						label={topology_hidePorts()}
-						helpText={topology_hidePortsHelp()}
-						path="request"
-						optionKey="hide_ports"
-						disabled={!editState.isEditable}
-						disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
-					/>
-				{/if}
-				{#if isVirtualized}
-					<OptionToggle
-						label={topology_hideVmOnContainer()}
-						helpText={topology_hideVmOnContainerHelp()}
-						path="request"
-						optionKey="hide_vm_title_on_docker_container"
-						disabled={!editState.isEditable}
-						disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
-					/>
-				{/if}
+				<OptionToggle
+					label={topology_hidePorts()}
+					helpText={topology_hidePortsHelp()}
+					path="request"
+					optionKey="hide_ports"
+					disabled={!editState.isEditable}
+					disabledReason={getOptionDisabledTooltip(editState.disabledReason)}
+				/>
 			</OptionsCard>
 		{/if}
 

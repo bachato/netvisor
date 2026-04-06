@@ -1159,8 +1159,6 @@
 	"topology_hidePortsHelp": "Don't show open ports next to services",
 	"topology_hideResizeHandles": "Hide Resize Handles",
 	"topology_hideResizeHandlesHelp": "Hide node resize handles",
-	"topology_hideVmOnContainer": "Hide VM provider on containers",
-	"topology_hideVmOnContainerHelp": "If a docker container is running on a host that is a VM, don't indicate this on the container node",
 	"topology_lastRebuild": "Last Rebuild: {timestamp}",
 	"topology_lockTipBody": "If you want to preserve this network state as a historical record, click 'Lock' to freeze this topology instead of rebuilding.",
 	"topology_locked": "This topology is locked",

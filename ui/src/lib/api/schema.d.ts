@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-06T19:25:08.577128Z",
-             *       "id": "27abb0ba-5630-4c39-abc8-a16afd687e09",
+             *       "created_at": "2026-04-06T21:15:47.937505Z",
+             *       "id": "2615fc8c-29dd-48af-9b04-ac12e51ef7cf",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-06T19:25:08.577128Z"
+             *       "updated_at": "2026-04-06T21:15:47.937505Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-06T19:25:08.561607Z",
-             *               "id": "2cbff36e-eef8-4d14-9959-4ab1cc343ef5",
+             *               "created_at": "2026-04-06T21:15:47.918495Z",
+             *               "id": "823fe818-2247-47c7-a394-c17bae470329",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-06T19:25:08.561607Z"
+             *               "updated_at": "2026-04-06T21:15:47.918495Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3172,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Kubernetes",
+             *           "service_definition": "MariaDB",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-06T19:25:08.572697Z",
-             *           "id": "2d71a068-6b06-437f-9a20-734569644440",
+             *           "created_at": "2026-04-06T21:15:47.932331Z",
+             *           "id": "569b2067-83c6-4f78-a60f-bae635a65b0b",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-06T19:25:08.572697Z"
+             *           "updated_at": "2026-04-06T21:15:47.932331Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3444,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Kubernetes",
+             *       "service_definition": "MariaDB",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3772,14 +3772,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-06T19:25:08.561802Z",
-         *       "id": "691cfebe-6b92-4fe6-9e67-25b7107074e8",
+         *       "created_at": "2026-04-06T21:15:47.918900Z",
+         *       "id": "55c5ea26-7a0f-4a3b-996f-c8ef5cf06076",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-06T19:25:08.561802Z"
+         *       "updated_at": "2026-04-06T21:15:47.918900Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3964,7 +3964,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Kubernetes",
+         *           "service_definition": "MariaDB",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4807,14 +4807,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-06T19:25:08.561328Z",
-         *               "id": "97af0f3f-7996-48ae-b22e-93c45d3b64de",
+         *               "created_at": "2026-04-06T21:15:47.917948Z",
+         *               "id": "e749b019-f71c-41e1-8c9d-a76796bc30d2",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-06T19:25:08.561328Z"
+         *               "updated_at": "2026-04-06T21:15:47.917948Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4823,7 +4823,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Kubernetes",
+         *           "service_definition": "MariaDB",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5261,6 +5261,11 @@ export interface components {
             subnet_count: number;
         };
         Node: components["schemas"]["NodeType"] & {
+            /**
+             * @description When true, edges targeting elements inside this container are elevated to target
+             *     the container itself. Set by rules that declare `absorbs_edges` (e.g. MergeDockerBridges, ByStack).
+             */
+            absorbs_edges?: boolean;
             /**
              * Format: uuid
              * @description ID of the element rule that created this container (for NestedTag/NestedServiceCategory)
@@ -5887,14 +5892,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-06T19:25:08.561732Z",
-         *           "id": "1aeae04d-cf90-4886-94e0-715921e60884",
+         *           "created_at": "2026-04-06T21:15:47.918764Z",
+         *           "id": "1128e809-d520-45de-adcc-d53109313fed",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-06T19:25:08.561732Z"
+         *           "updated_at": "2026-04-06T21:15:47.918764Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5903,7 +5908,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Kubernetes",
+         *       "service_definition": "MariaDB",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6309,7 +6314,6 @@ export interface components {
             hide_service_categories?: {
                 [key: string]: components["schemas"]["ServiceCategory"][];
             };
-            hide_vm_title_on_docker_container: boolean;
             view?: components["schemas"]["TopologyView"];
         };
         /** @description Filter settings for hiding entities by tag in topology visualization. */

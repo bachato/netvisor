@@ -92,8 +92,29 @@ impl GraphBuilder {
         host: &Host,
         subnet_type: &SubnetType,
     ) -> Option<String> {
-        // P1: Show virtualization provider, if any
         let host_interfaces = ctx.get_interfaces_for_host(host.id);
+        let host_has_name = host.base.name != "Unknown Device" && !host.base.name.is_empty();
+
+        // P1: Docker containers — always show "Docker @", never VM header
+        if *subnet_type == SubnetType::DockerBridge {
+            let header_text = if host_has_name {
+                Some("Docker @ ".to_owned() + &host.base.name.clone())
+            } else {
+                // Generate a label from non-docker interface, if there is one
+                host_interfaces
+                    .iter()
+                    .find(|i| {
+                        ctx.get_subnet_from_interface_id(i.id)
+                            .map(|s| s.base.subnet_type != SubnetType::DockerBridge)
+                            .unwrap_or(false)
+                    })
+                    .map(|i| "Docker @ ".to_owned() + &i.base.ip_address.to_string())
+            };
+
+            return header_text;
+        }
+
+        // P2: Show virtualization provider, if any
         if let Some(service) = ctx.get_host_is_virtualized_by(&host.id) {
             let virtualization_service_host = ctx.get_host_by_id(service.base.host_id);
 
@@ -118,8 +139,6 @@ impl GraphBuilder {
                 .cloned()
                 .collect();
 
-            // Always include VM header text — frontend handles suppression
-            // via hide_vm_title_on_docker_container option
             match intersection.first() {
                 Some(first) => {
                     if let Some(interface) =
@@ -149,27 +168,6 @@ impl GraphBuilder {
                 }
                 _ => return Some(format!("VM: {}", service.base.name)),
             }
-        }
-
-        let host_has_name = host.base.name != "Unknown Device" && !host.base.name.is_empty();
-
-        // P2: Show docker container header with host name
-        if *subnet_type == SubnetType::DockerBridge {
-            let header_text = if host_has_name {
-                Some("Docker @ ".to_owned() + &host.base.name.clone())
-            } else {
-                // Generate a label from non-docker interface, if there is one
-                host_interfaces
-                    .iter()
-                    .find(|i| {
-                        ctx.get_subnet_from_interface_id(i.id)
-                            .map(|s| s.base.subnet_type != SubnetType::DockerBridge)
-                            .unwrap_or(false)
-                    })
-                    .map(|i| "Docker @ ".to_owned() + &i.base.ip_address.to_string())
-            };
-
-            return header_text;
         }
 
         // P3: Show host if it differs from the first service name + isn't shown via interface edges

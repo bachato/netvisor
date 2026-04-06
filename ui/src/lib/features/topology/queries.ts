@@ -171,7 +171,6 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 
 	return {
 		hide_ports: false,
-		hide_vm_title_on_docker_container: false,
 		hide_service_categories: hideServiceCategories,
 		container_rules: containerRules,
 		element_rules: elementRules,
@@ -697,13 +696,12 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 				}
 			});
 		} else {
-			// SSE update: update request options, preserve local options for other views
+			// SSE update: update request options, preserve all client-side local options.
+			// Local options (hide_edge_types, bundle_edges, etc.) are client-side state —
+			// the server returns whatever was last sent, which may be stale.
 			topologyOptionsStore.update((current) => ({
 				request: opts.request,
-				perViewLocal: {
-					...current.perViewLocal,
-					[storedView]: opts.local
-				}
+				perViewLocal: current.perViewLocal
 			}));
 		}
 	} finally {
