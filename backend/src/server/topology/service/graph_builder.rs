@@ -39,14 +39,33 @@ impl GraphBuilder {
         }
     }
 
+    /// Compute which subnet ID each host's Docker bridges should be grouped under.
+    /// Returns a map of host_id → primary_subnet_id (first DockerBridge subnet found).
+    fn compute_docker_bridge_grouping(ctx: &TopologyContext) -> HashMap<Uuid, Uuid> {
+        let mut mapping: HashMap<Uuid, Uuid> = HashMap::new();
+        for interface in ctx.interfaces {
+            let Some(subnet) = ctx.get_subnet_by_id(interface.base.subnet_id) else {
+                continue;
+            };
+            if subnet.base.subnet_type == SubnetType::DockerBridge {
+                mapping.entry(interface.base.host_id).or_insert(subnet.id);
+            }
+        }
+        mapping
+    }
+
     /// Main entry point: group children by subnet and create all child nodes
     pub fn create_subnet_child_nodes(
         &mut self,
         ctx: &TopologyContext,
         all_edges: &mut [Edge],
         grouping: &GroupingConfig,
-        docker_bridge_host_subnet_id_to_group_on: HashMap<Uuid, Uuid>,
     ) -> (HashSet<Uuid>, Vec<Node>) {
+        let docker_bridge_host_subnet_id_to_group_on = if grouping.should_group_docker_bridges() {
+            Self::compute_docker_bridge_grouping(ctx)
+        } else {
+            HashMap::new()
+        };
         let children_by_subnet = self.group_children_by_subnet(
             ctx,
             all_edges,
@@ -425,6 +444,7 @@ impl GraphBuilder {
                     None
                 };
 
+                let absorbs_edges = self.consolidated_docker_subnets.contains_key(subnet_id);
                 Node {
                     id: *subnet_id,
                     node_type: NodeType::Container {
@@ -438,6 +458,7 @@ impl GraphBuilder {
                     size: Uxy { x: 0, y: 0 },
                     header,
                     element_rule_id: None,
+                    absorbs_edges,
                 }
             })
             .collect()

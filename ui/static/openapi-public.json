@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-06T18:22:08.518148Z",
-              "id": "e76a80f3-ac34-48c5-b0d8-7c4f5bb6335d",
+              "created_at": "2026-04-06T19:28:53.033188Z",
+              "id": "875e0dec-6eba-45d3-ad0d-7bf96639a78e",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-06T18:22:08.518148Z"
+              "updated_at": "2026-04-06T19:28:53.033188Z"
             }
           },
           "error": {
@@ -10734,14 +10734,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-06T18:22:08.499525Z",
-                      "id": "2fd6f464-f7cd-46a6-97eb-e2e3bacfd573",
+                      "created_at": "2026-04-06T19:28:53.020119Z",
+                      "id": "8768da7c-8681-482e-a43a-b0300b848aaa",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-06T18:22:08.499525Z"
+                      "updated_at": "2026-04-06T19:28:53.020119Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10750,7 +10750,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Scanopy Daemon",
+                  "service_definition": "GitHub",
                   "source": {
                     "type": "Manual"
                   },
@@ -11453,14 +11453,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-06T18:22:08.511498Z",
-                  "id": "0cec83d9-3805-4ae7-a5f3-62b0fed7f074",
+                  "created_at": "2026-04-06T19:28:53.029213Z",
+                  "id": "d843db7e-e82c-454c-8217-b835ad8205c0",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-06T18:22:08.511498Z"
+                  "updated_at": "2026-04-06T19:28:53.029213Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11469,7 +11469,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Scanopy Daemon",
+              "service_definition": "GitHub",
               "source": {
                 "type": "Manual"
               },
@@ -12744,14 +12744,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-06T18:22:08.500116Z",
-          "id": "3dfec014-79c9-4389-9396-02b9c73d8fcf",
+          "created_at": "2026-04-06T19:28:53.020350Z",
+          "id": "604f38ba-7351-4d8a-aac4-7418c3519ef8",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-06T18:22:08.500116Z"
+          "updated_at": "2026-04-06T19:28:53.020350Z"
         }
       },
       "BindingBase": {
@@ -13273,7 +13273,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Scanopy Daemon",
+              "service_definition": "GitHub",
               "tags": [],
               "virtualization": null
             }
@@ -15833,14 +15833,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-06T18:22:08.498914Z",
-                  "id": "17a075f6-dad3-4038-b6a0-ec8f83841251",
+                  "created_at": "2026-04-06T19:28:53.019813Z",
+                  "id": "62ee059d-4007-4b76-b0cc-daa792f4d799",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-06T18:22:08.498914Z"
+                  "updated_at": "2026-04-06T19:28:53.019813Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15849,7 +15849,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Scanopy Daemon",
+              "service_definition": "GitHub",
               "source": {
                 "type": "Manual"
               },
@@ -17008,6 +17008,10 @@
               "size"
             ],
             "properties": {
+              "absorbs_edges": {
+                "type": "boolean",
+                "description": "When true, edges targeting elements inside this container are elevated to target\nthe container itself. Set by rules that declare `absorbs_edges` (e.g. MergeDockerBridges, ByStack)."
+              },
               "element_rule_id": {
                 "type": [
                   "string",
@@ -17829,14 +17833,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-06T18:22:08.490205Z",
-                        "id": "13b9e57e-5651-4aca-a214-db5f1fd67431",
+                        "created_at": "2026-04-06T19:28:53.013297Z",
+                        "id": "c8b3d8b6-6eeb-4ecf-a0e2-40c709f89bc6",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-06T18:22:08.490205Z"
+                        "updated_at": "2026-04-06T19:28:53.013297Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17845,7 +17849,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Scanopy Daemon",
+                    "service_definition": "GitHub",
                     "source": {
                       "type": "Manual"
                     },
@@ -17922,14 +17926,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-06T18:22:08.508990Z",
-                    "id": "a84a1bf3-117b-49d7-8396-bec9d220cf75",
+                    "created_at": "2026-04-06T19:28:53.028162Z",
+                    "id": "96c21ec4-598c-4c86-9f79-7e68c539de34",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-06T18:22:08.508990Z"
+                    "updated_at": "2026-04-06T19:28:53.028162Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17938,7 +17942,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Scanopy Daemon",
+                "service_definition": "GitHub",
                 "source": {
                   "type": "Manual"
                 },
@@ -19098,14 +19102,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-06T18:22:08.499872Z",
-              "id": "66b6d4cb-6ab7-4b63-acf5-db6d57b695e7",
+              "created_at": "2026-04-06T19:28:53.020273Z",
+              "id": "687df682-9404-4ef4-8035-9849b58f87d1",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-06T18:22:08.499872Z"
+              "updated_at": "2026-04-06T19:28:53.020273Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19114,7 +19118,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Scanopy Daemon",
+          "service_definition": "GitHub",
           "source": {
             "type": "Manual"
           },

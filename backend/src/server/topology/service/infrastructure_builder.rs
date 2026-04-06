@@ -93,6 +93,7 @@ impl ViewBuilder for InfrastructureBuilder {
             size: Default::default(),
             header: None,
             element_rule_id: None,
+            absorbs_edges: false,
         });
 
         // Pre-compute virtualizer_host_id for each host

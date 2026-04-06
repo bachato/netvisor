@@ -50,6 +50,7 @@
 		tagHiddenServiceIds
 	} from '../../interactions';
 	import { bundleEdges } from '../../layout/edge-bundling';
+	import { elevateEdgesToContainers } from '../../layout/edge-elevation';
 	import { isOverlayEdge } from '../../layout/edge-classification';
 	import { onMount, tick, setContext } from 'svelte';
 	import { useQueryClient } from '@tanstack/svelte-query';
@@ -296,6 +297,9 @@
 				const elementToContainer = buildElementToContainer(layoutNodes);
 				const hiddenEdgeTypes = $topologyOptions.local.hide_edge_types ?? [];
 
+				// Elevate edges targeting elements inside absorbing containers
+				const elevatedEdges = elevateEdgesToContainers(topology.edges, layoutNodes);
+
 				// Run ELK on structure/collapse changes, skip for edge-only re-renders
 				const opts = get(topologyOptions);
 				const hiddenCatsMap = (opts.request.hide_service_categories ?? {}) as Record<
@@ -330,7 +334,7 @@
 
 				// Compute aggregated edges for collapsed containers
 				const aggregatedEdges = computeCollapsedEdges(
-					topology.edges,
+					elevatedEdges,
 					collapsed,
 					elementToContainer,
 					hiddenEdgeTypes
@@ -489,7 +493,7 @@
 					const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();
 					const elkResult = await layoutEngine.compute({
 						nodes: visibleNodes,
-						edges: topology.edges,
+						edges: elevatedEdges,
 						topology: topology,
 						collapsedContainers: collapsed,
 						expandedContainerSizes,
@@ -582,7 +586,7 @@
 
 				if (collapsed.size > 0 && aggregatedEdges.length > 0) {
 					// Filter out edges where source or target is inside a collapsed container
-					baseEdges = topology.edges.filter((edge) => {
+					baseEdges = elevatedEdges.filter((edge) => {
 						const srcContainer = elementToContainer.get(edge.source as string);
 						const tgtContainer = elementToContainer.get(edge.target as string);
 						const srcCollapsed = srcContainer && collapsed.has(srcContainer);
@@ -615,7 +619,7 @@
 					}
 				} else {
 					// No collapsed containers — all edges are base edges
-					baseEdges = topology.edges;
+					baseEdges = elevatedEdges;
 				}
 
 				// Filter visible edges (disabled edges excluded entirely, hidden types excluded before bundling)

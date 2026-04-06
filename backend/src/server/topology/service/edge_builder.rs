@@ -14,7 +14,6 @@ use crate::server::{
         service::context::TopologyContext,
         types::{
             edges::{DiscoveryProtocol, Edge, EdgeClassification, EdgeHandle, EdgeType},
-            grouping::GroupingConfig,
             nodes::Node,
         },
     },
@@ -61,14 +60,9 @@ impl EdgeBuilder {
             .collect()
     }
 
-    // Create edges to connect a host that virtualizes containers via docker to the docker bridge subnets
-    pub fn create_containerized_service_edges(
-        ctx: &TopologyContext,
-        grouping: &GroupingConfig,
-    ) -> (Vec<Edge>, HashMap<Uuid, Uuid>) {
-        // Host id to subnet id that will be used for grouping, if enabled
-        let mut docker_bridge_host_subnet_id_to_group_on: HashMap<Uuid, Uuid> = HashMap::new();
-
+    /// Create edges to connect a host that virtualizes containers via Docker
+    /// to the containerized services on Docker bridge subnets.
+    pub fn create_containerized_service_edges(ctx: &TopologyContext) -> Vec<Edge> {
         let mut docker_service_to_containerized_service_ids: HashMap<Uuid, Vec<Uuid>> =
             HashMap::new();
 
@@ -85,8 +79,7 @@ impl EdgeBuilder {
             }
         });
 
-        let edges = ctx
-            .services
+        ctx.services
             .iter()
             .filter(|s| {
                 docker_service_to_containerized_service_ids
@@ -122,77 +115,43 @@ impl EdgeBuilder {
                     })
                     .collect();
 
-                if grouping.should_group_docker_bridges() {
-                    // If subnets are grouped, pick an arbitrary subnet ID to use for grouping
-                    if let (Some(first_interface_id), Some(first_subnet_id)) = (
-                        container_subnet_interface_ids.first(),
-                        container_subnets.first(),
-                    ) {
-                        let is_multi_hop =
-                            ctx.edge_is_multi_hop(&origin_interface.id, first_interface_id);
+                docker_service_to_containerized_service_ids
+                    .get(&s.id)
+                    .unwrap_or(&Vec::new())
+                    .iter()
+                    .filter_map(move |cs| {
+                        let containerized = ctx.get_service_by_id(*cs)?;
 
-                        docker_bridge_host_subnet_id_to_group_on
-                            .entry(host.id)
-                            .or_insert(*first_subnet_id);
+                        let container_binding_interface_id = containerized
+                            .base
+                            .bindings
+                            .iter()
+                            .filter_map(|b| b.interface_id())
+                            .find(|i| container_subnet_interface_ids.contains(i))?;
 
-                        return vec![Edge {
+                        let is_multi_hop = ctx.edge_is_multi_hop(
+                            &origin_interface.id,
+                            &container_binding_interface_id,
+                        );
+
+                        Some(Edge {
                             id: Uuid::new_v4(),
                             source: origin_interface.id,
-                            target: *first_subnet_id,
+                            target: container_binding_interface_id,
                             edge_type: EdgeType::ServiceVirtualization {
                                 containerizing_service_id: s.id,
                                 host_id: host.id,
                             },
-                            label: Some(format!("{} @ {}", s.base.name, host.base.name)),
+                            label: Some(format!("{} on {}", s.base.name, host.base.name)),
                             source_handle: EdgeHandle::Bottom,
                             target_handle: EdgeHandle::Top,
                             is_multi_hop,
                             classification: EdgeClassification::default(),
-                        }];
-                    }
-                } else {
-                    return docker_service_to_containerized_service_ids
-                        .get(&s.id)
-                        .unwrap_or(&Vec::new())
-                        .iter()
-                        .filter_map(move |cs| {
-                            let containerized = ctx.get_service_by_id(*cs)?;
-
-                            let container_binding_interface_id = containerized
-                                .base
-                                .bindings
-                                .iter()
-                                .filter_map(|b| b.interface_id())
-                                .find(|i| container_subnet_interface_ids.contains(i))?;
-
-                            let is_multi_hop = ctx.edge_is_multi_hop(
-                                &origin_interface.id,
-                                &container_binding_interface_id,
-                            );
-
-                            Some(Edge {
-                                id: Uuid::new_v4(),
-                                source: origin_interface.id,
-                                target: container_binding_interface_id,
-                                edge_type: EdgeType::ServiceVirtualization {
-                                    containerizing_service_id: s.id,
-                                    host_id: host.id,
-                                },
-                                label: Some(format!("{} on {}", s.base.name, host.base.name)),
-                                source_handle: EdgeHandle::Bottom,
-                                target_handle: EdgeHandle::Top,
-                                is_multi_hop,
-                                classification: EdgeClassification::default(),
-                            })
                         })
-                        .collect();
-                }
-
-                Vec::new()
+                    })
+                    .collect::<Vec<Edge>>()
             })
-            .collect();
-
-        (edges, docker_bridge_host_subnet_id_to_group_on)
+            .collect()
     }
 
     // Create edges to connect a host that virtualizes other hosts as VMs

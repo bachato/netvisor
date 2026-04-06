@@ -22,19 +22,13 @@ impl ViewBuilder for L3Builder {
         all_edges.extend(EdgeBuilder::create_interface_edges(ctx));
         all_edges.extend(EdgeBuilder::create_dependency_edges(ctx));
         all_edges.extend(EdgeBuilder::create_vm_host_edges(ctx));
-        let (container_edges, docker_bridge_host_subnet_id_to_group_on) =
-            EdgeBuilder::create_containerized_service_edges(ctx, grouping);
-        all_edges.extend(container_edges);
+        all_edges.extend(EdgeBuilder::create_containerized_service_edges(ctx));
         all_edges.extend(EdgeBuilder::create_physical_link_edges(ctx));
 
         // Create nodes (positions zeroed — frontend computes layout via elkjs)
         let mut graph_builder = GraphBuilder::new();
-        let (subnet_ids, child_nodes) = graph_builder.create_subnet_child_nodes(
-            ctx,
-            &mut all_edges,
-            grouping,
-            docker_bridge_host_subnet_id_to_group_on,
-        );
+        let (subnet_ids, child_nodes) =
+            graph_builder.create_subnet_child_nodes(ctx, &mut all_edges, grouping);
 
         let mut subnet_nodes = graph_builder.create_subnet_nodes(ctx, &subnet_ids);
 

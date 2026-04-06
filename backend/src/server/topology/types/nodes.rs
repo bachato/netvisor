@@ -21,6 +21,10 @@ pub struct Node {
     /// ID of the element rule that created this container (for NestedTag/NestedServiceCategory)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub element_rule_id: Option<Uuid>,
+    /// When true, edges targeting elements inside this container are elevated to target
+    /// the container itself. Set by rules that declare `absorbs_edges` (e.g. MergeDockerBridges, ByStack).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub absorbs_edges: bool,
 }
 
 impl Node {
@@ -41,6 +45,7 @@ impl Node {
             size: Uxy::default(),
             header: None,
             element_rule_id: None,
+            absorbs_edges: false,
         }
     }
 }

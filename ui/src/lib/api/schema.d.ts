@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-06T18:22:08.517062Z",
-             *       "id": "cd19e87b-c5c2-4a6e-b976-0ac8d7d2ba8c",
+             *       "created_at": "2026-04-06T19:28:53.033186Z",
+             *       "id": "9e5a6113-1038-4611-89cc-e327c86d3c9b",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-06T18:22:08.517062Z"
+             *       "updated_at": "2026-04-06T19:28:53.033186Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-06T18:22:08.497373Z",
-             *               "id": "637bbd60-91e1-4720-ad4e-928b265db57c",
+             *               "created_at": "2026-04-06T19:28:53.020132Z",
+             *               "id": "bcd60aa0-9a60-437a-a8eb-d0326ea7c363",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-06T18:22:08.497373Z"
+             *               "updated_at": "2026-04-06T19:28:53.020132Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3172,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Scanopy Daemon",
+             *           "service_definition": "GitHub",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-06T18:22:08.507956Z",
-             *           "id": "67fd9c1e-6bac-41ee-83c0-55d3e01eb58e",
+             *           "created_at": "2026-04-06T19:28:53.029202Z",
+             *           "id": "3e8afac0-b320-4c44-979d-bb44ca6278ed",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-06T18:22:08.507956Z"
+             *           "updated_at": "2026-04-06T19:28:53.029202Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3444,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Scanopy Daemon",
+             *       "service_definition": "GitHub",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3772,14 +3772,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-06T18:22:08.497595Z",
-         *       "id": "935eb3c8-4c0c-4e1e-be6f-53ee3911e188",
+         *       "created_at": "2026-04-06T19:28:53.020365Z",
+         *       "id": "b285c386-b4f6-42ac-97a5-9cc153260054",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-06T18:22:08.497595Z"
+         *       "updated_at": "2026-04-06T19:28:53.020365Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3964,7 +3964,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Scanopy Daemon",
+         *           "service_definition": "GitHub",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4807,14 +4807,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-06T18:22:08.497027Z",
-         *               "id": "76a68524-4174-4fdb-a8aa-d001cb51ffab",
+         *               "created_at": "2026-04-06T19:28:53.019819Z",
+         *               "id": "b7e5df2e-72ef-4c3f-a694-e1b4033bc249",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-06T18:22:08.497027Z"
+         *               "updated_at": "2026-04-06T19:28:53.019819Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4823,7 +4823,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Scanopy Daemon",
+         *           "service_definition": "GitHub",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5261,6 +5261,11 @@ export interface components {
             subnet_count: number;
         };
         Node: components["schemas"]["NodeType"] & {
+            /**
+             * @description When true, edges targeting elements inside this container are elevated to target
+             *     the container itself. Set by rules that declare `absorbs_edges` (e.g. MergeDockerBridges, ByStack).
+             */
+            absorbs_edges?: boolean;
             /**
              * Format: uuid
              * @description ID of the element rule that created this container (for NestedTag/NestedServiceCategory)
@@ -5882,14 +5887,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-06T18:22:08.497505Z",
-         *           "id": "a42003fb-63f2-4179-98e8-93bbc2e10ae2",
+         *           "created_at": "2026-04-06T19:28:53.020287Z",
+         *           "id": "03471af4-ab3a-4d5d-b2a5-4361e4ac7842",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-06T18:22:08.497505Z"
+         *           "updated_at": "2026-04-06T19:28:53.020287Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5898,7 +5903,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Scanopy Daemon",
+         *       "service_definition": "GitHub",
          *       "source": {
          *         "type": "Manual"
          *       },
