@@ -301,13 +301,11 @@
 				const elevatedEdges = elevateEdgesToContainers(topology.edges, layoutNodes);
 
 				// After elevation, edge endpoints may be container IDs (not element IDs).
-				// Add them to elementToContainer so bundling can resolve their parent container.
+				// Map containers to themselves so bundling treats them as distinct targets
+				// (not as "inside" their parent, which would cause intra-container skipping).
 				for (const node of layoutNodes) {
 					if (node.node_type === 'Container' && !elementToContainer.has(node.id)) {
-						const parentId = (node as Record<string, unknown>).parent_container_id as
-							| string
-							| undefined;
-						elementToContainer.set(node.id, parentId ?? node.id);
+						elementToContainer.set(node.id, node.id);
 					}
 				}
 
