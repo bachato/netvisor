@@ -22,6 +22,8 @@ import { UNTAGGED_SENTINEL } from './interactions';
 import { getDefaultHiddenEdgeTypes } from './layout/edge-classification';
 import type { components } from '$lib/api/schema';
 import perspectivesJson from '$lib/data/perspectives.json';
+import serviceCategoriesJson from '$lib/data/service-categories.json';
+import type { ServiceCategoryMetadata } from '$lib/shared/stores/metadata';
 
 export type TopologyPerspective = components['schemas']['TopologyPerspective'];
 
@@ -44,6 +46,51 @@ export function sanitizeOptionsForApi(options: TopologyOptions): TopologyOptions
 
 type ServiceCategory = components['schemas']['ServiceCategory'];
 type TopologyLocalOptions = components['schemas']['TopologyLocalOptions'];
+
+/**
+ * Compute hidden service categories for the Application perspective based on org use case.
+ * Categories whose `application_relevant_use_cases` don't include the org's use case are hidden.
+ * Falls back to just ['OpenPorts'] if use case is unknown.
+ */
+function getApplicationHiddenCategories(useCase: string): ServiceCategory[] {
+	const hidden: ServiceCategory[] = ['OpenPorts'];
+	for (const cat of serviceCategoriesJson) {
+		const meta = cat.metadata as ServiceCategoryMetadata | null;
+		if (meta && !meta.application_relevant_use_cases.includes(useCase)) {
+			hidden.push(cat.id as ServiceCategory);
+		}
+	}
+	return hidden;
+}
+
+/** Get the org's use case from the query cache, defaulting to 'other' */
+function getOrgUseCase(): string {
+	const org = queryClient.getQueryData<Organization>(queryKeys.organizations.current());
+	return org?.use_case ?? 'other';
+}
+
+/**
+ * Apply use-case-aware hidden categories to the Application perspective
+ * in the current topology options store.
+ */
+export function applyApplicationHiddenCategories(): void {
+	topologyOptionsStore.update((store) => {
+		const hiddenCats = (store.request.hide_service_categories ?? {}) as Record<
+			string,
+			ServiceCategory[]
+		>;
+		return {
+			...store,
+			request: {
+				...store.request,
+				hide_service_categories: {
+					...hiddenCats,
+					Application: getApplicationHiddenCategories(getOrgUseCase())
+				}
+			}
+		};
+	});
+}
 
 const ALL_PERSPECTIVES: TopologyPerspective[] = perspectivesJson.map(
 	(p) => p.id as TopologyPerspective
@@ -115,10 +162,13 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 		}
 	}
 
-	// Hidden categories: OpenPorts for all perspectives
+	// Hidden categories: OpenPorts for most perspectives,
+	// Application gets use-case-aware filtering
+	const useCase = getOrgUseCase();
 	const hideServiceCategories: Record<string, ServiceCategory[]> = {};
 	for (const p of ALL_PERSPECTIVES) {
-		hideServiceCategories[p] = ['OpenPorts'];
+		hideServiceCategories[p] =
+			p === 'Application' ? getApplicationHiddenCategories(useCase) : ['OpenPorts'];
 	}
 
 	return {
@@ -628,9 +678,24 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 		}
 
 		if (isInitial) {
+			// Enrich Application hidden categories with use-case-aware defaults
+			// if the backend only has the bare default [OpenPorts]
+			const request = { ...opts.request };
+			const hiddenCats = (request.hide_service_categories ?? {}) as Record<
+				string,
+				ServiceCategory[]
+			>;
+			const appHidden = hiddenCats['Application'] ?? [];
+			if (appHidden.length <= 1 && appHidden[0] === 'OpenPorts') {
+				request.hide_service_categories = {
+					...hiddenCats,
+					Application: getApplicationHiddenCategories(getOrgUseCase())
+				};
+			}
+
 			// Full hydration: use backend request options + default local options
 			topologyOptionsStore.set({
-				request: opts.request,
+				request,
 				perPerspectiveLocal: {
 					...initDefaultLocalOptions(),
 					[storedPerspective]: opts.local

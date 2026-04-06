@@ -25,7 +25,8 @@
 		activePerspective,
 		topologyOptions,
 		updateTopologyOptions,
-		hydrateStoresFromTopology
+		hydrateStoresFromTopology,
+		applyApplicationHiddenCategories
 	} from '../queries';
 	import { makeGraphRule } from '../types/grouping';
 	import type { Topology } from '../types/base';
@@ -464,6 +465,8 @@
 				}
 			};
 		});
+		// Apply use-case-aware hidden categories for the Application perspective
+		applyApplicationHiddenCategories();
 		// Refresh rather than rebuild — safer if topology entered conflict state during wizard
 		handleRefresh();
 	}
