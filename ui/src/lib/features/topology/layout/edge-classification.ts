@@ -1,15 +1,15 @@
 import type { TopologyEdge } from '../types/base';
 import type { components } from '$lib/api/schema';
-import { perspectives } from '$lib/shared/stores/metadata';
+import { views } from '$lib/shared/stores/metadata';
 
 type EdgeTypeDiscriminants = components['schemas']['EdgeTypeDiscriminants'];
-type TopologyPerspective = components['schemas']['TopologyPerspective'];
+type TopologyView = components['schemas']['TopologyView'];
 
 export type EdgeClassification = 'primary' | 'overlay' | 'overlay_hidden' | 'disabled';
 
 /**
  * Classify an edge as primary (affects layout), overlay (drawn after layout),
- * or disabled (not shown in this perspective).
+ * or disabled (not shown in this view).
  * Uses the backend-provided `classification` field; defaults to overlay if absent.
  */
 export function classifyEdge(edge: TopologyEdge): EdgeClassification {
@@ -28,12 +28,10 @@ export function isDisabledEdge(edge: TopologyEdge): boolean {
 	return classifyEdge(edge) === 'disabled';
 }
 
-/** Returns the edge types that should be hidden by default for a given perspective.
- * Reads from perspective metadata — edge types classified as `overlay_hidden`. */
-export function getDefaultHiddenEdgeTypes(
-	perspective: TopologyPerspective
-): EdgeTypeDiscriminants[] {
-	const meta = perspectives.getMetadata(perspective) as {
+/** Returns the edge types that should be hidden by default for a given view.
+ * Reads from view metadata — edge types classified as `overlay_hidden`. */
+export function getDefaultHiddenEdgeTypes(view: TopologyView): EdgeTypeDiscriminants[] {
+	const meta = views.getMetadata(view) as {
 		edge_classifications?: Record<string, string>;
 	} | null;
 	if (!meta?.edge_classifications) return [];

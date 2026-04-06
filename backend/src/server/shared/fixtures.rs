@@ -16,9 +16,10 @@ use crate::server::shared::concepts::Concept;
 use crate::server::shared::entities::EntityDiscriminants;
 use crate::server::shared::types::metadata::{EntityMetadata, MetadataProvider, TypeMetadata};
 use crate::server::subnets::r#impl::types::SubnetType;
-use crate::server::topology::types::edges::{EdgeType, TopologyPerspective};
+use crate::server::topology::types::edges::EdgeType;
 use crate::server::topology::types::grouping::{ContainerRule, ElementRule};
 use crate::server::topology::types::nodes::ContainerType;
+use crate::server::topology::types::views::TopologyView;
 use crate::server::users::r#impl::permissions::UserOrgPermissions;
 use std::fs;
 use std::path::Path;
@@ -117,10 +118,8 @@ pub fn generate_ui_data_fixtures(output_dir: &Path) {
         ContainerType::iter().map(|r| r.to_metadata()).collect();
     write_fixture(&container_types, output_dir, "container-types.json");
 
-    let perspectives: Vec<TypeMetadata> = TopologyPerspective::iter()
-        .map(|p| p.to_metadata())
-        .collect();
-    write_fixture(&perspectives, output_dir, "perspectives.json");
+    let views: Vec<TypeMetadata> = TopologyView::iter().map(|v| v.to_metadata()).collect();
+    write_fixture(&views, output_dir, "views.json");
 
     let service_categories: Vec<TypeMetadata> =
         ServiceCategory::iter().map(|c| c.to_metadata()).collect();

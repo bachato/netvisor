@@ -3,8 +3,8 @@
 	import { useSvelteFlow } from '@xyflow/svelte';
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { getContainerContents } from '$lib/features/topology/resolvers';
-	import { perspectives } from '$lib/shared/stores/metadata';
-	import { activePerspective } from '$lib/features/topology/queries';
+	import { views } from '$lib/shared/stores/metadata';
+	import { activeView } from '$lib/features/topology/queries';
 	import { inspector_elementSummary, common_services, common_hosts } from '$lib/paraglide/messages';
 
 	let {
@@ -18,8 +18,8 @@
 	const { getNodes } = useSvelteFlow();
 
 	let elementLabel = $derived(
-		(perspectives.getMetadata($activePerspective) as { element_label?: string } | undefined)
-			?.element_label ?? 'elements'
+		(views.getMetadata($activeView) as { element_label?: string } | undefined)?.element_label ??
+			'elements'
 	);
 
 	// Count child elements and unique hosts inside this container (including subcontainers)

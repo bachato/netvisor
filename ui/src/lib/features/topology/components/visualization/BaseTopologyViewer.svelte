@@ -23,7 +23,7 @@
 	import '@xyflow/svelte/dist/style.css';
 	import { edgeTypes, containerTypes } from '$lib/shared/stores/metadata';
 	import { pushError } from '$lib/shared/stores/feedback';
-	import { previewEdges, selectedNodes, topologyOptions, activePerspective } from '../../queries';
+	import { previewEdges, selectedNodes, topologyOptions, activeView } from '../../queries';
 	import { isExporting, expandedPortNodeIds } from '../../interactions';
 	import { LayoutGraph } from '../../layout/layout-graph';
 
@@ -152,12 +152,12 @@
 	let sessionStructureKey = '';
 	let isMeasuring = false;
 	let prevExpandedPortIds = new Set<string>();
-	let prevPerspective = get(activePerspective);
+	let prevView = get(activeView);
 	let lastRenderedTopoKey = '';
-	let lastRenderedPerspective = '';
-	// Cache measured node sizes per perspective so return visits skip the measurement pass
+	let lastRenderedView = '';
+	// Cache measured node sizes per view so return visits skip the measurement pass
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
-	const perspectiveSizeCache = new Map<string, Map<string, { x: number; y: number }>>();
+	const viewSizeCache = new Map<string, Map<string, { x: number; y: number }>>();
 
 	function getStructureKey(topo: Topology): string {
 		// Include container assignments so membership changes (element rules) trigger re-layout
@@ -236,15 +236,14 @@
 	async function loadTopologyData() {
 		try {
 			if (topology && (topology.edges || topology.nodes)) {
-				const currentPerspective = get(activePerspective);
+				const currentView = get(activeView);
 				const topoKey = getStructureKey(topology);
-				const perspectiveChanged =
-					lastRenderedPerspective !== '' && currentPerspective !== lastRenderedPerspective;
+				const viewChanged = lastRenderedView !== '' && currentView !== lastRenderedView;
 				const topologyChanged = topoKey !== lastRenderedTopoKey;
 
-				// When perspective changed but topology data hasn't been rebuilt yet,
-				// skip processing to avoid rendering old nodes with the new perspective (flicker)
-				if (perspectiveChanged && !topologyChanged) {
+				// When view changed but topology data hasn't been rebuilt yet,
+				// skip processing to avoid rendering old nodes with the new view (flicker)
+				if (viewChanged && !topologyChanged) {
 					return;
 				}
 
@@ -303,12 +302,12 @@
 					string,
 					string[]
 				>;
-				const sizeKey = `${(hiddenCatsMap[currentPerspective] ?? []).join(',')}:${opts.request.hide_ports}`;
+				const sizeKey = `${(hiddenCatsMap[currentView] ?? []).join(',')}:${opts.request.hide_ports}`;
 				const rootCollapsedPreview = new Set(
 					[...collapsed].filter((id) => !layoutGraph || !layoutGraph.isSubcontainer(id))
 				);
 				const structureKey =
-					currentPerspective +
+					currentView +
 					':' +
 					topoKey +
 					':' +
@@ -445,24 +444,22 @@
 				const sortFlowNodes = (flowNodes: Node[]) =>
 					flowNodes.sort((a, b) => depthOf(a) - depthOf(b));
 
-				const isPerspectiveTransition = isNewStructure && perspectiveChanged && topologyChanged;
+				const isViewTransition = isNewStructure && viewChanged && topologyChanged;
 
 				if (isNewStructure) {
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 					const elementNodeSizes = new Map<string, { x: number; y: number }>();
-					const cachedSizes = isPerspectiveTransition
-						? perspectiveSizeCache.get(currentPerspective)
-						: undefined;
+					const cachedSizes = isViewTransition ? viewSizeCache.get(currentView) : undefined;
 
-					if (isPerspectiveTransition && cachedSizes) {
-						// Return visit to a previously-measured perspective: use cached sizes
+					if (isViewTransition && cachedSizes) {
+						// Return visit to a previously-measured view: use cached sizes
 						// so the old layout stays visible (no measurement pass / container hide)
 						for (const node of visibleNodes) {
 							const cached = cachedSizes.get(node.id);
 							elementNodeSizes.set(node.id, cached ?? { x: 250, y: 100 });
 						}
 					} else {
-						// First visit to perspective or non-perspective structural change:
+						// First visit to view or non-view structural change:
 						// full DOM measurement pass
 						isMeasuring = true;
 						edges.set([]);
@@ -518,8 +515,8 @@
 						elkResult.edgeHandles
 					);
 
-					// Cache measured sizes for this perspective so return visits skip measurement
-					perspectiveSizeCache.set(currentPerspective, new Map(elementNodeSizes));
+					// Cache measured sizes for this view so return visits skip measurement
+					viewSizeCache.set(currentView, new Map(elementNodeSizes));
 				}
 
 				// Local size adjustment for port expansion (no full ELK re-layout)
@@ -565,10 +562,10 @@
 					edgeHandles: new Map()
 				};
 
-				// Skip handle preservation on perspective change
-				if (currentPerspective !== prevPerspective) {
+				// Skip handle preservation on view change
+				if (currentView !== prevView) {
 					layoutResult = { ...layoutResult, edgeHandles: new Map() };
-					prevPerspective = currentPerspective;
+					prevView = currentView;
 				}
 
 				// Save current state before rebuilding
@@ -711,7 +708,7 @@
 				}
 
 				lastRenderedTopoKey = topoKey;
-				lastRenderedPerspective = currentPerspective;
+				lastRenderedView = currentView;
 			}
 		} catch (err) {
 			pushError(`Failed to parse topology data ${err}`);

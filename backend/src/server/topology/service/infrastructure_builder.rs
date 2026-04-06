@@ -4,7 +4,7 @@ use uuid::Uuid;
 use super::{
     context::TopologyContext,
     element_rules::{ElementMatchData, apply_element_rules_with_titles},
-    perspective::PerspectiveBuilder,
+    view::ViewBuilder,
 };
 use crate::server::{
     hosts::r#impl::virtualization::HostVirtualization,
@@ -74,7 +74,7 @@ impl InfrastructureBuilder {
     }
 }
 
-impl PerspectiveBuilder for InfrastructureBuilder {
+impl ViewBuilder for InfrastructureBuilder {
     fn build(&self, ctx: &TopologyContext, grouping: &GroupingConfig) -> (Vec<Node>, Vec<Edge>) {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();

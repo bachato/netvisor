@@ -20,7 +20,7 @@
 	import {
 		topologyOptions,
 		updateTopologyOptions,
-		activePerspective,
+		activeView,
 		sharedElementRules,
 		updateSharedElementRules
 	} from '../../../queries';
@@ -43,7 +43,7 @@
 		category: string | null;
 		icon: string | null;
 		color: string | null;
-		metadata: { is_user_editable: boolean; perspectives?: string[] } | null;
+		metadata: { is_user_editable: boolean; views?: string[] } | null;
 	}
 	import _containerRuleTypes from '$lib/data/container-rule-types.json';
 	import _elementRuleTypes from '$lib/data/element-rule-types.json';
@@ -58,7 +58,7 @@
 		topology_elementRuleNotApplicable,
 		topology_groupRuleTitlePlaceholder
 	} from '$lib/paraglide/messages';
-	import perspectivesJson from '$lib/data/perspectives.json';
+	import viewsJson from '$lib/data/views.json';
 
 	// Topology for edit state and rebuild
 	const topologiesQuery = useTopologiesQuery();
@@ -71,14 +71,14 @@
 	const tagsQuery = useTagsQuery();
 	let allTags = $derived(tagsQuery.data ?? []);
 
-	// Container rules for the active perspective (per-perspective HashMap)
+	// Container rules for the active view (per-view HashMap)
 	let containerRules = $derived(
 		((
 			$topologyOptions.request.container_rules as Record<string, ContainerGraphRule[]> | undefined
-		)?.[$activePerspective] ?? []) as ContainerGraphRule[]
+		)?.[$activeView] ?? []) as ContainerGraphRule[]
 	);
 
-	// Element rules from shared store (committed state, cross-perspective)
+	// Element rules from shared store (committed state, cross-view)
 	let committedElementRules = $derived($sharedElementRules);
 
 	// Pending edits buffer: used while an editor is open so individual toggles
@@ -96,14 +96,14 @@
 	const elementRuleMeta = Object.fromEntries(typedElementRuleTypes.map((m) => [m.id, m]));
 
 	// Perspective name lookup for tooltip
-	const perspectiveNames = Object.fromEntries(perspectivesJson.map((p) => [p.id, p.name ?? p.id]));
+	const viewNames = Object.fromEntries(viewsJson.map((p) => [p.id, p.name ?? p.id]));
 
-	/** Whether an element rule applies to the current perspective */
+	/** Whether an element rule applies to the current view */
 	function isElementRuleApplicable(item: ElementGraphRule): boolean {
 		const ruleId = getElementRuleType(item.rule);
 		const meta = elementRuleMeta[ruleId];
-		const perspectives = meta?.metadata?.perspectives;
-		return !perspectives || perspectives.includes(currentPerspective);
+		const applicableViews = meta?.metadata?.views;
+		return !applicableViews || applicableViews.includes(currentView);
 	}
 
 	/** Tooltip for a disabled (non-applicable) element rule */
@@ -111,8 +111,8 @@
 		if (isElementRuleApplicable(item)) return undefined;
 		const ruleId = getElementRuleType(item.rule);
 		const meta = elementRuleMeta[ruleId];
-		const perspectives = meta?.metadata?.perspectives ?? [];
-		const names = perspectives.map((p: string) => perspectiveNames[p] ?? p);
+		const applicableViews = meta?.metadata?.views ?? [];
+		const names = applicableViews.map((p: string) => viewNames[p] ?? p);
 		return topology_elementRuleNotApplicable({ perspectives: names.join(', ') });
 	}
 
@@ -169,12 +169,12 @@
 			getContainerRuleDiscriminant(item.rule)
 	};
 
-	let currentPerspective = $derived($activePerspective);
+	let currentView = $derived($activeView);
 
-	let perspectiveMeta = $derived(perspectivesJson.find((p) => p.id === currentPerspective));
+	let viewMeta = $derived(viewsJson.find((p) => p.id === currentView));
 	let elementGroupingLabel = $derived.by(() => {
 		const raw =
-			((perspectiveMeta?.metadata as Record<string, unknown>)?.element_label_singular as string) ??
+			((viewMeta?.metadata as Record<string, unknown>)?.element_label_singular as string) ??
 			'element';
 		return raw
 			.split(' ')
@@ -184,15 +184,15 @@
 
 	let filteredContainerRuleTypes = $derived(
 		typedContainerRuleTypes.filter((m) => {
-			const perspectives = m.metadata?.perspectives;
-			return !perspectives || perspectives.includes(currentPerspective);
+			const applicableViews = m.metadata?.views;
+			return !applicableViews || applicableViews.includes(currentView);
 		})
 	);
 
 	let filteredElementRuleTypes = $derived(
 		typedElementRuleTypes.filter((m) => {
-			const perspectives = m.metadata?.perspectives;
-			return !perspectives || perspectives.includes(currentPerspective);
+			const applicableViews = m.metadata?.views;
+			return !applicableViews || applicableViews.includes(currentView);
 		})
 	);
 
@@ -203,7 +203,7 @@
 				...opts.request,
 				container_rules: {
 					...(opts.request.container_rules as Record<string, ContainerGraphRule[]>),
-					[$activePerspective]: newRules
+					[$activeView]: newRules
 				}
 			}
 		}));
@@ -419,12 +419,12 @@
 <!-- Container grouping section -->
 <div
 	class="mb-4 border-l-2 pl-2"
-	style="border-left-color: {perspectiveMeta?.color
-		? COLOR_MAP[perspectiveMeta.color as Color]?.rgb
+	style="border-left-color: {viewMeta?.color
+		? COLOR_MAP[viewMeta.color as Color]?.rgb
 		: 'transparent'}"
 >
 	<ListManager
-		label={topology_containerGroupingPerspective({ perspective: perspectiveMeta?.name ?? '' })}
+		label={topology_containerGroupingPerspective({ perspective: viewMeta?.name ?? '' })}
 		placeholder={topology_addContainerRule()}
 		items={containerRules}
 		options={containerAddOptions}

@@ -21,11 +21,11 @@ import { writable, derived, get } from 'svelte/store';
 import { UNTAGGED_SENTINEL } from './interactions';
 import { getDefaultHiddenEdgeTypes } from './layout/edge-classification';
 import type { components } from '$lib/api/schema';
-import perspectivesJson from '$lib/data/perspectives.json';
+import viewsJson from '$lib/data/views.json';
 import serviceCategoriesJson from '$lib/data/service-categories.json';
 import type { ServiceCategoryMetadata } from '$lib/shared/stores/metadata';
 
-export type TopologyPerspective = components['schemas']['TopologyPerspective'];
+export type TopologyView = components['schemas']['TopologyView'];
 
 /** Strip UI-only sentinel values from options before sending to the API */
 export function sanitizeOptionsForApi(options: TopologyOptions): TopologyOptions {
@@ -48,7 +48,7 @@ type ServiceCategory = components['schemas']['ServiceCategory'];
 type TopologyLocalOptions = components['schemas']['TopologyLocalOptions'];
 
 /**
- * Compute hidden service categories for the Application perspective based on org use case.
+ * Compute hidden service categories for the Application view based on org use case.
  * Categories whose `application_relevant_use_cases` don't include the org's use case are hidden.
  * Falls back to just ['OpenPorts'] if use case is unknown.
  */
@@ -70,7 +70,7 @@ function getOrgUseCase(): string {
 }
 
 /**
- * Apply use-case-aware hidden categories to the Application perspective
+ * Apply use-case-aware hidden categories to the Application view
  * in the current topology options store.
  */
 export function applyApplicationHiddenCategories(): void {
@@ -92,14 +92,12 @@ export function applyApplicationHiddenCategories(): void {
 	});
 }
 
-const ALL_PERSPECTIVES: TopologyPerspective[] = perspectivesJson.map(
-	(p) => p.id as TopologyPerspective
-);
+const ALL_VIEWS: TopologyView[] = viewsJson.map((p) => p.id as TopologyView);
 
-/** Default local options for a given perspective (UI-only, not sent to backend as rules) */
-function getDefaultLocalOptions(perspective: TopologyPerspective): TopologyLocalOptions {
+/** Default local options for a given view (UI-only, not sent to backend as rules) */
+function getDefaultLocalOptions(view: TopologyView): TopologyLocalOptions {
 	return {
-		hide_edge_types: getDefaultHiddenEdgeTypes(perspective),
+		hide_edge_types: getDefaultHiddenEdgeTypes(view),
 		no_fade_edges: false,
 		hide_resize_handles: false,
 		bundle_edges: true,
@@ -112,25 +110,25 @@ function getDefaultLocalOptions(perspective: TopologyPerspective): TopologyLocal
 	};
 }
 
-/** Build default per-perspective local options */
-function initDefaultLocalOptions(): Record<TopologyPerspective, TopologyLocalOptions> {
-	return Object.fromEntries(ALL_PERSPECTIVES.map((p) => [p, getDefaultLocalOptions(p)])) as Record<
-		TopologyPerspective,
+/** Build default per-view local options */
+function initDefaultLocalOptions(): Record<TopologyView, TopologyLocalOptions> {
+	return Object.fromEntries(ALL_VIEWS.map((p) => [p, getDefaultLocalOptions(p)])) as Record<
+		TopologyView,
 		TopologyLocalOptions
 	>;
 }
 
 /**
  * Default request options matching the backend's TopologyRequestOptions::default().
- * Container rules and hidden categories are per-perspective HashMaps.
- * Element rules are shared cross-perspective.
+ * Container rules and hidden categories are per-view HashMaps.
+ * Element rules are shared cross-view.
  */
 function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'] {
-	// Build container rules per perspective from fixture metadata
+	// Build container rules per view from fixture metadata
 	const containerRules: Record<string, ContainerGraphRule[]> = {};
-	for (const p of ALL_PERSPECTIVES) {
+	for (const p of ALL_VIEWS) {
 		containerRules[p] = _containerRuleTypes
-			.filter((r) => (r.metadata as { perspectives?: string[] })?.perspectives?.includes(p))
+			.filter((r) => (r.metadata as { views?: string[] })?.views?.includes(p))
 			.map((r) => {
 				if (r.id === 'ByApplicationGroup') {
 					return makeGraphRule({ ByApplicationGroup: { tag_ids: [] } } as ContainerRule);
@@ -139,7 +137,7 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 			});
 	}
 
-	// Element rules: one of each type (shared cross-perspective)
+	// Element rules: one of each type (shared cross-view)
 	const seen = new Set<string>();
 	const elementRules: ElementGraphRule[] = [];
 	for (const r of _elementRuleTypes) {
@@ -162,11 +160,11 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 		}
 	}
 
-	// Hidden categories: OpenPorts for most perspectives,
+	// Hidden categories: OpenPorts for most views,
 	// Application gets use-case-aware filtering
 	const useCase = getOrgUseCase();
 	const hideServiceCategories: Record<string, ServiceCategory[]> = {};
-	for (const p of ALL_PERSPECTIVES) {
+	for (const p of ALL_VIEWS) {
 		hideServiceCategories[p] =
 			p === 'Application' ? getApplicationHiddenCategories(useCase) : ['OpenPorts'];
 	}
@@ -177,7 +175,7 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 		hide_service_categories: hideServiceCategories,
 		container_rules: containerRules,
 		element_rules: elementRules,
-		perspective: 'L3Logical'
+		view: 'L3Logical'
 	};
 }
 
@@ -579,58 +577,55 @@ export const selectedEdge = writable<Edge | null>(null);
 export const selectedNodes = writable<Node[]>([]);
 export const previewEdges = writable<Edge[]>([]);
 export const autoRebuild = writable<boolean>(loadAutoRebuildFromStorage());
-export const activePerspective = writable<TopologyPerspective>('L3Logical');
+export const activeView = writable<TopologyView>('L3Logical');
 
 // Single source of truth for topology options.
-// request: backend state (container_rules/hide_service_categories are per-perspective HashMaps)
-// perPerspectiveLocal: UI-only local options per perspective
+// request: backend state (container_rules/hide_service_categories are per-view HashMaps)
+// perViewLocal: UI-only local options per view
 const topologyOptionsStore = writable<{
 	request: components['schemas']['TopologyRequestOptions'];
-	perPerspectiveLocal: Record<TopologyPerspective, TopologyLocalOptions>;
+	perViewLocal: Record<TopologyView, TopologyLocalOptions>;
 }>({
 	request: defaultRequestOptions(),
-	perPerspectiveLocal: initDefaultLocalOptions()
+	perViewLocal: initDefaultLocalOptions()
 });
 
-// Derived: element rules from the single store (for backward compat with GroupingRuleEditor)
+// Derived: element rules from the single store (for GroupingRuleEditor)
 export const sharedElementRules = derived(topologyOptionsStore, ($store) => {
 	return ($store.request.element_rules ?? []) as ElementGraphRule[];
 });
 
-// Public derived store: projects the active perspective's view of topology options
-export const topologyOptions = derived(
-	[topologyOptionsStore, activePerspective],
-	([$store, $perspective]) => ({
-		local: $store.perPerspectiveLocal[$perspective],
-		request: {
-			...$store.request,
-			perspective: $perspective
-		}
-	})
-);
+// Public derived store: projects the active view's slice of topology options
+export const topologyOptions = derived([topologyOptionsStore, activeView], ([$store, $view]) => ({
+	local: $store.perViewLocal[$view],
+	request: {
+		...$store.request,
+		view: $view
+	}
+}));
 
-// Helper to update the active perspective's local options or request scalars
+// Helper to update the active view's local options or request scalars
 export function updateTopologyOptions(
 	updater: (current: TopologyOptions) => TopologyOptions
 ): void {
-	const perspective = get(activePerspective);
+	const view = get(activeView);
 	topologyOptionsStore.update((store) => {
-		const currentView: TopologyOptions = {
-			local: store.perPerspectiveLocal[perspective],
-			request: { ...store.request, perspective }
+		const currentOpts: TopologyOptions = {
+			local: store.perViewLocal[view],
+			request: { ...store.request, view: view }
 		};
-		const updated = updater(currentView);
+		const updated = updater(currentOpts);
 		return {
 			request: { ...updated.request },
-			perPerspectiveLocal: {
-				...store.perPerspectiveLocal,
-				[perspective]: updated.local
+			perViewLocal: {
+				...store.perViewLocal,
+				[view]: updated.local
 			}
 		};
 	});
 }
 
-// Update shared element rules (cross-perspective)
+// Update shared element rules (cross-view)
 export function updateSharedElementRules(
 	updater: (current: ElementGraphRule[]) => ElementGraphRule[]
 ): void {
@@ -645,16 +640,16 @@ export function updateSharedElementRules(
 
 /**
  * Build options for API requests. Reads directly from the source store —
- * container_rules and hide_service_categories are already per-perspective HashMaps.
+ * container_rules and hide_service_categories are already per-view HashMaps.
  */
 function buildOptionsForApi(): TopologyOptions {
 	const store = get(topologyOptionsStore);
-	const perspective = get(activePerspective);
+	const view = get(activeView);
 	return sanitizeOptionsForApi({
-		local: store.perPerspectiveLocal[perspective],
+		local: store.perViewLocal[view],
 		request: {
 			...store.request,
-			perspective
+			view: view
 		}
 	});
 }
@@ -662,19 +657,19 @@ function buildOptionsForApi(): TopologyOptions {
 /**
  * Hydrate stores from a topology's backend-stored options.
  * Called on initial topology selection and SSE updates.
- * SSE updates preserve the user's perspective and local options for other perspectives.
+ * SSE updates preserve the user's view and local options for other views.
  */
 let hydrating = false;
 export function hydrateStoresFromTopology(topology: Topology, isInitial = true): void {
 	hydrating = true;
 	try {
 		const opts = topology.options;
-		const storedPerspective = opts.request.perspective as TopologyPerspective;
+		const storedView = opts.request.view as TopologyView;
 
-		// Only set perspective on initial load — not on SSE updates, which would
-		// revert the user's perspective switch mid-flight
+		// Only set view on initial load — not on SSE updates, which would
+		// revert the user's view switch mid-flight
 		if (isInitial) {
-			activePerspective.set(storedPerspective);
+			activeView.set(storedView);
 		}
 
 		if (isInitial) {
@@ -696,18 +691,18 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 			// Full hydration: use backend request options + default local options
 			topologyOptionsStore.set({
 				request,
-				perPerspectiveLocal: {
+				perViewLocal: {
 					...initDefaultLocalOptions(),
-					[storedPerspective]: opts.local
+					[storedView]: opts.local
 				}
 			});
 		} else {
-			// SSE update: update request options, preserve local options for other perspectives
+			// SSE update: update request options, preserve local options for other views
 			topologyOptionsStore.update((current) => ({
 				request: opts.request,
-				perPerspectiveLocal: {
-					...current.perPerspectiveLocal,
-					[storedPerspective]: opts.local
+				perViewLocal: {
+					...current.perViewLocal,
+					[storedView]: opts.local
 				}
 			}));
 		}
@@ -743,7 +738,7 @@ export function consumePreferredNetwork(): string | null {
 export function resetTopologyOptions(): void {
 	topologyOptionsStore.set({
 		request: defaultRequestOptions(),
-		perPerspectiveLocal: initDefaultLocalOptions()
+		perViewLocal: initDefaultLocalOptions()
 	});
 	if (browser) {
 		localStorage.removeItem(EXPANDED_STORAGE_KEY);
@@ -814,7 +809,7 @@ function saveAutoRebuildToStorage(value: boolean): void {
 let optionsInitialized = false;
 let expandedInitialized = false;
 let autoRebuildInitialized = false;
-let perspectiveInitialized = false;
+let viewInitialized = false;
 
 if (browser) {
 	let rebuildTimeout: ReturnType<typeof setTimeout>;
@@ -863,11 +858,11 @@ if (browser) {
 		autoRebuildInitialized = true;
 	});
 
-	activePerspective.subscribe(() => {
-		if (perspectiveInitialized && !hydrating) {
+	activeView.subscribe(() => {
+		if (viewInitialized && !hydrating) {
 			triggerRebuild(0, true);
 		}
-		perspectiveInitialized = true;
+		viewInitialized = true;
 	});
 }
 
@@ -953,7 +948,7 @@ class TopologySSEManager extends BaseSSEManager<Topology> {
 		});
 
 		// Hydrate stores from the updated topology if it's the selected one.
-		// Not initial — don't reset perspective on SSE updates.
+		// Not initial — don't reset view on SSE updates.
 		if (update.id === get(selectedTopologyId)) {
 			hydrateStoresFromTopology(update, false);
 		}

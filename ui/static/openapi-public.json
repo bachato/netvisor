@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-06T16:17:26.063908Z",
-              "id": "fb10331d-84ab-43d1-a53d-dfd72c840d59",
+              "created_at": "2026-04-06T18:22:08.518148Z",
+              "id": "e76a80f3-ac34-48c5-b0d8-7c4f5bb6335d",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-06T16:17:26.063908Z"
+              "updated_at": "2026-04-06T18:22:08.518148Z"
             }
           },
           "error": {
@@ -10734,14 +10734,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-06T16:17:26.045078Z",
-                      "id": "dea6732e-7b56-4e40-9b8d-98474127485b",
+                      "created_at": "2026-04-06T18:22:08.499525Z",
+                      "id": "2fd6f464-f7cd-46a6-97eb-e2e3bacfd573",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-06T16:17:26.045078Z"
+                      "updated_at": "2026-04-06T18:22:08.499525Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10750,7 +10750,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Jira",
+                  "service_definition": "Scanopy Daemon",
                   "source": {
                     "type": "Manual"
                   },
@@ -11453,14 +11453,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-06T16:17:26.058904Z",
-                  "id": "b9414d8d-857a-480a-88a2-6dcc3928d1a5",
+                  "created_at": "2026-04-06T18:22:08.511498Z",
+                  "id": "0cec83d9-3805-4ae7-a5f3-62b0fed7f074",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-06T16:17:26.058904Z"
+                  "updated_at": "2026-04-06T18:22:08.511498Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11469,7 +11469,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Jira",
+              "service_definition": "Scanopy Daemon",
               "source": {
                 "type": "Manual"
               },
@@ -12744,14 +12744,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-06T16:17:26.045483Z",
-          "id": "bd755e16-65f3-421f-a78e-3c01f878115c",
+          "created_at": "2026-04-06T18:22:08.500116Z",
+          "id": "3dfec014-79c9-4389-9396-02b9c73d8fcf",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-06T16:17:26.045483Z"
+          "updated_at": "2026-04-06T18:22:08.500116Z"
         }
       },
       "BindingBase": {
@@ -13273,7 +13273,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Jira",
+              "service_definition": "Scanopy Daemon",
               "tags": [],
               "virtualization": null
             }
@@ -15833,14 +15833,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-06T16:17:26.044532Z",
-                  "id": "d6ad4778-4c2e-48c9-95e4-1aa6b576b0b9",
+                  "created_at": "2026-04-06T18:22:08.498914Z",
+                  "id": "17a075f6-dad3-4038-b6a0-ec8f83841251",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-06T16:17:26.044532Z"
+                  "updated_at": "2026-04-06T18:22:08.498914Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15849,7 +15849,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Jira",
+              "service_definition": "Scanopy Daemon",
               "source": {
                 "type": "Manual"
               },
@@ -17829,14 +17829,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-06T16:17:26.032569Z",
-                        "id": "32c099d7-6e68-465a-9f66-3077beeb8d32",
+                        "created_at": "2026-04-06T18:22:08.490205Z",
+                        "id": "13b9e57e-5651-4aca-a214-db5f1fd67431",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-06T16:17:26.032569Z"
+                        "updated_at": "2026-04-06T18:22:08.490205Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17845,7 +17845,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Jira",
+                    "service_definition": "Scanopy Daemon",
                     "source": {
                       "type": "Manual"
                     },
@@ -17922,14 +17922,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-06T16:17:26.057484Z",
-                    "id": "26cd91c6-c38c-4edc-9220-e26c32b8e108",
+                    "created_at": "2026-04-06T18:22:08.508990Z",
+                    "id": "a84a1bf3-117b-49d7-8396-bec9d220cf75",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-06T16:17:26.057484Z"
+                    "updated_at": "2026-04-06T18:22:08.508990Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17938,7 +17938,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Jira",
+                "service_definition": "Scanopy Daemon",
                 "source": {
                   "type": "Manual"
                 },
@@ -19098,14 +19098,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-06T16:17:26.045343Z",
-              "id": "b5b91ee6-becc-4b49-bfc6-e9b5f19308c0",
+              "created_at": "2026-04-06T18:22:08.499872Z",
+              "id": "66b6d4cb-6ab7-4b63-acf5-db6d57b695e7",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-06T16:17:26.045343Z"
+              "updated_at": "2026-04-06T18:22:08.499872Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19114,7 +19114,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Jira",
+          "service_definition": "Scanopy Daemon",
           "source": {
             "type": "Manual"
           },
@@ -20173,16 +20173,6 @@
           }
         }
       },
-      "TopologyPerspective": {
-        "type": "string",
-        "description": "Which topology perspective is being rendered",
-        "enum": [
-          "L2Physical",
-          "L3Logical",
-          "Infrastructure",
-          "Application"
-        ]
-      },
       "TopologyRebuildRequest": {
         "type": "object",
         "description": "Lightweight request type for topology rebuild/refresh operations.\n\nThis type only includes the fields actually needed by the server - entity data\n(hosts, interfaces, services, etc.) is fetched fresh from the database.\nUsing this instead of the full Topology dramatically reduces payload size\nfor large networks (from MBs to KBs), fixing HTTP 413 errors.",
@@ -20233,7 +20223,7 @@
             },
             "propertyNames": {
               "type": "string",
-              "description": "Which topology perspective is being rendered",
+              "description": "Which topology view is being rendered",
               "enum": [
                 "L2Physical",
                 "L3Logical",
@@ -20261,7 +20251,7 @@
             },
             "propertyNames": {
               "type": "string",
-              "description": "Which topology perspective is being rendered",
+              "description": "Which topology view is being rendered",
               "enum": [
                 "L2Physical",
                 "L3Logical",
@@ -20273,8 +20263,8 @@
           "hide_vm_title_on_docker_container": {
             "type": "boolean"
           },
-          "perspective": {
-            "$ref": "#/components/schemas/TopologyPerspective"
+          "view": {
+            "$ref": "#/components/schemas/TopologyView"
           }
         }
       },
@@ -20307,6 +20297,16 @@
             "description": "Subnet tag IDs to hide (subnets with these tags will fade out)"
           }
         }
+      },
+      "TopologyView": {
+        "type": "string",
+        "description": "Which topology view is being rendered",
+        "enum": [
+          "L2Physical",
+          "L3Logical",
+          "Infrastructure",
+          "Application"
+        ]
       },
       "TransportProtocol": {
         "type": "string",

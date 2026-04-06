@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { Handle, Position, type NodeProps } from '@xyflow/svelte';
-	import { concepts, entities, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import { concepts, entities, serviceDefinitions, views } from '$lib/shared/stores/metadata';
 	import {
 		selectedEdge as globalSelectedEdge,
 		selectedNode as globalSelectedNode,
 		selectedNodes as globalSelectedNodes,
 		selectedTopologyId,
 		topologyOptions,
-		activePerspective,
+		activeView,
 		useTopologiesQuery
 	} from '../../queries';
 	import type { TopologyNode, ElementRenderData, Topology } from '../../types/base';
@@ -134,7 +134,7 @@
 						const hiddenCategories =
 							(
 								($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>
-							)[$activePerspective] ?? [];
+							)[$activeView] ?? [];
 						type CategoryType = (typeof hiddenCategories)[number];
 						const isCategoryHidden =
 							service &&
@@ -162,7 +162,7 @@
 						const hiddenCategories =
 							(
 								($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>
-							)[$activePerspective] ?? [];
+							)[$activeView] ?? [];
 
 						type CategoryType = (typeof hiddenCategories)[number];
 						const servicesOnHost = visibleServicesForHost.filter(
@@ -199,7 +199,7 @@
 
 					const hiddenCategories =
 						(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
-							$activePerspective
+							$activeView
 						] ?? [];
 
 					// All services bound to this interface (after tag filtering)
@@ -282,10 +282,14 @@
 		return !$connectedNodeIds.has(id);
 	});
 
-	// Service-type element nodes should be fully hidden (not faded) when filtered out.
-	// Check tag filter (hiddenServices/hiddenNodes) and category filter (isCategoryHidden).
+	// Element nodes whose type matches the view's element_entity should be fully hidden
+	// (not faded) when filtered out by tag or category filter.
+	let viewElementEntity = $derived(
+		(views.getMetadata($activeView) as { element_config?: { element_entity: string } } | null)
+			?.element_config?.element_entity
+	);
 	let shouldHideEntirely = $derived(
-		nodeRenderData?.elementType === 'Service' &&
+		nodeRenderData?.elementType === viewElementEntity &&
 			(hiddenServices.has(id) ||
 				hiddenNodes.has(nodeRenderData.interface_id) ||
 				!!nodeRenderData.isCategoryHidden)

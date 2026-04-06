@@ -8,10 +8,10 @@
 	} from '../../../queries';
 	import { hoveredEdgeType } from '../../../interactions';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '../../../state';
-	import { edgeTypes, perspectives, serviceCategories } from '$lib/shared/stores/metadata';
-	import { activePerspective } from '../../../queries';
+	import { edgeTypes, views, serviceCategories } from '$lib/shared/stores/metadata';
+	import { activeView } from '../../../queries';
 	import { type Color, COLOR_MAP } from '$lib/shared/utils/styling';
-	import perspectivesJson from '$lib/data/perspectives.json';
+	import viewsJson from '$lib/data/views.json';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import TagFilterGroup from './TagFilterGroup.svelte';
 	import OptionToggle from './OptionToggle.svelte';
@@ -72,17 +72,26 @@
 	let hasUntaggedServices = $derived(topology?.services.some((s) => s.tags.length === 0) ?? false);
 	let hasUntaggedSubnets = $derived(topology?.subnets.some((s) => s.tags.length === 0) ?? false);
 
-	// Which tag filter categories apply to this perspective
-	let perspectiveMetaObj = $derived(
-		perspectives.getMetadata($activePerspective) as {
-			tag_filter_categories?: string[];
-			category_filter?: boolean;
+	// Derive filter visibility from element_config
+	let viewMetaObj = $derived(
+		views.getMetadata($activeView) as {
+			element_config?: {
+				parent_entity: string | null;
+				element_entity: string;
+				inline_entities: string[];
+			};
 		} | null
 	);
-	let tagFilterCategories = $derived(
-		perspectiveMetaObj?.tag_filter_categories ?? ['host', 'service', 'subnet']
+	let elementConfig = $derived(viewMetaObj?.element_config);
+	let showHostFilter = $derived(
+		elementConfig?.parent_entity === 'Host' || elementConfig?.element_entity === 'Host'
 	);
-	let hasCategoryFilter = $derived(perspectiveMetaObj?.category_filter ?? false);
+	let showServiceFilter = $derived(
+		elementConfig?.element_entity === 'Service' ||
+			(elementConfig?.inline_entities?.includes('Service') ?? false)
+	);
+	let showSubnetFilter = $derived(!!elementConfig?.parent_entity);
+	let hasCategoryFilter = $derived(showServiceFilter);
 
 	// Toggle functions for tag filter
 	function toggleHostTag(tagId: string) {
@@ -134,10 +143,10 @@
 	}
 
 	function toggleServiceCategory(category: string) {
-		const perspective = $activePerspective;
+		const view = $activeView;
 		updateTopologyOptions((opts) => {
 			const allHidden = (opts.request.hide_service_categories ?? {}) as Record<string, string[]>;
-			const hidden = allHidden[perspective] ?? [];
+			const hidden = allHidden[view] ?? [];
 			const idx = hidden.indexOf(category);
 			const newHidden =
 				idx !== -1 ? hidden.filter((c: string) => c !== category) : [...hidden, category];
@@ -148,7 +157,7 @@
 					...opts.request,
 					hide_service_categories: {
 						...allHidden,
-						[perspective]: newHidden
+						[view]: newHidden
 					}
 				}
 			};
@@ -181,7 +190,7 @@
 		hoveredEdgeType.set(null);
 	}
 
-	let perspectiveMeta = $derived(perspectivesJson.find((p) => p.id === $activePerspective));
+	let viewMeta = $derived(viewsJson.find((p) => p.id === $activeView));
 
 	// All service categories from fixture (not filtered by topology services)
 	let allServiceCategoriesWithColors = $derived.by(() => {
@@ -358,7 +367,7 @@
 			<div class="space-y-2 px-3 pb-3">
 				<p class="text-tertiary text-xs">{topology_filtersHelp()}</p>
 
-				{#if tagFilterCategories.includes('host')}
+				{#if showHostFilter}
 					<!-- Hosts -->
 					<div
 						class="space-y-1.5 rounded-lg p-2.5"
@@ -378,7 +387,7 @@
 					</div>
 				{/if}
 
-				{#if tagFilterCategories.includes('service')}
+				{#if showServiceFilter}
 					<!-- Services -->
 					<div
 						class="space-y-1.5 rounded-lg p-2.5"
@@ -398,8 +407,8 @@
 						{#if hasCategoryFilter}
 							<div
 								class="border-l-2 pl-2"
-								style="border-left-color: {perspectiveMeta?.color
-									? COLOR_MAP[perspectiveMeta.color as Color]?.rgb
+								style="border-left-color: {viewMeta?.color
+									? COLOR_MAP[viewMeta.color as Color]?.rgb
 									: 'transparent'}"
 							>
 								<CategoryFilterGroup
@@ -409,7 +418,7 @@
 											string,
 											string[]
 										>
-									)[$activePerspective] ?? []}
+									)[$activeView] ?? []}
 									onToggle={toggleServiceCategory}
 									disabled={!editState.isEditable}
 									label={common_byCategory()}
@@ -419,7 +428,7 @@
 					</div>
 				{/if}
 
-				{#if tagFilterCategories.includes('subnet')}
+				{#if showSubnetFilter}
 					<!-- Subnets -->
 					<div
 						class="space-y-1.5 rounded-lg p-2.5"

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Edge } from '@xyflow/svelte';
 	import type { TopologyEdge } from '$lib/features/topology/types/base';
-	import { activePerspective } from '$lib/features/topology/queries';
+	import { activeView } from '$lib/features/topology/queries';
 	import InspectorEdgeGroup from './edges/InspectorEdgeGroup.svelte';
 	import InspectorEdgeInterface from './edges/InspectorEdgeInterface.svelte';
 	import InspectorEdgeHostVirtualization from './edges/InspectorEdgeHostVirtualization.svelte';
@@ -11,7 +11,7 @@
 	let { edge }: { edge: Edge } = $props();
 
 	let edgeData = $derived(edge.data as TopologyEdge | undefined);
-	let perspective = $derived($activePerspective);
+	let view = $derived($activeView);
 </script>
 
 <div class="w-full space-y-4">
@@ -24,10 +24,10 @@
 			groupId={edgeData.group_id}
 			sourceBindingId={edgeData.source_binding_id}
 			targetBindingId={edgeData.target_binding_id}
-			{perspective}
+			{view}
 		/>
 	{:else if edgeData.edge_type === 'Interface'}
-		<InspectorEdgeInterface {edge} hostId={edgeData.host_id} {perspective} />
+		<InspectorEdgeInterface {edge} hostId={edgeData.host_id} {view} />
 	{:else if edgeData.edge_type === 'HostVirtualization'}
 		<InspectorEdgeHostVirtualization {edge} vmServiceId={edgeData.vm_service_id} />
 	{:else if edgeData.edge_type === 'ServiceVirtualization'}

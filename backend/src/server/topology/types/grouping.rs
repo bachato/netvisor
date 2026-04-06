@@ -3,7 +3,7 @@ use crate::server::shared::concepts::Concept;
 use crate::server::shared::types::metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider};
 use crate::server::shared::types::{Color, Icon};
 use crate::server::topology::types::base::TopologyRequestOptions;
-use crate::server::topology::types::edges::TopologyPerspective;
+use crate::server::topology::types::views::TopologyView;
 use serde::{Deserialize, Serialize};
 use strum_macros::{EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
@@ -40,14 +40,13 @@ pub enum ContainerRule {
 }
 
 impl ContainerRule {
-    pub fn applicable_perspectives(&self) -> &'static [TopologyPerspective] {
+    pub fn applicable_views(&self) -> &'static [TopologyView] {
         match self {
-            ContainerRule::BySubnet => &[TopologyPerspective::L3Logical],
-            ContainerRule::MergeDockerBridges => &[
-                TopologyPerspective::L3Logical,
-                TopologyPerspective::Infrastructure,
-            ],
-            ContainerRule::ByApplicationGroup { .. } => &[TopologyPerspective::Application],
+            ContainerRule::BySubnet => &[TopologyView::L3Logical],
+            ContainerRule::MergeDockerBridges => {
+                &[TopologyView::L3Logical, TopologyView::Infrastructure]
+            }
+            ContainerRule::ByApplicationGroup { .. } => &[TopologyView::Application],
         }
     }
 }
@@ -96,7 +95,7 @@ impl TypeMetadataProvider for ContainerRule {
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
             "is_user_editable": matches!(self, ContainerRule::MergeDockerBridges),
-            "perspectives": self.applicable_perspectives(),
+            "views": self.applicable_views(),
         })
     }
 }
@@ -119,20 +118,19 @@ pub enum ElementRule {
 }
 
 impl ElementRule {
-    pub fn applicable_perspectives(&self) -> &'static [TopologyPerspective] {
+    pub fn applicable_views(&self) -> &'static [TopologyView] {
         match self {
-            ElementRule::ByServiceCategory { .. } => &[
-                TopologyPerspective::L3Logical,
-                TopologyPerspective::Application,
-            ],
+            ElementRule::ByServiceCategory { .. } => {
+                &[TopologyView::L3Logical, TopologyView::Application]
+            }
             ElementRule::ByTag { .. } => &[
-                TopologyPerspective::L3Logical,
-                TopologyPerspective::L2Physical,
-                TopologyPerspective::Infrastructure,
-                TopologyPerspective::Application,
+                TopologyView::L3Logical,
+                TopologyView::L2Physical,
+                TopologyView::Infrastructure,
+                TopologyView::Application,
             ],
-            ElementRule::ByVirtualizer => &[TopologyPerspective::Infrastructure],
-            ElementRule::ByStack => &[TopologyPerspective::L3Logical, TopologyPerspective::Application],
+            ElementRule::ByVirtualizer => &[TopologyView::Infrastructure],
+            ElementRule::ByStack => &[TopologyView::L3Logical, TopologyView::Application],
         }
     }
 }
@@ -187,7 +185,7 @@ impl TypeMetadataProvider for ElementRule {
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
             "is_user_editable": true,
-            "perspectives": self.applicable_perspectives(),
+            "views": self.applicable_views(),
         })
     }
 }
@@ -200,20 +198,20 @@ pub struct GroupingConfig {
 
 impl GroupingConfig {
     pub fn from_request_options(options: &TopologyRequestOptions) -> Self {
-        let perspective = options.perspective;
+        let view = options.view;
 
-        // Container rules: look up current perspective directly (per-perspective HashMap)
+        // Container rules: look up current view directly (per-view HashMap)
         let container_rules = options
             .container_rules
-            .get(&perspective)
+            .get(&view)
             .cloned()
             .unwrap_or_default();
 
-        // Element rules: filter shared set by applicable perspectives
+        // Element rules: filter shared set by applicable views
         let element_rules = options
             .element_rules
             .iter()
-            .filter(|gr| gr.rule.applicable_perspectives().contains(&perspective))
+            .filter(|gr| gr.rule.applicable_views().contains(&view))
             .cloned()
             .collect();
 
@@ -257,7 +255,7 @@ mod tests {
     fn test_no_docker_grouping() {
         let mut options = TopologyRequestOptions::default();
         options.container_rules.insert(
-            TopologyPerspective::L3Logical,
+            TopologyView::L3Logical,
             vec![GraphRule::new(ContainerRule::BySubnet)],
         );
         let config = GroupingConfig::from_request_options(&options);

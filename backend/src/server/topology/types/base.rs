@@ -9,12 +9,11 @@ use crate::server::services::r#impl::categories::ServiceCategory;
 use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::tags::r#impl::base::Tag;
-use crate::server::topology::types::edges::{
-    Edge, EdgeHandle, EdgeTypeDiscriminants, TopologyPerspective,
-};
+use crate::server::topology::types::edges::{Edge, EdgeHandle, EdgeTypeDiscriminants};
 use crate::server::topology::types::grouping::{ContainerRule, ElementRule, GraphRule};
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
+use crate::server::topology::types::views::TopologyView;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display};
@@ -251,37 +250,37 @@ pub struct TopologyRequestOptions {
     pub hide_vm_title_on_docker_container: bool,
     pub hide_ports: bool,
     #[serde(default = "default_hide_service_categories")]
-    pub hide_service_categories: HashMap<TopologyPerspective, Vec<ServiceCategory>>,
+    pub hide_service_categories: HashMap<TopologyView, Vec<ServiceCategory>>,
     #[serde(default = "default_container_rules")]
-    pub container_rules: HashMap<TopologyPerspective, Vec<GraphRule<ContainerRule>>>,
+    pub container_rules: HashMap<TopologyView, Vec<GraphRule<ContainerRule>>>,
     #[serde(default = "default_element_rules")]
     pub element_rules: Vec<GraphRule<ElementRule>>,
     #[serde(default)]
-    pub perspective: TopologyPerspective,
+    pub view: TopologyView,
 }
 
-fn default_hide_service_categories() -> HashMap<TopologyPerspective, Vec<ServiceCategory>> {
-    TopologyPerspective::iter()
+fn default_hide_service_categories() -> HashMap<TopologyView, Vec<ServiceCategory>> {
+    TopologyView::iter()
         .map(|p| (p, vec![ServiceCategory::OpenPorts]))
         .collect()
 }
 
-fn default_container_rules() -> HashMap<TopologyPerspective, Vec<GraphRule<ContainerRule>>> {
+fn default_container_rules() -> HashMap<TopologyView, Vec<GraphRule<ContainerRule>>> {
     use ContainerRule::*;
 
-    // Build from applicable_perspectives: for each rule type, add it to every perspective it applies to
+    // Build from applicable_views: for each rule type, add it to every view it applies to
     let all_rules: Vec<GraphRule<ContainerRule>> = vec![
         GraphRule::new(BySubnet),
         GraphRule::new(MergeDockerBridges),
         GraphRule::new(ByApplicationGroup { tag_ids: vec![] }),
     ];
 
-    let mut map: HashMap<TopologyPerspective, Vec<GraphRule<ContainerRule>>> =
-        TopologyPerspective::iter().map(|p| (p, vec![])).collect();
+    let mut map: HashMap<TopologyView, Vec<GraphRule<ContainerRule>>> =
+        TopologyView::iter().map(|p| (p, vec![])).collect();
 
     for gr in all_rules {
-        for &perspective in gr.rule.applicable_perspectives() {
-            map.entry(perspective).or_default().push(gr.clone());
+        for &view in gr.rule.applicable_views() {
+            map.entry(view).or_default().push(gr.clone());
         }
     }
 
@@ -311,7 +310,7 @@ impl Default for TopologyRequestOptions {
             hide_service_categories: default_hide_service_categories(),
             container_rules: default_container_rules(),
             element_rules: default_element_rules(),
-            perspective: TopologyPerspective::default(),
+            view: TopologyView::default(),
         }
     }
 }

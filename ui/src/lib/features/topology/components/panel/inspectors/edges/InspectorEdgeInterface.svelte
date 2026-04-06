@@ -14,16 +14,16 @@
 	import type { Writable } from 'svelte/store';
 
 	import type { components } from '$lib/api/schema';
-	type TopologyPerspective = components['schemas']['TopologyPerspective'];
+	type TopologyView = components['schemas']['TopologyView'];
 
 	let {
 		edge,
 		hostId,
-		perspective = 'L3Logical'
+		view = 'L3Logical'
 	}: {
 		edge: Edge;
 		hostId: string;
-		perspective?: TopologyPerspective;
+		view?: TopologyView;
 	} = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology

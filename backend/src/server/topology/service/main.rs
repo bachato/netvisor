@@ -34,9 +34,10 @@ use crate::server::{
         service::{context::TopologyContext, edge_builder::EdgeBuilder},
         types::{
             base::{SetEntitiesParams, Topology, TopologyOptions},
-            edges::{Edge, EdgeHandle, TopologyPerspective},
+            edges::{Edge, EdgeHandle},
             grouping::GroupingConfig,
             nodes::Node,
+            views::TopologyView,
         },
     },
 };
@@ -113,7 +114,7 @@ impl CrudService<Topology> for TopologyService {
             old_edges: &[],
             old_nodes: &[],
             options: &topology.base.options,
-            old_perspective: None,
+            old_view: None,
         };
 
         let (nodes, edges) = self.build_graph(params);
@@ -169,7 +170,7 @@ pub struct BuildGraphParams<'a> {
     pub entity_tags: &'a [Tag],
     pub old_nodes: &'a [Node],
     pub old_edges: &'a [Edge],
-    pub old_perspective: Option<TopologyPerspective>,
+    pub old_view: Option<TopologyView>,
 }
 
 impl TopologyService {
@@ -350,7 +351,7 @@ impl TopologyService {
             entity_tags: &entity_tags,
             old_nodes: &[],
             old_edges: &[],
-            old_perspective: None,
+            old_view: None,
         });
 
         topology.set_entities(SetEntitiesParams {
@@ -387,7 +388,7 @@ impl TopologyService {
             old_edges,
             old_nodes,
             options,
-            old_perspective,
+            old_view,
         } = params;
 
         // Create context to avoid parameter passing
@@ -407,14 +408,14 @@ impl TopologyService {
         // Build grouping config from request options
         let grouping = GroupingConfig::from_request_options(&options.request);
 
-        // Select builder by perspective and build nodes + edges
-        let builder = super::perspective::builder_for_perspective(options.request.perspective);
+        // Select builder by view and build nodes + edges
+        let builder = super::view::builder_for_view(options.request.view);
         let (all_nodes, mut all_edges) = builder.build(&ctx, &grouping);
 
-        // Set edge classification based on perspective
-        let perspective = options.request.perspective;
+        // Set edge classification based on view
+        let view = options.request.view;
         for edge in &mut all_edges {
-            edge.classification = perspective.classify_edge((&edge.edge_type).into());
+            edge.classification = view.classify_edge((&edge.edge_type).into());
         }
 
         let final_edges = all_edges;
@@ -433,13 +434,13 @@ impl TopologyService {
         // Add edges to graph
         EdgeBuilder::add_edges_to_graph(&mut graph, &node_indices, final_edges);
 
-        // Skip handle preservation when perspective has changed — old handles are not meaningful
-        let perspective_unchanged = match old_perspective {
-            Some(old_p) => old_p == perspective,
+        // Skip handle preservation when view has changed — old handles are not meaningful
+        let view_unchanged = match old_view {
+            Some(old_v) => old_v == view,
             None => true,
         };
 
-        if perspective_unchanged {
+        if view_unchanged {
             // Build previous graph to compare and determine if user edits should be persisted
             // If nodes have changed edges, assume they have moved and user edits are no longer applicable
             let mut old_graph: Graph<Node, Edge> = Graph::new();

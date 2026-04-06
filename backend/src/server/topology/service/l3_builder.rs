@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use super::{
     context::TopologyContext, edge_builder::EdgeBuilder, graph_builder::GraphBuilder,
-    perspective::PerspectiveBuilder,
+    view::ViewBuilder,
 };
 use crate::server::shared::types::metadata::EntityMetadataProvider;
 use crate::server::topology::types::{
@@ -14,7 +14,7 @@ use crate::server::topology::types::{
 
 pub struct L3Builder;
 
-impl PerspectiveBuilder for L3Builder {
+impl ViewBuilder for L3Builder {
     fn build(&self, ctx: &TopologyContext, grouping: &GroupingConfig) -> (Vec<Node>, Vec<Edge>) {
         // Create all edges
         let mut all_edges = Vec::new();
@@ -77,7 +77,7 @@ mod tests {
     use crate::server::subnets::r#impl::base::{Subnet, SubnetBase};
     use crate::server::tags::r#impl::base::{Tag, TagBase};
     use crate::server::topology::service::context::TopologyContext;
-    use crate::server::topology::service::perspective::PerspectiveBuilder;
+    use crate::server::topology::service::view::ViewBuilder;
     use crate::server::topology::types::base::TopologyOptions;
     use crate::server::topology::types::grouping::{ElementRule, GraphRule};
     use crate::server::topology::types::nodes::{ContainerType, NodeType};

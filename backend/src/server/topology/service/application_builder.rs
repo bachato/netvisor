@@ -4,7 +4,7 @@ use uuid::Uuid;
 use super::{
     context::TopologyContext,
     element_rules::{ElementMatchData, apply_element_rules},
-    perspective::PerspectiveBuilder,
+    view::ViewBuilder,
 };
 use crate::server::{
     dependencies::r#impl::{base::DependencyMembers, types::DependencyType},
@@ -60,7 +60,7 @@ impl ApplicationBuilder {
     }
 }
 
-impl PerspectiveBuilder for ApplicationBuilder {
+impl ViewBuilder for ApplicationBuilder {
     fn build(&self, ctx: &TopologyContext, grouping: &GroupingConfig) -> (Vec<Node>, Vec<Edge>) {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
@@ -387,9 +387,9 @@ mod tests {
             service::context::TopologyContext,
             types::{
                 base::TopologyOptions,
-                edges::TopologyPerspective,
                 grouping::{ContainerRule, ElementRule, GraphRule, GroupingConfig},
                 nodes::NodeType,
+                views::TopologyView,
             },
         },
     };
@@ -761,9 +761,9 @@ mod tests {
         let tags = vec![app_tag_a, app_tag_b];
 
         let mut options = TopologyOptions::default();
-        options.request.perspective = TopologyPerspective::Application;
+        options.request.view = TopologyView::Application;
         options.request.container_rules.insert(
-            TopologyPerspective::Application,
+            TopologyView::Application,
             vec![GraphRule::new(ContainerRule::ByApplicationGroup {
                 tag_ids: vec![],
             })],
@@ -905,9 +905,9 @@ mod tests {
         let tags = vec![app_tag_a, app_tag_b];
 
         let mut options = TopologyOptions::default();
-        options.request.perspective = TopologyPerspective::Application;
+        options.request.view = TopologyView::Application;
         options.request.container_rules.insert(
-            TopologyPerspective::Application,
+            TopologyView::Application,
             vec![GraphRule::new(ContainerRule::ByApplicationGroup {
                 tag_ids: vec![],
             })],

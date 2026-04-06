@@ -7,7 +7,7 @@
 		useTopologiesQuery,
 		selectedTopologyId,
 		topologyOptions,
-		activePerspective,
+		activeView,
 		autoRebuild
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
@@ -51,7 +51,7 @@
 	let isGrouped = $derived(
 		(
 			(($topologyOptions.request.container_rules ?? {}) as Record<string, { rule: unknown }[]>)[
-				$activePerspective
+				$activeView
 			] ?? []
 		).some((r) => r.rule === 'MergeDockerBridges')
 	);

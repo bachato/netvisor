@@ -7,5 +7,5 @@ pub mod graph_builder;
 pub mod infrastructure_builder;
 pub mod l3_builder;
 pub mod main;
-pub mod perspective;
 pub mod subscriber;
+pub mod view;

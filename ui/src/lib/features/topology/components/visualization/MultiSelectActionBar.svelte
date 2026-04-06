@@ -2,8 +2,8 @@
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { X, GitBranch, Network } from 'lucide-svelte';
-	import { selectedNodes, previewEdges, autoRebuild, activePerspective } from '../../queries';
-	import { getInspectorConfig } from '../panel/inspectors/perspective-config';
+	import { selectedNodes, previewEdges, autoRebuild, activeView } from '../../queries';
+	import { getInspectorConfig } from '../panel/inspectors/view-config';
 	import type { Topology, TopologyNode } from '../../types/base';
 	import { resolveElementNode } from '../../resolvers';
 	import type { DependencyType } from '$lib/features/dependencies/types/base';
@@ -167,8 +167,8 @@
 		const newDependency = createEmptyDependencyFormData(topology.network_id);
 		newDependency.name = groupName.trim();
 		newDependency.dependency_type = groupType;
-		// Build members as the correct tagged union based on perspective
-		const config = getInspectorConfig(get(activePerspective));
+		// Build members as the correct tagged union based on view
+		const config = getInspectorConfig(get(activeView));
 		if (config.dependency_creation === 'Services') {
 			const serviceIds: string[] = [];
 			for (const bindingId of bindingIds) {

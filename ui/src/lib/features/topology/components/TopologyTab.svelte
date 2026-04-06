@@ -22,7 +22,7 @@
 		selectedTopologyId,
 		selectedNodes,
 		consumePreferredNetwork,
-		activePerspective,
+		activeView,
 		topologyOptions,
 		updateTopologyOptions,
 		hydrateStoresFromTopology,
@@ -52,8 +52,8 @@
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import type { components } from '$lib/api/schema';
-	import { entities, permissions, perspectives } from '$lib/shared/stores/metadata';
-	import { getInspectorConfig } from './panel/inspectors/perspective-config';
+	import { entities, permissions, views } from '$lib/shared/stores/metadata';
+	import { getInspectorConfig } from './panel/inspectors/view-config';
 	import { modalState, openModal } from '$lib/shared/stores/modal-registry';
 	import type { TabProps } from '$lib/shared/types';
 	import {
@@ -110,9 +110,9 @@
 	let appGroupTags = $derived((tagsQuery.data ?? []).filter((t) => t.is_application_group));
 	let wizardOpen = $state(false);
 
-	let currentInspectorConfig = $derived(getInspectorConfig($activePerspective));
+	let currentInspectorConfig = $derived(getInspectorConfig($activeView));
 
-	// Auto-open wizard when entering a perspective with app-group picker and no app-group tags
+	// Auto-open wizard when entering a view with app-group picker and no app-group tags
 	$effect(() => {
 		if (
 			isActive &&
@@ -138,9 +138,9 @@
 		updateTagFilter(
 			currentTopology,
 			$topologyOptions.local.tag_filter,
-			$activePerspective,
+			$activeView,
 			(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
-				$activePerspective
+				$activeView
 			] ?? []
 		);
 	});
@@ -153,16 +153,16 @@
 	);
 	let discoveryColor = $derived(entities.getColorHelper('Discovery'));
 
-	// Perspective selector — built from fixture data
-	import perspectivesJson from '$lib/data/perspectives.json';
+	// View selector — built from fixture data
+	import viewsJson from '$lib/data/views.json';
 
-	const perspectiveOptions = perspectivesJson.map((p) => ({
+	const viewOptions = viewsJson.map((p) => ({
 		value: p.id,
 		label: '',
-		icon: perspectives.getIconComponent(p.id),
+		icon: views.getIconComponent(p.id),
 		tooltip: p.description
 	}));
-	let perspectiveColorStyle = $derived(perspectives.getColorHelper($activePerspective));
+	let viewColorStyle = $derived(views.getColorHelper($activeView));
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
 	let onboarding = $derived((organizationQuery.data?.onboarding ?? []) as OnboardingOperation[]);
@@ -465,7 +465,7 @@
 				}
 			};
 		});
-		// Apply use-case-aware hidden categories for the Application perspective
+		// Apply use-case-aware hidden categories for the Application view
 		applyApplicationHiddenCategories();
 		// Refresh rather than rebuild — safer if topology entered conflict state during wizard
 		handleRefresh();
@@ -496,7 +496,7 @@
 			<!-- Header -->
 			<div
 				class="card card-static flex items-center justify-evenly gap-4 px-4 py-2"
-				style="border-bottom: 2px solid {perspectiveColorStyle.rgb}; transition: border-color 0.3s ease;"
+				style="border-bottom: 2px solid {viewColorStyle.rgb}; transition: border-color 0.3s ease;"
 			>
 				{#if currentTopology}
 					<div class="flex items-center gap-4 py-2">
@@ -629,9 +629,9 @@
 						<div class="card-divider-v self-stretch"></div>
 
 						<SegmentedControl
-							options={perspectiveOptions}
-							selected={$activePerspective}
-							onchange={(value) => activePerspective.set(value)}
+							options={viewOptions}
+							selected={$activeView}
+							onchange={(value) => activeView.set(value)}
 							iconSize="lg"
 						/>
 					{/if}

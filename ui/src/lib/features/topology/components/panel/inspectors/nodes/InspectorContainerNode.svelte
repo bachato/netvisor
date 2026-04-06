@@ -4,14 +4,14 @@
 		useTopologiesQuery,
 		selectedTopologyId,
 		autoRebuild,
-		activePerspective
+		activeView
 	} from '$lib/features/topology/queries';
 	import type { TopologyNode, Topology } from '$lib/features/topology/types/base';
 	import { resolveContainerNode } from '$lib/features/topology/resolvers';
 	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import { getInspectorConfig, getSectionComponent } from '../perspective-config';
+	import { getInspectorConfig, getSectionComponent } from '../view-config';
 
 	let { node }: { node: Node } = $props();
 
@@ -31,8 +31,8 @@
 		topology ? resolveContainerNode(node.id, node.data as TopologyNode, topology) : null
 	);
 
-	// Perspective-driven section config
-	let config = $derived(getInspectorConfig($activePerspective));
+	// View-driven section config
+	let config = $derived(getInspectorConfig($activeView));
 	let sections = $derived(config.container_sections);
 </script>
 

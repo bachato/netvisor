@@ -12,9 +12,9 @@
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Color, ColorStyle } from '$lib/shared/utils/styling';
-	import { serviceDefinitions, containerTypes, perspectives } from '$lib/shared/stores/metadata';
+	import { serviceDefinitions, containerTypes, views } from '$lib/shared/stores/metadata';
 	import { topology_elementCount, topology_ungroupedCount } from '$lib/paraglide/messages';
-	import { activePerspective } from '../../queries';
+	import { activeView } from '../../queries';
 	import {
 		useTopologiesQuery,
 		useUpdateNodeResizeMutation,
@@ -122,16 +122,16 @@
 	let resolved = $derived(
 		topology ? resolveContainerNode(id, data as TopologyNode, topology) : null
 	);
-	// TODO(perspectives): subnet is used for tag hover. When containers represent other
+	// TODO(views): subnet is used for tag hover. When containers represent other
 	// entity types, refactor to use a generic entity tags lookup instead.
 	let subnet = $derived(resolved?.subnet);
 
-	let currentPerspective = $state(get(activePerspective));
-	activePerspective.subscribe((v) => (currentPerspective = v));
+	let currentView = $state(get(activeView));
+	activeView.subscribe((v) => (currentView = v));
 
 	let elementLabel = $derived(
-		(perspectives.getMetadata(currentPerspective) as { element_label?: string } | undefined)
-			?.element_label ?? 'hosts'
+		(views.getMetadata(currentView) as { element_label?: string } | undefined)?.element_label ??
+			'hosts'
 	);
 
 	let isCollapsed = $derived(collapsedNodes.has(id));
@@ -198,7 +198,7 @@
 		return [];
 	});
 
-	// TODO(perspectives): tag hover highlight is subnet-specific. When containers
+	// TODO(views): tag hover highlight is subnet-specific. When containers
 	// represent other entity types, refactor to use generic entity tags.
 	let tagHoverRingStyle = $derived.by(() => {
 		if (!currentHoveredTag || currentHoveredTag.entityType !== 'subnet' || !subnet) return '';

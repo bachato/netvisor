@@ -4,7 +4,7 @@
 		useTopologiesQuery,
 		selectedTopologyId,
 		autoRebuild,
-		activePerspective
+		activeView
 	} from '$lib/features/topology/queries';
 	import type { TopologyNode, Topology } from '$lib/features/topology/types/base';
 	import { resolveElementNode } from '$lib/features/topology/resolvers';
@@ -13,7 +13,7 @@
 	import type { Writable } from 'svelte/store';
 	import OptionToggle from '../../options/OptionToggle.svelte';
 	import OptionsCard from '../../options/OptionsCard.svelte';
-	import { getInspectorConfig, getSectionComponent } from '../perspective-config';
+	import { getInspectorConfig, getSectionComponent } from '../view-config';
 	import {
 		topology_hidePorts,
 		topology_hidePortsHelp,
@@ -39,8 +39,8 @@
 		topology ? resolveElementNode(node.id, node.data as TopologyNode, topology) : null
 	);
 
-	// Perspective-driven section config
-	let config = $derived(getInspectorConfig($activePerspective));
+	// View-driven section config
+	let config = $derived(getInspectorConfig($activeView));
 	let sections = $derived(config.element_sections);
 
 	// Contextual hint conditions for options card

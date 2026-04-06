@@ -84,7 +84,7 @@ const elementResolvers: Record<
 	}
 };
 
-// TODO(perspectives): This resolver returns a subnet entity for tag hover support.
+// TODO(views): This resolver returns a subnet entity for tag hover support.
 // When containers represent other entity types (hosts, services, hypervisors),
 // this must be refactored to return tags generically from whatever entity
 // the container represents, not specifically a subnet.
@@ -154,7 +154,7 @@ export interface ContainerContents {
 /**
  * Walk the flow node tree and return all entities inside a container,
  * including entities in nested subcontainers. Works generically across
- * perspectives — uses container_id/subnet_id for elements and
+ * views — uses container_id/subnet_id for elements and
  * parent_container_id for subcontainers.
  */
 export function getContainerContents(containerId: string, allNodes: Node[]): ContainerContents {

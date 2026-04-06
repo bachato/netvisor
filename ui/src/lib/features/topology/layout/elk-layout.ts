@@ -154,7 +154,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 	const elementToContainer = new Map<string, string>();
 	for (const node of input.nodes) {
 		if (node.node_type === 'Element') {
-			let parentId = node.container_id ?? node.subnet_id;
+			let parentId = node.container_id;
 			if (typeof parentId === 'string' && containers.has(parentId)) {
 				// Walk up to root container for cross-container edge routing
 				while (parentContainerMap.has(parentId)) {
@@ -217,7 +217,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 	// Add element nodes as children of their containers (skip collapsed)
 	for (const node of input.nodes) {
 		if (node.node_type === 'Element') {
-			const parentId = node.container_id ?? node.subnet_id;
+			const parentId = node.container_id;
 			if (collapsed.has(parentId)) continue;
 			const parent = containers.get(parentId);
 			if (parent && parent.children) {
@@ -656,7 +656,7 @@ export function applyLocalSizeAdjustment(
 	const containerChildren = new Map<string, string[]>();
 	for (const node of nodes) {
 		if (node.node_type === 'Element') {
-			const parentId = node.container_id ?? node.subnet_id;
+			const parentId = node.container_id;
 			if (parentId && !collapsed.has(parentId)) {
 				leafToContainer.set(node.id, parentId);
 				if (!containerChildren.has(parentId)) containerChildren.set(parentId, []);

@@ -43,6 +43,7 @@ function makeElement(id: string, subnetId: string, hostId?: string): TopologyNod
 		node_type: 'Element',
 		element_type: 'Interface',
 		host_id: hostId ?? uuid(),
+		container_id: subnetId,
 		subnet_id: subnetId,
 		position: { x: 0, y: 0 },
 		size: { x: 180, y: 60 }

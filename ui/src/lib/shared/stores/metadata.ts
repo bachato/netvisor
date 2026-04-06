@@ -13,7 +13,7 @@ import permissionsJson from '$lib/data/permissions.json';
 import credentialTypesJson from '$lib/data/credential-types.json';
 import conceptsJson from '$lib/data/concepts.json';
 import containerTypesJson from '$lib/data/container-types.json';
-import perspectivesJson from '$lib/data/perspectives.json';
+import viewsJson from '$lib/data/views.json';
 import serviceCategoriesJson from '$lib/data/service-categories.json';
 import {
 	createColorHelper,
@@ -82,7 +82,7 @@ export interface MetadataRegistry {
 	concepts: EntityMetadata[];
 	credential_types: TypeMetadata[];
 	container_types: TypeMetadata[];
-	perspectives: TypeMetadata[];
+	views: TypeMetadata[];
 	service_categories: TypeMetadata[];
 }
 
@@ -210,7 +210,7 @@ export const metadata = writable<MetadataRegistry>({
 	concepts: conceptsJson,
 	credential_types: credentialTypesJson,
 	container_types: containerTypesJson,
-	perspectives: perspectivesJson,
+	views: viewsJson,
 	service_categories: serviceCategoriesJson
 } as unknown as MetadataRegistry);
 
@@ -399,7 +399,7 @@ export const credentialTypes = createTypeMetadataHelpers<
 export const containerTypes = createTypeMetadataHelpers<'container_types', ContainerTypeMetadata>(
 	'container_types'
 );
-export const perspectives = createTypeMetadataHelpers<'perspectives', object>('perspectives');
+export const views = createTypeMetadataHelpers<'views', object>('views');
 
 export interface ServiceCategoryMetadata {
 	application_relevant_use_cases: string[];

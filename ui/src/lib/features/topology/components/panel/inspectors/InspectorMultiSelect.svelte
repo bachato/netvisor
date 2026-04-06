@@ -10,7 +10,7 @@
 		selectedTopologyId,
 		useTopologiesQuery,
 		useRebuildTopologyMutation,
-		activePerspective,
+		activeView,
 		topologyOptions,
 		updateSharedElementRules
 	} from '../../../queries';
@@ -31,8 +31,8 @@
 		createEmptyDependencyFormData
 	} from '$lib/features/dependencies/queries';
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
-	import { entities, dependencyTypes, concepts, perspectives } from '$lib/shared/stores/metadata';
-	import { getInspectorConfig } from './perspective-config';
+	import { entities, dependencyTypes, concepts, views } from '$lib/shared/stores/metadata';
+	import { getInspectorConfig } from './view-config';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
 	import type { Node, Edge } from '@xyflow/svelte';
@@ -113,18 +113,16 @@
 		topology ? topology.services.filter((s) => selectedServiceIds.includes(s.id)) : []
 	);
 
-	// Perspective-driven config
-	let inspectorConfig = $derived(getInspectorConfig($activePerspective));
-	let perspectiveMeta = $derived(
-		perspectives.getMetadata($activePerspective) as Record<string, unknown> | null
-	);
+	// View-driven config
+	let inspectorConfig = $derived(getInspectorConfig($activeView));
+	let viewMeta = $derived(views.getMetadata($activeView) as Record<string, unknown> | null);
 	let elementLabel = $derived.by(() => {
 		const count = nodes.length;
-		if (count === 1) return (perspectiveMeta?.element_label_singular as string) ?? 'element';
-		return (perspectiveMeta?.element_label as string) ?? 'elements';
+		if (count === 1) return (viewMeta?.element_label_singular as string) ?? 'element';
+		return (viewMeta?.element_label as string) ?? 'elements';
 	});
 
-	// Tag entity type — fixed by perspective config (no user toggle)
+	// Tag entity type — fixed by view config (no user toggle)
 	let tagEntityType = $derived(inspectorConfig.bulk_tag_entity as 'Host' | 'Service');
 
 	let tagEntityIds = $derived(tagEntityType === 'Host' ? selectedHostIds : selectedServiceIds);
@@ -430,11 +428,11 @@
 		newDependency.dependency_type = groupType;
 
 		if (isServicesMode) {
-			// Application perspective: use service IDs directly from selected nodes
+			// Application view: use service IDs directly from selected nodes
 			if (selectedServiceIds.length < 2) return;
 			newDependency.members = { type: 'Services', service_ids: [...selectedServiceIds] };
 		} else {
-			// L3 perspective: use binding IDs from disambiguation
+			// L3 view: use binding IDs from disambiguation
 			const bindingIds: string[] = [];
 			for (const bindingId of bindingSelections.values()) {
 				if (bindingId) {
@@ -645,7 +643,7 @@
 		{/if}
 
 		{#if inspectorConfig.dependency_creation}
-			<!-- Dependency creation section — conditionally shown based on perspective -->
+			<!-- Dependency creation section — conditionally shown based on view -->
 			<div class="space-y-2">
 				<span class="text-secondary block text-sm font-medium"
 					>{dependencies_createDependency()}</span

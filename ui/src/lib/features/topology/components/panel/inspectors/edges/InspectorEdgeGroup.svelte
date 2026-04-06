@@ -26,18 +26,18 @@
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 
 	import type { components } from '$lib/api/schema';
-	type TopologyPerspective = components['schemas']['TopologyPerspective'];
+	type TopologyView = components['schemas']['TopologyView'];
 
 	let {
 		groupId,
 		sourceBindingId,
 		targetBindingId,
-		perspective = 'L3Logical'
+		view = 'L3Logical'
 	}: {
 		groupId: string;
 		sourceBindingId: string;
 		targetBindingId: string;
-		perspective?: TopologyPerspective;
+		view?: TopologyView;
 	} = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
