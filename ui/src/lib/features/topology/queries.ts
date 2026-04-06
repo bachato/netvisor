@@ -18,11 +18,13 @@ import type { Organization } from '$lib/features/organizations/types';
 import { uuidv4Sentinel, utcTimeZoneSentinel } from '$lib/shared/utils/formatting';
 import { BaseSSEManager, type SSEConfig } from '$lib/shared/utils/sse';
 import { writable, derived, get } from 'svelte/store';
-import { UNTAGGED_SENTINEL, GENERIC_SENTINEL } from './interactions';
+import { UNTAGGED_SENTINEL } from './interactions';
 import { getDefaultHiddenEdgeTypes } from './layout/edge-classification';
 import type { components } from '$lib/api/schema';
 import perspectivesJson from '$lib/data/perspectives.json';
 import { perspectives } from '$lib/shared/stores/metadata';
+import type { ServiceCategoryMetadata } from '$lib/shared/stores/metadata';
+import serviceCategoriesJson from '$lib/data/service-categories.json';
 
 export type TopologyPerspective = components['schemas']['TopologyPerspective'];
 type PerPerspectiveOptions = Record<TopologyPerspective, TopologyOptions>;
@@ -30,7 +32,7 @@ type PerPerspectiveOptions = Record<TopologyPerspective, TopologyOptions>;
 /** Strip UI-only sentinel values from options before sending to the API */
 export function sanitizeOptionsForApi(options: TopologyOptions): TopologyOptions {
 	const tf = options.local?.tag_filter;
-	const isSentinel = (id: string) => id === UNTAGGED_SENTINEL || id === GENERIC_SENTINEL;
+	const isSentinel = (id: string) => id === UNTAGGED_SENTINEL;
 	return {
 		...options,
 		local: {
@@ -78,7 +80,39 @@ function getDefaultElementRules(perspective: TopologyPerspective): ElementGraphR
 // Legacy default for backward compatibility
 export const defaultElementRules: ElementGraphRule[] = getDefaultElementRules('L3Logical');
 
-export function getDefaultTopologyOptions(perspective: TopologyPerspective): TopologyOptions {
+type ServiceCategory = components['schemas']['ServiceCategory'];
+
+/**
+ * Compute the default hidden service categories for a perspective + use case.
+ * Uses the `application_relevant_use_cases` metadata from service-categories.json.
+ * Categories whose relevance list does NOT include the org's use case are hidden.
+ */
+function getDefaultHiddenCategories(
+	perspective: TopologyPerspective,
+	useCase: string
+): ServiceCategory[] {
+	const hasCategoryFilter = (
+		perspectives.getMetadata(perspective) as { category_filter?: boolean } | null
+	)?.category_filter;
+
+	if (!hasCategoryFilter) {
+		return ['OpenPorts'];
+	}
+
+	const hidden: ServiceCategory[] = ['OpenPorts'];
+	for (const cat of serviceCategoriesJson) {
+		const meta = cat.metadata as ServiceCategoryMetadata | null;
+		if (meta && !meta.application_relevant_use_cases.includes(useCase)) {
+			hidden.push(cat.id as ServiceCategory);
+		}
+	}
+	return hidden;
+}
+
+export function getDefaultTopologyOptions(
+	perspective: TopologyPerspective,
+	useCase: string = 'other'
+): TopologyOptions {
 	return {
 		local: {
 			hide_edge_types: getDefaultHiddenEdgeTypes(perspective),
@@ -87,13 +121,7 @@ export function getDefaultTopologyOptions(perspective: TopologyPerspective): Top
 			bundle_edges: true,
 			tag_filter: {
 				hidden_host_tag_ids: [],
-				hidden_service_tag_ids: (
-					perspectives.getMetadata(perspective) as {
-						default_hide_generic_services?: boolean;
-					} | null
-				)?.default_hide_generic_services
-					? [GENERIC_SENTINEL]
-					: [],
+				hidden_service_tag_ids: [],
 				hidden_subnet_tag_ids: []
 			},
 			show_minimap: true
@@ -101,7 +129,7 @@ export function getDefaultTopologyOptions(perspective: TopologyPerspective): Top
 		request: {
 			hide_ports: false,
 			hide_vm_title_on_docker_container: false,
-			hide_service_categories: ['OpenPorts'],
+			hide_service_categories: getDefaultHiddenCategories(perspective, useCase),
 			container_rules: getDefaultContainerRules(perspective),
 			element_rules: getDefaultElementRules(perspective),
 			perspective

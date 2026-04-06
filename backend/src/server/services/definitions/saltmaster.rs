@@ -15,7 +15,7 @@ impl ServiceDefinition for SaltMaster {
         "A Salt master server acts as a central control bus for the clients, which are called minions."
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkCore
+        ServiceCategory::Development
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {

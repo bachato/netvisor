@@ -1,13 +1,17 @@
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
 
-use crate::server::shared::{
-    concepts::Concept,
-    entities::EntityDiscriminants,
-    types::{
-        Color, Icon,
-        metadata::{EntityMetadataProvider, HasId},
+use crate::server::{
+    organizations::r#impl::base::UseCase,
+    shared::{
+        concepts::Concept,
+        entities::EntityDiscriminants,
+        types::{
+            Color, Icon,
+            metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider},
+        },
     },
 };
 
@@ -28,9 +32,15 @@ use crate::server::shared::{
 )]
 pub enum ServiceCategory {
     // Infrastructure (always-on, core network services)
-    NetworkCore,     // Routers, switches, core infrastructure
-    NetworkAccess,   // WiFi APs, switches for end devices
-    NetworkSecurity, // Firewalls, security appliances
+    NetworkCore,   // DHCP, Gateway, NTP, Switch, SNMP
+    NetworkAccess, // WiFi APs, switches for end devices
+
+    // Network appliances (router/firewall/VPN platforms)
+    #[serde(alias = "NetworkSecurity")]
+    NetworkAppliance, // MikroTik, pfSense, OPNsense, FortiGate, Firewall
+
+    // Remote access protocols
+    RemoteAccess, // SSH, Telnet, RDP
 
     // Server Services
     Storage, // NAS, file servers
@@ -42,8 +52,8 @@ pub enum ServiceCategory {
     // Network Services
     DNS, // All DNS services
     VPN, // All VPN services
-    SNMP,
-    Monitoring, // SNMP, monitoring tools
+    #[serde(alias = "SNMP")]
+    Monitoring, // Monitoring tools, SNMP
     AdBlock,
     ReverseProxy,
 
@@ -55,7 +65,7 @@ pub enum ServiceCategory {
 
     // Applications
     Database,    // DB servers
-    Development, // Dev tools, CI/CD
+    Development, // Dev tools, CI/CD, config management
     Dashboard,
     MessageQueue,
     IdentityAndAccess,
@@ -92,7 +102,8 @@ impl EntityMetadataProvider for ServiceCategory {
             // Infrastructure (always-on, core network services)
             ServiceCategory::NetworkCore => Icon::Network,
             ServiceCategory::NetworkAccess => Icon::Router,
-            ServiceCategory::NetworkSecurity => Icon::BrickWall,
+            ServiceCategory::NetworkAppliance => Icon::BrickWall,
+            ServiceCategory::RemoteAccess => Icon::Terminal,
 
             // Server Services
             ServiceCategory::Storage => Icon::HardDrive,
@@ -104,7 +115,6 @@ impl EntityMetadataProvider for ServiceCategory {
             // Network Services
             ServiceCategory::DNS => Concept::Dns.icon(),
             ServiceCategory::VPN => Concept::Vpn.icon(),
-            ServiceCategory::SNMP => Concept::SNMP.icon(),
             ServiceCategory::Monitoring => Icon::Activity,
             ServiceCategory::AdBlock => Icon::ShieldCheck,
             ServiceCategory::ReverseProxy => Concept::ReverseProxy.icon(),
@@ -148,7 +158,8 @@ impl EntityMetadataProvider for ServiceCategory {
             // Infrastructure (always-on, core network services)
             ServiceCategory::NetworkCore => Color::Yellow,
             ServiceCategory::NetworkAccess => Color::Green,
-            ServiceCategory::NetworkSecurity => Color::Red,
+            ServiceCategory::NetworkAppliance => Color::Red,
+            ServiceCategory::RemoteAccess => Color::Amber,
 
             // Server Services
             ServiceCategory::Storage => Color::Green,
@@ -160,7 +171,6 @@ impl EntityMetadataProvider for ServiceCategory {
             // Network Services
             ServiceCategory::DNS => Concept::Dns.color(),
             ServiceCategory::VPN => Concept::Vpn.color(),
-            ServiceCategory::SNMP => Concept::SNMP.color(),
             ServiceCategory::Monitoring => Color::Orange,
             ServiceCategory::AdBlock => Concept::Dns.color(),
             ServiceCategory::ReverseProxy => Concept::ReverseProxy.color(),
@@ -196,6 +206,38 @@ impl EntityMetadataProvider for ServiceCategory {
             ServiceCategory::Custom => Color::Rose,
             ServiceCategory::OpenPorts => EntityDiscriminants::Port.color(),
             ServiceCategory::Unknown => Color::Gray,
+        }
+    }
+}
+
+impl TypeMetadataProvider for ServiceCategory {
+    fn name(&self) -> &'static str {
+        self.into()
+    }
+
+    fn metadata(&self) -> serde_json::Value {
+        serde_json::json!({
+            "application_relevant_use_cases": self.application_relevant_use_cases()
+        })
+    }
+}
+
+impl ServiceCategory {
+    /// Returns the use cases for which this category is considered application-relevant.
+    /// Categories not relevant for a given use case are hidden by default in the
+    /// Application perspective.
+    pub fn application_relevant_use_cases(&self) -> Vec<UseCase> {
+        use ServiceCategory::*;
+        match self {
+            // Infrastructure plumbing — never application-relevant
+            NetworkCore | NetworkAccess | RemoteAccess | Workstation | Mobile | Printer
+            | OpenPorts => vec![],
+
+            // Network appliances: infra for most, but MSPs manage these
+            NetworkAppliance => vec![UseCase::Msp],
+
+            // Everything else: relevant for all use cases
+            _ => UseCase::iter().collect(),
         }
     }
 }

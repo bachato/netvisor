@@ -10,7 +10,7 @@ use crate::server::{
     },
     email::traits::EmailService,
     organizations::{
-        r#impl::base::{Organization, OrganizationBase},
+        r#impl::base::{Organization, OrganizationBase, UseCase},
         service::OrganizationService,
     },
     shared::{
@@ -267,7 +267,11 @@ impl AuthService {
             };
             new_org_plan_type = plan.as_ref().map(|p| p.name().to_string());
 
-            let use_case = pending_setup.as_ref().and_then(|s| s.use_case.clone());
+            let use_case = pending_setup
+                .as_ref()
+                .and_then(|s| s.use_case.as_deref())
+                .and_then(|s| serde_json::from_value::<UseCase>(serde_json::json!(s)).ok())
+                .unwrap_or_default();
 
             // Create new organization for this user
             let organization = self

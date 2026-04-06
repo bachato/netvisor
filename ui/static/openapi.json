@@ -12577,14 +12577,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-05T23:42:37.285455Z",
-              "id": "7e168a59-9bbb-4d68-8d42-66d1e092f897",
+              "created_at": "2026-04-06T01:47:11.089829Z",
+              "id": "4cb80f7b-670d-42da-a9d3-7e583560ca4b",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-05T23:42:37.285455Z"
+              "updated_at": "2026-04-06T01:47:11.089829Z"
             }
           },
           "error": {
@@ -13483,14 +13483,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-05T23:42:37.265860Z",
-                      "id": "676d8c3d-47c8-417b-84e4-f0ae62eb4c30",
+                      "created_at": "2026-04-06T01:47:11.072681Z",
+                      "id": "705e69d3-3853-4203-aeb9-5243b26cf502",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-05T23:42:37.265860Z"
+                      "updated_at": "2026-04-06T01:47:11.072681Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -13499,7 +13499,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Docker Container",
+                  "service_definition": "Asterisk",
                   "source": {
                     "type": "Manual"
                   },
@@ -14202,14 +14202,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-05T23:42:37.280366Z",
-                  "id": "818cfab8-bd74-4127-93a1-fe27a0a0e112",
+                  "created_at": "2026-04-06T01:47:11.085111Z",
+                  "id": "0a720a3f-61b8-4fc1-9ea7-776752cab980",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-05T23:42:37.280366Z"
+                  "updated_at": "2026-04-06T01:47:11.085111Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14218,7 +14218,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Docker Container",
+              "service_definition": "Asterisk",
               "source": {
                 "type": "Manual"
               },
@@ -15493,14 +15493,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-05T23:42:37.266256Z",
-          "id": "3125e817-eee1-4bfa-9751-7526c7a1be01",
+          "created_at": "2026-04-06T01:47:11.073024Z",
+          "id": "674ebab7-2792-4e96-925e-335c9c842f17",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-05T23:42:37.266256Z"
+          "updated_at": "2026-04-06T01:47:11.073024Z"
         }
       },
       "BindingBase": {
@@ -15769,6 +15769,7 @@
           "Pink",
           "Rose",
           "Red",
+          "Amber",
           "Orange",
           "Green",
           "Emerald",
@@ -15787,6 +15788,7 @@
           "Subnet",
           "ServiceCategory",
           "ApplicationGroup",
+          "Root",
           "NestedTag",
           "NestedServiceCategory",
           "Virtualizer",
@@ -16020,7 +16022,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Docker Container",
+              "service_definition": "Asterisk",
               "tags": [],
               "virtualization": null
             }
@@ -18580,14 +18582,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-05T23:42:37.265297Z",
-                  "id": "f643b3f3-fbec-4c4c-b88f-4ac574ba2bd9",
+                  "created_at": "2026-04-06T01:47:11.072193Z",
+                  "id": "638c602d-6ca0-4a0e-be26-eea9779eee88",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-05T23:42:37.265297Z"
+                  "updated_at": "2026-04-06T01:47:11.072193Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -18596,7 +18598,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Docker Container",
+              "service_definition": "Asterisk",
               "source": {
                 "type": "Manual"
               },
@@ -20119,11 +20121,8 @@
             "readOnly": true
           },
           "use_case": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Use case selection (homelab, company, msp)"
+            "$ref": "#/components/schemas/UseCase",
+            "description": "Use case selection (homelab, company, msp, other)"
           }
         }
       },
@@ -20579,14 +20578,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-05T23:42:37.252782Z",
-                        "id": "5aca84b4-7c29-4b3c-a5d3-33451aeb23da",
+                        "created_at": "2026-04-06T01:47:11.062106Z",
+                        "id": "15ad5c42-ea3c-421c-832e-f7cb1a37a2eb",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-05T23:42:37.252782Z"
+                        "updated_at": "2026-04-06T01:47:11.062106Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -20595,7 +20594,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Docker Container",
+                    "service_definition": "Asterisk",
                     "source": {
                       "type": "Manual"
                     },
@@ -20672,14 +20671,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-05T23:42:37.278942Z",
-                    "id": "fc539bf3-7ab1-447c-91fd-ebb21e567635",
+                    "created_at": "2026-04-06T01:47:11.083810Z",
+                    "id": "f5b818ff-2064-450e-91b5-8c7cd804b80c",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-05T23:42:37.278942Z"
+                    "updated_at": "2026-04-06T01:47:11.083810Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -20688,7 +20687,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Docker Container",
+                "service_definition": "Asterisk",
                 "source": {
                   "type": "Manual"
                 },
@@ -21880,14 +21879,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-05T23:42:37.266116Z",
-              "id": "f3e140a1-3c03-4fba-a4f7-0eb9d296834a",
+              "created_at": "2026-04-06T01:47:11.072902Z",
+              "id": "c46a97db-68c6-4250-bfe7-a61830805f48",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-05T23:42:37.266116Z"
+              "updated_at": "2026-04-06T01:47:11.072902Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -21896,7 +21895,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Docker Container",
+          "service_definition": "Asterisk",
           "source": {
             "type": "Manual"
           },
@@ -21971,7 +21970,8 @@
         "enum": [
           "NetworkCore",
           "NetworkAccess",
-          "NetworkSecurity",
+          "NetworkAppliance",
+          "RemoteAccess",
           "Storage",
           "Backup",
           "Media",
@@ -21979,7 +21979,6 @@
           "Virtualization",
           "DNS",
           "VPN",
-          "SNMP",
           "Monitoring",
           "AdBlock",
           "ReverseProxy",
@@ -23208,6 +23207,15 @@
             "description": "New password to set"
           }
         }
+      },
+      "UseCase": {
+        "type": "string",
+        "enum": [
+          "homelab",
+          "company",
+          "msp",
+          "other"
+        ]
       },
       "User": {
         "allOf": [

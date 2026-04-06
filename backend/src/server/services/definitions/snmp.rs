@@ -14,7 +14,7 @@ impl ServiceDefinition for Snmp {
         "Simple Network Management Protocol"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::SNMP
+        ServiceCategory::NetworkCore
     }
     fn discovery_pattern(&self) -> Pattern<'_> {
         // SNMP port detection is credential-gated (scan_udp_ports uses

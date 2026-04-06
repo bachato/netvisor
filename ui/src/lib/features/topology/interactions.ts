@@ -37,8 +37,6 @@ export const searchOpen = writable<boolean>(false);
 
 // Special sentinel value for "Untagged" pseudo-tag
 export const UNTAGGED_SENTINEL = '__untagged__';
-// Special sentinel value for "Generic Services" pseudo-tag
-export const GENERIC_SENTINEL = '__generic__';
 
 // Tag hover state for highlighting nodes with a specific tag
 export interface HoveredTag {
@@ -103,16 +101,18 @@ interface TagFilter {
 }
 
 /**
- * Update hidden nodes/services based on tag filter settings.
+ * Update hidden nodes/services based on tag filter and category filter settings.
  * - Hosts with hidden tags -> their Element nodes fade out
  * - Services with hidden tags -> hidden from node display (node does NOT fade)
+ * - Services in hidden categories -> hidden from node display
  * - Subnets with hidden tags -> Container nodes fade out
  * - UNTAGGED_SENTINEL in hidden arrays -> hide entities with no tags
  */
 export function updateTagFilter(
 	topology: Topology | undefined,
 	tagFilter: TagFilter | undefined,
-	perspective?: string
+	perspective?: string,
+	hiddenCategories?: string[]
 ) {
 	if (!topology) {
 		tagHiddenNodeIds.set(new Set());
@@ -120,7 +120,10 @@ export function updateTagFilter(
 		return;
 	}
 
-	if (!tagFilter || isTagFilterEmpty(tagFilter)) {
+	const hasTagFilter = tagFilter && !isTagFilterEmpty(tagFilter);
+	const hasCategoryFilter = hiddenCategories && hiddenCategories.length > 0;
+
+	if (!hasTagFilter && !hasCategoryFilter) {
 		tagHiddenNodeIds.set(new Set());
 		tagHiddenServiceIds.set(new Set());
 		return;
@@ -135,14 +138,14 @@ export function updateTagFilter(
 	const categories = meta?.tag_filter_categories ?? ['host', 'service', 'subnet'];
 	const servicesAreElements = meta?.services_are_elements ?? false;
 
-	const hiddenHostTagIds = tagFilter.hidden_host_tag_ids ?? [];
-	const hiddenServiceTagIds = tagFilter.hidden_service_tag_ids ?? [];
-	const hiddenSubnetTagIds = tagFilter.hidden_subnet_tag_ids ?? [];
+	const hiddenHostTagIds = tagFilter?.hidden_host_tag_ids ?? [];
+	const hiddenServiceTagIds = tagFilter?.hidden_service_tag_ids ?? [];
+	const hiddenSubnetTagIds = tagFilter?.hidden_subnet_tag_ids ?? [];
 
 	const hideUntaggedHosts = hiddenHostTagIds.includes(UNTAGGED_SENTINEL);
 	const hideUntaggedServices = hiddenServiceTagIds.includes(UNTAGGED_SENTINEL);
 	const hideUntaggedSubnets = hiddenSubnetTagIds.includes(UNTAGGED_SENTINEL);
-	const hideGenericServices = hiddenServiceTagIds.includes(GENERIC_SENTINEL);
+	const hiddenCategorySet = new Set(hiddenCategories ?? []);
 
 	const hiddenNodeIds = new Set<string>();
 	const hiddenServiceIds = new Set<string>();
@@ -159,16 +162,14 @@ export function updateTagFilter(
 		}
 	}
 
-	// Service tags -> hide services from display
+	// Service tags + category filter -> hide services from display
 	if (categories.includes('service')) {
 		for (const service of topology.services) {
 			const isUntagged = service.tags.length === 0;
 			const serviceHasHiddenTag = service.tags.some((t) => hiddenServiceTagIds.includes(t));
-			const isGeneric =
-				hideGenericServices &&
-				(serviceDefinitions.getMetadata(service.service_definition) as { is_generic?: boolean })
-					?.is_generic === true;
-			if (serviceHasHiddenTag || (isUntagged && hideUntaggedServices) || isGeneric) {
+			const serviceCategory = serviceDefinitions.getCategory(service.service_definition);
+			const isCategoryHidden = hiddenCategorySet.has(serviceCategory);
+			if (serviceHasHiddenTag || (isUntagged && hideUntaggedServices) || isCategoryHidden) {
 				hiddenServiceIds.add(service.id);
 				// When services are element nodes, hide the node too
 				if (servicesAreElements) {

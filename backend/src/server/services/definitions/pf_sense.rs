@@ -15,7 +15,7 @@ impl ServiceDefinition for PfSense {
         "Open-source firewall and router platform"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkSecurity
+        ServiceCategory::NetworkAppliance
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {

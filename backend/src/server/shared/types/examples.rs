@@ -341,7 +341,7 @@ pub fn organization() -> Organization {
             trial_end_date: None,
             brevo_company_id: None,
             plan_limit_notifications: Default::default(),
-            use_case: None,
+            use_case: Default::default(),
         },
     }
 }

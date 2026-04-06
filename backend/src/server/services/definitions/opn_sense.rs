@@ -15,7 +15,7 @@ impl ServiceDefinition for OpnSense {
         "Open-source firewall and routing platform"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkSecurity
+        ServiceCategory::NetworkAppliance
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {

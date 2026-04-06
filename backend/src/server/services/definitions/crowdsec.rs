@@ -15,7 +15,7 @@ impl ServiceDefinition for CrowdSec {
         "Crowdsourced protection against malicious IPs"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkSecurity
+        ServiceCategory::Monitoring
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {

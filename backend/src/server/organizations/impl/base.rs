@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt::Display;
+use strum_macros::EnumIter;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -9,6 +10,33 @@ use crate::server::{
     billing::types::base::BillingPlan,
     shared::{entities::ChangeTriggersTopologyStaleness, events::types::OnboardingOperation},
 };
+
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default, EnumIter, ToSchema,
+)]
+#[serde(rename_all = "lowercase")]
+pub enum UseCase {
+    Homelab,
+    Company,
+    Msp,
+    #[default]
+    Other,
+}
+
+/// Deserialize UseCase from an Option<String>, mapping null to UseCase::Other.
+fn deserialize_use_case_from_option<'de, D>(deserializer: D) -> Result<UseCase, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt: Option<String> = Option::deserialize(deserializer)?;
+    match opt.as_deref() {
+        Some("homelab") => Ok(UseCase::Homelab),
+        Some("company") => Ok(UseCase::Company),
+        Some("msp") => Ok(UseCase::Msp),
+        Some("other") => Ok(UseCase::Other),
+        _ => Ok(UseCase::Other),
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Hash)]
 pub enum LimitNotificationLevel {
@@ -54,9 +82,9 @@ pub struct OrganizationBase {
     /// Tracks which plan limit notification levels have been sent
     #[serde(default, skip_serializing)]
     pub plan_limit_notifications: PlanLimitNotifications,
-    /// Use case selection (homelab, company, msp)
-    #[serde(default)]
-    pub use_case: Option<String>,
+    /// Use case selection (homelab, company, msp, other)
+    #[serde(default, deserialize_with = "deserialize_use_case_from_option")]
+    pub use_case: UseCase,
 }
 
 #[derive(

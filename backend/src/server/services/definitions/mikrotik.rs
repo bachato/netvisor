@@ -15,7 +15,7 @@ impl ServiceDefinition for Mikrotik {
         "MikroTik RouterOS network device"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkCore
+        ServiceCategory::NetworkAppliance
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {

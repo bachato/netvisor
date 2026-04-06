@@ -14,7 +14,7 @@ impl ServiceDefinition for Firewall {
         "Generic network security appliance"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkSecurity
+        ServiceCategory::NetworkAppliance
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {

@@ -6,7 +6,7 @@
 		useTopologiesQuery,
 		autoRebuild
 	} from '../../../queries';
-	import { hoveredEdgeType, GENERIC_SENTINEL } from '../../../interactions';
+	import { hoveredEdgeType } from '../../../interactions';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '../../../state';
 	import { edgeTypes, perspectives, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { activePerspective } from '../../../queries';
@@ -16,7 +16,6 @@
 	import OptionToggle from './OptionToggle.svelte';
 	import CategoryFilterGroup from './CategoryFilterGroup.svelte';
 	import FilterGroup from './FilterGroup.svelte';
-	import GenericServiceFilter from './GenericServiceFilter.svelte';
 	import GroupingRuleEditor from './GroupingRuleEditor.svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -80,11 +79,6 @@
 				tag_filter_categories?: string[];
 			} | null
 		)?.tag_filter_categories ?? ['host', 'service', 'subnet']
-	);
-
-	// Generic services filter state
-	let isGenericHidden = $derived(
-		($topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []).includes(GENERIC_SENTINEL)
 	);
 
 	// Toggle functions for tag filter
@@ -445,10 +439,6 @@
 							onToggle={toggleServiceCategory}
 							disabled={!editState.isEditable}
 							label={common_byCategory()}
-						/>
-						<GenericServiceFilter
-							hidden={isGenericHidden}
-							onToggle={() => toggleServiceTag(GENERIC_SENTINEL)}
 						/>
 					</div>
 				{/if}

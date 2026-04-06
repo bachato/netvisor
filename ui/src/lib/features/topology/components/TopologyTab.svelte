@@ -133,7 +133,12 @@
 
 	// Update tag filter stores when topology or options change (always-mounted, unlike OptionsContent)
 	$effect(() => {
-		updateTagFilter(currentTopology, $topologyOptions.local.tag_filter, $activePerspective);
+		updateTagFilter(
+			currentTopology,
+			$topologyOptions.local.tag_filter,
+			$activePerspective,
+			$topologyOptions.request.hide_service_categories ?? []
+		);
 	});
 
 	// Find active discovery session for current topology's network

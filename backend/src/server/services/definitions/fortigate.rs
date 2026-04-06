@@ -15,7 +15,7 @@ impl ServiceDefinition for Fortinet {
         "Fortinet security appliance"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkSecurity
+        ServiceCategory::NetworkAppliance
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {

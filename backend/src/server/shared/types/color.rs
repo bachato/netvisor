@@ -22,6 +22,7 @@ pub enum Color {
     Pink,
     Rose,
     Red,
+    Amber,
     Orange,
     Green,
     Emerald,

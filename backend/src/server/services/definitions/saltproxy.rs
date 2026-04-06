@@ -15,7 +15,7 @@ impl ServiceDefinition for SaltProxy {
         "A Salt Proxy server acts as a proxy between the Salt Master and the minions."
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkCore
+        ServiceCategory::Development
     }
 
     fn discovery_pattern(&self) -> Pattern<'_> {

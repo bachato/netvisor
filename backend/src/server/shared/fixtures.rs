@@ -10,6 +10,7 @@ use crate::server::discovery::r#impl::scan_settings::ScanSettings;
 use crate::server::discovery::r#impl::types::DiscoveryType;
 use crate::server::ports::r#impl::base::PortType;
 use crate::server::services::definitions::ServiceDefinitionRegistry;
+use crate::server::services::r#impl::categories::ServiceCategory;
 use crate::server::services::r#impl::definitions::ServiceDefinition;
 use crate::server::shared::concepts::Concept;
 use crate::server::shared::entities::EntityDiscriminants;
@@ -120,6 +121,10 @@ pub fn generate_ui_data_fixtures(output_dir: &Path) {
         .map(|p| p.to_metadata())
         .collect();
     write_fixture(&perspectives, output_dir, "perspectives.json");
+
+    let service_categories: Vec<TypeMetadata> =
+        ServiceCategory::iter().map(|c| c.to_metadata()).collect();
+    write_fixture(&service_categories, output_dir, "service-categories.json");
 
     println!("Done! Generated all metadata fixtures.");
 }

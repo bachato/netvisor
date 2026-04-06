@@ -15,7 +15,7 @@ impl ServiceDefinition for Telnet {
         "Telnet remote access"
     }
     fn category(&self) -> ServiceCategory {
-        ServiceCategory::NetworkCore
+        ServiceCategory::RemoteAccess
     }
     fn discovery_pattern(&self) -> Pattern<'_> {
         Pattern::Port(PortType::Telnet)
