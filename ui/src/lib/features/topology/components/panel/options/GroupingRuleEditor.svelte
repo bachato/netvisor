@@ -128,7 +128,8 @@
 			)
 			.map((m) => ({
 				value: m.id,
-				label: m.name ?? m.id
+				label: m.name ?? m.id,
+				description: m.description ?? undefined
 			}));
 	});
 
@@ -212,7 +213,8 @@
 	let elementAddOptions = $derived(
 		filteredElementRuleTypes.map((m) => ({
 			value: m.id,
-			label: m.name ?? m.id
+			label: m.name ?? m.id,
+			description: m.description ?? undefined
 		}))
 	);
 
@@ -407,6 +409,8 @@
 			<GroupingRuleItem
 				label={containerRuleMeta[getContainerRuleDiscriminant(item.rule)]?.name ??
 					getContainerRuleDiscriminant(item.rule)}
+				description={containerRuleMeta[getContainerRuleDiscriminant(item.rule)]?.description ??
+					undefined}
 				locked={!isContainerRuleEditable(item)}
 			/>
 		{/snippet}
@@ -435,7 +439,10 @@
 	onEdit={handleElementEdit}
 >
 	{#snippet itemSnippet({ item })}
-		<GroupingRuleItem label={getElementRuleLabel(item)} />
+		<GroupingRuleItem
+			label={getElementRuleLabel(item)}
+			description={elementRuleMeta[getElementRuleType(item.rule)]?.description ?? undefined}
+		/>
 	{/snippet}
 	{#snippet itemExpandedSnippet({ item, index })}
 		{#if isElementEditing(item) && typeof item.rule !== 'string'}
