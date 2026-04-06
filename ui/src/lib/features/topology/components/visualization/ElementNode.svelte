@@ -372,7 +372,7 @@
 	>
 		<!-- Rest of component stays the same -->
 		<!-- Header section with gradient transition to body -->
-		{#if nodeRenderData.headerText}
+		{#if nodeRenderData.headerText && !($topologyOptions.request.hide_vm_title_on_docker_container && nodeRenderData.headerText.startsWith('VM:'))}
 			<div class="relative flex-shrink-0 px-2 pt-2 text-center">
 				<div
 					class={`truncate text-xs font-medium leading-none ${nodeRenderData.isVirtualized ? virtualizationColorHelper.text : 'text-tertiary'}`}
