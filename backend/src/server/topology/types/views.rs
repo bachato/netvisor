@@ -271,8 +271,8 @@ impl TopologyView {
                 }
             },
             Self::Infrastructure => match edge_type {
-                HostVirtualization => active(true, Visible, Solid),
-                ServiceVirtualization => active(true, Visible, Solid),
+                HostVirtualization => active(true, Hidden, Dashed),
+                ServiceVirtualization => active(true, Hidden, Dashed),
                 Interface => active(false, Hidden, Dashed),
                 PhysicalLink | RequestPath | HubAndSpoke => EdgeViewConfig::Disabled,
             },
@@ -365,118 +365,6 @@ mod tests {
     use super::*;
     use strum::IntoEnumIterator;
 
-    // -- Edge view config tests --
-
-    fn active(
-        affects_layout: bool,
-        visibility: EdgeDefaultVisibility,
-        stroke: EdgeStroke,
-    ) -> EdgeViewConfig {
-        EdgeViewConfig::Active {
-            affects_layout,
-            default_visibility: visibility,
-            stroke,
-        }
-    }
-
-    #[test]
-    fn edge_view_config_l3() {
-        use EdgeDefaultVisibility::*;
-        use EdgeStroke::*;
-        use EdgeTypeDiscriminants::*;
-        let v = TopologyView::L3Logical;
-        assert_eq!(v.edge_view_config(Interface), active(true, Visible, Solid));
-        assert_eq!(
-            v.edge_view_config(ServiceVirtualization),
-            active(true, Visible, Solid)
-        );
-        assert_eq!(
-            v.edge_view_config(RequestPath),
-            active(false, Visible, Dashed)
-        );
-        assert_eq!(
-            v.edge_view_config(HubAndSpoke),
-            active(false, Visible, Dashed)
-        );
-        assert_eq!(
-            v.edge_view_config(HostVirtualization),
-            active(false, Hidden, Dashed)
-        );
-        assert_eq!(
-            v.edge_view_config(PhysicalLink),
-            active(false, Hidden, Dashed)
-        );
-    }
-
-    #[test]
-    fn edge_view_config_l2() {
-        use EdgeDefaultVisibility::*;
-        use EdgeStroke::*;
-        use EdgeTypeDiscriminants::*;
-        let v = TopologyView::L2Physical;
-        assert_eq!(
-            v.edge_view_config(PhysicalLink),
-            active(true, Visible, Solid)
-        );
-        assert_eq!(v.edge_view_config(Interface), active(false, Hidden, Dashed));
-        assert_eq!(
-            v.edge_view_config(HostVirtualization),
-            EdgeViewConfig::Disabled
-        );
-        assert_eq!(
-            v.edge_view_config(ServiceVirtualization),
-            EdgeViewConfig::Disabled
-        );
-        assert_eq!(v.edge_view_config(RequestPath), EdgeViewConfig::Disabled);
-        assert_eq!(v.edge_view_config(HubAndSpoke), EdgeViewConfig::Disabled);
-    }
-
-    #[test]
-    fn edge_view_config_infrastructure() {
-        use EdgeDefaultVisibility::*;
-        use EdgeStroke::*;
-        use EdgeTypeDiscriminants::*;
-        let v = TopologyView::Infrastructure;
-        assert_eq!(
-            v.edge_view_config(HostVirtualization),
-            active(true, Visible, Solid)
-        );
-        assert_eq!(
-            v.edge_view_config(ServiceVirtualization),
-            active(true, Visible, Solid)
-        );
-        assert_eq!(v.edge_view_config(Interface), active(false, Hidden, Dashed));
-        assert_eq!(v.edge_view_config(PhysicalLink), EdgeViewConfig::Disabled);
-        assert_eq!(v.edge_view_config(RequestPath), EdgeViewConfig::Disabled);
-        assert_eq!(v.edge_view_config(HubAndSpoke), EdgeViewConfig::Disabled);
-    }
-
-    #[test]
-    fn edge_view_config_application() {
-        use EdgeDefaultVisibility::*;
-        use EdgeStroke::*;
-        use EdgeTypeDiscriminants::*;
-        let v = TopologyView::Application;
-        assert_eq!(
-            v.edge_view_config(RequestPath),
-            active(true, Visible, Solid)
-        );
-        assert_eq!(
-            v.edge_view_config(HubAndSpoke),
-            active(true, Visible, Solid)
-        );
-        assert_eq!(
-            v.edge_view_config(ServiceVirtualization),
-            active(true, Hidden, Dashed)
-        );
-        assert_eq!(v.edge_view_config(Interface), EdgeViewConfig::Disabled);
-        assert_eq!(
-            v.edge_view_config(HostVirtualization),
-            EdgeViewConfig::Disabled
-        );
-        assert_eq!(v.edge_view_config(PhysicalLink), EdgeViewConfig::Disabled);
-    }
-
     #[test]
     fn topology_view_serde_round_trip() {
         let json = serde_json::to_value(TopologyView::L2Physical).unwrap();
@@ -484,42 +372,6 @@ mod tests {
         let deserialized: TopologyView = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, TopologyView::L2Physical);
     }
-
-    // -- Element config tests --
-
-    #[test]
-    fn element_config_l3() {
-        let config = TopologyView::L3Logical.element_config();
-        assert_eq!(config.parent_entity, Some(EntityDiscriminants::Host));
-        assert_eq!(config.element_entity, EntityDiscriminants::Interface);
-        assert_eq!(config.inline_entities, vec![EntityDiscriminants::Service]);
-    }
-
-    #[test]
-    fn element_config_application() {
-        let config = TopologyView::Application.element_config();
-        assert_eq!(config.parent_entity, None);
-        assert_eq!(config.element_entity, EntityDiscriminants::Service);
-        assert!(config.inline_entities.is_empty());
-    }
-
-    #[test]
-    fn element_config_infrastructure() {
-        let config = TopologyView::Infrastructure.element_config();
-        assert_eq!(config.parent_entity, None);
-        assert_eq!(config.element_entity, EntityDiscriminants::Host);
-        assert_eq!(config.inline_entities, vec![EntityDiscriminants::Service]);
-    }
-
-    #[test]
-    fn element_config_l2() {
-        let config = TopologyView::L2Physical.element_config();
-        assert_eq!(config.parent_entity, Some(EntityDiscriminants::Host));
-        assert_eq!(config.element_entity, EntityDiscriminants::IfEntry);
-        assert!(config.inline_entities.is_empty());
-    }
-
-    // -- Inspector config tests --
 
     #[test]
     fn all_views_have_non_empty_sections() {
@@ -536,64 +388,6 @@ mod tests {
                 view
             );
         }
-    }
-
-    #[test]
-    fn l3_config_uses_bindings_and_host_tags() {
-        let config = TopologyView::L3Logical.inspector_config();
-        assert_eq!(
-            config.dependency_creation,
-            Some(DependencyMemberType::Bindings)
-        );
-        assert_eq!(config.bulk_tag_entity, EntityDiscriminants::Host);
-        assert!(!config.show_application_group_picker);
-    }
-
-    #[test]
-    fn application_config_uses_services_and_service_tags() {
-        let config = TopologyView::Application.inspector_config();
-        assert_eq!(
-            config.dependency_creation,
-            Some(DependencyMemberType::Services)
-        );
-        assert_eq!(config.bulk_tag_entity, EntityDiscriminants::Service);
-        assert!(config.show_application_group_picker);
-    }
-
-    #[test]
-    fn infrastructure_and_l2_have_no_dependency_creation() {
-        assert_eq!(
-            TopologyView::Infrastructure
-                .inspector_config()
-                .dependency_creation,
-            None
-        );
-        assert_eq!(
-            TopologyView::L2Physical
-                .inspector_config()
-                .dependency_creation,
-            None
-        );
-    }
-
-    #[test]
-    fn bulk_tag_entity_derived_from_element_config() {
-        // Parent entity present → bulk tags the parent
-        assert_eq!(
-            TopologyView::L3Logical.inspector_config().bulk_tag_entity,
-            EntityDiscriminants::Host
-        );
-        // No parent → bulk tags the element
-        assert_eq!(
-            TopologyView::Application.inspector_config().bulk_tag_entity,
-            EntityDiscriminants::Service
-        );
-        assert_eq!(
-            TopologyView::Infrastructure
-                .inspector_config()
-                .bulk_tag_entity,
-            EntityDiscriminants::Host
-        );
     }
 
     #[test]

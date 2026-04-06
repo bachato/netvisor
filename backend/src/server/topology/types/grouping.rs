@@ -128,7 +128,7 @@ impl ElementRule {
     /// Whether edges targeting elements inside subcontainers created by this rule
     /// should be elevated to target the subcontainer itself.
     pub fn absorbs_edges(&self) -> bool {
-        matches!(self, ElementRule::ByStack)
+        matches!(self, ElementRule::ByStack | ElementRule::ByVirtualizer)
     }
 
     pub fn applicable_views(&self) -> &'static [TopologyView] {
