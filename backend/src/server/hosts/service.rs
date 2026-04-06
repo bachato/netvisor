@@ -633,7 +633,7 @@ impl HostService {
         // These are needed because interface/port IDs may change during creation,
         // and service bindings need to be remapped to the new IDs
         let original_host = host.clone();
-        let original_interfaces = interfaces.clone();
+        let mut original_interfaces = interfaces.clone();
         let original_ports = ports.clone();
 
         // Stage 2: Create or upsert host via ID matching
@@ -743,6 +743,15 @@ impl HostService {
                 .await?;
             if created.id != original_id {
                 subnet_id_remap.insert(original_id, created.id);
+            }
+        }
+
+        // Apply subnet_id_remap to original_interfaces so downstream consumers
+        // (reassign_service_interface_bindings and binding fixup remap) can match
+        // them against created_interfaces by (ip_address, subnet_id)
+        for iface in &mut original_interfaces {
+            if let Some(&new_subnet_id) = subnet_id_remap.get(&iface.base.subnet_id) {
+                iface.base.subnet_id = new_subnet_id;
             }
         }
 
