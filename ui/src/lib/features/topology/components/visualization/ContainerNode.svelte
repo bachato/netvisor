@@ -398,6 +398,7 @@
 						{@const labels = (() => {
 							if (!rule) return [];
 							const r = (rule as { rule: Record<string, unknown> }).rule;
+							if (typeof r === 'string') return [];
 							if ('ByServiceCategory' in r) {
 								return ((r.ByServiceCategory as { categories?: string[] }).categories ?? []).map(
 									(cat) => {
