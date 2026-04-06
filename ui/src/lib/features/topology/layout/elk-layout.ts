@@ -510,77 +510,9 @@ function applyEdgeAwareSwaps(
 	}
 
 	const spacing = parseInt(container.layoutOptions?.['elk.spacing.nodeNode'] ?? '20');
-	const sortedColumnXs = Array.from(columns.keys()).sort((a, b) => a - b);
 
-	// Phase 1: Move bridge nodes to edge columns
-	if (sortedColumnXs.length >= 2) {
-		const leftX = sortedColumnXs[0];
-		const rightX = sortedColumnXs[sortedColumnXs.length - 1];
-
-		// Collect bridge nodes from all columns
-		const bridgeNodes: { node: ElkNode; sourceColX: number }[] = [];
-		for (const [colX, colNodes] of columns) {
-			for (const n of colNodes) {
-				const info = elementExternalEdgeInfo.get(n.id);
-				if (info?.hasUpwardEdge && info?.hasDownwardEdge) {
-					bridgeNodes.push({ node: n, sourceColX: colX });
-				}
-			}
-		}
-
-		// Assign bridge nodes to edge columns, alternating right/left
-		for (let i = 0; i < bridgeNodes.length; i++) {
-			const { node: bridgeNode, sourceColX } = bridgeNodes[i];
-			const targetX = i % 2 === 0 ? rightX : leftX;
-			const side: HandleSide = targetX === leftX ? 'Left' : 'Right';
-
-			if (sourceColX === targetX) {
-				// Already in an edge column
-				bridgeNodeSides.set(bridgeNode.id, side);
-				continue;
-			}
-
-			const targetCol = columns.get(targetX)!;
-			const sourceCol = columns.get(sourceColX)!;
-
-			// Find closest-sized node in target column to swap with
-			let bestIdx = 0;
-			let bestDiff = Infinity;
-			const bridgeH = bridgeNode.height ?? 0;
-			for (let j = 0; j < targetCol.length; j++) {
-				const info = elementExternalEdgeInfo.get(targetCol[j].id);
-				// Don't swap with another bridge node
-				if (info?.hasUpwardEdge && info?.hasDownwardEdge) continue;
-				const diff = Math.abs((targetCol[j].height ?? 0) - bridgeH);
-				if (diff < bestDiff) {
-					bestDiff = diff;
-					bestIdx = j;
-				}
-			}
-
-			const displaced = targetCol[bestIdx];
-
-			// Swap column membership: bridge → target column, displaced → source column
-			targetCol[bestIdx] = bridgeNode;
-			const srcIdx = sourceCol.indexOf(bridgeNode);
-			sourceCol[srcIdx] = displaced;
-
-			// Update x-coordinates
-			bridgeNode.x = targetX;
-			displaced.x = sourceColX;
-
-			bridgeNodeSides.set(bridgeNode.id, side);
-		}
-
-		// Recompute y in all columns that were modified by bridge swaps
-		if (bridgeNodes.length > 0) {
-			for (const [, colNodes] of columns) {
-				recomputeColumnY(colNodes, spacing);
-			}
-		}
-	}
-
-	// Phase 2: Within each column, reorder upward-only to top, downward-only to bottom
+	// Within each column, reorder: upward-edge elements to top, downward to bottom.
+	// This keeps elements near the container boundary closest to their edge targets.
 	for (const [, colNodes] of columns) {
 		if (colNodes.length < 2) continue;
 
@@ -592,8 +524,8 @@ function applyEdgeAwareSwaps(
 		const downward: ElkNode[] = [];
 		for (const n of colNodes) {
 			const info = elementExternalEdgeInfo.get(n.id);
-			// Bridge nodes already handled — treat them as middle here
 			if (info?.hasUpwardEdge && info?.hasDownwardEdge) {
+				// Bridge nodes (both directions) — keep in middle
 				middle.push(n);
 			} else if (info?.hasUpwardEdge) {
 				upward.push(n);
@@ -667,6 +599,7 @@ function mapElkResults(
 			}
 		}
 	}
+
 
 	// Collect bridge node handle overrides from all containers
 	const bridgeNodeSides = new Map<string, HandleSide>();
