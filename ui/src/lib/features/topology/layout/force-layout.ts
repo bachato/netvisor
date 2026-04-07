@@ -195,7 +195,7 @@ function computeEdgeHandles(
 
 		if (srcPos && tgtPos && srcNode && tgtNode && srcId !== tgtId) {
 			handles.set(
-				edge.id,
+				`${srcId}->${tgtId}`,
 				computeOptimalHandles(srcPos, { w: srcNode.width, h: srcNode.height }, tgtPos, {
 					w: tgtNode.width,
 					h: tgtNode.height
