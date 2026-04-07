@@ -3,10 +3,7 @@
 	import type { TopologyEdge, Topology } from '$lib/features/topology/types/base';
 	import { useTopologiesQuery, selectedTopologyId } from '$lib/features/topology/queries';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
-	import {
-		topology_connectionsCount,
-		common_dependenciesLabel
-	} from '$lib/paraglide/messages';
+	import { topology_connectionsCount, common_dependenciesLabel } from '$lib/paraglide/messages';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { InterfaceEdgeDisplay } from '$lib/shared/components/forms/selection/display/InterfaceEdgeDisplay.svelte';
 	import { PhysicalLinkEdgeDisplay } from '$lib/shared/components/forms/selection/display/PhysicalLinkEdgeDisplay.svelte';

@@ -294,7 +294,6 @@
 				let collapsed = get(collapsedContainers);
 				const hiddenServices = get(tagHiddenServiceIds);
 
-
 				// Perspective switch fix: when switching views while all containers were
 				// collapsed, the old perspective's container IDs become stale. Detect this
 				// and auto-collapse the new perspective's root containers to preserve the
@@ -999,6 +998,13 @@
 		if (!viewportMoved) {
 			selectedNode = null;
 		}
+
+		// Explicitly clear edge animation — don't rely solely on reactive $: block
+		const currentEdges = get(edges);
+		if (currentEdges.some((e) => e.animated)) {
+			edges.set(currentEdges.map((e) => (e.animated ? { ...e, animated: false } : e)));
+		}
+
 		if (onPaneSelect) {
 			onPaneSelect(event, viewportMoved);
 		}
