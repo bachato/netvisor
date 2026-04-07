@@ -21,7 +21,7 @@
 		</div>
 	{:else if edgeData.edge_type === 'HubAndSpoke' || edgeData.edge_type === 'RequestPath'}
 		<InspectorEdgeGroup
-			groupId={edgeData.group_id}
+			dependencyId={edgeData.dependency_id}
 			sourceBindingId={edgeData.source_binding_id}
 			targetBindingId={edgeData.target_binding_id}
 			{view}

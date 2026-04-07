@@ -166,12 +166,12 @@ pub enum EdgeType {
         containerizing_service_id: Uuid,
     },
     RequestPath {
-        group_id: Uuid,
+        dependency_id: Uuid,
         source_binding_id: Uuid,
         target_binding_id: Uuid,
     },
     HubAndSpoke {
-        group_id: Uuid,
+        dependency_id: Uuid,
         source_binding_id: Uuid,
         target_binding_id: Uuid,
     },

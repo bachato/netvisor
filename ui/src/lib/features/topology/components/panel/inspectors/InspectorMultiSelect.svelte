@@ -507,7 +507,7 @@
 					data: {
 						edge_type: 'RequestPath',
 						is_preview: true,
-						group_id: '__preview__',
+						dependency_id: '__preview__',
 						preview_color: groupColor,
 						preview_edge_style: groupEdgeStyle
 					},
@@ -532,7 +532,7 @@
 					data: {
 						edge_type: 'HubAndSpoke',
 						is_preview: true,
-						group_id: '__preview__',
+						dependency_id: '__preview__',
 						preview_color: groupColor,
 						preview_edge_style: groupEdgeStyle
 					},

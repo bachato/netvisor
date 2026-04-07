@@ -162,8 +162,9 @@ export interface EdgeTypeMetadata {
 	has_start_marker: boolean;
 	has_end_marker: boolean;
 	edge_style: 'Straight' | 'Smoothstep' | 'Bezier' | 'Simplebezier' | 'Step';
-	is_group_edge: boolean;
+	is_dependency_edge: boolean;
 	is_host_edge: boolean;
+	is_physical_edge: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

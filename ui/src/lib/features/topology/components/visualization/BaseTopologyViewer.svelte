@@ -580,11 +580,7 @@
 						sessionStructureKey = structureKey;
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						layoutGraph.syncCollapseState(collapsed);
-						layoutGraph.applyForceResult(
-							forceResult.nodePositions,
-							new Map(),
-							elementNodeSizes
-						);
+						layoutGraph.applyForceResult(forceResult.nodePositions, new Map(), elementNodeSizes);
 					} else {
 						// Standard ELK layout for expanded or partially collapsed views
 						const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();

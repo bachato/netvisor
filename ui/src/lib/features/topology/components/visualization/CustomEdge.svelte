@@ -92,8 +92,8 @@
 	// Get dependency reactively - updates when dependencies store changes
 	let group = $derived.by(() => {
 		if (!topology?.dependencies || !edgeTypeMetadata || !edgeData) return null;
-		if ('group_id' in edgeData) {
-			return topology.dependencies.find((g) => g.id == edgeData.group_id) || null;
+		if ('dependency_id' in edgeData) {
+			return topology.dependencies.find((g) => g.id == edgeData.dependency_id) || null;
 		}
 		return null;
 	});
@@ -145,7 +145,7 @@
 	});
 
 	// Determine if this edge should use the two-color dashed effect
-	let isGroupEdge = $derived(edgeTypeMetadata?.is_group_edge ?? false);
+	let isGroupEdge = $derived(edgeTypeMetadata?.is_dependency_edge ?? false);
 	let isPreview = $derived(!!(edgeData as Record<string, unknown> | undefined)?.is_preview);
 	let useMultiColorDash = $derived((isGroupEdge && shouldShowFull) || isPreview);
 

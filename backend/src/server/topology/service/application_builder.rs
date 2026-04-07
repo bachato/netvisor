@@ -318,7 +318,7 @@ impl ViewBuilder for ApplicationBuilder {
                                 source: source_id,
                                 target: target_id,
                                 edge_type: EdgeType::RequestPath {
-                                    group_id: dep.id,
+                                    dependency_id: dep.id,
                                     source_binding_id: Uuid::nil(),
                                     target_binding_id: Uuid::nil(),
                                 },
@@ -342,7 +342,7 @@ impl ViewBuilder for ApplicationBuilder {
                                     source: hub_id,
                                     target: spoke_id,
                                     edge_type: EdgeType::HubAndSpoke {
-                                        group_id: dep.id,
+                                        dependency_id: dep.id,
                                         source_binding_id: Uuid::nil(),
                                         target_binding_id: Uuid::nil(),
                                     },

@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-07T01:01:09.869865Z",
-              "id": "c905f1b4-ba83-4f50-b35c-5f6a3c2f4ef2",
+              "created_at": "2026-04-07T03:12:09.090920Z",
+              "id": "c21ed968-c5d7-4116-b439-6deb510cc967",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-07T01:01:09.869865Z"
+              "updated_at": "2026-04-07T03:12:09.090920Z"
             }
           },
           "error": {
@@ -10734,14 +10734,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-07T01:01:09.852635Z",
-                      "id": "70adcf43-1e57-4a48-967d-86c89177a725",
+                      "created_at": "2026-04-07T03:12:09.077934Z",
+                      "id": "7c32cae0-5cd2-4505-af30-376b1b9e7e1f",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-07T01:01:09.852635Z"
+                      "updated_at": "2026-04-07T03:12:09.077934Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10750,7 +10750,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Tasmota",
+                  "service_definition": "Pulse",
                   "source": {
                     "type": "Manual"
                   },
@@ -11453,14 +11453,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-07T01:01:09.865113Z",
-                  "id": "f25e641d-677f-432b-a888-8976e1f49ccc",
+                  "created_at": "2026-04-07T03:12:09.087089Z",
+                  "id": "0ad5900f-83fc-4156-9e45-d8e7cd95861a",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-07T01:01:09.865113Z"
+                  "updated_at": "2026-04-07T03:12:09.087089Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11469,7 +11469,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Tasmota",
+              "service_definition": "Pulse",
               "source": {
                 "type": "Manual"
               },
@@ -12744,14 +12744,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-07T01:01:09.852981Z",
-          "id": "c43c107c-ddde-484e-9f53-a9efc3c483ee",
+          "created_at": "2026-04-07T03:12:09.078160Z",
+          "id": "8396bdcf-59fc-4a1f-8460-912b1568be4f",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-07T01:01:09.852981Z"
+          "updated_at": "2026-04-07T03:12:09.078160Z"
         }
       },
       "BindingBase": {
@@ -13273,7 +13273,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Tasmota",
+              "service_definition": "Pulse",
               "tags": [],
               "virtualization": null
             }
@@ -14894,21 +14894,21 @@
           {
             "type": "object",
             "required": [
-              "group_id",
+              "dependency_id",
               "source_binding_id",
               "target_binding_id",
               "edge_type"
             ],
             "properties": {
+              "dependency_id": {
+                "type": "string",
+                "format": "uuid"
+              },
               "edge_type": {
                 "type": "string",
                 "enum": [
                   "RequestPath"
                 ]
-              },
-              "group_id": {
-                "type": "string",
-                "format": "uuid"
               },
               "source_binding_id": {
                 "type": "string",
@@ -14923,21 +14923,21 @@
           {
             "type": "object",
             "required": [
-              "group_id",
+              "dependency_id",
               "source_binding_id",
               "target_binding_id",
               "edge_type"
             ],
             "properties": {
+              "dependency_id": {
+                "type": "string",
+                "format": "uuid"
+              },
               "edge_type": {
                 "type": "string",
                 "enum": [
                   "HubAndSpoke"
                 ]
-              },
-              "group_id": {
-                "type": "string",
-                "format": "uuid"
               },
               "source_binding_id": {
                 "type": "string",
@@ -15908,14 +15908,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-07T01:01:09.852138Z",
-                  "id": "3f0934b9-29d7-4591-ae97-4b75a2332c5f",
+                  "created_at": "2026-04-07T03:12:09.077616Z",
+                  "id": "8f49d162-e45d-4d2e-93f3-279d094c3343",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-07T01:01:09.852138Z"
+                  "updated_at": "2026-04-07T03:12:09.077616Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15924,7 +15924,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Tasmota",
+              "service_definition": "Pulse",
               "source": {
                 "type": "Manual"
               },
@@ -17915,14 +17915,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-07T01:01:09.841439Z",
-                        "id": "3812997e-150a-4cec-a9d5-c1d48a7f2ae0",
+                        "created_at": "2026-04-07T03:12:09.069112Z",
+                        "id": "257a4af0-b140-40a2-85bb-3fc1d0f4571b",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-07T01:01:09.841439Z"
+                        "updated_at": "2026-04-07T03:12:09.069112Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17931,7 +17931,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Tasmota",
+                    "service_definition": "Pulse",
                     "source": {
                       "type": "Manual"
                     },
@@ -18008,14 +18008,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-07T01:01:09.863818Z",
-                    "id": "f3dd29e8-6e60-4d5f-b981-90b44b017dcf",
+                    "created_at": "2026-04-07T03:12:09.086034Z",
+                    "id": "87a6843f-e4d3-49b9-8137-fbe61c4ad098",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-07T01:01:09.863818Z"
+                    "updated_at": "2026-04-07T03:12:09.086034Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18024,7 +18024,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Tasmota",
+                "service_definition": "Pulse",
                 "source": {
                   "type": "Manual"
                 },
@@ -19184,14 +19184,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-07T01:01:09.852857Z",
-              "id": "efaa77e0-13d6-4dc9-8be1-503af2ea02bb",
+              "created_at": "2026-04-07T03:12:09.078079Z",
+              "id": "a9b0f876-5fbc-48ba-83d2-d385d1a9f26b",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-07T01:01:09.852857Z"
+              "updated_at": "2026-04-07T03:12:09.078079Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19200,7 +19200,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Tasmota",
+          "service_definition": "Pulse",
           "source": {
             "type": "Manual"
           },

@@ -29,12 +29,12 @@
 	type TopologyView = components['schemas']['TopologyView'];
 
 	let {
-		groupId,
+		dependencyId,
 		sourceBindingId,
 		targetBindingId,
 		view = 'L3Logical'
 	}: {
-		groupId: string;
+		dependencyId: string;
 		sourceBindingId: string;
 		targetBindingId: string;
 		view?: TopologyView;
@@ -57,7 +57,7 @@
 	const descriptionMutation = useUpdateDependencyDescriptionMutation();
 	let isMutationPending = $derived(updateDependencyMutation.isPending);
 
-	let group = $derived(topology ? topology.dependencies.find((g) => g.id == groupId) : null);
+	let group = $derived(topology ? topology.dependencies.find((g) => g.id == dependencyId) : null);
 
 	// Local copy of dependency for editing
 	let localGroup = $state<Dependency | null>(null);

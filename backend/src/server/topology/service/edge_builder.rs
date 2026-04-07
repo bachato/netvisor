@@ -453,12 +453,12 @@ impl EdgeBuilder {
                 DependencyType::HubAndSpoke => EdgeType::HubAndSpoke {
                     source_binding_id,
                     target_binding_id,
-                    group_id: dependency.id,
+                    dependency_id: dependency.id,
                 },
                 DependencyType::RequestPath => EdgeType::RequestPath {
                     source_binding_id,
                     target_binding_id,
-                    group_id: dependency.id,
+                    dependency_id: dependency.id,
                 },
             },
             label,

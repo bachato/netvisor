@@ -27,7 +27,9 @@
 	let serviceCount = $derived(topology.services.length);
 	let dependencyCount = $derived(
 		new Set(
-			topology.edges.filter((e) => 'group_id' in e).map((e) => (e as { group_id: string }).group_id)
+			topology.edges
+				.filter((e) => 'dependency_id' in e)
+				.map((e) => (e as { dependency_id: string }).dependency_id)
 		).size
 	);
 	let totalCount = $derived(hostCount + serviceCount + subnetCount + dependencyCount);
