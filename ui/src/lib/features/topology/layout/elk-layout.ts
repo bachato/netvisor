@@ -352,6 +352,94 @@ function buildElkGraph(
 		}
 	}
 
+	// Detect cross-child edges within the same root container (e.g., element → ByVirtualizer
+	// subcontainer, or Docker element → ByStack subcontainer). These edges need inner ELK edges
+	// so the root container can use layered algorithm to position connected children adjacently.
+	const rootsWithCrossChildEdges = new Set<string>();
+	const seenInnerEdges = new Map<string, Set<string>>();
+
+	for (const edge of input.edges) {
+		if (!affectsLayout(edge)) continue;
+
+		const srcImm =
+			elementToImmediateContainer.get(edge.source) ??
+			(containerIds.has(edge.source) ? edge.source : undefined);
+		const tgtImm =
+			elementToImmediateContainer.get(edge.target) ??
+			(containerIds.has(edge.target) ? edge.target : undefined);
+		const srcRoot = resolveRoot(edge.source);
+		const tgtRoot = resolveRoot(edge.target);
+
+		if (!srcImm || !tgtImm) continue;
+		if (srcImm === tgtImm) continue;
+		if (!srcRoot || !tgtRoot || srcRoot !== tgtRoot) continue;
+
+		// Cross-child edge within same root
+		const srcNode = srcImm === srcRoot ? edge.source : srcImm;
+		const tgtNode = tgtImm === tgtRoot ? edge.target : tgtImm;
+		if (srcNode === tgtNode) continue;
+
+		rootsWithCrossChildEdges.add(srcRoot);
+		const key = `${srcNode}->${tgtNode}`;
+		if (!seenInnerEdges.has(srcRoot)) seenInnerEdges.set(srcRoot, new Set());
+		const seen = seenInnerEdges.get(srcRoot)!;
+		if (!seen.has(key) && !seen.has(`${tgtNode}->${srcNode}`)) {
+			seen.add(key);
+			const rootContainer = containers.get(srcRoot);
+			if (rootContainer) {
+				if (!rootContainer.edges) rootContainer.edges = [];
+				rootContainer.edges.push({
+					id: `elk-inner-edge-${edgeIndex++}`,
+					sources: [srcNode],
+					targets: [tgtNode]
+				});
+			}
+		}
+	}
+
+	// Switch root containers with cross-child edges from box to layered
+	for (const rootId of rootsWithCrossChildEdges) {
+		const container = containers.get(rootId);
+		if (container?.layoutOptions) {
+			container.layoutOptions['elk.algorithm'] = 'layered';
+			container.layoutOptions['elk.direction'] = 'DOWN';
+			container.layoutOptions['elk.layered.nodePlacement.strategy'] = 'NETWORK_SIMPLEX';
+			container.layoutOptions['elk.layered.crossingMinimization.strategy'] = 'LAYER_SWEEP';
+			container.layoutOptions['elk.layered.layering.strategy'] = 'NETWORK_SIMPLEX';
+			delete container.layoutOptions['elk.box.packingMode'];
+		}
+	}
+
+	// For layered containers, also add element↔element edges within the same container
+	if (rootsWithCrossChildEdges.size > 0) {
+		for (const edge of input.edges) {
+			if (!affectsLayout(edge)) continue;
+			const srcImm =
+				elementToImmediateContainer.get(edge.source) ??
+				(containerIds.has(edge.source) ? edge.source : undefined);
+			const tgtImm =
+				elementToImmediateContainer.get(edge.target) ??
+				(containerIds.has(edge.target) ? edge.target : undefined);
+			if (srcImm && tgtImm && srcImm === tgtImm && rootsWithCrossChildEdges.has(srcImm)) {
+				const key = `${edge.source}->${edge.target}`;
+				if (!seenInnerEdges.has(srcImm)) seenInnerEdges.set(srcImm, new Set());
+				const seen = seenInnerEdges.get(srcImm)!;
+				if (!seen.has(key) && !seen.has(`${edge.target}->${edge.source}`)) {
+					seen.add(key);
+					const container = containers.get(srcImm);
+					if (container) {
+						if (!container.edges) container.edges = [];
+						container.edges.push({
+							id: `elk-inner-edge-${edgeIndex++}`,
+							sources: [edge.source],
+							targets: [edge.target]
+						});
+					}
+				}
+			}
+		}
+	}
+
 	// Only add root-level containers (not nested sub-groups) to root children
 	const rootContainers = Array.from(containers.entries())
 		.filter(([id]) => !parentContainerMap.has(id))
