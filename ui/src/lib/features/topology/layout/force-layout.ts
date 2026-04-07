@@ -45,7 +45,7 @@ const ORIGIN_PAD = 50;
  * d3-force's forceCollide is radius-based (circular). This checks axis-aligned
  * bounding box overlap and pushes apart along the axis of least overlap.
  */
-function forceRectCollide(padding: number) {
+export function forceRectCollide(padding: number) {
 	let nodes: SimNode[] = [];
 
 	function force(alpha: number) {

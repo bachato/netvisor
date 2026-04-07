@@ -272,6 +272,7 @@ fn default_container_rules() -> HashMap<TopologyView, Vec<GraphRule<ContainerRul
         GraphRule::new(BySubnet),
         GraphRule::new(MergeDockerBridges),
         GraphRule::new(ByApplicationGroup { tag_ids: vec![] }),
+        GraphRule::new(ByHost),
     ];
 
     let mut map: HashMap<TopologyView, Vec<GraphRule<ContainerRule>>> =

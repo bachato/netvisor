@@ -5,6 +5,7 @@ pub mod edge_builder;
 pub mod element_rules;
 pub mod graph_builder;
 pub mod infrastructure_builder;
+pub mod l2_builder;
 pub mod l3_builder;
 pub mod main;
 pub mod subscriber;

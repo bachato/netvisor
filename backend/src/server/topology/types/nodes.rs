@@ -82,6 +82,9 @@ pub enum ContainerType {
     /// Generic root container for perspectives without structural container rules.
     Root,
 
+    /// Host container for L2 Physical view (groups ports by their network device)
+    Host,
+
     // Subcontainers (nested inside a top-level container)
     NestedTag,
     NestedServiceCategory,
@@ -103,6 +106,7 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::ServiceCategory => EntityDiscriminants::Service.color(),
             ContainerType::ApplicationGroup => Concept::Application.color(),
             ContainerType::Root => Color::Gray,
+            ContainerType::Host => Concept::L2.color(),
             ContainerType::NestedTag => Color::Orange,
             ContainerType::NestedServiceCategory => Color::Purple,
             ContainerType::Virtualizer => Concept::Infrastructure.color(),
@@ -117,6 +121,7 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::ServiceCategory => EntityDiscriminants::Service.icon(),
             ContainerType::ApplicationGroup => Concept::Application.icon(),
             ContainerType::Root => Icon::Layers,
+            ContainerType::Host => Concept::L2.icon(),
             ContainerType::NestedTag => Icon::Tag,
             ContainerType::NestedServiceCategory => Icon::Layers,
             ContainerType::Virtualizer => Concept::Infrastructure.icon(),
@@ -133,6 +138,7 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::ServiceCategory => "Service category",
             ContainerType::ApplicationGroup => "Application group",
             ContainerType::Root => "Root",
+            ContainerType::Host => "Host",
             ContainerType::NestedTag => "Tag container",
             ContainerType::NestedServiceCategory => "Service category container",
             ContainerType::Virtualizer => "Virtualizer",
@@ -147,6 +153,7 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::ServiceCategory => "Services grouped by category",
             ContainerType::ApplicationGroup => "Services grouped by application group tag",
             ContainerType::Root => "Root container",
+            ContainerType::Host => "Physical network device",
             ContainerType::NestedTag => "Elements grouped by tag",
             ContainerType::NestedServiceCategory => "Elements grouped by service category",
             ContainerType::Virtualizer => "Hosts grouped by virtualizer",
@@ -160,7 +167,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Subnet
             | ContainerType::ServiceCategory
             | ContainerType::ApplicationGroup
-            | ContainerType::Root => TitleStyle::External,
+            | ContainerType::Root
+            | ContainerType::Host => TitleStyle::External,
             ContainerType::NestedTag
             | ContainerType::NestedServiceCategory
             | ContainerType::Virtualizer
@@ -179,7 +187,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Subnet
             | ContainerType::ServiceCategory
             | ContainerType::ApplicationGroup
-            | ContainerType::Root => (25, 25),
+            | ContainerType::Root
+            | ContainerType::Host => (25, 25),
             ContainerType::NestedTag
             | ContainerType::NestedServiceCategory
             | ContainerType::Virtualizer
@@ -190,7 +199,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Subnet
             | ContainerType::ServiceCategory
             | ContainerType::ApplicationGroup
-            | ContainerType::Root => (200, 80),
+            | ContainerType::Root
+            | ContainerType::Host => (200, 80),
             _ => (250, 40),
         };
         serde_json::json!({
@@ -214,6 +224,9 @@ pub enum ElementEntityType {
     },
     Service {},
     Host {},
+    Port {
+        if_entry_id: Uuid,
+    },
 }
 
 impl Default for ElementEntityType {
@@ -231,6 +244,7 @@ impl From<&ElementEntityType> for EntityDiscriminants {
             ElementEntityType::Interface { .. } => EntityDiscriminants::Interface,
             ElementEntityType::Service {} => EntityDiscriminants::Service,
             ElementEntityType::Host {} => EntityDiscriminants::Host,
+            ElementEntityType::Port { .. } => EntityDiscriminants::IfEntry,
         }
     }
 }
@@ -481,6 +495,47 @@ mod tests {
             EntityDiscriminants::from(&ElementEntityType::Host {}),
             EntityDiscriminants::Host
         );
+        assert_eq!(
+            EntityDiscriminants::from(&ElementEntityType::Port {
+                if_entry_id: Uuid::nil(),
+            }),
+            EntityDiscriminants::IfEntry
+        );
+    }
+
+    #[test]
+    fn test_element_port_round_trip() {
+        let container_id = Uuid::new_v4();
+        let host_id = Uuid::new_v4();
+        let if_entry_id = Uuid::new_v4();
+        let node_type = NodeType::Element {
+            container_id,
+            host_id,
+            element: ElementEntityType::Port { if_entry_id },
+        };
+        let json = serde_json::to_value(&node_type).unwrap();
+        assert_eq!(json["node_type"], "Element");
+        assert_eq!(json["element_type"], "Port");
+        assert_eq!(json["if_entry_id"], if_entry_id.to_string());
+
+        let deserialized: NodeType = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, node_type);
+    }
+
+    #[test]
+    fn test_host_container_round_trip() {
+        let node_type = NodeType::Container {
+            container_type: ContainerType::Host,
+            parent_container_id: None,
+            layer_hint: None,
+            icon: None,
+            color: None,
+            associated_service_definition: None,
+        };
+        let json = serde_json::to_value(&node_type).unwrap();
+        assert_eq!(json["container_type"], "Host");
+        let deserialized: NodeType = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, node_type);
     }
 
     #[test]
