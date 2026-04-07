@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-06T21:15:47.937505Z",
-             *       "id": "2615fc8c-29dd-48af-9b04-ac12e51ef7cf",
+             *       "created_at": "2026-04-07T00:06:49.335632Z",
+             *       "id": "0ff2c728-d9b5-4660-a815-b5ba9800fabb",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-06T21:15:47.937505Z"
+             *       "updated_at": "2026-04-07T00:06:49.335632Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-06T21:15:47.918495Z",
-             *               "id": "823fe818-2247-47c7-a394-c17bae470329",
+             *               "created_at": "2026-04-07T00:06:49.317113Z",
+             *               "id": "bb09d833-b560-43d8-a223-751f09096759",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-06T21:15:47.918495Z"
+             *               "updated_at": "2026-04-07T00:06:49.317113Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3172,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "MariaDB",
+             *           "service_definition": "Beszel Agent",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-06T21:15:47.932331Z",
-             *           "id": "569b2067-83c6-4f78-a60f-bae635a65b0b",
+             *           "created_at": "2026-04-07T00:06:49.330923Z",
+             *           "id": "4214e152-d07c-4877-ad04-ccdead507386",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-06T21:15:47.932331Z"
+             *           "updated_at": "2026-04-07T00:06:49.330923Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3444,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "MariaDB",
+             *       "service_definition": "Beszel Agent",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3772,14 +3772,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-06T21:15:47.918900Z",
-         *       "id": "55c5ea26-7a0f-4a3b-996f-c8ef5cf06076",
+         *       "created_at": "2026-04-07T00:06:49.317470Z",
+         *       "id": "6af9ac18-59c5-4e57-b9b9-fe12e18841dd",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-06T21:15:47.918900Z"
+         *       "updated_at": "2026-04-07T00:06:49.317470Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3964,7 +3964,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "MariaDB",
+         *           "service_definition": "Beszel Agent",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4490,7 +4490,6 @@ export interface components {
             service_id: string;
         };
         Edge: components["schemas"]["EdgeType"] & {
-            classification?: components["schemas"]["EdgeClassification"];
             /** Format: uuid */
             id: string;
             is_multi_hop: boolean;
@@ -4501,14 +4500,25 @@ export interface components {
             /** Format: uuid */
             target: string;
             target_handle: components["schemas"]["EdgeHandle"];
+            view_config?: components["schemas"]["EdgeViewConfig"];
         };
         /**
-         * @description Whether an edge affects layout (primary) or is drawn after layout (overlay)
+         * @description Whether an edge is visible by default or hidden behind a toggle
          * @enum {string}
          */
-        EdgeClassification: "primary" | "overlay" | "overlay_hidden" | "disabled";
+        EdgeDefaultVisibility: "visible" | "hidden";
         /** @enum {string} */
         EdgeHandle: "Top" | "Bottom" | "Left" | "Right";
+        /**
+         * @description Controls when an edge contributes to node highlighting on selection
+         * @enum {string}
+         */
+        EdgeHighlightBehavior: "when_visible" | "always" | "never";
+        /**
+         * @description Visual stroke style for an edge
+         * @enum {string}
+         */
+        EdgeStroke: "solid" | "dashed";
         /** @enum {string} */
         EdgeStyle: "Straight" | "SmoothStep" | "Step" | "Bezier" | "SimpleBezier";
         EdgeType: {
@@ -4557,6 +4567,22 @@ export interface components {
         };
         /** @enum {string} */
         EdgeTypeDiscriminants: "Interface" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke" | "PhysicalLink";
+        /** @description Per-view configuration for an edge: disabled (not in this view) or active with properties */
+        EdgeViewConfig: {
+            /** @enum {string} */
+            type: "disabled";
+        } | {
+            /** @description Whether ELK should use this edge for layout positioning */
+            affects_layout: boolean;
+            /** @description Whether the edge is shown by default or hidden behind a toggle */
+            default_visibility: components["schemas"]["EdgeDefaultVisibility"];
+            /** @description When this edge contributes to node highlighting on selection */
+            highlight_behavior: components["schemas"]["EdgeHighlightBehavior"];
+            /** @description Visual stroke style */
+            stroke: components["schemas"]["EdgeStroke"];
+            /** @enum {string} */
+            type: "active";
+        };
         ElementEntityType: {
             /** @enum {string} */
             element_type: "Interface";
@@ -4807,14 +4833,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-06T21:15:47.917948Z",
-         *               "id": "e749b019-f71c-41e1-8c9d-a76796bc30d2",
+         *               "created_at": "2026-04-07T00:06:49.316634Z",
+         *               "id": "7a3bcc13-d48e-43d1-b228-23cb61feb0ef",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-06T21:15:47.917948Z"
+         *               "updated_at": "2026-04-07T00:06:49.316634Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4823,7 +4849,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "MariaDB",
+         *           "service_definition": "Beszel Agent",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5892,14 +5918,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-06T21:15:47.918764Z",
-         *           "id": "1128e809-d520-45de-adcc-d53109313fed",
+         *           "created_at": "2026-04-07T00:06:49.317348Z",
+         *           "id": "fa47049b-0d12-4f65-b4c4-14dfeda44e6b",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-06T21:15:47.918764Z"
+         *           "updated_at": "2026-04-07T00:06:49.317348Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5908,7 +5934,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "MariaDB",
+         *       "service_definition": "Beszel Agent",
          *       "source": {
          *         "type": "Manual"
          *       },

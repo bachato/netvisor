@@ -4,7 +4,8 @@ import type { Node } from '@xyflow/svelte';
 import type { QueryClient } from '@tanstack/svelte-query';
 import { edgeTypes, views, serviceDefinitions, subnetTypes } from '$lib/shared/stores/metadata';
 import type { TopologyEdge, TopologyNode, Topology } from './types/base';
-import { isDisabledEdge } from './layout/edge-classification';
+import { isDisabledEdge, getHighlightBehavior } from './layout/edge-classification';
+import { elevateEdgesToContainers } from './layout/edge-elevation';
 import { getContainerContents } from './resolvers';
 import { getHostFromInterfaceIdFromCache } from '../hosts/queries';
 import {
@@ -305,11 +306,17 @@ export function updateConnectedNodes(
 
 	// If multiple nodes are selected
 	if (multiSelectedNodes && multiSelectedNodes.length >= 2) {
-		const topologyEdges = topology?.edges ?? [];
+		const rawEdges = topology?.edges ?? [];
+		const topologyNodes = topology?.nodes ?? [];
+		const elevatedEdges = elevateEdgesToContainers(rawEdges, topologyNodes);
 		for (const node of multiSelectedNodes) {
 			connected.add(node.id);
-			// Add direct neighbors of each selected node
-			for (const edge of topologyEdges) {
+			// Add direct neighbors of each selected node (using elevated edges)
+			for (const edge of elevatedEdges) {
+				if (isDisabledEdge(edge)) continue;
+				const behavior = getHighlightBehavior(edge);
+				if (behavior === 'never') continue;
+				if (behavior === 'when_visible' && hiddenEdgeTypes?.includes(edge.edge_type)) continue;
 				if (edge.source === node.id) {
 					connected.add(edge.target);
 				}
@@ -333,14 +340,21 @@ export function updateConnectedNodes(
 			for (const id of contents.subcontainerIds) connected.add(id);
 		}
 
-		// Use topology edges (stable source of truth) rather than xyflow edges
-		// store, which may be empty during re-layout triggered by collapseAllBundles.
-		const topologyEdges = topology?.edges ?? [];
+		// Use elevated edges so absorbing containers appear in the connected set.
+		// Elevation rewrites edge endpoints from elements to their outermost
+		// absorbing container, which is exactly what highlighting needs.
+		const rawEdges = topology?.edges ?? [];
+		const topologyNodes = topology?.nodes ?? [];
+		const elevatedEdges = elevateEdgesToContainers(rawEdges, topologyNodes);
 
-		for (const edge of topologyEdges) {
-			// Skip edges that are disabled (view-level) or hidden (user toggle)
+		for (const edge of elevatedEdges) {
+			// Skip disabled edges entirely
 			if (isDisabledEdge(edge)) continue;
-			if (hiddenEdgeTypes?.includes(edge.edge_type)) continue;
+
+			// Use highlight_behavior to decide if this edge contributes
+			const behavior = getHighlightBehavior(edge);
+			if (behavior === 'never') continue;
+			if (behavior === 'when_visible' && hiddenEdgeTypes?.includes(edge.edge_type)) continue;
 
 			// Add directly connected nodes
 			if (edge.source === selectedNode.id) {
@@ -350,7 +364,7 @@ export function updateConnectedNodes(
 				connected.add(edge.source);
 			}
 
-			// For visible virtualization edges, also add virtualized container nodes
+			// For virtualization edges, also add virtualized container nodes
 			if (edge.edge_type === 'ServiceVirtualization') {
 				if (edge.source === selectedNode.id || edge.target === selectedNode.id) {
 					const virtualizedNodes = getVirtualizedContainerNodes(edge.source, queryClient, topology);

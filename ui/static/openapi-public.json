@@ -9828,14 +9828,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-06T21:15:47.937507Z",
-              "id": "6bc659a4-0634-43f7-9686-c5edd45e9ebf",
+              "created_at": "2026-04-07T00:06:49.335815Z",
+              "id": "6192f1e9-2e07-49e0-918c-52981e78600b",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-06T21:15:47.937507Z"
+              "updated_at": "2026-04-07T00:06:49.335815Z"
             }
           },
           "error": {
@@ -10734,14 +10734,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-06T21:15:47.918507Z",
-                      "id": "59fd4363-7824-4908-9205-03efac122e66",
+                      "created_at": "2026-04-07T00:06:49.317131Z",
+                      "id": "8bea0676-26bb-4669-a8d1-60be005c2d7a",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-06T21:15:47.918507Z"
+                      "updated_at": "2026-04-07T00:06:49.317131Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -10750,7 +10750,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "MariaDB",
+                  "service_definition": "Beszel Agent",
                   "source": {
                     "type": "Manual"
                   },
@@ -11453,14 +11453,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-06T21:15:47.932329Z",
-                  "id": "bec3c293-ab49-4235-82e4-e250af248083",
+                  "created_at": "2026-04-07T00:06:49.330959Z",
+                  "id": "91ff707f-d9a6-442f-879e-4995c5ca9877",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-06T21:15:47.932329Z"
+                  "updated_at": "2026-04-07T00:06:49.330959Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -11469,7 +11469,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "MariaDB",
+              "service_definition": "Beszel Agent",
               "source": {
                 "type": "Manual"
               },
@@ -12744,14 +12744,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-06T21:15:47.918913Z",
-          "id": "31fc1d8e-f4a2-40e9-8616-2f8ee1bd1754",
+          "created_at": "2026-04-07T00:06:49.317494Z",
+          "id": "cdf4084a-7f6b-429b-9378-7b778cd8a63b",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-06T21:15:47.918913Z"
+          "updated_at": "2026-04-07T00:06:49.317494Z"
         }
       },
       "BindingBase": {
@@ -13273,7 +13273,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "MariaDB",
+              "service_definition": "Beszel Agent",
               "tags": [],
               "virtualization": null
             }
@@ -14749,9 +14749,6 @@
               "is_multi_hop"
             ],
             "properties": {
-              "classification": {
-                "$ref": "#/components/schemas/EdgeClassification"
-              },
               "id": {
                 "type": "string",
                 "format": "uuid"
@@ -14778,19 +14775,20 @@
               },
               "target_handle": {
                 "$ref": "#/components/schemas/EdgeHandle"
+              },
+              "view_config": {
+                "$ref": "#/components/schemas/EdgeViewConfig"
               }
             }
           }
         ]
       },
-      "EdgeClassification": {
+      "EdgeDefaultVisibility": {
         "type": "string",
-        "description": "Whether an edge affects layout (primary) or is drawn after layout (overlay)",
+        "description": "Whether an edge is visible by default or hidden behind a toggle",
         "enum": [
-          "primary",
-          "overlay",
-          "overlay_hidden",
-          "disabled"
+          "visible",
+          "hidden"
         ]
       },
       "EdgeHandle": {
@@ -14800,6 +14798,23 @@
           "Bottom",
           "Left",
           "Right"
+        ]
+      },
+      "EdgeHighlightBehavior": {
+        "type": "string",
+        "description": "Controls when an edge contributes to node highlighting on selection",
+        "enum": [
+          "when_visible",
+          "always",
+          "never"
+        ]
+      },
+      "EdgeStroke": {
+        "type": "string",
+        "description": "Visual stroke style for an edge",
+        "enum": [
+          "solid",
+          "dashed"
         ]
       },
       "EdgeStyle": {
@@ -14975,6 +14990,61 @@
           "HubAndSpoke",
           "PhysicalLink"
         ]
+      },
+      "EdgeViewConfig": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Edge is not available in this view",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "disabled"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Edge is active in this view with specific properties",
+            "required": [
+              "affects_layout",
+              "default_visibility",
+              "stroke",
+              "highlight_behavior",
+              "type"
+            ],
+            "properties": {
+              "affects_layout": {
+                "type": "boolean",
+                "description": "Whether ELK should use this edge for layout positioning"
+              },
+              "default_visibility": {
+                "$ref": "#/components/schemas/EdgeDefaultVisibility",
+                "description": "Whether the edge is shown by default or hidden behind a toggle"
+              },
+              "highlight_behavior": {
+                "$ref": "#/components/schemas/EdgeHighlightBehavior",
+                "description": "When this edge contributes to node highlighting on selection"
+              },
+              "stroke": {
+                "$ref": "#/components/schemas/EdgeStroke",
+                "description": "Visual stroke style"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "active"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Per-view configuration for an edge: disabled (not in this view) or active with properties"
       },
       "ElementEntityType": {
         "oneOf": [
@@ -15833,14 +15903,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-06T21:15:47.917959Z",
-                  "id": "ca79e602-b0ef-4471-9fc6-8b2d41286841",
+                  "created_at": "2026-04-07T00:06:49.316641Z",
+                  "id": "b6f79130-91c4-4bcd-8d69-d07ccdcdd9aa",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-06T21:15:47.917959Z"
+                  "updated_at": "2026-04-07T00:06:49.316641Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -15849,7 +15919,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "MariaDB",
+              "service_definition": "Beszel Agent",
               "source": {
                 "type": "Manual"
               },
@@ -17840,14 +17910,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-06T21:15:47.906535Z",
-                        "id": "796d0d67-c1be-4e3d-93c4-1494e31cd4c2",
+                        "created_at": "2026-04-07T00:06:49.305983Z",
+                        "id": "ad4034a0-0f70-4fab-ac6c-d70292ac94ae",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-06T21:15:47.906535Z"
+                        "updated_at": "2026-04-07T00:06:49.305983Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -17856,7 +17926,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "MariaDB",
+                    "service_definition": "Beszel Agent",
                     "source": {
                       "type": "Manual"
                     },
@@ -17933,14 +18003,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-06T21:15:47.930884Z",
-                    "id": "41ffc0d6-50b4-43b4-baa2-2a254f5c2bda",
+                    "created_at": "2026-04-07T00:06:49.329589Z",
+                    "id": "0fd5d9ab-068a-412a-be6d-b8ec9b818a02",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-06T21:15:47.930884Z"
+                    "updated_at": "2026-04-07T00:06:49.329589Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -17949,7 +18019,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "MariaDB",
+                "service_definition": "Beszel Agent",
                 "source": {
                   "type": "Manual"
                 },
@@ -19109,14 +19179,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-06T21:15:47.918780Z",
-              "id": "d0519cae-ffd2-40ac-8f9e-101b2c4d3163",
+              "created_at": "2026-04-07T00:06:49.317370Z",
+              "id": "8faa2c52-605c-404e-b65d-89bca6d85356",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-06T21:15:47.918780Z"
+              "updated_at": "2026-04-07T00:06:49.317370Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19125,7 +19195,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "MariaDB",
+          "service_definition": "Beszel Agent",
           "source": {
             "type": "Manual"
           },
