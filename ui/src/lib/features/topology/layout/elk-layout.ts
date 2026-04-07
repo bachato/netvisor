@@ -170,14 +170,61 @@ function buildElkGraph(
 	}
 
 	// Add element nodes as children of their containers (skip collapsed)
+	// For L2 Physical: sort by oper_status (Up first) and assign layer IDs
+	// to spread ports across multiple columns within each container
+	const MAX_PORTS_PER_LAYER = 8;
+
+	// Collect elements per container for sorting
+	const elementsPerContainer = new Map<string, { node: TopologyNode; size: { x: number; y: number } }[]>();
 	for (const node of input.nodes) {
 		if (node.node_type === 'Element') {
 			const parentId = node.container_id;
 			if (collapsed.has(parentId)) continue;
-			const parent = containers.get(parentId);
-			if (parent && parent.children) {
-				const size = input.elementNodeSizes?.get(node.id) ?? node.size;
-				parent.children.push({
+			if (!containers.has(parentId)) continue;
+			const size = input.elementNodeSizes?.get(node.id) ?? node.size;
+			if (!elementsPerContainer.has(parentId)) elementsPerContainer.set(parentId, []);
+			elementsPerContainer.get(parentId)!.push({ node, size });
+		}
+	}
+
+	for (const [parentId, elements] of elementsPerContainer) {
+		const parent = containers.get(parentId);
+		if (!parent?.children) continue;
+
+		if (useLayeredChildren) {
+			// Sort: Up ports first, then Down, then others
+			const statusOrder = (n: TopologyNode): number => {
+				const status = (n as Record<string, unknown>).oper_status as string | undefined;
+				// oper_status isn't on the node directly — look it up from topology
+				const ifEntryId = (n as Record<string, unknown>).if_entry_id as string | undefined;
+				const ifEntry = ifEntryId
+					? input.topology?.if_entries.find((e) => e.id === ifEntryId)
+					: undefined;
+				const s = ifEntry?.oper_status ?? status ?? '';
+				if (s === 'Up') return 0;
+				if (s === 'Down') return 1;
+				return 2;
+			};
+			elements.sort((a, b) => statusOrder(a.node) - statusOrder(b.node));
+
+			// Assign layer IDs to create multiple columns
+			const numLayers = Math.max(1, Math.ceil(elements.length / MAX_PORTS_PER_LAYER));
+			elements.forEach(({ node, size }, i) => {
+				const layerIdx = i % numLayers;
+				parent.children!.push({
+					id: node.id,
+					width: size.x,
+					height: size.y,
+					layoutOptions: {
+						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+						'elk.nodeSize.minimum': `(${size.x},${size.y})`,
+						'elk.layered.layering.layerID': `${layerIdx}`
+					}
+				});
+			});
+		} else {
+			for (const { node, size } of elements) {
+				parent.children!.push({
 					id: node.id,
 					width: size.x,
 					height: size.y,
@@ -473,8 +520,6 @@ function buildElkGraph(
 		.filter(([id]) => !parentContainerMap.has(id))
 		.map(([, node]) => node);
 
-	// For L2 Physical, use INCLUDE_CHILDREN so ELK can optimize crossing
-	// minimization across container boundaries (port-to-port edges)
 	const rootOptions = useLayeredChildren
 		? {
 				...ROOT_LAYOUT_OPTIONS,
