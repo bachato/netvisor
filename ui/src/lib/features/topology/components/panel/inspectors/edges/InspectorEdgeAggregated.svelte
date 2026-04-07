@@ -3,7 +3,10 @@
 	import type { TopologyEdge, Topology } from '$lib/features/topology/types/base';
 	import { useTopologiesQuery, selectedTopologyId } from '$lib/features/topology/queries';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
-	import { topology_connectionsCount } from '$lib/paraglide/messages';
+	import {
+		topology_connectionsCount,
+		common_dependenciesLabel
+	} from '$lib/paraglide/messages';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { InterfaceEdgeDisplay } from '$lib/shared/components/forms/selection/display/InterfaceEdgeDisplay.svelte';
 	import { PhysicalLinkEdgeDisplay } from '$lib/shared/components/forms/selection/display/PhysicalLinkEdgeDisplay.svelte';
@@ -149,7 +152,9 @@
 
 	<div class="max-h-96 space-y-3 overflow-y-auto">
 		{#each [...edgesByType.entries()] as [edgeType, typeEdges] (edgeType)}
-			{@const typeName = edgeTypes.getName(edgeType)}
+			{@const typeName = isDependencyEdge(edgeType)
+				? common_dependenciesLabel()
+				: edgeTypes.getName(edgeType)}
 			{@const displayComponent = getDisplayComponent(edgeType)}
 
 			{#if typeEdges.length > 1}
