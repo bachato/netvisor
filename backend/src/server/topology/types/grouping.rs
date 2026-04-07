@@ -142,7 +142,7 @@ impl ElementRule {
 
     /// Whether this rule is locked (not user-removable) when applicable.
     pub fn is_locked(&self) -> bool {
-        matches!(self, ElementRule::ByTrunkPort)
+        matches!(self, ElementRule::ByTrunkPort | ElementRule::ByVLAN)
     }
 
     pub fn applicable_views(&self) -> &'static [TopologyView] {
