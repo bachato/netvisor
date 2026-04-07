@@ -4,7 +4,11 @@ import type { Node } from '@xyflow/svelte';
 import type { QueryClient } from '@tanstack/svelte-query';
 import { edgeTypes, views, serviceDefinitions, subnetTypes } from '$lib/shared/stores/metadata';
 import type { TopologyEdge, TopologyNode, Topology } from './types/base';
-import { isDisabledEdge, getHighlightBehavior } from './layout/edge-classification';
+import {
+	isDisabledEdge,
+	getHighlightBehavior,
+	showDirectionality
+} from './layout/edge-classification';
 import { elevateEdgesToContainers } from './layout/edge-elevation';
 import { getContainerContents } from './resolvers';
 import { getHostFromInterfaceIdFromCache } from '../hosts/queries';
@@ -583,15 +587,21 @@ export function getEdgeDisplayState(
 		// Should show full if: group hovered, group selected, or connected node selected
 		shouldShowFull = isGroupHovered || isGroupSelected || !!isConnectedNodeSelected;
 
-		// Should animate if: group hovered, group selected, or connected node selected
-		shouldAnimate = isGroupHovered || isGroupSelected || !!isConnectedNodeSelected;
+		// Animate only if view config enables directionality
+		shouldAnimate = showDirectionality(edgeData)
+			? isGroupHovered || isGroupSelected || !!isConnectedNodeSelected
+			: false;
 	} else {
 		// Non-group edges: show full if hovered, selected, or connected node selected
 		const isConnectedNodeSelected =
 			selectedNode && (edgeData.source === selectedNode.id || edgeData.target === selectedNode.id);
 
 		shouldShowFull = isThisEdgeHovered || isThisEdgeSelected || !!isConnectedNodeSelected;
-		shouldAnimate = false; // Non-group edges don't animate
+
+		// Animate only if view config enables directionality
+		shouldAnimate = showDirectionality(edgeData)
+			? isThisEdgeHovered || isThisEdgeSelected || !!isConnectedNodeSelected
+			: false;
 	}
 
 	return { shouldShowFull, shouldAnimate };

@@ -48,6 +48,12 @@ export function getHighlightBehavior(edge: TopologyEdge): 'when_visible' | 'alwa
 	);
 }
 
+/** Whether this edge should show directional animation when highlighted. */
+export function showDirectionality(edge: TopologyEdge): boolean {
+	const vc = getViewConfig(edge);
+	return vc.type === 'active' && vc.show_directionality;
+}
+
 /** Whether this edge should be elevated to target an accepting container. */
 export function willTargetContainer(edge: TopologyEdge): boolean {
 	const vc = getViewConfig(edge);

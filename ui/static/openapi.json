@@ -12577,14 +12577,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-07T03:12:09.092724Z",
-              "id": "95dd870e-5873-493f-867c-126bb9097f5e",
+              "created_at": "2026-04-07T19:40:22.308095Z",
+              "id": "920bb412-4089-4b27-b6c6-458614519543",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-07T03:12:09.092724Z"
+              "updated_at": "2026-04-07T19:40:22.308095Z"
             }
           },
           "error": {
@@ -13483,14 +13483,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-07T03:12:09.078646Z",
-                      "id": "b539f7e8-4890-4475-8778-b5b41d174116",
+                      "created_at": "2026-04-07T19:40:22.289498Z",
+                      "id": "2e25e9a5-fb18-495c-9164-6b1bb602715d",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-07T03:12:09.078646Z"
+                      "updated_at": "2026-04-07T19:40:22.289498Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -13499,7 +13499,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Pulse",
+                  "service_definition": "Discourse",
                   "source": {
                     "type": "Manual"
                   },
@@ -14202,14 +14202,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-07T03:12:09.087646Z",
-                  "id": "5c15bcc4-41d1-4314-9dba-c8a028766452",
+                  "created_at": "2026-04-07T19:40:22.302967Z",
+                  "id": "716c472e-91b7-4057-b41b-45f938bab468",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-07T03:12:09.087646Z"
+                  "updated_at": "2026-04-07T19:40:22.302967Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14218,7 +14218,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Pulse",
+              "service_definition": "Discourse",
               "source": {
                 "type": "Manual"
               },
@@ -15493,14 +15493,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-07T03:12:09.079125Z",
-          "id": "6092e6af-6207-4c39-93ff-5d9e07f695c0",
+          "created_at": "2026-04-07T19:40:22.289903Z",
+          "id": "4b74801c-b9a8-4a9c-aa91-5332741228da",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-07T03:12:09.079125Z"
+          "updated_at": "2026-04-07T19:40:22.289903Z"
         }
       },
       "BindingBase": {
@@ -15789,11 +15789,15 @@
           "ServiceCategory",
           "ApplicationGroup",
           "Root",
+          "Host",
           "NestedTag",
           "NestedServiceCategory",
           "Virtualizer",
           "BareMetal",
-          "Stack"
+          "Stack",
+          "TrunkPort",
+          "VLAN",
+          "PortOpStatus"
         ]
       },
       "CreateBindingInput": {
@@ -16022,7 +16026,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Pulse",
+              "service_definition": "Discourse",
               "tags": [],
               "virtualization": null
             }
@@ -17766,6 +17770,7 @@
               "stroke",
               "highlight_behavior",
               "will_target_container",
+              "show_directionality",
               "type"
             ],
             "properties": {
@@ -17780,6 +17785,10 @@
               "highlight_behavior": {
                 "$ref": "#/components/schemas/EdgeHighlightBehavior",
                 "description": "When this edge contributes to node highlighting on selection"
+              },
+              "show_directionality": {
+                "type": "boolean",
+                "description": "Whether this edge should show directional animation when highlighted"
               },
               "stroke": {
                 "$ref": "#/components/schemas/EdgeStroke",
@@ -17853,6 +17862,25 @@
                 "enum": [
                   "Host"
                 ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "if_entry_id",
+              "element_type"
+            ],
+            "properties": {
+              "element_type": {
+                "type": "string",
+                "enum": [
+                  "Port"
+                ]
+              },
+              "if_entry_id": {
+                "type": "string",
+                "format": "uuid"
               }
             }
           }
@@ -18150,6 +18178,12 @@
                     }
                   }
                 }
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "ByHost"
+                ]
               }
             ],
             "description": "Rules that change which containers exist and how they nest.\nContainer titles are data-driven (subnet CIDR, host names), not user-configurable."
@@ -18237,6 +18271,27 @@
                 "type": "string",
                 "enum": [
                   "ByStack"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Groups trunk ports (ports with tagged VLANs) into a \"Trunk Ports\" subcontainer.\nHigher priority than ByVLAN — prevents trunk ports from being grouped by VLAN.",
+                "enum": [
+                  "ByTrunkPort"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Groups access ports by their native VLAN ID into per-VLAN subcontainers.",
+                "enum": [
+                  "ByVLAN"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Groups ports by operational status (Up, Down, etc.) into per-status subcontainers.",
+                "enum": [
+                  "ByPortOpStatus"
                 ]
               }
             ],
@@ -18657,14 +18712,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-07T03:12:09.078260Z",
-                  "id": "1573c8b9-37cb-40b6-b41c-1da76e5b8a63",
+                  "created_at": "2026-04-07T19:40:22.288909Z",
+                  "id": "4135fafb-8b12-4a9a-9bb9-3ce35a79601a",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-07T03:12:09.078260Z"
+                  "updated_at": "2026-04-07T19:40:22.288909Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -18673,7 +18728,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Pulse",
+              "service_definition": "Discourse",
               "source": {
                 "type": "Manual"
               },
@@ -18906,6 +18961,15 @@
             ],
             "description": "MAC address from SNMP ifPhysAddress - immutable once set"
           },
+          "native_vlan_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Native/untagged VLAN ID on this port (from Q-BRIDGE dot1qPvid)",
+            "minimum": 0
+          },
           "neighbor": {
             "oneOf": [
               {
@@ -18932,6 +18996,18 @@
             ],
             "format": "int64",
             "description": "Interface speed from ifSpeed/ifHighSpeed in bits per second"
+          },
+          "vlan_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Tagged VLAN IDs on this port (from Q-BRIDGE dot1qVlanCurrentEgressPorts)"
           }
         }
       },
@@ -20664,14 +20740,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-07T03:12:09.069316Z",
-                        "id": "5d3f3af2-b477-4774-843c-417c61d03b65",
+                        "created_at": "2026-04-07T19:40:22.277386Z",
+                        "id": "9a7fcf86-0673-4e40-81aa-b3a790395d69",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-07T03:12:09.069316Z"
+                        "updated_at": "2026-04-07T19:40:22.277386Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -20680,7 +20756,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Pulse",
+                    "service_definition": "Discourse",
                     "source": {
                       "type": "Manual"
                     },
@@ -20757,14 +20833,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-07T03:12:09.086628Z",
-                    "id": "ab52315c-e0e1-47e0-8c2a-8cb1878aec9a",
+                    "created_at": "2026-04-07T19:40:22.301580Z",
+                    "id": "6d60a3a6-5886-418f-afdd-ae4370e25d39",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-07T03:12:09.086628Z"
+                    "updated_at": "2026-04-07T19:40:22.301580Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -20773,7 +20849,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Pulse",
+                "service_definition": "Discourse",
                 "source": {
                   "type": "Manual"
                 },
@@ -21933,14 +22009,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-07T03:12:09.078951Z",
-              "id": "ec8bcf8f-7f13-4216-8835-72c1db6c1a16",
+              "created_at": "2026-04-07T19:40:22.289762Z",
+              "id": "5f70fec8-33ca-49dd-8e0e-b762e129f15d",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-07T03:12:09.078951Z"
+              "updated_at": "2026-04-07T19:40:22.289762Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -21949,7 +22025,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Pulse",
+          "service_definition": "Discourse",
           "source": {
             "type": "Manual"
           },

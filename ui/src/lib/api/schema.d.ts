@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-07T03:12:09.092724Z",
-             *       "id": "95dd870e-5873-493f-867c-126bb9097f5e",
+             *       "created_at": "2026-04-07T19:40:22.308095Z",
+             *       "id": "920bb412-4089-4b27-b6c6-458614519543",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-07T03:12:09.092724Z"
+             *       "updated_at": "2026-04-07T19:40:22.308095Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-07T03:12:09.078646Z",
-             *               "id": "b539f7e8-4890-4475-8778-b5b41d174116",
+             *               "created_at": "2026-04-07T19:40:22.289498Z",
+             *               "id": "2e25e9a5-fb18-495c-9164-6b1bb602715d",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-07T03:12:09.078646Z"
+             *               "updated_at": "2026-04-07T19:40:22.289498Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3172,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Pulse",
+             *           "service_definition": "Discourse",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-07T03:12:09.087646Z",
-             *           "id": "5c15bcc4-41d1-4314-9dba-c8a028766452",
+             *           "created_at": "2026-04-07T19:40:22.302967Z",
+             *           "id": "716c472e-91b7-4057-b41b-45f938bab468",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-07T03:12:09.087646Z"
+             *           "updated_at": "2026-04-07T19:40:22.302967Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3444,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Pulse",
+             *       "service_definition": "Discourse",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3772,14 +3772,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-07T03:12:09.079125Z",
-         *       "id": "6092e6af-6207-4c39-93ff-5d9e07f695c0",
+         *       "created_at": "2026-04-07T19:40:22.289903Z",
+         *       "id": "4b74801c-b9a8-4a9c-aa91-5332741228da",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-07T03:12:09.079125Z"
+         *       "updated_at": "2026-04-07T19:40:22.289903Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3899,7 +3899,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Amber" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "Root" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack";
+        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "Root" | "Host" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack" | "TrunkPort" | "VLAN" | "PortOpStatus";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -3964,7 +3964,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Pulse",
+         *           "service_definition": "Discourse",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4578,6 +4578,8 @@ export interface components {
             default_visibility: components["schemas"]["EdgeDefaultVisibility"];
             /** @description When this edge contributes to node highlighting on selection */
             highlight_behavior: components["schemas"]["EdgeHighlightBehavior"];
+            /** @description Whether this edge should show directional animation when highlighted */
+            show_directionality: boolean;
             /** @description Visual stroke style */
             stroke: components["schemas"]["EdgeStroke"];
             /** @enum {string} */
@@ -4601,6 +4603,11 @@ export interface components {
         } | {
             /** @enum {string} */
             element_type: "Host";
+        } | {
+            /** @enum {string} */
+            element_type: "Port";
+            /** Format: uuid */
+            if_entry_id: string;
         };
         /** @description Request body for emailing an install command to the authenticated user. */
         EmailInstallCommandRequest: {
@@ -4676,7 +4683,7 @@ export interface components {
                 ByApplicationGroup: {
                     tag_ids?: string[];
                 };
-            };
+            } | "ByHost";
         };
         /** @description Generic wrapper that gives any rule type a stable UUID identity. */
         GraphRule_ElementRule: {
@@ -4693,7 +4700,7 @@ export interface components {
                     tag_ids: string[];
                     title?: string | null;
                 };
-            } | "ByVirtualizer" | "ByStack";
+            } | "ByVirtualizer" | "ByStack" | "ByTrunkPort" | "ByVLAN" | "ByPortOpStatus";
         };
         /**
          * @example {
@@ -4838,14 +4845,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-07T03:12:09.078260Z",
-         *               "id": "1573c8b9-37cb-40b6-b41c-1da76e5b8a63",
+         *               "created_at": "2026-04-07T19:40:22.288909Z",
+         *               "id": "4135fafb-8b12-4a9a-9bb9-3ce35a79601a",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-07T03:12:09.078260Z"
+         *               "updated_at": "2026-04-07T19:40:22.288909Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4854,7 +4861,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Pulse",
+         *           "service_definition": "Discourse",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4971,6 +4978,11 @@ export interface components {
             lldp_sys_name?: string | null;
             /** @description MAC address from SNMP ifPhysAddress - immutable once set */
             mac_address?: string | null;
+            /**
+             * Format: int32
+             * @description Native/untagged VLAN ID on this port (from Q-BRIDGE dot1qPvid)
+             */
+            native_vlan_id?: number | null;
             neighbor?: null | components["schemas"]["Neighbor"];
             /** Format: uuid */
             network_id: string;
@@ -4981,6 +4993,8 @@ export interface components {
              * @description Interface speed from ifSpeed/ifHighSpeed in bits per second
              */
             speed_bps?: number | null;
+            /** @description Tagged VLAN IDs on this port (from Q-BRIDGE dot1qVlanCurrentEgressPorts) */
+            vlan_ids?: number[] | null;
         };
         /**
          * @description Input for creating an SNMP interface entry (ifTable data).
@@ -5923,14 +5937,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-07T03:12:09.078951Z",
-         *           "id": "ec8bcf8f-7f13-4216-8835-72c1db6c1a16",
+         *           "created_at": "2026-04-07T19:40:22.289762Z",
+         *           "id": "5f70fec8-33ca-49dd-8e0e-b762e129f15d",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-07T03:12:09.078951Z"
+         *           "updated_at": "2026-04-07T19:40:22.289762Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5939,7 +5953,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Pulse",
+         *       "service_definition": "Discourse",
          *       "source": {
          *         "type": "Manual"
          *       },

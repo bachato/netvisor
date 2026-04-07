@@ -348,8 +348,7 @@ pub fn apply_element_rules_with_titles(
 
                     for (status, ids) in by_status {
                         let status_name = format!("{:?}", status);
-                        let group_key =
-                            format!("{parent_id}:{rule_id}:status:{}", status as i32);
+                        let group_key = format!("{parent_id}:{rule_id}:status:{}", status as i32);
                         let group_id = Uuid::new_v5(&Uuid::NAMESPACE_OID, group_key.as_bytes());
 
                         // Color per status for the filled circle icon

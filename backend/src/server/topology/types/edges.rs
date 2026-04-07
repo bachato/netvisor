@@ -75,6 +75,8 @@ pub enum EdgeViewConfig {
         /// Whether this edge should be elevated to target an accepting container
         /// instead of the element inside it
         will_target_container: bool,
+        /// Whether this edge should show directional animation when highlighted
+        show_directionality: bool,
     },
 }
 
@@ -305,6 +307,7 @@ mod tests {
             stroke: EdgeStroke::Dashed,
             highlight_behavior: EdgeHighlightBehavior::Always,
             will_target_container: true,
+            show_directionality: true,
         };
         let json = serde_json::to_value(active).unwrap();
         assert_eq!(json["type"], "active");
@@ -313,6 +316,7 @@ mod tests {
         assert_eq!(json["stroke"], "dashed");
         assert_eq!(json["highlight_behavior"], "always");
         assert_eq!(json["will_target_container"], true);
+        assert_eq!(json["show_directionality"], true);
         let deserialized: EdgeViewConfig = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, active);
     }
