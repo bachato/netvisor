@@ -102,21 +102,14 @@ function buildElkGraph(
 
 			// Layered children: ELK optimizes child ordering for crossing minimization
 			// Box children: grid packing by size (default for most views)
-			const childLayoutOptions: Record<string, string> = useLayeredChildren
-				? {
-						// INCLUDE_CHILDREN: root handles layout — container just sets padding
-						'elk.padding': padding,
-						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.spacing.nodeNode': '10'
-					}
-				: {
-						'elk.algorithm': 'box',
-						'elk.box.packingMode': 'SIMPLE',
-						'elk.aspectRatio': '1.4',
-						'elk.padding': padding,
-						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.spacing.nodeNode': '25'
-					};
+			const childLayoutOptions: Record<string, string> = {
+				'elk.algorithm': 'box',
+				'elk.box.packingMode': 'SIMPLE',
+				'elk.aspectRatio': useLayeredChildren ? '2.5' : '1.4',
+				'elk.padding': padding,
+				'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+				'elk.spacing.nodeNode': useLayeredChildren ? '10' : '25'
+			};
 
 			const elkNode: ElkNode = isCollapsed
 				? {
@@ -227,29 +220,6 @@ function buildElkGraph(
 						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
 						'elk.nodeSize.minimum': `(${size.x},${size.y})`
 					}
-				});
-			}
-		}
-	}
-
-	// L2: add dummy chain edges between ports within each container.
-	// Without edges between ports, COFFMAN_GRAHAM puts them all in one layer.
-	// A chain (port0→port1→port2→...) creates precedence constraints that,
-	// combined with layerBound=8, spread ports across ceil(N/8) layers.
-	// The chain follows status sort order (Up first → Down last), so Up ports
-	// end up in earlier layers (closer to incoming edges).
-	if (useLayeredChildren) {
-		let dummyIdx = 0;
-		for (const [, parent] of containers) {
-			if (!parent.children || parent.children.length < 2) continue;
-			// Only chain element nodes (not nested subcontainers)
-			const elementChildren = parent.children.filter((c) => !containerIds.has(c.id));
-			for (let i = 0; i < elementChildren.length - 1; i++) {
-				if (!parent.edges) parent.edges = [];
-				parent.edges.push({
-					id: `elk-chain-${dummyIdx++}`,
-					sources: [elementChildren[i].id],
-					targets: [elementChildren[i + 1].id]
 				});
 			}
 		}
@@ -572,16 +542,7 @@ function buildElkGraph(
 		.filter(([id]) => !parentContainerMap.has(id))
 		.map(([, node]) => node);
 
-	const rootOptions = useLayeredChildren
-		? {
-				...ROOT_LAYOUT_OPTIONS,
-				'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-				'elk.direction': 'RIGHT',
-				'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
-				'elk.layered.layering.coffmanGraham.layerBound': '8',
-				'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES'
-			}
-		: ROOT_LAYOUT_OPTIONS;
+	const rootOptions = ROOT_LAYOUT_OPTIONS;
 
 	const graph: ElkNode = {
 		id: 'root',
