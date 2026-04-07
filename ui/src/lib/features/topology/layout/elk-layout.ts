@@ -104,13 +104,11 @@ function buildElkGraph(
 			// Box children: grid packing by size (default for most views)
 			const childLayoutOptions: Record<string, string> = useLayeredChildren
 				? {
-						'elk.algorithm': 'layered',
-						'elk.direction': 'RIGHT',
-						'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-						'elk.layered.spacing.nodeNodeBetweenLayers': '10',
-						'elk.spacing.nodeNode': '10',
+						// With INCLUDE_CHILDREN, the root layered algorithm handles child
+						// placement and crossing minimization — container just sets padding
 						'elk.padding': padding,
-						'elk.nodeSize.constraints': 'MINIMUM_SIZE'
+						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+						'elk.spacing.nodeNode': '10'
 					}
 				: {
 						'elk.algorithm': 'box',
@@ -475,9 +473,18 @@ function buildElkGraph(
 		.filter(([id]) => !parentContainerMap.has(id))
 		.map(([, node]) => node);
 
+	// For L2 Physical, use INCLUDE_CHILDREN so ELK can optimize crossing
+	// minimization across container boundaries (port-to-port edges)
+	const rootOptions = useLayeredChildren
+		? {
+				...ROOT_LAYOUT_OPTIONS,
+				'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+			}
+		: ROOT_LAYOUT_OPTIONS;
+
 	const graph: ElkNode = {
 		id: 'root',
-		layoutOptions: ROOT_LAYOUT_OPTIONS,
+		layoutOptions: rootOptions,
 		children: rootContainers,
 		edges
 	};
