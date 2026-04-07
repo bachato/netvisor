@@ -16,10 +16,28 @@
 			if (!context?.topology || !('vm_service_id' in edge)) return '';
 			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
 			if (!vmService) return '';
-			return serviceDefinitions.getName(vmService.service_definition) ?? '';
+			// Find the hypervisor host (the host running the VM service)
+			const hypervisorHost = context.topology.hosts.find((h) => h.id === vmService.host_id);
+			const parts: string[] = [];
+			const defName = serviceDefinitions.getName(vmService.service_definition);
+			if (defName && defName !== vmService.name) parts.push(defName);
+			if (hypervisorHost) parts.push(`on ${hypervisorHost.name}`);
+			return parts.join(' · ');
 		},
-		getIcon: () => edgeTypes.getIconComponent('HostVirtualization'),
-		getIconColor: () => edgeTypes.getColorHelper('HostVirtualization').icon
+		getIcon: (edge, context) => {
+			if (!context?.topology || !('vm_service_id' in edge))
+				return edgeTypes.getIconComponent('HostVirtualization');
+			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
+			if (vmService) return serviceDefinitions.getIconComponent(vmService.service_definition);
+			return edgeTypes.getIconComponent('HostVirtualization');
+		},
+		getIconColor: (edge, context) => {
+			if (!context?.topology || !('vm_service_id' in edge))
+				return edgeTypes.getColorHelper('HostVirtualization').icon;
+			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
+			if (vmService) return serviceDefinitions.getColorHelper(vmService.service_definition).icon;
+			return edgeTypes.getColorHelper('HostVirtualization').icon;
+		}
 	};
 
 	export interface EdgeDisplayContext {

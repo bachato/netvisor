@@ -11,6 +11,7 @@
 	import { DependencyDisplay } from '$lib/shared/components/forms/selection/display/DependencyDisplay.svelte';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
+	import type { Dependency } from '$lib/features/dependencies/types/base';
 
 	let { edges }: { edges: TopologyEdge[] } = $props();
 
@@ -21,7 +22,7 @@
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
 	);
 
-	// Group edges by type
+	// Group edges by type, deduplicating dependency edges by group_id
 	let edgesByType = $derived.by(() => {
 		const groups = new Map<string, TopologyEdge[]>();
 		for (const edge of edges) {
@@ -35,6 +36,22 @@
 		}
 		return groups;
 	});
+
+	// For dependency edges, deduplicate by group_id and resolve to Dependency objects
+	function getUniqueDependencies(typeEdges: TopologyEdge[]): Dependency[] {
+		if (!topology) return [];
+		const seen = new Set<string>();
+		const deps: Dependency[] = [];
+		for (const edge of typeEdges) {
+			if (!('group_id' in edge)) continue;
+			const groupId = edge.group_id as string;
+			if (seen.has(groupId)) continue;
+			seen.add(groupId);
+			const dep = topology.dependencies.find((d) => d.id === groupId);
+			if (dep) deps.push(dep);
+		}
+		return deps;
+	}
 
 	function getDisplayComponent(edgeType: string) {
 		switch (edgeType) {
@@ -76,27 +93,32 @@
 				</span>
 			{/if}
 
-			{#each typeEdges as edge (edge.id)}
-				<div class="card card-static">
-					{#if isDependencyEdge(edgeType) && topology}
-						{@const dependency =
-							'group_id' in edge ? topology.dependencies.find((d) => d.id === edge.group_id) : null}
-						{#if dependency}
-							<EntityDisplayWrapper
-								item={dependency}
-								context={{}}
-								displayComponent={DependencyDisplay}
-							/>
-						{/if}
-					{:else if displayComponent}
-						<EntityDisplayWrapper item={edge} context={{ topology }} {displayComponent} />
-					{:else}
+			{#if isDependencyEdge(edgeType)}
+				{@const uniqueDeps = getUniqueDependencies(typeEdges)}
+				{#each uniqueDeps as dep (dep.id)}
+					<div class="card card-static">
+						<EntityDisplayWrapper item={dep} context={{}} displayComponent={DependencyDisplay} />
+					</div>
+				{:else}
+					<div class="card card-static">
 						<div class="px-2 py-1">
 							<span class="text-secondary text-sm">{typeName}</span>
 						</div>
-					{/if}
-				</div>
-			{/each}
+					</div>
+				{/each}
+			{:else}
+				{#each typeEdges as edge (edge.id)}
+					<div class="card card-static">
+						{#if displayComponent}
+							<EntityDisplayWrapper item={edge} context={{ topology }} {displayComponent} />
+						{:else}
+							<div class="px-2 py-1">
+								<span class="text-secondary text-sm">{typeName}</span>
+							</div>
+						{/if}
+					</div>
+				{/each}
+			{/if}
 		{/each}
 	</div>
 </div>
