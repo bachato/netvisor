@@ -280,8 +280,7 @@ impl TopologyView {
             Self::Infrastructure => match edge_type {
                 HostVirtualization => active(true, Hidden, Dashed, Always, true),
                 ServiceVirtualization => active(true, Hidden, Dashed, Always, true),
-                Interface => active(false, Hidden, Dashed, WhenVisible, false),
-                PhysicalLink | RequestPath | HubAndSpoke => EdgeViewConfig::Disabled,
+                Interface | PhysicalLink | RequestPath | HubAndSpoke => EdgeViewConfig::Disabled,
             },
             Self::Application => match edge_type {
                 RequestPath => active(true, Visible, Solid, WhenVisible, false),

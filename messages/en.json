@@ -1164,7 +1164,7 @@
 	"topology_locked": "This topology is locked",
 	"topology_lockedInfoBody": "Data can't be refreshed while this topology is locked. You can still move and resize nodes and edges, but you won't be able to make any other changes. Click the badge above to unlock and enable data refresh.",
 	"topology_lockedTimestamp": "Locked: {timestamp} by {user}",
-	"topology_multiSelectCreateGroupRebuildWarning": "Creating a group will rebuild the topology.",
+	"topology_multiSelectCreateGroupRebuildWarning": "Creating a dependency will rebuild the topology.",
 	"topology_multiSelectGroupName": "Group name",
 	"topology_multiSelectLockedHint": "Unlock this topology to make changes.",
 	"topology_multiSelectNoBindings": "(no bindings)",

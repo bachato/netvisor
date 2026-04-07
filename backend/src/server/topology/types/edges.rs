@@ -227,12 +227,12 @@ impl TypeMetadataProvider for EdgeType {
 
     fn metadata(&self) -> serde_json::Value {
         let edge_style: &str = match &self {
-            EdgeType::RequestPath { .. } => EdgeStyle::SmoothStep.into(),
-            EdgeType::HubAndSpoke { .. } => EdgeStyle::SmoothStep.into(),
-            EdgeType::Interface { .. } => EdgeStyle::SmoothStep.into(),
-            EdgeType::HostVirtualization { .. } => EdgeStyle::Straight.into(),
-            EdgeType::ServiceVirtualization { .. } => EdgeStyle::SmoothStep.into(),
-            EdgeType::PhysicalLink { .. } => EdgeStyle::SmoothStep.into(),
+            EdgeType::RequestPath { .. } => EdgeStyle::Bezier.into(),
+            EdgeType::HubAndSpoke { .. } => EdgeStyle::Bezier.into(),
+            EdgeType::Interface { .. } => EdgeStyle::Bezier.into(),
+            EdgeType::HostVirtualization { .. } => EdgeStyle::Bezier.into(),
+            EdgeType::ServiceVirtualization { .. } => EdgeStyle::Bezier.into(),
+            EdgeType::PhysicalLink { .. } => EdgeStyle::Bezier.into(),
         };
 
         let has_start_marker = false;

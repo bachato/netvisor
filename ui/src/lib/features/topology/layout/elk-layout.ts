@@ -408,9 +408,9 @@ function buildElkGraph(
 			container.layoutOptions['elk.layered.crossingMinimization.strategy'] = 'LAYER_SWEEP';
 			container.layoutOptions['elk.layered.layering.strategy'] = 'NETWORK_SIMPLEX';
 			container.layoutOptions['elk.spacing.nodeNode'] = '15';
-			container.layoutOptions['elk.layered.spacing.nodeNodeBetweenLayers'] = '15';
+			container.layoutOptions['elk.layered.spacing.nodeNodeBetweenLayers'] = '10';
 			container.layoutOptions['elk.layered.spacing.edgeNodeBetweenLayers'] = '5';
-			container.layoutOptions['elk.layered.compaction.postCompaction.strategy'] = 'LEFT_RIGHT_CONSTRAINT_LOCKING';
+			container.layoutOptions['elk.layered.compaction.postCompaction.strategy'] = 'EDGE_LENGTH';
 			delete container.layoutOptions['elk.box.packingMode'];
 		}
 	}

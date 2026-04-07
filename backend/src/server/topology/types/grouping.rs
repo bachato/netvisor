@@ -43,9 +43,7 @@ impl ContainerRule {
     pub fn applicable_views(&self) -> &'static [TopologyView] {
         match self {
             ContainerRule::BySubnet => &[TopologyView::L3Logical],
-            ContainerRule::MergeDockerBridges => {
-                &[TopologyView::L3Logical, TopologyView::Infrastructure]
-            }
+            ContainerRule::MergeDockerBridges => &[TopologyView::L3Logical],
             ContainerRule::ByApplicationGroup { .. } => &[TopologyView::Application],
         }
     }
