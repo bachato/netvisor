@@ -203,6 +203,7 @@ impl ViewBuilder for InfrastructureBuilder {
                         compose_project,
                         native_vlan_id: None,
                         is_trunk_port: false,
+                        oper_status: None,
                     })
                 } else {
                     None

@@ -22,6 +22,8 @@ pub struct ElementMatchData {
     pub native_vlan_id: Option<u16>,
     /// Whether this port has tagged VLANs (for ByTrunkPort grouping).
     pub is_trunk_port: bool,
+    /// Port operational status string (for ByPortOpStatus grouping).
+    pub oper_status: Option<String>,
 }
 
 /// Apply element rules to nodes, creating nested subcontainers within each parent container.
@@ -323,6 +325,65 @@ pub fn apply_element_rules_with_titles(
                     }
                 }
             }
+            ElementRule::ByPortOpStatus => {
+                // Groups ports by operational status into per-status subcontainers.
+                for (parent_id, element_ids) in &elements_by_container {
+                    let unclaimed: Vec<Uuid> = element_ids
+                        .iter()
+                        .filter(|id| !claimed.contains(id))
+                        .copied()
+                        .collect();
+                    if unclaimed.is_empty() {
+                        continue;
+                    }
+
+                    // Group by oper_status
+                    let mut by_status: HashMap<String, Vec<Uuid>> = HashMap::new();
+                    for id in &unclaimed {
+                        if let Some(status) =
+                            match_data.get(id).and_then(|d| d.oper_status.clone())
+                        {
+                            by_status.entry(status).or_default().push(*id);
+                        }
+                    }
+
+                    for (status, ids) in by_status {
+                        let group_key = format!("{parent_id}:{rule_id}:status:{status}");
+                        let group_id = Uuid::new_v5(&Uuid::NAMESPACE_OID, group_key.as_bytes());
+
+                        // Color per status for the filled circle icon
+                        let color = match status.as_str() {
+                            "Up" => "Green",
+                            "Down" | "LowerLayerDown" => "Red",
+                            "Testing" => "Amber",
+                            "Dormant" => "Blue",
+                            _ => "Gray",
+                        };
+
+                        new_containers.push(Node {
+                            id: group_id,
+                            node_type: NodeType::Container {
+                                container_type: ContainerType::PortOpStatus,
+                                parent_container_id: Some(*parent_id),
+                                layer_hint: None,
+                                icon: None,
+                                color: Some(color.to_string()),
+                                associated_service_definition: None,
+                            },
+                            position: Default::default(),
+                            size: Default::default(),
+                            header: Some(status),
+                            element_rule_id: Some(*rule_id),
+                            will_accept_edges: rule.will_accept_edges(),
+                        });
+
+                        for id in &ids {
+                            reassignments.insert(*id, group_id);
+                        }
+                        claimed.extend(ids);
+                    }
+                }
+            }
             ElementRule::ByTag { tag_ids, title } => {
                 for (parent_id, element_ids) in &elements_by_container {
                     let matched_ids: HashSet<Uuid> = element_ids
@@ -408,6 +469,7 @@ mod tests {
             compose_project: compose_project.map(String::from),
             native_vlan_id: None,
             is_trunk_port: false,
+            oper_status: None,
         }
     }
 

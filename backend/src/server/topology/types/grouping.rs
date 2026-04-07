@@ -131,6 +131,8 @@ pub enum ElementRule {
     ByTrunkPort,
     /// Groups access ports by their native VLAN ID into per-VLAN subcontainers.
     ByVLAN,
+    /// Groups ports by operational status (Up, Down, etc.) into per-status subcontainers.
+    ByPortOpStatus,
 }
 
 impl ElementRule {
@@ -142,7 +144,10 @@ impl ElementRule {
 
     /// Whether this rule is locked (not user-removable) when applicable.
     pub fn is_locked(&self) -> bool {
-        matches!(self, ElementRule::ByTrunkPort | ElementRule::ByVLAN)
+        matches!(
+            self,
+            ElementRule::ByTrunkPort | ElementRule::ByVLAN | ElementRule::ByPortOpStatus
+        )
     }
 
     pub fn applicable_views(&self) -> &'static [TopologyView] {
@@ -160,6 +165,7 @@ impl ElementRule {
             ElementRule::ByStack => &[TopologyView::L3Logical, TopologyView::Application],
             ElementRule::ByTrunkPort => &[TopologyView::L2Physical],
             ElementRule::ByVLAN => &[TopologyView::L2Physical],
+            ElementRule::ByPortOpStatus => &[TopologyView::L2Physical],
         }
     }
 }
@@ -179,6 +185,7 @@ impl EntityMetadataProvider for ElementRule {
             ElementRule::ByStack => Concept::Virtualization.color(),
             ElementRule::ByTrunkPort => Color::Amber,
             ElementRule::ByVLAN => Color::Teal,
+            ElementRule::ByPortOpStatus => Color::Gray,
         }
     }
 
@@ -190,6 +197,7 @@ impl EntityMetadataProvider for ElementRule {
             ElementRule::ByStack => Concept::Virtualization.icon(),
             ElementRule::ByTrunkPort => Icon::Network,
             ElementRule::ByVLAN => Icon::Network,
+            ElementRule::ByPortOpStatus => Icon::Circle,
         }
     }
 }
@@ -203,6 +211,7 @@ impl TypeMetadataProvider for ElementRule {
             ElementRule::ByStack => "Docker Stack",
             ElementRule::ByTrunkPort => "Trunk Ports",
             ElementRule::ByVLAN => "VLAN",
+            ElementRule::ByPortOpStatus => "Port Status",
         }
     }
 
@@ -216,6 +225,7 @@ impl TypeMetadataProvider for ElementRule {
             ElementRule::ByStack => "Group by Docker Compose project",
             ElementRule::ByTrunkPort => "Group trunk ports (ports carrying multiple VLANs)",
             ElementRule::ByVLAN => "Group access ports by native VLAN ID",
+            ElementRule::ByPortOpStatus => "Group ports by operational status",
         }
     }
 

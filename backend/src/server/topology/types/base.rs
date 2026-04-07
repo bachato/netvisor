@@ -291,6 +291,7 @@ fn default_element_rules() -> Vec<GraphRule<ElementRule>> {
     vec![
         GraphRule::new(ElementRule::ByTrunkPort),
         GraphRule::new(ElementRule::ByVLAN),
+        GraphRule::new(ElementRule::ByPortOpStatus),
         GraphRule::new(ElementRule::ByServiceCategory {
             categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
             title: Some("Network Services".into()),

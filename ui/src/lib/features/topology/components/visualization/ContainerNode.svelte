@@ -117,6 +117,7 @@
 	let isSubcontainer = $derived(containerMeta.is_subcontainer);
 	let isCollapsible = $derived(containerMeta.is_collapsible);
 	let hasBorder = $derived(containerMeta.has_border);
+	let fillIcon = $derived(containerMeta.fill_icon ?? false);
 
 	// Resolve container data
 	let resolved = $derived(
@@ -310,7 +311,10 @@
 
 			{#if iconComponent}
 				{@const IconComp = iconComponent}
-				<IconComp class={`h-5 w-5 ${colorHelper.icon}`} />
+				<IconComp
+					class={`h-5 w-5 ${colorHelper.icon}`}
+					fill={fillIcon ? 'currentColor' : 'none'}
+				/>
 			{/if}
 
 			<span class="text-s text-secondary whitespace-nowrap font-medium">

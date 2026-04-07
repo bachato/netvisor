@@ -93,6 +93,7 @@ pub enum ContainerType {
     Stack,
     TrunkPort,
     VLAN,
+    PortOpStatus,
 }
 
 impl HasId for ContainerType {
@@ -116,6 +117,7 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::Stack => Concept::Virtualization.color(),
             ContainerType::TrunkPort => Color::Amber,
             ContainerType::VLAN => Color::Teal,
+            ContainerType::PortOpStatus => Color::Gray,
         }
     }
 
@@ -133,6 +135,7 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::Stack => Concept::Virtualization.icon(),
             ContainerType::TrunkPort => Icon::Network,
             ContainerType::VLAN => Icon::Network,
+            ContainerType::PortOpStatus => Icon::Circle,
         }
     }
 }
@@ -152,6 +155,7 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Stack => "Docker stack",
             ContainerType::TrunkPort => "Trunk ports",
             ContainerType::VLAN => "VLAN",
+            ContainerType::PortOpStatus => "Port status",
         }
     }
 
@@ -169,6 +173,7 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Stack => "Elements grouped by Docker Compose project",
             ContainerType::TrunkPort => "Trunk ports carrying multiple VLANs",
             ContainerType::VLAN => "Access ports grouped by native VLAN",
+            ContainerType::PortOpStatus => "Ports grouped by operational status",
         }
     }
 
@@ -185,7 +190,8 @@ impl TypeMetadataProvider for ContainerType {
             | ContainerType::BareMetal
             | ContainerType::Stack
             | ContainerType::TrunkPort
-            | ContainerType::VLAN => TitleStyle::Inline,
+            | ContainerType::VLAN
+            | ContainerType::PortOpStatus => TitleStyle::Inline,
         };
         let is_subcontainer = matches!(
             self,
@@ -196,6 +202,7 @@ impl TypeMetadataProvider for ContainerType {
                 | ContainerType::Stack
                 | ContainerType::TrunkPort
                 | ContainerType::VLAN
+                | ContainerType::PortOpStatus
         );
         let (padding_top, padding_side) = match self {
             ContainerType::Subnet
@@ -209,7 +216,8 @@ impl TypeMetadataProvider for ContainerType {
             | ContainerType::BareMetal
             | ContainerType::Stack
             | ContainerType::TrunkPort
-            | ContainerType::VLAN => (50, 25),
+            | ContainerType::VLAN
+            | ContainerType::PortOpStatus => (50, 25),
         };
         let (collapsed_width, collapsed_height) = match self {
             ContainerType::Subnet
@@ -219,11 +227,13 @@ impl TypeMetadataProvider for ContainerType {
             | ContainerType::Host => (200, 80),
             _ => (250, 40),
         };
+        let fill_icon = matches!(self, ContainerType::PortOpStatus);
         serde_json::json!({
             "title_style": title_style,
             "is_subcontainer": is_subcontainer,
             "is_collapsible": true,
             "has_border": true,
+            "fill_icon": fill_icon,
             "padding": { "top": padding_top, "left": padding_side, "bottom": padding_side, "right": padding_side },
             "collapsed_size": { "width": collapsed_width, "height": collapsed_height },
         })
