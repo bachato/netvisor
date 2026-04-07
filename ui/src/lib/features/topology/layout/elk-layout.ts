@@ -105,8 +105,7 @@ function buildElkGraph(
 			const childLayoutOptions: Record<string, string> = useLayeredChildren
 				? {
 						// With INCLUDE_CHILDREN, the root layered algorithm handles child
-						// placement and crossing minimization. Partitioning on root splits
-						// ports into columns via elk.partitioning.partition on each port.
+						// placement and crossing minimization — container just sets padding
 						'elk.padding': padding,
 						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
 						'elk.spacing.nodeNode': '10'
@@ -173,8 +172,6 @@ function buildElkGraph(
 	// Add element nodes as children of their containers (skip collapsed)
 	// For L2 Physical: sort by oper_status (Up first) and assign layer IDs
 	// to spread ports across multiple columns within each container
-	const MAX_PORTS_PER_LAYER = 8;
-
 	// Collect elements per container for sorting
 	const elementsPerContainer = new Map<string, { node: TopologyNode; size: { x: number; y: number } }[]>();
 	for (const node of input.nodes) {
@@ -208,23 +205,19 @@ function buildElkGraph(
 			};
 			elements.sort((a, b) => statusOrder(a.node) - statusOrder(b.node));
 
-			// Assign partition IDs to spread ports across multiple columns.
-			// Ports are already sorted by status (Up first), so partitions
-			// will naturally group Up ports to the left, Down ports to the right.
-			const numPartitions = Math.max(1, Math.ceil(elements.length / MAX_PORTS_PER_LAYER));
-			elements.forEach(({ node, size }, i) => {
-				const partition = i % numPartitions;
+			// COFFMAN_GRAHAM + layerBound handles multi-column splitting.
+			// considerModelOrder preserves the status sort order where possible.
+			for (const { node, size } of elements) {
 				parent.children!.push({
 					id: node.id,
 					width: size.x,
 					height: size.y,
 					layoutOptions: {
 						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.nodeSize.minimum': `(${size.x},${size.y})`,
-						'elk.partitioning.partition': `${partition}`
+						'elk.nodeSize.minimum': `(${size.x},${size.y})`
 					}
 				});
-			});
+			}
 		} else {
 			for (const { node, size } of elements) {
 				parent.children!.push({
@@ -528,7 +521,9 @@ function buildElkGraph(
 				...ROOT_LAYOUT_OPTIONS,
 				'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
 				'elk.direction': 'RIGHT',
-				'elk.partitioning.activate': 'true'
+				'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
+				'elk.layered.layering.coffmanGraham.layerBound': '8',
+				'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES'
 			}
 		: ROOT_LAYOUT_OPTIONS;
 
