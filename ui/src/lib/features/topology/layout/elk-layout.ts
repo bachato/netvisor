@@ -403,12 +403,13 @@ function buildElkGraph(
 		if (container?.layoutOptions) {
 			container.layoutOptions['elk.algorithm'] = 'layered';
 			container.layoutOptions['elk.direction'] = 'DOWN';
+			container.layoutOptions['elk.hierarchyHandling'] = 'SEPARATE_CHILDREN';
 			container.layoutOptions['elk.layered.nodePlacement.strategy'] = 'NETWORK_SIMPLEX';
 			container.layoutOptions['elk.layered.crossingMinimization.strategy'] = 'LAYER_SWEEP';
 			container.layoutOptions['elk.layered.layering.strategy'] = 'NETWORK_SIMPLEX';
 			container.layoutOptions['elk.spacing.nodeNode'] = '15';
-			container.layoutOptions['elk.layered.spacing.nodeNodeBetweenLayers'] = '20';
-			container.layoutOptions['elk.layered.spacing.edgeNodeBetweenLayers'] = '10';
+			container.layoutOptions['elk.layered.spacing.nodeNodeBetweenLayers'] = '15';
+			container.layoutOptions['elk.layered.spacing.edgeNodeBetweenLayers'] = '5';
 			container.layoutOptions['elk.layered.compaction.postCompaction.strategy'] = 'LEFT_RIGHT_CONSTRAINT_LOCKING';
 			delete container.layoutOptions['elk.box.packingMode'];
 		}
