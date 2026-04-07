@@ -113,7 +113,7 @@ function buildElkGraph(
 						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
 						'elk.spacing.nodeNode': '8',
 						'elk.layered.spacing.nodeNodeBetweenLayers': '15',
-						'elk.aspectRatio': '3.0'
+						'elk.aspectRatio': '0.5'
 					}
 				: {
 						'elk.algorithm': 'box',
