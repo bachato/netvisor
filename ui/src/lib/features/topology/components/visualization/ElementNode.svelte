@@ -194,12 +194,34 @@
 						} as ElementRenderData;
 					}
 
-					// Port elements: minimal display — just port name
+					// Port elements: show port name + status/MAC info
 					if (elementType === 'Port') {
+						const ifEntryId = 'if_entry_id' in (data as Record<string, unknown>)
+							? ((data as Record<string, unknown>).if_entry_id as string)
+							: undefined;
+						const ifEntry = ifEntryId
+							? topology?.if_entries.find((e) => e.id === ifEntryId)
+							: undefined;
+
+						// Build compact status line: "Up · 1 Gbps" or "Down"
+						const parts: string[] = [];
+						if (ifEntry) {
+							parts.push(ifEntry.oper_status === 'Up' ? '● Up' : ifEntry.oper_status === 'Down' ? '○ Down' : ifEntry.oper_status);
+							if (ifEntry.speed_bps) {
+								const bps = ifEntry.speed_bps;
+								if (bps >= 1_000_000_000) parts.push(`${(bps / 1_000_000_000).toFixed(0)}G`);
+								else if (bps >= 1_000_000) parts.push(`${(bps / 1_000_000).toFixed(0)}M`);
+								else parts.push(`${bps} bps`);
+							}
+						}
+						const footerParts: string[] = [];
+						if (parts.length > 0) footerParts.push(parts.join(' · '));
+						if (ifEntry?.mac_address) footerParts.push(ifEntry.mac_address);
+
 						return {
 							elementType,
 							headerText: (data as TopologyNode).header ?? null,
-							footerText: null,
+							footerText: footerParts.join(' · ') || null,
 							bodyText: null,
 							showServices: false,
 							isVirtualized: false,

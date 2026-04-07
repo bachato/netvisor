@@ -39,7 +39,7 @@
 	import CustomEdge from './CustomEdge.svelte';
 	import type { TopologyEdge, Topology } from '../../types/base';
 	import { resolveElementNode } from '../../resolvers';
-	import { ElkLayoutEngine, ForceCompoundLayoutEngine } from '../../layout/engine';
+	import { ElkLayoutEngine } from '../../layout/engine';
 	import {
 		collapsedContainers,
 		collapseAll,
@@ -65,12 +65,7 @@
 	import { writable as svelteWritable } from 'svelte/store';
 	import { themeStore } from '$lib/shared/stores/theme.svelte';
 
-	const elkLayoutEngine = new ElkLayoutEngine();
-	const forceCompoundLayoutEngine = new ForceCompoundLayoutEngine();
-
-	function getLayoutEngine(view: string) {
-		return view === 'L2Physical' ? forceCompoundLayoutEngine : elkLayoutEngine;
-	}
+	const layoutEngine = new ElkLayoutEngine();
 
 	// Props
 	export let topology: Topology;
@@ -596,7 +591,7 @@
 					} else {
 						// Standard ELK layout for expanded or partially collapsed views
 						const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();
-						const elkResult = await getLayoutEngine(currentView).compute({
+						const elkResult = await layoutEngine.compute({
 							nodes: visibleNodes,
 							edges: elevatedEdges,
 							topology: topology,

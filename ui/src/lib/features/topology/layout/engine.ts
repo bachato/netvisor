@@ -1,7 +1,6 @@
 import type { TopologyNode, TopologyEdge, Topology } from '../types/base';
 import type { EdgeHandles } from './elk-layout';
 import { computeElkLayout } from './elk-layout';
-export { ForceCompoundLayoutEngine } from './force-compound-layout';
 
 export interface LayoutInput {
 	nodes: TopologyNode[];

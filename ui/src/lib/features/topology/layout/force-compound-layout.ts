@@ -165,14 +165,21 @@ export class ForceCompoundLayoutEngine implements LayoutEngine {
 					target: nodeById.get(l.target)!
 				}));
 
+			// Scale link distance by the average container size for natural spacing
+			const avgSize =
+				simNodes.reduce((s, n) => s + Math.max(n.width, n.height), 0) / simNodes.length;
+			const linkDist = Math.max(250, avgSize * 1.5);
+
 			const simulation = forceSimulation<SimNode>(simNodes)
 				.force(
 					'link',
-					forceLink<SimNode, SimulationLinkDatum<SimNode>>(simLinks).distance(200).strength(0.5)
+					forceLink<SimNode, SimulationLinkDatum<SimNode>>(simLinks)
+						.distance(linkDist)
+						.strength(0.4)
 				)
-				.force('charge', forceManyBody().strength(-600))
+				.force('charge', forceManyBody().strength(-1500))
 				.force('center', forceCenter(0, 0))
-				.force('collide', forceRectCollide(PADDING))
+				.force('collide', forceRectCollide(PADDING * 2))
 				.stop();
 
 			simulation.tick(300);
