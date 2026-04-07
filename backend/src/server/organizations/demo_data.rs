@@ -2556,6 +2556,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
 
@@ -2589,6 +2591,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2628,6 +2632,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
     }
@@ -2671,6 +2677,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2720,6 +2728,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2759,6 +2769,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
     }
@@ -2802,6 +2814,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2851,6 +2865,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2909,6 +2925,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2949,6 +2967,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2989,6 +3009,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3029,6 +3051,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3069,6 +3093,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3109,6 +3135,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3149,6 +3177,8 @@ fn generate_if_entries(
                     cdp_platform: None,
                     cdp_address: None,
                     fdb_macs: None,
+                    native_vlan_id: None,
+                    vlan_ids: None,
                 },
             });
         }
@@ -3193,6 +3223,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3242,6 +3274,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3291,6 +3325,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3340,6 +3376,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3389,6 +3427,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3445,6 +3485,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3485,6 +3527,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3525,6 +3569,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3565,6 +3611,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3605,6 +3653,8 @@ fn generate_if_entries(
                     cdp_platform: None,
                     cdp_address: None,
                     fdb_macs: None,
+                    native_vlan_id: None,
+                    vlan_ids: None,
                 },
             });
         }

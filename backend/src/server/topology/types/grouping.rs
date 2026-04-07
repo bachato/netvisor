@@ -120,6 +120,11 @@ pub enum ElementRule {
     },
     ByVirtualizer,
     ByStack,
+    /// Groups trunk ports (ports with tagged VLANs) into a "Trunk Ports" subcontainer.
+    /// Higher priority than ByVLAN — prevents trunk ports from being grouped by VLAN.
+    ByTrunkPort,
+    /// Groups access ports by their native VLAN ID into per-VLAN subcontainers.
+    ByVLAN,
 }
 
 impl ElementRule {
@@ -127,6 +132,11 @@ impl ElementRule {
     /// should be elevated to target the subcontainer itself.
     pub fn will_accept_edges(&self) -> bool {
         matches!(self, ElementRule::ByStack | ElementRule::ByVirtualizer)
+    }
+
+    /// Whether this rule is locked (not user-removable) when applicable.
+    pub fn is_locked(&self) -> bool {
+        matches!(self, ElementRule::ByTrunkPort)
     }
 
     pub fn applicable_views(&self) -> &'static [TopologyView] {
@@ -142,6 +152,8 @@ impl ElementRule {
             ],
             ElementRule::ByVirtualizer => &[TopologyView::Infrastructure],
             ElementRule::ByStack => &[TopologyView::L3Logical, TopologyView::Application],
+            ElementRule::ByTrunkPort => &[TopologyView::L2Physical],
+            ElementRule::ByVLAN => &[TopologyView::L2Physical],
         }
     }
 }
@@ -159,6 +171,8 @@ impl EntityMetadataProvider for ElementRule {
             ElementRule::ByTag { .. } => Color::Orange,
             ElementRule::ByVirtualizer => Concept::Infrastructure.color(),
             ElementRule::ByStack => Concept::Virtualization.color(),
+            ElementRule::ByTrunkPort => Color::Amber,
+            ElementRule::ByVLAN => Color::Teal,
         }
     }
 
@@ -168,6 +182,8 @@ impl EntityMetadataProvider for ElementRule {
             ElementRule::ByTag { .. } => Icon::Tag,
             ElementRule::ByVirtualizer => Concept::Infrastructure.icon(),
             ElementRule::ByStack => Concept::Virtualization.icon(),
+            ElementRule::ByTrunkPort => Icon::Network,
+            ElementRule::ByVLAN => Icon::Network,
         }
     }
 }
@@ -179,6 +195,8 @@ impl TypeMetadataProvider for ElementRule {
             ElementRule::ByTag { .. } => "Tag",
             ElementRule::ByVirtualizer => "Virtualizer",
             ElementRule::ByStack => "Docker Stack",
+            ElementRule::ByTrunkPort => "Trunk Ports",
+            ElementRule::ByVLAN => "VLAN",
         }
     }
 
@@ -190,12 +208,15 @@ impl TypeMetadataProvider for ElementRule {
             ElementRule::ByTag { .. } => "Group nodes by tag within a container",
             ElementRule::ByVirtualizer => "Group hosts by their virtualizer",
             ElementRule::ByStack => "Group by Docker Compose project",
+            ElementRule::ByTrunkPort => "Group trunk ports (ports carrying multiple VLANs)",
+            ElementRule::ByVLAN => "Group access ports by native VLAN ID",
         }
     }
 
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
-            "is_user_editable": true,
+            "is_user_editable": !self.is_locked(),
+            "is_locked": self.is_locked(),
             "views": self.applicable_views(),
             "will_accept_edges": self.will_accept_edges(),
         })

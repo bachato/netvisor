@@ -168,6 +168,14 @@ pub struct IfEntryBase {
     /// Multi-MAC ports indicate uplinks where LLDP/CDP is the better source.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fdb_macs: Option<Vec<String>>,
+
+    /// Native/untagged VLAN ID on this port (from Q-BRIDGE dot1qPvid)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_vlan_id: Option<u16>,
+
+    /// Tagged VLAN IDs on this port (from Q-BRIDGE dot1qVlanCurrentEgressPorts)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vlan_ids: Option<Vec<u16>>,
 }
 
 impl Default for IfEntryBase {
@@ -197,6 +205,8 @@ impl Default for IfEntryBase {
             cdp_platform: None,
             cdp_address: None,
             fdb_macs: None,
+            native_vlan_id: None,
+            vlan_ids: None,
         }
     }
 }

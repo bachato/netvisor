@@ -45,6 +45,8 @@ pub struct IfEntryCsvRow {
     pub cdp_platform: Option<String>,
     pub cdp_address: Option<String>,
     pub fdb_macs: Option<String>,
+    pub native_vlan_id: Option<u16>,
+    pub vlan_ids: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -102,6 +104,8 @@ impl Storable for IfEntry {
                     cdp_platform,
                     cdp_address,
                     fdb_macs,
+                    native_vlan_id,
+                    vlan_ids,
                 },
         } = self.clone();
 
@@ -139,6 +143,8 @@ impl Storable for IfEntry {
             "cdp_platform",
             "cdp_address",
             "fdb_macs",
+            "native_vlan_id",
+            "vlan_ids",
             "created_at",
             "updated_at",
         ];
@@ -170,6 +176,8 @@ impl Storable for IfEntry {
             SqlValue::OptionalString(cdp_platform),
             SqlValue::OptionalIpAddr(cdp_address),
             SqlValue::OptionalFdbMacs(fdb_macs),
+            SqlValue::OptionalI64(native_vlan_id.map(|v| v as i64)),
+            SqlValue::OptionVecU16(vlan_ids),
             SqlValue::Timestamp(created_at),
             SqlValue::Timestamp(updated_at),
         ];
@@ -259,6 +267,16 @@ impl Storable for IfEntry {
                     .ok()
                     .flatten()
                     .and_then(|v| serde_json::from_value(v).ok()),
+                native_vlan_id: row
+                    .try_get::<Option<i16>, _>("native_vlan_id")
+                    .ok()
+                    .flatten()
+                    .map(|v| v as u16),
+                vlan_ids: row
+                    .try_get::<Option<serde_json::Value>, _>("vlan_ids")
+                    .ok()
+                    .flatten()
+                    .and_then(|v| serde_json::from_value(v).ok()),
             },
         })
     }
@@ -325,6 +343,12 @@ impl Entity for IfEntry {
                 .fdb_macs
                 .as_ref()
                 .and_then(|m| serde_json::to_string(m).ok()),
+            native_vlan_id: self.base.native_vlan_id,
+            vlan_ids: self
+                .base
+                .vlan_ids
+                .as_ref()
+                .and_then(|v| serde_json::to_string(v).ok()),
             created_at: self.created_at,
             updated_at: self.updated_at,
         }

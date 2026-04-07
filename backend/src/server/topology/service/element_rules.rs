@@ -18,6 +18,10 @@ pub struct ElementMatchData {
     pub virtualizer_host_id: Option<Uuid>,
     /// The Docker Compose project name (for ByStack grouping).
     pub compose_project: Option<String>,
+    /// Native VLAN ID on this port (for ByVLAN grouping).
+    pub native_vlan_id: Option<u16>,
+    /// Whether this port has tagged VLANs (for ByTrunkPort grouping).
+    pub is_trunk_port: bool,
 }
 
 /// Apply element rules to nodes, creating nested subcontainers within each parent container.
@@ -231,6 +235,94 @@ pub fn apply_element_rules_with_titles(
                     claimed.extend(matched_ids);
                 }
             }
+            ElementRule::ByTrunkPort => {
+                // Groups trunk ports (ports with tagged VLANs) into a "Trunk Ports" subcontainer.
+                for (parent_id, element_ids) in &elements_by_container {
+                    let matched_ids: Vec<Uuid> = element_ids
+                        .iter()
+                        .filter(|id| !claimed.contains(id))
+                        .filter(|id| match_data.get(id).is_some_and(|d| d.is_trunk_port))
+                        .copied()
+                        .collect();
+
+                    if matched_ids.is_empty() {
+                        continue;
+                    }
+
+                    let group_key = format!("{parent_id}:{rule_id}:trunk");
+                    let group_id = Uuid::new_v5(&Uuid::NAMESPACE_OID, group_key.as_bytes());
+
+                    new_containers.push(Node {
+                        id: group_id,
+                        node_type: NodeType::Container {
+                            container_type: ContainerType::TrunkPort,
+                            parent_container_id: Some(*parent_id),
+                            layer_hint: None,
+                            icon: None,
+                            color: None,
+                            associated_service_definition: None,
+                        },
+                        position: Default::default(),
+                        size: Default::default(),
+                        header: Some("Trunk Ports".to_string()),
+                        element_rule_id: Some(*rule_id),
+                        will_accept_edges: rule.will_accept_edges(),
+                    });
+
+                    for id in &matched_ids {
+                        reassignments.insert(*id, group_id);
+                    }
+                    claimed.extend(matched_ids);
+                }
+            }
+            ElementRule::ByVLAN => {
+                // Groups access ports by native VLAN ID into per-VLAN subcontainers.
+                for (parent_id, element_ids) in &elements_by_container {
+                    let unclaimed: Vec<Uuid> = element_ids
+                        .iter()
+                        .filter(|id| !claimed.contains(id))
+                        .copied()
+                        .collect();
+                    if unclaimed.is_empty() {
+                        continue;
+                    }
+
+                    // Group by native_vlan_id
+                    let mut by_vlan: HashMap<u16, Vec<Uuid>> = HashMap::new();
+                    for id in &unclaimed {
+                        if let Some(vlan_id) = match_data.get(id).and_then(|d| d.native_vlan_id) {
+                            by_vlan.entry(vlan_id).or_default().push(*id);
+                        }
+                    }
+
+                    for (vlan_id, ids) in by_vlan {
+                        let group_key = format!("{parent_id}:{rule_id}:vlan:{vlan_id}");
+                        let group_id = Uuid::new_v5(&Uuid::NAMESPACE_OID, group_key.as_bytes());
+
+                        new_containers.push(Node {
+                            id: group_id,
+                            node_type: NodeType::Container {
+                                container_type: ContainerType::VLAN,
+                                parent_container_id: Some(*parent_id),
+                                layer_hint: None,
+                                icon: None,
+                                color: None,
+                                associated_service_definition: None,
+                            },
+                            position: Default::default(),
+                            size: Default::default(),
+                            header: Some(format!("VLAN {vlan_id}")),
+                            element_rule_id: Some(*rule_id),
+                            will_accept_edges: rule.will_accept_edges(),
+                        });
+
+                        for id in &ids {
+                            reassignments.insert(*id, group_id);
+                        }
+                        claimed.extend(ids);
+                    }
+                }
+            }
             ElementRule::ByTag { tag_ids, title } => {
                 for (parent_id, element_ids) in &elements_by_container {
                     let matched_ids: HashSet<Uuid> = element_ids
@@ -314,6 +406,8 @@ mod tests {
             tag_ids: HashSet::new(),
             virtualizer_host_id: None,
             compose_project: compose_project.map(String::from),
+            native_vlan_id: None,
+            is_trunk_port: false,
         }
     }
 

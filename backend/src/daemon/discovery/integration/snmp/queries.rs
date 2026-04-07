@@ -15,10 +15,11 @@ use super::oids::{self, oid_to_vec, parse_oid};
 use super::session::{MAX_WALK_ENTRIES, SNMP_TIMEOUT, create_session};
 use super::types::{
     ArpEntry, BridgeFdbEntry, CdpNeighbor, DeviceInventory, IfTableEntry, IpAddrEntry,
-    LldpLocalInfo, LldpNeighbor, SystemInfo,
+    LldpLocalInfo, LldpNeighbor, PortVlanMembership, SystemInfo, VlanInfo,
 };
 use super::values::{
-    parse_lldp_mgmt_addr, value_to_i32, value_to_ip, value_to_mac, value_to_string, value_to_u64,
+    parse_lldp_mgmt_addr, parse_portlist_bitmap, value_to_i32, value_to_ip, value_to_mac,
+    value_to_string, value_to_u16, value_to_u64,
 };
 
 /// Query system MIB information from a device
@@ -913,16 +914,11 @@ pub async fn query_entity_physical(
     Ok(result)
 }
 
-/// Query bridge FDB (dot1dTpFdbTable) for MAC-to-port mappings.
-/// Also walks dot1dBasePortIfIndex to resolve bridge port numbers to ifIndex values.
-pub async fn query_bridge_fdb(
-    ip: IpAddr,
-    credential: &SnmpQueryCredential,
-    port: u16,
-) -> Result<Vec<BridgeFdbEntry>> {
-    let mut session = create_session(ip, credential, port).await?;
-
-    // Step 1: Walk dot1dBasePortIfIndex to build bridge_port → ifIndex map
+/// Walk dot1dBasePortIfIndex to build bridge_port → ifIndex mapping.
+/// Shared by query_bridge_fdb() and query_port_vlan_membership().
+async fn walk_bridge_port_mapping(
+    session: &mut Box<snmp2::AsyncSession>,
+) -> Result<HashMap<i32, i32>> {
     let port_oid_str = oids::bridge::DOT1D_BASE_PORT_IF_INDEX;
     let port_base_oid = parse_oid(port_oid_str)?;
     let port_base_parts: Vec<u64> = port_oid_str
@@ -943,7 +939,6 @@ pub async fn query_bridge_fdb(
         match timeout(SNMP_TIMEOUT, session.getnext(&current_oid)).await {
             Ok(Ok(mut response)) => {
                 if let Some((resp_oid, value)) = response.varbinds.next() {
-                    // EndOfMibView/NoSuchObject/NoSuchInstance = no more data
                     if matches!(
                         value,
                         Value::EndOfMibView | Value::NoSuchObject | Value::NoSuchInstance
@@ -976,6 +971,21 @@ pub async fn query_bridge_fdb(
             Ok(Err(_)) | Err(_) => break,
         }
     }
+
+    Ok(port_to_if_index)
+}
+
+/// Query bridge FDB (dot1dTpFdbTable) for MAC-to-port mappings.
+/// Also walks dot1dBasePortIfIndex to resolve bridge port numbers to ifIndex values.
+pub async fn query_bridge_fdb(
+    ip: IpAddr,
+    credential: &SnmpQueryCredential,
+    port: u16,
+) -> Result<Vec<BridgeFdbEntry>> {
+    let mut session = create_session(ip, credential, port).await?;
+
+    // Step 1: Walk dot1dBasePortIfIndex to build bridge_port → ifIndex map
+    let port_to_if_index = walk_bridge_port_mapping(&mut session).await?;
 
     // Step 2: Walk dot1dTpFdbTable columns
     struct FdbBuilder {
@@ -1164,4 +1174,374 @@ pub async fn query_lldp_local(
             Ok(None)
         }
     }
+}
+
+/// Query VLAN table for VLAN IDs and names.
+/// Tries Q-BRIDGE dot1qVlanStaticName first, falls back to Cisco VTP vtpVlanName.
+pub async fn query_vlan_table(
+    ip: IpAddr,
+    credential: &SnmpQueryCredential,
+    port: u16,
+) -> Result<Vec<VlanInfo>> {
+    let mut session = create_session(ip, credential, port).await?;
+    let mut vlans: Vec<VlanInfo> = Vec::new();
+
+    // Try Q-BRIDGE dot1qVlanStaticName first
+    let base_oid_str = oids::vlan::q_bridge::DOT1Q_VLAN_STATIC_NAME;
+    let base_oid = parse_oid(base_oid_str)?;
+    let base_parts: Vec<u64> = base_oid_str
+        .split('.')
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| s.parse().ok())
+        .collect();
+
+    let mut current_oid = base_oid.clone();
+    let mut count = 0;
+
+    loop {
+        if count >= MAX_WALK_ENTRIES {
+            break;
+        }
+
+        match timeout(SNMP_TIMEOUT, session.getnext(&current_oid)).await {
+            Ok(Ok(mut response)) => {
+                if let Some((resp_oid, value)) = response.varbinds.next() {
+                    if matches!(
+                        value,
+                        Value::EndOfMibView | Value::NoSuchObject | Value::NoSuchInstance
+                    ) {
+                        break;
+                    }
+
+                    let response_parts = oid_to_vec(&resp_oid);
+                    if response_parts.len() <= base_parts.len()
+                        || !response_parts.starts_with(&base_parts)
+                    {
+                        break;
+                    }
+
+                    // OID suffix is VLAN ID
+                    if let Some(&vlan_u64) = response_parts.last() {
+                        let vlan_id = vlan_u64 as u16;
+                        if let Some(name) = value_to_string(&value) {
+                            vlans.push(VlanInfo { vlan_id, name });
+                        }
+                    }
+
+                    current_oid = Oid::from(response_parts.as_slice())
+                        .map_err(|e| anyhow!("Invalid response OID: {:?}", e))?;
+                    count += 1;
+                } else {
+                    break;
+                }
+            }
+            Ok(Err(_)) | Err(_) => break,
+        }
+    }
+
+    // Fall back to Cisco VTP if Q-BRIDGE returned nothing
+    if vlans.is_empty() {
+        let vtp_oid_str = oids::vlan::cisco_vtp::VTP_VLAN_NAME;
+        let vtp_base_oid = parse_oid(vtp_oid_str)?;
+        let vtp_base_parts: Vec<u64> = vtp_oid_str
+            .split('.')
+            .filter(|s| !s.is_empty())
+            .filter_map(|s| s.parse().ok())
+            .collect();
+
+        let mut current_oid = vtp_base_oid.clone();
+        let mut count = 0;
+
+        loop {
+            if count >= MAX_WALK_ENTRIES {
+                break;
+            }
+
+            match timeout(SNMP_TIMEOUT, session.getnext(&current_oid)).await {
+                Ok(Ok(mut response)) => {
+                    if let Some((resp_oid, value)) = response.varbinds.next() {
+                        if matches!(
+                            value,
+                            Value::EndOfMibView | Value::NoSuchObject | Value::NoSuchInstance
+                        ) {
+                            break;
+                        }
+
+                        let response_parts = oid_to_vec(&resp_oid);
+                        if response_parts.len() <= vtp_base_parts.len()
+                            || !response_parts.starts_with(&vtp_base_parts)
+                        {
+                            break;
+                        }
+
+                        // VTP index is mgmtDomainIndex.vlanId — use last component as VLAN ID
+                        if let Some(&vlan_u64) = response_parts.last() {
+                            let vlan_id = vlan_u64 as u16;
+                            if let Some(name) = value_to_string(&value) {
+                                vlans.push(VlanInfo { vlan_id, name });
+                            }
+                        }
+
+                        current_oid = Oid::from(response_parts.as_slice())
+                            .map_err(|e| anyhow!("Invalid response OID: {:?}", e))?;
+                        count += 1;
+                    } else {
+                        break;
+                    }
+                }
+                Ok(Err(_)) | Err(_) => break,
+            }
+        }
+    }
+
+    debug!(
+        "VLAN table query from {} returned {} entries (Q-BRIDGE or VTP)",
+        ip,
+        vlans.len()
+    );
+
+    Ok(vlans)
+}
+
+/// Query per-port VLAN membership from Q-BRIDGE-MIB.
+/// Uses dot1qPvid for native VLANs and dot1qVlanCurrentEgressPorts/UntaggedPorts
+/// for tagged VLAN membership. Resolves bridge ports to ifIndex.
+pub async fn query_port_vlan_membership(
+    ip: IpAddr,
+    credential: &SnmpQueryCredential,
+    port: u16,
+) -> Result<Vec<PortVlanMembership>> {
+    let mut session = create_session(ip, credential, port).await?;
+
+    // Step 1: Get bridge port → ifIndex mapping
+    let port_to_if_index = walk_bridge_port_mapping(&mut session).await?;
+
+    if port_to_if_index.is_empty() {
+        debug!(
+            "No bridge port mappings from {} — skipping VLAN membership",
+            ip
+        );
+        return Ok(Vec::new());
+    }
+
+    // Step 2: Walk dot1qPvid for native VLAN per bridge port
+    let mut native_vlans: HashMap<i32, u16> = HashMap::new();
+    {
+        let base_oid_str = oids::vlan::q_bridge::DOT1Q_PVID;
+        let base_oid = parse_oid(base_oid_str)?;
+        let base_parts: Vec<u64> = base_oid_str
+            .split('.')
+            .filter(|s| !s.is_empty())
+            .filter_map(|s| s.parse().ok())
+            .collect();
+
+        let mut current_oid = base_oid.clone();
+        let mut count = 0;
+
+        loop {
+            if count >= MAX_WALK_ENTRIES {
+                break;
+            }
+
+            match timeout(SNMP_TIMEOUT, session.getnext(&current_oid)).await {
+                Ok(Ok(mut response)) => {
+                    if let Some((resp_oid, value)) = response.varbinds.next() {
+                        if matches!(
+                            value,
+                            Value::EndOfMibView | Value::NoSuchObject | Value::NoSuchInstance
+                        ) {
+                            break;
+                        }
+
+                        let response_parts = oid_to_vec(&resp_oid);
+                        if response_parts.len() <= base_parts.len()
+                            || !response_parts.starts_with(&base_parts)
+                        {
+                            break;
+                        }
+
+                        // OID suffix is bridge port number, value is native VLAN ID
+                        if let Some(&port_u64) = response_parts.last() {
+                            let bridge_port = port_u64 as i32;
+                            if let Some(vlan_id) = value_to_u16(&value) {
+                                native_vlans.insert(bridge_port, vlan_id);
+                            }
+                        }
+
+                        current_oid = Oid::from(response_parts.as_slice())
+                            .map_err(|e| anyhow!("Invalid response OID: {:?}", e))?;
+                        count += 1;
+                    } else {
+                        break;
+                    }
+                }
+                Ok(Err(_)) | Err(_) => break,
+            }
+        }
+    }
+
+    // Step 3: Walk dot1qVlanCurrentEgressPorts — PortList bitmap per VLAN
+    // Indexed by timeFilter.vlanId (timeFilter is typically 0)
+    let mut egress_by_port: HashMap<i32, Vec<u16>> = HashMap::new();
+    {
+        let base_oid_str = oids::vlan::q_bridge::DOT1Q_VLAN_CURRENT_EGRESS_PORTS;
+        let base_oid = parse_oid(base_oid_str)?;
+        let base_parts: Vec<u64> = base_oid_str
+            .split('.')
+            .filter(|s| !s.is_empty())
+            .filter_map(|s| s.parse().ok())
+            .collect();
+
+        let mut current_oid = base_oid.clone();
+        let mut count = 0;
+
+        loop {
+            if count >= MAX_WALK_ENTRIES {
+                break;
+            }
+
+            match timeout(SNMP_TIMEOUT, session.getnext(&current_oid)).await {
+                Ok(Ok(mut response)) => {
+                    if let Some((resp_oid, value)) = response.varbinds.next() {
+                        if matches!(
+                            value,
+                            Value::EndOfMibView | Value::NoSuchObject | Value::NoSuchInstance
+                        ) {
+                            break;
+                        }
+
+                        let response_parts = oid_to_vec(&resp_oid);
+                        if response_parts.len() <= base_parts.len()
+                            || !response_parts.starts_with(&base_parts)
+                        {
+                            break;
+                        }
+
+                        // Suffix is timeFilter.vlanId — last component is VLAN ID
+                        let suffix = &response_parts[base_parts.len()..];
+                        if let Some(&vlan_u64) = suffix.last() {
+                            let vlan_id = vlan_u64 as u16;
+
+                            // Value is PortList bitmap (OCTET STRING)
+                            if let Value::OctetString(bytes) = &value {
+                                let bridge_ports = parse_portlist_bitmap(bytes);
+                                for bp in bridge_ports {
+                                    egress_by_port.entry(bp).or_default().push(vlan_id);
+                                }
+                            }
+                        }
+
+                        current_oid = Oid::from(response_parts.as_slice())
+                            .map_err(|e| anyhow!("Invalid response OID: {:?}", e))?;
+                        count += 1;
+                    } else {
+                        break;
+                    }
+                }
+                Ok(Err(_)) | Err(_) => break,
+            }
+        }
+    }
+
+    // Step 4: Walk dot1qVlanCurrentUntaggedPorts — same bitmap format
+    let mut untagged_by_port: HashMap<i32, Vec<u16>> = HashMap::new();
+    {
+        let base_oid_str = oids::vlan::q_bridge::DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS;
+        let base_oid = parse_oid(base_oid_str)?;
+        let base_parts: Vec<u64> = base_oid_str
+            .split('.')
+            .filter(|s| !s.is_empty())
+            .filter_map(|s| s.parse().ok())
+            .collect();
+
+        let mut current_oid = base_oid.clone();
+        let mut count = 0;
+
+        loop {
+            if count >= MAX_WALK_ENTRIES {
+                break;
+            }
+
+            match timeout(SNMP_TIMEOUT, session.getnext(&current_oid)).await {
+                Ok(Ok(mut response)) => {
+                    if let Some((resp_oid, value)) = response.varbinds.next() {
+                        if matches!(
+                            value,
+                            Value::EndOfMibView | Value::NoSuchObject | Value::NoSuchInstance
+                        ) {
+                            break;
+                        }
+
+                        let response_parts = oid_to_vec(&resp_oid);
+                        if response_parts.len() <= base_parts.len()
+                            || !response_parts.starts_with(&base_parts)
+                        {
+                            break;
+                        }
+
+                        let suffix = &response_parts[base_parts.len()..];
+                        if let Some(&vlan_u64) = suffix.last() {
+                            let vlan_id = vlan_u64 as u16;
+
+                            if let Value::OctetString(bytes) = &value {
+                                let bridge_ports = parse_portlist_bitmap(bytes);
+                                for bp in bridge_ports {
+                                    untagged_by_port.entry(bp).or_default().push(vlan_id);
+                                }
+                            }
+                        }
+
+                        current_oid = Oid::from(response_parts.as_slice())
+                            .map_err(|e| anyhow!("Invalid response OID: {:?}", e))?;
+                        count += 1;
+                    } else {
+                        break;
+                    }
+                }
+                Ok(Err(_)) | Err(_) => break,
+            }
+        }
+    }
+
+    // Step 5: Assemble per-port membership, resolving bridge port → ifIndex
+    let mut result: Vec<PortVlanMembership> = Vec::new();
+
+    for (&bridge_port, &if_index) in &port_to_if_index {
+        let native_vlan = native_vlans.get(&bridge_port).copied();
+        let egress_vlans = egress_by_port.get(&bridge_port);
+        let untagged_vlans = untagged_by_port.get(&bridge_port);
+
+        // Tagged VLANs = egress VLANs minus untagged VLANs for this port
+        let tagged_vlans: Vec<u16> = match egress_vlans {
+            Some(egress) => {
+                let untagged_set: std::collections::HashSet<u16> = untagged_vlans
+                    .map(|v| v.iter().copied().collect())
+                    .unwrap_or_default();
+                egress
+                    .iter()
+                    .copied()
+                    .filter(|v| !untagged_set.contains(v))
+                    .collect()
+            }
+            None => Vec::new(),
+        };
+
+        // Only include ports that have some VLAN data
+        if native_vlan.is_some() || !tagged_vlans.is_empty() {
+            result.push(PortVlanMembership {
+                if_index,
+                native_vlan,
+                tagged_vlans,
+            });
+        }
+    }
+
+    debug!(
+        "VLAN membership query from {} returned {} port memberships ({} bridge port mappings)",
+        ip,
+        result.len(),
+        port_to_if_index.len()
+    );
+
+    Ok(result)
 }

@@ -88,6 +88,8 @@ pub enum ContainerType {
     Virtualizer,
     BareMetal,
     Stack,
+    TrunkPort,
+    VLAN,
 }
 
 impl HasId for ContainerType {
@@ -108,6 +110,8 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::Virtualizer => Concept::Infrastructure.color(),
             ContainerType::BareMetal => EntityDiscriminants::Host.color(),
             ContainerType::Stack => Concept::Virtualization.color(),
+            ContainerType::TrunkPort => Color::Amber,
+            ContainerType::VLAN => Color::Teal,
         }
     }
 
@@ -122,6 +126,8 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::Virtualizer => Concept::Infrastructure.icon(),
             ContainerType::BareMetal => Icon::Server,
             ContainerType::Stack => Concept::Virtualization.icon(),
+            ContainerType::TrunkPort => Icon::Network,
+            ContainerType::VLAN => Icon::Network,
         }
     }
 }
@@ -138,6 +144,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Virtualizer => "Virtualizer",
             ContainerType::BareMetal => "Bare metal",
             ContainerType::Stack => "Docker stack",
+            ContainerType::TrunkPort => "Trunk ports",
+            ContainerType::VLAN => "VLAN",
         }
     }
 
@@ -152,6 +160,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Virtualizer => "Hosts grouped by virtualizer",
             ContainerType::BareMetal => "Hosts with no virtualization",
             ContainerType::Stack => "Elements grouped by Docker Compose project",
+            ContainerType::TrunkPort => "Trunk ports carrying multiple VLANs",
+            ContainerType::VLAN => "Access ports grouped by native VLAN",
         }
     }
 
@@ -165,7 +175,9 @@ impl TypeMetadataProvider for ContainerType {
             | ContainerType::NestedServiceCategory
             | ContainerType::Virtualizer
             | ContainerType::BareMetal
-            | ContainerType::Stack => TitleStyle::Inline,
+            | ContainerType::Stack
+            | ContainerType::TrunkPort
+            | ContainerType::VLAN => TitleStyle::Inline,
         };
         let is_subcontainer = matches!(
             self,
@@ -174,6 +186,8 @@ impl TypeMetadataProvider for ContainerType {
                 | ContainerType::Virtualizer
                 | ContainerType::BareMetal
                 | ContainerType::Stack
+                | ContainerType::TrunkPort
+                | ContainerType::VLAN
         );
         let (padding_top, padding_side) = match self {
             ContainerType::Subnet
@@ -184,7 +198,9 @@ impl TypeMetadataProvider for ContainerType {
             | ContainerType::NestedServiceCategory
             | ContainerType::Virtualizer
             | ContainerType::BareMetal
-            | ContainerType::Stack => (50, 25),
+            | ContainerType::Stack
+            | ContainerType::TrunkPort
+            | ContainerType::VLAN => (50, 25),
         };
         let (collapsed_width, collapsed_height) = match self {
             ContainerType::Subnet

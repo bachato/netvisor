@@ -7,7 +7,9 @@
 		inspector_snmpStatus,
 		common_speed,
 		inspector_lldpNeighbor,
-		inspector_fdbMacs
+		inspector_fdbMacs,
+		inspector_nativeVlan,
+		inspector_taggedVlans
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -72,6 +74,18 @@
 					<span class="text-primary ml-2 truncate"
 						>{lldpNeighborName}{lldpPortDesc ? ` (${lldpPortDesc})` : ''}</span
 					>
+				</div>
+			{/if}
+			{#if ifEntry.native_vlan_id != null}
+				<div class="flex justify-between">
+					<span class="text-tertiary">{inspector_nativeVlan()}</span>
+					<span class="text-primary">{ifEntry.native_vlan_id}</span>
+				</div>
+			{/if}
+			{#if ifEntry.vlan_ids && ifEntry.vlan_ids.length > 0}
+				<div class="flex justify-between">
+					<span class="text-tertiary">{inspector_taggedVlans()}</span>
+					<span class="text-primary">{ifEntry.vlan_ids.join(', ')}</span>
 				</div>
 			{/if}
 			{#if fdbMacs.length > 0}

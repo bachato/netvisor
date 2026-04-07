@@ -365,6 +365,8 @@ impl IfEntryInput {
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
+                native_vlan_id: None,
+                vlan_ids: None,
             },
         }
     }

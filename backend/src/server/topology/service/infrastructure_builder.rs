@@ -201,6 +201,8 @@ impl ViewBuilder for InfrastructureBuilder {
                         tag_ids,
                         virtualizer_host_id: virtualizer_map.get(host_id).copied().flatten(),
                         compose_project,
+                        native_vlan_id: None,
+                        is_trunk_port: false,
                     })
                 } else {
                     None

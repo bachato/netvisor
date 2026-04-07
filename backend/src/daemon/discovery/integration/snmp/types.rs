@@ -139,3 +139,23 @@ pub struct CdpNeighbor {
     /// Remote device IP address
     pub remote_address: Option<IpAddr>,
 }
+
+/// VLAN information from dot1qVlanStaticTable or Cisco VTP
+#[derive(Debug, Clone)]
+pub struct VlanInfo {
+    /// 802.1Q VLAN ID (1-4094)
+    pub vlan_id: u16,
+    /// VLAN name (e.g., "default", "management")
+    pub name: String,
+}
+
+/// Per-port VLAN membership from Q-BRIDGE-MIB
+#[derive(Debug, Clone)]
+pub struct PortVlanMembership {
+    /// ifIndex of the port (resolved from bridge port number)
+    pub if_index: i32,
+    /// Native/untagged VLAN (dot1qPvid)
+    pub native_vlan: Option<u16>,
+    /// Tagged VLAN IDs (egress VLANs minus untagged VLANs)
+    pub tagged_vlans: Vec<u16>,
+}

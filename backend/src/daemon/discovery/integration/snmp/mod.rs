@@ -15,12 +15,13 @@ pub mod values;
 // Re-export commonly used items
 pub use queries::{
     query_arp_table, query_bridge_fdb, query_cdp_neighbors, query_entity_physical,
-    query_ip_addr_table, query_lldp_local, query_lldp_neighbors, query_system_info, walk_if_table,
+    query_ip_addr_table, query_lldp_local, query_lldp_neighbors, query_port_vlan_membership,
+    query_system_info, query_vlan_table, walk_if_table,
 };
 pub use session::SNMP_WALK_TIMEOUT;
 pub use types::{
     ArpEntry, BridgeFdbEntry, CdpNeighbor, DeviceInventory, IfTableEntry, IpAddrEntry,
-    LldpLocalInfo, LldpNeighbor, SystemInfo,
+    LldpLocalInfo, LldpNeighbor, PortVlanMembership, SystemInfo, VlanInfo,
 };
 
 use std::net::IpAddr;
@@ -237,6 +238,25 @@ impl DiscoveryIntegration for SnmpIntegration {
             .unwrap_or_default();
         tracing::info!(ip = %ip, count = bridge_fdb.len(), "Bridge FDB entries collected");
 
+        // Query VLAN table for VLAN names (logged, not persisted)
+        let vlan_table = query_vlan_table(ip, credential, port)
+            .await
+            .unwrap_or_default();
+        if !vlan_table.is_empty() {
+            tracing::info!(
+                ip = %ip,
+                count = vlan_table.len(),
+                vlans = ?vlan_table.iter().map(|v| format!("{}={}", v.vlan_id, v.name)).collect::<Vec<_>>(),
+                "VLAN table entries collected"
+            );
+        }
+
+        // Query per-port VLAN membership
+        let port_vlan_membership = query_port_vlan_membership(ip, credential, port)
+            .await
+            .unwrap_or_default();
+        tracing::info!(ip = %ip, count = port_vlan_membership.len(), "Port VLAN memberships collected");
+
         // Query local LLDP identity
         let lldp_local = query_lldp_local(ip, credential, port).await.unwrap_or(None);
         tracing::info!(
@@ -334,6 +354,7 @@ impl DiscoveryIntegration for SnmpIntegration {
                 &lldp_neighbors,
                 &cdp_neighbors,
                 &bridge_fdb,
+                &port_vlan_membership,
             );
             host_data.add_if_entry(if_entry);
         }
@@ -542,6 +563,7 @@ fn convert_snmp_if_entry(
     lldp_neighbors: &[LldpNeighbor],
     cdp_neighbors: &[CdpNeighbor],
     bridge_fdb: &[BridgeFdbEntry],
+    port_vlan_membership: &[PortVlanMembership],
 ) -> IfEntry {
     // Find LLDP neighbor data for this port (match by local_port_index == if_index)
     let lldp_neighbor = lldp_neighbors
@@ -566,6 +588,11 @@ fn convert_snmp_if_entry(
         let bytes = n.remote_port_id_bytes.as_ref()?;
         LldpPortId::from_snmp(subtype, bytes)
     });
+
+    // Find VLAN membership for this port
+    let vlan_membership = port_vlan_membership
+        .iter()
+        .find(|m| m.if_index == entry.if_index);
 
     // Collect learned MACs from bridge FDB for this port.
     // Single-MAC ports are used for neighbor resolution server-side;
@@ -609,6 +636,11 @@ fn convert_snmp_if_entry(
         } else {
             Some(fdb_macs)
         },
+        // VLAN data
+        native_vlan_id: vlan_membership.and_then(|m| m.native_vlan),
+        vlan_ids: vlan_membership
+            .map(|m| m.tagged_vlans.clone())
+            .filter(|v| !v.is_empty()),
     })
 }
 
@@ -683,5 +715,80 @@ mod tests {
         let value = Value::OctetString(&mac_bytes);
         let mac = value_to_mac(&value).unwrap();
         assert_eq!(mac.bytes(), [0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34]);
+    }
+
+    #[test]
+    fn test_convert_snmp_if_entry_with_vlan_data() {
+        use super::convert_snmp_if_entry;
+        use super::types::{IfTableEntry, PortVlanMembership};
+        use uuid::Uuid;
+
+        let entry = IfTableEntry {
+            if_index: 5,
+            if_descr: Some("GigabitEthernet0/5".to_string()),
+            ..Default::default()
+        };
+
+        let membership = vec![
+            PortVlanMembership {
+                if_index: 5,
+                native_vlan: Some(10),
+                tagged_vlans: vec![20, 30],
+            },
+            PortVlanMembership {
+                if_index: 7,
+                native_vlan: Some(20),
+                tagged_vlans: vec![],
+            },
+        ];
+
+        let result = convert_snmp_if_entry(&entry, Uuid::nil(), &[], &[], &[], &membership);
+
+        assert_eq!(result.base.native_vlan_id, Some(10));
+        assert_eq!(result.base.vlan_ids, Some(vec![20, 30]));
+    }
+
+    #[test]
+    fn test_convert_snmp_if_entry_no_vlan_data() {
+        use super::convert_snmp_if_entry;
+        use super::types::IfTableEntry;
+        use uuid::Uuid;
+
+        let entry = IfTableEntry {
+            if_index: 3,
+            if_descr: Some("Loopback0".to_string()),
+            ..Default::default()
+        };
+
+        let result = convert_snmp_if_entry(&entry, Uuid::nil(), &[], &[], &[], &[]);
+
+        assert_eq!(result.base.native_vlan_id, None);
+        assert_eq!(result.base.vlan_ids, None);
+    }
+
+    #[test]
+    fn test_convert_snmp_if_entry_empty_tagged_vlans() {
+        use super::convert_snmp_if_entry;
+        use super::types::{IfTableEntry, PortVlanMembership};
+        use uuid::Uuid;
+
+        let entry = IfTableEntry {
+            if_index: 1,
+            if_descr: Some("FastEthernet0/1".to_string()),
+            ..Default::default()
+        };
+
+        // Access port: native VLAN only, no tagged VLANs
+        let membership = vec![PortVlanMembership {
+            if_index: 1,
+            native_vlan: Some(10),
+            tagged_vlans: vec![],
+        }];
+
+        let result = convert_snmp_if_entry(&entry, Uuid::nil(), &[], &[], &[], &membership);
+
+        assert_eq!(result.base.native_vlan_id, Some(10));
+        // Empty tagged_vlans should be stored as None (filtered)
+        assert_eq!(result.base.vlan_ids, None);
     }
 }

@@ -285,6 +285,33 @@ pub mod bridge {
     }
 }
 
+/// VLAN MIB OIDs - Q-BRIDGE-MIB (IEEE 802.1Q) and Cisco VTP
+pub mod vlan {
+    /// Q-BRIDGE-MIB (RFC 4363) - IEEE 802.1Q VLAN management
+    pub mod q_bridge {
+        /// dot1qVlanStaticName - VLAN name (indexed by VLAN ID)
+        pub const DOT1Q_VLAN_STATIC_NAME: &str = "1.3.6.1.2.1.17.7.1.4.3.1.1";
+
+        /// dot1qPvid - native/untagged VLAN per bridge port
+        pub const DOT1Q_PVID: &str = "1.3.6.1.2.1.17.7.1.4.5.1.1";
+
+        /// dot1qVlanCurrentEgressPorts - PortList bitmap of egress ports per VLAN
+        pub const DOT1Q_VLAN_CURRENT_EGRESS_PORTS: &str = "1.3.6.1.2.1.17.7.1.4.2.1.4";
+
+        /// dot1qVlanCurrentUntaggedPorts - PortList bitmap of untagged ports per VLAN
+        pub const DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS: &str = "1.3.6.1.2.1.17.7.1.4.2.1.5";
+    }
+
+    /// Cisco VTP MIB - VLAN Trunking Protocol
+    pub mod cisco_vtp {
+        /// vtpVlanName - VLAN name from Cisco VTP (indexed by mgmtDomainIndex.vlanId)
+        pub const VTP_VLAN_NAME: &str = "1.3.6.1.4.1.9.9.46.1.3.1.1.4";
+
+        /// vtpVlanState - VLAN operational state (1=operational)
+        pub const VTP_VLAN_STATE: &str = "1.3.6.1.4.1.9.9.46.1.3.1.1.2";
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

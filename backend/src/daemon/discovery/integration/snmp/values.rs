@@ -65,6 +65,33 @@ pub fn value_to_ip(value: &Value) -> Option<IpAddr> {
     }
 }
 
+/// Extract an unsigned 16-bit value from an SNMP varbind value
+pub fn value_to_u16(value: &Value) -> Option<u16> {
+    match value {
+        Value::Integer(n) => u16::try_from(*n).ok(),
+        Value::Unsigned32(n) => u16::try_from(*n).ok(),
+        Value::Counter32(n) => u16::try_from(*n).ok(),
+        _ => None,
+    }
+}
+
+/// Parse a Q-BRIDGE PortList OCTET STRING into a Vec of bridge port numbers (1-based).
+///
+/// The PortList is an MSB-first bitmap: bit 0 (most significant) of octet 0 = port 1,
+/// bit 1 of octet 0 = port 2, etc. This follows the BRIDGE-MIB PortList convention.
+pub fn parse_portlist_bitmap(bytes: &[u8]) -> Vec<i32> {
+    let mut ports = Vec::new();
+    for (octet_idx, &byte) in bytes.iter().enumerate() {
+        for bit in 0..8u32 {
+            if byte & (0x80 >> bit) != 0 {
+                let port_num = (octet_idx as i32) * 8 + (bit as i32) + 1;
+                ports.push(port_num);
+            }
+        }
+    }
+    ports
+}
+
 /// Parse LLDP management address from raw SNMP bytes.
 ///
 /// SNMP returns the address in one of these formats:
@@ -83,5 +110,55 @@ pub fn parse_lldp_mgmt_addr(bytes: &[u8]) -> Option<IpAddr> {
         // IANA family 2 (IPv6) + 16 address bytes
         17 if bytes[0] == 2 => Some(IpAddr::from(<[u8; 16]>::try_from(&bytes[1..17]).ok()?)),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_portlist_bitmap_empty() {
+        assert_eq!(parse_portlist_bitmap(&[]), Vec::<i32>::new());
+    }
+
+    #[test]
+    fn test_parse_portlist_bitmap_all_set() {
+        assert_eq!(parse_portlist_bitmap(&[0xFF]), vec![1, 2, 3, 4, 5, 6, 7, 8]);
+    }
+
+    #[test]
+    fn test_parse_portlist_bitmap_msb_only() {
+        assert_eq!(parse_portlist_bitmap(&[0x80]), vec![1]);
+    }
+
+    #[test]
+    fn test_parse_portlist_bitmap_lsb_only() {
+        assert_eq!(parse_portlist_bitmap(&[0x01]), vec![8]);
+    }
+
+    #[test]
+    fn test_parse_portlist_bitmap_multi_octet() {
+        assert_eq!(parse_portlist_bitmap(&[0x80, 0x40]), vec![1, 10]);
+    }
+
+    #[test]
+    fn test_parse_portlist_bitmap_all_zeros() {
+        assert_eq!(parse_portlist_bitmap(&[0x00, 0x00]), Vec::<i32>::new());
+    }
+
+    #[test]
+    fn test_value_to_u16_integer() {
+        assert_eq!(value_to_u16(&Value::Integer(100)), Some(100));
+    }
+
+    #[test]
+    fn test_value_to_u16_unsigned32() {
+        assert_eq!(value_to_u16(&Value::Unsigned32(4094)), Some(4094));
+    }
+
+    #[test]
+    fn test_value_to_u16_overflow() {
+        assert_eq!(value_to_u16(&Value::Integer(70000)), None);
     }
 }

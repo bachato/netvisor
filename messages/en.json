@@ -882,6 +882,8 @@
 	"inspector_dependencySummary": "Dependency Summary",
 	"inspector_elementSummary": "Element Summary",
 	"inspector_fdbMacs": "FDB MACs",
+	"inspector_nativeVlan": "Native VLAN",
+	"inspector_taggedVlans": "Tagged VLANs",
 	"inspector_hostDetail": "Host Details",
 	"inspector_ifEntryData": "Interface Data",
 	"inspector_lldpNeighbor": "LLDP Neighbor",

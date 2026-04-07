@@ -241,6 +241,8 @@ impl ViewBuilder for ApplicationBuilder {
                 tag_ids,
                 virtualizer_host_id: None,
                 compose_project,
+                native_vlan_id: None,
+                is_trunk_port: false,
             })
         });
 
