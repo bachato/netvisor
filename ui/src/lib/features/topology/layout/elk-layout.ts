@@ -478,7 +478,8 @@ function buildElkGraph(
 	const rootOptions = useLayeredChildren
 		? {
 				...ROOT_LAYOUT_OPTIONS,
-				'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+				'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+				'elk.direction': 'RIGHT'
 			}
 		: ROOT_LAYOUT_OPTIONS;
 
