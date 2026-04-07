@@ -104,11 +104,19 @@ function buildElkGraph(
 			// Box children: grid packing by size (default for most views)
 			const childLayoutOptions: Record<string, string> = useLayeredChildren
 				? {
-						// With INCLUDE_CHILDREN, the root layered algorithm handles child
-						// placement and crossing minimization — container just sets padding
+						// Layered layout with COFFMAN_GRAHAM bounds ports to N per column.
+						// DOWN direction stacks ports vertically, creating columns left-to-right.
+						// considerModelOrder preserves status sort (Up ports first).
+						'elk.algorithm': 'layered',
+						'elk.direction': 'DOWN',
+						'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
+						'elk.layered.layering.coffmanGraham.layerBound': '8',
+						'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+						'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
 						'elk.padding': padding,
 						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.spacing.nodeNode': '10'
+						'elk.spacing.nodeNode': '8',
+						'elk.layered.spacing.nodeNodeBetweenLayers': '8'
 					}
 				: {
 						'elk.algorithm': 'box',
@@ -516,16 +524,7 @@ function buildElkGraph(
 		.filter(([id]) => !parentContainerMap.has(id))
 		.map(([, node]) => node);
 
-	const rootOptions = useLayeredChildren
-		? {
-				...ROOT_LAYOUT_OPTIONS,
-				'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-				'elk.direction': 'RIGHT',
-				'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
-				'elk.layered.layering.coffmanGraham.layerBound': '8',
-				'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES'
-			}
-		: ROOT_LAYOUT_OPTIONS;
+	const rootOptions = ROOT_LAYOUT_OPTIONS;
 
 	const graph: ElkNode = {
 		id: 'root',
