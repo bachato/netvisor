@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Edge } from '@xyflow/svelte';
 	import type { TopologyEdge } from '$lib/features/topology/types/base';
-	import { activeView } from '$lib/features/topology/queries';
+	import { activeView, aggregatedEdgeOriginals } from '$lib/features/topology/queries';
 	import InspectorEdgeGroup from './edges/InspectorEdgeGroup.svelte';
 	import InspectorEdgeInterface from './edges/InspectorEdgeInterface.svelte';
 	import InspectorEdgeHostVirtualization from './edges/InspectorEdgeHostVirtualization.svelte';
@@ -11,12 +11,11 @@
 
 	let { edge }: { edge: Edge } = $props();
 
-	let edgeData = $derived(
-		edge.data as
-			| (TopologyEdge & { isAggregated?: boolean; originalEdges?: TopologyEdge[] })
-			| undefined
-	);
+	let edgeData = $derived(edge.data as (TopologyEdge & { isAggregated?: boolean }) | undefined);
 	let view = $derived($activeView);
+	let originalEdges = $derived(
+		edgeData?.isAggregated ? $aggregatedEdgeOriginals.get(edge.id) : undefined
+	);
 </script>
 
 <div class="w-full space-y-4">
@@ -24,8 +23,8 @@
 		<div class="space-y-3">
 			<p class="text-tertiary text-sm">Edge data not available</p>
 		</div>
-	{:else if edgeData.isAggregated && edgeData.originalEdges}
-		<InspectorEdgeAggregated edges={edgeData.originalEdges} />
+	{:else if edgeData.isAggregated && originalEdges}
+		<InspectorEdgeAggregated edges={originalEdges} />
 	{:else if edgeData.edge_type === 'HubAndSpoke' || edgeData.edge_type === 'RequestPath'}
 		<InspectorEdgeGroup
 			dependencyId={edgeData.dependency_id}

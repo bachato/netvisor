@@ -8,7 +8,7 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 import { queryClient, queryKeys } from '$lib/api/query-client';
 import { apiClient } from '$lib/api/client';
-import type { Topology, TopologyOptions } from './types/base';
+import type { Topology, TopologyEdge, TopologyOptions } from './types/base';
 import type { ContainerGraphRule, ElementGraphRule } from './types/grouping';
 import { makeGraphRule } from './types/grouping';
 import type { ContainerRule } from './types/grouping';
@@ -713,6 +713,9 @@ export const optionsPanelExpanded = writable<boolean>(loadExpandedFromStorage())
 
 /** Expanded options panel width in px (Tailwind w-96 = 384px). Used by the panel and panel-aware fitView. */
 export const OPTIONS_PANEL_WIDTH_PX = 384;
+
+/** Lookup map from aggregated edge ID to its original edges. Populated by BaseTopologyViewer during collapse. */
+export const aggregatedEdgeOriginals = writable<Map<string, TopologyEdge[]>>(new Map());
 
 /**
  * Set a preferred network to select when topology loads.

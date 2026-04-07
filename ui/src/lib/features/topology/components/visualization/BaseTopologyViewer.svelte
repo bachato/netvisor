@@ -29,7 +29,8 @@
 		topologyOptions,
 		activeView,
 		optionsPanelExpanded,
-		OPTIONS_PANEL_WIDTH_PX
+		OPTIONS_PANEL_WIDTH_PX,
+		aggregatedEdgeOriginals
 	} from '../../queries';
 	import { isExporting, expandedPortNodeIds } from '../../interactions';
 	import { LayoutGraph } from '../../layout/layout-graph';
@@ -103,30 +104,20 @@
 	let viewportMoved = false;
 	let viewportMoveTimer: ReturnType<typeof setTimeout> | null = null;
 
-	const { fitView, getViewport, setViewport, getNodes } = useSvelteFlow();
+	const { fitView, getNodes } = useSvelteFlow();
 
-	/**
-	 * Fit view then shift viewport to account for the options panel overlay.
-	 * fitView centers in the full canvas; this shifts content right so it's
-	 * centered in the visible area beside the panel.
-	 */
-	function panelAwareFitView(options?: Parameters<typeof fitView>[0]) {
-		fitView({ padding: 0.2, ...options }).then(() => {
-			if (get(optionsPanelExpanded)) {
-				const vp = getViewport();
-				setViewport({
-					x: vp.x + OPTIONS_PANEL_WIDTH_PX / 2,
-					y: vp.y,
-					zoom: vp.zoom
-				});
-			}
-		});
+	/** Returns fitView padding that accounts for the options panel overlay. */
+	function getFitViewPadding(): import('@xyflow/system').Padding {
+		if (get(optionsPanelExpanded)) {
+			return { top: 0.2, right: 0.2, bottom: 0.2, left: `${OPTIONS_PANEL_WIDTH_PX}px` };
+		}
+		return 0.2;
 	}
 	const queryClient = useQueryClient();
 	let containerElement: HTMLDivElement;
 
 	export function triggerFitView() {
-		requestAnimationFrame(() => panelAwareFitView());
+		requestAnimationFrame(() => fitView({ padding: getFitViewPadding() }));
 	}
 
 	export function fitViewToNodes(nodeIds: string[]) {
@@ -708,8 +699,12 @@
 					});
 
 					// Create aggregated flow edges for collapsed containers
+					// Store original edges in a separate lookup (not in flow edge data,
+					// which causes SvelteFlow rendering issues with nested objects)
+					const originalsMap = new Map<string, import('../../types/base').TopologyEdge[]>();
 					for (let index = 0; index < aggregatedEdges.length; index++) {
 						const agg = aggregatedEdges[index];
+						originalsMap.set(agg.id, agg.originalEdges);
 						const edgeKey = `${agg.source}->${agg.target}`;
 						let handles = edgeHandles.get(edgeKey);
 
@@ -741,16 +736,17 @@
 								...agg.originalEdges[0],
 								isAggregated: true,
 								aggregatedCount: agg.count,
-								originalEdges: agg.originalEdges,
 								edgeIndex: 1000 + index
 							},
 							animated: false,
 							interactionWidth: 50
 						});
 					}
+					aggregatedEdgeOriginals.set(originalsMap);
 				} else {
 					// No collapsed containers — all edges are base edges
 					baseEdges = elevatedEdges;
+					aggregatedEdgeOriginals.set(new Map());
 				}
 
 				// Filter visible edges (disabled edges excluded entirely, hidden types excluded before bundling)
@@ -847,7 +843,7 @@
 
 				// Auto-fit viewport after perspective switch completes
 				if (viewChanged && topologyChanged) {
-					requestAnimationFrame(() => panelAwareFitView());
+					requestAnimationFrame(() => fitView({ padding: getFitViewPadding() }));
 				}
 			}
 		} catch (err) {
@@ -1000,12 +996,12 @@
 	function handleCollapseAll() {
 		const containerIds = topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id);
 		collapseAll(containerIds);
-		setTimeout(() => panelAwareFitView({ duration: 300 }), 100);
+		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
 	}
 
 	function handleExpandAll() {
 		expandAll();
-		setTimeout(() => panelAwareFitView({ duration: 300 }), 100);
+		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
 	}
 
 	// Merge preview edges into the edge store when they change
