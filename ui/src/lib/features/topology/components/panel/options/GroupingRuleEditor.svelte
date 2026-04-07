@@ -500,7 +500,7 @@
 	allowReorder={true}
 	allowDuplicates={true}
 	allowItemEdit={(item) => typeof item.rule !== 'string' && isElementRuleApplicable(item)}
-	allowItemRemove={isElementRuleApplicable}
+	allowItemRemove={(item) => isElementRuleApplicable(item) && isElementRuleEditable(item)}
 	allowItemReorder={isElementRuleEditable}
 	reorderDisabledTooltip={hideDisabledElementRules ? topology_showAllToReorder() : undefined}
 	editIcon={getElementEditIcon}
@@ -540,6 +540,7 @@
 			label={getElementRuleLabel(item)}
 			description={elementRuleMeta[getElementRuleType(item.rule)]?.description ?? undefined}
 			disabled={!isElementRuleApplicable(item)}
+			locked={!isElementRuleEditable(item)}
 			disabledTooltip={getElementRuleDisabledTooltip(item)}
 		/>
 	{/snippet}
