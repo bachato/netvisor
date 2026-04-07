@@ -111,6 +111,17 @@ struct DependencyServiceIds {
     haproxy_dc_binding: Uuid,
     app01_dc_binding: Uuid,
     mariadb_dc_binding: Uuid,
+    // Backup Flow (RequestPath): binding-level members
+    pve_hq1_binding: Uuid,
+    truenas_binding: Uuid,
+    // Observability Stack (HubAndSpoke): service-level members
+    prometheus_dc: Uuid,
+    grafana_dc: Uuid,
+    jaeger_dc: Uuid,
+    // Storage Tier (HubAndSpoke): service-level members
+    minio_dc: Uuid,
+    ceph_dc: Uuid,
+    elasticsearch_dc: Uuid,
 }
 
 /// Container for all demo data entities
@@ -148,6 +159,14 @@ impl DemoData {
             haproxy_dc_binding: Uuid::new_v4(),
             app01_dc_binding: Uuid::new_v4(),
             mariadb_dc_binding: Uuid::new_v4(),
+            pve_hq1_binding: Uuid::new_v4(),
+            truenas_binding: Uuid::new_v4(),
+            prometheus_dc: Uuid::new_v4(),
+            grafana_dc: Uuid::new_v4(),
+            jaeger_dc: Uuid::new_v4(),
+            minio_dc: Uuid::new_v4(),
+            ceph_dc: Uuid::new_v4(),
+            elasticsearch_dc: Uuid::new_v4(),
         };
 
         // Generate all entities in dependency order
@@ -982,6 +1001,15 @@ fn generate_hosts_and_services(
     let haproxy_dc_binding_id = dep_svc_ids.haproxy_dc_binding;
     let app01_dc_binding_id = dep_svc_ids.app01_dc_binding;
     let mariadb_dc_binding_id = dep_svc_ids.mariadb_dc_binding;
+    let pve_hq1_binding_id = dep_svc_ids.pve_hq1_binding;
+    let truenas_binding_id = dep_svc_ids.truenas_binding;
+    // Service UUIDs for DC HubAndSpoke dependency wiring
+    let prometheus_dc_svc_id = dep_svc_ids.prometheus_dc;
+    let grafana_dc_svc_id = dep_svc_ids.grafana_dc;
+    let jaeger_dc_svc_id = dep_svc_ids.jaeger_dc;
+    let minio_dc_svc_id = dep_svc_ids.minio_dc;
+    let ceph_dc_svc_id = dep_svc_ids.ceph_dc;
+    let elasticsearch_dc_svc_id = dep_svc_ids.elasticsearch_dc;
 
     // ========================================================================
     // HEADQUARTERS NETWORK — 30 hosts
@@ -1264,7 +1292,7 @@ fn generate_hosts_and_services(
         let interfaces = vec![interface];
         let mut ports = Vec::new();
         let mut services = Vec::new();
-        if let Some((svc, port)) = create_service_with_id(
+        if let Some((mut svc, port)) = create_service_with_id(
             pve_hq1_svc_id,
             "Proxmox VE",
             "Proxmox VE",
@@ -1274,6 +1302,7 @@ fn generate_hosts_and_services(
             production_tag.into_iter().collect(),
             now,
         ) {
+            svc.base.bindings[0].id = pve_hq1_binding_id;
             if let Some(p) = port {
                 ports.push(p);
             }
@@ -1708,9 +1737,9 @@ fn generate_hosts_and_services(
         ),
     ));
 
-    // 17. TrueNAS Primary
-    result.push(host_with_services!(
-        with_snmp(
+    // 17. TrueNAS Primary (pre-generated binding ID for Backup Flow dependency)
+    {
+        let (host, interface) = with_snmp(
             create_host(
                 "truenas-primary",
                 Some("truenas.acme.local"),
@@ -1728,16 +1757,46 @@ fn generate_hosts_and_services(
             Some("HQ Server Room, Rack C1"),
             Some("sysadmin@acme-corp.com"),
             None,
-        ),
-        now,
-        (
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((mut svc, port)) = create_service(
             "TrueNAS",
             "TrueNAS",
+            &host,
+            &interfaces[0],
             Some(PortType::Https),
-            backup_tag.into_iter().collect()
-        ),
-        ("NFS", "NFS", Some(PortType::Nfs), vec![]),
-    ));
+            backup_tag.into_iter().collect(),
+            now,
+        ) {
+            svc.base.bindings[0].id = truenas_binding_id;
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        if let Some((svc, port)) = create_service(
+            "NFS",
+            "NFS",
+            &host,
+            &interfaces[0],
+            Some(PortType::Nfs),
+            vec![],
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
     // 18. Synology Backup
     result.push(host_with_services!(
@@ -2499,14 +2558,15 @@ fn generate_hosts_and_services(
             services.push(svc);
         }
 
-        // Container services on docker0
-        for (def_id, name, pt, cname, cid) in [
+        // Container services on docker0 (pre-generated IDs for Observability Stack)
+        for (def_id, name, pt, cname, cid, override_svc_id) in [
             (
                 "Prometheus",
                 "Prometheus",
                 Some(PortType::new_tcp(9090)),
                 "prometheus",
                 "p1r2o3m4e5t6",
+                Some(prometheus_dc_svc_id),
             ),
             (
                 "Grafana",
@@ -2514,6 +2574,7 @@ fn generate_hosts_and_services(
                 Some(PortType::Http3000),
                 "grafana",
                 "g1r2a3f4a5n6",
+                Some(grafana_dc_svc_id),
             ),
             (
                 "Jaeger",
@@ -2521,6 +2582,7 @@ fn generate_hosts_and_services(
                 Some(PortType::Https),
                 "jaeger",
                 "j1a2e3g4e5r6",
+                Some(jaeger_dc_svc_id),
             ),
             (
                 "Loki",
@@ -2528,9 +2590,10 @@ fn generate_hosts_and_services(
                 Some(PortType::new_tcp(3100)),
                 "loki",
                 "l1o2k3i4d5c6",
+                None,
             ),
         ] {
-            if let Some((svc, port)) = create_container_service(
+            if let Some((mut svc, port)) = create_container_service(
                 def_id,
                 name,
                 &host,
@@ -2542,6 +2605,9 @@ fn generate_hosts_and_services(
                 monitoring_tag.into_iter().collect(),
                 now,
             ) {
+                if let Some(id) = override_svc_id {
+                    svc.id = id;
+                }
                 if let Some(p) = port {
                     ports.push(p);
                 }
@@ -2605,9 +2671,9 @@ fn generate_hosts_and_services(
 
     // -- Storage (172.16.20.x) --
 
-    // 14. MinIO
-    result.push(host_with_services!(
-        create_host(
+    // 14. MinIO (pre-generated service ID for Storage Tier dependency)
+    {
+        let (host, interface) = create_host(
             "minio-storage",
             Some("minio.dc.acme.io"),
             Some("MinIO object storage"),
@@ -2617,20 +2683,37 @@ fn generate_hosts_and_services(
             backup_tag.into_iter().collect(),
             None,
             None,
-            now
-        ),
-        now,
-        (
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((mut svc, port)) = create_service(
             "MinIO",
             "MinIO",
+            &host,
+            &interfaces[0],
             Some(PortType::Https),
-            backup_tag.into_iter().collect()
-        ),
-    ));
+            backup_tag.into_iter().collect(),
+            now,
+        ) {
+            svc.id = minio_dc_svc_id;
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
-    // 15. Ceph
-    result.push(host_with_services!(
-        create_host(
+    // 15. Ceph (pre-generated service ID for Storage Tier dependency)
+    {
+        let (host, interface) = create_host(
             "ceph-node01",
             Some("ceph.dc.acme.io"),
             Some("Ceph storage node"),
@@ -2640,15 +2723,37 @@ fn generate_hosts_and_services(
             backup_tag.into_iter().collect(),
             None,
             None,
-            now
-        ),
-        now,
-        ("Ceph", "Ceph", None, backup_tag.into_iter().collect()),
-    ));
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((mut svc, port)) = create_service(
+            "Ceph",
+            "Ceph",
+            &host,
+            &interfaces[0],
+            None,
+            backup_tag.into_iter().collect(),
+            now,
+        ) {
+            svc.id = ceph_dc_svc_id;
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
-    // 16. Elasticsearch
-    result.push(host_with_services!(
-        create_host(
+    // 16. Elasticsearch (pre-generated service ID for Storage Tier dependency)
+    {
+        let (host, interface) = create_host(
             "elasticsearch-dc",
             Some("es.dc.acme.io"),
             Some("Elasticsearch cluster"),
@@ -2658,16 +2763,33 @@ fn generate_hosts_and_services(
             database_tag.into_iter().collect(),
             None,
             None,
-            now
-        ),
-        now,
-        (
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((mut svc, port)) = create_service(
             "Elasticsearch",
             "Elasticsearch",
+            &host,
+            &interfaces[0],
             Some(PortType::Elasticsearch),
-            database_tag.into_iter().collect()
-        ),
-    ));
+            database_tag.into_iter().collect(),
+            now,
+        ) {
+            svc.id = elasticsearch_dc_svc_id;
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
     // 17. InfluxDB
     result.push(host_with_services!(
@@ -4417,7 +4539,7 @@ fn generate_dependencies(
         },
     });
 
-    // 2. Backup Flow: Proxmox VE (hv01) → TrueNAS (no pre-generated IDs available)
+    // 2. Backup Flow: Proxmox VE (hv01) → TrueNAS
     dependencies.push(Dependency {
         id: Uuid::new_v4(),
         created_at: now,
@@ -4427,7 +4549,9 @@ fn generate_dependencies(
             network_id: hq.id,
             description: Some("Server backup targets to TrueNAS storage".to_string()),
             dependency_type: DependencyType::RequestPath,
-            members: DependencyMembers::default(),
+            members: DependencyMembers::Bindings {
+                binding_ids: vec![svc_ids.pve_hq1_binding, svc_ids.truenas_binding],
+            },
             source: EntitySource::Manual,
             color: Color::Green,
             edge_style: EdgeStyle::SmoothStep,
@@ -4502,7 +4626,9 @@ fn generate_dependencies(
                 "Containerized observability: Prometheus, Grafana, and Jaeger".to_string(),
             ),
             dependency_type: DependencyType::HubAndSpoke,
-            members: DependencyMembers::default(),
+            members: DependencyMembers::Services {
+                service_ids: vec![svc_ids.prometheus_dc, svc_ids.grafana_dc, svc_ids.jaeger_dc],
+            },
             source: EntitySource::Manual,
             color: Color::Purple,
             edge_style: EdgeStyle::Straight,
@@ -4520,7 +4646,9 @@ fn generate_dependencies(
             network_id: dc.id,
             description: Some("Object storage, distributed storage, and search".to_string()),
             dependency_type: DependencyType::HubAndSpoke,
-            members: DependencyMembers::default(),
+            members: DependencyMembers::Services {
+                service_ids: vec![svc_ids.minio_dc, svc_ids.ceph_dc, svc_ids.elasticsearch_dc],
+            },
             source: EntitySource::Manual,
             color: Color::Orange,
             edge_style: EdgeStyle::Step,
