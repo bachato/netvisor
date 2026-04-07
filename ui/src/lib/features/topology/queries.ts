@@ -711,6 +711,9 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 
 export const optionsPanelExpanded = writable<boolean>(loadExpandedFromStorage());
 
+/** Expanded options panel width in px (Tailwind w-96 = 384px). Used by the panel and panel-aware fitView. */
+export const OPTIONS_PANEL_WIDTH_PX = 384;
+
 /**
  * Set a preferred network to select when topology loads.
  * Used after onboarding to ensure the scanned network's topology is shown.

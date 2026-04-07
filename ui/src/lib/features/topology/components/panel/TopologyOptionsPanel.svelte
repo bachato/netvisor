@@ -4,7 +4,8 @@
 		selectedNode,
 		selectedEdge,
 		selectedNodes,
-		previewEdges
+		previewEdges,
+		OPTIONS_PANEL_WIDTH_PX
 	} from '../../queries';
 	import { get } from 'svelte/store';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
@@ -47,8 +48,9 @@
 <!-- Floating Panel -->
 <div
 	class="topology-options absolute left-4 top-4 z-10 duration-300 {$optionsPanelExpanded
-		? 'w-96'
+		? ''
 		: 'w-auto'}"
+	style={$optionsPanelExpanded ? `width: ${OPTIONS_PANEL_WIDTH_PX}px` : ''}
 >
 	<div class="card card-static p-0 shadow-lg">
 		{#if $optionsPanelExpanded}

@@ -28,7 +28,8 @@
 		selectedNodes,
 		topologyOptions,
 		activeView,
-		optionsPanelExpanded
+		optionsPanelExpanded,
+		OPTIONS_PANEL_WIDTH_PX
 	} from '../../queries';
 	import { isExporting, expandedPortNodeIds } from '../../interactions';
 	import { LayoutGraph } from '../../layout/layout-graph';
@@ -102,13 +103,30 @@
 	let viewportMoved = false;
 	let viewportMoveTimer: ReturnType<typeof setTimeout> | null = null;
 
-	const { fitView, getNodes } = useSvelteFlow();
+	const { fitView, getViewport, setViewport, getNodes } = useSvelteFlow();
+
+	/**
+	 * Fit view then shift viewport to account for the options panel overlay.
+	 * fitView centers in the full canvas; this shifts content right so it's
+	 * centered in the visible area beside the panel.
+	 */
+	function panelAwareFitView(options?: Parameters<typeof fitView>[0]) {
+		fitView({ padding: 0.2, ...options }).then(() => {
+			if (get(optionsPanelExpanded)) {
+				const vp = getViewport();
+				setViewport({
+					x: vp.x - OPTIONS_PANEL_WIDTH_PX / 2,
+					y: vp.y,
+					zoom: vp.zoom
+				});
+			}
+		});
+	}
 	const queryClient = useQueryClient();
 	let containerElement: HTMLDivElement;
 
 	export function triggerFitView() {
-		const padding = get(optionsPanelExpanded) ? 0.35 : 0.2;
-		requestAnimationFrame(() => fitView({ padding }));
+		requestAnimationFrame(() => panelAwareFitView());
 	}
 
 	export function fitViewToNodes(nodeIds: string[]) {
@@ -829,8 +847,7 @@
 
 				// Auto-fit viewport after perspective switch completes
 				if (viewChanged && topologyChanged) {
-					const padding = get(optionsPanelExpanded) ? 0.35 : 0.2;
-					requestAnimationFrame(() => fitView({ padding }));
+					requestAnimationFrame(() => panelAwareFitView());
 				}
 			}
 		} catch (err) {
@@ -983,14 +1000,12 @@
 	function handleCollapseAll() {
 		const containerIds = topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id);
 		collapseAll(containerIds);
-		const padding = get(optionsPanelExpanded) ? 0.35 : 0.2;
-		setTimeout(() => fitView({ padding, duration: 300 }), 100);
+		setTimeout(() => panelAwareFitView({ duration: 300 }), 100);
 	}
 
 	function handleExpandAll() {
 		expandAll();
-		const padding = get(optionsPanelExpanded) ? 0.35 : 0.2;
-		setTimeout(() => fitView({ padding, duration: 300 }), 100);
+		setTimeout(() => panelAwareFitView({ duration: 300 }), 100);
 	}
 
 	// Merge preview edges into the edge store when they change
