@@ -313,10 +313,7 @@
 
 			{#if iconComponent}
 				{@const IconComp = iconComponent}
-				<IconComp
-					class={`h-5 w-5 ${colorHelper.icon}`}
-					fill={fillIcon ? 'currentColor' : 'none'}
-				/>
+				<IconComp class={`h-5 w-5 ${colorHelper.icon}`} fill={fillIcon ? 'currentColor' : 'none'} />
 			{/if}
 
 			<span class="text-s text-secondary whitespace-nowrap font-medium">

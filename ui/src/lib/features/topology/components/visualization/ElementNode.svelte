@@ -196,9 +196,10 @@
 
 					// Port elements: show port name + status/MAC info
 					if (elementType === 'Port') {
-						const ifEntryId = 'if_entry_id' in (data as Record<string, unknown>)
-							? ((data as Record<string, unknown>).if_entry_id as string)
-							: undefined;
+						const ifEntryId =
+							'if_entry_id' in (data as Record<string, unknown>)
+								? ((data as Record<string, unknown>).if_entry_id as string)
+								: undefined;
 						const ifEntry = ifEntryId
 							? topology?.if_entries.find((e) => e.id === ifEntryId)
 							: undefined;
@@ -586,13 +587,19 @@
 			<div class="flex flex-shrink-0 items-center justify-center gap-1.5 px-2 pb-1.5">
 				<span
 					class="text-xs font-medium"
-					style="color: {nodeRenderData.portStatus.operStatus === 'Up' ? '#22c55e' : nodeRenderData.portStatus.operStatus === 'Down' ? '#ef4444' : '#9ca3af'}"
-				>●</span>
+					style="color: {nodeRenderData.portStatus.operStatus === 'Up'
+						? '#22c55e'
+						: nodeRenderData.portStatus.operStatus === 'Down'
+							? '#ef4444'
+							: '#9ca3af'}">●</span
+				>
 				{#if nodeRenderData.portStatus.speed}
 					<span class="text-tertiary text-xs">{nodeRenderData.portStatus.speed}</span>
 				{/if}
 				{#if nodeRenderData.portStatus.macAddress}
-					<span class="text-tertiary truncate font-mono text-xs" style="font-size: 0.6rem">{nodeRenderData.portStatus.macAddress}</span>
+					<span class="text-tertiary truncate font-mono text-xs" style="font-size: 0.6rem"
+						>{nodeRenderData.portStatus.macAddress}</span
+					>
 				{/if}
 			</div>
 		{:else if nodeRenderData.footerText}

@@ -351,11 +351,7 @@ impl TopologyView {
                 show_application_group_picker: false,
             },
             Self::L2Physical => ViewInspectorConfig {
-                element_sections: vec![
-                    InspectorSection::Identity,
-                    InspectorSection::IfEntryData,
-                    InspectorSection::Tags,
-                ],
+                element_sections: vec![InspectorSection::Identity, InspectorSection::IfEntryData],
                 container_sections: vec![
                     InspectorSection::Identity,
                     InspectorSection::ElementSummary,

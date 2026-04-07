@@ -144,7 +144,8 @@ function buildElkGraph(
 			if (useLayeredChildren && child.layoutOptions) {
 				// Left-connecting subs get higher priority = packed first = leftmost
 				const dir = subEdgeDirection.get(childId);
-				child.layoutOptions['elk.priority'] = dir === 'left' ? '200' : dir === 'right' ? '50' : '100';
+				child.layoutOptions['elk.priority'] =
+					dir === 'left' ? '200' : dir === 'right' ? '50' : '100';
 				child.layoutOptions['elk.box.packingMode'] = 'SIMPLE';
 			}
 			parent.children.push(child);
@@ -176,7 +177,10 @@ function buildElkGraph(
 	// For L2 Physical: sort by oper_status (Up first) and assign layer IDs
 	// to spread ports across multiple columns within each container
 	// Collect elements per container for sorting
-	const elementsPerContainer = new Map<string, { node: TopologyNode; size: { x: number; y: number } }[]>();
+	const elementsPerContainer = new Map<
+		string,
+		{ node: TopologyNode; size: { x: number; y: number } }[]
+	>();
 	for (const node of input.nodes) {
 		if (node.node_type === 'Element') {
 			const parentId = node.container_id;
@@ -193,7 +197,6 @@ function buildElkGraph(
 		if (!parent?.children) continue;
 
 		if (useLayeredChildren) {
-
 			// Sort: Up ports first, then Down, then others
 			const statusOrder = (n: TopologyNode): number => {
 				const status = (n as Record<string, unknown>).oper_status as string | undefined;
@@ -305,9 +308,13 @@ function buildElkGraph(
 				if (containerIds.has(child.id)) continue;
 				const ifEntryId = (() => {
 					const node = input.nodes.find((n) => n.id === child.id);
-					return node ? ((node as Record<string, unknown>).if_entry_id as string | undefined) : undefined;
+					return node
+						? ((node as Record<string, unknown>).if_entry_id as string | undefined)
+						: undefined;
 				})();
-				const ifEntry = ifEntryId ? input.topology?.if_entries.find((e) => e.id === ifEntryId) : undefined;
+				const ifEntry = ifEntryId
+					? input.topology?.if_entries.find((e) => e.id === ifEntryId)
+					: undefined;
 				if (ifEntry?.oper_status === 'Up') upCount++;
 			}
 			subcontainerUpCount.set(subId, upCount);
@@ -361,7 +368,6 @@ function buildElkGraph(
 
 			return a.id.localeCompare(b.id);
 		});
-
 	}
 
 	// Create port-based edges for cross-container connections.
@@ -487,7 +493,9 @@ function buildElkGraph(
 			const useFixedPosTgt = elementPositions && elementPositions.size > 0 && useLayeredChildren;
 			if (useLayeredChildren) {
 			}
-			tgtContainer.layoutOptions['elk.portConstraints'] = useFixedPosTgt ? 'FIXED_POS' : 'FIXED_SIDE';
+			tgtContainer.layoutOptions['elk.portConstraints'] = useFixedPosTgt
+				? 'FIXED_POS'
+				: 'FIXED_SIDE';
 
 			for (const elemId of elemIds) {
 				const tgtPortId = `port-${elemId}-${tgtSide}`;
@@ -710,7 +718,6 @@ function buildElkGraph(
 		children: rootContainers,
 		edges
 	};
-
 
 	return { graph, containerIds };
 }
@@ -1131,7 +1138,10 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 	const result1 = await elk.layout(graph1);
 
 	// Extract actual element AND subcontainer positions from pass 1
-	const elementPositions = new Map<string, { x: number; y: number; w: number; h: number; containerW: number; containerH: number }>();
+	const elementPositions = new Map<
+		string,
+		{ x: number; y: number; w: number; h: number; containerW: number; containerH: number }
+	>();
 	const subcontainerPositions = new Map<string, { x: number; y: number }>();
 	function extractPositions(children: ElkNode[]) {
 		for (const child of children) {
@@ -1165,7 +1175,11 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 	}
 
 	// Pass 2: rebuild graph with FIXED_POS ports at actual element positions
-	const { graph: graph2, containerIds: cids2 } = buildElkGraph(input, elementPositions, subcontainerPositions);
+	const { graph: graph2, containerIds: cids2 } = buildElkGraph(
+		input,
+		elementPositions,
+		subcontainerPositions
+	);
 	if (input.topology?.options?.request?.view === 'L2Physical' && elementPositions.size > 0) {
 	}
 	const result2 = await elk.layout(graph2);

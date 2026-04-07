@@ -5,7 +5,9 @@
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
-	import type { Topology } from '$lib/features/topology/types/base';
+	import { IfEntryDisplay } from '$lib/shared/components/forms/selection/display/IfEntryDisplay.svelte';
+	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
+	import type { Topology, TopologyNode } from '$lib/features/topology/types/base';
 	import type { TopologyEditState } from '$lib/features/topology/state';
 	import type {
 		ElementRenderContext,
@@ -65,6 +67,33 @@
 		entityTags: topology.entity_tags
 	});
 
+	// For Port elements: show the IfEntry
+	let thisIfEntry = $derived.by(() => {
+		if (elementContext?.elementType !== 'Port') return null;
+		const nodeData = node.data as TopologyNode;
+		const ifEntryId = 'if_entry_id' in nodeData ? (nodeData.if_entry_id as string) : undefined;
+		return ifEntryId ? (topology.if_entries.find((e) => e.id === ifEntryId) ?? null) : null;
+	});
+
+	// For Host containers: show the host
+	let thisHost = $derived.by(() => {
+		if (containerContext?.containerType !== 'Host') return null;
+		// Find a child Port element to get the host_id
+		const childElement = topology.nodes.find(
+			(n) => n.node_type === 'Element' && n.container_id === node.id
+		);
+		if (childElement && 'host_id' in childElement) {
+			return topology.hosts.find((h) => h.id === childElement.host_id) ?? null;
+		}
+		// Fallback: match by name
+		return topology.hosts.find((h) => h.name === containerContext?.title) ?? null;
+	});
+	let hostDisplayContext = $derived({
+		showEntityTagPicker: !editState.isReadonly,
+		tagPickerDisabled: !editState.isEditable,
+		entityTags: topology.entity_tags
+	});
+
 	// For containers: show the header/title
 	let containerTitle = $derived(containerContext?.title ?? null);
 </script>
@@ -76,7 +105,15 @@
 			<Crosshair class="h-3.5 w-3.5" />
 		</button>
 	</div>
-	{#if thisInterface}
+	{#if thisIfEntry}
+		<div class="card card-static">
+			<EntityDisplayWrapper
+				context={undefined}
+				item={thisIfEntry}
+				displayComponent={IfEntryDisplay}
+			/>
+		</div>
+	{:else if thisInterface}
 		<div class="card card-static">
 			<EntityDisplayWrapper
 				context={interfaceDisplayContext}
@@ -90,6 +127,14 @@
 				context={serviceDisplayContext}
 				item={thisService}
 				displayComponent={ServiceDisplay}
+			/>
+		</div>
+	{:else if thisHost}
+		<div class="card card-static">
+			<EntityDisplayWrapper
+				context={hostDisplayContext}
+				item={thisHost}
+				displayComponent={HostDisplay}
 			/>
 		</div>
 	{:else if containerTitle}

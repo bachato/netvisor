@@ -881,7 +881,6 @@
 	"inspector_crossBoundaryDeps": "Cross-boundary Dependencies",
 	"inspector_dependencySummary": "Dependency Summary",
 	"inspector_elementSummary": "Element Summary",
-	"inspector_fdbMacs": "FDB MACs",
 	"inspector_hostDetail": "Host Details",
 	"inspector_ifEntryData": "Interface Data",
 	"inspector_lldpNeighbor": "LLDP Neighbor",

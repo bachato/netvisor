@@ -218,9 +218,7 @@ export function computeCollapsedEdges(
 				parentMap.set(node.id, parentId);
 			}
 		} else if (node.node_type === 'Container') {
-			const parentId = (node as Record<string, unknown>).parent_container_id as
-				| string
-				| undefined;
+			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
 			if (parentId) {
 				parentMap.set(node.id, parentId);
 			}
