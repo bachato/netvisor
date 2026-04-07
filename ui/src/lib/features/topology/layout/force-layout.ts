@@ -14,8 +14,6 @@ import {
 	type SimulationNodeDatum,
 	type SimulationLinkDatum
 } from 'd3-force';
-import type { TopologyEdge } from '../types/base';
-import { computeOptimalHandles, type EdgeHandles } from './elk-layout';
 
 export interface ForceNode {
 	id: string;
@@ -30,7 +28,6 @@ export interface ForceLink {
 
 export interface ForceLayoutResult {
 	nodePositions: Map<string, { x: number; y: number }>;
-	edgeHandles: Map<string, EdgeHandles>;
 }
 
 interface SimNode extends SimulationNodeDatum {
@@ -88,20 +85,14 @@ function forceRectCollide(padding: number) {
 
 /**
  * Compute force-directed layout for collapsed containers.
+ * Returns only positions — edge handles are computed after edge aggregation.
  *
  * @param nodes - Root-level collapsed containers with measured dimensions
  * @param links - Deduplicated edges between containers
- * @param edges - All elevated edges (for computing edge handles)
- * @param hiddenEdgeTypes - Edge types to exclude from handle computation
  */
-export function computeForceLayout(
-	nodes: ForceNode[],
-	links: ForceLink[],
-	edges: TopologyEdge[],
-	hiddenEdgeTypes?: string[]
-): ForceLayoutResult {
+export function computeForceLayout(nodes: ForceNode[], links: ForceLink[]): ForceLayoutResult {
 	if (nodes.length === 0) {
-		return { nodePositions: new Map(), edgeHandles: new Map() };
+		return { nodePositions: new Map() };
 	}
 
 	// Single node: place at origin, no simulation needed
@@ -109,8 +100,7 @@ export function computeForceLayout(
 		const node = nodes[0];
 		const nodePositions = new Map<string, { x: number; y: number }>();
 		nodePositions.set(node.id, { x: ORIGIN_PAD, y: ORIGIN_PAD });
-		const edgeHandles = computeEdgeHandles(nodePositions, nodes, edges, hiddenEdgeTypes);
-		return { nodePositions, edgeHandles };
+		return { nodePositions };
 	}
 
 	// Initialize simulation nodes in circular arrangement for better convergence
@@ -164,45 +154,5 @@ export function computeForceLayout(
 		});
 	}
 
-	const edgeHandles = computeEdgeHandles(nodePositions, nodes, edges, hiddenEdgeTypes);
-
-	return { nodePositions, edgeHandles };
-}
-
-/**
- * Compute edge handles (connection sides) for all visible edges using node positions.
- */
-function computeEdgeHandles(
-	nodePositions: Map<string, { x: number; y: number }>,
-	nodes: ForceNode[],
-	edges: TopologyEdge[],
-	hiddenEdgeTypes?: string[]
-): Map<string, EdgeHandles> {
-	const handles = new Map<string, EdgeHandles>();
-	const hiddenSet = new Set(hiddenEdgeTypes ?? []);
-	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-
-	for (const edge of edges) {
-		const edgeType = (edge as Record<string, unknown>).edge_type as string | undefined;
-		if (edgeType && hiddenSet.has(edgeType)) continue;
-
-		const srcId = edge.source as string;
-		const tgtId = edge.target as string;
-		const srcPos = nodePositions.get(srcId);
-		const tgtPos = nodePositions.get(tgtId);
-		const srcNode = nodeMap.get(srcId);
-		const tgtNode = nodeMap.get(tgtId);
-
-		if (srcPos && tgtPos && srcNode && tgtNode && srcId !== tgtId) {
-			handles.set(
-				`${srcId}->${tgtId}`,
-				computeOptimalHandles(srcPos, { w: srcNode.width, h: srcNode.height }, tgtPos, {
-					w: tgtNode.width,
-					h: tgtNode.height
-				})
-			);
-		}
-	}
-
-	return handles;
+	return { nodePositions };
 }

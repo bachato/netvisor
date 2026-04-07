@@ -52,6 +52,7 @@
 	import { bundleEdges } from '../../layout/edge-bundling';
 	import { elevateEdgesToContainers } from '../../layout/edge-elevation';
 	import { computeForceLayout, type ForceNode, type ForceLink } from '../../layout/force-layout';
+	import { computeOptimalHandles } from '../../layout/elk-layout';
 	import { isDisabledEdge, isDashedEdge } from '../../layout/edge-classification';
 	import { onMount, tick, setContext } from 'svelte';
 	import { useQueryClient } from '@tanstack/svelte-query';
@@ -574,19 +575,14 @@
 							}
 						}
 
-						const forceResult = computeForceLayout(
-							forceNodes,
-							forceLinks,
-							elevatedEdges,
-							hiddenEdgeTypes
-						);
+						const forceResult = computeForceLayout(forceNodes, forceLinks);
 
 						sessionStructureKey = structureKey;
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						layoutGraph.syncCollapseState(collapsed);
 						layoutGraph.applyForceResult(
 							forceResult.nodePositions,
-							forceResult.edgeHandles,
+							new Map(),
 							elementNodeSizes
 						);
 					} else {
@@ -694,7 +690,24 @@
 					for (let index = 0; index < aggregatedEdges.length; index++) {
 						const agg = aggregatedEdges[index];
 						const edgeKey = `${agg.source}->${agg.target}`;
-						const handles = edgeHandles.get(edgeKey);
+						let handles = edgeHandles.get(edgeKey);
+
+						// Compute handles on-the-fly from positions if not cached
+						// (force layout doesn't pre-compute handles)
+						if (!handles && layoutGraph) {
+							const srcPos = layoutGraph.getPosition(agg.source);
+							const tgtPos = layoutGraph.getPosition(agg.target);
+							const srcSize = layoutGraph.getContainerSize(agg.source);
+							const tgtSize = layoutGraph.getContainerSize(agg.target);
+							if (srcPos && tgtPos && srcSize && tgtSize) {
+								handles = computeOptimalHandles(
+									srcPos,
+									{ w: srcSize.width, h: srcSize.height },
+									tgtPos,
+									{ w: tgtSize.width, h: tgtSize.height }
+								);
+							}
+						}
 						extraFlowEdges.push({
 							id: agg.id,
 							source: agg.source,
