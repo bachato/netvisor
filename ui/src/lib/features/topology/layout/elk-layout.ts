@@ -105,12 +105,11 @@ function buildElkGraph(
 			const childLayoutOptions: Record<string, string> = useLayeredChildren
 				? {
 						// With INCLUDE_CHILDREN, the root layered algorithm handles child
-						// placement and crossing minimization. Partitioning splits ports
-						// into multiple columns within the container.
+						// placement and crossing minimization. Partitioning on root splits
+						// ports into columns via elk.partitioning.partition on each port.
 						'elk.padding': padding,
 						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.spacing.nodeNode': '10',
-						'elk.partitioning.activate': 'true'
+						'elk.spacing.nodeNode': '10'
 					}
 				: {
 						'elk.algorithm': 'box',
@@ -528,7 +527,8 @@ function buildElkGraph(
 		? {
 				...ROOT_LAYOUT_OPTIONS,
 				'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-				'elk.direction': 'RIGHT'
+				'elk.direction': 'RIGHT',
+				'elk.partitioning.activate': 'true'
 			}
 		: ROOT_LAYOUT_OPTIONS;
 
