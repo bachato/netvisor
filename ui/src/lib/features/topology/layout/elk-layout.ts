@@ -102,27 +102,14 @@ function buildElkGraph(
 
 			// Layered children: ELK optimizes child ordering for crossing minimization
 			// Box children: grid packing by size (default for most views)
-			const childLayoutOptions: Record<string, string> = useLayeredChildren
-				? {
-						// Layered DOWN: subcontainers (FIRST) at top, then port grid, Down ports (LAST) at bottom.
-						// Ports within the same layer are ordered by crossing minimization.
-						'elk.algorithm': 'layered',
-						'elk.direction': 'DOWN',
-						'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
-						'elk.padding': padding,
-						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.spacing.nodeNode': '8',
-						'elk.layered.spacing.nodeNodeBetweenLayers': '15',
-						'elk.aspectRatio': '1.0'
-					}
-				: {
-						'elk.algorithm': 'box',
-						'elk.box.packingMode': 'SIMPLE',
-						'elk.aspectRatio': '1.4',
-						'elk.padding': padding,
-						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-						'elk.spacing.nodeNode': '25'
-					};
+			const childLayoutOptions: Record<string, string> = {
+				'elk.algorithm': 'box',
+				'elk.box.packingMode': 'SIMPLE',
+				'elk.aspectRatio': useLayeredChildren ? '1.0' : '1.4',
+				'elk.padding': padding,
+				'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+				'elk.spacing.nodeNode': useLayeredChildren ? '10' : '25'
+			};
 
 			const elkNode: ElkNode = isCollapsed
 				? {
