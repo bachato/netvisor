@@ -239,57 +239,23 @@ function buildElkGraph(input: ElkLayoutInput): {
 		});
 	}
 
-	// Predict element positions from box packing to create ports on containers.
-	// SIMPLE packing fills left-to-right, top-to-bottom. We simulate this to know
-	// WHERE each element sits within its container, then add ports at those positions
-	// so ELK's crossing minimization can order same-layer containers correctly.
-	const predictedPositions = new Map<string, { x: number; y: number }>();
-	for (const [containerId, container] of containers) {
-		if (!container.children || container.children.length === 0) continue;
-		if (parentContainerMap.has(containerId)) continue; // skip subcontainers
-
-		const opts = container.layoutOptions ?? {};
-		const aspectRatio = parseFloat(opts['elk.aspectRatio'] ?? '1.4');
-		const spacing = parseFloat(opts['elk.spacing.nodeNode'] ?? '25');
-		const paddingStr = opts['elk.padding'] ?? '';
-		const padMatch = paddingStr.match(/top=(\d+).*left=(\d+)/);
-		const padTop = padMatch ? parseInt(padMatch[1]) : 20;
-		const padLeft = padMatch ? parseInt(padMatch[2]) : 20;
-
-		// Estimate target width from total area and aspect ratio
-		const children = container.children.filter((c) => !containerIds.has(c.id));
-		if (children.length === 0) continue;
-		const totalArea = children.reduce((s, c) => s + (c.width ?? 0) * (c.height ?? 0), 0);
-		const targetWidth = Math.sqrt(totalArea * aspectRatio) + padLeft * 2;
-
-		let x = padLeft;
-		let y = padTop;
-		let rowHeight = 0;
-		for (const child of children) {
-			const w = child.width ?? 0;
-			const h = child.height ?? 0;
-			if (x + w > targetWidth && x > padLeft) {
-				x = padLeft;
-				y += rowHeight + spacing;
-				rowHeight = 0;
-			}
-			predictedPositions.set(child.id, { x, y });
-			x += w + spacing;
-			rowHeight = Math.max(rowHeight, h);
-		}
-	}
-
 	// Create port-based edges for cross-container connections.
-	// Ports give ELK positional information on WHERE edges exit a container,
-	// enabling meaningful crossing minimization for same-layer containers.
+	// Ports encode the relative order of edge sources within a container so ELK's
+	// crossing minimization can meaningfully order same-layer target containers.
+	//
+	// Port positions are distributed evenly across the container width, ordered by
+	// target group. Box packing internally reorders elements by size, so predicting
+	// actual element positions is unreliable. What matters is the RELATIVE order:
+	// elements connecting to "left" targets get left-side ports, "right" targets
+	// get right-side ports.
 	const edges: ElkExtendedEdge[] = [];
-	const containerPorts = new Map<string, { id: string; x: number; side: string }[]>();
 	const seenEdges = new Set<string>();
 	let edgeIndex = 0;
 
+	// Collect all cross-container edges grouped by source container
+	const edgesBySourceContainer = new Map<string, { source: string; target: string; srcRoot: string; tgtRoot: string }[]>();
 	for (const edge of input.edges) {
 		if (!affectsLayout(edge)) continue;
-
 		const key = `${edge.source}->${edge.target}`;
 		if (seenEdges.has(key)) continue;
 		seenEdges.add(key);
@@ -298,60 +264,82 @@ function buildElkGraph(input: ElkLayoutInput): {
 		const tgtRoot = resolveRoot(edge.target);
 		if (!srcRoot || !tgtRoot || srcRoot === tgtRoot) continue;
 
-		// For each endpoint, create a port on its root container at the element's x position
-		const addPort = (elementOrContainerId: string, rootId: string, side: string): string => {
-			const portId = `port-${elementOrContainerId}-${side}`;
-			if (!containerPorts.has(rootId)) containerPorts.set(rootId, []);
-			const ports = containerPorts.get(rootId)!;
-			if (ports.some((p) => p.id === portId)) return portId;
-
-			const pos = predictedPositions.get(elementOrContainerId);
-			const elemNode = containers.get(rootId)?.children?.find((c) => c.id === elementOrContainerId);
-			const elemWidth = elemNode?.width ?? 180;
-			const portX = pos ? pos.x + elemWidth / 2 : 0;
-
-			ports.push({ id: portId, x: portX, side });
-			return portId;
-		};
-
-		const srcPortId = addPort(edge.source, srcRoot, 'SOUTH');
-		// Target might be a container itself (absorbs_edges) — use container center
-		const tgtIsContainer = containerIds.has(edge.target);
-		const tgtEndpoint = tgtIsContainer ? tgtRoot : addPort(edge.target, tgtRoot, 'NORTH');
-
-		edges.push({
-			id: `elk-edge-${edgeIndex++}`,
-			sources: [srcPortId],
-			targets: [tgtEndpoint]
-		});
+		if (!edgesBySourceContainer.has(srcRoot)) edgesBySourceContainer.set(srcRoot, []);
+		edgesBySourceContainer.get(srcRoot)!.push({ source: edge.source, target: edge.target, srcRoot, tgtRoot });
 	}
 
-	// Apply ports to container ElkNodes
-	for (const [containerId, ports] of containerPorts) {
-		const container = containers.get(containerId);
+	// For each source container, distribute ports evenly ordered by target group
+	for (const [srcContainerId, containerEdges] of edgesBySourceContainer) {
+		const container = containers.get(srcContainerId);
 		if (!container) continue;
+
+		// Group edges by source element, then sort elements by their target group key
+		// (same key = same target set → adjacent ports)
+		const elementEdges = new Map<string, Set<string>>();
+		for (const e of containerEdges) {
+			if (!elementEdges.has(e.source)) elementEdges.set(e.source, new Set());
+			elementEdges.get(e.source)!.add(e.tgtRoot);
+		}
+		const sortedElements = Array.from(elementEdges.entries())
+			.sort(([, aTargets], [, bTargets]) => {
+				const aKey = Array.from(aTargets).sort().join(',');
+				const bKey = Array.from(bTargets).sort().join(',');
+				return aKey.localeCompare(bKey);
+			});
+
+		// Use a fixed reference width for port distribution. Only the relative
+		// order of ports matters for crossing minimization, not exact positions.
+		const containerWidth = 1000;
+		const portCount = sortedElements.length;
+		const portSpacing = containerWidth / (portCount + 1);
+
 		if (!container.ports) container.ports = [];
 		if (!container.layoutOptions) container.layoutOptions = {};
 		container.layoutOptions['elk.portConstraints'] = 'FIXED_POS';
 
-		for (const port of ports) {
-			// y=0 for NORTH (top), y=container height estimate for SOUTH (bottom)
-			const isBottom = port.side === 'SOUTH';
-			// Estimate container height from predicted positions
-			let containerH = 300; // fallback
-			const children = container.children?.filter((c) => !containerIds.has(c.id)) ?? [];
-			if (children.length > 0) {
-				const lastChild = children[children.length - 1];
-				const lastPos = predictedPositions.get(lastChild.id);
-				if (lastPos) containerH = lastPos.y + (lastChild.height ?? 60) + 20;
+		const elementPortIds = new Map<string, string>();
+		for (let i = 0; i < sortedElements.length; i++) {
+			const [elemId] = sortedElements[i];
+			const portId = `port-${elemId}-SOUTH`;
+			const portX = portSpacing * (i + 1);
+			const containerHeight = 700; // reference height, exact value doesn't matter
+			container.ports.push({
+				id: portId, x: portX, y: containerHeight, width: 1, height: 1,
+				layoutOptions: { 'elk.port.side': 'SOUTH' }
+			});
+			elementPortIds.set(elemId, portId);
+		}
+
+		// Create edges from source ports to target containers (or target ports)
+		for (const e of containerEdges) {
+			const srcPortId = elementPortIds.get(e.source);
+			if (!srcPortId) continue;
+
+			// Target: always route to the target ROOT container.
+			// If the target is an element inside a container, create a NORTH port
+			// on the target container so ELK knows the edge enters from the top.
+			const tgtContainer = containers.get(e.tgtRoot);
+			let tgtEndpoint = e.tgtRoot;
+			if (tgtContainer && !containerIds.has(e.target)) {
+				// Target is an element, not a container — add a NORTH port on its container
+				const tgtPortId = `port-${e.target}-NORTH`;
+				if (!tgtContainer.ports) tgtContainer.ports = [];
+				if (!tgtContainer.ports.some((p: { id: string }) => p.id === tgtPortId)) {
+					if (!tgtContainer.layoutOptions) tgtContainer.layoutOptions = {};
+					tgtContainer.layoutOptions['elk.portConstraints'] = 'FIXED_POS';
+					const tgtWidth = tgtContainer.width ?? 300;
+					tgtContainer.ports.push({
+						id: tgtPortId, x: tgtWidth / 2, y: 0, width: 1, height: 1,
+						layoutOptions: { 'elk.port.side': 'NORTH' }
+					});
+				}
+				tgtEndpoint = tgtPortId;
 			}
 
-			container.ports.push({
-				id: port.id,
-				x: port.x,
-				y: isBottom ? containerH : 0,
-				width: 1,
-				height: 1
+			edges.push({
+				id: `elk-edge-${edgeIndex++}`,
+				sources: [srcPortId],
+				targets: [tgtEndpoint]
 			});
 		}
 	}
