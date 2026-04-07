@@ -55,7 +55,10 @@ const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
  * Containers become parent nodes; elements become children inside their container.
  * Only layout-affecting edges are included in the ELK graph.
  */
-function buildElkGraph(input: ElkLayoutInput): {
+function buildElkGraph(
+	input: ElkLayoutInput,
+	elementPositions?: Map<string, { x: number; w: number; containerW: number }>
+): {
 	graph: ElkNode;
 	containerIds: Set<string>;
 } {
@@ -287,26 +290,32 @@ function buildElkGraph(input: ElkLayoutInput): {
 				return aKey.localeCompare(bKey);
 			});
 
-		// Use a fixed reference width for port distribution. Only the relative
-		// order of ports matters for crossing minimization, not exact positions.
-		const containerWidth = 1000;
-		const portCount = sortedElements.length;
-		const portSpacing = containerWidth / (portCount + 1);
-
 		if (!container.ports) container.ports = [];
 		if (!container.layoutOptions) container.layoutOptions = {};
-		container.layoutOptions['elk.portConstraints'] = 'FIXED_POS';
+
+		const useFixedPos = elementPositions && elementPositions.size > 0;
+		container.layoutOptions['elk.portConstraints'] = useFixedPos ? 'FIXED_POS' : 'FIXED_SIDE';
 
 		const elementPortIds = new Map<string, string>();
-		for (let i = 0; i < sortedElements.length; i++) {
-			const [elemId] = sortedElements[i];
+		for (const [elemId] of sortedElements) {
 			const portId = `port-${elemId}-SOUTH`;
-			const portX = portSpacing * (i + 1);
-			const containerHeight = 700; // reference height, exact value doesn't matter
-			container.ports.push({
-				id: portId, x: portX, y: containerHeight, width: 1, height: 1,
-				layoutOptions: { 'elk.port.side': 'SOUTH' }
-			});
+			const pos = elementPositions?.get(elemId);
+			if (useFixedPos && pos) {
+				// Pass 2: place port at the element's actual x center within the container
+				container.ports.push({
+					id: portId,
+					x: pos.x + pos.w / 2,
+					y: pos.containerW * 0.7, // approximate container height
+					width: 1, height: 1,
+					layoutOptions: { 'elk.port.side': 'SOUTH' }
+				});
+			} else {
+				// Pass 1: let ELK decide port positions
+				container.ports.push({
+					id: portId,
+					layoutOptions: { 'elk.port.side': 'SOUTH' }
+				});
+			}
 			elementPortIds.set(elemId, portId);
 		}
 
@@ -326,10 +335,9 @@ function buildElkGraph(input: ElkLayoutInput): {
 				if (!tgtContainer.ports) tgtContainer.ports = [];
 				if (!tgtContainer.ports.some((p: { id: string }) => p.id === tgtPortId)) {
 					if (!tgtContainer.layoutOptions) tgtContainer.layoutOptions = {};
-					tgtContainer.layoutOptions['elk.portConstraints'] = 'FIXED_POS';
-					const tgtWidth = tgtContainer.width ?? 300;
+					tgtContainer.layoutOptions['elk.portConstraints'] = 'FIXED_SIDE';
 					tgtContainer.ports.push({
-						id: tgtPortId, x: tgtWidth / 2, y: 0, width: 1, height: 1,
+						id: tgtPortId,
 						layoutOptions: { 'elk.port.side': 'NORTH' }
 					});
 				}
@@ -758,8 +766,38 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 		};
 	}
 
-	const { graph, containerIds } = buildElkGraph(input);
 	const elk = await getElk();
-	const result = await elk.layout(graph);
-	return mapElkResults(result, containerIds, input);
+
+	// Pass 1: compute layout with FIXED_SIDE ports (no position info).
+	// This gives us actual element positions within box-packed containers.
+	const { graph: graph1, containerIds } = buildElkGraph(input);
+	const result1 = await elk.layout(graph1);
+
+	// Extract actual element positions from pass 1 to set accurate port positions
+	const elementPositions = new Map<string, { x: number; w: number; containerW: number }>();
+	function extractPositions(children: ElkNode[]) {
+		for (const child of children) {
+			if (containerIds.has(child.id)) {
+				// Container: record width, recurse into children
+				if (child.children) {
+					for (const elem of child.children) {
+						if (!containerIds.has(elem.id)) {
+							elementPositions.set(elem.id, {
+								x: elem.x ?? 0,
+								w: elem.width ?? 0,
+								containerW: child.width ?? 0
+							});
+						}
+					}
+					extractPositions(child.children);
+				}
+			}
+		}
+	}
+	if (result1.children) extractPositions(result1.children);
+
+	// Pass 2: rebuild graph with FIXED_POS ports at actual element positions
+	const { graph: graph2, containerIds: cids2 } = buildElkGraph(input, elementPositions);
+	const result2 = await elk.layout(graph2);
+	return mapElkResults(result2, cids2, input);
 }
