@@ -444,39 +444,19 @@ export class LayoutGraph {
 	/** Apply positions from force layout (collapsed containers only) */
 	applyForceResult(
 		nodePositions: Map<string, { x: number; y: number }>,
-		edgeHandles: Map<string, EdgeHandles>
+		edgeHandles: Map<string, EdgeHandles>,
+		measuredSizes?: Map<string, { x: number; y: number }>
 	): void {
 		for (const [id, pos] of nodePositions) {
 			const container = this.containers.get(id);
 			if (container) {
 				container.position = { ...pos };
+				const measured = measuredSizes?.get(id);
+				if (measured && container.collapsed) {
+					container.measuredCollapsedSize = { width: measured.x, height: measured.y };
+				}
 			}
 		}
 		this.edgeHandles = new Map(edgeHandles);
-	}
-
-	/**
-	 * Export as flat maps for backward compatibility with existing code.
-	 */
-	toLayoutResult(): {
-		nodePositions: Map<string, { x: number; y: number }>;
-		containerSizes: Map<string, { width: number; height: number }>;
-		elementNodeSizes: Map<string, { x: number; y: number }>;
-		edgeHandles: Map<string, EdgeHandles>;
-	} {
-		const nodePositions = new Map<string, { x: number; y: number }>();
-		const containerSizes = new Map<string, { width: number; height: number }>();
-		const elementNodeSizes = new Map<string, { x: number; y: number }>();
-
-		for (const c of this.containers.values()) {
-			nodePositions.set(c.id, c.position);
-			containerSizes.set(c.id, c.size);
-		}
-		for (const e of this.elements.values()) {
-			nodePositions.set(e.id, e.position);
-			elementNodeSizes.set(e.id, e.size);
-		}
-
-		return { nodePositions, containerSizes, elementNodeSizes, edgeHandles: this.edgeHandles };
 	}
 }

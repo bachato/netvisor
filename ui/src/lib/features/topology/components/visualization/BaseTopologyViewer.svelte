@@ -157,6 +157,7 @@
 	let prevView = get(activeView);
 	let lastRenderedTopoKey = '';
 	let lastRenderedView = '';
+	let edgeHandles: Map<string, import('../../layout/elk-layout').EdgeHandles> = new Map();
 	// Cache measured node sizes per view so return visits skip the measurement pass
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
 	const viewSizeCache = new Map<string, Map<string, { x: number; y: number }>>();
@@ -583,7 +584,11 @@
 						sessionStructureKey = structureKey;
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						layoutGraph.syncCollapseState(collapsed);
-						layoutGraph.applyForceResult(forceResult.nodePositions, forceResult.edgeHandles);
+						layoutGraph.applyForceResult(
+							forceResult.nodePositions,
+							forceResult.edgeHandles,
+							elementNodeSizes
+						);
 					} else {
 						// Standard ELK layout for expanded or partially collapsed views
 						const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();
@@ -656,16 +661,10 @@
 				// collapse()/expand() with proper targeted reflowChildren(changedChildId).
 				// No additional blanket reflow needed here.
 
-				let layoutResult = layoutGraph?.toLayoutResult() ?? {
-					nodePositions: new Map(),
-					containerSizes: new Map(),
-					elementNodeSizes: new Map(),
-					edgeHandles: new Map()
-				};
-
 				// Skip handle preservation on view change
+				edgeHandles = layoutGraph?.edgeHandles ?? new Map();
 				if (currentView !== prevView) {
-					layoutResult = { ...layoutResult, edgeHandles: new Map() };
+					edgeHandles = new Map();
 					prevView = currentView;
 				}
 
@@ -695,7 +694,7 @@
 					for (let index = 0; index < aggregatedEdges.length; index++) {
 						const agg = aggregatedEdges[index];
 						const edgeKey = `${agg.source}->${agg.target}`;
-						const handles = layoutResult.edgeHandles.get(edgeKey);
+						const handles = edgeHandles.get(edgeKey);
 						extraFlowEdges.push({
 							id: agg.id,
 							source: agg.source,
@@ -733,7 +732,7 @@
 
 					// Unbundled edges render normally
 					for (const edge of unbundled) {
-						flowEdges.push(createFlowEdge(edge, edgeIndex++, layoutResult, animatedStates));
+						flowEdges.push(createFlowEdge(edge, edgeIndex++, animatedStates));
 					}
 
 					for (const bundle of bundles) {
@@ -742,7 +741,7 @@
 							const fanTotal = bundle.edges.length;
 							for (let i = 0; i < fanTotal; i++) {
 								flowEdges.push(
-									createFlowEdge(bundle.edges[i], edgeIndex++, layoutResult, animatedStates, {
+									createFlowEdge(bundle.edges[i], edgeIndex++, animatedStates, {
 										bundleId: bundle.id,
 										bundleFanIndex: i,
 										bundleFanTotal: fanTotal
@@ -754,7 +753,7 @@
 							const representative = bundle.edges[0];
 							const bundleStrokeWidth = Math.min(2 + 0.5 * (bundle.count - 1), 6);
 							flowEdges.push(
-								createFlowEdge(representative, edgeIndex++, layoutResult, animatedStates, {
+								createFlowEdge(representative, edgeIndex++, animatedStates, {
 									isBundle: true,
 									bundleId: bundle.id,
 									bundleCount: bundle.count,
@@ -768,14 +767,14 @@
 				} else {
 					// Bundling disabled: render all visible edges individually
 					flowEdges = visibleEdges.map((edge, index) =>
-						createFlowEdge(edge, index, layoutResult, animatedStates)
+						createFlowEdge(edge, index, animatedStates)
 					);
 				}
 
 				// Add hidden edges (they get filtered by CustomEdge's hideEdge logic)
 				const hiddenEdges = nonDisabledEdges.filter((e) => hiddenEdgeTypes.includes(e.edge_type));
 				for (const edge of hiddenEdges) {
-					flowEdges.push(createFlowEdge(edge, flowEdges.length, layoutResult, animatedStates));
+					flowEdges.push(createFlowEdge(edge, flowEdges.length, animatedStates));
 				}
 
 				// Add aggregated collapse edges
@@ -820,7 +819,6 @@
 	function createFlowEdge(
 		edge: TopologyEdge,
 		index: number,
-		layoutResult: import('../../layout/engine').LayoutResult,
 		animatedStates: Map<string, boolean | undefined>,
 		extraData?: Record<string, unknown>
 	): Edge {
@@ -850,12 +848,10 @@
 			markerEnd,
 			markerStart,
 			sourceHandle: (
-				layoutResult.edgeHandles.get(`${edge.source}->${edge.target}`)?.sourceHandle ??
-				edge.source_handle
+				edgeHandles.get(`${edge.source}->${edge.target}`)?.sourceHandle ?? edge.source_handle
 			).toString(),
 			targetHandle: (
-				layoutResult.edgeHandles.get(`${edge.source}->${edge.target}`)?.targetHandle ??
-				edge.target_handle
+				edgeHandles.get(`${edge.source}->${edge.target}`)?.targetHandle ?? edge.target_handle
 			).toString(),
 			type: 'custom',
 			label: edge.label ?? undefined,
