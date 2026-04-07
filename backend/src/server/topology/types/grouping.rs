@@ -222,7 +222,6 @@ impl TypeMetadataProvider for ElementRule {
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
             "is_user_editable": !self.is_locked(),
-            "is_locked": self.is_locked(),
             "views": self.applicable_views(),
             "will_accept_edges": self.will_accept_edges(),
         })
