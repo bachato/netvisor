@@ -194,6 +194,21 @@
 						} as ElementRenderData;
 					}
 
+					// Port elements: minimal display — just port name
+					if (elementType === 'Port') {
+						return {
+							elementType,
+							headerText: (data as TopologyNode).header ?? null,
+							footerText: null,
+							bodyText: null,
+							showServices: false,
+							isVirtualized: false,
+							services: [],
+							hiddenOpenPorts: [],
+							interface_id: ''
+						} as ElementRenderData;
+					}
+
 					// Interface elements: existing behavior
 					if (!host || !resolved.hostId) return null;
 
