@@ -29,7 +29,7 @@
 		topologyOptions,
 		activeView,
 		optionsPanelExpanded,
-		OPTIONS_PANEL_WIDTH_PX,
+		OPTIONS_PANEL_FITVIEW_PADDING_PX,
 		aggregatedEdgeOriginals
 	} from '../../queries';
 	import { isExporting, expandedPortNodeIds } from '../../interactions';
@@ -109,7 +109,7 @@
 	/** Returns fitView padding that accounts for the options panel overlay. */
 	function getFitViewPadding(): import('@xyflow/system').Padding {
 		if (get(optionsPanelExpanded)) {
-			return { top: 0.2, right: 0.2, bottom: 0.2, left: `${OPTIONS_PANEL_WIDTH_PX}px` };
+			return { top: 0.2, right: 0.2, bottom: 0.2, left: `${OPTIONS_PANEL_FITVIEW_PADDING_PX}px` };
 		}
 		return 0.2;
 	}

@@ -714,6 +714,13 @@ export const optionsPanelExpanded = writable<boolean>(loadExpandedFromStorage())
 /** Expanded options panel width in px (Tailwind w-96 = 384px). Used by the panel and panel-aware fitView. */
 export const OPTIONS_PANEL_WIDTH_PX = 384;
 
+/** Left offset of the options panel (Tailwind left-4 = 16px). */
+export const OPTIONS_PANEL_LEFT_OFFSET_PX = 16;
+
+/** Total left padding for fitView when panel is open: panel width + offset + gap. */
+export const OPTIONS_PANEL_FITVIEW_PADDING_PX =
+	OPTIONS_PANEL_WIDTH_PX + OPTIONS_PANEL_LEFT_OFFSET_PX + 16;
+
 /** Lookup map from aggregated edge ID to its original edges. Populated by BaseTopologyViewer during collapse. */
 export const aggregatedEdgeOriginals = writable<Map<string, TopologyEdge[]>>(new Map());
 
