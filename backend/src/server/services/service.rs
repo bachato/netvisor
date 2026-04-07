@@ -1209,6 +1209,7 @@ impl ServiceService {
         updated_host: &Host,
         updated_interfaces: &[Interface],
         updated_ports: &[Port],
+        interface_id_remap: &std::collections::HashMap<Uuid, Uuid>,
     ) -> Service {
         let lock = self.get_service_lock(&service.id).await;
         let _guard = lock.lock().await;
@@ -1246,6 +1247,12 @@ impl ServiceService {
                                 return Some(*b);
                             }
                         }
+                        // Structural match failed — try direct ID remap (handles subnet_id
+                        // mismatch on second scan where scanner subnet UUIDs differ from DB)
+                        if let Some(&new_id) = interface_id_remap.get(interface_id) {
+                            *interface_id = new_id;
+                            return Some(*b);
+                        }
                         // Interface binding couldn't be matched - this can happen during consolidation
                         // when the source host's interface doesn't exist on the destination host.
                         // We drop the binding and warn.
@@ -1280,17 +1287,33 @@ impl ServiceService {
                                             Some(Some(found_interface.clone()))
                                         }
                                         None => {
-                                            // Interface not found on destination host - fall back to "all interfaces"
-                                            // This is better than dropping the binding entirely
-                                            tracing::warn!(
-                                                service_id = %service_id,
-                                                service_name = %service_name,
-                                                port_number = %new_port.base.port_type.config().number,
-                                                original_interface_ip = %original_interface.base.ip_address,
-                                                "Port binding interface not found on destination host - \
-                                                 falling back to 'all interfaces'"
-                                            );
-                                            Some(None)
+                                            // Structural match failed — try direct ID remap
+                                            // (handles subnet_id mismatch on second scan)
+                                            if let Some(&new_id) = interface_id_remap.get(&original_interface.id) {
+                                                if let Some(found) = updated_interfaces.iter().find(|i| i.id == new_id) {
+                                                    Some(Some(found.clone()))
+                                                } else {
+                                                    tracing::warn!(
+                                                        service_id = %service_id,
+                                                        service_name = %service_name,
+                                                        port_number = %new_port.base.port_type.config().number,
+                                                        remapped_interface_id = %new_id,
+                                                        "Port binding interface remap target not found - \
+                                                         falling back to 'all interfaces'"
+                                                    );
+                                                    Some(None)
+                                                }
+                                            } else {
+                                                tracing::warn!(
+                                                    service_id = %service_id,
+                                                    service_name = %service_name,
+                                                    port_number = %new_port.base.port_type.config().number,
+                                                    original_interface_ip = %original_interface.base.ip_address,
+                                                    "Port binding interface not found on destination host - \
+                                                     falling back to 'all interfaces'"
+                                                );
+                                                Some(None)
+                                            }
                                         }
                                     }
                                 }

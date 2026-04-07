@@ -834,6 +834,16 @@ impl HostService {
             created_interfaces.push(created);
         }
 
+        // Build scanner→DB interface ID mapping using positional correspondence.
+        // original_interfaces and created_interfaces are 1:1 in order (the interface
+        // creation loop produces exactly one entry per input interface).
+        let interface_id_remap: std::collections::HashMap<Uuid, Uuid> = original_interfaces
+            .iter()
+            .zip(created_interfaces.iter())
+            .filter(|(orig, created)| orig.id != created.id)
+            .map(|(orig, created)| (orig.id, created.id))
+            .collect();
+
         // Create services with bindings reassigned (for discovery where IDs may change)
         // Track claimed bindings in this batch to detect in-batch conflicts
         let mut batch_claimed: Vec<(Uuid, Option<Uuid>)> = Vec::new();
@@ -852,6 +862,7 @@ impl HostService {
                     &created_host,
                     &created_interfaces,
                     &created_ports,
+                    &interface_id_remap,
                 )
                 .await;
 
@@ -1169,26 +1180,11 @@ impl HostService {
         // Binding fixup: remap provisional daemon interface/port IDs to server-assigned IDs.
         // This handles the case where interface or port UUIDs changed during dedup (upsert).
         // Idempotent — no-op if no IDs changed.
+        // Reuse the zip-based interface_id_remap built before service creation.
+        // The old structural-matching approach (ip_address + subnet_id) failed on second
+        // scan because original_interfaces retain scanner subnet_ids while created_interfaces
+        // have DB subnet_ids.
         {
-            let interface_id_remap: std::collections::HashMap<Uuid, Uuid> = original_interfaces
-                .iter()
-                .filter_map(|orig| {
-                    created_interfaces
-                        .iter()
-                        .find(|c| {
-                            c.base.ip_address == orig.base.ip_address
-                                && c.base.subnet_id == orig.base.subnet_id
-                        })
-                        .and_then(|created| {
-                            if created.id != orig.id {
-                                Some((orig.id, created.id))
-                            } else {
-                                None
-                            }
-                        })
-                })
-                .collect();
-
             let port_id_remap: std::collections::HashMap<Uuid, Uuid> = original_ports
                 .iter()
                 .filter_map(|orig| {
