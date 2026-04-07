@@ -279,6 +279,23 @@
 				let collapsed = get(collapsedContainers);
 				const hiddenServices = get(tagHiddenServiceIds);
 
+				// Auto-collapse containers whose type has collapsed_by_default metadata
+				{
+					const autoCollapseIds = topology.nodes
+						.filter((n) => {
+							if (n.node_type !== 'Container' || collapsed.has(n.id)) return false;
+							const ct = (n as Record<string, unknown>).container_type as string | undefined;
+							return ct ? containerTypes.getMetadata(ct).collapsed_by_default === true : false;
+						})
+						.map((n) => n.id);
+					if (autoCollapseIds.length > 0) {
+						const next = new Set(collapsed);
+						for (const id of autoCollapseIds) next.add(id);
+						collapsedContainers.set(next);
+						collapsed = next;
+					}
+				}
+
 				// Perspective switch fix: when switching views while all containers were
 				// collapsed, the old perspective's container IDs become stale. Detect this
 				// and auto-collapse the new perspective's root containers to preserve the

@@ -228,12 +228,14 @@ impl TypeMetadataProvider for ContainerType {
             _ => (250, 40),
         };
         let fill_icon = matches!(self, ContainerType::PortOpStatus);
+        let collapsed_by_default = matches!(self, ContainerType::PortOpStatus);
         serde_json::json!({
             "title_style": title_style,
             "is_subcontainer": is_subcontainer,
             "is_collapsible": true,
             "has_border": true,
             "fill_icon": fill_icon,
+            "collapsed_by_default": collapsed_by_default,
             "padding": { "top": padding_top, "left": padding_side, "bottom": padding_side, "right": padding_side },
             "collapsed_size": { "width": collapsed_width, "height": collapsed_height },
         })
