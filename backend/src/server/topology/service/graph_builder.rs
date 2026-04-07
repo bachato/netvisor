@@ -491,7 +491,7 @@ mod tests {
     use crate::server::tags::r#impl::base::{Tag, TagBase};
     use crate::server::topology::service::context::TopologyContext;
     use crate::server::topology::types::base::TopologyOptions;
-    use crate::server::topology::types::grouping::{ElementRule, GraphRule};
+    use crate::server::topology::types::grouping::{ElementRule, IdentifiedRule};
     use chrono::Utc;
 
     /// Test service definition that returns ReverseProxy category
@@ -613,13 +613,15 @@ mod tests {
         ];
 
         // Rules: ByServiceCategory first, then ByTag
+        // Use Application view so ByServiceCategory is applicable
         let mut options = TopologyOptions::default();
+        options.request.view = crate::server::topology::types::views::TopologyView::Application;
         options.request.element_rules = vec![
-            GraphRule::new(ElementRule::ByServiceCategory {
+            IdentifiedRule::new(ElementRule::ByServiceCategory {
                 categories: vec![ServiceCategory::ReverseProxy],
                 title: Some("Infra".to_string()),
             }),
-            GraphRule::new(ElementRule::ByTag {
+            IdentifiedRule::new(ElementRule::ByTag {
                 tag_ids: vec![tag.id],
                 title: None,
             }),
@@ -732,11 +734,11 @@ mod tests {
         // This time: ByTag FIRST, then ByServiceCategory
         let mut options = TopologyOptions::default();
         options.request.element_rules = vec![
-            GraphRule::new(ElementRule::ByTag {
+            IdentifiedRule::new(ElementRule::ByTag {
                 tag_ids: vec![tag.id],
                 title: Some("Tagged".to_string()),
             }),
-            GraphRule::new(ElementRule::ByServiceCategory {
+            IdentifiedRule::new(ElementRule::ByServiceCategory {
                 categories: vec![ServiceCategory::ReverseProxy],
                 title: Some("Infra".to_string()),
             }),
@@ -818,7 +820,7 @@ mod tests {
         let mut child_nodes = vec![make_element_node(child_id, host.id, subnet_id)];
 
         let mut options = TopologyOptions::default();
-        options.request.element_rules = vec![GraphRule::new(ElementRule::ByTag {
+        options.request.element_rules = vec![IdentifiedRule::new(ElementRule::ByTag {
             tag_ids: vec![tag.id],
             title: Some("ServiceTagGroup".to_string()),
         })];

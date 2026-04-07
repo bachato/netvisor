@@ -7,7 +7,7 @@
 	import type { ElementRenderContext } from '$lib/features/topology/resolvers';
 	import { inspector_servicesOnInterface } from '$lib/paraglide/messages';
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
 	let {
 		node,
 		topology,
@@ -19,6 +19,7 @@
 		editState: TopologyEditState;
 		elementContext?: ElementRenderContext;
 	} = $props();
+	/* eslint-enable @typescript-eslint/no-unused-vars */
 
 	let isReadonly = $derived(editState.isReadonly);
 

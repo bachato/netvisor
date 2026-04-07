@@ -11,6 +11,7 @@
 		inspector_noDependencies
 	} from '$lib/paraglide/messages';
 
+	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
 	let {
 		node,
 		topology,
@@ -20,6 +21,7 @@
 		topology: Topology;
 		elementContext?: ElementRenderContext;
 	} = $props();
+	/* eslint-enable @typescript-eslint/no-unused-vars */
 
 	let service = $derived(
 		elementContext?.elementType === 'Service' && elementContext.services.length > 0

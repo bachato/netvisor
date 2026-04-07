@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
-	import { SvelteMap } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { Eye, EyeOff, X, Crosshair } from 'lucide-svelte';
 	import { useSvelteFlow } from '@xyflow/svelte';
 	import {
@@ -31,7 +31,7 @@
 		createEmptyDependencyFormData
 	} from '$lib/features/dependencies/queries';
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
-	import { entities, dependencyTypes, concepts, views } from '$lib/shared/stores/metadata';
+	import { dependencyTypes, concepts, views } from '$lib/shared/stores/metadata';
 	import { getInspectorConfig } from './view-config';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
@@ -94,8 +94,8 @@
 	// Collect host and service IDs from all selected nodes via the resolver
 	let selectionIds = $derived.by(() => {
 		if (!topology) return { hostIds: [] as string[], serviceIds: [] as string[] };
-		const hostSet = new Set<string>();
-		const serviceSet = new Set<string>();
+		const hostSet = new SvelteSet<string>();
+		const serviceSet = new SvelteSet<string>();
 		for (const node of nodes) {
 			const ids = getNodeSelectionIds(node.id, node.data as TopologyNode, topology);
 			ids.hostIds.forEach((id) => hostSet.add(id));

@@ -8,6 +8,7 @@
 	import { useUpdateHostDescriptionMutation } from '$lib/features/hosts/queries';
 	import { inspector_hostDetail } from '$lib/paraglide/messages';
 
+	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
 	let {
 		node,
 		topology,
@@ -19,6 +20,7 @@
 		editState: TopologyEditState;
 		elementContext?: ElementRenderContext;
 	} = $props();
+	/* eslint-enable @typescript-eslint/no-unused-vars */
 
 	let isReadonly = $derived(editState.isReadonly);
 	let host = $derived(elementContext?.host ?? null);

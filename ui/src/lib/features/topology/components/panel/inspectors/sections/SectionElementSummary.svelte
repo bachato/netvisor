@@ -7,6 +7,7 @@
 	import { activeView } from '$lib/features/topology/queries';
 	import { inspector_elementSummary, common_services, common_hosts } from '$lib/paraglide/messages';
 
+	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
 	let {
 		node,
 		topology
@@ -14,6 +15,7 @@
 		node: Node;
 		topology: Topology;
 	} = $props();
+	/* eslint-enable @typescript-eslint/no-unused-vars */
 
 	const { getNodes } = useSvelteFlow();
 

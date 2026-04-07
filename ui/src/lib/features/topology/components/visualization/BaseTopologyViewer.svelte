@@ -162,7 +162,7 @@
 		if (panelInitialized) {
 			setTimeout(() => fitView({ padding: getFitViewPadding() }), 300);
 		}
-		panelInitialized = true;
+		panelInitialized = true; // eslint-disable-line no-useless-assignment -- read on next reactive trigger
 	}
 
 	// Stores for SvelteFlow
@@ -178,6 +178,7 @@
 	// Track ELK layout — only skip within same session when structure unchanged
 	let layoutGraph: LayoutGraph | null = null;
 	let sessionStructureKey = '';
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
 	let seenAutoCollapseIds = new Set<string>();
 	let isMeasuring = false;
 	let prevExpandedPortIds = new Set<string>();
@@ -293,6 +294,7 @@
 						.map((n) => n.id);
 					if (autoCollapseIds.length > 0) {
 						for (const id of autoCollapseIds) seenAutoCollapseIds.add(id);
+						// eslint-disable-next-line svelte/prefer-svelte-reactivity -- temporary value for store update
 						const next = new Set(collapsed);
 						for (const id of autoCollapseIds) next.add(id);
 						collapsedContainers.set(next);
@@ -430,11 +432,6 @@
 
 				// Use the graph to determine visible nodes
 				const visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
-
-				// Only root container collapses affect graph structure (need full ELK)
-				const rootCollapsed = new Set(
-					[...collapsed].filter((id) => !layoutGraph!.isSubcontainer(id))
-				);
 
 				// Helper: build SvelteFlow node array from topology nodes
 				const buildFlowNodes = (useGraph: boolean): Node[] => {
@@ -608,6 +605,7 @@
 						// Build deduplicated links from elevated edges between root containers
 						const rootIds = new Set(rootContainerNodes.map((n) => n.id));
 						const forceLinks: ForceLink[] = [];
+						// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local computation, not reactive state
 						const seenLinks = new Set<string>();
 						for (const edge of elevatedEdges) {
 							const src = edge.source as string;
@@ -731,6 +729,7 @@
 					// Create aggregated flow edges for collapsed containers
 					// Store original edges in a separate lookup (not in flow edge data,
 					// which causes SvelteFlow rendering issues with nested objects)
+					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local computation, not reactive state
 					const originalsMap = new Map<string, import('../../types/base').TopologyEdge[]>();
 					for (let index = 0; index < aggregatedEdges.length; index++) {
 						const agg = aggregatedEdges[index];

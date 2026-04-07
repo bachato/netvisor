@@ -32,6 +32,7 @@
 	import type { components } from '$lib/api/schema';
 	type TopologyView = components['schemas']['TopologyView'];
 
+	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
 	let {
 		dependencyId,
 		sourceBindingId,
@@ -43,6 +44,7 @@
 		targetBindingId: string;
 		view?: TopologyView;
 	} = $props();
+	/* eslint-enable @typescript-eslint/no-unused-vars */
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');

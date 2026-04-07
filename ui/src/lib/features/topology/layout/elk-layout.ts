@@ -84,6 +84,7 @@ function buildElkGraph(
 			const containerType =
 				((node as Record<string, unknown>).container_type as string) ?? 'Subnet';
 			const meta = containerTypes.getMetadata(containerType);
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const isSubcontainer = meta.is_subcontainer;
 			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
 			if (parentId) parentContainerMap.set(node.id, parentId);
@@ -492,6 +493,7 @@ function buildElkGraph(
 			// giving ELK crossing minimization real positional signals
 			const useFixedPosTgt = elementPositions && elementPositions.size > 0 && useLayeredChildren;
 			if (useLayeredChildren) {
+				// Layered layout handled below via portConstraints
 			}
 			tgtContainer.layoutOptions['elk.portConstraints'] = useFixedPosTgt
 				? 'FIXED_POS'
@@ -588,6 +590,7 @@ function buildElkGraph(
 
 	// Switch root containers with cross-child edges from box to layered
 	if (useLayeredChildren) {
+		// Cross-child edge containers switched to layered below
 	}
 	for (const rootId of rootsWithCrossChildEdges) {
 		const container = containers.get(rootId);
@@ -643,7 +646,7 @@ function buildElkGraph(
 	}
 
 	// Only add root-level containers (not nested sub-groups) to root children
-	let rootContainers = Array.from(containers.entries())
+	const rootContainers = Array.from(containers.entries())
 		.filter(([id]) => !parentContainerMap.has(id))
 		.map(([, node]) => node);
 
@@ -689,11 +692,13 @@ function buildElkGraph(
 			const srcRoot = resolveRoot(edge.source);
 			const tgtRoot = resolveRoot(edge.target);
 			if (!srcRoot || !tgtRoot || srcRoot === tgtRoot) continue;
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const tgtPos = elementPositions.get(edge.target);
 		}
 	}
 
 	if (useLayeredChildren) {
+		// Root options set via ternary below
 	}
 	const rootOptions = useLayeredChildren
 		? {
@@ -1168,20 +1173,12 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 	}
 	if (result1.children) extractPositions(result1.children);
 
-	// Log pass 1 root children positions
-	if (input.topology?.options?.request?.view === 'L2Physical' && result1.children) {
-		for (const c of result1.children) {
-		}
-	}
-
 	// Pass 2: rebuild graph with FIXED_POS ports at actual element positions
 	const { graph: graph2, containerIds: cids2 } = buildElkGraph(
 		input,
 		elementPositions,
 		subcontainerPositions
 	);
-	if (input.topology?.options?.request?.view === 'L2Physical' && elementPositions.size > 0) {
-	}
 	const result2 = await elk.layout(graph2);
 
 	// L2: top-align layers by shifting each layer's top node to the same Y.

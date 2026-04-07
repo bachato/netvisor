@@ -291,7 +291,7 @@
 		: undefined}
 >
 	<!-- TITLE: External (card/pill above container) -->
-	{#if titleStyle === 'External' && headerText}
+	{#if titleStyle === 'External' && (headerText || isCollapsible)}
 		<div
 			class="nopan nodrag card text-secondary z-100 absolute -top-10 left-0 flex cursor-pointer items-center gap-1 px-2 py-1 shadow-lg backdrop-blur-sm"
 			role="button"

@@ -299,7 +299,7 @@ mod tests {
             service::context::TopologyContext,
             types::{
                 base::TopologyOptions,
-                grouping::{ElementRule, GraphRule, GroupingConfig},
+                grouping::{ElementRule, GroupingConfig, IdentifiedRule},
                 nodes::ContainerType,
             },
         },
@@ -369,7 +369,7 @@ mod tests {
     fn infra_grouping() -> GroupingConfig {
         GroupingConfig {
             container_rules: vec![],
-            element_rules: vec![GraphRule::new(ElementRule::ByVirtualizer)],
+            element_rules: vec![IdentifiedRule::new(ElementRule::ByVirtualizer)],
         }
     }
 

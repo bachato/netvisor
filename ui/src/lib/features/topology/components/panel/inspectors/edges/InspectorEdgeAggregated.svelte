@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import type { TopologyEdge, Topology } from '$lib/features/topology/types/base';
 	import { useTopologiesQuery, selectedTopologyId } from '$lib/features/topology/queries';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
@@ -24,7 +25,7 @@
 
 	// Group edges by type, deduplicating dependency edges by group_id
 	let edgesByType = $derived.by(() => {
-		const groups = new Map<string, TopologyEdge[]>();
+		const groups = new SvelteMap<string, TopologyEdge[]>();
 		for (const edge of edges) {
 			const type = edge.edge_type;
 			const existing = groups.get(type);
@@ -40,7 +41,7 @@
 	// For dependency edges, deduplicate by group_id and resolve to Dependency objects
 	function getUniqueDependencies(typeEdges: TopologyEdge[]): Dependency[] {
 		if (!topology) return [];
-		const seen = new Set<string>();
+		const seen = new SvelteSet<string>();
 		const deps: Dependency[] = [];
 		for (const edge of typeEdges) {
 			if (!('group_id' in edge)) continue;
@@ -79,7 +80,7 @@
 	</span>
 
 	<div class="max-h-96 space-y-3 overflow-y-auto">
-		{#each [...edgesByType.entries()] as [edgeType, typeEdges]}
+		{#each [...edgesByType.entries()] as [edgeType, typeEdges] (edgeType)}
 			{@const typeName = edgeTypes.getName(edgeType)}
 			{@const displayComponent = getDisplayComponent(edgeType)}
 

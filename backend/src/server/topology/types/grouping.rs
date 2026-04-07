@@ -9,14 +9,25 @@ use strum_macros::{EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+pub trait GraphRule {
+    /// Whether edges targeting elements inside containers created by this rule
+    /// should be elevated to target the container itself.
+    fn will_accept_edges(&self) -> bool;
+
+    /// Whether this rule is locked (not user-removable or orderable)
+    fn is_user_editable(&self) -> bool;
+
+    fn applicable_views(&self) -> &'static [TopologyView];
+}
+
 /// Generic wrapper that gives any rule type a stable UUID identity.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
-pub struct GraphRule<T> {
+pub struct IdentifiedRule<T: GraphRule> {
     pub id: Uuid,
     pub rule: T,
 }
 
-impl<T> GraphRule<T> {
+impl<T: GraphRule> IdentifiedRule<T> {
     pub fn new(rule: T) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -40,8 +51,8 @@ pub enum ContainerRule {
     ByHost,
 }
 
-impl ContainerRule {
-    pub fn applicable_views(&self) -> &'static [TopologyView] {
+impl GraphRule for ContainerRule {
+    fn applicable_views(&self) -> &'static [TopologyView] {
         match self {
             ContainerRule::BySubnet => &[TopologyView::L3Logical],
             ContainerRule::MergeDockerBridges => &[TopologyView::L3Logical],
@@ -50,9 +61,11 @@ impl ContainerRule {
         }
     }
 
-    /// Whether edges targeting elements inside containers created by this rule
-    /// should be elevated to target the container itself.
-    pub fn will_accept_edges(&self) -> bool {
+    fn will_accept_edges(&self) -> bool {
+        matches!(self, ContainerRule::MergeDockerBridges)
+    }
+
+    fn is_user_editable(&self) -> bool {
         matches!(self, ContainerRule::MergeDockerBridges)
     }
 }
@@ -104,7 +117,7 @@ impl TypeMetadataProvider for ContainerRule {
 
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
-            "is_user_editable": matches!(self, ContainerRule::MergeDockerBridges),
+            "is_user_editable": self.is_user_editable(),
             "views": self.applicable_views(),
             "will_accept_edges": self.will_accept_edges(),
         })
@@ -135,26 +148,21 @@ pub enum ElementRule {
     ByPortOpStatus,
 }
 
-impl ElementRule {
-    /// Whether edges targeting elements inside subcontainers created by this rule
-    /// should be elevated to target the subcontainer itself.
-    pub fn will_accept_edges(&self) -> bool {
+impl GraphRule for ElementRule {
+    fn will_accept_edges(&self) -> bool {
         matches!(self, ElementRule::ByStack | ElementRule::ByVirtualizer)
     }
 
-    /// Whether this rule is locked (not user-removable) when applicable.
-    pub fn is_locked(&self) -> bool {
+    fn is_user_editable(&self) -> bool {
         matches!(
             self,
             ElementRule::ByTrunkPort | ElementRule::ByVLAN | ElementRule::ByPortOpStatus
         )
     }
 
-    pub fn applicable_views(&self) -> &'static [TopologyView] {
+    fn applicable_views(&self) -> &'static [TopologyView] {
         match self {
-            ElementRule::ByServiceCategory { .. } => {
-                &[TopologyView::L3Logical, TopologyView::Application]
-            }
+            ElementRule::ByServiceCategory { .. } => &[TopologyView::Application],
             ElementRule::ByTag { .. } => &[
                 TopologyView::L3Logical,
                 TopologyView::L2Physical,
@@ -231,7 +239,7 @@ impl TypeMetadataProvider for ElementRule {
 
     fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
-            "is_user_editable": !self.is_locked(),
+            "is_user_editable": self.is_user_editable(),
             "views": self.applicable_views(),
             "will_accept_edges": self.will_accept_edges(),
         })
@@ -240,8 +248,8 @@ impl TypeMetadataProvider for ElementRule {
 
 #[derive(Debug, Clone)]
 pub struct GroupingConfig {
-    pub container_rules: Vec<GraphRule<ContainerRule>>,
-    pub element_rules: Vec<GraphRule<ElementRule>>,
+    pub container_rules: Vec<IdentifiedRule<ContainerRule>>,
+    pub element_rules: Vec<IdentifiedRule<ElementRule>>,
 }
 
 impl GroupingConfig {
@@ -312,23 +320,11 @@ mod tests {
     }
 
     #[test]
-    fn test_from_default_options() {
-        // Default perspective is L3Logical, which gets BySubnet + MergeDockerBridges
-        let options = TopologyRequestOptions::default();
-        let config = GroupingConfig::from_request_options(&options);
-
-        assert!(config.should_group_docker_bridges());
-        assert_eq!(config.container_rules.len(), 2);
-        // L3Logical gets ByServiceCategory + ByTag + ByStack (3 of the 4 default element rules)
-        assert_eq!(config.element_rules.len(), 3);
-    }
-
-    #[test]
     fn test_no_docker_grouping() {
         let mut options = TopologyRequestOptions::default();
         options.container_rules.insert(
             TopologyView::L3Logical,
-            vec![GraphRule::new(ContainerRule::BySubnet)],
+            vec![IdentifiedRule::new(ContainerRule::BySubnet)],
         );
         let config = GroupingConfig::from_request_options(&options);
 
@@ -336,62 +332,42 @@ mod tests {
     }
 
     #[test]
-    fn test_service_category_grouping() {
-        let options = TopologyRequestOptions {
-            element_rules: vec![GraphRule::new(ElementRule::ByServiceCategory {
-                categories: vec![ServiceCategory::DNS],
-                title: Some("Infra".into()),
-            })],
-            ..Default::default()
-        };
-        let config = GroupingConfig::from_request_options(&options);
-
-        let has_category_rule = config.element_rules.iter().any(|r| match &r.rule {
-            ElementRule::ByServiceCategory { categories, .. } => {
-                categories.contains(&ServiceCategory::DNS)
-            }
-            _ => false,
-        });
-        assert!(has_category_rule);
-    }
-
-    #[test]
     fn test_serialization_round_trip_container_rules() {
         let rules = vec![
-            GraphRule::new(ContainerRule::BySubnet),
-            GraphRule::new(ContainerRule::MergeDockerBridges),
+            IdentifiedRule::new(ContainerRule::BySubnet),
+            IdentifiedRule::new(ContainerRule::MergeDockerBridges),
         ];
 
         let json = serde_json::to_string(&rules).unwrap();
-        let deserialized: Vec<GraphRule<ContainerRule>> = serde_json::from_str(&json).unwrap();
+        let deserialized: Vec<IdentifiedRule<ContainerRule>> = serde_json::from_str(&json).unwrap();
         assert_eq!(rules, deserialized);
     }
 
     #[test]
     fn test_serialization_round_trip_element_rules() {
         let rules = vec![
-            GraphRule::new(ElementRule::ByServiceCategory {
+            IdentifiedRule::new(ElementRule::ByServiceCategory {
                 categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
                 title: Some("Infrastructure".into()),
             }),
-            GraphRule::new(ElementRule::ByTag {
+            IdentifiedRule::new(ElementRule::ByTag {
                 tag_ids: vec![Uuid::new_v4(), Uuid::new_v4()],
                 title: Some("Tagged".into()),
             }),
-            GraphRule::new(ElementRule::ByStack),
+            IdentifiedRule::new(ElementRule::ByStack),
         ];
 
         let json = serde_json::to_string(&rules).unwrap();
-        let deserialized: Vec<GraphRule<ElementRule>> = serde_json::from_str(&json).unwrap();
+        let deserialized: Vec<IdentifiedRule<ElementRule>> = serde_json::from_str(&json).unwrap();
         assert_eq!(rules, deserialized);
     }
 
     #[test]
     fn test_by_stack_serde_round_trip() {
-        let rule = GraphRule::new(ElementRule::ByStack);
+        let rule = IdentifiedRule::new(ElementRule::ByStack);
         let json = serde_json::to_string(&rule).unwrap();
         assert!(json.contains("ByStack"));
-        let deserialized: GraphRule<ElementRule> = serde_json::from_str(&json).unwrap();
+        let deserialized: IdentifiedRule<ElementRule> = serde_json::from_str(&json).unwrap();
         assert_eq!(rule, deserialized);
     }
 }

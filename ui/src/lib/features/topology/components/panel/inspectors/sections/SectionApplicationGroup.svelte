@@ -15,7 +15,7 @@
 		tags_fromHost
 	} from '$lib/paraglide/messages';
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
 	let {
 		node,
 		topology,
@@ -27,6 +27,7 @@
 		editState: TopologyEditState;
 		elementContext?: ElementRenderContext;
 	} = $props();
+	/* eslint-enable @typescript-eslint/no-unused-vars */
 
 	let entityId = $derived.by((): string | undefined => {
 		if (elementContext?.services.length) return elementContext.services[0].id;

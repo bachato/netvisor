@@ -56,7 +56,6 @@
 
 <script lang="ts">
 	import type { EntityDisplayComponent } from '../types';
-	import type { TagProps } from '$lib/shared/components/data/types';
 	import ListSelectItem from '../ListSelectItem.svelte';
 
 	interface Props {

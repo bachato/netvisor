@@ -10,7 +10,9 @@ use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::tags::r#impl::base::Tag;
 use crate::server::topology::types::edges::{Edge, EdgeHandle, EdgeTypeDiscriminants};
-use crate::server::topology::types::grouping::{ContainerRule, ElementRule, GraphRule};
+use crate::server::topology::types::grouping::{
+    ContainerRule, ElementRule, GraphRule, IdentifiedRule,
+};
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
 use crate::server::topology::types::views::TopologyView;
@@ -251,9 +253,9 @@ pub struct TopologyRequestOptions {
     #[serde(default = "default_hide_service_categories")]
     pub hide_service_categories: HashMap<TopologyView, Vec<ServiceCategory>>,
     #[serde(default = "default_container_rules")]
-    pub container_rules: HashMap<TopologyView, Vec<GraphRule<ContainerRule>>>,
+    pub container_rules: HashMap<TopologyView, Vec<IdentifiedRule<ContainerRule>>>,
     #[serde(default = "default_element_rules")]
-    pub element_rules: Vec<GraphRule<ElementRule>>,
+    pub element_rules: Vec<IdentifiedRule<ElementRule>>,
     #[serde(default)]
     pub view: TopologyView,
 }
@@ -264,18 +266,18 @@ fn default_hide_service_categories() -> HashMap<TopologyView, Vec<ServiceCategor
         .collect()
 }
 
-fn default_container_rules() -> HashMap<TopologyView, Vec<GraphRule<ContainerRule>>> {
+fn default_container_rules() -> HashMap<TopologyView, Vec<IdentifiedRule<ContainerRule>>> {
     use ContainerRule::*;
 
     // Build from applicable_views: for each rule type, add it to every view it applies to
-    let all_rules: Vec<GraphRule<ContainerRule>> = vec![
-        GraphRule::new(BySubnet),
-        GraphRule::new(MergeDockerBridges),
-        GraphRule::new(ByApplicationGroup { tag_ids: vec![] }),
-        GraphRule::new(ByHost),
+    let all_rules: Vec<IdentifiedRule<ContainerRule>> = vec![
+        IdentifiedRule::new(BySubnet),
+        IdentifiedRule::new(MergeDockerBridges),
+        IdentifiedRule::new(ByApplicationGroup { tag_ids: vec![] }),
+        IdentifiedRule::new(ByHost),
     ];
 
-    let mut map: HashMap<TopologyView, Vec<GraphRule<ContainerRule>>> =
+    let mut map: HashMap<TopologyView, Vec<IdentifiedRule<ContainerRule>>> =
         TopologyView::iter().map(|p| (p, vec![])).collect();
 
     for gr in all_rules {
@@ -287,21 +289,21 @@ fn default_container_rules() -> HashMap<TopologyView, Vec<GraphRule<ContainerRul
     map
 }
 
-fn default_element_rules() -> Vec<GraphRule<ElementRule>> {
+fn default_element_rules() -> Vec<IdentifiedRule<ElementRule>> {
     vec![
-        GraphRule::new(ElementRule::ByTrunkPort),
-        GraphRule::new(ElementRule::ByVLAN),
-        GraphRule::new(ElementRule::ByPortOpStatus),
-        GraphRule::new(ElementRule::ByServiceCategory {
+        IdentifiedRule::new(ElementRule::ByTrunkPort),
+        IdentifiedRule::new(ElementRule::ByVLAN),
+        IdentifiedRule::new(ElementRule::ByPortOpStatus),
+        IdentifiedRule::new(ElementRule::ByServiceCategory {
             categories: vec![ServiceCategory::DNS, ServiceCategory::ReverseProxy],
             title: Some("Network Services".into()),
         }),
-        GraphRule::new(ElementRule::ByTag {
+        IdentifiedRule::new(ElementRule::ByTag {
             tag_ids: vec![],
             title: None,
         }),
-        GraphRule::new(ElementRule::ByVirtualizer),
-        GraphRule::new(ElementRule::ByStack),
+        IdentifiedRule::new(ElementRule::ByVirtualizer),
+        IdentifiedRule::new(ElementRule::ByStack),
     ]
 }
 

@@ -5,7 +5,7 @@ use crate::server::{
     if_entries::r#impl::base::IfOperStatus,
     services::r#impl::categories::ServiceCategory,
     topology::types::{
-        grouping::{ElementRule, GraphRule},
+        grouping::{ElementRule, GraphRule, IdentifiedRule},
         nodes::{ContainerType, Node, NodeType},
     },
 };
@@ -38,7 +38,7 @@ pub struct ElementMatchData {
 /// First-match-wins: nodes claimed by an earlier rule are not reassigned.
 pub fn apply_element_rules(
     nodes: &mut Vec<Node>,
-    element_rules: &[GraphRule<ElementRule>],
+    element_rules: &[IdentifiedRule<ElementRule>],
     resolve_element: impl Fn(&Node) -> Option<ElementMatchData>,
 ) {
     apply_element_rules_with_titles(nodes, element_rules, resolve_element, None);
@@ -48,7 +48,7 @@ pub fn apply_element_rules(
 /// `virtualizer_titles` maps virtualizer host IDs to display names (for ByVirtualizer subcontainers).
 pub fn apply_element_rules_with_titles(
     nodes: &mut Vec<Node>,
-    element_rules: &[GraphRule<ElementRule>],
+    element_rules: &[IdentifiedRule<ElementRule>],
     resolve_element: impl Fn(&Node) -> Option<ElementMatchData>,
     virtualizer_titles: Option<&HashMap<Uuid, String>>,
 ) {
@@ -80,7 +80,7 @@ pub fn apply_element_rules_with_titles(
     // Collect reassignments: node_id → new container_id
     let mut reassignments: HashMap<Uuid, Uuid> = HashMap::new();
 
-    for GraphRule { id: rule_id, rule } in element_rules {
+    for IdentifiedRule { id: rule_id, rule } in element_rules {
         match rule {
             ElementRule::ByVirtualizer => {
                 // ByVirtualizer groups elements by their virtualizer_host_id.
@@ -451,7 +451,7 @@ pub fn apply_element_rules_with_titles(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::server::topology::types::{grouping::GraphRule, nodes::ElementEntityType};
+    use crate::server::topology::types::{grouping::IdentifiedRule, nodes::ElementEntityType};
 
     fn make_element(id: Uuid, container_id: Uuid) -> Node {
         Node::element(
@@ -490,7 +490,7 @@ mod tests {
         ]
         .into();
 
-        let rules = vec![GraphRule::new(ElementRule::ByStack)];
+        let rules = vec![IdentifiedRule::new(ElementRule::ByStack)];
         apply_element_rules(&mut nodes, &rules, |node| match_map.get(&node.id).cloned());
 
         // Both services should be in the same new container
@@ -533,7 +533,7 @@ mod tests {
 
         let match_map: HashMap<Uuid, ElementMatchData> = [(svc1, make_match_data(None))].into();
 
-        let rules = vec![GraphRule::new(ElementRule::ByStack)];
+        let rules = vec![IdentifiedRule::new(ElementRule::ByStack)];
         apply_element_rules(&mut nodes, &rules, |node| match_map.get(&node.id).cloned());
 
         // Should stay in original container
@@ -566,7 +566,7 @@ mod tests {
         ]
         .into();
 
-        let rules = vec![GraphRule::new(ElementRule::ByStack)];
+        let rules = vec![IdentifiedRule::new(ElementRule::ByStack)];
         apply_element_rules(&mut nodes, &rules, |node| match_map.get(&node.id).cloned());
 
         let get_container = |id: Uuid| -> Uuid {

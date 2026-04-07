@@ -69,7 +69,19 @@ impl From<IfAdminStatus> for i32 {
 }
 
 /// SNMP ifOperStatus values per IF-MIB RFC 2863
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Hash, Default, ToSchema)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    ToSchema,
+    strum_macros::Display,
+)]
 #[repr(i32)]
 pub enum IfOperStatus {
     #[default]

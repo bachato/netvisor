@@ -73,7 +73,7 @@ mod tests {
     use crate::server::topology::service::context::TopologyContext;
     use crate::server::topology::service::view::ViewBuilder;
     use crate::server::topology::types::base::TopologyOptions;
-    use crate::server::topology::types::grouping::{ElementRule, GraphRule};
+    use crate::server::topology::types::grouping::{ElementRule, IdentifiedRule};
     use crate::server::topology::types::nodes::{ContainerType, NodeType};
     use chrono::Utc;
     use cidr::{IpCidr, Ipv4Cidr};
@@ -171,7 +171,7 @@ mod tests {
         };
 
         let mut options = TopologyOptions::default();
-        options.request.element_rules = vec![GraphRule::new(ElementRule::ByTag {
+        options.request.element_rules = vec![IdentifiedRule::new(ElementRule::ByTag {
             tag_ids: vec![tag_id],
             title: Some("Tagged".to_string()),
         })];
