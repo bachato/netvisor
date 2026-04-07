@@ -35,8 +35,9 @@ async function getElk(): Promise<import('elkjs/lib/elk-api')['default']> {
 const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
 	'elk.algorithm': 'layered',
 	'elk.direction': 'DOWN',
-	'elk.layered.spacing.nodeNodeBetweenLayers': '40',
-	'elk.layered.spacing.edgeNodeBetweenLayers': '20',
+	'elk.layered.spacing.nodeNodeBetweenLayers': '30',
+	'elk.layered.spacing.edgeNodeBetweenLayers': '15',
+	'elk.edgeRouting': 'POLYLINE',
 	'elk.spacing.componentComponent': '50',
 	'elk.spacing.nodeNode': '40',
 	'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
@@ -169,15 +170,17 @@ function buildElkGraph(input: ElkLayoutInput): {
 
 	// Sort children: elements first (alphabetical), then subcontainers (alphabetical).
 	// Must run AFTER elements are added above.
-	for (const [, parent] of containers) {
-		if (parent.children && parent.children.length > 1) {
-			parent.children.sort((a, b) => {
-				const aIsSub = containerIds.has(a.id) ? 1 : 0;
-				const bIsSub = containerIds.has(b.id) ? 1 : 0;
-				if (aIsSub !== bIsSub) return aIsSub - bIsSub;
-				return a.id.localeCompare(b.id);
-			});
-		}
+	for (const [containerId, parent] of containers) {
+		if (!parent.children || parent.children.length < 2) continue;
+		if (parentContainerMap.has(containerId)) continue; // only sort root containers
+		const elemCount = parent.children.filter((c) => !containerIds.has(c.id)).length;
+		const subCount = parent.children.filter((c) => containerIds.has(c.id)).length;
+		parent.children.sort((a, b) => {
+			const aIsSub = containerIds.has(a.id) ? 1 : 0;
+			const bIsSub = containerIds.has(b.id) ? 1 : 0;
+			if (aIsSub !== bIsSub) return aIsSub - bIsSub;
+			return a.id.localeCompare(b.id);
+		});
 	}
 
 	// Predict element positions from box packing to create ports on containers.
