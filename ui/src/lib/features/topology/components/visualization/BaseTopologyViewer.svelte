@@ -51,6 +51,7 @@
 	} from '../../interactions';
 	import { bundleEdges } from '../../layout/edge-bundling';
 	import { elevateEdgesToContainers } from '../../layout/edge-elevation';
+	import { computeForceLayout, type ForceNode, type ForceLink } from '../../layout/force-layout';
 	import { isDisabledEdge, isDashedEdge } from '../../layout/edge-classification';
 	import { onMount, tick, setContext } from 'svelte';
 	import { useQueryClient } from '@tanstack/svelte-query';
@@ -248,8 +249,33 @@
 					return;
 				}
 
-				const collapsed = get(collapsedContainers);
+				let collapsed = get(collapsedContainers);
 				const hiddenServices = get(tagHiddenServiceIds);
+
+				// Perspective switch fix: when switching views while all containers were
+				// collapsed, the old perspective's container IDs become stale. Detect this
+				// and auto-collapse the new perspective's root containers to preserve the
+				// user's "overview mode" intent.
+				if (viewChanged && topologyChanged && collapsed.size > 0 && layoutGraph) {
+					const oldRootIds = [...layoutGraph.containers.values()]
+						.filter((c) => !c.parent)
+						.map((c) => c.id);
+					const wasFullyCollapsed =
+						oldRootIds.length > 0 && oldRootIds.every((id) => collapsed.has(id));
+					if (wasFullyCollapsed) {
+						const newRootIds = topology.nodes
+							.filter((n) => n.node_type === 'Container' && !n.parent_container_id)
+							.map((n) => n.id);
+						if (newRootIds.length > 0) {
+							// Also collapse all subcontainers
+							const allContainerIds = topology.nodes
+								.filter((n) => n.node_type === 'Container')
+								.map((n) => n.id);
+							collapseAll(allContainerIds);
+							collapsed = new Set(allContainerIds);
+						}
+					}
+				}
 
 				// Filter out hidden service element nodes before layout
 				let layoutNodes =
@@ -510,35 +536,85 @@
 						}
 					}
 
-					// Run layout engine
-					const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();
-					const elkResult = await layoutEngine.compute({
-						nodes: visibleNodes,
-						edges: elevatedEdges,
-						topology: topology,
-						collapsedContainers: collapsed,
-						expandedContainerSizes,
-						elementNodeSizes,
-						hiddenEdgeTypes: hiddenEdgeTypes
-					});
-					sessionStructureKey = structureKey;
-
-					// Rebuild graph and apply ELK result
-					layoutGraph = LayoutGraph.fromTopology(layoutNodes);
-					layoutGraph.syncCollapseState(collapsed);
-					// Restore expanded sizes for collapsed containers before applying ELK
-					// results — applyElkResult skips them since ELK only has collapsed dims.
-					// Only restore on non-structural changes (collapse/expand); on structural
-					// rebuilds the old sizes may be stale (different child sets).
-					if (expandedContainerSizes && !isNewStructure) {
-						layoutGraph.restoreExpandedSizes(expandedContainerSizes);
-					}
-					layoutGraph.applyElkResult(
-						elkResult.nodePositions,
-						elkResult.containerSizes,
-						elkResult.elementNodeSizes,
-						elkResult.edgeHandles
+					// Detect if all root containers are collapsed → use force layout
+					const rootContainerNodes = visibleNodes.filter(
+						(n) => n.node_type === 'Container' && !n.parent_container_id
 					);
+					const allRootCollapsed =
+						rootContainerNodes.length > 0 && rootContainerNodes.every((n) => collapsed.has(n.id));
+
+					if (allRootCollapsed) {
+						// Force layout for all-collapsed overview mode
+						const forceNodes: ForceNode[] = rootContainerNodes.map((n) => {
+							const measured = elementNodeSizes.get(n.id);
+							const meta = containerTypes.getMetadata(
+								((n as Record<string, unknown>).container_type as string) ?? 'Subnet'
+							);
+							return {
+								id: n.id,
+								width: measured?.x ?? meta.collapsed_size.width,
+								height: measured?.y ?? meta.collapsed_size.height
+							};
+						});
+
+						// Build deduplicated links from elevated edges between root containers
+						const rootIds = new Set(rootContainerNodes.map((n) => n.id));
+						const forceLinks: ForceLink[] = [];
+						const seenLinks = new Set<string>();
+						for (const edge of elevatedEdges) {
+							const src = edge.source as string;
+							const tgt = edge.target as string;
+							if (rootIds.has(src) && rootIds.has(tgt) && src !== tgt) {
+								const key = `${src}->${tgt}`;
+								if (!seenLinks.has(key)) {
+									seenLinks.add(key);
+									forceLinks.push({ source: src, target: tgt });
+								}
+							}
+						}
+
+						const forceResult = computeForceLayout(
+							forceNodes,
+							forceLinks,
+							elevatedEdges,
+							hiddenEdgeTypes
+						);
+
+						sessionStructureKey = structureKey;
+						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
+						layoutGraph.syncCollapseState(collapsed);
+						layoutGraph.applyForceResult(forceResult.nodePositions, forceResult.edgeHandles);
+					} else {
+						// Standard ELK layout for expanded or partially collapsed views
+						const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();
+						const elkResult = await layoutEngine.compute({
+							nodes: visibleNodes,
+							edges: elevatedEdges,
+							topology: topology,
+							collapsedContainers: collapsed,
+							expandedContainerSizes,
+							elementNodeSizes,
+							hiddenEdgeTypes: hiddenEdgeTypes
+						});
+						sessionStructureKey = structureKey;
+
+						// Rebuild graph and apply ELK result
+						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
+						layoutGraph.syncCollapseState(collapsed);
+						// Restore expanded sizes for collapsed containers before applying ELK
+						// results — applyElkResult skips them since ELK only has collapsed dims.
+						// Only restore on non-structural changes (collapse/expand); on structural
+						// rebuilds the old sizes may be stale (different child sets).
+						if (expandedContainerSizes && !isNewStructure) {
+							layoutGraph.restoreExpandedSizes(expandedContainerSizes);
+						}
+						layoutGraph.applyElkResult(
+							elkResult.nodePositions,
+							elkResult.containerSizes,
+							elkResult.elementNodeSizes,
+							elkResult.edgeHandles
+						);
+					}
 
 					// Cache measured sizes for this view so return visits skip measurement
 					viewSizeCache.set(currentView, new Map(elementNodeSizes));

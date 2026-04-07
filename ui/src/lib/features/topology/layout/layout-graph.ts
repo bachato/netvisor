@@ -441,6 +441,20 @@ export class LayoutGraph {
 		return this.containers.get(nodeId)?.isSubcontainer ?? false;
 	}
 
+	/** Apply positions from force layout (collapsed containers only) */
+	applyForceResult(
+		nodePositions: Map<string, { x: number; y: number }>,
+		edgeHandles: Map<string, EdgeHandles>
+	): void {
+		for (const [id, pos] of nodePositions) {
+			const container = this.containers.get(id);
+			if (container) {
+				container.position = { ...pos };
+			}
+		}
+		this.edgeHandles = new Map(edgeHandles);
+	}
+
 	/**
 	 * Export as flat maps for backward compatibility with existing code.
 	 */

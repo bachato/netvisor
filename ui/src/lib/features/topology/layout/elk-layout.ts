@@ -256,7 +256,10 @@ function buildElkGraph(
 	let edgeIndex = 0;
 
 	// Collect all cross-container edges grouped by source container
-	const edgesBySourceContainer = new Map<string, { source: string; target: string; srcRoot: string; tgtRoot: string }[]>();
+	const edgesBySourceContainer = new Map<
+		string,
+		{ source: string; target: string; srcRoot: string; tgtRoot: string }[]
+	>();
 	for (const edge of input.edges) {
 		if (!affectsLayout(edge)) continue;
 		const key = `${edge.source}->${edge.target}`;
@@ -268,7 +271,9 @@ function buildElkGraph(
 		if (!srcRoot || !tgtRoot || srcRoot === tgtRoot) continue;
 
 		if (!edgesBySourceContainer.has(srcRoot)) edgesBySourceContainer.set(srcRoot, []);
-		edgesBySourceContainer.get(srcRoot)!.push({ source: edge.source, target: edge.target, srcRoot, tgtRoot });
+		edgesBySourceContainer
+			.get(srcRoot)!
+			.push({ source: edge.source, target: edge.target, srcRoot, tgtRoot });
 	}
 
 	// For each source container, distribute ports evenly ordered by target group
@@ -283,12 +288,11 @@ function buildElkGraph(
 			if (!elementEdges.has(e.source)) elementEdges.set(e.source, new Set());
 			elementEdges.get(e.source)!.add(e.tgtRoot);
 		}
-		const sortedElements = Array.from(elementEdges.entries())
-			.sort(([, aTargets], [, bTargets]) => {
-				const aKey = Array.from(aTargets).sort().join(',');
-				const bKey = Array.from(bTargets).sort().join(',');
-				return aKey.localeCompare(bKey);
-			});
+		const sortedElements = Array.from(elementEdges.entries()).sort(([, aTargets], [, bTargets]) => {
+			const aKey = Array.from(aTargets).sort().join(',');
+			const bKey = Array.from(bTargets).sort().join(',');
+			return aKey.localeCompare(bKey);
+		});
 
 		if (!container.ports) container.ports = [];
 		if (!container.layoutOptions) container.layoutOptions = {};
@@ -306,7 +310,8 @@ function buildElkGraph(
 					id: portId,
 					x: pos.x + pos.w / 2,
 					y: pos.containerW * 0.7, // approximate container height
-					width: 1, height: 1,
+					width: 1,
+					height: 1,
 					layoutOptions: { 'elk.port.side': 'SOUTH' }
 				});
 			} else {
@@ -467,7 +472,7 @@ function buildElkGraph(
  * adjacent elements. Only uses Left/Right when the edge is very horizontal
  * (target at nearly the same vertical level).
  */
-function computeOptimalHandles(
+export function computeOptimalHandles(
 	srcPos: { x: number; y: number },
 	srcSize: { w: number; h: number },
 	tgtPos: { x: number; y: number },
@@ -501,7 +506,6 @@ function computeOptimalHandles(
 		}
 	}
 }
-
 
 /** Recompute y-coordinates for a column of nodes based on actual heights. */
 function recomputeColumnY(colNodes: ElkNode[], spacing: number): void {
@@ -552,7 +556,6 @@ function mapElkResults(
 			}
 		}
 	}
-
 
 	if (layoutResult.children) {
 		processChildren(layoutResult.children, 0, 0);

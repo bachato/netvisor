@@ -88,9 +88,7 @@
 
 	{#if expanded}
 		<div translate="no" class="code-wrapper {maxHeight ? maxHeight + ' overflow-y-auto' : ''}">
-			<div
-				class="min-w-0 flex-1 {shouldPreventSelect ? 'prevent-select' : ''}"
-			>
+			<div class="min-w-0 flex-1 {shouldPreventSelect ? 'prevent-select' : ''}">
 				<Prism {language} showCopyButton={false} source={code} showLineNumbers={true} />
 			</div>
 			{#if isSecureContext && !hideCopyButton}
