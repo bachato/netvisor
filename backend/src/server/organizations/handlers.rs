@@ -352,7 +352,7 @@ pub async fn populate_demo_data(
     auth: Authorized<Owner>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<ApiResponse<()>>> {
-    use crate::server::organizations::demo_data::{DemoData, generate_dependencies};
+    use crate::server::organizations::demo_data::DemoData;
     use crate::server::services::r#impl::base::Service;
     use crate::server::shared::handlers::traits::CrudHandlers;
     use crate::server::topology::types::base::Topology;
@@ -429,7 +429,7 @@ pub async fn populate_demo_data(
     // storage().create_many() directly.
 
     // 1. Tags (no dependencies)
-    let created_tags = state
+    state
         .services
         .tag_service
         .storage()
@@ -611,12 +611,11 @@ pub async fn populate_demo_data(
         .create_many(&demo_data.discoveries)
         .await?;
 
-    // 9. Dependencies — generate with created services to get correct binding IDs
-    let dependencies = generate_dependencies(&created_networks, &created_services, &created_tags);
+    // 9. Dependencies — pre-generated with service IDs during DemoData::generate()
     state
         .services
         .dependency_service
-        .create_many(&dependencies, entity.clone())
+        .create_many(&demo_data.dependencies, entity.clone())
         .await?;
 
     // 10. Topologies (depends on networks)

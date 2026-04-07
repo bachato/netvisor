@@ -165,8 +165,10 @@ impl ViewBuilder for L2Builder {
         }
 
         // 5. Apply element rules (ByTag already has L2Physical in applicable_views)
-        let if_entry_lookup: std::collections::HashMap<Uuid, &crate::server::if_entries::r#impl::base::IfEntry> =
-            ctx.if_entries.iter().map(|e| (e.id, e)).collect();
+        let if_entry_lookup: std::collections::HashMap<
+            Uuid,
+            &crate::server::if_entries::r#impl::base::IfEntry,
+        > = ctx.if_entries.iter().map(|e| (e.id, e)).collect();
         apply_element_rules(&mut nodes, &grouping.element_rules, |node| {
             if let NodeType::Element { host_id, .. } = &node.node_type {
                 let host = host_lookup.get(host_id)?;
@@ -180,7 +182,7 @@ impl ViewBuilder for L2Builder {
                     native_vlan_id: if_entry.and_then(|e| e.base.native_vlan_id),
                     is_trunk_port: if_entry
                         .and_then(|e| e.base.vlan_ids.as_ref())
-                        .map_or(false, |v| !v.is_empty()),
+                        .is_some_and(|v| !v.is_empty()),
                 })
             } else {
                 None

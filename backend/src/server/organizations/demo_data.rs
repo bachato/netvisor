@@ -52,8 +52,9 @@ use crate::server::{
     },
     tags::r#impl::base::{Tag, TagBase},
     topology::types::{
-        base::{Topology, TopologyBase},
+        base::{Topology, TopologyBase, TopologyOptions, TopologyRequestOptions},
         edges::EdgeStyle,
+        grouping::ElementRule,
     },
     user_api_keys::r#impl::base::{UserApiKey, UserApiKeyBase},
     users::r#impl::permissions::UserOrgPermissions,
@@ -95,6 +96,20 @@ pub struct NetworkCredentialAssignment {
     pub credential_ids: Vec<Uuid>,
 }
 
+/// Pre-generated service UUIDs for dependency wiring.
+/// Created at the top level and passed to both host/service and dependency generators.
+struct DependencyServiceIds {
+    pfsense: Uuid,
+    prometheus_hq: Uuid,
+    grafana_hq: Uuid,
+    uptime_kuma: Uuid,
+    traefik_hq: Uuid,
+    gitea_hq: Uuid,
+    haproxy_dc: Uuid,
+    app01_dc: Uuid,
+    mariadb_dc: Uuid,
+}
+
 /// Container for all demo data entities
 pub struct DemoData {
     pub tags: Vec<Tag>,
@@ -116,10 +131,21 @@ pub struct DemoData {
 
 impl DemoData {
     /// Generate all demo data for the given organization
-    /// Note: Dependencies are intentionally empty - they must be generated after services are created
-    /// because dependency members reference actual service binding IDs from the database.
     pub fn generate(organization_id: Uuid, user_id: Uuid) -> Self {
         let now = Utc::now();
+
+        // Pre-generate service UUIDs used by both host/service and dependency generators
+        let dep_svc_ids = DependencyServiceIds {
+            pfsense: Uuid::new_v4(),
+            prometheus_hq: Uuid::new_v4(),
+            grafana_hq: Uuid::new_v4(),
+            uptime_kuma: Uuid::new_v4(),
+            traefik_hq: Uuid::new_v4(),
+            gitea_hq: Uuid::new_v4(),
+            haproxy_dc: Uuid::new_v4(),
+            app01_dc: Uuid::new_v4(),
+            mariadb_dc: Uuid::new_v4(),
+        };
 
         // Generate all entities in dependency order
         let tags = generate_tags(organization_id, now);
@@ -128,8 +154,14 @@ impl DemoData {
         let subnets = generate_subnets(&networks, &tags, now);
         let network_credential_assignments =
             generate_network_credential_assignments(&networks, &credentials);
-        let hosts_with_services =
-            generate_hosts_and_services(&networks, &subnets, &tags, &credentials, now);
+        let hosts_with_services = generate_hosts_and_services(
+            &networks,
+            &subnets,
+            &tags,
+            &credentials,
+            &dep_svc_ids,
+            now,
+        );
 
         // Collect hosts for daemon generation and if_entry generation
         let hosts: Vec<&Host> = hosts_with_services.iter().map(|h| &h.host).collect();
@@ -142,15 +174,13 @@ impl DemoData {
             generate_if_entries(&networks, &hosts, &interfaces, now);
         let daemons = generate_daemons(&networks, &hosts, &subnets, now, user_id);
         let api_keys = generate_api_keys(&networks, now);
-        let topologies = generate_topologies(&networks, now);
+        let topologies = generate_topologies(&networks, &tags, now);
         let discoveries =
             generate_discoveries(&networks, &subnets, &daemons, &hosts, &credentials, now);
         let shares = generate_shares(&topologies, &networks, user_id, now);
         let user_api_keys = generate_user_api_keys(&networks, organization_id, now);
 
-        // Dependencies are empty - they'll be generated in the handler after services are created
-        // This ensures dependency members reference actual service binding IDs
-        let dependencies = vec![];
+        let dependencies = generate_dependencies(&networks, &tags, &dep_svc_ids);
 
         Self {
             tags,
@@ -176,14 +206,39 @@ impl DemoData {
 // Topologies
 // ============================================================================
 
-fn generate_topologies(networks: &[Network], now: DateTime<Utc>) -> Vec<Topology> {
+fn generate_topologies(networks: &[Network], tags: &[Tag], now: DateTime<Utc>) -> Vec<Topology> {
+    let critical_tag_id = tags
+        .iter()
+        .find(|t| t.base.name == "Critical")
+        .map(|t| t.id);
+
     networks
         .iter()
-        .map(|network| Topology {
-            id: Uuid::new_v4(),
-            created_at: now,
-            updated_at: now,
-            base: TopologyBase::new(format!("{} Topology", network.base.name), network.id),
+        .map(|network| {
+            let mut base = TopologyBase::new(format!("{} Topology", network.base.name), network.id);
+            // Add Critical tag to the default ByTag element rule
+            if let Some(tag_id) = critical_tag_id {
+                let mut request = TopologyRequestOptions::default();
+                // Replace the default empty ByTag rule with one that includes Critical
+                for rule in &mut request.element_rules {
+                    if matches!(rule.rule, ElementRule::ByTag { .. }) {
+                        rule.rule = ElementRule::ByTag {
+                            tag_ids: vec![tag_id],
+                            title: None,
+                        };
+                    }
+                }
+                base.options = TopologyOptions {
+                    request,
+                    ..base.options
+                };
+            }
+            Topology {
+                id: Uuid::new_v4(),
+                created_at: now,
+                updated_at: now,
+                base,
+            }
         })
         .collect()
 }
@@ -193,22 +248,59 @@ fn generate_topologies(networks: &[Network], now: DateTime<Utc>) -> Vec<Topology
 // ============================================================================
 
 fn generate_tags(organization_id: Uuid, now: DateTime<Utc>) -> Vec<Tag> {
-    let tag_definitions: [(&str, &str, Color); 10] = [
-        ("Production", "Systems running in production", Color::Red),
-        ("Development", "Development and test systems", Color::Blue),
-        ("Critical", "Business-critical services", Color::Orange),
-        ("Backup Target", "Backup destinations", Color::Green),
-        ("Monitoring", "Monitoring infrastructure", Color::Purple),
-        ("Database", "Database servers", Color::Cyan),
-        ("Web Tier", "Web and application servers", Color::Teal),
-        ("IoT Device", "Smart devices", Color::Yellow),
-        ("Needs Attention", "Requires admin review", Color::Rose),
-        ("Managed Client", "Client-owned assets", Color::Indigo),
+    // (name, description, color, is_application_group)
+    let tag_definitions: [(&str, &str, Color, bool); 11] = [
+        (
+            "Production",
+            "Systems running in production",
+            Color::Red,
+            false,
+        ),
+        (
+            "Development",
+            "Development and test systems",
+            Color::Blue,
+            false,
+        ),
+        (
+            "Critical",
+            "Business-critical services",
+            Color::Orange,
+            false,
+        ),
+        ("Backup Target", "Backup destinations", Color::Green, false),
+        (
+            "Monitoring",
+            "Monitoring infrastructure",
+            Color::Purple,
+            true,
+        ),
+        ("Database", "Database servers", Color::Cyan, true),
+        ("Web Tier", "Web and application servers", Color::Teal, true),
+        ("IoT Device", "Smart devices", Color::Yellow, false),
+        (
+            "Needs Attention",
+            "Requires admin review",
+            Color::Rose,
+            false,
+        ),
+        (
+            "Managed Client",
+            "Client-owned assets",
+            Color::Indigo,
+            false,
+        ),
+        (
+            "DevOps Pipeline",
+            "CI/CD and deployment tools",
+            Color::Pink,
+            true,
+        ),
     ];
 
     tag_definitions
         .iter()
-        .map(|(name, description, color)| Tag {
+        .map(|(name, description, color, is_app_group)| Tag {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
@@ -217,7 +309,7 @@ fn generate_tags(organization_id: Uuid, now: DateTime<Utc>) -> Vec<Tag> {
                 description: Some(description.to_string()),
                 color: *color,
                 organization_id,
-                is_application_group: false,
+                is_application_group: *is_app_group,
             },
         })
         .collect()
@@ -836,6 +928,7 @@ fn generate_hosts_and_services(
     subnets: &[Subnet],
     tags: &[Tag],
     credentials: &[Credential],
+    dep_svc_ids: &DependencyServiceIds,
     now: DateTime<Utc>,
 ) -> Vec<HostWithServices> {
     let mut result = Vec::new();
@@ -866,6 +959,7 @@ fn generate_hosts_and_services(
     let iot_tag = find_tag("IoT Device");
     let web_tier_tag = find_tag("Web Tier");
     let backup_tag = find_tag("Backup Target");
+    let devops_tag = find_tag("DevOps Pipeline");
 
     // Pre-generated service UUIDs for virtualization wiring
     let pve_hq1_svc_id = Uuid::new_v4(); // Proxmox VE on proxmox-hv01
@@ -873,6 +967,17 @@ fn generate_hosts_and_services(
     let docker_hq_svc_id = Uuid::new_v4(); // Docker daemon on docker-prod01
     let pve_dc_svc_id = Uuid::new_v4(); // Proxmox VE on dc-proxmox-hv01
     let docker_dc_svc_id = Uuid::new_v4(); // Docker daemon on dc-docker01
+
+    // Service UUIDs for dependency wiring (pre-generated at top level)
+    let pfsense_svc_id = dep_svc_ids.pfsense;
+    let prometheus_hq_svc_id = dep_svc_ids.prometheus_hq;
+    let grafana_hq_svc_id = dep_svc_ids.grafana_hq;
+    let uptime_kuma_svc_id = dep_svc_ids.uptime_kuma;
+    let traefik_hq_svc_id = dep_svc_ids.traefik_hq;
+    let gitea_hq_svc_id = dep_svc_ids.gitea_hq;
+    let haproxy_dc_svc_id = dep_svc_ids.haproxy_dc;
+    let app01_dc_svc_id = dep_svc_ids.app01_dc;
+    let mariadb_dc_svc_id = dep_svc_ids.mariadb_dc;
 
     // ========================================================================
     // HEADQUARTERS NETWORK — 30 hosts
@@ -889,8 +994,8 @@ fn generate_hosts_and_services(
     // -- Management (10.0.1.x) --
 
     // 1. pfSense Firewall (Critical) — with host-level SNMP credential override
-    let mut pfsense = host_with_services!(
-        with_snmp(
+    let mut pfsense = {
+        let (host, interface) = with_snmp(
             create_host(
                 "pfsense-fw01",
                 Some("pfsense-fw01.acme.local"),
@@ -908,15 +1013,32 @@ fn generate_hosts_and_services(
             Some("HQ Server Room, Rack A1"),
             Some("netops@acme-corp.com"),
             None,
-        ),
-        now,
-        (
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((svc, port)) = create_service_with_id(
+            pfsense_svc_id,
             "pfSense",
             "pfSense",
+            &host,
+            &interfaces[0],
             Some(PortType::Https),
-            critical_tag.into_iter().collect()
-        ),
-    );
+            critical_tag.into_iter().collect(),
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        }
+    };
     pfsense.host.base.credential_assignments = network_devices_cred
         .into_iter()
         .map(|id| CredentialAssignment {
@@ -992,9 +1114,9 @@ fn generate_hosts_and_services(
         ("Pi-Hole", "Pi-hole", Some(PortType::Http), vec![]),
     ));
 
-    // 5. Grafana
-    result.push(host_with_services!(
-        create_host(
+    // 5. Grafana (pre-generated ID for dependency wiring)
+    {
+        let (host, interface) = create_host(
             "grafana-mon",
             Some("grafana.acme.local"),
             Some("Grafana monitoring dashboard"),
@@ -1004,20 +1126,37 @@ fn generate_hosts_and_services(
             monitoring_tag.into_iter().collect(),
             None,
             None,
-            now
-        ),
-        now,
-        (
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((svc, port)) = create_service_with_id(
+            grafana_hq_svc_id,
             "Grafana",
             "Grafana",
+            &host,
+            &interfaces[0],
             Some(PortType::Http3000),
-            monitoring_tag.into_iter().collect()
-        ),
-    ));
+            monitoring_tag.into_iter().collect(),
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
-    // 6. Prometheus
-    result.push(host_with_services!(
-        create_host(
+    // 6. Prometheus (pre-generated ID for dependency wiring)
+    {
+        let (host, interface) = create_host(
             "prometheus",
             Some("prometheus.acme.local"),
             Some("Prometheus metrics server"),
@@ -1027,20 +1166,37 @@ fn generate_hosts_and_services(
             monitoring_tag.into_iter().collect(),
             None,
             None,
-            now
-        ),
-        now,
-        (
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((svc, port)) = create_service_with_id(
+            prometheus_hq_svc_id,
             "Prometheus",
             "Prometheus",
+            &host,
+            &interfaces[0],
             Some(PortType::Http9000),
-            monitoring_tag.into_iter().collect()
-        ),
-    ));
+            monitoring_tag.into_iter().collect(),
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
-    // 7. Uptime Kuma
-    result.push(host_with_services!(
-        create_host(
+    // 7. Uptime Kuma (pre-generated ID for dependency wiring)
+    {
+        let (host, interface) = create_host(
             "uptime-kuma",
             Some("status.acme.local"),
             Some("Uptime Kuma status page"),
@@ -1050,16 +1206,33 @@ fn generate_hosts_and_services(
             monitoring_tag.into_iter().collect(),
             None,
             None,
-            now
-        ),
-        now,
-        (
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((svc, port)) = create_service_with_id(
+            uptime_kuma_svc_id,
             "UptimeKuma",
             "Uptime Kuma",
+            &host,
+            &interfaces[0],
             Some(PortType::Http3000),
-            monitoring_tag.into_iter().collect()
-        ),
-    ));
+            monitoring_tag.into_iter().collect(),
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
     // -- Servers (10.0.20.x) — hypervisors, VMs, Docker --
 
@@ -1208,7 +1381,7 @@ fn generate_hosts_and_services(
             "GitLab",
             "GitLab",
             Some(PortType::Https),
-            production_tag.into_iter().collect()
+            [production_tag, devops_tag].into_iter().flatten().collect()
         ),
     ));
 
@@ -1235,7 +1408,10 @@ fn generate_hosts_and_services(
             "NextCloud",
             "Nextcloud",
             Some(PortType::Https),
-            production_tag.into_iter().collect()
+            [production_tag, web_tier_tag]
+                .into_iter()
+                .flatten()
+                .collect()
         ),
     ));
 
@@ -1356,7 +1532,7 @@ fn generate_hosts_and_services(
             &host,
             &eth0,
             Some(PortType::Http9000),
-            production_tag.into_iter().collect(),
+            [production_tag, devops_tag].into_iter().flatten().collect(),
             now,
         ) {
             if let Some(p) = port {
@@ -1365,28 +1541,52 @@ fn generate_hosts_and_services(
             services.push(svc);
         }
 
-        // Container services on docker0
+        // Traefik container (pre-generated ID for dependency wiring)
+        if let Some((mut svc, port)) = create_container_service(
+            "Traefik",
+            "Traefik",
+            &host,
+            &docker0,
+            Some(PortType::Https),
+            "traefik",
+            "a1b2c3d4e5f6",
+            docker_hq_svc_id,
+            web_tier_tag.into_iter().collect(),
+            now,
+        ) {
+            svc.id = traefik_hq_svc_id;
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        // Gitea container (pre-generated ID for dependency wiring)
+        if let Some((mut svc, port)) = create_container_service(
+            "Gitea",
+            "Gitea",
+            &host,
+            &docker0,
+            Some(PortType::Http3000),
+            "gitea",
+            "g7h8i9j0k1l2",
+            docker_hq_svc_id,
+            devops_tag.into_iter().collect(),
+            now,
+        ) {
+            svc.id = gitea_hq_svc_id;
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        // Other container services on docker0
         for (def_id, name, pt, cname, cid) in [
-            (
-                "Traefik",
-                "Traefik",
-                Some(PortType::Https),
-                "traefik",
-                "a1b2c3d4e5f6",
-            ),
             (
                 "Vaultwarden",
                 "Vaultwarden",
                 Some(PortType::Http8080),
                 "vaultwarden",
                 "d4e5f6a7b8c9",
-            ),
-            (
-                "Gitea",
-                "Gitea",
-                Some(PortType::Http3000),
-                "gitea",
-                "g7h8i9j0k1l2",
             ),
             (
                 "mailcow",
@@ -1442,7 +1642,7 @@ fn generate_hosts_and_services(
             "Jenkins",
             "Jenkins",
             Some(PortType::Http8080),
-            production_tag.into_iter().collect()
+            [production_tag, devops_tag].into_iter().flatten().collect()
         ),
     ));
 
@@ -1912,9 +2112,9 @@ fn generate_hosts_and_services(
 
     // -- DMZ (172.16.30.x) --
 
-    // 4. HAProxy Load Balancer
-    result.push(host_with_services!(
-        create_host(
+    // 4. HAProxy Load Balancer (pre-generated ID for dependency wiring)
+    {
+        let (host, interface) = create_host(
             "haproxy-lb01",
             Some("lb01.dc.acme.io"),
             Some("HAProxy load balancer"),
@@ -1928,20 +2128,37 @@ fn generate_hosts_and_services(
                 .collect(),
             None,
             None,
-            now
-        ),
-        now,
-        (
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((svc, port)) = create_service_with_id(
+            haproxy_dc_svc_id,
             "HAProxy",
             "HAProxy",
+            &host,
+            &interfaces[0],
             Some(PortType::Https),
-            web_tier_tag.into_iter().collect()
-        ),
-    ));
+            web_tier_tag.into_iter().collect(),
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
-    // 5. App Server 01
-    result.push(host_with_services!(
-        create_host(
+    // 5. App Server 01 (pre-generated Web App ID for dependency wiring)
+    {
+        let (host, interface) = create_host(
             "app-server-01",
             Some("app-01.dc.acme.io"),
             Some("Application server 1"),
@@ -1951,17 +2168,47 @@ fn generate_hosts_and_services(
             production_tag.into_iter().chain(web_tier_tag).collect(),
             None,
             None,
-            now
-        ),
-        now,
-        (
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((svc, port)) = create_service_with_id(
+            app01_dc_svc_id,
             "Web Service",
             "Web Application",
+            &host,
+            &interfaces[0],
             Some(PortType::Http8080),
-            web_tier_tag.into_iter().collect()
-        ),
-        ("SSH", "SSH", Some(PortType::Ssh), vec![]),
-    ));
+            web_tier_tag.into_iter().collect(),
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        if let Some((svc, port)) = create_service(
+            "SSH",
+            "SSH",
+            &host,
+            &interfaces[0],
+            Some(PortType::Ssh),
+            vec![],
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
     // 6. App Server 02
     result.push(host_with_services!(
@@ -2073,7 +2320,7 @@ fn generate_hosts_and_services(
             "ArgoCD",
             "ArgoCD",
             Some(PortType::Https8443),
-            production_tag.into_iter().collect()
+            [production_tag, devops_tag].into_iter().flatten().collect()
         ),
     ));
 
@@ -2105,8 +2352,9 @@ fn generate_hosts_and_services(
     ));
 
     // 10. mariadb-vm — VM on dc-proxmox-hv01 (vm_id=302, on Storage subnet)
-    result.push(host_with_services!(
-        create_host(
+    // Pre-generated MariaDB service ID for dependency wiring
+    {
+        let (host, interface) = create_host(
             "mariadb-vm",
             Some("mariadb.dc.acme.io"),
             Some("MariaDB database (VM on dc-proxmox-hv01)"),
@@ -2120,16 +2368,33 @@ fn generate_hosts_and_services(
                 vm_id: Some("302".to_string()),
                 service_id: pve_dc_svc_id,
             })),
-            now
-        ),
-        now,
-        (
+            now,
+        );
+        let interfaces = vec![interface];
+        let mut ports = Vec::new();
+        let mut services = Vec::new();
+        if let Some((svc, port)) = create_service_with_id(
+            mariadb_dc_svc_id,
             "MariaDB",
             "MariaDB",
+            &host,
+            &interfaces[0],
             Some(PortType::MySql),
-            database_tag.into_iter().collect()
-        ),
-    ));
+            database_tag.into_iter().collect(),
+            now,
+        ) {
+            if let Some(p) = port {
+                ports.push(p);
+            }
+            services.push(svc);
+        }
+        result.push(HostWithServices {
+            host,
+            interfaces,
+            ports,
+            services,
+        });
+    }
 
     // 11. dc-docker01 — Docker host (2 interfaces: eth0 on Compute, docker0 on DC Docker Bridge)
     {
@@ -2591,8 +2856,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20, 30, 100]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2677,8 +2942,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2728,8 +2993,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2814,8 +3079,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2865,7 +3130,7 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
+                native_vlan_id: Some(10),
                 vlan_ids: None,
             },
         });
@@ -2925,8 +3190,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20, 30, 100]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -2967,8 +3232,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3009,8 +3274,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3051,8 +3316,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3093,8 +3358,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3135,7 +3400,7 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
+                native_vlan_id: Some(30),
                 vlan_ids: None,
             },
         });
@@ -3223,7 +3488,7 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
+                native_vlan_id: Some(30),
                 vlan_ids: None,
             },
         });
@@ -3274,8 +3539,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20, 30]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3325,8 +3590,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3376,7 +3641,7 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
+                native_vlan_id: Some(10),
                 vlan_ids: None,
             },
         });
@@ -3427,7 +3692,7 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
+                native_vlan_id: Some(30),
                 vlan_ids: None,
             },
         });
@@ -3485,8 +3750,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20, 30]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3527,8 +3792,8 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
-                vlan_ids: None,
+                native_vlan_id: Some(1),
+                vlan_ids: Some(vec![1, 10, 20]),
             },
         });
         neighbor_updates.push(NeighborUpdate {
@@ -3569,7 +3834,7 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
+                native_vlan_id: Some(10),
                 vlan_ids: None,
             },
         });
@@ -3611,7 +3876,7 @@ fn generate_if_entries(
                 cdp_platform: None,
                 cdp_address: None,
                 fdb_macs: None,
-                native_vlan_id: None,
+                native_vlan_id: Some(30),
                 vlan_ids: None,
             },
         });
@@ -4096,13 +4361,12 @@ fn generate_user_api_keys(
 // Dependencies
 // ============================================================================
 
-/// Generate demo dependencies using actual created services.
-/// This must be called AFTER services are created to ensure binding IDs are correct.
+/// Generate demo dependencies with pre-generated service IDs for member wiring.
 #[allow(clippy::vec_init_then_push)]
-pub fn generate_dependencies(
+fn generate_dependencies(
     networks: &[Network],
-    _services: &[Service],
     tags: &[Tag],
+    svc_ids: &DependencyServiceIds,
 ) -> Vec<Dependency> {
     let now = Utc::now();
     let hq = networks
@@ -4123,7 +4387,7 @@ pub fn generate_dependencies(
 
     // ===== HQ Dependencies (3) =====
 
-    // 1. Monitoring Stack: Prometheus → Grafana, Uptime Kuma
+    // 1. Monitoring Stack: Prometheus (hub) ↔ Grafana, Uptime Kuma (spokes)
     dependencies.push(Dependency {
         id: Uuid::new_v4(),
         created_at: now,
@@ -4135,7 +4399,13 @@ pub fn generate_dependencies(
                 "Prometheus metrics collection with Grafana visualization".to_string(),
             ),
             dependency_type: DependencyType::HubAndSpoke,
-            members: DependencyMembers::default(),
+            members: DependencyMembers::Services {
+                service_ids: vec![
+                    svc_ids.prometheus_hq,
+                    svc_ids.grafana_hq,
+                    svc_ids.uptime_kuma,
+                ],
+            },
             source: EntitySource::Manual,
             color: Color::Purple,
             edge_style: EdgeStyle::Straight,
@@ -4143,7 +4413,7 @@ pub fn generate_dependencies(
         },
     });
 
-    // 2. Backup Flow: Proxmox VE (hv01) → TrueNAS
+    // 2. Backup Flow: Proxmox VE (hv01) → TrueNAS (no pre-generated IDs available)
     dependencies.push(Dependency {
         id: Uuid::new_v4(),
         created_at: now,
@@ -4161,7 +4431,7 @@ pub fn generate_dependencies(
         },
     });
 
-    // 3. Network Access Path: pfSense → Portainer
+    // 3. Network Access Path: pfSense → Traefik → Gitea
     dependencies.push(Dependency {
         id: Uuid::new_v4(),
         created_at: now,
@@ -4169,9 +4439,13 @@ pub fn generate_dependencies(
         base: DependencyBase {
             name: "Network Access Path".to_string(),
             network_id: hq.id,
-            description: Some("Traffic path from firewall to container management".to_string()),
+            description: Some(
+                "Traffic path from firewall through reverse proxy to code hosting".to_string(),
+            ),
             dependency_type: DependencyType::RequestPath,
-            members: DependencyMembers::default(),
+            members: DependencyMembers::Services {
+                service_ids: vec![svc_ids.pfsense, svc_ids.traefik_hq, svc_ids.gitea_hq],
+            },
             source: EntitySource::Manual,
             color: Color::Cyan,
             edge_style: EdgeStyle::Bezier,
@@ -4181,7 +4455,7 @@ pub fn generate_dependencies(
 
     // ===== DC Dependencies (3) =====
 
-    // 4. Web Traffic Flow: HAProxy → Web Application → RabbitMQ
+    // 4. Web Traffic Flow: HAProxy → Web Application → MariaDB
     dependencies.push(Dependency {
         id: Uuid::new_v4(),
         created_at: now,
@@ -4190,11 +4464,13 @@ pub fn generate_dependencies(
             name: "Web Traffic Flow".to_string(),
             network_id: dc.id,
             description: Some(
-                "Production web request path from load balancer through app servers to message broker"
+                "Production web request path from load balancer through app servers to database"
                     .to_string(),
             ),
             dependency_type: DependencyType::RequestPath,
-            members: DependencyMembers::default(),
+            members: DependencyMembers::Services {
+                service_ids: vec![svc_ids.haproxy_dc, svc_ids.app01_dc, svc_ids.mariadb_dc],
+            },
             source: EntitySource::Manual,
             color: Color::Blue,
             edge_style: EdgeStyle::Bezier,
