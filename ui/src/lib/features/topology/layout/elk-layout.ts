@@ -70,6 +70,11 @@ function buildElkGraph(
 	// Track parent relationships for nested containers
 	const parentContainerMap = new Map<string, string>();
 
+	// Determine if the current view benefits from layered child layout
+	// (crossing minimization for port-to-port edges)
+	const view = input.topology?.options?.request?.view;
+	const useLayeredChildren = view === 'L2Physical';
+
 	// Create container (parent) nodes
 	for (const node of input.nodes) {
 		if (node.node_type === 'Container') {
@@ -94,6 +99,28 @@ function buildElkGraph(
 			// space — prevents neighbors from being placed where they'd overlap on expand
 			const expandedWidth = input.expandedContainerSizes?.get(node.id)?.width;
 			const elkCollapsedWidth = expandedWidth ?? collapsedWidth;
+
+			// Layered children: ELK optimizes child ordering for crossing minimization
+			// Box children: grid packing by size (default for most views)
+			const childLayoutOptions: Record<string, string> = useLayeredChildren
+				? {
+						'elk.algorithm': 'layered',
+						'elk.direction': 'RIGHT',
+						'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+						'elk.layered.spacing.nodeNodeBetweenLayers': '10',
+						'elk.spacing.nodeNode': '10',
+						'elk.padding': padding,
+						'elk.nodeSize.constraints': 'MINIMUM_SIZE'
+					}
+				: {
+						'elk.algorithm': 'box',
+						'elk.box.packingMode': 'SIMPLE',
+						'elk.aspectRatio': '1.4',
+						'elk.padding': padding,
+						'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+						'elk.spacing.nodeNode': '25'
+					};
+
 			const elkNode: ElkNode = isCollapsed
 				? {
 						id: node.id,
@@ -108,14 +135,7 @@ function buildElkGraph(
 				: {
 						id: node.id,
 						children: [],
-						layoutOptions: {
-							'elk.algorithm': 'box',
-							'elk.box.packingMode': 'SIMPLE',
-							'elk.aspectRatio': '1.4',
-							'elk.padding': padding,
-							'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-							'elk.spacing.nodeNode': '25'
-						}
+						layoutOptions: childLayoutOptions
 					};
 			containers.set(node.id, elkNode);
 		}

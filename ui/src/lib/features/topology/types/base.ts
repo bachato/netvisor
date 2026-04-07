@@ -16,6 +16,12 @@ export type ElementNode = Extract<TopologyNode, { node_type: 'Element' }>;
 export type ContainerNode = Extract<TopologyNode, { node_type: 'Container' }>;
 
 // Frontend-specific render types (not from backend)
+export interface PortStatus {
+	operStatus: 'Up' | 'Down' | string;
+	speed: string | null;
+	macAddress: string | null;
+}
+
 export interface ElementRenderData {
 	elementType: string;
 	headerText: string | null;
@@ -27,6 +33,7 @@ export interface ElementRenderData {
 	hiddenOpenPorts: Service[];
 	interface_id: string;
 	isCategoryHidden?: boolean;
+	portStatus?: PortStatus;
 }
 
 // ContainerRenderData removed — ContainerNode now reads icon/color directly

@@ -203,31 +203,31 @@
 							? topology?.if_entries.find((e) => e.id === ifEntryId)
 							: undefined;
 
-						// Build compact status line: "Up · 1 Gbps" or "Down"
-						const parts: string[] = [];
-						if (ifEntry) {
-							parts.push(ifEntry.oper_status === 'Up' ? '● Up' : ifEntry.oper_status === 'Down' ? '○ Down' : ifEntry.oper_status);
-							if (ifEntry.speed_bps) {
-								const bps = ifEntry.speed_bps;
-								if (bps >= 1_000_000_000) parts.push(`${(bps / 1_000_000_000).toFixed(0)}G`);
-								else if (bps >= 1_000_000) parts.push(`${(bps / 1_000_000).toFixed(0)}M`);
-								else parts.push(`${bps} bps`);
-							}
+						let speed: string | null = null;
+						if (ifEntry?.speed_bps) {
+							const bps = ifEntry.speed_bps;
+							if (bps >= 1_000_000_000) speed = `${(bps / 1_000_000_000).toFixed(0)}G`;
+							else if (bps >= 1_000_000) speed = `${(bps / 1_000_000).toFixed(0)}M`;
+							else speed = `${bps} bps`;
 						}
-						const footerParts: string[] = [];
-						if (parts.length > 0) footerParts.push(parts.join(' · '));
-						if (ifEntry?.mac_address) footerParts.push(ifEntry.mac_address);
 
 						return {
 							elementType,
 							headerText: (data as TopologyNode).header ?? null,
-							footerText: footerParts.join(' · ') || null,
+							footerText: null,
 							bodyText: null,
 							showServices: false,
 							isVirtualized: false,
 							services: [],
 							hiddenOpenPorts: [],
-							interface_id: ''
+							interface_id: '',
+							portStatus: ifEntry
+								? {
+										operStatus: ifEntry.oper_status,
+										speed,
+										macAddress: ifEntry.mac_address ?? null
+									}
+								: undefined
 						} as ElementRenderData;
 					}
 
@@ -582,7 +582,20 @@
 		</div>
 
 		<!-- Footer section -->
-		{#if nodeRenderData.footerText}
+		{#if nodeRenderData.portStatus}
+			<div class="flex flex-shrink-0 items-center justify-center gap-1.5 px-2 pb-1.5">
+				<span
+					class="text-xs font-medium"
+					style="color: {nodeRenderData.portStatus.operStatus === 'Up' ? '#22c55e' : nodeRenderData.portStatus.operStatus === 'Down' ? '#ef4444' : '#9ca3af'}"
+				>●</span>
+				{#if nodeRenderData.portStatus.speed}
+					<span class="text-tertiary text-xs">{nodeRenderData.portStatus.speed}</span>
+				{/if}
+				{#if nodeRenderData.portStatus.macAddress}
+					<span class="text-tertiary truncate font-mono text-xs" style="font-size: 0.6rem">{nodeRenderData.portStatus.macAddress}</span>
+				{/if}
+			</div>
+		{:else if nodeRenderData.footerText}
 			<div class="relative flex flex-shrink-0 items-center justify-center px-2 pb-2">
 				<div class="text-tertiary truncate text-xs font-medium leading-none">
 					{nodeRenderData.footerText}
