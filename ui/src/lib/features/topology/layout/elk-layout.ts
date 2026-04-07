@@ -35,38 +35,32 @@ async function getElk(): Promise<import('elkjs/lib/elk-api')['default']> {
 const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
 	'elk.algorithm': 'layered',
 	'elk.direction': 'DOWN',
-	'elk.layered.spacing.nodeNodeBetweenLayers': '100',
-	'elk.layered.spacing.edgeNodeBetweenLayers': '50',
-	'elk.spacing.componentComponent': '75',
-	'elk.spacing.nodeNode': '50',
+	'elk.layered.spacing.nodeNodeBetweenLayers': '30',
+	'elk.layered.spacing.edgeNodeBetweenLayers': '15',
+	'elk.edgeRouting': 'POLYLINE',
+	'elk.layered.spacing.edgeEdgeBetweenLayers': '10',
+	'elk.spacing.componentComponent': '50',
+	'elk.spacing.nodeNode': '40',
 	'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
 	'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
 	'elk.hierarchyHandling': 'SEPARATE_CHILDREN',
-	'elk.layered.layering.strategy': 'INTERACTIVE',
+	'elk.layered.layering.strategy': 'NETWORK_SIMPLEX',
 	'elk.layered.compaction.postCompaction.strategy': 'LEFT_RIGHT_CONSTRAINT_LOCKING',
 	'elk.aspectRatio': '1.6',
 	'elk.padding': '[top=20,left=20,bottom=20,right=20]'
 };
-
-function getLayerHint(node: TopologyNode): number {
-	if ('layer_hint' in node && typeof (node as Record<string, unknown>).layer_hint === 'number') {
-		return (node as Record<string, unknown>).layer_hint as number;
-	}
-	return 999;
-}
 
 /**
  * Build an ELK graph from topology data.
  * Containers become parent nodes; elements become children inside their container.
  * Only layout-affecting edges are included in the ELK graph.
  */
-function buildElkGraph(input: ElkLayoutInput): {
+function buildElkGraph(
+	input: ElkLayoutInput,
+	elementPositions?: Map<string, { x: number; w: number; containerW: number }>
+): {
 	graph: ElkNode;
 	containerIds: Set<string>;
-	elementExternalEdgeInfo: Map<
-		string,
-		{ hasUpwardEdge: boolean; hasDownwardEdge: boolean; externalEdgeCount: number }
-	>;
 } {
 	const containers: Map<string, ElkNode> = new Map();
 	const containerIds = new Set<string>();
@@ -88,7 +82,6 @@ function buildElkGraph(input: ElkLayoutInput): {
 			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
 			if (parentId) parentContainerMap.set(node.id, parentId);
 
-			const layerId = isSubcontainer ? undefined : getLayerHint(node);
 			const p = meta.padding;
 			const padding = `[top=${p.top},left=${p.left},bottom=${p.bottom},right=${p.right}]`;
 
@@ -109,10 +102,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 						children: [],
 						layoutOptions: {
 							'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-							'elk.nodeSize.minimum': `(${elkCollapsedWidth},${collapsedHeight})`,
-							...(layerId !== undefined && {
-								'elk.layered.layering.layerId': String(layerId)
-							})
+							'elk.nodeSize.minimum': `(${elkCollapsedWidth},${collapsedHeight})`
 						}
 					}
 				: {
@@ -121,13 +111,10 @@ function buildElkGraph(input: ElkLayoutInput): {
 						layoutOptions: {
 							'elk.algorithm': 'box',
 							'elk.box.packingMode': 'SIMPLE',
-							'elk.aspectRatio': '2',
+							'elk.aspectRatio': '1.4',
 							'elk.padding': padding,
 							'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-							'elk.spacing.nodeNode': '25',
-							...(layerId !== undefined && {
-								'elk.layered.layering.layerId': String(layerId)
-							})
+							'elk.spacing.nodeNode': '25'
 						}
 					};
 			containers.set(node.id, elkNode);
@@ -143,12 +130,7 @@ function buildElkGraph(input: ElkLayoutInput): {
 		}
 	}
 
-	// Sort sub-group children within each parent for deterministic placement
-	for (const [, parent] of containers) {
-		if (parent.children && parent.children.length > 0) {
-			parent.children.sort((a, b) => a.id.localeCompare(b.id));
-		}
-	}
+	// Subcontainer children sorted after elements are added (below)
 
 	// Build dual element→container mappings:
 	// - immediate: direct parent container (may be a subcontainer)
@@ -165,53 +147,6 @@ function buildElkGraph(input: ElkLayoutInput): {
 					rootId = parentContainerMap.get(rootId)!;
 				}
 				elementToRootContainer.set(node.id, rootId);
-			}
-		}
-	}
-
-	// Build container layerId lookup for edge direction enforcement
-	const containerLayerId = new Map<string, number>();
-	for (const [id, container] of containers) {
-		containerLayerId.set(
-			id,
-			parseInt(container.layoutOptions?.['elk.layered.layering.layerId'] ?? '999')
-		);
-	}
-
-	// Build cross-container edge metadata per element node for edge-aware positioning.
-	// Uses immediate containers so cross-subcontainer edges (within the same root) are counted.
-	const elementExternalEdgeInfo = new Map<
-		string,
-		{ hasUpwardEdge: boolean; hasDownwardEdge: boolean; externalEdgeCount: number }
-	>();
-	for (const edge of input.edges) {
-		if (isDisabledEdge(edge)) continue;
-		// Use immediate container for edge detection, but root container for layer direction
-		const srcImm =
-			elementToImmediateContainer.get(edge.source) ??
-			(containerIds.has(edge.source) ? edge.source : undefined);
-		const tgtImm =
-			elementToImmediateContainer.get(edge.target) ??
-			(containerIds.has(edge.target) ? edge.target : undefined);
-		if (srcImm && tgtImm && srcImm !== tgtImm) {
-			// Use root container layers for vertical direction (subcontainers don't have layer hints)
-			const srcRoot = elementToRootContainer.get(edge.source) ?? srcImm;
-			const tgtRoot = elementToRootContainer.get(edge.target) ?? tgtImm;
-			const srcLayer = containerLayerId.get(srcRoot) ?? 999;
-			const tgtLayer = containerLayerId.get(tgtRoot) ?? 999;
-			for (const [elementId, myLayer, otherLayer] of [
-				[edge.source, srcLayer, tgtLayer],
-				[edge.target, tgtLayer, srcLayer]
-			] as [string, number, number][]) {
-				const info = elementExternalEdgeInfo.get(elementId) ?? {
-					hasUpwardEdge: false,
-					hasDownwardEdge: false,
-					externalEdgeCount: 0
-				};
-				info.externalEdgeCount++;
-				if (otherLayer < myLayer) info.hasUpwardEdge = true;
-				if (otherLayer > myLayer) info.hasDownwardEdge = true;
-				elementExternalEdgeInfo.set(elementId, info);
 			}
 		}
 	}
@@ -237,119 +172,275 @@ function buildElkGraph(input: ElkLayoutInput): {
 		}
 	}
 
-	// Create container-level edges at two levels:
-	// 1. Root-level: cross-root-container edges for the root layered layout
-	// 2. Subcontainer-level: cross-child edges within a root container
+	// Helper: resolve an edge endpoint to its root container
+	const resolveRoot = (id: string): string | undefined => {
+		const fromElem = elementToRootContainer.get(id);
+		if (fromElem) return fromElem;
+		if (!containerIds.has(id)) return undefined;
+		let rootId = id;
+		while (parentContainerMap.has(rootId)) {
+			rootId = parentContainerMap.get(rootId)!;
+		}
+		return rootId;
+	};
+
+	// Build element → target root container(s) mapping for edge-aware sorting.
+	// Elements connecting to the same target should be adjacent in the grid so
+	// their ports cluster together, giving ELK meaningful crossing information.
+	const elementTargets = new Map<string, Set<string>>();
+	for (const edge of input.edges) {
+		if (!affectsLayout(edge)) continue;
+		const srcRoot = resolveRoot(edge.source);
+		const tgtRoot = resolveRoot(edge.target);
+		if (!srcRoot || !tgtRoot || srcRoot === tgtRoot) continue;
+
+		// Map source element → target container
+		if (elementToRootContainer.has(edge.source)) {
+			if (!elementTargets.has(edge.source)) elementTargets.set(edge.source, new Set());
+			elementTargets.get(edge.source)!.add(tgtRoot);
+		}
+		// Map target element → source container (reverse direction)
+		if (elementToRootContainer.has(edge.target)) {
+			if (!elementTargets.has(edge.target)) elementTargets.set(edge.target, new Set());
+			elementTargets.get(edge.target)!.add(srcRoot);
+		}
+	}
+
+	// Sort children: elements grouped by target, then elements without edges, then subcontainers.
+	// Within target groups, elements connecting to the same target are adjacent.
+	// Group order is by first target ID (arbitrary but stable) — ELK will reorder
+	// the target containers to match via crossing minimization.
+	for (const [containerId, container] of containers) {
+		if (!container.children || container.children.length < 2) continue;
+		if (parentContainerMap.has(containerId)) continue;
+
+		container.children.sort((a, b) => {
+			const aIsSub = containerIds.has(a.id) ? 1 : 0;
+			const bIsSub = containerIds.has(b.id) ? 1 : 0;
+			if (aIsSub !== bIsSub) return aIsSub - bIsSub;
+			if (aIsSub && bIsSub) return a.id.localeCompare(b.id);
+
+			// Both are elements: sort by target group
+			const aTargets = elementTargets.get(a.id);
+			const bTargets = elementTargets.get(b.id);
+			const aHasEdge = aTargets && aTargets.size > 0;
+			const bHasEdge = bTargets && bTargets.size > 0;
+
+			// Elements without edges go in the middle (sort group 1)
+			// Elements with edges go at the edges of the grid (sort group 0 or 2)
+			// — but we just need them grouped by target, so put them all before no-edge elements
+			if (aHasEdge && !bHasEdge) return -1;
+			if (!aHasEdge && bHasEdge) return 1;
+			if (!aHasEdge && !bHasEdge) return a.id.localeCompare(b.id);
+
+			// Both have edges: group by primary target (sorted target IDs as group key)
+			const aKey = Array.from(aTargets!).sort().join(',');
+			const bKey = Array.from(bTargets!).sort().join(',');
+			if (aKey !== bKey) return aKey.localeCompare(bKey);
+
+			return a.id.localeCompare(b.id);
+		});
+	}
+
+	// Create port-based edges for cross-container connections.
+	// Ports encode the relative order of edge sources within a container so ELK's
+	// crossing minimization can meaningfully order same-layer target containers.
+	//
+	// Port positions are distributed evenly across the container width, ordered by
+	// target group. Box packing internally reorders elements by size, so predicting
+	// actual element positions is unreliable. What matters is the RELATIVE order:
+	// elements connecting to "left" targets get left-side ports, "right" targets
+	// get right-side ports.
 	const edges: ElkExtendedEdge[] = [];
-	const seenContainerEdges = new Set<string>();
-	const seenInnerEdges = new Map<string, Set<string>>(); // rootId → set of "from->to"
-	const rootsWithCrossChildEdges = new Set<string>();
+	const seenEdges = new Set<string>();
 	let edgeIndex = 0;
+
+	// Collect all cross-container edges grouped by source container
+	const edgesBySourceContainer = new Map<string, { source: string; target: string; srcRoot: string; tgtRoot: string }[]>();
+	for (const edge of input.edges) {
+		if (!affectsLayout(edge)) continue;
+		const key = `${edge.source}->${edge.target}`;
+		if (seenEdges.has(key)) continue;
+		seenEdges.add(key);
+
+		const srcRoot = resolveRoot(edge.source);
+		const tgtRoot = resolveRoot(edge.target);
+		if (!srcRoot || !tgtRoot || srcRoot === tgtRoot) continue;
+
+		if (!edgesBySourceContainer.has(srcRoot)) edgesBySourceContainer.set(srcRoot, []);
+		edgesBySourceContainer.get(srcRoot)!.push({ source: edge.source, target: edge.target, srcRoot, tgtRoot });
+	}
+
+	// For each source container, distribute ports evenly ordered by target group
+	for (const [srcContainerId, containerEdges] of edgesBySourceContainer) {
+		const container = containers.get(srcContainerId);
+		if (!container) continue;
+
+		// Group edges by source element, then sort elements by their target group key
+		// (same key = same target set → adjacent ports)
+		const elementEdges = new Map<string, Set<string>>();
+		for (const e of containerEdges) {
+			if (!elementEdges.has(e.source)) elementEdges.set(e.source, new Set());
+			elementEdges.get(e.source)!.add(e.tgtRoot);
+		}
+		const sortedElements = Array.from(elementEdges.entries())
+			.sort(([, aTargets], [, bTargets]) => {
+				const aKey = Array.from(aTargets).sort().join(',');
+				const bKey = Array.from(bTargets).sort().join(',');
+				return aKey.localeCompare(bKey);
+			});
+
+		if (!container.ports) container.ports = [];
+		if (!container.layoutOptions) container.layoutOptions = {};
+
+		const useFixedPos = elementPositions && elementPositions.size > 0;
+		container.layoutOptions['elk.portConstraints'] = useFixedPos ? 'FIXED_POS' : 'FIXED_SIDE';
+
+		const elementPortIds = new Map<string, string>();
+		for (const [elemId] of sortedElements) {
+			const portId = `port-${elemId}-SOUTH`;
+			const pos = elementPositions?.get(elemId);
+			if (useFixedPos && pos) {
+				// Pass 2: place port at the element's actual x center within the container
+				container.ports.push({
+					id: portId,
+					x: pos.x + pos.w / 2,
+					y: pos.containerW * 0.7, // approximate container height
+					width: 1, height: 1,
+					layoutOptions: { 'elk.port.side': 'SOUTH' }
+				});
+			} else {
+				// Pass 1: let ELK decide port positions
+				container.ports.push({
+					id: portId,
+					layoutOptions: { 'elk.port.side': 'SOUTH' }
+				});
+			}
+			elementPortIds.set(elemId, portId);
+		}
+
+		// Create edges from source ports to target containers (or target ports)
+		for (const e of containerEdges) {
+			const srcPortId = elementPortIds.get(e.source);
+			if (!srcPortId) continue;
+
+			// Target: always route to the target ROOT container.
+			// If the target is an element inside a container, create a NORTH port
+			// on the target container so ELK knows the edge enters from the top.
+			const tgtContainer = containers.get(e.tgtRoot);
+			let tgtEndpoint = e.tgtRoot;
+			if (tgtContainer && !containerIds.has(e.target)) {
+				// Target is an element, not a container — add a NORTH port on its container
+				const tgtPortId = `port-${e.target}-NORTH`;
+				if (!tgtContainer.ports) tgtContainer.ports = [];
+				if (!tgtContainer.ports.some((p: { id: string }) => p.id === tgtPortId)) {
+					if (!tgtContainer.layoutOptions) tgtContainer.layoutOptions = {};
+					tgtContainer.layoutOptions['elk.portConstraints'] = 'FIXED_SIDE';
+					tgtContainer.ports.push({
+						id: tgtPortId,
+						layoutOptions: { 'elk.port.side': 'NORTH' }
+					});
+				}
+				tgtEndpoint = tgtPortId;
+			}
+
+			edges.push({
+				id: `elk-edge-${edgeIndex++}`,
+				sources: [srcPortId],
+				targets: [tgtEndpoint]
+			});
+		}
+	}
+
+	// Detect cross-child edges within the same root container (e.g., element → ByVirtualizer
+	// subcontainer, or Docker element → ByStack subcontainer). These edges need inner ELK edges
+	// so the root container can use layered algorithm to position connected children adjacently.
+	const rootsWithCrossChildEdges = new Set<string>();
+	const seenInnerEdges = new Map<string, Set<string>>();
 
 	for (const edge of input.edges) {
 		if (!affectsLayout(edge)) continue;
 
-		const srcImm = elementToImmediateContainer.get(edge.source);
-		const tgtImm = elementToImmediateContainer.get(edge.target);
-		const srcRoot = elementToRootContainer.get(edge.source);
-		const tgtRoot = elementToRootContainer.get(edge.target);
+		const srcImm =
+			elementToImmediateContainer.get(edge.source) ??
+			(containerIds.has(edge.source) ? edge.source : undefined);
+		const tgtImm =
+			elementToImmediateContainer.get(edge.target) ??
+			(containerIds.has(edge.target) ? edge.target : undefined);
+		const srcRoot = resolveRoot(edge.source);
+		const tgtRoot = resolveRoot(edge.target);
 
 		if (!srcImm || !tgtImm) continue;
-		if (srcImm === tgtImm) continue; // same immediate container — no edge needed
+		if (srcImm === tgtImm) continue;
+		if (!srcRoot || !tgtRoot || srcRoot !== tgtRoot) continue;
 
-		if (srcRoot && tgtRoot && srcRoot !== tgtRoot) {
-			// Cross-root-container edge: add to root-level ELK graph
-			const srcLayer = containerLayerId.get(srcRoot) ?? 999;
-			const tgtLayer = containerLayerId.get(tgtRoot) ?? 999;
-			const [from, to] = srcLayer <= tgtLayer ? [srcRoot, tgtRoot] : [tgtRoot, srcRoot];
+		// Cross-child edge within same root
+		const srcNode = srcImm === srcRoot ? edge.source : srcImm;
+		const tgtNode = tgtImm === tgtRoot ? edge.target : tgtImm;
+		if (srcNode === tgtNode) continue;
 
-			const key = `${from}->${to}`;
-			if (!seenContainerEdges.has(key)) {
-				seenContainerEdges.add(key);
-				edges.push({
-					id: `elk-edge-${edgeIndex++}`,
-					sources: [from],
-					targets: [to]
+		rootsWithCrossChildEdges.add(srcRoot);
+		const key = `${srcNode}->${tgtNode}`;
+		if (!seenInnerEdges.has(srcRoot)) seenInnerEdges.set(srcRoot, new Set());
+		const seen = seenInnerEdges.get(srcRoot)!;
+		if (!seen.has(key) && !seen.has(`${tgtNode}->${srcNode}`)) {
+			seen.add(key);
+			const rootContainer = containers.get(srcRoot);
+			if (rootContainer) {
+				if (!rootContainer.edges) rootContainer.edges = [];
+				rootContainer.edges.push({
+					id: `elk-inner-edge-${edgeIndex++}`,
+					sources: [srcNode],
+					targets: [tgtNode]
 				});
-			}
-		} else if (srcRoot === tgtRoot && srcRoot) {
-			// Cross-child edge within same root: add to root container's inner edges.
-			// If an element is directly in the root (not in a subcontainer), use the
-			// element ID as edge endpoint; otherwise use the subcontainer ID.
-			const srcNode = srcImm === srcRoot ? edge.source : srcImm;
-			const tgtNode = tgtImm === tgtRoot ? edge.target : tgtImm;
-			if (srcNode === tgtNode) continue; // both in same node, skip
-
-			rootsWithCrossChildEdges.add(srcRoot);
-			const key = `${srcNode}->${tgtNode}`;
-			if (!seenInnerEdges.has(srcRoot)) seenInnerEdges.set(srcRoot, new Set());
-			const seen = seenInnerEdges.get(srcRoot)!;
-			if (!seen.has(key) && !seen.has(`${tgtNode}->${srcNode}`)) {
-				seen.add(key);
-				const rootContainer = containers.get(srcRoot);
-				if (rootContainer) {
-					if (!rootContainer.edges) rootContainer.edges = [];
-					rootContainer.edges.push({
-						id: `elk-inner-edge-${edgeIndex++}`,
-						sources: [srcNode],
-						targets: [tgtNode]
-					});
-				}
 			}
 		}
 	}
 
-	// Switch root containers with cross-child edges from box to layered.
-	// The layered algorithm uses the inner edges to position subcontainers and elements
-	// so that connected children are adjacent.
+	// Switch root containers with cross-child edges from box to layered
 	for (const rootId of rootsWithCrossChildEdges) {
 		const container = containers.get(rootId);
 		if (container?.layoutOptions) {
 			container.layoutOptions['elk.algorithm'] = 'layered';
 			container.layoutOptions['elk.direction'] = 'DOWN';
+			container.layoutOptions['elk.hierarchyHandling'] = 'SEPARATE_CHILDREN';
 			container.layoutOptions['elk.layered.nodePlacement.strategy'] = 'NETWORK_SIMPLEX';
 			container.layoutOptions['elk.layered.crossingMinimization.strategy'] = 'LAYER_SWEEP';
 			container.layoutOptions['elk.layered.layering.strategy'] = 'NETWORK_SIMPLEX';
+			container.layoutOptions['elk.spacing.nodeNode'] = '15';
+			container.layoutOptions['elk.layered.spacing.nodeNodeBetweenLayers'] = '15';
+			container.layoutOptions['elk.layered.spacing.edgeNodeBetweenLayers'] = '5';
+			container.layoutOptions['elk.layered.compaction.postCompaction.strategy'] = 'LEFT_RIGHT_CONSTRAINT_LOCKING';
 			delete container.layoutOptions['elk.box.packingMode'];
 		}
 	}
 
-	// Add hierarchy-enforcing edges between layer tiers for disconnected containers.
-	// Without these, containers with no cross-container element edges (e.g., Docker Bridge)
-	// float as disconnected components and ignore layerId ordering.
-	const connectedContainers = new Set<string>();
-	for (const key of seenContainerEdges) {
-		const [src, tgt] = key.split('->');
-		connectedContainers.add(src);
-		connectedContainers.add(tgt);
-	}
-
-	// Group root-level containers by layer, sorted by layerId
-	const containersByLayer = new Map<number, string[]>();
-	for (const [id, container] of containers) {
-		if (parentContainerMap.has(id)) continue; // skip subcontainers
-		const layerId = parseInt(container.layoutOptions?.['elk.layered.layering.layerId'] ?? '999');
-		if (!containersByLayer.has(layerId)) containersByLayer.set(layerId, []);
-		containersByLayer.get(layerId)!.push(id);
-	}
-	const sortedLayers = Array.from(containersByLayer.entries()).sort((a, b) => a[0] - b[0]);
-
-	// Chain adjacent layers with edges to enforce vertical ordering.
-	// Connect every container to a container in the next layer so disconnected
-	// containers (e.g., VPN at layer 1 with no edges) still respect ordering.
-	for (let i = 0; i < sortedLayers.length - 1; i++) {
-		const currentLayerContainers = sortedLayers[i][1];
-		const nextLayerContainers = sortedLayers[i + 1][1];
-		for (const src of currentLayerContainers) {
-			const tgt = nextLayerContainers[0];
-			const key = `${src}->${tgt}`;
-			if (!seenContainerEdges.has(key)) {
-				seenContainerEdges.add(key);
-				edges.push({
-					id: `elk-edge-${edgeIndex++}`,
-					sources: [src],
-					targets: [tgt]
-				});
+	// For layered containers, also add element↔element edges within the same container
+	if (rootsWithCrossChildEdges.size > 0) {
+		for (const edge of input.edges) {
+			if (!affectsLayout(edge)) continue;
+			const srcImm =
+				elementToImmediateContainer.get(edge.source) ??
+				(containerIds.has(edge.source) ? edge.source : undefined);
+			const tgtImm =
+				elementToImmediateContainer.get(edge.target) ??
+				(containerIds.has(edge.target) ? edge.target : undefined);
+			if (srcImm && tgtImm && srcImm === tgtImm && rootsWithCrossChildEdges.has(srcImm)) {
+				const key = `${edge.source}->${edge.target}`;
+				if (!seenInnerEdges.has(srcImm)) seenInnerEdges.set(srcImm, new Set());
+				const seen = seenInnerEdges.get(srcImm)!;
+				if (!seen.has(key) && !seen.has(`${edge.target}->${edge.source}`)) {
+					seen.add(key);
+					const container = containers.get(srcImm);
+					if (container) {
+						if (!container.edges) container.edges = [];
+						container.edges.push({
+							id: `elk-inner-edge-${edgeIndex++}`,
+							sources: [edge.source],
+							targets: [edge.target]
+						});
+					}
+				}
 			}
 		}
 	}
@@ -366,12 +457,15 @@ function buildElkGraph(input: ElkLayoutInput): {
 		edges
 	};
 
-	return { graph, containerIds, elementExternalEdgeInfo };
+	return { graph, containerIds };
 }
 
 /**
  * Compute optimal handle sides based on relative position of source and target.
- * Picks the pair of sides (Top/Bottom/Left/Right) that minimizes edge distance.
+ * Biases toward vertical handles (Top/Bottom) since containers are typically
+ * stacked vertically — horizontal handles cause edges to cross through
+ * adjacent elements. Only uses Left/Right when the edge is very horizontal
+ * (target at nearly the same vertical level).
  */
 function computeOptimalHandles(
 	srcPos: { x: number; y: number },
@@ -387,16 +481,19 @@ function computeOptimalHandles(
 	const dx = tgtCx - srcCx;
 	const dy = tgtCy - srcCy;
 
-	// Pick handle based on predominant direction
-	if (Math.abs(dy) >= Math.abs(dx)) {
-		// Vertical: target is below source → source Bottom, target Top (and vice versa)
+	// Bias toward vertical handles: use horizontal only when |dx| > 2.5 * |dy|
+	// (roughly 68° from vertical). This ensures edges to containers that are
+	// below-and-to-the-side use Bottom/Top handles, routing cleanly downward
+	// instead of horizontally through adjacent elements.
+	const useVertical = Math.abs(dy) * 2.5 >= Math.abs(dx);
+
+	if (useVertical) {
 		if (dy >= 0) {
 			return { sourceHandle: 'Bottom', targetHandle: 'Top' };
 		} else {
 			return { sourceHandle: 'Top', targetHandle: 'Bottom' };
 		}
 	} else {
-		// Horizontal: target is right of source → source Right, target Left
 		if (dx >= 0) {
 			return { sourceHandle: 'Right', targetHandle: 'Left' };
 		} else {
@@ -404,6 +501,7 @@ function computeOptimalHandles(
 		}
 	}
 }
+
 
 /** Recompute y-coordinates for a column of nodes based on actual heights. */
 function recomputeColumnY(colNodes: ElkNode[], spacing: number): void {
@@ -416,161 +514,10 @@ function recomputeColumnY(colNodes: ElkNode[], spacing: number): void {
 	}
 }
 
-/**
- * Post-layout swap: move nodes with external edges to container boundary positions.
- * - Upward-only edges: move to top of their column
- * - Downward-only edges: move to bottom of their column
- * - Bridge nodes (both up+down): move to left/right edge column, handles face outward
- *
- * Returns a map of bridge node IDs → outward-facing handle side.
- */
-function applyEdgeAwareSwaps(
-	container: ElkNode,
-	elementExternalEdgeInfo: Map<
-		string,
-		{ hasUpwardEdge: boolean; hasDownwardEdge: boolean; externalEdgeCount: number }
-	>,
-	containerIds: Set<string>
-): Map<string, HandleSide> {
-	const bridgeNodeSides = new Map<string, HandleSide>();
-	if (!container.children || container.children.length < 2) return bridgeNodeSides;
-
-	// Only consider element nodes (not nested sub-group containers)
-	const elements = container.children.filter((c) => !containerIds.has(c.id));
-	if (elements.length < 2) return bridgeNodeSides;
-
-	// Group elements by x-coordinate (same column)
-	const columns = new Map<number, ElkNode[]>();
-	for (const element of elements) {
-		const x = element.x ?? 0;
-		if (!columns.has(x)) columns.set(x, []);
-		columns.get(x)!.push(element);
-	}
-
-	const spacing = parseInt(container.layoutOptions?.['elk.spacing.nodeNode'] ?? '20');
-	const sortedColumnXs = Array.from(columns.keys()).sort((a, b) => a - b);
-
-	// Phase 1: Move bridge nodes to edge columns
-	if (sortedColumnXs.length >= 2) {
-		const leftX = sortedColumnXs[0];
-		const rightX = sortedColumnXs[sortedColumnXs.length - 1];
-
-		// Collect bridge nodes from all columns
-		const bridgeNodes: { node: ElkNode; sourceColX: number }[] = [];
-		for (const [colX, colNodes] of columns) {
-			for (const n of colNodes) {
-				const info = elementExternalEdgeInfo.get(n.id);
-				if (info?.hasUpwardEdge && info?.hasDownwardEdge) {
-					bridgeNodes.push({ node: n, sourceColX: colX });
-				}
-			}
-		}
-
-		// Assign bridge nodes to edge columns, alternating right/left
-		for (let i = 0; i < bridgeNodes.length; i++) {
-			const { node: bridgeNode, sourceColX } = bridgeNodes[i];
-			const targetX = i % 2 === 0 ? rightX : leftX;
-			const side: HandleSide = targetX === leftX ? 'Left' : 'Right';
-
-			if (sourceColX === targetX) {
-				// Already in an edge column
-				bridgeNodeSides.set(bridgeNode.id, side);
-				continue;
-			}
-
-			const targetCol = columns.get(targetX)!;
-			const sourceCol = columns.get(sourceColX)!;
-
-			// Find closest-sized node in target column to swap with
-			let bestIdx = 0;
-			let bestDiff = Infinity;
-			const bridgeH = bridgeNode.height ?? 0;
-			for (let j = 0; j < targetCol.length; j++) {
-				const info = elementExternalEdgeInfo.get(targetCol[j].id);
-				// Don't swap with another bridge node
-				if (info?.hasUpwardEdge && info?.hasDownwardEdge) continue;
-				const diff = Math.abs((targetCol[j].height ?? 0) - bridgeH);
-				if (diff < bestDiff) {
-					bestDiff = diff;
-					bestIdx = j;
-				}
-			}
-
-			const displaced = targetCol[bestIdx];
-
-			// Swap column membership: bridge → target column, displaced → source column
-			targetCol[bestIdx] = bridgeNode;
-			const srcIdx = sourceCol.indexOf(bridgeNode);
-			sourceCol[srcIdx] = displaced;
-
-			// Update x-coordinates
-			bridgeNode.x = targetX;
-			displaced.x = sourceColX;
-
-			bridgeNodeSides.set(bridgeNode.id, side);
-		}
-
-		// Recompute y in all columns that were modified by bridge swaps
-		if (bridgeNodes.length > 0) {
-			for (const [, colNodes] of columns) {
-				recomputeColumnY(colNodes, spacing);
-			}
-		}
-	}
-
-	// Phase 2: Within each column, reorder upward-only to top, downward-only to bottom
-	for (const [, colNodes] of columns) {
-		if (colNodes.length < 2) continue;
-
-		colNodes.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
-		const startY = colNodes[0].y ?? 0;
-
-		const upward: ElkNode[] = [];
-		const middle: ElkNode[] = [];
-		const downward: ElkNode[] = [];
-		for (const n of colNodes) {
-			const info = elementExternalEdgeInfo.get(n.id);
-			// Bridge nodes already handled — treat them as middle here
-			if (info?.hasUpwardEdge && info?.hasDownwardEdge) {
-				middle.push(n);
-			} else if (info?.hasUpwardEdge) {
-				upward.push(n);
-			} else if (info?.hasDownwardEdge) {
-				downward.push(n);
-			} else {
-				middle.push(n);
-			}
-		}
-
-		// Within buckets, sort by edge count so elements with more cross-container
-		// edges are placed closest to the container boundary
-		const byEdgeCount = (a: ElkNode, b: ElkNode) => {
-			const ac = elementExternalEdgeInfo.get(a.id)?.externalEdgeCount ?? 0;
-			const bc = elementExternalEdgeInfo.get(b.id)?.externalEdgeCount ?? 0;
-			return bc - ac;
-		};
-		upward.sort(byEdgeCount);
-		downward.sort(byEdgeCount);
-
-		const reordered = [...upward, ...middle, ...downward];
-		let y = startY;
-		for (const node of reordered) {
-			node.y = y;
-			y += (node.height ?? 0) + spacing;
-		}
-	}
-
-	return bridgeNodeSides;
-}
-
 function mapElkResults(
 	layoutResult: ElkNode,
 	containerIds: Set<string>,
-	input: ElkLayoutInput,
-	elementExternalEdgeInfo: Map<
-		string,
-		{ hasUpwardEdge: boolean; hasDownwardEdge: boolean; externalEdgeCount: number }
-	>
+	input: ElkLayoutInput
 ): ElkLayoutResult {
 	const nodePositions = new Map<string, { x: number; y: number }>();
 	const containerSizes = new Map<string, { width: number; height: number }>();
@@ -606,30 +553,8 @@ function mapElkResults(
 		}
 	}
 
-	// Collect bridge node handle overrides from all containers
-	const bridgeNodeSides = new Map<string, HandleSide>();
 
 	if (layoutResult.children) {
-		// Apply edge-aware position swaps before extracting positions.
-		// Skip containers using 'layered' algorithm — ELK already optimized placement.
-		const isBoxLayout = (node: ElkNode) =>
-			!node.layoutOptions?.['elk.algorithm'] || node.layoutOptions['elk.algorithm'] === 'box';
-
-		for (const child of layoutResult.children) {
-			if (containerIds.has(child.id) && isBoxLayout(child)) {
-				const sides = applyEdgeAwareSwaps(child, elementExternalEdgeInfo, containerIds);
-				for (const [id, side] of sides) bridgeNodeSides.set(id, side);
-				// Also apply to nested sub-group containers
-				if (child.children) {
-					for (const subChild of child.children) {
-						if (containerIds.has(subChild.id) && isBoxLayout(subChild)) {
-							const subSides = applyEdgeAwareSwaps(subChild, elementExternalEdgeInfo, containerIds);
-							for (const [id, side] of subSides) bridgeNodeSides.set(id, side);
-						}
-					}
-				}
-			}
-		}
 		processChildren(layoutResult.children, 0, 0);
 	}
 
@@ -662,21 +587,6 @@ function mapElkResults(
 				`${edge.source}->${edge.target}`,
 				computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize)
 			);
-		}
-	}
-
-	// Override handles for bridge nodes — edges should face outward from container edge
-	if (bridgeNodeSides.size > 0) {
-		for (const edge of renderedEdges) {
-			const key = `${edge.source}->${edge.target}`;
-			const handles = edgeHandles.get(key);
-			if (!handles) continue;
-
-			const srcSide = bridgeNodeSides.get(edge.source);
-			if (srcSide) handles.sourceHandle = srcSide;
-
-			const tgtSide = bridgeNodeSides.get(edge.target);
-			if (tgtSide) handles.targetHandle = tgtSide;
 		}
 	}
 
@@ -949,8 +859,38 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 		};
 	}
 
-	const { graph, containerIds, elementExternalEdgeInfo } = buildElkGraph(input);
 	const elk = await getElk();
-	const result = await elk.layout(graph);
-	return mapElkResults(result, containerIds, input, elementExternalEdgeInfo);
+
+	// Pass 1: compute layout with FIXED_SIDE ports (no position info).
+	// This gives us actual element positions within box-packed containers.
+	const { graph: graph1, containerIds } = buildElkGraph(input);
+	const result1 = await elk.layout(graph1);
+
+	// Extract actual element positions from pass 1 to set accurate port positions
+	const elementPositions = new Map<string, { x: number; w: number; containerW: number }>();
+	function extractPositions(children: ElkNode[]) {
+		for (const child of children) {
+			if (containerIds.has(child.id)) {
+				// Container: record width, recurse into children
+				if (child.children) {
+					for (const elem of child.children) {
+						if (!containerIds.has(elem.id)) {
+							elementPositions.set(elem.id, {
+								x: elem.x ?? 0,
+								w: elem.width ?? 0,
+								containerW: child.width ?? 0
+							});
+						}
+					}
+					extractPositions(child.children);
+				}
+			}
+		}
+	}
+	if (result1.children) extractPositions(result1.children);
+
+	// Pass 2: rebuild graph with FIXED_POS ports at actual element positions
+	const { graph: graph2, containerIds: cids2 } = buildElkGraph(input, elementPositions);
+	const result2 = await elk.layout(graph2);
+	return mapElkResults(result2, cids2, input);
 }
