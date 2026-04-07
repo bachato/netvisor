@@ -33,7 +33,7 @@
 	import CustomEdge from './CustomEdge.svelte';
 	import type { TopologyEdge, Topology } from '../../types/base';
 	import { resolveElementNode } from '../../resolvers';
-	import { ElkLayoutEngine } from '../../layout/engine';
+	import { ElkLayoutEngine, ForceCompoundLayoutEngine } from '../../layout/engine';
 	import {
 		collapsedContainers,
 		collapseAll,
@@ -59,7 +59,12 @@
 	import { writable as svelteWritable } from 'svelte/store';
 	import { themeStore } from '$lib/shared/stores/theme.svelte';
 
-	const layoutEngine = new ElkLayoutEngine();
+	const elkLayoutEngine = new ElkLayoutEngine();
+	const forceCompoundLayoutEngine = new ForceCompoundLayoutEngine();
+
+	function getLayoutEngine(view: string) {
+		return view === 'L2Physical' ? forceCompoundLayoutEngine : elkLayoutEngine;
+	}
 
 	// Props
 	export let topology: Topology;
@@ -580,15 +585,11 @@
 						sessionStructureKey = structureKey;
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						layoutGraph.syncCollapseState(collapsed);
-						layoutGraph.applyForceResult(
-							forceResult.nodePositions,
-							new Map(),
-							elementNodeSizes
-						);
+						layoutGraph.applyForceResult(forceResult.nodePositions, new Map(), elementNodeSizes);
 					} else {
 						// Standard ELK layout for expanded or partially collapsed views
 						const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();
-						const elkResult = await layoutEngine.compute({
+						const elkResult = await getLayoutEngine(currentView).compute({
 							nodes: visibleNodes,
 							edges: elevatedEdges,
 							topology: topology,

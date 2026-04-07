@@ -37,6 +37,7 @@ pub enum ContainerRule {
         #[serde(default)]
         tag_ids: Vec<Uuid>,
     },
+    ByHost,
 }
 
 impl ContainerRule {
@@ -45,6 +46,7 @@ impl ContainerRule {
             ContainerRule::BySubnet => &[TopologyView::L3Logical],
             ContainerRule::MergeDockerBridges => &[TopologyView::L3Logical],
             ContainerRule::ByApplicationGroup { .. } => &[TopologyView::Application],
+            ContainerRule::ByHost => &[TopologyView::L2Physical],
         }
     }
 
@@ -67,6 +69,7 @@ impl EntityMetadataProvider for ContainerRule {
             ContainerRule::BySubnet => Color::Blue,
             ContainerRule::MergeDockerBridges => Color::Teal,
             ContainerRule::ByApplicationGroup { .. } => Concept::Application.color(),
+            ContainerRule::ByHost => Concept::L2.color(),
         }
     }
 
@@ -75,6 +78,7 @@ impl EntityMetadataProvider for ContainerRule {
             ContainerRule::BySubnet => Icon::Network,
             ContainerRule::MergeDockerBridges => Icon::Boxes,
             ContainerRule::ByApplicationGroup { .. } => Concept::Application.icon(),
+            ContainerRule::ByHost => Concept::L2.icon(),
         }
     }
 }
@@ -85,6 +89,7 @@ impl TypeMetadataProvider for ContainerRule {
             ContainerRule::BySubnet => "Subnet",
             ContainerRule::MergeDockerBridges => "Docker bridges",
             ContainerRule::ByApplicationGroup { .. } => "Application Group",
+            ContainerRule::ByHost => "Host",
         }
     }
 
@@ -93,6 +98,7 @@ impl TypeMetadataProvider for ContainerRule {
             ContainerRule::BySubnet => "Group nodes by network subnet",
             ContainerRule::MergeDockerBridges => "Merge Docker bridge subnets under their host",
             ContainerRule::ByApplicationGroup { .. } => "Group services by application group tag",
+            ContainerRule::ByHost => "Group ports by their host device",
         }
     }
 

@@ -81,6 +81,26 @@ const elementResolvers: Record<
 			subnetId: '',
 			isInfra: false
 		};
+	},
+	Port: (nodeId, node, topology) => {
+		const hostId = 'host_id' in node ? (node.host_id as string) : undefined;
+		const ifEntryId = 'if_entry_id' in node ? (node.if_entry_id as string) : undefined;
+		const host = topology.hosts.find((h) => h.id === hostId);
+		const ifEntry = ifEntryId ? topology.if_entries.find((e) => e.id === ifEntryId) : undefined;
+		// Resolve interface from the IfEntry's interface_id for inspector sections
+		const interfaceId = ifEntry?.interface_id ?? undefined;
+		const iface = interfaceId ? topology.interfaces.find((i) => i.id === interfaceId) : undefined;
+
+		return {
+			elementType: 'Port' as ElementEntityType,
+			host,
+			iface,
+			services: [],
+			hostId,
+			interfaceId,
+			subnetId: '',
+			isInfra: false
+		};
 	}
 };
 
@@ -200,6 +220,8 @@ export function getContainerContents(containerId: string, allNodes: Node[]): Con
 			if (ifaceId) interfaceIds.add(ifaceId);
 		} else if (nd.element_type === 'Host') {
 			// Host elements: no additional IDs needed beyond hostId (already added above)
+		} else if (nd.element_type === 'Port') {
+			// Port elements: no additional IDs needed beyond hostId
 		}
 	}
 

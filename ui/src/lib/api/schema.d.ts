@@ -2862,14 +2862,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-07T01:01:09.869863Z",
-             *       "id": "1ca14dee-942e-408d-ba55-ca1bcae543ef",
+             *       "created_at": "2026-04-07T03:01:43.869679Z",
+             *       "id": "562fb9f2-2644-4bf0-ba46-cb4d39dca12d",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-07T01:01:09.869863Z"
+             *       "updated_at": "2026-04-07T03:01:43.869679Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3156,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-07T01:01:09.852610Z",
-             *               "id": "34598296-3404-4ec8-87c1-5ec2aae644af",
+             *               "created_at": "2026-04-07T03:01:43.856647Z",
+             *               "id": "98f60bc1-87c0-4aaf-8af0-dd084d9e4ef9",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-07T01:01:09.852610Z"
+             *               "updated_at": "2026-04-07T03:01:43.856647Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3172,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Tasmota",
+             *           "service_definition": "Denodo",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3428,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-07T01:01:09.865078Z",
-             *           "id": "e27c3fc5-6a96-44af-b27d-72d0ed816302",
+             *           "created_at": "2026-04-07T03:01:43.865746Z",
+             *           "id": "18c7c22d-7032-453a-aac3-7079e4e99e6f",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-07T01:01:09.865078Z"
+             *           "updated_at": "2026-04-07T03:01:43.865746Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3444,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Tasmota",
+             *       "service_definition": "Denodo",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3772,14 +3772,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-07T01:01:09.852952Z",
-         *       "id": "8f406d4a-3615-4cc8-9c03-b0c3a6a1c819",
+         *       "created_at": "2026-04-07T03:01:43.856897Z",
+         *       "id": "6788c859-f3ff-4a25-a173-b218c032e3a8",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-07T01:01:09.852952Z"
+         *       "updated_at": "2026-04-07T03:01:43.856897Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3899,7 +3899,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Amber" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "Root" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack";
+        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "Root" | "Host" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -3964,7 +3964,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Tasmota",
+         *           "service_definition": "Denodo",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4601,6 +4601,11 @@ export interface components {
         } | {
             /** @enum {string} */
             element_type: "Host";
+        } | {
+            /** @enum {string} */
+            element_type: "Port";
+            /** Format: uuid */
+            if_entry_id: string;
         };
         /** @description Request body for emailing an install command to the authenticated user. */
         EmailInstallCommandRequest: {
@@ -4676,7 +4681,7 @@ export interface components {
                 ByApplicationGroup: {
                     tag_ids?: string[];
                 };
-            };
+            } | "ByHost";
         };
         /** @description Generic wrapper that gives any rule type a stable UUID identity. */
         GraphRule_ElementRule: {
@@ -4838,14 +4843,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-07T01:01:09.852131Z",
-         *               "id": "ab32292d-f108-409d-b85d-ced2339e849c",
+         *               "created_at": "2026-04-07T03:01:43.856307Z",
+         *               "id": "715268c8-e226-4702-9383-e8313b3e7d39",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-07T01:01:09.852131Z"
+         *               "updated_at": "2026-04-07T03:01:43.856307Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4854,7 +4859,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Tasmota",
+         *           "service_definition": "Denodo",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5923,14 +5928,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-07T01:01:09.852832Z",
-         *           "id": "cb439cb7-3586-4c62-ab3c-de66c5ae6067",
+         *           "created_at": "2026-04-07T03:01:43.856814Z",
+         *           "id": "255fb7d4-4c9a-4f61-824e-1d7966579e32",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-07T01:01:09.852832Z"
+         *           "updated_at": "2026-04-07T03:01:43.856814Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5939,7 +5944,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Tasmota",
+         *       "service_definition": "Denodo",
          *       "source": {
          *         "type": "Manual"
          *       },
