@@ -152,6 +152,11 @@ function buildElkGraph(
 		const parent = containers.get(parentId);
 		const child = containers.get(childId);
 		if (parent && child && parent.children) {
+			// L2: subcontainers hold connected Up ports — place them in the first
+			// layer so edges from above don't traverse through Down port rows
+			if (useLayeredChildren && child.layoutOptions) {
+				child.layoutOptions['elk.layered.layering.layerConstraint'] = 'FIRST';
+			}
 			parent.children.push(child);
 		}
 	}
