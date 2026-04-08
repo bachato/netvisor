@@ -236,6 +236,7 @@
 		const curSelectedNode = $selNodeStore;
 		const curSelectedEdge = $selEdgeStore;
 		const multiSelected = $selNodesStore;
+		console.log('[DESELECT DEBUG] $: block fired, curSelectedEdge=', curSelectedEdge, 'curSelectedNode=', curSelectedNode?.id ?? null);
 
 		if (topology && (topology.edges || topology.nodes)) {
 			const currentEdges = get(edges);

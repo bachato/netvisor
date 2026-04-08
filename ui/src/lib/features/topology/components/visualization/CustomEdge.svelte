@@ -91,6 +91,10 @@
 	let shouldAnimate = $derived((anyEdgeData?.shouldAnimate as boolean) ?? false);
 	let isSelected = $derived((anyEdgeData?.isSelected as boolean) ?? false);
 
+	$effect(() => {
+		console.log(`[DESELECT DEBUG] CustomEdge ${id} re-derived: shouldShowFull=${shouldShowFull}, shouldAnimate=${shouldAnimate}, data.shouldShowFull=${anyEdgeData?.shouldShowFull}`);
+	});
+
 	// Calculate edge color - use group color if available, otherwise use edge type color
 	let edgeColorHelper = $derived.by(() => {
 		if (group?.color) {
