@@ -256,13 +256,25 @@
 				opts.local.hide_edge_types ?? []
 			);
 
+			const hasActiveSelection = !!(curSelectedNode || curSelectedEdge);
 			const updatedEdges = currentEdges.map((edge) => {
-				const { shouldAnimate } = getEdgeDisplayState(edge, curSelectedNode, curSelectedEdge);
+				const { shouldAnimate, shouldShowFull } = getEdgeDisplayState(
+					edge,
+					curSelectedNode,
+					curSelectedEdge
+				);
+				const isEdgeSelected = curSelectedEdge?.id === edge.id;
 
 				return {
 					...edge,
-					id: edge.id,
-					animated: shouldAnimate
+					data: {
+						...edge.data,
+						shouldShowFull,
+						shouldAnimate,
+						isSelected: isEdgeSelected,
+						hasActiveSelection
+					},
+					animated: false
 				};
 			});
 
@@ -951,13 +963,17 @@
 			interactionWidth: 50
 		};
 
-		// Compute animation from current selection state
-		const { shouldAnimate } = getEdgeDisplayState(
-			flowEdge,
-			get(selectionStores.selectedNode),
-			get(selectionStores.selectedEdge)
-		);
-		flowEdge.animated = shouldAnimate;
+		// Compute display state from current selection
+		const curNode = get(selectionStores.selectedNode);
+		const curEdge = get(selectionStores.selectedEdge);
+		const { shouldAnimate, shouldShowFull } = getEdgeDisplayState(flowEdge, curNode, curEdge);
+		flowEdge.data = {
+			...flowEdge.data,
+			shouldShowFull,
+			shouldAnimate,
+			isSelected: curEdge?.id === flowEdge.id,
+			hasActiveSelection: !!(curNode || curEdge)
+		};
 
 		return flowEdge;
 	}
@@ -1015,14 +1031,26 @@
 		}, 50);
 	}
 
-	/** Imperatively sync edge animated state with current selection stores. */
-	function syncEdgeAnimation() {
+	/** Imperatively sync edge display state (animation, highlight) with current selection stores. */
+	function syncEdgeDisplayState() {
 		const currentEdges = get(edges);
 		const curNode = get(selectionStores.selectedNode);
 		const curEdge = get(selectionStores.selectedEdge);
+		const hasActiveSelection = !!(curNode || curEdge);
 		const updatedEdges = currentEdges.map((e) => {
-			const { shouldAnimate } = getEdgeDisplayState(e, curNode, curEdge);
-			return { ...e, id: e.id, animated: shouldAnimate };
+			const { shouldAnimate, shouldShowFull } = getEdgeDisplayState(e, curNode, curEdge);
+			const isEdgeSelected = curEdge?.id === e.id;
+			return {
+				...e,
+				data: {
+					...e.data,
+					shouldShowFull,
+					shouldAnimate,
+					isSelected: isEdgeSelected,
+					hasActiveSelection
+				},
+				animated: false
+			};
 		});
 		edges.set(updatedEdges);
 	}
@@ -1031,7 +1059,7 @@
 		collapseAllBundles();
 		if (!viewportMoved) {
 			clearSelection(selectionStores);
-			syncEdgeAnimation();
+			syncEdgeDisplayState();
 		}
 		// Reset immediately after handling
 		viewportMoved = false;
@@ -1043,7 +1071,7 @@
 
 	function handleEdgeHover({ edge }: { edge: Edge }) {
 		toggleEdgeHover(edge, get(edges));
-		syncEdgeAnimation();
+		syncEdgeDisplayState();
 	}
 
 	function handleSelectionChange({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) {
@@ -1059,7 +1087,7 @@
 		if (selNodes.length === 0 && !viewportMoved) {
 			tick().then(() => {
 				clearSelection(selectionStores);
-				syncEdgeAnimation();
+				syncEdgeDisplayState();
 			});
 			return;
 		}

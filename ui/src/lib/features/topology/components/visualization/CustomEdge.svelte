@@ -11,27 +11,17 @@
 	} from '@xyflow/svelte';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import {
-		selectedEdge as globalSelectedEdge,
-		selectedNode as globalSelectedNode,
-		selectedTopologyId,
-		topologyOptions,
-		useTopologiesQuery
-	} from '../../queries';
+	import { selectedTopologyId, topologyOptions, useTopologiesQuery } from '../../queries';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { createColorHelper, type Color } from '$lib/shared/utils/styling';
 	import type { Topology, TopologyEdge } from '../../types/base';
 	import {
-		getEdgeDisplayState,
-		edgeHoverState,
-		groupHoverState,
 		isExporting,
 		tagHiddenNodeIds,
 		hoveredEdgeType,
 		toggleBundleExpanded
 	} from '../../interactions';
 	import { isDashedEdge } from '../../layout/edge-classification';
-	import type { Node, Edge as FlowEdge } from '@xyflow/svelte';
 
 	let {
 		id,
@@ -56,16 +46,6 @@
 	let topologiesData = $derived(topologiesQuery.data ?? []);
 	let globalTopology = $derived(topologiesData.find((t) => t.id === $selectedTopologyId));
 	let topology = $derived(topologyContext ? $topologyContext : globalTopology);
-
-	// Try to get selection from context (for share/embed pages), fallback to global store
-	const selectedNodeContext = getContext<Writable<Node | null> | undefined>('selectedNode');
-	const selectedEdgeContext = getContext<Writable<FlowEdge | null> | undefined>('selectedEdge');
-	let selectedNode = $derived(
-		selectedNodeContext ? $selectedNodeContext : $globalSelectedNode
-	) as Node | null;
-	let selectedEdge = $derived(
-		selectedEdgeContext ? $selectedEdgeContext : $globalSelectedEdge
-	) as FlowEdge | null;
 
 	const nodes = $derived(topology?.nodes ?? []);
 
@@ -104,29 +84,12 @@
 
 	let isDashed = $derived(isBundle ? bundleIsOverlay : edgeData ? isDashedEdge(edgeData) : false);
 
-	// Get display state from helper - Make reactive to hover stores
-	let displayState = $derived.by(() => {
-		// Subscribe to hover stores to trigger reactivity
-		void $edgeHoverState;
-		void $groupHoverState;
-
-		if (!edgeData) {
-			return { shouldShowFull: false, shouldAnimate: false };
-		}
-
-		// Create a minimal edge object for the helper
-		const edge: Edge = {
-			id,
-			source: edgeData.source as string,
-			target: edgeData.target as string,
-			data: edgeData
-		} as Edge;
-
-		return getEdgeDisplayState(edge, selectedNode, selectedEdge);
-	});
-
-	let shouldShowFull = $derived(displayState.shouldShowFull);
-	let isSelected = $derived(selectedEdge?.id === id);
+	// Display state is passed as edge data from BaseTopologyViewer, which computes it
+	// from selection/hover stores. This avoids store subscription issues inside SvelteFlow's
+	// component tree — data props always propagate reliably.
+	let shouldShowFull = $derived((anyEdgeData?.shouldShowFull as boolean) ?? false);
+	let shouldAnimate = $derived((anyEdgeData?.shouldAnimate as boolean) ?? false);
+	let isSelected = $derived((anyEdgeData?.isSelected as boolean) ?? false);
 
 	// Calculate edge color - use group color if available, otherwise use edge type color
 	let edgeColorHelper = $derived.by(() => {
@@ -191,8 +154,8 @@
 		if (isEdgeTypeHovered) return 1;
 		if (isAnotherEdgeTypeHovered) return 0.2;
 		if (isEndpointHiddenByTagFilter) return 0.4;
-		if (!$topologyOptions.local.no_fade_edges && (selectedNode || selectedEdge) && !shouldShowFull)
-			return 0.4;
+		const hasActiveSelection = !!(anyEdgeData?.hasActiveSelection as boolean);
+		if (!$topologyOptions.local.no_fade_edges && hasActiveSelection && !shouldShowFull) return 0.4;
 		return 1;
 	});
 
@@ -404,7 +367,9 @@
 		<!-- Primary edge layer (white dashes for group edges when shown, normal for everything else) -->
 		<BaseEdge
 			path={edgePath}
-			style={edgeStyle}
+			style="{edgeStyle}{shouldAnimate
+				? ' stroke-dasharray: 5; animation: dashdraw 0.5s linear infinite;'
+				: ''}"
 			{id}
 			interactionWidth={interactionWidth || 20}
 			class={useMultiColorDash ? 'dashed-overlay' : ''}
@@ -458,11 +423,16 @@
 {/if}
 
 <style>
-	/* Override SvelteFlow's animated behavior ONLY for our solid base layer - keep it solid */
-	:global(.svelte-flow__edge.animated .svelte-flow__edge-path.solid-base) {
-		stroke-dasharray: 0 !important;
+	/* We control animation ourselves via inline styles and shouldAnimate data prop.
+	   Override SvelteFlow's .animated class to prevent double animation. */
+	:global(.svelte-flow__edge.animated .svelte-flow__edge-path) {
+		stroke-dasharray: initial !important;
 		animation: none !important;
 	}
 
-	/* Let the dashed overlay use SvelteFlow's built-in animation */
+	@keyframes dashdraw {
+		from {
+			stroke-dashoffset: 10;
+		}
+	}
 </style>
