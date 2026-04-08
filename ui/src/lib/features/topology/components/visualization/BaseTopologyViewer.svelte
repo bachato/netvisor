@@ -994,12 +994,18 @@
 
 	function handlePaneClick({ event }: { event: MouseEvent }) {
 		collapseAllBundles();
+		// Clear props (always — animation uses props so it stops immediately)
 		selectedEdge = null;
 		if (!viewportMoved) {
 			selectedNode = null;
+			// Clear stores directly so highlights clear without relying on
+			// the parent callback chain or reactive $: block timing
+			selectedEdgeStore.set(null);
+			selectedNodeStore.set(null);
+			selectedNodes.set([]);
 		}
 
-		// Explicitly clear edge animation — don't rely solely on reactive $: block
+		// Explicitly clear edge animation
 		const currentEdges = get(edges);
 		if (currentEdges.some((e) => e.animated)) {
 			edges.set(currentEdges.map((e) => (e.animated ? { ...e, animated: false } : e)));
