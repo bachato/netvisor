@@ -1031,9 +1031,13 @@
 		// When SvelteFlow deselects everything (e.g. pane click while edge selected),
 		// it fires onselectionchange with empty arrays instead of onpaneclick.
 		// Clear selection if we're not panning.
+		// Deferred with tick() to escape SvelteFlow's $effect batch — setting stores
+		// inside the effect gets overwritten before the batch completes.
 		if (selNodes.length === 0 && !viewportMoved) {
-			clearSelection(selectionStores);
-			syncEdgeAnimation();
+			tick().then(() => {
+				clearSelection(selectionStores);
+				syncEdgeAnimation();
+			});
 			return;
 		}
 		handleBoxSelect(selNodes, selectionStores);
