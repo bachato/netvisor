@@ -1057,7 +1057,6 @@
 
 	function handlePaneClick() {
 		console.log('[DESELECT DEBUG] handlePaneClick fired, viewportMoved=', viewportMoved);
-		collapseAllBundles();
 		if (!viewportMoved) {
 			clearSelection(selectionStores);
 			console.log('[DESELECT DEBUG] after clearSelection, edgeStore=', get(selectionStores.selectedEdge));
