@@ -1056,10 +1056,13 @@
 	}
 
 	function handlePaneClick() {
+		console.log('[DESELECT DEBUG] handlePaneClick fired, viewportMoved=', viewportMoved);
 		collapseAllBundles();
 		if (!viewportMoved) {
 			clearSelection(selectionStores);
+			console.log('[DESELECT DEBUG] after clearSelection, edgeStore=', get(selectionStores.selectedEdge));
 			syncEdgeDisplayState();
+			console.log('[DESELECT DEBUG] after syncEdgeDisplayState, first edge data=', get(edges)[0]?.data?.shouldShowFull, get(edges)[0]?.data?.shouldAnimate);
 		}
 		// Reset immediately after handling
 		viewportMoved = false;
@@ -1075,19 +1078,19 @@
 	}
 
 	function handleSelectionChange({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) {
+		console.log('[DESELECT DEBUG] handleSelectionChange fired, nodes=', selNodes.length, 'viewportMoved=', viewportMoved, 'ignoreNext=', ignoreNextSelectionChange);
 		if (ignoreNextSelectionChange) {
 			ignoreNextSelectionChange = false;
 			return;
 		}
-		// When SvelteFlow deselects everything (e.g. pane click while edge selected),
-		// it fires onselectionchange with empty arrays instead of onpaneclick.
-		// Clear selection if we're not panning.
-		// Deferred with tick() to escape SvelteFlow's $effect batch — setting stores
-		// inside the effect gets overwritten before the batch completes.
 		if (selNodes.length === 0 && !viewportMoved) {
+			console.log('[DESELECT DEBUG] empty selection, deferring clear via tick()');
 			tick().then(() => {
+				console.log('[DESELECT DEBUG] tick resolved, clearing now. edgeStore before=', get(selectionStores.selectedEdge));
 				clearSelection(selectionStores);
+				console.log('[DESELECT DEBUG] edgeStore after clear=', get(selectionStores.selectedEdge));
 				syncEdgeDisplayState();
+				console.log('[DESELECT DEBUG] after sync, first edge data=', get(edges)[0]?.data?.shouldShowFull, get(edges)[0]?.data?.shouldAnimate);
 			});
 			return;
 		}
