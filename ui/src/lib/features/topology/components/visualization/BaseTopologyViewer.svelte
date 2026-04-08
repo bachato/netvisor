@@ -957,11 +957,15 @@
 		}
 	}
 
+	// Flag to ignore SvelteFlow's onselectionchange after we handle Ctrl+click ourselves
+	let ignoreNextSelectionChange = false;
+
 	function handleNodeClick({ node, event }: { node: Node; event: MouseEvent | TouchEvent }) {
 		const isModifierClick = event instanceof MouseEvent && (event.ctrlKey || event.metaKey);
 
 		if (isModifierClick) {
 			handleModifierNodeClick(node, selectionStores);
+			ignoreNextSelectionChange = true;
 		} else {
 			selectNode(node, selectionStores);
 		}
@@ -1019,6 +1023,17 @@
 	}
 
 	function handleSelectionChange({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) {
+		if (ignoreNextSelectionChange) {
+			ignoreNextSelectionChange = false;
+			return;
+		}
+		// When SvelteFlow deselects everything (e.g. pane click while edge selected),
+		// it fires onselectionchange with empty arrays instead of onpaneclick.
+		// Clear selection if we're not panning.
+		if (selNodes.length === 0 && !viewportMoved) {
+			clearSelection(selectionStores);
+			return;
+		}
 		handleBoxSelect(selNodes, selectionStores);
 	}
 
@@ -1079,7 +1094,7 @@
 		snapGrid={[25, 25]}
 		nodesDraggable={!readonly}
 		nodesConnectable={!readonly}
-		elementsSelectable={false}
+		elementsSelectable={true}
 		selectionOnDrag={true}
 		selectionKey="Shift"
 		panOnDrag={true}
