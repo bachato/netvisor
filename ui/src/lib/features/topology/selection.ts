@@ -41,7 +41,6 @@ export function clearSelection(stores: SelectionStores = defaultStores) {
 	stores.selectedNode.set(null);
 	stores.selectedEdge.set(null);
 	stores.selectedNodes.set([]);
-	collapseAllBundles();
 	clearSearch();
 }
 
