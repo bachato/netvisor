@@ -488,18 +488,17 @@ export function updateConnectedNodes(
 }
 
 /**
- * Toggle edge hover state - updates both individual edge and group hover states
+ * Set edge hover state explicitly — avoids toggle desync when enter/leave events fire asymmetrically
  */
-export function toggleEdgeHover(edge: Edge, allEdges: Edge[]) {
+export function setEdgeHover(edge: Edge, hovered: boolean, allEdges: Edge[]) {
 	const edgeData = edge.data as TopologyEdge | undefined;
 	if (!edgeData) return;
 	const edgeTypeMetadata = edgeTypes.getMetadata(edgeData.edge_type);
 
-	// Toggle individual edge hover state
+	// Set individual edge hover state
 	edgeHoverState.update((state) => {
-		const currentHoverState = state.get(edge.id) || false;
 		const newState = new Map(state);
-		newState.set(edge.id, !currentHoverState);
+		newState.set(edge.id, hovered);
 		return newState;
 	});
 

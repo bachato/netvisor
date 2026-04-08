@@ -53,7 +53,7 @@
 	} from '../../collapse';
 	import {
 		updateConnectedNodes,
-		toggleEdgeHover,
+		setEdgeHover,
 		getEdgeDisplayState,
 		expandedBundles,
 		collapseAllBundles,
@@ -236,7 +236,12 @@
 		const curSelectedNode = $selNodeStore;
 		const curSelectedEdge = $selEdgeStore;
 		const multiSelected = $selNodesStore;
-		console.log('[DESELECT DEBUG] $: block fired, curSelectedEdge=', curSelectedEdge, 'curSelectedNode=', curSelectedNode?.id ?? null);
+		console.log(
+			'[DESELECT DEBUG] $: block fired, curSelectedEdge=',
+			curSelectedEdge,
+			'curSelectedNode=',
+			curSelectedNode?.id ?? null
+		);
 
 		if (topology && (topology.edges || topology.nodes)) {
 			const currentEdges = get(edges);
@@ -1060,9 +1065,16 @@
 		console.log('[DESELECT DEBUG] handlePaneClick fired, viewportMoved=', viewportMoved);
 		if (!viewportMoved) {
 			clearSelection(selectionStores);
-			console.log('[DESELECT DEBUG] after clearSelection, edgeStore=', get(selectionStores.selectedEdge));
+			console.log(
+				'[DESELECT DEBUG] after clearSelection, edgeStore=',
+				get(selectionStores.selectedEdge)
+			);
 			syncEdgeDisplayState();
-			console.log('[DESELECT DEBUG] after syncEdgeDisplayState, first edge data=', get(edges)[0]?.data?.shouldShowFull, get(edges)[0]?.data?.shouldAnimate);
+			console.log(
+				'[DESELECT DEBUG] after syncEdgeDisplayState, first edge data=',
+				get(edges)[0]?.data?.shouldShowFull,
+				get(edges)[0]?.data?.shouldAnimate
+			);
 		}
 		// Reset immediately after handling
 		viewportMoved = false;
@@ -1072,13 +1084,25 @@
 		}
 	}
 
-	function handleEdgeHover({ edge }: { edge: Edge }) {
-		toggleEdgeHover(edge, get(edges));
+	function handleEdgePointerEnter({ edge }: { edge: Edge }) {
+		setEdgeHover(edge, true, get(edges));
+		syncEdgeDisplayState();
+	}
+
+	function handleEdgePointerLeave({ edge }: { edge: Edge }) {
+		setEdgeHover(edge, false, get(edges));
 		syncEdgeDisplayState();
 	}
 
 	function handleSelectionChange({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) {
-		console.log('[DESELECT DEBUG] handleSelectionChange fired, nodes=', selNodes.length, 'viewportMoved=', viewportMoved, 'ignoreNext=', ignoreNextSelectionChange);
+		console.log(
+			'[DESELECT DEBUG] handleSelectionChange fired, nodes=',
+			selNodes.length,
+			'viewportMoved=',
+			viewportMoved,
+			'ignoreNext=',
+			ignoreNextSelectionChange
+		);
 		if (ignoreNextSelectionChange) {
 			ignoreNextSelectionChange = false;
 			return;
@@ -1086,11 +1110,18 @@
 		if (selNodes.length === 0 && !viewportMoved) {
 			console.log('[DESELECT DEBUG] empty selection, deferring clear via tick()');
 			tick().then(() => {
-				console.log('[DESELECT DEBUG] tick resolved, clearing now. edgeStore before=', get(selectionStores.selectedEdge));
+				console.log(
+					'[DESELECT DEBUG] tick resolved, clearing now. edgeStore before=',
+					get(selectionStores.selectedEdge)
+				);
 				clearSelection(selectionStores);
 				console.log('[DESELECT DEBUG] edgeStore after clear=', get(selectionStores.selectedEdge));
 				syncEdgeDisplayState();
-				console.log('[DESELECT DEBUG] after sync, first edge data=', get(edges)[0]?.data?.shouldShowFull, get(edges)[0]?.data?.shouldAnimate);
+				console.log(
+					'[DESELECT DEBUG] after sync, first edge data=',
+					get(edges)[0]?.data?.shouldShowFull,
+					get(edges)[0]?.data?.shouldAnimate
+				);
 			});
 			return;
 		}
@@ -1141,8 +1172,8 @@
 		onpaneclick={handlePaneClick}
 		onedgeclick={handleEdgeClick}
 		onnodeclick={handleNodeClick}
-		onedgepointerenter={handleEdgeHover}
-		onedgepointerleave={handleEdgeHover}
+		onedgepointerenter={handleEdgePointerEnter}
+		onedgepointerleave={handleEdgePointerLeave}
 		onnodedragstop={readonly ? undefined : handleNodeDragStop}
 		onreconnect={readonly ? undefined : handleReconnect}
 		onselectionchange={handleSelectionChange}
