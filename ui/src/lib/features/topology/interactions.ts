@@ -294,9 +294,11 @@ function getVirtualizedContainerNodes(
 /**
  * Add container highlights: when a container is in the connected set,
  * also include its element contents and subcontainers so they highlight.
- * When a subcontainer has connected elements, add the subcontainer itself.
+ * When a container has connected elements inside it, highlight that container.
+ * Uses topology data to find elements hidden by collapsed containers.
  */
-function addContainerHighlights(connected: Set<string>, allNodes: Node[]) {
+function addContainerHighlights(connected: Set<string>, allNodes: Node[], topology?: Topology) {
+	// First pass: use visible nodes (allNodes) for containers and their visible contents
 	for (const node of allNodes) {
 		const nd = node.data as TopologyNode;
 		if (nd.node_type !== 'Container') continue;
@@ -308,12 +310,27 @@ function addContainerHighlights(connected: Set<string>, allNodes: Node[]) {
 			for (const id of contents.elementNodeIds) connected.add(id);
 			for (const id of contents.subcontainerIds) connected.add(id);
 		} else {
-			// Check if this container has any connected elements inside it
+			// Check if this container has any connected elements inside it (visible)
 			for (const elementId of contents.elementNodeIds) {
 				if (connected.has(elementId)) {
 					connected.add(nd.id);
 					break;
 				}
+			}
+		}
+	}
+
+	// Second pass: check topology data for elements hidden by collapsed containers.
+	// Edge endpoints reference element IDs that may be hidden — map them to their
+	// parent container so collapsed containers highlight correctly.
+	if (topology) {
+		for (const topoNode of topology.nodes) {
+			if (topoNode.node_type !== 'Element') continue;
+			if (!connected.has(topoNode.id)) continue;
+			// This element is connected — ensure its container highlights
+			const containerId = (topoNode as Record<string, unknown>).container_id as string | undefined;
+			if (containerId && !connected.has(containerId)) {
+				connected.add(containerId);
 			}
 		}
 	}
@@ -413,7 +430,7 @@ export function updateConnectedNodes(
 			}
 		}
 
-		addContainerHighlights(connected, allNodes);
+		addContainerHighlights(connected, allNodes, topology);
 
 		connectedNodeIds.set(connected);
 		return;
@@ -434,7 +451,7 @@ export function updateConnectedNodes(
 				connected.add(bundledEdge.source as string);
 				connected.add(bundledEdge.target as string);
 			}
-			addContainerHighlights(connected, allNodes);
+			addContainerHighlights(connected, allNodes, topology);
 			connectedNodeIds.set(connected);
 			return;
 		}
@@ -482,7 +499,7 @@ export function updateConnectedNodes(
 			connected.add(edgeData.target as string);
 		}
 
-		addContainerHighlights(connected, allNodes);
+		addContainerHighlights(connected, allNodes, topology);
 		connectedNodeIds.set(connected);
 		return;
 	}
