@@ -131,6 +131,15 @@
 					// Service elements: simpler rendering — single service with host name
 					if (elementType === 'Service') {
 						const service = resolved.services[0];
+						if (!service) {
+							console.warn(
+								`[ElementNode] Service element ${id} has no service in resolved.services`,
+								{
+									resolvedServices: resolved.services,
+									resolvedElementType: resolved.elementType
+								}
+							);
+						}
 						const hiddenCategories =
 							(
 								($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>
