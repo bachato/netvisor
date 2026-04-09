@@ -23,6 +23,7 @@ import SectionSubnetDetail from './sections/SectionSubnetDetail.svelte';
 import SectionElementSummary from './sections/SectionElementSummary.svelte';
 import SectionDependencySummary from './sections/SectionDependencySummary.svelte';
 import SectionApplicationGroup from './sections/SectionApplicationGroup.svelte';
+import SectionVirtualization from './sections/SectionVirtualization.svelte';
 
 export type InspectorSection =
 	| 'Identity'
@@ -30,6 +31,7 @@ export type InspectorSection =
 	| 'Services'
 	| 'Dependencies'
 	| 'HostDetail'
+	| 'Virtualization'
 	| 'OtherInterfaces'
 	| 'Tags'
 	| 'PortBindings'
@@ -53,6 +55,7 @@ const SECTION_COMPONENTS: Record<InspectorSection, Component<any>> = {
 	Services: SectionServices,
 	Dependencies: SectionDependencies,
 	HostDetail: SectionHostDetail,
+	Virtualization: SectionVirtualization,
 	OtherInterfaces: SectionOtherInterfaces,
 	Tags: SectionTags,
 	PortBindings: SectionPortBindings,

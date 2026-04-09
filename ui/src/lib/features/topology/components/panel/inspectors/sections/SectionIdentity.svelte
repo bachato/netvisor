@@ -15,6 +15,7 @@
 	} from '$lib/features/topology/resolvers';
 	import { inspector_thisEntity, topology_focusNode } from '$lib/paraglide/messages';
 	import { containerTypes, entities } from '$lib/shared/stores/metadata';
+	import { activeView } from '$lib/features/topology/queries';
 
 	let {
 		node,
@@ -59,9 +60,10 @@
 			? elementContext.services[0]
 			: null
 	);
+	let isApplicationView = $derived($activeView === 'Application');
 	let serviceDisplayContext = $derived({
-		interfaceId: elementContext?.interfaceId ?? null,
-		ports: topology.ports,
+		interfaceId: isApplicationView ? null : (elementContext?.interfaceId ?? null),
+		ports: isApplicationView ? [] : topology.ports,
 		showEntityTagPicker: !editState.isReadonly,
 		tagPickerDisabled: !editState.isEditable,
 		entityTags: topology.entity_tags
@@ -75,18 +77,40 @@
 		return ifEntryId ? (topology.if_entries.find((e) => e.id === ifEntryId) ?? null) : null;
 	});
 
-	// For Host containers: show the host
+	// For Host and Virtualizer containers: show the host
 	let thisHost = $derived.by(() => {
-		if (containerContext?.containerType !== 'Host') return null;
-		// Find a child Port element to get the host_id
-		const childElement = topology.nodes.find(
-			(n) => n.node_type === 'Element' && n.container_id === node.id
-		);
-		if (childElement && 'host_id' in childElement) {
-			return topology.hosts.find((h) => h.id === childElement.host_id) ?? null;
+		if (containerContext?.containerType === 'Host') {
+			// Find a child Port element to get the host_id
+			const childElement = topology.nodes.find(
+				(n) => n.node_type === 'Element' && n.container_id === node.id
+			);
+			if (childElement && 'host_id' in childElement) {
+				return topology.hosts.find((h) => h.id === childElement.host_id) ?? null;
+			}
+			// Fallback: match by name
+			return topology.hosts.find((h) => h.name === containerContext?.title) ?? null;
 		}
-		// Fallback: match by name
-		return topology.hosts.find((h) => h.name === containerContext?.title) ?? null;
+		if (containerContext?.containerType === 'Virtualizer') {
+			// Virtualizer container groups VMs — resolve the virtualizer host
+			// via a child VM's virtualization data
+			const childElement = topology.nodes.find(
+				(n) => n.node_type === 'Element' && n.container_id === node.id
+			);
+			if (childElement && 'host_id' in childElement) {
+				const vmHost = topology.hosts.find((h) => h.id === childElement.host_id);
+				if (vmHost?.virtualization) {
+					const virtService = topology.services.find(
+						(s) => s.id === vmHost.virtualization!.details.service_id
+					);
+					if (virtService?.host_id) {
+						return topology.hosts.find((h) => h.id === virtService.host_id) ?? null;
+					}
+				}
+			}
+			// Fallback: match by name
+			return topology.hosts.find((h) => h.name === containerContext?.title) ?? null;
+		}
+		return null;
 	});
 	let hostDisplayContext = $derived({
 		showEntityTagPicker: !editState.isReadonly,

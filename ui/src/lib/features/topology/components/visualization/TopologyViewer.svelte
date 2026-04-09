@@ -54,7 +54,8 @@
 
 	// Sidebar buttons show labels briefly on first visit per session, then stay collapsed
 	const SIDEBAR_SEEN_KEY = 'topology_sidebar_labels_shown';
-	const alreadySeen = typeof sessionStorage !== 'undefined' && sessionStorage.getItem(SIDEBAR_SEEN_KEY) === '1';
+	const alreadySeen =
+		typeof sessionStorage !== 'undefined' && sessionStorage.getItem(SIDEBAR_SEEN_KEY) === '1';
 	let sidebarCollapsed = $state(alreadySeen);
 
 	$effect(() => {

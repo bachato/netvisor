@@ -31,7 +31,12 @@
 	import { getContext } from 'svelte';
 	import type { Port } from '$lib/features/hosts/types/base';
 	import type { Node, Edge } from '@xyflow/svelte';
-	import { topology_hideOpenPorts, topology_openPortsSummary } from '$lib/paraglide/messages';
+	import {
+		topology_hideOpenPorts,
+		topology_openPortsSummary,
+		common_vm,
+		common_container
+	} from '$lib/paraglide/messages';
 
 	let { id, data, width }: NodeProps = $props();
 
@@ -141,9 +146,10 @@
 							hiddenCategories.includes(
 								serviceDefinitions.getCategory(service.service_definition) as CategoryType
 							);
+						const isApplicationView = $activeView === 'Application';
 						return {
 							elementType,
-							footerText: host?.name ?? null,
+							footerText: isApplicationView ? null : (host?.name ?? null),
 							services: service && !isCategoryHidden ? [service] : [],
 							hiddenOpenPorts: [],
 							headerText: null,
@@ -181,6 +187,22 @@
 
 						const showServices = servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0;
 
+						let platformBadge: string | null = null;
+						if ($activeView === 'Infrastructure') {
+							if (host.virtualization) {
+								platformBadge = common_vm();
+							} else if (
+								topology?.edges.some(
+									(e) =>
+										e.edge_type === 'ServiceVirtualization' &&
+										'host_id' in e &&
+										e.host_id === resolved.hostId
+								)
+							) {
+								platformBadge = common_container();
+							}
+						}
+
 						return {
 							elementType,
 							footerText: null,
@@ -190,6 +212,7 @@
 							bodyText: showServices ? null : host.name || host.hostname,
 							showServices,
 							isVirtualized: host.virtualization !== null,
+							platformBadge,
 							interface_id: id
 						} as ElementRenderData;
 					}
@@ -265,11 +288,13 @@
 
 					let bodyText: string | null = null;
 					let footerText: string | null = null;
+					let subtitleText: string | null = null;
 					let headerText: string | null = (data as TopologyNode).header ?? null;
 					let showServices = servicesOnInterface.length != 0 || hiddenOpenPorts.length != 0;
 
 					if (iface && !isContainerSubnetValue) {
-						footerText = (iface.name ? iface.name + ': ' : '') + iface.ip_address;
+						subtitleText = iface.ip_address;
+						footerText = iface.name || null;
 					}
 
 					if (!showServices) {
@@ -279,6 +304,7 @@
 					return {
 						elementType,
 						footerText,
+						subtitleText,
 						services: servicesOnInterface,
 						hiddenOpenPorts,
 						headerText,
@@ -416,10 +442,21 @@
 		{#if nodeRenderData.headerText}
 			<div class="relative flex-shrink-0 px-2 pt-2 text-center">
 				<div
-					class={`truncate text-xs font-medium leading-none ${nodeRenderData.isVirtualized ? virtualizationColorHelper.text : 'text-tertiary'}`}
+					class={`flex items-center justify-center gap-1 truncate text-xs font-medium leading-none ${nodeRenderData.isVirtualized ? virtualizationColorHelper.text : 'text-tertiary'}`}
 				>
 					{nodeRenderData.headerText}
+					{#if nodeRenderData.platformBadge}
+						<span class="text-tertiary bg-surface-secondary rounded px-1 text-[10px]">
+							{nodeRenderData.platformBadge}
+						</span>
+					{/if}
 				</div>
+			</div>
+		{/if}
+
+		{#if nodeRenderData.subtitleText}
+			<div class="text-secondary truncate px-2 text-center text-xs font-medium">
+				{nodeRenderData.subtitleText}
 			</div>
 		{/if}
 
@@ -471,7 +508,7 @@
 									{service.name}
 								</span>
 							</div>
-							{#if !$topologyOptions.request.hide_ports && service.bindings.filter((b) => b.type == 'Port').length > 0}
+							{#if !$topologyOptions.request.hide_ports && $activeView !== 'Application' && service.bindings.filter((b) => b.type == 'Port').length > 0}
 								<span class="text-tertiary mt-1 text-center text-xs"
 									>{service.bindings
 										.map((b) => {
@@ -514,7 +551,7 @@
 											{service.name}
 										</span>
 									</div>
-									{#if !$topologyOptions.request.hide_ports && service.bindings.filter((b) => b.type == 'Port').length > 0}
+									{#if !$topologyOptions.request.hide_ports && $activeView !== 'Application' && service.bindings.filter((b) => b.type == 'Port').length > 0}
 										<span class="text-tertiary mt-1 text-center text-xs"
 											>{service.bindings
 												.map((b) => {

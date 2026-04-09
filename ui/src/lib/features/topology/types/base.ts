@@ -25,6 +25,7 @@ export interface PortStatus {
 export interface ElementRenderData {
 	elementType: string;
 	headerText: string | null;
+	subtitleText?: string | null;
 	footerText: string | null;
 	bodyText: string | null;
 	showServices: boolean;
@@ -33,6 +34,7 @@ export interface ElementRenderData {
 	hiddenOpenPorts: Service[];
 	interface_id: string;
 	isCategoryHidden?: boolean;
+	platformBadge?: string | null;
 	portStatus?: PortStatus;
 }
 

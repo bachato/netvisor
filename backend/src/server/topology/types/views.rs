@@ -107,6 +107,7 @@ pub enum InspectorSection {
     Services,
     Dependencies,
     HostDetail,
+    Virtualization,
     OtherInterfaces,
     Tags,
     PortBindings,
@@ -338,6 +339,7 @@ impl TopologyView {
             Self::Infrastructure => ViewInspectorConfig {
                 element_sections: vec![
                     InspectorSection::Identity,
+                    InspectorSection::Virtualization,
                     InspectorSection::HostDetail,
                     InspectorSection::Services,
                     InspectorSection::OtherInterfaces,
