@@ -181,13 +181,13 @@ pub struct IfEntryBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fdb_macs: Option<Vec<String>>,
 
-    /// Native/untagged VLAN ID on this port (from Q-BRIDGE dot1qPvid)
+    /// Native/untagged VLAN entity ID on this port (resolved from Q-BRIDGE dot1qPvid)
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub native_vlan_id: Option<u16>,
+    pub native_vlan_id: Option<Uuid>,
 
-    /// Tagged VLAN IDs on this port (from Q-BRIDGE dot1qVlanCurrentEgressPorts)
+    /// Tagged VLAN entity IDs on this port (resolved from Q-BRIDGE dot1qVlanCurrentEgressPorts)
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vlan_ids: Option<Vec<u16>>,
+    pub vlan_ids: Option<Vec<Uuid>>,
 }
 
 impl Default for IfEntryBase {

@@ -19,8 +19,12 @@ pub struct ElementMatchData {
     pub virtualizer_host_id: Option<Uuid>,
     /// The Docker Compose project name (for ByStack grouping).
     pub compose_project: Option<String>,
-    /// Native VLAN ID on this port (for ByVLAN grouping).
-    pub native_vlan_id: Option<u16>,
+    /// Native VLAN entity UUID on this port (for ByVLAN grouping).
+    pub native_vlan_id: Option<Uuid>,
+    /// Native VLAN number (for grouping key and display).
+    pub vlan_number: Option<u16>,
+    /// Native VLAN name (for display in container header).
+    pub vlan_name: Option<String>,
     /// Whether this port has tagged VLANs (for ByTrunkPort grouping).
     pub is_trunk_port: bool,
     /// Port operational status (for ByPortOpStatus grouping).
@@ -279,7 +283,7 @@ pub fn apply_element_rules_with_titles(
                 }
             }
             ElementRule::ByVLAN => {
-                // Groups access ports by native VLAN ID into per-VLAN subcontainers.
+                // Groups access ports by native VLAN number into per-VLAN subcontainers.
                 for (parent_id, element_ids) in &elements_by_container {
                     let unclaimed: Vec<Uuid> = element_ids
                         .iter()
@@ -290,17 +294,28 @@ pub fn apply_element_rules_with_titles(
                         continue;
                     }
 
-                    // Group by native_vlan_id
+                    // Group by vlan_number (u16) for consistent grouping
                     let mut by_vlan: HashMap<u16, Vec<Uuid>> = HashMap::new();
                     for id in &unclaimed {
-                        if let Some(vlan_id) = match_data.get(id).and_then(|d| d.native_vlan_id) {
-                            by_vlan.entry(vlan_id).or_default().push(*id);
+                        if let Some(vlan_number) = match_data.get(id).and_then(|d| d.vlan_number) {
+                            by_vlan.entry(vlan_number).or_default().push(*id);
                         }
                     }
 
-                    for (vlan_id, ids) in by_vlan {
-                        let group_key = format!("{parent_id}:{rule_id}:vlan:{vlan_id}");
+                    for (vlan_number, ids) in by_vlan {
+                        let group_key = format!("{parent_id}:{rule_id}:vlan:{vlan_number}");
                         let group_id = Uuid::new_v5(&Uuid::NAMESPACE_OID, group_key.as_bytes());
+
+                        // Look up name from first element's match data
+                        let vlan_name = ids
+                            .first()
+                            .and_then(|id| match_data.get(id))
+                            .and_then(|d| d.vlan_name.as_deref());
+
+                        let header = match vlan_name {
+                            Some(name) => format!("VLAN {} ({})", vlan_number, name),
+                            None => format!("VLAN {}", vlan_number),
+                        };
 
                         new_containers.push(Node {
                             id: group_id,
@@ -314,7 +329,7 @@ pub fn apply_element_rules_with_titles(
                             },
                             position: Default::default(),
                             size: Default::default(),
-                            header: Some(format!("VLAN {vlan_id}")),
+                            header: Some(header),
                             element_rule_id: Some(*rule_id),
                             will_accept_edges: rule.will_accept_edges(),
                         });
@@ -469,6 +484,8 @@ mod tests {
             virtualizer_host_id: None,
             compose_project: compose_project.map(String::from),
             native_vlan_id: None,
+            vlan_number: None,
+            vlan_name: None,
             is_trunk_port: false,
             oper_status: None,
         }

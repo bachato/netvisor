@@ -12415,6 +12415,544 @@
         ]
       }
     },
+    "/api/v1/vlans": {
+      "get": {
+        "tags": [
+          "Vlans"
+        ],
+        "summary": "List all VLANs",
+        "description": "Returns VLANs accessible to the authenticated user, optionally filtered by network.",
+        "operationId": "get_all_vlans",
+        "parameters": [
+          {
+            "name": "group_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/VlanOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/VlanOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of VLANs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedApiResponse_Vlan"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Vlans"
+        ],
+        "summary": "Create a new VLAN",
+        "description": "Creates a VLAN scoped to a network. VLAN numbers must be unique within a network.",
+        "operationId": "create_vlan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Vlan"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "VLAN created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_Vlan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VLAN number already exists in this network",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/vlans/bulk-delete": {
+      "post": {
+        "tags": [
+          "Vlans"
+        ],
+        "summary": "Bulk delete Vlans",
+        "operationId": "bulk_delete_vlans",
+        "requestBody": {
+          "description": "Array of Vlan IDs to delete",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Vlans deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/vlans/discovery": {
+      "post": {
+        "tags": [
+          "Vlans"
+        ],
+        "summary": "Bulk upsert VLANs from discovery",
+        "description": "Used by daemons to report discovered VLANs. Creates new VLANs or updates names.\nReturns the mapping of VLAN numbers to entity UUIDs for IfEntry construction.",
+        "operationId": "discovery_upsert_vlans",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VlanDiscoveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "VLANs upserted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_VlanDiscoveryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "daemon_api_key": []
+          }
+        ]
+      }
+    },
+    "/api/v1/vlans/export/csv": {
+      "get": {
+        "tags": [
+          "Vlans"
+        ],
+        "summary": "Export Vlans to CSV",
+        "description": "Export all Vlans matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_vlans_csv",
+        "parameters": [
+          {
+            "name": "group_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/VlanOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/VlanOrderField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "order_direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing Vlans",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/vlans/{id}": {
+      "get": {
+        "tags": [
+          "Vlans"
+        ],
+        "summary": "Get Vlan by ID",
+        "operationId": "get_vlan_by_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Vlan ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vlan found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_Vlan"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Vlan not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Vlans"
+        ],
+        "summary": "Update Vlan",
+        "operationId": "update_vlan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Vlan ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Vlan"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Vlan updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_Vlan"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Vlan not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Vlans"
+        ],
+        "summary": "Delete Vlan",
+        "operationId": "delete_vlan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Vlan ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vlan deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Vlan not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/version": {
       "get": {
         "tags": [
@@ -12577,14 +13115,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-07T19:40:22.308095Z",
-              "id": "920bb412-4089-4b27-b6c6-458614519543",
+              "created_at": "2026-04-08T21:15:56.472692Z",
+              "id": "bad86396-3b47-4799-9feb-b7ae7dd21a3a",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-07T19:40:22.308095Z"
+              "updated_at": "2026-04-08T21:15:56.472692Z"
             }
           },
           "error": {
@@ -13483,14 +14021,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-07T19:40:22.289498Z",
-                      "id": "2e25e9a5-fb18-495c-9164-6b1bb602715d",
+                      "created_at": "2026-04-08T21:15:56.449826Z",
+                      "id": "b2b3e3f8-6420-4ef8-bdb0-e63e398d34c3",
                       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-07T19:40:22.289498Z"
+                      "updated_at": "2026-04-08T21:15:56.449826Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -13499,7 +14037,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Discourse",
+                  "service_definition": "DHCP Server",
                   "source": {
                     "type": "Manual"
                   },
@@ -14202,14 +14740,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-07T19:40:22.302967Z",
-                  "id": "716c472e-91b7-4057-b41b-45f938bab468",
+                  "created_at": "2026-04-08T21:15:56.466886Z",
+                  "id": "b2b11c9d-f5a4-4837-aea4-bd170fde1de7",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-07T19:40:22.302967Z"
+                  "updated_at": "2026-04-08T21:15:56.466886Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14218,7 +14756,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Discourse",
+              "service_definition": "DHCP Server",
               "source": {
                 "type": "Manual"
               },
@@ -15210,6 +15748,96 @@
           }
         }
       },
+      "ApiResponse_Vlan": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VlanBase"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "updated_at"
+                ],
+                "properties": {
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                  }
+                }
+              }
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_VlanDiscoveryResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Response for discovery upsert",
+            "required": [
+              "vlans"
+            ],
+            "properties": {
+              "vlans": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/VlanDiscoveryResponseItem"
+                },
+                "description": "Mapping of vlan_number → VLAN entity UUID"
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
       "ApiResponse_bool": {
         "type": "object",
         "required": [
@@ -15493,14 +16121,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-07T19:40:22.289903Z",
-          "id": "4b74801c-b9a8-4a9c-aa91-5332741228da",
+          "created_at": "2026-04-08T21:15:56.450312Z",
+          "id": "e84ae415-bffc-4e55-b996-b91e4d1ae056",
           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-07T19:40:22.289903Z"
+          "updated_at": "2026-04-08T21:15:56.450312Z"
         }
       },
       "BindingBase": {
@@ -16026,7 +16654,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Discourse",
+              "service_definition": "DHCP Server",
               "tags": [],
               "virtualization": null
             }
@@ -17978,6 +18606,7 @@
           "IfEntry",
           "Credential",
           "Subnet",
+          "Vlan",
           "Dependency",
           "Topology",
           "Unknown"
@@ -18130,172 +18759,6 @@
           "email": {
             "type": "string",
             "format": "email"
-          }
-        }
-      },
-      "GraphRule_ContainerRule": {
-        "type": "object",
-        "description": "Generic wrapper that gives any rule type a stable UUID identity.",
-        "required": [
-          "id",
-          "rule"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "rule": {
-            "oneOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "BySubnet"
-                ]
-              },
-              {
-                "type": "string",
-                "enum": [
-                  "MergeDockerBridges"
-                ]
-              },
-              {
-                "type": "object",
-                "required": [
-                  "ByApplicationGroup"
-                ],
-                "properties": {
-                  "ByApplicationGroup": {
-                    "type": "object",
-                    "properties": {
-                      "tag_ids": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "string",
-                "enum": [
-                  "ByHost"
-                ]
-              }
-            ],
-            "description": "Rules that change which containers exist and how they nest.\nContainer titles are data-driven (subnet CIDR, host names), not user-configurable."
-          }
-        }
-      },
-      "GraphRule_ElementRule": {
-        "type": "object",
-        "description": "Generic wrapper that gives any rule type a stable UUID identity.",
-        "required": [
-          "id",
-          "rule"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "rule": {
-            "oneOf": [
-              {
-                "type": "object",
-                "required": [
-                  "ByServiceCategory"
-                ],
-                "properties": {
-                  "ByServiceCategory": {
-                    "type": "object",
-                    "required": [
-                      "categories"
-                    ],
-                    "properties": {
-                      "categories": {
-                        "type": "array",
-                        "items": {
-                          "$ref": "#/components/schemas/ServiceCategory"
-                        }
-                      },
-                      "title": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "object",
-                "required": [
-                  "ByTag"
-                ],
-                "properties": {
-                  "ByTag": {
-                    "type": "object",
-                    "required": [
-                      "tag_ids"
-                    ],
-                    "properties": {
-                      "tag_ids": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      },
-                      "title": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "string",
-                "enum": [
-                  "ByVirtualizer"
-                ]
-              },
-              {
-                "type": "string",
-                "enum": [
-                  "ByStack"
-                ]
-              },
-              {
-                "type": "string",
-                "description": "Groups trunk ports (ports with tagged VLANs) into a \"Trunk Ports\" subcontainer.\nHigher priority than ByVLAN — prevents trunk ports from being grouped by VLAN.",
-                "enum": [
-                  "ByTrunkPort"
-                ]
-              },
-              {
-                "type": "string",
-                "description": "Groups access ports by their native VLAN ID into per-VLAN subcontainers.",
-                "enum": [
-                  "ByVLAN"
-                ]
-              },
-              {
-                "type": "string",
-                "description": "Groups ports by operational status (Up, Down, etc.) into per-status subcontainers.",
-                "enum": [
-                  "ByPortOpStatus"
-                ]
-              }
-            ],
-            "description": "Rules that organize nodes within a container into sub-groups."
           }
         }
       },
@@ -18712,14 +19175,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-07T19:40:22.288909Z",
-                  "id": "4135fafb-8b12-4a9a-9bb9-3ce35a79601a",
+                  "created_at": "2026-04-08T21:15:56.449195Z",
+                  "id": "ca23da63-1033-4b70-99a7-1af74b1ee97d",
                   "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-07T19:40:22.288909Z"
+                  "updated_at": "2026-04-08T21:15:56.449195Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -18728,7 +19191,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Discourse",
+              "service_definition": "DHCP Server",
               "source": {
                 "type": "Manual"
               },
@@ -18768,6 +19231,172 @@
           }
         ],
         "title": "HostVirtualization"
+      },
+      "IdentifiedRule_ContainerRule": {
+        "type": "object",
+        "description": "Generic wrapper that gives any rule type a stable UUID identity.",
+        "required": [
+          "id",
+          "rule"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rule": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "BySubnet"
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "MergeDockerBridges"
+                ]
+              },
+              {
+                "type": "object",
+                "required": [
+                  "ByApplicationGroup"
+                ],
+                "properties": {
+                  "ByApplicationGroup": {
+                    "type": "object",
+                    "properties": {
+                      "tag_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "ByHost"
+                ]
+              }
+            ],
+            "description": "Rules that change which containers exist and how they nest.\nContainer titles are data-driven (subnet CIDR, host names), not user-configurable."
+          }
+        }
+      },
+      "IdentifiedRule_ElementRule": {
+        "type": "object",
+        "description": "Generic wrapper that gives any rule type a stable UUID identity.",
+        "required": [
+          "id",
+          "rule"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rule": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "ByServiceCategory"
+                ],
+                "properties": {
+                  "ByServiceCategory": {
+                    "type": "object",
+                    "required": [
+                      "categories"
+                    ],
+                    "properties": {
+                      "categories": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/ServiceCategory"
+                        }
+                      },
+                      "title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "ByTag"
+                ],
+                "properties": {
+                  "ByTag": {
+                    "type": "object",
+                    "required": [
+                      "tag_ids"
+                    ],
+                    "properties": {
+                      "tag_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "ByVirtualizer"
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "ByStack"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Groups trunk ports (ports with tagged VLANs) into a \"Trunk Ports\" subcontainer.\nHigher priority than ByVLAN — prevents trunk ports from being grouped by VLAN.",
+                "enum": [
+                  "ByTrunkPort"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Groups access ports by their native VLAN ID into per-VLAN subcontainers.",
+                "enum": [
+                  "ByVLAN"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Groups ports by operational status (Up, Down, etc.) into per-status subcontainers.",
+                "enum": [
+                  "ByPortOpStatus"
+                ]
+              }
+            ],
+            "description": "Rules that organize nodes within a container into sub-groups."
+          }
+        }
       },
       "IfAdminStatus": {
         "type": "string",
@@ -18963,12 +19592,11 @@
           },
           "native_vlan_id": {
             "type": [
-              "integer",
+              "string",
               "null"
             ],
-            "format": "int32",
-            "description": "Native/untagged VLAN ID on this port (from Q-BRIDGE dot1qPvid)",
-            "minimum": 0
+            "format": "uuid",
+            "description": "Native/untagged VLAN entity ID on this port (resolved from Q-BRIDGE dot1qPvid)"
           },
           "neighbor": {
             "oneOf": [
@@ -19003,11 +19631,10 @@
               "null"
             ],
             "items": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
+              "type": "string",
+              "format": "uuid"
             },
-            "description": "Tagged VLAN IDs on this port (from Q-BRIDGE dot1qVlanCurrentEgressPorts)"
+            "description": "Tagged VLAN entity IDs on this port (resolved from Q-BRIDGE dot1qVlanCurrentEgressPorts)"
           }
         }
       },
@@ -20740,14 +21367,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-07T19:40:22.277386Z",
-                        "id": "9a7fcf86-0673-4e40-81aa-b3a790395d69",
+                        "created_at": "2026-04-08T21:15:56.439233Z",
+                        "id": "a4889efd-f3d0-4881-a7ae-866e2aabf932",
                         "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-07T19:40:22.277386Z"
+                        "updated_at": "2026-04-08T21:15:56.439233Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -20756,7 +21383,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Discourse",
+                    "service_definition": "DHCP Server",
                     "source": {
                       "type": "Manual"
                     },
@@ -20833,14 +21460,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-07T19:40:22.301580Z",
-                    "id": "6d60a3a6-5886-418f-afdd-ae4370e25d39",
+                    "created_at": "2026-04-08T21:15:56.465014Z",
+                    "id": "1a34f7e4-1ecc-4070-9460-2b6b70b4ea08",
                     "interface_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-07T19:40:22.301580Z"
+                    "updated_at": "2026-04-08T21:15:56.465014Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -20849,7 +21476,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Discourse",
+                "service_definition": "DHCP Server",
                 "source": {
                   "type": "Manual"
                 },
@@ -21151,6 +21778,64 @@
                     "id",
                     "updated_at",
                     "created_at"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "readOnly": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginatedApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PaginatedApiResponse_Vlan": {
+        "type": "object",
+        "description": "Response type for paginated list endpoints (pagination is always present in meta)",
+        "required": [
+          "success",
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/VlanBase"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "updated_at"
                   ],
                   "properties": {
                     "created_at": {
@@ -22009,14 +22694,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-07T19:40:22.289762Z",
-              "id": "5f70fec8-33ca-49dd-8e0e-b762e129f15d",
+              "created_at": "2026-04-08T21:15:56.450155Z",
+              "id": "ef2c5162-6b75-40fe-9c4f-0d74ce9e7841",
               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-07T19:40:22.289762Z"
+              "updated_at": "2026-04-08T21:15:56.450155Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -22025,7 +22710,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Discourse",
+          "service_definition": "DHCP Server",
           "source": {
             "type": "Manual"
           },
@@ -23128,7 +23813,7 @@
             "additionalProperties": {
               "type": "array",
               "items": {
-                "$ref": "#/components/schemas/GraphRule_ContainerRule"
+                "$ref": "#/components/schemas/IdentifiedRule_ContainerRule"
               }
             },
             "propertyNames": {
@@ -23145,7 +23830,7 @@
           "element_rules": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GraphRule_ElementRule"
+              "$ref": "#/components/schemas/IdentifiedRule_ElementRule"
             }
           },
           "hide_ports": {
@@ -23627,6 +24312,155 @@
             "example": "0.12.10"
           }
         }
+      },
+      "Vlan": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/VlanBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "created_at",
+              "updated_at"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              }
+            }
+          }
+        ]
+      },
+      "VlanBase": {
+        "type": "object",
+        "required": [
+          "vlan_number",
+          "name",
+          "network_id",
+          "organization_id"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "$ref": "#/components/schemas/EntitySource"
+          },
+          "vlan_number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The 802.1Q VLAN number (1-4094)",
+            "minimum": 0
+          }
+        }
+      },
+      "VlanDiscoveryItem": {
+        "type": "object",
+        "required": [
+          "vlan_number",
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "vlan_number": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "VlanDiscoveryRequest": {
+        "type": "object",
+        "description": "Request body for daemon VLAN discovery upsert",
+        "required": [
+          "network_id",
+          "vlans"
+        ],
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vlans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VlanDiscoveryItem"
+            }
+          }
+        }
+      },
+      "VlanDiscoveryResponse": {
+        "type": "object",
+        "description": "Response for discovery upsert",
+        "required": [
+          "vlans"
+        ],
+        "properties": {
+          "vlans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VlanDiscoveryResponseItem"
+            },
+            "description": "Mapping of vlan_number → VLAN entity UUID"
+          }
+        }
+      },
+      "VlanDiscoveryResponseItem": {
+        "type": "object",
+        "required": [
+          "vlan_number",
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vlan_number": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "VlanOrderField": {
+        "type": "string",
+        "enum": [
+          "created_at",
+          "name",
+          "vlan_number",
+          "updated_at"
+        ]
       }
     },
     "securitySchemes": {
@@ -23730,6 +24564,10 @@
     {
       "name": "User API Keys",
       "description": "User API keys for programmatic access. Create and manage personal API keys with scoped permissions."
+    },
+    {
+      "name": "Vlans",
+      "description": "Virtual LANs discovered from network switches. VLANs segment network traffic and are associated with interfaces and subnets."
     },
     {
       "name": "auth",

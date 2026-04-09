@@ -33,6 +33,7 @@ use crate::server::{
         r#impl::network_access::UserApiKeyNetworkAccessStorage, service::UserApiKeyService,
     },
     users::{UserNetworkAccessStorage, service::UserService},
+    vlans::{r#impl::subnet_vlans::SubnetVlanStorage, service::VlanService},
 };
 use anyhow::Result;
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
@@ -72,6 +73,7 @@ pub struct ServiceFactory {
     pub binding_service: Arc<BindingService>,
     pub credential_service: Arc<CredentialService>,
     pub if_entry_service: Arc<IfEntryService>,
+    pub vlan_service: Arc<VlanService>,
 }
 
 impl ServiceFactory {
@@ -148,6 +150,13 @@ impl ServiceFactory {
             storage.subnets.clone(),
             event_bus.clone(),
             entity_tag_service.clone(),
+        ));
+
+        let subnet_vlan_storage = Arc::new(SubnetVlanStorage::new(storage.pool.clone()));
+        let vlan_service = Arc::new(VlanService::new(
+            storage.vlans.clone(),
+            event_bus.clone(),
+            subnet_vlan_storage,
         ));
 
         let network_service = Arc::new(NetworkService::new(
@@ -245,6 +254,7 @@ impl ServiceFactory {
             binding_service.clone(),
             if_entry_service.clone(),
             tag_service.clone(),
+            vlan_service.clone(),
             network_service.clone(),
             storage.topologies.clone(),
             event_bus.clone(),
@@ -429,6 +439,7 @@ impl ServiceFactory {
             binding_service,
             credential_service,
             if_entry_service,
+            vlan_service,
         })
     }
 }

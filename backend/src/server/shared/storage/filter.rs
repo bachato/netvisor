@@ -548,6 +548,15 @@ impl<T: Storable> StorableFilter<T> {
         self
     }
 
+    /// Generic u16 filter for any SMALLINT column.
+    pub fn u16_column(mut self, column: &str, value: u16) -> Self {
+        let col = self.qualify_column(column);
+        self.conditions
+            .push(format!("{} = ${}", col, self.values.len() + 1));
+        self.values.push(SqlValue::U16(value));
+        self
+    }
+
     /// Generic UUID filter for any column name.
     /// Used by generic child entity handlers to filter by parent_column dynamically.
     pub fn uuid_column(mut self, column: &str, id: &Uuid) -> Self {

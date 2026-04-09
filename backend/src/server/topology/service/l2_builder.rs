@@ -174,12 +174,16 @@ impl ViewBuilder for L2Builder {
                 let host = host_lookup.get(host_id)?;
                 let tag_ids: HashSet<Uuid> = host.base.tags.iter().copied().collect();
                 let if_entry = if_entry_lookup.get(&node.id);
+                let native_vlan_id = if_entry.and_then(|e| e.base.native_vlan_id);
+                let resolved_vlan = native_vlan_id.and_then(|vid| ctx.get_vlan_by_id(vid));
                 Some(ElementMatchData {
                     categories: HashSet::new(),
                     tag_ids,
                     virtualizer_host_id: None,
                     compose_project: None,
-                    native_vlan_id: if_entry.and_then(|e| e.base.native_vlan_id),
+                    native_vlan_id,
+                    vlan_number: resolved_vlan.map(|v| v.base.vlan_number),
+                    vlan_name: resolved_vlan.map(|v| v.base.name.clone()),
                     is_trunk_port: if_entry
                         .and_then(|e| e.base.vlan_ids.as_ref())
                         .is_some_and(|v| !v.is_empty()),
@@ -256,7 +260,7 @@ mod tests {
     #[test]
     fn test_empty_topology() {
         let options = TopologyOptions::default();
-        let ctx = TopologyContext::new(&[], &[], &[], &[], &[], &[], &[], &[], &[], &options);
+        let ctx = TopologyContext::new(&[], &[], &[], &[], &[], &[], &[], &[], &[], &[], &options);
         let builder = L2Builder;
         let (nodes, edges) = builder.build(&ctx, &l2_grouping());
         assert!(nodes.is_empty());
@@ -279,6 +283,7 @@ mod tests {
             &[],
             &[],
             &if_entries,
+            &[],
             &[],
             &options,
         );
@@ -314,6 +319,7 @@ mod tests {
             &[],
             &[],
             &if_entries,
+            &[],
             &[],
             &options,
         );
@@ -375,6 +381,7 @@ mod tests {
             &[],
             &if_entries,
             &[],
+            &[],
             &options,
         );
 
@@ -416,6 +423,7 @@ mod tests {
             &[],
             &[],
             &if_entries,
+            &[],
             &[],
             &options,
         );

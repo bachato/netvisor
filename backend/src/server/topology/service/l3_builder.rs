@@ -192,6 +192,7 @@ mod tests {
             &[],
             &[],
             &tags,
+            &[],
             &options,
         );
 

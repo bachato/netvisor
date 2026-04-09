@@ -242,6 +242,8 @@ impl ViewBuilder for ApplicationBuilder {
                 virtualizer_host_id: None,
                 compose_project,
                 native_vlan_id: None,
+                vlan_number: None,
+                vlan_name: None,
                 is_trunk_port: false,
                 oper_status: None,
             })
@@ -499,7 +501,19 @@ mod tests {
         let services = vec![svc];
         let options = TopologyOptions::default();
 
-        let ctx = TopologyContext::new(&[], &[], &[], &services, &[], &[], &[], &[], &[], &options);
+        let ctx = TopologyContext::new(
+            &[],
+            &[],
+            &[],
+            &services,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &options,
+        );
 
         let builder = ApplicationBuilder;
         let (nodes, _edges) = builder.build(
@@ -531,7 +545,19 @@ mod tests {
         let services = vec![svc_no_bindings];
         let options = TopologyOptions::default();
 
-        let ctx = TopologyContext::new(&[], &[], &[], &services, &[], &[], &[], &[], &[], &options);
+        let ctx = TopologyContext::new(
+            &[],
+            &[],
+            &[],
+            &services,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &options,
+        );
 
         let builder = ApplicationBuilder;
         let (nodes, _edges) = builder.build(
@@ -573,6 +599,7 @@ mod tests {
             &[],
             &services,
             &deps,
+            &[],
             &[],
             &[],
             &[],
@@ -646,6 +673,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &options,
         );
 
@@ -702,6 +730,7 @@ mod tests {
             &[],
             &services,
             &deps,
+            &[],
             &[],
             &[],
             &[],
@@ -817,6 +846,7 @@ mod tests {
             &[],
             &[],
             &tags,
+            &[],
             &options,
         );
 
@@ -968,6 +998,7 @@ mod tests {
             &[],
             &[],
             &tags,
+            &[],
             &options,
         );
 

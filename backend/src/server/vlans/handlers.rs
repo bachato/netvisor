@@ -1,0 +1,301 @@
+use crate::server::auth::middleware::permissions::{Authorized, Member, Viewer};
+use crate::server::shared::handlers::ordering::OrderField;
+use crate::server::shared::handlers::query::{
+    FilterQueryExtractor, OrderDirection, PaginationParams,
+};
+use crate::server::shared::handlers::traits::create_handler;
+use crate::server::shared::services::traits::CrudService;
+use crate::server::shared::storage::filter::StorableFilter;
+use crate::server::shared::storage::traits::{Entity, Storable, Storage};
+use crate::server::shared::types::api::{ApiError, ApiErrorResponse, PaginatedApiResponse};
+use crate::server::vlans::r#impl::base::Vlan;
+use crate::server::{
+    config::AppState,
+    shared::types::api::{ApiResponse, ApiResult},
+};
+use axum::{extract::State, response::Json};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use utoipa::{IntoParams, ToSchema};
+use utoipa_axum::{router::OpenApiRouter, routes};
+use uuid::Uuid;
+
+// ============================================================================
+// Vlan Ordering
+// ============================================================================
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum VlanOrderField {
+    #[default]
+    CreatedAt,
+    Name,
+    VlanNumber,
+    UpdatedAt,
+}
+
+impl OrderField for VlanOrderField {
+    fn to_sql(&self) -> &'static str {
+        match self {
+            Self::CreatedAt => "vlans.created_at",
+            Self::Name => "vlans.name",
+            Self::VlanNumber => "vlans.vlan_number",
+            Self::UpdatedAt => "vlans.updated_at",
+        }
+    }
+}
+
+// ============================================================================
+// Vlan Filter Query
+// ============================================================================
+
+#[derive(Deserialize, Default, Debug, Clone, IntoParams)]
+pub struct VlanFilterQuery {
+    pub group_by: Option<VlanOrderField>,
+    pub order_by: Option<VlanOrderField>,
+    pub order_direction: Option<OrderDirection>,
+    #[param(minimum = 0, maximum = 1000)]
+    pub limit: Option<u32>,
+    #[param(minimum = 0)]
+    pub offset: Option<u32>,
+    /// Filter by network ID
+    pub network_id: Option<Uuid>,
+}
+
+impl VlanFilterQuery {
+    pub fn apply_ordering(&self, filter: StorableFilter<Vlan>) -> (StorableFilter<Vlan>, String) {
+        crate::server::shared::handlers::ordering::apply_ordering(
+            self.group_by,
+            self.order_by,
+            self.order_direction,
+            filter,
+            "vlans.vlan_number ASC",
+        )
+    }
+}
+
+impl FilterQueryExtractor for VlanFilterQuery {
+    fn apply_to_filter<T: Storable>(
+        &self,
+        mut filter: StorableFilter<T>,
+        user_network_ids: &[Uuid],
+        _user_organization_id: Uuid,
+    ) -> StorableFilter<T> {
+        // If a specific network is requested, filter to it (must be in user's accessible networks)
+        if let Some(network_id) = self.network_id {
+            if user_network_ids.contains(&network_id) {
+                filter = filter.uuid_column("network_id", &network_id);
+            } else {
+                // User doesn't have access to this network — return empty
+                filter = filter.uuid_column("network_id", &Uuid::nil());
+            }
+        }
+        filter
+    }
+
+    fn pagination(&self) -> PaginationParams {
+        PaginationParams {
+            limit: self.limit,
+            offset: self.offset,
+        }
+    }
+}
+
+// Generated handlers for most CRUD operations
+mod generated {
+    use super::*;
+    crate::crud_get_by_id_handler!(Vlan);
+    crate::crud_update_handler!(Vlan);
+    crate::crud_delete_handler!(Vlan);
+    crate::crud_bulk_delete_handler!(Vlan);
+    crate::crud_export_csv_handler!(Vlan);
+}
+
+pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
+    OpenApiRouter::new()
+        .routes(routes!(get_all_vlans, create_vlan))
+        .routes(routes!(
+            generated::get_by_id,
+            generated::update,
+            generated::delete
+        ))
+        .routes(routes!(generated::bulk_delete))
+        .routes(routes!(generated::export_csv))
+        .routes(routes!(discovery_upsert_vlans))
+}
+
+/// List all VLANs
+///
+/// Returns VLANs accessible to the authenticated user, optionally filtered by network.
+#[utoipa::path(
+    get,
+    path = "",
+    tag = Vlan::ENTITY_NAME_PLURAL,
+    params(VlanFilterQuery),
+    responses(
+        (status = 200, description = "List of VLANs", body = PaginatedApiResponse<Vlan>),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+async fn get_all_vlans(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Viewer>,
+    crate::server::shared::extractors::Query(query): crate::server::shared::extractors::Query<
+        VlanFilterQuery,
+    >,
+) -> ApiResult<Json<PaginatedApiResponse<Vlan>>> {
+    let network_ids = auth.network_ids();
+
+    let base_filter = StorableFilter::<Vlan>::new_from_network_ids(&network_ids);
+    let filter = query.apply_to_filter(base_filter, &network_ids, Uuid::nil());
+
+    let pagination = query.pagination();
+    let filter = pagination.apply_to_filter(filter);
+
+    let (filter, order_by) = query.apply_ordering(filter);
+
+    let result = state
+        .services
+        .vlan_service
+        .storage()
+        .get_paginated(filter, &order_by)
+        .await?;
+
+    let limit = pagination.effective_limit().unwrap_or(0);
+    let offset = pagination.effective_offset();
+
+    Ok(Json(PaginatedApiResponse::success(
+        result.items,
+        result.total_count,
+        limit,
+        offset,
+    )))
+}
+
+/// Create a new VLAN
+///
+/// Creates a VLAN scoped to a network. VLAN numbers must be unique within a network.
+#[utoipa::path(
+    post,
+    path = "",
+    tag = Vlan::ENTITY_NAME_PLURAL,
+    request_body = Vlan,
+    responses(
+        (status = 200, description = "VLAN created successfully", body = ApiResponse<Vlan>),
+        (status = 400, description = "Validation error", body = ApiErrorResponse),
+        (status = 409, description = "VLAN number already exists in this network", body = ApiErrorResponse),
+    ),
+    security(("user_api_key" = []), ("session" = []))
+)]
+pub async fn create_vlan(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Member>,
+    Json(vlan): Json<Vlan>,
+) -> ApiResult<Json<ApiResponse<Vlan>>> {
+    let network_ids = auth.network_ids();
+
+    // Verify user has access to the target network
+    if !network_ids.contains(&vlan.base.network_id) {
+        return Err(ApiError::forbidden("Access denied to this network"));
+    }
+
+    // Check uniqueness: (network_id, vlan_number)
+    let existing_filter =
+        StorableFilter::<Vlan>::new_from_uuid_column("network_id", &vlan.base.network_id)
+            .u16_column("vlan_number", vlan.base.vlan_number);
+
+    if state
+        .services
+        .vlan_service
+        .get_one(existing_filter)
+        .await?
+        .is_some()
+    {
+        return Err(ApiError::conflict(&format!(
+            "VLAN {} already exists in this network",
+            vlan.base.vlan_number
+        )));
+    }
+
+    create_handler::<Vlan>(State(state), auth, Json(vlan)).await
+}
+
+// ============================================================================
+// Discovery Upsert
+// ============================================================================
+
+/// Request body for daemon VLAN discovery upsert
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct VlanDiscoveryRequest {
+    pub network_id: Uuid,
+    pub vlans: Vec<VlanDiscoveryItem>,
+}
+
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
+pub struct VlanDiscoveryItem {
+    pub vlan_number: u16,
+    pub name: String,
+}
+
+/// Response for discovery upsert
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct VlanDiscoveryResponse {
+    /// Mapping of vlan_number → VLAN entity UUID
+    pub vlans: Vec<VlanDiscoveryResponseItem>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct VlanDiscoveryResponseItem {
+    pub vlan_number: u16,
+    pub id: Uuid,
+}
+
+/// Bulk upsert VLANs from discovery
+///
+/// Used by daemons to report discovered VLANs. Creates new VLANs or updates names.
+/// Returns the mapping of VLAN numbers to entity UUIDs for IfEntry construction.
+#[utoipa::path(
+    post,
+    path = "/discovery",
+    tag = Vlan::ENTITY_NAME_PLURAL,
+    request_body = VlanDiscoveryRequest,
+    responses(
+        (status = 200, description = "VLANs upserted", body = ApiResponse<VlanDiscoveryResponse>),
+        (status = 400, description = "Invalid request", body = ApiErrorResponse),
+    ),
+    security(("daemon_api_key" = []))
+)]
+pub async fn discovery_upsert_vlans(
+    State(state): State<Arc<AppState>>,
+    auth: Authorized<Viewer>,
+    Json(request): Json<VlanDiscoveryRequest>,
+) -> ApiResult<Json<ApiResponse<VlanDiscoveryResponse>>> {
+    let organization_id = auth
+        .organization_id()
+        .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
+
+    let mut response_items = Vec::with_capacity(request.vlans.len());
+
+    for item in request.vlans {
+        let vlan = state
+            .services
+            .vlan_service
+            .upsert_from_discovery(
+                request.network_id,
+                organization_id,
+                item.vlan_number,
+                item.name,
+            )
+            .await
+            .map_err(|e| ApiError::internal_error(&format!("Failed to upsert VLAN: {}", e)))?;
+
+        response_items.push(VlanDiscoveryResponseItem {
+            vlan_number: vlan.base.vlan_number,
+            id: vlan.id,
+        });
+    }
+
+    Ok(Json(ApiResponse::success(VlanDiscoveryResponse {
+        vlans: response_items,
+    })))
+}

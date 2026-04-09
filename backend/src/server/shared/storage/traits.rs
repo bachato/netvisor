@@ -235,6 +235,7 @@ pub enum SqlValue {
     OptionalLldpPortId(Option<crate::server::snmp::resolution::lldp::LldpPortId>),
     OptionalFdbMacs(Option<Vec<String>>),
     OptionVecU16(Option<Vec<u16>>),
+    OptionVecUuid(Option<Vec<Uuid>>),
     ShareOptions(crate::server::shares::r#impl::base::ShareOptions),
     CredentialType(CredentialType),
     MacAddress(MacAddress),

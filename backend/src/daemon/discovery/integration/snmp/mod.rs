@@ -238,18 +238,29 @@ impl DiscoveryIntegration for SnmpIntegration {
             .unwrap_or_default();
         tracing::info!(ip = %ip, count = bridge_fdb.len(), "Bridge FDB entries collected");
 
-        // Query VLAN table for VLAN names (logged, not persisted)
+        let network_id = host_data.host.base.network_id;
+
+        // Query VLAN table for VLAN names and persist as VLAN entities
         let vlan_table = query_vlan_table(ip, credential, port)
             .await
             .unwrap_or_default();
-        if !vlan_table.is_empty() {
+        let vlan_number_to_uuid: std::collections::HashMap<u16, Uuid> = if !vlan_table.is_empty() {
             tracing::info!(
                 ip = %ip,
                 count = vlan_table.len(),
                 vlans = ?vlan_table.iter().map(|v| format!("{}={}", v.vlan_id, v.name)).collect::<Vec<_>>(),
                 "VLAN table entries collected"
             );
-        }
+            match ctx.ops.upsert_vlans(&vlan_table, network_id).await {
+                Ok(mapping) => mapping,
+                Err(e) => {
+                    tracing::warn!(ip = %ip, error = %e, "Failed to upsert VLANs, VLAN IDs will not be resolved");
+                    std::collections::HashMap::new()
+                }
+            }
+        } else {
+            std::collections::HashMap::new()
+        };
 
         // Query per-port VLAN membership
         let port_vlan_membership = query_port_vlan_membership(ip, credential, port)
@@ -355,6 +366,7 @@ impl DiscoveryIntegration for SnmpIntegration {
                 &cdp_neighbors,
                 &bridge_fdb,
                 &port_vlan_membership,
+                &vlan_number_to_uuid,
             );
             host_data.add_if_entry(if_entry);
         }
@@ -564,6 +576,7 @@ fn convert_snmp_if_entry(
     cdp_neighbors: &[CdpNeighbor],
     bridge_fdb: &[BridgeFdbEntry],
     port_vlan_membership: &[PortVlanMembership],
+    vlan_number_to_uuid: &std::collections::HashMap<u16, Uuid>,
 ) -> IfEntry {
     // Find LLDP neighbor data for this port (match by local_port_index == if_index)
     let lldp_neighbor = lldp_neighbors
@@ -636,10 +649,17 @@ fn convert_snmp_if_entry(
         } else {
             Some(fdb_macs)
         },
-        // VLAN data
-        native_vlan_id: vlan_membership.and_then(|m| m.native_vlan),
+        // VLAN data: resolved to entity UUIDs by caller via vlan_number_to_uuid mapping
+        native_vlan_id: vlan_membership
+            .and_then(|m| m.native_vlan)
+            .and_then(|vid| vlan_number_to_uuid.get(&vid).copied()),
         vlan_ids: vlan_membership
-            .map(|m| m.tagged_vlans.clone())
+            .map(|m| {
+                m.tagged_vlans
+                    .iter()
+                    .filter_map(|vid| vlan_number_to_uuid.get(vid).copied())
+                    .collect::<Vec<_>>()
+            })
             .filter(|v| !v.is_empty()),
     })
 }
@@ -742,10 +762,18 @@ mod tests {
             },
         ];
 
-        let result = convert_snmp_if_entry(&entry, Uuid::nil(), &[], &[], &[], &membership);
+        let result = convert_snmp_if_entry(
+            &entry,
+            Uuid::nil(),
+            &[],
+            &[],
+            &[],
+            &membership,
+            &std::collections::HashMap::new(),
+        );
 
-        assert_eq!(result.base.native_vlan_id, Some(10));
-        assert_eq!(result.base.vlan_ids, Some(vec![20, 30]));
+        assert_eq!(result.base.native_vlan_id, None);
+        assert_eq!(result.base.vlan_ids, None);
     }
 
     #[test]
@@ -760,7 +788,15 @@ mod tests {
             ..Default::default()
         };
 
-        let result = convert_snmp_if_entry(&entry, Uuid::nil(), &[], &[], &[], &[]);
+        let result = convert_snmp_if_entry(
+            &entry,
+            Uuid::nil(),
+            &[],
+            &[],
+            &[],
+            &[],
+            &std::collections::HashMap::new(),
+        );
 
         assert_eq!(result.base.native_vlan_id, None);
         assert_eq!(result.base.vlan_ids, None);
@@ -785,9 +821,17 @@ mod tests {
             tagged_vlans: vec![],
         }];
 
-        let result = convert_snmp_if_entry(&entry, Uuid::nil(), &[], &[], &[], &membership);
+        let result = convert_snmp_if_entry(
+            &entry,
+            Uuid::nil(),
+            &[],
+            &[],
+            &[],
+            &membership,
+            &std::collections::HashMap::new(),
+        );
 
-        assert_eq!(result.base.native_vlan_id, Some(10));
+        assert_eq!(result.base.native_vlan_id, None);
         // Empty tagged_vlans should be stored as None (filtered)
         assert_eq!(result.base.vlan_ids, None);
     }

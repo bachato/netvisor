@@ -17,6 +17,7 @@ use crate::server::{
     shares::handlers as share_handlers, subnets::handlers as subnet_handlers,
     tags::handlers as tag_handlers, topology::handlers as topology_handlers,
     user_api_keys::handlers as user_api_key_handlers, users::handlers as user_handlers,
+    vlans::handlers as vlan_handlers,
 };
 use axum::Json;
 use axum::Router;
@@ -93,6 +94,7 @@ fn create_billed_openapi_routes() -> OpenApiRouter<Arc<AppState>> {
         // Credential routes
         .nest("/api/v1/credentials", credential_handlers::create_router())
         .nest("/api/v1/if-entries", if_entry_handlers::create_router())
+        .nest("/api/v1/vlans", vlan_handlers::create_router())
         // Topology endpoints (tagged as internal - hidden from public docs)
         .nest("/api/v1/topology", topology_handlers::create_router())
 }

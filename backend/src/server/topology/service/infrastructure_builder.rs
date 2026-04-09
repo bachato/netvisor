@@ -202,6 +202,8 @@ impl ViewBuilder for InfrastructureBuilder {
                         virtualizer_host_id: virtualizer_map.get(host_id).copied().flatten(),
                         compose_project,
                         native_vlan_id: None,
+                        vlan_number: None,
+                        vlan_name: None,
                         is_trunk_port: false,
                         oper_status: None,
                     })
@@ -376,7 +378,7 @@ mod tests {
     #[test]
     fn test_empty_topology() {
         let options = TopologyOptions::default();
-        let ctx = TopologyContext::new(&[], &[], &[], &[], &[], &[], &[], &[], &[], &options);
+        let ctx = TopologyContext::new(&[], &[], &[], &[], &[], &[], &[], &[], &[], &[], &options);
         let builder = InfrastructureBuilder;
         let (nodes, edges) = builder.build(&ctx, &infra_grouping());
         // Only the Root container, no elements
@@ -397,7 +399,19 @@ mod tests {
         let h2 = make_host("server-2");
         let hosts = vec![h1, h2];
         let options = TopologyOptions::default();
-        let ctx = TopologyContext::new(&hosts, &[], &[], &[], &[], &[], &[], &[], &[], &options);
+        let ctx = TopologyContext::new(
+            &hosts,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &options,
+        );
 
         let builder = InfrastructureBuilder;
         let (nodes, _edges) = builder.build(&ctx, &infra_grouping());
@@ -439,6 +453,7 @@ mod tests {
             &[],
             &[],
             &services,
+            &[],
             &[],
             &[],
             &[],
@@ -523,6 +538,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &options,
         );
 
@@ -563,6 +579,7 @@ mod tests {
             &[],
             &[],
             &services,
+            &[],
             &[],
             &[],
             &[],

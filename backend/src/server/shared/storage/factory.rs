@@ -14,7 +14,7 @@ use crate::server::{
     services::r#impl::base::Service, shared::storage::generic::GenericPostgresStorage,
     shares::r#impl::base::Share, subnets::r#impl::base::Subnet, tags::r#impl::base::Tag,
     topology::types::base::Topology, user_api_keys::r#impl::base::UserApiKey,
-    users::r#impl::base::User,
+    users::r#impl::base::User, vlans::r#impl::base::Vlan,
 };
 
 pub struct StorageFactory {
@@ -40,6 +40,7 @@ pub struct StorageFactory {
     pub bindings: Arc<GenericPostgresStorage<Binding>>,
     pub credentials: Arc<GenericPostgresStorage<Credential>>,
     pub if_entries: Arc<GenericPostgresStorage<IfEntry>>,
+    pub vlans: Arc<GenericPostgresStorage<Vlan>>,
 }
 
 pub async fn create_session_store(
@@ -89,6 +90,7 @@ impl StorageFactory {
             bindings: Arc::new(GenericPostgresStorage::new(pool.clone())),
             credentials: Arc::new(GenericPostgresStorage::new(pool.clone())),
             if_entries: Arc::new(GenericPostgresStorage::new(pool.clone())),
+            vlans: Arc::new(GenericPostgresStorage::new(pool.clone())),
         })
     }
 }

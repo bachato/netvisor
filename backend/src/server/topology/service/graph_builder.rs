@@ -396,6 +396,8 @@ impl GraphBuilder {
                 virtualizer_host_id: None,
                 compose_project,
                 native_vlan_id: None,
+                vlan_number: None,
+                vlan_name: None,
                 is_trunk_port: false,
                 oper_status: None,
             })
@@ -641,6 +643,7 @@ mod tests {
             &[],
             &[],
             &tags,
+            &[],
             &options,
         );
 
@@ -758,6 +761,7 @@ mod tests {
             &[],
             &[],
             &tags,
+            &[],
             &options,
         );
 
@@ -839,6 +843,7 @@ mod tests {
             &[],
             &[],
             &tags,
+            &[],
             &options,
         );
 
