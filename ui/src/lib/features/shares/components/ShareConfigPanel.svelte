@@ -4,7 +4,7 @@
 	import { required, max } from '$lib/shared/components/forms/validators';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import type { Share } from '../types/base';
-	import { useUpdateShareMutation, useDeleteShareMutation } from '../queries';
+	import { useUpdateShareMutation } from '../queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
@@ -14,19 +14,15 @@
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
+	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
 	import { generateShareUrl, generateEmbedCode } from '../queries';
 	import { Sun, Moon, Monitor } from 'lucide-svelte';
 	import {
-		common_delete,
-		common_deleting,
 		common_enabled,
-		common_failedToDelete,
 		common_failedToSave,
 		common_height,
 		common_name,
 		common_password,
-		common_save,
-		common_saving,
 		common_theme,
 		common_width,
 		shares_accessControl,
@@ -57,16 +53,13 @@
 	} from '$lib/paraglide/messages';
 
 	let {
-		share,
-		onDeleted
+		share
 	}: {
 		share: Share;
-		onDeleted: () => void;
 	} = $props();
 
 	// Mutations
 	const updateShareMutation = useUpdateShareMutation();
-	const deleteShareMutation = useDeleteShareMutation();
 
 	// TanStack Query for current user and organization
 	const currentUserQuery = useCurrentUserQuery();
@@ -76,7 +69,6 @@
 	let organization = $derived(organizationQuery.data);
 
 	let loading = $state(false);
-	let deleting = $state(false);
 	let shareTheme = $state<'default' | 'light' | 'dark'>('default');
 
 	let hasEmbedsFeature = $derived(
@@ -96,7 +88,6 @@
 			show_minimap: share.options?.show_minimap ?? true,
 			embed_width: '800',
 			embed_height: '600',
-			// Preserve share fields
 			id: share.id,
 			topology_id: share.topology_id,
 			network_id: share.network_id,
@@ -104,7 +95,6 @@
 		};
 	}
 
-	// Create form
 	const form = createForm(() => ({
 		defaultValues: getDefaultValues(),
 		onSubmit: async ({ value }) => {
@@ -145,20 +135,13 @@
 		}
 	}));
 
-	async function handleSubmit() {
+	// Expose save for parent to call
+	export async function save() {
 		await submitForm(form);
 	}
 
-	async function handleDelete() {
-		deleting = true;
-		try {
-			await deleteShareMutation.mutateAsync(share.id);
-			onDeleted();
-		} catch (error) {
-			pushError(error instanceof Error ? error.message : common_failedToDelete());
-		} finally {
-			deleting = false;
-		}
+	export function isSaving() {
+		return loading;
 	}
 
 	// For embed code display
@@ -172,46 +155,64 @@
 		| undefined;
 </script>
 
-<form
-	onsubmit={(e) => {
-		e.preventDefault();
-		e.stopPropagation();
-		handleSubmit();
-	}}
-	class="flex min-h-0 flex-1 flex-col"
->
-	<div class="flex-1 overflow-auto">
-		<div class="space-y-6">
-			<InlineInfo
-				title={shares_cacheInfoTitle()}
-				body={shares_cacheInfoBody()}
-				dismissableKey="share-cache-info"
-			/>
+<div class="flex min-h-0 flex-1 flex-col overflow-auto">
+	<div class="space-y-4">
+		<InlineInfo
+			title={shares_cacheInfoTitle()}
+			body={shares_cacheInfoBody()}
+			dismissableKey="share-cache-info"
+		/>
 
-			<!-- Name -->
-			<div class="card card-static">
-				<form.Field
-					name="name"
-					validators={{
-						onBlur: ({ value }) => required(value) || max(100)(value)
-					}}
-				>
-					{#snippet children(field)}
-						<TextInput
-							label={common_name()}
-							id="share-name"
-							{field}
-							placeholder={shares_namePlaceholder()}
-							required
-						/>
-					{/snippet}
-				</form.Field>
+		<!-- Name -->
+		<div class="card card-static">
+			<form.Field
+				name="name"
+				validators={{
+					onBlur: ({ value }) => required(value) || max(100)(value)
+				}}
+			>
+				{#snippet children(field)}
+					<TextInput
+						label={common_name()}
+						id="share-name"
+						{field}
+						placeholder={shares_namePlaceholder()}
+						required
+					/>
+				{/snippet}
+			</form.Field>
+		</div>
+
+		<!-- Share URL / Embed Code — directly below name -->
+		<div class="space-y-3">
+			<div>
+				<span class="text-secondary mb-1 block text-sm font-medium">{shares_shareUrl()}</span>
+				<CodeContainer
+					language="bash"
+					expandable={false}
+					code={generateShareUrl(share.id, themeParam)}
+				/>
 			</div>
+			<div class="space-y-2">
+				<span class="text-secondary mb-1 block text-sm font-medium">{shares_embedCode()}</span>
+				{#if !hasEmbedsFeature}
+					<InlineInfo title={shares_embedsRequirePlan()} body={shares_upgradeForEmbeds()} />
+					<div class="mt-2">
+						<UpgradeButton feature="embeds" />
+					</div>
+				{:else}
+					<CodeContainer
+						language="html"
+						expandable={false}
+						code={generateEmbedCode(share.id, embedWidth, embedHeight, themeParam)}
+					/>
+				{/if}
+			</div>
+		</div>
 
-			<div class="card card-static space-y-3">
-				<span class="text-secondary text-m">{shares_accessControl()}</span>
-
-				<!-- Password -->
+		<!-- Access Control — collapsible -->
+		<CollapsibleCard title={shares_accessControl()} expanded={false}>
+			<div class="space-y-3">
 				<form.Field name="password">
 					{#snippet children(field)}
 						<TextInput
@@ -225,7 +226,6 @@
 					{/snippet}
 				</form.Field>
 
-				<!-- Enabled & Expiration -->
 				<div class="grid grid-cols-2 gap-4">
 					<form.Field name="expires_at">
 						{#snippet children(field)}
@@ -251,7 +251,6 @@
 					</div>
 				</div>
 
-				<!-- Allowed Domains -->
 				<form.Field name="allowed_domains">
 					{#snippet children(field)}
 						<TextInput
@@ -264,9 +263,11 @@
 					{/snippet}
 				</form.Field>
 			</div>
+		</CollapsibleCard>
 
-			<div class="card card-static space-y-3">
-				<span class="text-secondary text-m">{shares_displayOptions()}</span>
+		<!-- Display Options — collapsible -->
+		<CollapsibleCard title={shares_displayOptions()} expanded={false}>
+			<div class="space-y-3">
 				<form.Field name="show_zoom_controls">
 					{#snippet children(field)}
 						<Checkbox label={shares_showZoomControls()} id="show-zoom-controls" {field} />
@@ -350,52 +351,6 @@
 					</form.Field>
 				</div>
 			</div>
-
-			<!-- Share URL / Embed Code -->
-			<div class="space-y-4">
-				<div>
-					<span class="text-secondary mb-1 block text-sm font-medium">{shares_shareUrl()}</span>
-					<CodeContainer
-						language="bash"
-						expandable={false}
-						code={generateShareUrl(share.id, themeParam)}
-					/>
-				</div>
-				<div class="space-y-2">
-					<span class="text-secondary mb-1 block text-sm font-medium">{shares_embedCode()}</span>
-					{#if !hasEmbedsFeature}
-						<InlineInfo title={shares_embedsRequirePlan()} body={shares_upgradeForEmbeds()} />
-						<div class="mt-2">
-							<UpgradeButton feature="embeds" />
-						</div>
-					{:else}
-						<CodeContainer
-							language="html"
-							expandable={false}
-							code={generateEmbedCode(share.id, embedWidth, embedHeight, themeParam)}
-						/>
-					{/if}
-				</div>
-			</div>
-		</div>
+		</CollapsibleCard>
 	</div>
-
-	<!-- Footer buttons -->
-	<div class="mt-4 flex items-center justify-between border-t border-gray-600 pt-4">
-		<div>
-			<button
-				type="button"
-				disabled={deleting || loading}
-				onclick={handleDelete}
-				class="btn-danger"
-			>
-				{deleting ? common_deleting() : common_delete()}
-			</button>
-		</div>
-		<div>
-			<button type="submit" disabled={loading || deleting} class="btn-primary">
-				{loading ? common_saving() : common_save()}
-			</button>
-		</div>
-	</div>
-</form>
+</div>

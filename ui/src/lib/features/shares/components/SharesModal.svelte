@@ -19,7 +19,10 @@
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import {
+		common_cancel,
 		common_failedToSave,
+		common_save,
+		common_saving,
 		common_shares,
 		shares_manageShares,
 		shares_noShareSelected,
@@ -63,6 +66,10 @@
 	const createShareMutation = useCreateShareMutation();
 	const deleteShareMutation = useDeleteShareMutation();
 
+	// Reference to config panel for save
+	let configPanel: ShareConfigPanel | null = $state(null);
+	let saving = $state(false);
+
 	async function handleCreateNew() {
 		const newShare = createEmptyShare(topologyId, networkId);
 		newShare.created_by = currentUser?.id || newShare.created_by;
@@ -84,6 +91,16 @@
 			await deleteShareMutation.mutateAsync(share.id);
 		} catch (error) {
 			pushError(error instanceof Error ? error.message : common_failedToSave());
+		}
+	}
+
+	async function handleSave() {
+		if (!configPanel) return;
+		saving = true;
+		try {
+			await configPanel.save();
+		} finally {
+			saving = false;
 		}
 	}
 </script>
@@ -146,7 +163,7 @@
 				<svelte:fragment slot="config" let:selectedItem>
 					{#if selectedItem}
 						{#key selectedItem.id}
-							<ShareConfigPanel share={selectedItem} onDeleted={() => {}} />
+							<ShareConfigPanel bind:this={configPanel} share={selectedItem} />
 						{/key}
 					{:else}
 						<EntityConfigEmpty title={shares_noShareSelected()} subtitle={shares_selectToEdit()} />
@@ -155,4 +172,19 @@
 			</ListConfigEditor>
 		</div>
 	{/if}
+
+	{#snippet footer()}
+		<div class="modal-footer">
+			<div class="flex items-center justify-end gap-3">
+				<button type="button" onclick={onClose} class="btn-secondary">
+					{common_cancel()}
+				</button>
+				{#if configPanel}
+					<button type="button" disabled={saving} onclick={handleSave} class="btn-primary">
+						{saving ? common_saving() : common_save()}
+					</button>
+				{/if}
+			</div>
+		</div>
+	{/snippet}
 </GenericModal>

@@ -156,7 +156,6 @@
 	"common_failedGenerateApiKey": "Failed to generate API key",
 	"common_failedRotateApiKey": "Failed to rotate API key",
 	"common_failedToCopy": "Failed to copy to clipboard: {error}",
-	"common_failedToDelete": "Failed to delete",
 	"common_failedToSave": "Failed to save",
 	"common_filters": "Filters",
 	"common_firstDiscoveryEmailHint": "We'll email you when your first discovery is complete.",
