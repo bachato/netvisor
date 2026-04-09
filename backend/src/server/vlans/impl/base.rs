@@ -20,7 +20,7 @@ pub struct VlanBase {
         message = "VLAN name must be between 1 and 100 characters"
     ))]
     pub name: String,
-    #[serde(deserialize_with = "deserialize_empty_string_as_none")]
+    #[serde(default, deserialize_with = "deserialize_empty_string_as_none")]
     pub description: Option<String>,
     pub network_id: Uuid,
     pub organization_id: Uuid,
