@@ -131,6 +131,9 @@
 					// Service elements: simpler rendering — single service with host name
 					if (elementType === 'Service') {
 						const service = resolved.services[0];
+						console.log(
+							`[DIAG] Service ${id}: resolved.services.length=${resolved.services.length}, service=${!!service}, topology.services.length=${topology?.services?.length}`
+						);
 						const hiddenCategories =
 							(
 								($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>
