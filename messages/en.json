@@ -1042,7 +1042,7 @@
 	"shares_shareThemeDark": "Always dark",
 	"shares_shareThemeDefault": "System default",
 	"shares_shareThemeLight": "Always light",
-	"shares_manageShares": "Manage Shares",
+	"shares_manageShares": "Manage Shares for {name}",
 	"shares_selectToEdit": "Select a share from the list to edit its settings",
 	"shares_shareUrl": "Share URL",
 	"shares_showExportButton": "Show export button",

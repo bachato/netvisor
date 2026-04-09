@@ -1,11 +1,6 @@
 <script lang="ts">
-	import { createForm } from '@tanstack/svelte-form';
-	import { submitForm } from '$lib/shared/components/forms/form-context';
 	import { required, max } from '$lib/shared/components/forms/validators';
-	import { pushError } from '$lib/shared/stores/feedback';
 	import type { Share } from '../types/base';
-	import { useUpdateShareMutation } from '../queries';
-	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { billingPlans } from '$lib/shared/stores/metadata';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
@@ -17,9 +12,9 @@
 	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
 	import { generateShareUrl, generateEmbedCode } from '../queries';
 	import { Sun, Moon, Monitor } from 'lucide-svelte';
+	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import {
 		common_enabled,
-		common_failedToSave,
 		common_height,
 		common_name,
 		common_password,
@@ -52,305 +47,256 @@
 		shares_upgradeForEmbeds
 	} from '$lib/paraglide/messages';
 
-	let {
-		share
-	}: {
+	interface Props {
 		share: Share;
-	} = $props();
+		index: number;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		form: { Field: any };
+		onChange?: (share: Share) => void;
+	}
 
-	// Mutations
-	const updateShareMutation = useUpdateShareMutation();
-
-	// TanStack Query for current user and organization
-	const currentUserQuery = useCurrentUserQuery();
-	let currentUser = $derived(currentUserQuery.data);
+	let { share, index, form, onChange = () => {} }: Props = $props();
 
 	const organizationQuery = useOrganizationQuery();
 	let organization = $derived(organizationQuery.data);
 
-	let loading = $state(false);
 	let shareTheme = $state<'default' | 'light' | 'dark'>('default');
 
 	let hasEmbedsFeature = $derived(
 		organization?.plan ? billingPlans.getMetadata(organization.plan.type).features.embeds : true
 	);
 
-	function getDefaultValues() {
-		return {
-			name: share.name || '',
-			password: '',
-			allowed_domains: share.allowed_domains?.join(', ') || '',
-			expires_at: share.expires_at || '',
-			is_enabled: share.is_enabled ?? true,
-			show_zoom_controls: share.options?.show_zoom_controls ?? true,
-			show_inspect_panel: share.options?.show_inspect_panel ?? true,
-			show_export_button: share.options?.show_export_button ?? true,
-			show_minimap: share.options?.show_minimap ?? true,
-			embed_width: '800',
-			embed_height: '600',
-			id: share.id,
-			topology_id: share.topology_id,
-			network_id: share.network_id,
-			created_by: share.created_by
-		};
+	// Field names for this share in the form array
+	let nameFieldName = $derived(`shares[${index}].name`);
+	let passwordFieldName = $derived(`shares[${index}].password`);
+	let allowedDomainsFieldName = $derived(`shares[${index}].allowed_domains`);
+	let expiresAtFieldName = $derived(`shares[${index}].expires_at`);
+	let isEnabledFieldName = $derived(`shares[${index}].is_enabled`);
+	let showZoomControlsFieldName = $derived(`shares[${index}].show_zoom_controls`);
+	let showInspectPanelFieldName = $derived(`shares[${index}].show_inspect_panel`);
+	let showExportButtonFieldName = $derived(`shares[${index}].show_export_button`);
+	let showMinimapFieldName = $derived(`shares[${index}].show_minimap`);
+	let embedWidthFieldName = $derived(`shares[${index}].embed_width`);
+	let embedHeightFieldName = $derived(`shares[${index}].embed_height`);
+
+	// Notify parent of changes for real-time sync
+	function handleNameChange(value: string) {
+		onChange({ ...share, name: value });
 	}
 
-	const form = createForm(() => ({
-		defaultValues: getDefaultValues(),
-		onSubmit: async ({ value }) => {
-			const formData = {
-				id: value.id,
-				name: value.name.trim(),
-				topology_id: value.topology_id,
-				network_id: value.network_id,
-				created_by: currentUser?.id || value.created_by,
-				allowed_domains: value.allowed_domains.trim()
-					? value.allowed_domains
-							.split(',')
-							.map((d: string) => d.trim())
-							.filter(Boolean)
-					: null,
-				expires_at: value.expires_at || null,
-				is_enabled: value.is_enabled,
-				options: {
-					show_zoom_controls: value.show_zoom_controls,
-					show_inspect_panel: value.show_inspect_panel,
-					show_export_button: value.show_export_button,
-					show_minimap: value.show_minimap
-				}
-			} as Share;
-
-			loading = true;
-			try {
-				const password = value.password || undefined;
-				await updateShareMutation.mutateAsync({
-					id: share.id,
-					request: { share: formData, password }
-				});
-			} catch (error) {
-				pushError(error instanceof Error ? error.message : common_failedToSave());
-			} finally {
-				loading = false;
-			}
-		}
-	}));
-
-	// Expose save for parent to call
-	export async function save() {
-		await submitForm(form);
-	}
-
-	export function isSaving() {
-		return loading;
+	function handleEnabledChange(value: boolean) {
+		onChange({ ...share, is_enabled: value });
 	}
 
 	// For embed code display
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let formValues = $derived(form.state.values as any);
-	let embedWidth = $derived(parseInt(String(formValues.embed_width)) || 800);
-	let embedHeight = $derived(parseInt(String(formValues.embed_height)) || 600);
 	let themeParam = $derived(shareTheme === 'default' ? undefined : shareTheme) as
 		| 'light'
 		| 'dark'
 		| undefined;
 </script>
 
-<div class="flex min-h-0 flex-1 flex-col overflow-auto">
-	<div class="space-y-4">
-		<InlineInfo
-			title={shares_cacheInfoTitle()}
-			body={shares_cacheInfoBody()}
-			dismissableKey="share-cache-info"
-		/>
+<div class="space-y-4 px-1">
+	<InlineInfo
+		title={shares_cacheInfoTitle()}
+		body={shares_cacheInfoBody()}
+		dismissableKey="share-cache-info"
+	/>
 
-		<!-- Name -->
-		<div class="card card-static">
-			<form.Field
-				name="name"
-				validators={{
-					onBlur: ({ value }) => required(value) || max(100)(value)
-				}}
-			>
-				{#snippet children(field)}
+	<!-- Name -->
+	<div class="card card-static">
+		<form.Field
+			name={nameFieldName}
+			validators={{
+				onBlur: ({ value }: { value: string }) => required(value) || max(100)(value),
+				onChange: ({ value }: { value: string }) => required(value) || max(100)(value)
+			}}
+			listeners={{
+				onChange: ({ value }: { value: string }) => handleNameChange(value)
+			}}
+		>
+			{#snippet children(field: AnyFieldApi)}
+				<TextInput
+					label={common_name()}
+					id="share-name-{index}"
+					{field}
+					placeholder={shares_namePlaceholder()}
+					required
+				/>
+			{/snippet}
+		</form.Field>
+	</div>
+
+	<!-- Share URL / Embed Code — directly below name -->
+	<div class="space-y-3">
+		<div>
+			<span class="text-secondary mb-1 block text-sm font-medium">{shares_shareUrl()}</span>
+			<CodeContainer
+				language="bash"
+				expandable={false}
+				code={generateShareUrl(share.id, themeParam)}
+			/>
+		</div>
+		<div class="space-y-2">
+			<span class="text-secondary mb-1 block text-sm font-medium">{shares_embedCode()}</span>
+			{#if !hasEmbedsFeature}
+				<InlineInfo title={shares_embedsRequirePlan()} body={shares_upgradeForEmbeds()} />
+				<div class="mt-2">
+					<UpgradeButton feature="embeds" />
+				</div>
+			{:else}
+				<CodeContainer
+					language="html"
+					expandable={false}
+					code={generateEmbedCode(share.id, 800, 600, themeParam)}
+				/>
+			{/if}
+		</div>
+	</div>
+
+	<!-- Access Control — collapsible -->
+	<CollapsibleCard title={shares_accessControl()} expanded={false}>
+		<div class="space-y-3">
+			<form.Field name={passwordFieldName}>
+				{#snippet children(field: AnyFieldApi)}
 					<TextInput
-						label={common_name()}
-						id="share-name"
+						label={common_password()}
+						id="share-password-{index}"
+						type="password"
 						{field}
-						placeholder={shares_namePlaceholder()}
-						required
+						placeholder={shares_passwordPlaceholder()}
+						helpText={shares_passwordHelpEdit()}
+					/>
+				{/snippet}
+			</form.Field>
+
+			<div class="grid grid-cols-2 gap-4">
+				<form.Field name={expiresAtFieldName}>
+					{#snippet children(field: AnyFieldApi)}
+						<DateInput
+							{field}
+							label={shares_expirationDate()}
+							id="expires-at-{index}"
+							helpText={shares_expirationHelp()}
+						/>
+					{/snippet}
+				</form.Field>
+				<div class="flex items-center">
+					<form.Field
+						name={isEnabledFieldName}
+						listeners={{
+							onChange: ({ value }: { value: boolean }) => handleEnabledChange(value)
+						}}
+					>
+						{#snippet children(field: AnyFieldApi)}
+							<Checkbox
+								label={common_enabled()}
+								id="is-enabled-{index}"
+								{field}
+								helpText={shares_enabledHelp()}
+							/>
+						{/snippet}
+					</form.Field>
+				</div>
+			</div>
+
+			<form.Field name={allowedDomainsFieldName}>
+				{#snippet children(field: AnyFieldApi)}
+					<TextInput
+						label={shares_allowedEmbedDomains()}
+						id="allowed-domains-{index}"
+						{field}
+						placeholder={shares_allowedDomainsPlaceholder()}
+						helpText={shares_allowedDomainsHelp()}
 					/>
 				{/snippet}
 			</form.Field>
 		</div>
+	</CollapsibleCard>
 
-		<!-- Share URL / Embed Code — directly below name -->
+	<!-- Display Options — collapsible -->
+	<CollapsibleCard title={shares_displayOptions()} expanded={false}>
 		<div class="space-y-3">
+			<form.Field name={showZoomControlsFieldName}>
+				{#snippet children(field: AnyFieldApi)}
+					<Checkbox label={shares_showZoomControls()} id="show-zoom-controls-{index}" {field} />
+				{/snippet}
+			</form.Field>
+			<form.Field name={showInspectPanelFieldName}>
+				{#snippet children(field: AnyFieldApi)}
+					<Checkbox label={shares_showInspectPanel()} id="show-inspect-panel-{index}" {field} />
+				{/snippet}
+			</form.Field>
+			<form.Field name={showExportButtonFieldName}>
+				{#snippet children(field: AnyFieldApi)}
+					<Checkbox label={shares_showExportButton()} id="show-export-button-{index}" {field} />
+				{/snippet}
+			</form.Field>
+			<form.Field name={showMinimapFieldName}>
+				{#snippet children(field: AnyFieldApi)}
+					<Checkbox label={shares_showMinimap()} id="show-minimap-{index}" {field} />
+				{/snippet}
+			</form.Field>
 			<div>
-				<span class="text-secondary mb-1 block text-sm font-medium">{shares_shareUrl()}</span>
-				<CodeContainer
-					language="bash"
-					expandable={false}
-					code={generateShareUrl(share.id, themeParam)}
-				/>
+				<span class="text-secondary mb-1 block text-sm font-medium">{common_theme()}</span>
+				<div class="flex gap-2">
+					<button
+						type="button"
+						class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme ===
+						'default'
+							? 'btn-primary'
+							: 'btn-secondary'}"
+						onclick={() => (shareTheme = 'default')}
+					>
+						<Monitor class="h-3.5 w-3.5" />
+						{shares_shareThemeDefault()}
+					</button>
+					<button
+						type="button"
+						class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme === 'light'
+							? 'btn-primary'
+							: 'btn-secondary'}"
+						onclick={() => (shareTheme = 'light')}
+					>
+						<Sun class="h-3.5 w-3.5" />
+						{shares_shareThemeLight()}
+					</button>
+					<button
+						type="button"
+						class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme === 'dark'
+							? 'btn-primary'
+							: 'btn-secondary'}"
+						onclick={() => (shareTheme = 'dark')}
+					>
+						<Moon class="h-3.5 w-3.5" />
+						{shares_shareThemeDark()}
+					</button>
+				</div>
 			</div>
-			<div class="space-y-2">
-				<span class="text-secondary mb-1 block text-sm font-medium">{shares_embedCode()}</span>
-				{#if !hasEmbedsFeature}
-					<InlineInfo title={shares_embedsRequirePlan()} body={shares_upgradeForEmbeds()} />
-					<div class="mt-2">
-						<UpgradeButton feature="embeds" />
-					</div>
-				{:else}
-					<CodeContainer
-						language="html"
-						expandable={false}
-						code={generateEmbedCode(share.id, embedWidth, embedHeight, themeParam)}
-					/>
-				{/if}
+			<span class="text-secondary block text-sm font-medium">{shares_embedDimensions()}</span>
+			<div class="grid grid-cols-2 gap-4">
+				<form.Field name={embedWidthFieldName}>
+					{#snippet children(field: AnyFieldApi)}
+						<TextInput
+							label={common_width()}
+							id="embed-width-{index}"
+							type="number"
+							{field}
+							placeholder="800"
+						/>
+					{/snippet}
+				</form.Field>
+				<form.Field name={embedHeightFieldName}>
+					{#snippet children(field: AnyFieldApi)}
+						<TextInput
+							label={common_height()}
+							id="embed-height-{index}"
+							type="number"
+							{field}
+							placeholder="600"
+						/>
+					{/snippet}
+				</form.Field>
 			</div>
 		</div>
-
-		<!-- Access Control — collapsible -->
-		<CollapsibleCard title={shares_accessControl()} expanded={false}>
-			<div class="space-y-3">
-				<form.Field name="password">
-					{#snippet children(field)}
-						<TextInput
-							label={common_password()}
-							id="share-password"
-							type="password"
-							{field}
-							placeholder={shares_passwordPlaceholder()}
-							helpText={shares_passwordHelpEdit()}
-						/>
-					{/snippet}
-				</form.Field>
-
-				<div class="grid grid-cols-2 gap-4">
-					<form.Field name="expires_at">
-						{#snippet children(field)}
-							<DateInput
-								{field}
-								label={shares_expirationDate()}
-								id="expires-at"
-								helpText={shares_expirationHelp()}
-							/>
-						{/snippet}
-					</form.Field>
-					<div class="flex items-center">
-						<form.Field name="is_enabled">
-							{#snippet children(field)}
-								<Checkbox
-									label={common_enabled()}
-									id="is-enabled"
-									{field}
-									helpText={shares_enabledHelp()}
-								/>
-							{/snippet}
-						</form.Field>
-					</div>
-				</div>
-
-				<form.Field name="allowed_domains">
-					{#snippet children(field)}
-						<TextInput
-							label={shares_allowedEmbedDomains()}
-							id="allowed-domains"
-							{field}
-							placeholder={shares_allowedDomainsPlaceholder()}
-							helpText={shares_allowedDomainsHelp()}
-						/>
-					{/snippet}
-				</form.Field>
-			</div>
-		</CollapsibleCard>
-
-		<!-- Display Options — collapsible -->
-		<CollapsibleCard title={shares_displayOptions()} expanded={false}>
-			<div class="space-y-3">
-				<form.Field name="show_zoom_controls">
-					{#snippet children(field)}
-						<Checkbox label={shares_showZoomControls()} id="show-zoom-controls" {field} />
-					{/snippet}
-				</form.Field>
-				<form.Field name="show_inspect_panel">
-					{#snippet children(field)}
-						<Checkbox label={shares_showInspectPanel()} id="show-inspect-panel" {field} />
-					{/snippet}
-				</form.Field>
-				<form.Field name="show_export_button">
-					{#snippet children(field)}
-						<Checkbox label={shares_showExportButton()} id="show-export-button" {field} />
-					{/snippet}
-				</form.Field>
-				<form.Field name="show_minimap">
-					{#snippet children(field)}
-						<Checkbox label={shares_showMinimap()} id="show-minimap" {field} />
-					{/snippet}
-				</form.Field>
-				<div>
-					<span class="text-secondary mb-1 block text-sm font-medium">{common_theme()}</span>
-					<div class="flex gap-2">
-						<button
-							type="button"
-							class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme ===
-							'default'
-								? 'btn-primary'
-								: 'btn-secondary'}"
-							onclick={() => (shareTheme = 'default')}
-						>
-							<Monitor class="h-3.5 w-3.5" />
-							{shares_shareThemeDefault()}
-						</button>
-						<button
-							type="button"
-							class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme ===
-							'light'
-								? 'btn-primary'
-								: 'btn-secondary'}"
-							onclick={() => (shareTheme = 'light')}
-						>
-							<Sun class="h-3.5 w-3.5" />
-							{shares_shareThemeLight()}
-						</button>
-						<button
-							type="button"
-							class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm {shareTheme === 'dark'
-								? 'btn-primary'
-								: 'btn-secondary'}"
-							onclick={() => (shareTheme = 'dark')}
-						>
-							<Moon class="h-3.5 w-3.5" />
-							{shares_shareThemeDark()}
-						</button>
-					</div>
-				</div>
-				<span class="text-secondary block text-sm font-medium">{shares_embedDimensions()}</span>
-				<div class="grid grid-cols-2 gap-4">
-					<form.Field name="embed_width">
-						{#snippet children(field)}
-							<TextInput
-								label={common_width()}
-								id="embed-width"
-								type="number"
-								{field}
-								placeholder="800"
-							/>
-						{/snippet}
-					</form.Field>
-					<form.Field name="embed_height">
-						{#snippet children(field)}
-							<TextInput
-								label={common_height()}
-								id="embed-height"
-								type="number"
-								{field}
-								placeholder="600"
-							/>
-						{/snippet}
-					</form.Field>
-				</div>
-			</div>
-		</CollapsibleCard>
-	</div>
+	</CollapsibleCard>
 </div>
