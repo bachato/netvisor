@@ -351,6 +351,15 @@
 
 	let nodeOpacity = $derived(shouldFadeOut ? 0.3 : 1);
 
+	// DEBUG: trace Service element render state changes
+	$effect(() => {
+		if (nodeRenderData?.elementType === 'Service') {
+			console.log(
+				`[ElementNode] Service ${id}: showServices=${nodeRenderData.showServices}, services=${nodeRenderData.services.length}, opacity=${nodeOpacity}, fadeOut=${shouldFadeOut}, hiddenSvc=${hiddenServices.has(id)}, hiddenNode=${hiddenNodes.has(nodeRenderData.interface_id)}`
+			);
+		}
+	});
+
 	const hostColorHelper = entities.getColorHelper('Host');
 	const virtualizationColorHelper = concepts.getColorHelper('Virtualization');
 	const discoveryColorHelper = entities.getColorHelper('Discovery');
@@ -449,14 +458,6 @@
 
 		<!-- Body section -->
 		<div class="flex flex-col items-center px-3 py-2">
-			{@const _debugServices = (() => {
-				if (nodeRenderData.elementType === 'Service') {
-					console.log(
-						`[ElementNode] Service ${id}: showServices=${nodeRenderData.showServices}, services=${nodeRenderData.services.length}, opacity=${nodeOpacity}, fadeOut=${shouldFadeOut}, hiddenSvc=${hiddenServices.has(id)}, hiddenNode=${hiddenNodes.has(nodeRenderData.interface_id)}`
-					);
-				}
-				return null;
-			})()}
 			{#if nodeRenderData.showServices}
 				<!-- Show services list -->
 				<div class="flex w-full flex-col items-center" style="min-width: 0; max-width: 100%;">
