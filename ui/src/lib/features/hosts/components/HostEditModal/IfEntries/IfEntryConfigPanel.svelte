@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { useQueryClient } from '@tanstack/svelte-query';
+	import { createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import { queryKeys } from '$lib/api/query-client';
+	import { apiClient } from '$lib/api/client';
 	import type { IfEntry, Interface } from '$lib/features/hosts/types/base';
 	import { getHostByIdFromCache } from '$lib/features/hosts/queries';
 	import { getSubnetByIdFromCache } from '$lib/features/subnets/queries';
@@ -63,6 +64,32 @@
 		return allIfEntries.find((e) => e.id === ifEntry.neighbor!.id) ?? null;
 	});
 
+	// VLAN resolution
+	const vlansQuery = createQuery(() => ({
+		queryKey: ['vlans', 'forNetwork', ifEntry.network_id],
+		queryFn: async () => {
+			const { data } = await apiClient.GET('/api/v1/vlans', {
+				params: { query: { network_id: ifEntry.network_id } }
+			});
+			return data?.data ?? [];
+		},
+		staleTime: 30000
+	}));
+
+	let nativeVlan = $derived.by(() => {
+		if (!ifEntry.native_vlan_id || !vlansQuery.data) return null;
+		const vlan = vlansQuery.data.find((v) => v.id === ifEntry.native_vlan_id);
+		return vlan ? { id: vlan.id!, vlan_number: vlan.vlan_number, name: vlan.name } : null;
+	});
+
+	let taggedVlans = $derived.by(() => {
+		if (!ifEntry.vlan_ids?.length || !vlansQuery.data) return [];
+		return ifEntry.vlan_ids
+			.map((id) => vlansQuery.data!.find((v) => v.id === id))
+			.filter(Boolean)
+			.map((v) => ({ id: v!.id!, vlan_number: v!.vlan_number, name: v!.name }));
+	});
+
 	let cdpExpanded = $state(false);
 	let lldpExpanded = $state(false);
 </script>
@@ -73,7 +100,15 @@
 		subtitle={hosts_ifEntries_index({ index: ifEntry.if_index })}
 	/>
 
-	<IfEntryDetailsCard {ifEntry} {linkedInterface} {linkedSubnet} {neighborHost} {neighborIfEntry} />
+	<IfEntryDetailsCard
+		{ifEntry}
+		{linkedInterface}
+		{linkedSubnet}
+		{neighborHost}
+		{neighborIfEntry}
+		{nativeVlan}
+		{taggedVlans}
+	/>
 
 	<!-- CDP Neighbor Info Section -->
 	<CollapsibleCard title={hosts_ifEntries_cdpNeighbor()} bind:expanded={cdpExpanded}>
