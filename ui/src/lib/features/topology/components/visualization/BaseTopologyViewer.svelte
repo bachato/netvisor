@@ -817,9 +817,11 @@
 									edgeHandles.get(origKey) ??
 									edgeHandles.get(`${origEdge.target}->${origEdge.source}`);
 								if (origHandles) {
-									// Determine if original edge's source aligns with agg.source
+									// Determine if original edge's source aligns with agg.source.
+									// If source isn't inside a collapsed container, use its ID directly.
 									const resolvedSrc = resolveAncestor(origEdge.source as string);
-									const aligned = resolvedSrc === agg.source;
+									const srcSide = resolvedSrc ?? (origEdge.source as string);
+									const aligned = srcSide === agg.source;
 									const srcH = aligned ? origHandles.sourceHandle : origHandles.targetHandle;
 									const tgtH = aligned ? origHandles.targetHandle : origHandles.sourceHandle;
 									const combo = `${srcH}|${tgtH}`;

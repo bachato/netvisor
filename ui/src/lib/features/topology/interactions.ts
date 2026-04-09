@@ -210,8 +210,25 @@ export function updateTagFilter(
 				hiddenContainerIds.add(subnet.id);
 			}
 		}
-		// Also hide child elements inside hidden containers
+		// Also hide subcontainers and all descendant elements inside hidden containers
 		if (hiddenContainerIds.size > 0) {
+			// Find all subcontainers recursively (breadth-first)
+			let changed = true;
+			while (changed) {
+				changed = false;
+				for (const node of topology.nodes) {
+					if (node.node_type !== 'Container' || hiddenContainerIds.has(node.id)) continue;
+					const parentId = (node as Record<string, unknown>).parent_container_id as
+						| string
+						| undefined;
+					if (parentId && hiddenContainerIds.has(parentId)) {
+						hiddenContainerIds.add(node.id);
+						hiddenNodeIds.add(node.id);
+						changed = true;
+					}
+				}
+			}
+			// Hide all element nodes inside any hidden container
 			for (const node of topology.nodes) {
 				if (node.node_type === 'Element') {
 					const parentId =

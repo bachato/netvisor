@@ -444,7 +444,8 @@
 				<!-- Show services list -->
 				<div class="flex w-full flex-col items-center" style="min-width: 0; max-width: 100%;">
 					{#each nodeRenderData.services as service (service.id)}
-						{@const isServiceTagHidden = hiddenServices.has(service.id)}
+						{@const isServiceTagHidden =
+							nodeRenderData.elementType !== 'Service' && hiddenServices.has(service.id)}
 						{@const ServiceIcon = serviceDefinitions.getIconComponent(service.service_definition)}
 						{@const serviceTagHighlight = (() => {
 							if (!currentHoveredTag || currentHoveredTag.entityType !== 'service') return '';
