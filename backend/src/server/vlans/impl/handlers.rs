@@ -1,0 +1,14 @@
+use crate::server::{
+    config::AppState,
+    shared::handlers::traits::CrudHandlers,
+    vlans::{handlers::VlanFilterQuery, r#impl::base::Vlan, service::VlanService},
+};
+
+impl CrudHandlers for Vlan {
+    type Service = VlanService;
+    type FilterQuery = VlanFilterQuery;
+
+    fn get_service(state: &AppState) -> &Self::Service {
+        &state.services.vlan_service
+    }
+}

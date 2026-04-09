@@ -172,6 +172,7 @@ where
             SqlValue::Dependencies(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::IfEntries(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::Tags(v) => query.bind(serde_json::to_value(v)?),
+            SqlValue::Vlans(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::PlanLimitNotifications(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::OnboardingOperation(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::StringArray(v) => query.bind(v.clone()),
@@ -186,6 +187,9 @@ where
                 query.bind(v.as_ref().map(|m| serde_json::to_value(m).unwrap()))
             }
             SqlValue::OptionVecU16(v) => {
+                query.bind(v.as_ref().map(|ids| serde_json::to_value(ids).unwrap()))
+            }
+            SqlValue::OptionVecUuid(v) => {
                 query.bind(v.as_ref().map(|ids| serde_json::to_value(ids).unwrap()))
             }
             SqlValue::ShareOptions(v) => query.bind(serde_json::to_value(v)?),

@@ -16,6 +16,7 @@ use crate::server::{
         edges::Edge,
         nodes::{ElementEntityType, Node, NodeType},
     },
+    vlans::r#impl::base::Vlan,
 };
 
 /// Central context for topology building operations
@@ -30,6 +31,7 @@ pub struct TopologyContext<'a> {
     pub bindings: &'a [Binding],
     pub if_entries: &'a [IfEntry],
     pub entity_tags: &'a [Tag],
+    pub vlans: &'a [Vlan],
     pub options: &'a TopologyOptions,
 }
 
@@ -45,6 +47,7 @@ impl<'a> TopologyContext<'a> {
         bindings: &'a [Binding],
         if_entries: &'a [IfEntry],
         entity_tags: &'a [Tag],
+        vlans: &'a [Vlan],
         options: &'a TopologyOptions,
     ) -> Self {
         Self {
@@ -57,6 +60,7 @@ impl<'a> TopologyContext<'a> {
             bindings,
             if_entries,
             entity_tags,
+            vlans,
             options,
         }
     }
@@ -219,6 +223,15 @@ impl<'a> TopologyContext<'a> {
                 NodeType::Container { .. } => Some(node.id),
                 _ => None,
             })
+    }
+
+    // ============================================================================
+    // VLAN Methods
+    // ============================================================================
+
+    /// Look up a VLAN by its entity UUID
+    pub fn get_vlan_by_id(&self, vlan_id: Uuid) -> Option<&'a Vlan> {
+        self.vlans.iter().find(|v| v.id == vlan_id)
     }
 
     // ============================================================================

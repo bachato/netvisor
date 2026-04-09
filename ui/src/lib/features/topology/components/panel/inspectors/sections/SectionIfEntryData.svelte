@@ -52,8 +52,41 @@
 		if (!ifEntry?.neighbor || ifEntry.neighbor.type !== 'IfEntry') return null;
 		return topology.if_entries.find((e) => e.id === ifEntry!.neighbor!.id) ?? null;
 	});
+
+	let nativeVlan = $derived.by(() => {
+		if (!ifEntry?.native_vlan_id || !('vlans' in topology)) return null;
+		const vlans = (topology as any).vlans as Array<{
+			id: string;
+			vlan_number: number;
+			name: string;
+		}>;
+		return vlans?.find((v) => v.id === ifEntry!.native_vlan_id) ?? null;
+	});
+
+	let taggedVlans = $derived.by(() => {
+		if (!ifEntry?.vlan_ids?.length || !('vlans' in topology)) return [];
+		const vlans = (topology as any).vlans as Array<{
+			id: string;
+			vlan_number: number;
+			name: string;
+		}>;
+		if (!vlans) return [];
+		return ifEntry!.vlan_ids!.map((id) => vlans.find((v) => v.id === id)).filter(Boolean) as Array<{
+			id: string;
+			vlan_number: number;
+			name: string;
+		}>;
+	});
 </script>
 
 {#if ifEntry}
-	<IfEntryDetailsCard {ifEntry} {linkedInterface} {linkedSubnet} {neighborHost} {neighborIfEntry} />
+	<IfEntryDetailsCard
+		{ifEntry}
+		{linkedInterface}
+		{linkedSubnet}
+		{neighborHost}
+		{neighborIfEntry}
+		{nativeVlan}
+		{taggedVlans}
+	/>
 {/if}

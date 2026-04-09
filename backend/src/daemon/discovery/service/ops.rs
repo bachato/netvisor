@@ -724,6 +724,57 @@ impl DiscoveryOps {
         }
     }
 
+    /// Upsert VLANs discovered via SNMP. Returns mapping of vlan_number → entity UUID.
+    /// Posts to the server's VLAN discovery endpoint.
+    pub async fn upsert_vlans(
+        &self,
+        vlans: &[crate::daemon::discovery::integration::snmp::types::VlanInfo],
+        network_id: Uuid,
+    ) -> Result<std::collections::HashMap<u16, Uuid>, Error> {
+        use crate::server::vlans::handlers::{
+            VlanDiscoveryItem, VlanDiscoveryRequest, VlanDiscoveryResponse,
+        };
+
+        let request = VlanDiscoveryRequest {
+            network_id,
+            vlans: vlans
+                .iter()
+                .map(|v| VlanDiscoveryItem {
+                    vlan_number: v.vlan_id,
+                    name: v.name.clone(),
+                })
+                .collect(),
+        };
+
+        let api_client = &self.api_client;
+        let response: crate::server::shared::types::api::ApiResponse<VlanDiscoveryResponse> =
+            (|| async {
+                api_client
+                    .post(
+                        "/api/v1/vlans/discovery",
+                        &request,
+                        "Failed to upsert VLANs",
+                    )
+                    .await
+            })
+            .retry(
+                ExponentialBuilder::default()
+                    .with_min_delay(Duration::from_millis(500))
+                    .with_max_delay(Duration::from_secs(10))
+                    .with_max_times(3),
+            )
+            .notify(|e, dur| tracing::warn!("Retrying VLAN upsert after {:?}: {}", dur, e))
+            .await?;
+
+        let mut mapping = std::collections::HashMap::new();
+        if let Some(data) = response.data {
+            for item in data.vlans {
+                mapping.insert(item.vlan_number, item.id);
+            }
+        }
+        Ok(mapping)
+    }
+
     /// Run service matching against all registered service definitions.
     /// Returns matched services and ports. Pure logic — no side effects.
     pub fn match_services(

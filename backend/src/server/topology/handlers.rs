@@ -232,6 +232,10 @@ async fn create_topology(
     let services = service.get_service_data(topology.base.network_id).await?;
 
     let entity_tags = service.get_entity_tags(&hosts, &services, &subnets).await?;
+    let vlans = service
+        .get_vlans(topology.base.network_id)
+        .await
+        .unwrap_or_default();
 
     let (nodes, edges) = service.build_graph(BuildGraphParams {
         options: &topology.base.options,
@@ -244,6 +248,7 @@ async fn create_topology(
         bindings: &bindings,
         if_entries: &if_entries,
         entity_tags: &entity_tags,
+        vlans: &vlans,
         old_edges: &[],
         old_nodes: &[],
         old_view: None,
@@ -259,6 +264,7 @@ async fn create_topology(
         bindings,
         if_entries,
         entity_tags,
+        vlans,
     });
 
     topology.set_graph(nodes, edges);
@@ -335,6 +341,10 @@ async fn refresh(
     let services = service.get_service_data(request.network_id).await?;
 
     let entity_tags = service.get_entity_tags(&hosts, &services, &subnets).await?;
+    let vlans = service
+        .get_vlans(request.network_id)
+        .await
+        .unwrap_or_default();
 
     topology.set_entities(SetEntitiesParams {
         hosts,
@@ -346,6 +356,7 @@ async fn refresh(
         bindings,
         if_entries,
         entity_tags,
+        vlans,
     });
 
     service.update(&mut topology, auth.into_entity()).await?;
@@ -404,6 +415,10 @@ async fn rebuild(
     let services = service.get_service_data(request.network_id).await?;
 
     let entity_tags = service.get_entity_tags(&hosts, &services, &subnets).await?;
+    let vlans = service
+        .get_vlans(request.network_id)
+        .await
+        .unwrap_or_default();
 
     let (nodes, edges) = service.build_graph(BuildGraphParams {
         options: &topology.base.options,
@@ -416,6 +431,7 @@ async fn rebuild(
         bindings: &bindings,
         if_entries: &if_entries,
         entity_tags: &entity_tags,
+        vlans: &vlans,
         old_nodes: &request.nodes,
         old_edges: &request.edges,
         old_view,
@@ -431,6 +447,7 @@ async fn rebuild(
         bindings,
         if_entries,
         entity_tags,
+        vlans,
     });
 
     topology.set_graph(nodes, edges);

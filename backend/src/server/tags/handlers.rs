@@ -325,6 +325,7 @@ async fn resolve_entity_scope(
         EntityDiscriminants::Credential => {
             resolve_scope(s.credential_service.as_ref(), entity_id).await
         }
+        EntityDiscriminants::Vlan => resolve_scope(s.vlan_service.as_ref(), entity_id).await,
         EntityDiscriminants::Unknown => (None, None),
     }
 }

@@ -42,6 +42,8 @@ use crate::server::tags::r#impl::base::Tag;
 use crate::server::topology::types::base::Topology;
 use crate::server::user_api_keys::r#impl::base::UserApiKey;
 use crate::server::users::r#impl::base::User;
+use crate::server::vlans::handlers::VlanOrderField;
+use crate::server::vlans::r#impl::base::Vlan;
 
 /// Tag used to mark endpoints that should be hidden from public documentation
 /// but included in the full OpenAPI spec for client generation.
@@ -63,7 +65,8 @@ pub const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
         DependencyOrderField,
         SubnetOrderField,
         DaemonOrderField,
-        CredentialOrderField
+        CredentialOrderField,
+        VlanOrderField
     )),
     info(
         title = "Scanopy API",
@@ -195,6 +198,7 @@ Resources are scoped to your **organization** and **network(s)**:
         (name = Topology::ENTITY_NAME_PLURAL, description = Topology::ENTITY_DESCRIPTION),
         (name = User::ENTITY_NAME_PLURAL, description = User::ENTITY_DESCRIPTION),
         (name = UserApiKey::ENTITY_NAME_PLURAL, description = UserApiKey::ENTITY_DESCRIPTION),
+        (name = Vlan::ENTITY_NAME_PLURAL, description = Vlan::ENTITY_DESCRIPTION),
         // Non-entity tags with inline descriptions
         (name = "auth", description = "Authentication and session management. Handle user login, logout, and session state."),
         (name = "config", description = "Server configuration. Public configuration settings for client applications."),

@@ -20,9 +20,17 @@
 		hosts_ifEntries_adminStatus,
 		hosts_ifEntries_aliasDescription,
 		hosts_ifEntries_index,
+		hosts_ifEntries_nativeVlan,
 		hosts_ifEntries_neighbor,
-		hosts_ifEntries_operStatus
+		hosts_ifEntries_operStatus,
+		hosts_ifEntries_taggedVlans
 	} from '$lib/paraglide/messages';
+
+	interface VlanInfo {
+		id: string;
+		vlan_number: number;
+		name: string;
+	}
 
 	interface Props {
 		ifEntry: IfEntry;
@@ -30,6 +38,8 @@
 		linkedSubnet?: Subnet | null;
 		neighborHost?: Host | null;
 		neighborIfEntry?: IfEntry | null;
+		nativeVlan?: VlanInfo | null;
+		taggedVlans?: VlanInfo[];
 		showStatus?: boolean;
 	}
 
@@ -39,6 +49,8 @@
 		linkedSubnet = null,
 		neighborHost = null,
 		neighborIfEntry = null,
+		nativeVlan = null,
+		taggedVlans = [],
 		showStatus = true
 	}: Props = $props();
 
@@ -112,6 +124,22 @@
 			-
 		{/if}
 	</InfoRow>
+
+	{#if nativeVlan}
+		<InfoRow label={hosts_ifEntries_nativeVlan()}>
+			<Tag label="VLAN {nativeVlan.vlan_number} ({nativeVlan.name})" color="Teal" />
+		</InfoRow>
+	{/if}
+
+	{#if taggedVlans.length > 0}
+		<InfoRow label={hosts_ifEntries_taggedVlans()}>
+			<div class="flex flex-wrap gap-1">
+				{#each taggedVlans as vlan}
+					<Tag label="VLAN {vlan.vlan_number}" color="Teal" />
+				{/each}
+			</div>
+		</InfoRow>
+	{/if}
 
 	<InfoRow label={hosts_ifEntries_neighbor()}>
 		{#if ifEntry.neighbor}

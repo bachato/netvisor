@@ -31,3 +31,4 @@ pub mod tags;
 pub mod topology;
 pub mod user_api_keys;
 pub mod users;
+pub mod vlans;

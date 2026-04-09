@@ -40,6 +40,7 @@ use crate::server::{
             views::TopologyView,
         },
     },
+    vlans::{r#impl::base::Vlan, service::VlanService},
 };
 
 pub struct TopologyService {
@@ -53,6 +54,7 @@ pub struct TopologyService {
     binding_service: Arc<BindingService>,
     if_entry_service: Arc<IfEntryService>,
     tag_service: Arc<TagService>,
+    vlan_service: Arc<VlanService>,
     pub(crate) network_service: Arc<crate::server::networks::service::NetworkService>,
     event_bus: Arc<EventBus>,
     pub staleness_tx: broadcast::Sender<Topology>,
@@ -101,6 +103,9 @@ impl CrudService<Topology> for TopologyService {
         // Fetch tag definitions for all tags used by entities
         let entity_tags = self.get_entity_tags(&hosts, &services, &subnets).await?;
 
+        // Fetch VLANs for the network
+        let vlans = self.get_vlans(topology.base.network_id).await?;
+
         let params = BuildGraphParams {
             hosts: &hosts,
             interfaces: &interfaces,
@@ -111,6 +116,7 @@ impl CrudService<Topology> for TopologyService {
             bindings: &bindings,
             if_entries: &if_entries,
             entity_tags: &entity_tags,
+            vlans: &vlans,
             old_edges: &[],
             old_nodes: &[],
             options: &topology.base.options,
@@ -127,6 +133,7 @@ impl CrudService<Topology> for TopologyService {
             dependencies,
             if_entries,
             entity_tags,
+            vlans,
             ports,
             bindings,
         });
@@ -168,6 +175,7 @@ pub struct BuildGraphParams<'a> {
     pub bindings: &'a [Binding],
     pub if_entries: &'a [IfEntry],
     pub entity_tags: &'a [Tag],
+    pub vlans: &'a [Vlan],
     pub old_nodes: &'a [Node],
     pub old_edges: &'a [Edge],
     pub old_view: Option<TopologyView>,
@@ -185,6 +193,7 @@ impl TopologyService {
         binding_service: Arc<BindingService>,
         if_entry_service: Arc<IfEntryService>,
         tag_service: Arc<TagService>,
+        vlan_service: Arc<VlanService>,
         network_service: Arc<crate::server::networks::service::NetworkService>,
         storage: Arc<GenericPostgresStorage<Topology>>,
         event_bus: Arc<EventBus>,
@@ -201,6 +210,7 @@ impl TopologyService {
             binding_service,
             if_entry_service,
             tag_service,
+            vlan_service,
             network_service,
             event_bus,
             staleness_tx,
@@ -324,6 +334,12 @@ impl TopologyService {
         Ok(tags)
     }
 
+    /// Fetch all VLANs for a network.
+    pub async fn get_vlans(&self, network_id: Uuid) -> Result<Vec<Vlan>, Error> {
+        let filter = StorableFilter::<Vlan>::new_from_uuid_column("network_id", &network_id);
+        self.vlan_service.storage().get_all(filter).await
+    }
+
     /// Rebuild a topology: fetch entities from DB, compute nodes/edges, persist.
     /// Used by the rebuild handler and demo data seeder.
     pub async fn rebuild(
@@ -338,6 +354,8 @@ impl TopologyService {
 
         let entity_tags = self.get_entity_tags(&hosts, &services, &subnets).await?;
 
+        let vlans = self.get_vlans(topology.base.network_id).await?;
+
         let (nodes, edges) = self.build_graph(BuildGraphParams {
             options: &topology.base.options,
             hosts: &hosts,
@@ -349,6 +367,7 @@ impl TopologyService {
             bindings: &bindings,
             if_entries: &if_entries,
             entity_tags: &entity_tags,
+            vlans: &vlans,
             old_nodes: &[],
             old_edges: &[],
             old_view: None,
@@ -364,6 +383,7 @@ impl TopologyService {
             bindings,
             if_entries,
             entity_tags,
+            vlans,
         });
 
         topology.set_graph(nodes, edges);
@@ -385,6 +405,7 @@ impl TopologyService {
             bindings,
             if_entries,
             entity_tags,
+            vlans,
             old_edges,
             old_nodes,
             options,
@@ -402,6 +423,7 @@ impl TopologyService {
             bindings,
             if_entries,
             entity_tags,
+            vlans,
             options,
         );
 

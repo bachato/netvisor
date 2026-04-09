@@ -8,6 +8,7 @@ use crate::server::services::r#impl::base::Service;
 use crate::server::shares::r#impl::base::Share;
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::topology::types::base::Topology;
+use crate::server::vlans::r#impl::base::Vlan;
 use crate::server::{dependencies::r#impl::base::Dependency, tags::r#impl::base::Tag};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
@@ -94,6 +95,7 @@ pub enum Entity {
 
     Credential(Credential),
     Subnet(Subnet),
+    Vlan(Vlan),
     Dependency(Dependency),
     Topology(Box<Topology>),
 
@@ -131,6 +133,7 @@ impl EntityMetadataProvider for EntityDiscriminants {
             EntityDiscriminants::IfEntry => Color::Teal,
 
             EntityDiscriminants::Subnet => Color::Orange,
+            EntityDiscriminants::Vlan => Color::Teal,
             EntityDiscriminants::Dependency => Color::Rose,
             EntityDiscriminants::Topology => Color::Pink,
 
@@ -158,6 +161,7 @@ impl EntityMetadataProvider for EntityDiscriminants {
             EntityDiscriminants::IfEntry => Icon::Cable,
             EntityDiscriminants::Credential => Icon::Asterisk,
             EntityDiscriminants::Subnet => Icon::Network,
+            EntityDiscriminants::Vlan => Icon::Network,
             EntityDiscriminants::Dependency => Icon::Waypoints,
             EntityDiscriminants::Topology => Icon::ChartBarStacked,
 
@@ -256,6 +260,12 @@ impl From<Subnet> for Entity {
     }
 }
 
+impl From<Vlan> for Entity {
+    fn from(value: Vlan) -> Self {
+        Self::Vlan(value)
+    }
+}
+
 impl From<Dependency> for Entity {
     fn from(value: Dependency) -> Self {
         Self::Dependency(value)
@@ -292,6 +302,7 @@ impl From<EntityDiscriminants> for Entity {
             EntityDiscriminants::Host => Entity::Host(Host::default()),
             EntityDiscriminants::Service => Entity::Service(Service::default()),
             EntityDiscriminants::Subnet => Entity::Subnet(Subnet::default()),
+            EntityDiscriminants::Vlan => Entity::Vlan(Vlan::default()),
             EntityDiscriminants::Dependency => Entity::Dependency(Dependency::default()),
             EntityDiscriminants::Port => Entity::Port(Port::default()),
             EntityDiscriminants::Interface => Entity::Interface(Interface::default()),

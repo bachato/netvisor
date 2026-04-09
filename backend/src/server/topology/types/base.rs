@@ -16,6 +16,7 @@ use crate::server::topology::types::grouping::{
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
 use crate::server::topology::types::views::TopologyView;
+use crate::server::vlans::r#impl::base::Vlan;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display};
@@ -34,6 +35,7 @@ pub struct SetEntitiesParams {
     pub interfaces: Vec<Interface>,
     pub if_entries: Vec<IfEntry>,
     pub entity_tags: Vec<Tag>,
+    pub vlans: Vec<Vlan>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, ToSchema, Validate)]
@@ -88,6 +90,7 @@ impl Topology {
         self.base.interfaces = params.interfaces;
         self.base.if_entries = params.if_entries;
         self.base.entity_tags = params.entity_tags;
+        self.base.vlans = params.vlans;
     }
 
     pub fn set_graph(&mut self, nodes: Vec<Node>, edges: Vec<Edge>) {
@@ -123,6 +126,10 @@ pub struct TopologyBase {
 
     // Tag definitions for filtering
     pub entity_tags: Vec<Tag>,
+
+    // VLAN definitions for name resolution
+    #[serde(default)]
+    pub vlans: Vec<Vlan>,
 
     // Build state
     pub is_stale: bool,
@@ -173,6 +180,7 @@ impl TopologyBase {
             parent_id: None,
             tags: vec![],
             entity_tags: vec![],
+            vlans: vec![],
         }
     }
 }

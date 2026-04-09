@@ -63,6 +63,7 @@ pub struct HostService {
     pub daemon_service: Arc<DaemonService>,
     credential_service: Arc<CredentialService>,
     subnet_service: Arc<SubnetService>,
+    vlan_service: Arc<crate::server::vlans::service::VlanService>,
     host_locks: Arc<Mutex<HashMap<Uuid, Arc<Mutex<()>>>>>,
     event_bus: Arc<EventBus>,
     entity_tag_service: Arc<EntityTagService>,
@@ -238,6 +239,7 @@ impl HostService {
         daemon_service: Arc<DaemonService>,
         credential_service: Arc<CredentialService>,
         subnet_service: Arc<SubnetService>,
+        vlan_service: Arc<crate::server::vlans::service::VlanService>,
         event_bus: Arc<EventBus>,
         entity_tag_service: Arc<EntityTagService>,
     ) -> Self {
@@ -250,6 +252,7 @@ impl HostService {
             daemon_service,
             credential_service,
             subnet_service,
+            vlan_service,
             host_locks: Arc::new(Mutex::new(HashMap::new())),
             event_bus,
             entity_tag_service,
@@ -1684,6 +1687,13 @@ impl HostService {
             tracing::warn!(error = %e, "Failed to link IfEntries to Interfaces");
         }
 
+        // Auto-link subnets to VLANs based on IfEntry VLAN assignments
+        if !if_entries.is_empty() {
+            if let Err(e) = self.link_subnets_to_vlans(&host_response.id).await {
+                tracing::warn!(error = %e, "Failed to auto-link subnets to VLANs");
+            }
+        }
+
         Ok(host_response)
     }
 
@@ -1758,6 +1768,50 @@ impl HostService {
                 host_id = %host_id,
                 linked = linked_count,
                 "Linked IfEntries to Interfaces via MAC address and loopback type"
+            );
+        }
+
+        Ok(())
+    }
+
+    /// Auto-link subnets to VLANs based on IfEntry native VLAN assignments.
+    ///
+    /// For each IfEntry with a native_vlan_id and a linked interface (which has a subnet_id),
+    /// creates a subnet ↔ VLAN link in the junction table. Idempotent.
+    async fn link_subnets_to_vlans(&self, host_id: &Uuid) -> Result<()> {
+        let if_entries = self.if_entry_service.get_for_host(host_id).await?;
+        let interfaces = self.interface_service.get_for_host(host_id).await?;
+
+        // Build interface_id → subnet_id lookup
+        let interface_to_subnet: std::collections::HashMap<Uuid, Uuid> = interfaces
+            .iter()
+            .map(|i| (i.id, i.base.subnet_id))
+            .collect();
+
+        let mut linked_count = 0;
+        for if_entry in &if_entries {
+            let Some(vlan_id) = if_entry.base.native_vlan_id else {
+                continue;
+            };
+            let Some(interface_id) = if_entry.base.interface_id else {
+                continue;
+            };
+            let Some(subnet_id) = interface_to_subnet.get(&interface_id) else {
+                continue;
+            };
+
+            self.vlan_service
+                .subnet_vlan_storage
+                .link(subnet_id, &vlan_id)
+                .await?;
+            linked_count += 1;
+        }
+
+        if linked_count > 0 {
+            tracing::debug!(
+                host_id = %host_id,
+                linked = linked_count,
+                "Auto-linked subnets to VLANs from IfEntry data"
             );
         }
 

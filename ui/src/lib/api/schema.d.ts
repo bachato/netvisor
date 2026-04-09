@@ -2799,6 +2799,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/vlans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all VLANs
+         * @description Returns VLANs accessible to the authenticated user, optionally filtered by network.
+         */
+        get: operations["get_all_vlans"];
+        put?: never;
+        /**
+         * Create a new VLAN
+         * @description Creates a VLAN scoped to a network. VLAN numbers must be unique within a network.
+         */
+        post: operations["create_vlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vlans/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk delete Vlans */
+        post: operations["bulk_delete_vlans"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vlans/discovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk upsert VLANs from discovery
+         * @description Used by daemons to report discovered VLANs. Creates new VLANs or updates names.
+         *     Returns the mapping of VLAN numbers to entity UUIDs for IfEntry construction.
+         */
+        post: operations["discovery_upsert_vlans"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vlans/export/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Vlans to CSV
+         * @description Export all Vlans matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.
+         */
+        get: operations["export_vlans_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vlans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Vlan by ID */
+        get: operations["get_vlan_by_id"];
+        /** Update Vlan */
+        put: operations["update_vlan"];
+        post?: never;
+        /** Delete Vlan */
+        delete: operations["delete_vlan"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/version": {
         parameters: {
             query?: never;
@@ -2862,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-07T19:40:22.308095Z",
-             *       "id": "920bb412-4089-4b27-b6c6-458614519543",
+             *       "created_at": "2026-04-09T18:31:36.526624Z",
+             *       "id": "740b2f13-3fd8-4337-ad4a-01a47122dced",
              *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-07T19:40:22.308095Z"
+             *       "updated_at": "2026-04-09T18:31:36.526624Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3156,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-07T19:40:22.289498Z",
-             *               "id": "2e25e9a5-fb18-495c-9164-6b1bb602715d",
+             *               "created_at": "2026-04-09T18:31:36.514194Z",
+             *               "id": "04ad01f3-336a-4085-a9b7-18107d6601aa",
              *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-07T19:40:22.289498Z"
+             *               "updated_at": "2026-04-09T18:31:36.514194Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3172,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Discourse",
+             *           "service_definition": "TP-Link EAP",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3428,14 +3529,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-07T19:40:22.302967Z",
-             *           "id": "716c472e-91b7-4057-b41b-45f938bab468",
+             *           "created_at": "2026-04-09T18:31:36.522967Z",
+             *           "id": "a63eec85-7185-4f07-81aa-cfc24cd8db60",
              *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-07T19:40:22.302967Z"
+             *           "updated_at": "2026-04-09T18:31:36.522967Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3444,7 +3545,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Discourse",
+             *       "service_definition": "TP-Link EAP",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3726,6 +3827,29 @@ export interface components {
             meta: components["schemas"]["ApiMeta"];
             success: boolean;
         };
+        ApiResponse_Vlan: {
+            data?: components["schemas"]["VlanBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
+        ApiResponse_VlanDiscoveryResponse: {
+            /** @description Response for discovery upsert */
+            data?: {
+                /** @description Mapping of vlan_number → VLAN entity UUID */
+                vlans: components["schemas"]["VlanDiscoveryResponseItem"][];
+            };
+            error?: string | null;
+            meta: components["schemas"]["ApiMeta"];
+            success: boolean;
+        };
         ApiResponse_bool: {
             data?: boolean;
             error?: string | null;
@@ -3772,14 +3896,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-07T19:40:22.289903Z",
-         *       "id": "4b74801c-b9a8-4a9c-aa91-5332741228da",
+         *       "created_at": "2026-04-09T18:31:36.514420Z",
+         *       "id": "da090018-8a84-42e6-babe-92e40a2dcba5",
          *       "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-07T19:40:22.289903Z"
+         *       "updated_at": "2026-04-09T18:31:36.514420Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -3964,7 +4088,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Discourse",
+         *           "service_definition": "TP-Link EAP",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4637,7 +4761,7 @@ export interface components {
             urgency?: string | null;
         };
         /** @enum {string} */
-        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "IfEntry" | "Credential" | "Subnet" | "Dependency" | "Topology" | "Unknown";
+        EntityDiscriminants: "Organization" | "Invite" | "Share" | "Network" | "DaemonApiKey" | "UserApiKey" | "User" | "Tag" | "Discovery" | "Daemon" | "Host" | "Service" | "Port" | "Binding" | "Interface" | "IfEntry" | "Credential" | "Subnet" | "Vlan" | "Dependency" | "Topology" | "Unknown";
         EntitySource: {
             /** @enum {string} */
             type: "Manual";
@@ -4670,37 +4794,6 @@ export interface components {
         ForgotPasswordRequest: {
             /** Format: email */
             email: string;
-        };
-        /** @description Generic wrapper that gives any rule type a stable UUID identity. */
-        GraphRule_ContainerRule: {
-            /** Format: uuid */
-            id: string;
-            /**
-             * @description Rules that change which containers exist and how they nest.
-             *     Container titles are data-driven (subnet CIDR, host names), not user-configurable.
-             */
-            rule: "BySubnet" | "MergeDockerBridges" | {
-                ByApplicationGroup: {
-                    tag_ids?: string[];
-                };
-            } | "ByHost";
-        };
-        /** @description Generic wrapper that gives any rule type a stable UUID identity. */
-        GraphRule_ElementRule: {
-            /** Format: uuid */
-            id: string;
-            /** @description Rules that organize nodes within a container into sub-groups. */
-            rule: {
-                ByServiceCategory: {
-                    categories: components["schemas"]["ServiceCategory"][];
-                    title?: string | null;
-                };
-            } | {
-                ByTag: {
-                    tag_ids: string[];
-                    title?: string | null;
-                };
-            } | "ByVirtualizer" | "ByStack" | "ByTrunkPort" | "ByVLAN" | "ByPortOpStatus";
         };
         /**
          * @example {
@@ -4845,14 +4938,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-07T19:40:22.288909Z",
-         *               "id": "4135fafb-8b12-4a9a-9bb9-3ce35a79601a",
+         *               "created_at": "2026-04-09T18:31:36.513896Z",
+         *               "id": "67da256c-a0b3-4955-8689-7afb450f79bf",
          *               "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-07T19:40:22.288909Z"
+         *               "updated_at": "2026-04-09T18:31:36.513896Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4861,7 +4954,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Discourse",
+         *           "service_definition": "TP-Link EAP",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -4912,6 +5005,37 @@ export interface components {
             details: components["schemas"]["ProxmoxVirtualization"];
             /** @enum {string} */
             type: "Proxmox";
+        };
+        /** @description Generic wrapper that gives any rule type a stable UUID identity. */
+        IdentifiedRule_ContainerRule: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description Rules that change which containers exist and how they nest.
+             *     Container titles are data-driven (subnet CIDR, host names), not user-configurable.
+             */
+            rule: "BySubnet" | "MergeDockerBridges" | {
+                ByApplicationGroup: {
+                    tag_ids?: string[];
+                };
+            } | "ByHost";
+        };
+        /** @description Generic wrapper that gives any rule type a stable UUID identity. */
+        IdentifiedRule_ElementRule: {
+            /** Format: uuid */
+            id: string;
+            /** @description Rules that organize nodes within a container into sub-groups. */
+            rule: {
+                ByServiceCategory: {
+                    categories: components["schemas"]["ServiceCategory"][];
+                    title?: string | null;
+                };
+            } | {
+                ByTag: {
+                    tag_ids: string[];
+                    title?: string | null;
+                };
+            } | "ByVirtualizer" | "ByStack" | "ByTrunkPort" | "ByVLAN" | "ByPortOpStatus";
         };
         /**
          * @description SNMP ifAdminStatus values per IF-MIB RFC 2863
@@ -4979,10 +5103,10 @@ export interface components {
             /** @description MAC address from SNMP ifPhysAddress - immutable once set */
             mac_address?: string | null;
             /**
-             * Format: int32
-             * @description Native/untagged VLAN ID on this port (from Q-BRIDGE dot1qPvid)
+             * Format: uuid
+             * @description Native/untagged VLAN entity ID on this port (resolved from Q-BRIDGE dot1qPvid)
              */
-            native_vlan_id?: number | null;
+            native_vlan_id?: string | null;
             neighbor?: null | components["schemas"]["Neighbor"];
             /** Format: uuid */
             network_id: string;
@@ -4993,8 +5117,8 @@ export interface components {
              * @description Interface speed from ifSpeed/ifHighSpeed in bits per second
              */
             speed_bps?: number | null;
-            /** @description Tagged VLAN IDs on this port (from Q-BRIDGE dot1qVlanCurrentEgressPorts) */
-            vlan_ids?: number[] | null;
+            /** @description Tagged VLAN entity IDs on this port (resolved from Q-BRIDGE dot1qVlanCurrentEgressPorts) */
+            vlan_ids?: string[] | null;
         };
         /**
          * @description Input for creating an SNMP interface entry (ifTable data).
@@ -5613,6 +5737,20 @@ export interface components {
             meta: components["schemas"]["PaginatedApiMeta"];
             success: boolean;
         };
+        /** @description Response type for paginated list endpoints (pagination is always present in meta) */
+        PaginatedApiResponse_Vlan: {
+            data: (components["schemas"]["VlanBase"] & {
+                /** Format: date-time */
+                readonly created_at: string;
+                /** Format: uuid */
+                readonly id: string;
+                /** Format: date-time */
+                readonly updated_at: string;
+            })[];
+            error?: string | null;
+            meta: components["schemas"]["PaginatedApiMeta"];
+            success: boolean;
+        };
         /**
          * @description Pagination metadata returned with paginated responses.
          * @example {
@@ -5937,14 +6075,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-07T19:40:22.289762Z",
-         *           "id": "5f70fec8-33ca-49dd-8e0e-b762e129f15d",
+         *           "created_at": "2026-04-09T18:31:36.514344Z",
+         *           "id": "73a7cb2f-e592-4105-a5b9-eded68c25fd1",
          *           "interface_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-07T19:40:22.289762Z"
+         *           "updated_at": "2026-04-09T18:31:36.514344Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -5953,7 +6091,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Discourse",
+         *       "service_definition": "TP-Link EAP",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6228,6 +6366,7 @@ export interface components {
             services: components["schemas"]["Service"][];
             subnets: components["schemas"]["Subnet"][];
             tags: string[];
+            vlans?: components["schemas"]["Vlan"][];
         };
         /**
          * @description Lightweight request type for updating an edge's handles.
@@ -6352,9 +6491,9 @@ export interface components {
         };
         TopologyRequestOptions: {
             container_rules?: {
-                [key: string]: components["schemas"]["GraphRule_ContainerRule"][];
+                [key: string]: components["schemas"]["IdentifiedRule_ContainerRule"][];
             };
-            element_rules?: components["schemas"]["GraphRule_ElementRule"][];
+            element_rules?: components["schemas"]["IdentifiedRule_ElementRule"][];
             hide_ports: boolean;
             hide_service_categories?: {
                 [key: string]: components["schemas"]["ServiceCategory"][];
@@ -6524,6 +6663,52 @@ export interface components {
              */
             server_version: string;
         };
+        Vlan: components["schemas"]["VlanBase"] & {
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        VlanBase: {
+            description?: string | null;
+            name: string;
+            /** Format: uuid */
+            network_id: string;
+            /** Format: uuid */
+            organization_id: string;
+            source?: components["schemas"]["EntitySource"];
+            /**
+             * Format: int32
+             * @description The 802.1Q VLAN number (1-4094)
+             */
+            vlan_number: number;
+        };
+        VlanDiscoveryItem: {
+            name: string;
+            /** Format: int32 */
+            vlan_number: number;
+        };
+        /** @description Request body for daemon VLAN discovery upsert */
+        VlanDiscoveryRequest: {
+            /** Format: uuid */
+            network_id: string;
+            vlans: components["schemas"]["VlanDiscoveryItem"][];
+        };
+        /** @description Response for discovery upsert */
+        VlanDiscoveryResponse: {
+            /** @description Mapping of vlan_number → VLAN entity UUID */
+            vlans: components["schemas"]["VlanDiscoveryResponseItem"][];
+        };
+        VlanDiscoveryResponseItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            vlan_number: number;
+        };
+        /** @enum {string} */
+        VlanOrderField: "created_at" | "name" | "vlan_number" | "updated_at";
     };
     responses: never;
     parameters: never;
@@ -13293,6 +13478,262 @@ export interface operations {
                 };
             };
             /** @description User not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_all_vlans: {
+        parameters: {
+            query?: {
+                group_by?: null | components["schemas"]["VlanOrderField"];
+                order_by?: null | components["schemas"]["VlanOrderField"];
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                limit?: number | null;
+                offset?: number | null;
+                /** @description Filter by network ID */
+                network_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of VLANs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedApiResponse_Vlan"];
+                };
+            };
+        };
+    };
+    create_vlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Vlan"];
+            };
+        };
+        responses: {
+            /** @description VLAN created successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Vlan"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description VLAN number already exists in this network */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    bulk_delete_vlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Array of Vlan IDs to delete */
+        requestBody: {
+            content: {
+                "application/json": string[];
+            };
+        };
+        responses: {
+            /** @description Vlans deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BulkDeleteResponse"];
+                };
+            };
+        };
+    };
+    discovery_upsert_vlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VlanDiscoveryRequest"];
+            };
+        };
+        responses: {
+            /** @description VLANs upserted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_VlanDiscoveryResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    export_vlans_csv: {
+        parameters: {
+            query?: {
+                group_by?: null | components["schemas"]["VlanOrderField"];
+                order_by?: null | components["schemas"]["VlanOrderField"];
+                order_direction?: null | components["schemas"]["OrderDirection"];
+                limit?: number | null;
+                offset?: number | null;
+                /** @description Filter by network ID */
+                network_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file containing Vlans */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+        };
+    };
+    get_vlan_by_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Vlan ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Vlan found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Vlan"];
+                };
+            };
+            /** @description Vlan not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    update_vlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Vlan ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Vlan"];
+            };
+        };
+        responses: {
+            /** @description Vlan updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Vlan"];
+                };
+            };
+            /** @description Vlan not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_vlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Vlan ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Vlan deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Vlan not found */
             404: {
                 headers: {
                     [name: string]: unknown;

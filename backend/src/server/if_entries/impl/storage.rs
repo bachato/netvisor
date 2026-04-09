@@ -45,7 +45,7 @@ pub struct IfEntryCsvRow {
     pub cdp_platform: Option<String>,
     pub cdp_address: Option<String>,
     pub fdb_macs: Option<String>,
-    pub native_vlan_id: Option<u16>,
+    pub native_vlan_id: Option<Uuid>,
     pub vlan_ids: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -176,8 +176,8 @@ impl Storable for IfEntry {
             SqlValue::OptionalString(cdp_platform),
             SqlValue::OptionalIpAddr(cdp_address),
             SqlValue::OptionalFdbMacs(fdb_macs),
-            SqlValue::OptionalI64(native_vlan_id.map(|v| v as i64)),
-            SqlValue::OptionVecU16(vlan_ids),
+            SqlValue::OptionalUuid(native_vlan_id),
+            SqlValue::OptionVecUuid(vlan_ids),
             SqlValue::Timestamp(created_at),
             SqlValue::Timestamp(updated_at),
         ];
@@ -267,11 +267,7 @@ impl Storable for IfEntry {
                     .ok()
                     .flatten()
                     .and_then(|v| serde_json::from_value(v).ok()),
-                native_vlan_id: row
-                    .try_get::<Option<i16>, _>("native_vlan_id")
-                    .ok()
-                    .flatten()
-                    .map(|v| v as u16),
+                native_vlan_id: row.get("native_vlan_id"),
                 vlan_ids: row
                     .try_get::<Option<serde_json::Value>, _>("vlan_ids")
                     .ok()

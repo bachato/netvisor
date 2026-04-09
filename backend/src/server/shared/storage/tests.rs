@@ -21,6 +21,7 @@ use crate::server::{
     topology::types::base::Topology,
     user_api_keys::r#impl::base::UserApiKey,
     users::r#impl::base::User,
+    vlans::r#impl::{base::Vlan, subnet_vlans::SubnetVlanRecord},
 };
 use sqlx::postgres::PgRow;
 use std::collections::HashMap;
@@ -217,6 +218,22 @@ fn get_entity_deserializers() -> HashMap<&'static str, DeserializeFn> {
         IfEntry::table_name(),
         Box::new(|row| {
             IfEntry::from_row(row)?;
+            Ok(())
+        }),
+    );
+
+    map.insert(
+        Vlan::table_name(),
+        Box::new(|row| {
+            Vlan::from_row(row)?;
+            Ok(())
+        }),
+    );
+
+    map.insert(
+        SubnetVlanRecord::table_name(),
+        Box::new(|row| {
+            SubnetVlanRecord::from_row(row)?;
             Ok(())
         }),
     );
