@@ -12,7 +12,7 @@
 		type Connection,
 		useSvelteFlow
 	} from '@xyflow/svelte';
-	import { Keyboard, Minimize2, Maximize2, Lock, Pencil } from 'lucide-svelte';
+	import { Keyboard, Minimize2, Maximize2, PencilOff, Pencil } from 'lucide-svelte';
 	import {
 		topology_shortcutsTitle,
 		topology_collapseAll,
@@ -20,7 +20,6 @@
 		topology_connectionsCount,
 		topology_viewModeTooltip,
 		topology_editModeTooltip,
-		common_view,
 		common_edit
 	} from '$lib/paraglide/messages';
 	import TopologySidebarButton from './TopologySidebarButton.svelte';
@@ -1176,19 +1175,19 @@
 		/>
 
 		{#if showControls}
-			<Panel position="top-right" class="!m-[10px] !flex !flex-col !items-center !gap-2 !p-0">
+			<Panel position="top-right" class="!m-[10px] !flex !flex-col !items-end !gap-2 !p-0">
 				{#if onToggleEditMode}
 					<TopologySidebarButton
 						onclick={onToggleEditMode}
 						title={editMode ? topology_editModeTooltip() : topology_viewModeTooltip()}
-						label={editMode ? common_edit() : common_view()}
+						label={common_edit()}
 						active={editMode}
 					>
 						{#snippet icon()}
 							{#if editMode}
 								<Pencil class="h-4 w-4" />
 							{:else}
-								<Lock class="h-4 w-4" />
+								<PencilOff class="h-4 w-4" />
 							{/if}
 						{/snippet}
 					</TopologySidebarButton>

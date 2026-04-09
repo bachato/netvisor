@@ -329,7 +329,6 @@
 	"common_validation_entityField": "{name}: {field}",
 	"common_validation_fixFields": "Please fix the following fields: {fields}",
 	"common_version": "Version",
-	"common_view": "View",
 	"common_viewPlans": "View Plans",
 	"common_virtualization": "Virtualization",
 	"common_visual": "Visual",
