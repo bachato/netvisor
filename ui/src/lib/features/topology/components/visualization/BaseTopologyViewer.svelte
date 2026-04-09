@@ -12,13 +12,18 @@
 		type Connection,
 		useSvelteFlow
 	} from '@xyflow/svelte';
-	import { Keyboard, Minimize2, Maximize2 } from 'lucide-svelte';
+	import { Keyboard, Minimize2, Maximize2, Lock, Pencil } from 'lucide-svelte';
 	import {
 		topology_shortcutsTitle,
 		topology_collapseAll,
 		topology_expandAll,
-		topology_connectionsCount
+		topology_connectionsCount,
+		topology_viewModeTooltip,
+		topology_editModeTooltip,
+		common_view,
+		common_edit
 	} from '$lib/paraglide/messages';
+	import TopologySidebarButton from './TopologySidebarButton.svelte';
 	import { type Node, type Edge } from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
 	import { edgeTypes, containerTypes } from '$lib/shared/stores/metadata';
@@ -100,6 +105,10 @@
 
 	// Optional callback for shortcuts overlay
 	export let onOpenShortcuts: (() => void) | null = null;
+
+	// Edit mode toggle
+	export let editMode: boolean = false;
+	export let onToggleEditMode: (() => void) | null = null;
 
 	// Resolve selection stores from context (share/embed) or fall back to global stores.
 	// These are the SINGLE source of truth for selection state.
@@ -1168,32 +1177,50 @@
 
 		{#if showControls}
 			<Panel position="top-right" class="!m-[10px] !flex !flex-col !items-center !gap-2 !p-0">
-				<div
-					class="flex flex-col gap-0.5 rounded !border !border-gray-300 !bg-white !shadow-lg dark:!border-gray-600 dark:!bg-gray-800"
+				{#if onToggleEditMode}
+					<TopologySidebarButton
+						onclick={onToggleEditMode}
+						title={editMode ? topology_editModeTooltip() : topology_viewModeTooltip()}
+						label={editMode ? common_edit() : common_view()}
+						active={editMode}
+					>
+						{#snippet icon()}
+							{#if editMode}
+								<Pencil class="h-4 w-4" />
+							{:else}
+								<Lock class="h-4 w-4" />
+							{/if}
+						{/snippet}
+					</TopologySidebarButton>
+				{/if}
+				<TopologySidebarButton
+					onclick={handleCollapseAll}
+					title={topology_collapseAll()}
+					label={topology_collapseAll()}
 				>
-					<button
-						class="flex items-center justify-center rounded-t p-1.5 !text-gray-700 hover:!bg-gray-100 dark:!text-gray-100 dark:hover:!bg-gray-600"
-						onclick={handleCollapseAll}
-						title={topology_collapseAll()}
-					>
+					{#snippet icon()}
 						<Minimize2 class="h-4 w-4" />
-					</button>
-					<button
-						class="flex items-center justify-center rounded-b p-1.5 !text-gray-700 hover:!bg-gray-100 dark:!text-gray-100 dark:hover:!bg-gray-600"
-						onclick={handleExpandAll}
-						title={topology_expandAll()}
-					>
+					{/snippet}
+				</TopologySidebarButton>
+				<TopologySidebarButton
+					onclick={handleExpandAll}
+					title={topology_expandAll()}
+					label={topology_expandAll()}
+				>
+					{#snippet icon()}
 						<Maximize2 class="h-4 w-4" />
-					</button>
-				</div>
+					{/snippet}
+				</TopologySidebarButton>
 				{#if onOpenShortcuts}
-					<button
-						class="flex items-center justify-center rounded !border !border-gray-300 !bg-gray-50 p-1.5 !text-gray-700 !shadow-lg hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600"
+					<TopologySidebarButton
 						onclick={onOpenShortcuts}
 						title={topology_shortcutsTitle()}
+						label={topology_shortcutsTitle()}
 					>
-						<Keyboard class="h-4 w-4" />
-					</button>
+						{#snippet icon()}
+							<Keyboard class="h-4 w-4" />
+						{/snippet}
+					</TopologySidebarButton>
 				{/if}
 				<Controls
 					showZoom={true}

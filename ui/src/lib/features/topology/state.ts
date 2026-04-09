@@ -1,4 +1,5 @@
 import { Lock, Radio, RefreshCcw } from 'lucide-svelte';
+import { writable } from 'svelte/store';
 import type { Topology } from './types/base';
 import type { IconComponent } from '$lib/shared/utils/types';
 import type { Color } from '$lib/shared/utils/styling';
@@ -7,6 +8,9 @@ import {
 	topology_optionDisabledRebuildRequired,
 	topology_optionDisabledUnlockRequired
 } from '$lib/paraglide/messages';
+
+/** Whether edit mode is active (nodes draggable, containers resizable). */
+export const editModeEnabled = writable(false);
 
 export type TopologyStateType = 'locked' | 'fresh' | 'stale_safe' | 'stale_conflicts';
 

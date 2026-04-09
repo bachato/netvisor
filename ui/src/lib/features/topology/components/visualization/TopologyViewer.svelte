@@ -13,9 +13,11 @@
 	import { type EdgeHandle, type TopologyEdge, type TopologyNode } from '../../types/base';
 	import { searchOpen, clearSearch } from '../../interactions';
 	import { clearSelection } from '../../selection';
+	import { editModeEnabled } from '../../state';
 	import BaseTopologyViewer from './BaseTopologyViewer.svelte';
 	import SearchOverlay from './SearchOverlay.svelte';
 	import ShortcutsHelpOverlay from './ShortcutsHelpOverlay.svelte';
+	import { onDestroy } from 'svelte';
 
 	// Props for callbacks from parent
 	let {
@@ -41,6 +43,18 @@
 
 	// Overlay state
 	let shortcutsHelpOpen = $state(false);
+
+	// Edit mode state — defaults to view mode (locked), resets on page load
+	let editMode = $state(false);
+
+	function toggleEditMode() {
+		editMode = !editMode;
+		editModeEnabled.set(editMode);
+	}
+
+	onDestroy(() => {
+		editModeEnabled.set(false);
+	});
 
 	export function triggerFitView() {
 		baseViewer?.triggerFitView();
@@ -153,6 +167,10 @@
 				}
 				break;
 			}
+			case 'e':
+			case 'E':
+				toggleEditMode();
+				break;
 			case 'l':
 			case 'L':
 				onToggleLock?.();
@@ -175,8 +193,10 @@
 		<BaseTopologyViewer
 			bind:this={baseViewer}
 			{topology}
-			readonly={false}
+			readonly={!editMode}
 			showControls={true}
+			{editMode}
+			onToggleEditMode={toggleEditMode}
 			onNodeDragStop={handleNodeDragStop}
 			onReconnect={handleReconnect}
 			onOpenShortcuts={() => (shortcutsHelpOpen = true)}

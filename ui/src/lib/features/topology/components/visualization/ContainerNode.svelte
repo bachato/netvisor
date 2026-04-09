@@ -24,6 +24,7 @@
 	import { resolveContainerNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
 	import { getContext } from 'svelte';
+	import { editModeEnabled } from '../../state';
 	import {
 		connectedNodeIds,
 		isExporting,
@@ -433,7 +434,7 @@
 				style="background: var(--color-topology-node-bg); width: 100%; height: 100%; position: relative; overflow: hidden; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
 			></div>
 
-			{#if resizeHandleZoomLevel && !$topologyOptions.local.hide_resize_handles}
+			{#if resizeHandleZoomLevel && $editModeEnabled && !$topologyOptions.local.hide_resize_handles}
 				<NodeResizeControl
 					position="bottom-right"
 					onResizeEnd={onResize}

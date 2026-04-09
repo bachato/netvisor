@@ -11,7 +11,8 @@
 		topology_shortcutHelp,
 		topology_shortcutSelectAll,
 		topology_shortcutBoxSelect,
-		topology_shortcutToggleSelect
+		topology_shortcutToggleSelect,
+		topology_shortcutToggleEditMode
 	} from '$lib/paraglide/messages';
 	import KbdKey from '$lib/shared/components/feedback/KbdKey.svelte';
 
@@ -22,6 +23,7 @@
 		{ keys: ['/'], description: () => topology_shortcutSearch() },
 		{ keys: ['F'], description: () => topology_shortcutFitView() },
 		{ keys: ['Z'], description: () => topology_shortcutZoomSelection() },
+		{ keys: ['E'], description: () => topology_shortcutToggleEditMode() },
 		{ keys: ['L'], description: () => topology_shortcutToggleLock() },
 		{ keys: ['R'], description: () => topology_shortcutRebuild() },
 		{ keys: ['Escape'], description: () => topology_shortcutDeselect() },
