@@ -320,6 +320,15 @@
 					return;
 				}
 
+				// When switching topologies, the incoming data may be built for a
+				// different view than the user's activeView (e.g. topology was last
+				// saved as Application but user is on L2). Skip rendering until a
+				// rebuild delivers data matching the active view.
+				const dataView = topology.options?.request?.view;
+				if (dataView && dataView !== currentView) {
+					return;
+				}
+
 				let collapsed = get(collapsedContainers);
 				// Perspective switch fix: when switching views while all containers were
 				// collapsed, the old perspective's container IDs become stale. Detect this

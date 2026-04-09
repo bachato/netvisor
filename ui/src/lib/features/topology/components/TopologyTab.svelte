@@ -231,7 +231,8 @@
 
 	// Hydrate stores from topology options when a topology is selected.
 	// On first hydration (page load), use the topology's stored view.
-	// On subsequent switches, preserve the user's current view.
+	// On subsequent switches, preserve the user's current view and rebuild
+	// if the topology's data was built for a different view.
 	$effect(() => {
 		if (currentTopology && currentTopology.id !== lastHydratedId) {
 			lastHydratedId = currentTopology.id;
@@ -240,6 +241,15 @@
 			if (!urlViewConsumed && urlParams.view) {
 				urlViewConsumed = true;
 				activeView.set(urlParams.view);
+			}
+			// When switching topologies, the data may be built for a different
+			// view. Trigger a rebuild so the server returns data for activeView.
+			if (!isFirstHydration) {
+				const currentView = get(activeView);
+				const dataView = currentTopology.options?.request?.view;
+				if (dataView && dataView !== currentView) {
+					rebuildTopologyMutation.mutateAsync(currentTopology);
+				}
 			}
 			isFirstHydration = false;
 		}
