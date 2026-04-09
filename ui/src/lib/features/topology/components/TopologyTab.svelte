@@ -11,6 +11,8 @@
 	import { tooltip } from '$lib/shared/actions/tooltip';
 	import { SvelteFlowProvider } from '@xyflow/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { onMount, onDestroy } from 'svelte';
+	import { get } from 'svelte/store';
 	import {
 		useTopologiesQuery,
 		useDeleteTopologyMutation,
@@ -26,7 +28,10 @@
 		topologyOptions,
 		updateTopologyOptions,
 		hydrateStoresFromTopology,
-		applyApplicationHiddenCategories
+		applyApplicationHiddenCategories,
+		getTopologyParamsFromUrl,
+		pushTopologyParams,
+		type TopologyView
 	} from '../queries';
 	import { makeGraphRule } from '../types/grouping';
 	import type { Topology } from '../types/base';
@@ -38,8 +43,11 @@
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
 	import RefreshConflictsModal from './RefreshConflictsModal.svelte';
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
-	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
 	import { TopologyDisplay } from '$lib/shared/components/forms/selection/display/TopologyDisplay.svelte';
+	import {
+		SimpleOptionDisplay,
+		type SimpleOption
+	} from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { formatTimestamp } from '$lib/shared/utils/formatting';
 	import { trackEvent } from '$lib/shared/utils/analytics';
@@ -166,11 +174,12 @@
 	// View selector — built from fixture data
 	import viewsJson from '$lib/data/views.json';
 
-	const viewOptions = viewsJson.map((p) => ({
+	const viewOptions: SimpleOption[] = viewsJson.map((p) => ({
 		value: p.id,
-		label: '',
+		label: p.name,
+		description: p.description,
 		icon: views.getIconComponent(p.id),
-		tooltip: p.description
+		iconColor: views.getColorHelper(p.id).icon
 	}));
 	let viewColorStyle = $derived(views.getColorHelper($activeView));
 
@@ -189,11 +198,23 @@
 	const lockTopologyMutation = useLockTopologyMutation();
 	const unlockTopologyMutation = useUnlockTopologyMutation();
 
+	// URL params: read once on init for topology/view deep-linking
+	const urlParams = getTopologyParamsFromUrl();
+	let urlViewConsumed = false;
+
 	// Initialize selected topology when data loads
 	let lastHydratedId: string | null = null;
 	$effect(() => {
 		if (topologiesData.length > 0 && !$selectedTopologyId) {
-			// Check for preferred network from onboarding
+			// Priority 1: URL param topologyId
+			if (urlParams.topologyId) {
+				const fromUrl = topologiesData.find((t) => t.id === urlParams.topologyId);
+				if (fromUrl) {
+					selectedTopologyId.set(fromUrl.id);
+					return;
+				}
+			}
+			// Priority 2: preferred network from onboarding
 			const preferredNetworkId = consumePreferredNetwork();
 			if (preferredNetworkId) {
 				const preferred = topologiesData.find((t) => t.network_id === preferredNetworkId);
@@ -212,6 +233,11 @@
 		if (currentTopology && currentTopology.id !== lastHydratedId) {
 			lastHydratedId = currentTopology.id;
 			hydrateStoresFromTopology(currentTopology);
+			// Override view from URL param on first hydration only
+			if (!urlViewConsumed && urlParams.view) {
+				urlViewConsumed = true;
+				activeView.set(urlParams.view);
+			}
 		}
 	});
 
@@ -377,8 +403,16 @@
 
 	// Handle topology selection
 	function handleTopologyChange(value: string) {
+		pushTopologyParams(value, get(activeView));
 		selectedTopologyId.set(value);
 		selectedNodes.set([]);
+	}
+
+	// Handle view selection (user-initiated)
+	function handleViewChange(value: string) {
+		const view = value as TopologyView;
+		pushTopologyParams(get(selectedTopologyId), view);
+		activeView.set(view);
 	}
 
 	async function handleDelete() {
@@ -496,6 +530,26 @@
 	let lockedByDisplay = $derived(
 		lockedByUser?.email ?? (currentTopology?.locked_by ? topology_anotherUser() : null)
 	);
+
+	// Browser back/forward: restore topology + view from URL params
+	function handlePopState() {
+		const params = getTopologyParamsFromUrl();
+		if (params.topologyId && params.topologyId !== get(selectedTopologyId)) {
+			selectedTopologyId.set(params.topologyId);
+			selectedNodes.set([]);
+		}
+		if (params.view && params.view !== get(activeView)) {
+			activeView.set(params.view);
+		}
+	}
+
+	onMount(() => {
+		window.addEventListener('popstate', handlePopState);
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('popstate', handlePopState);
+	});
 </script>
 
 <SvelteFlowProvider>
@@ -638,11 +692,12 @@
 
 						<div class="card-divider-v self-stretch"></div>
 
-						<SegmentedControl
+						<RichSelect
+							label=""
+							selectedValue={$activeView}
+							displayComponent={SimpleOptionDisplay}
+							onSelect={handleViewChange}
 							options={viewOptions}
-							selected={$activeView}
-							onchange={(value) => activeView.set(value)}
-							iconSize="lg"
 						/>
 					{/if}
 				{/if}

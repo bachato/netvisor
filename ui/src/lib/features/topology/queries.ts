@@ -578,6 +578,51 @@ export const previewEdges = writable<Edge[]>([]);
 export const autoRebuild = writable<boolean>(loadAutoRebuildFromStorage());
 export const activeView = writable<TopologyView>('L3Logical');
 
+// ============================================================================
+// URL Param Sync
+// ============================================================================
+
+const VALID_VIEWS: Set<string> = new Set(viewsJson.map((v) => v.id));
+
+/** Read topology ID and view from current URL search params. */
+export function getTopologyParamsFromUrl(): {
+	topologyId: string | null;
+	view: TopologyView | null;
+} {
+	if (!browser) return { topologyId: null, view: null };
+	const params = new URLSearchParams(window.location.search);
+	const topologyId = params.get('topologyId');
+	const viewParam = params.get('view');
+	const view = viewParam && VALID_VIEWS.has(viewParam) ? (viewParam as TopologyView) : null;
+	return { topologyId, view };
+}
+
+/** Update URL search params to reflect current topology state. Uses replaceState (no history entry). */
+function syncTopologyParamsToUrl(topologyId: string | null, view: TopologyView): void {
+	if (!browser) return;
+	const url = new URL(window.location.href);
+	if (topologyId) {
+		url.searchParams.set('topologyId', topologyId);
+	} else {
+		url.searchParams.delete('topologyId');
+	}
+	url.searchParams.set('view', view);
+	window.history.replaceState(window.history.state, '', url.toString());
+}
+
+/** Push a new history entry with updated topology params. For user-initiated changes. */
+export function pushTopologyParams(topologyId: string | null, view: TopologyView): void {
+	if (!browser) return;
+	const url = new URL(window.location.href);
+	if (topologyId) {
+		url.searchParams.set('topologyId', topologyId);
+	} else {
+		url.searchParams.delete('topologyId');
+	}
+	url.searchParams.set('view', view);
+	window.history.pushState({}, '', url.toString());
+}
+
 // Single source of truth for topology options.
 // request: backend state (container_rules/hide_service_categories are per-view HashMaps)
 // perViewLocal: UI-only local options per view
@@ -874,6 +919,20 @@ if (browser) {
 			triggerRebuild(0, true);
 		}
 		viewInitialized = true;
+	});
+
+	// Sync stores → URL (replaceState, no history entry)
+	// User-initiated changes use pushTopologyParams from TopologyTab instead.
+	selectedTopologyId.subscribe((id) => {
+		if (id !== null) {
+			syncTopologyParamsToUrl(id, get(activeView));
+		}
+	});
+	activeView.subscribe((view) => {
+		const id = get(selectedTopologyId);
+		if (id !== null) {
+			syncTopologyParamsToUrl(id, view);
+		}
 	});
 }
 

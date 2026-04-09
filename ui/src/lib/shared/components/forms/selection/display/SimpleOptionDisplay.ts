@@ -14,6 +14,7 @@ export interface SimpleOption {
 	description?: string;
 	tags?: TagProps[];
 	icon?: IconComponent;
+	iconColor?: string;
 }
 
 export const SimpleOptionDisplay: EntityDisplayComponent<SimpleOption, void> = {
@@ -22,5 +23,6 @@ export const SimpleOptionDisplay: EntityDisplayComponent<SimpleOption, void> = {
 	getDescription: (item) => item.description ?? '',
 	getDisabled: (item) => item.disabled ?? false,
 	getTags: (item) => item.tags ?? [],
-	getIcon: (item) => item.icon ?? null
+	getIcon: (item) => item.icon ?? null,
+	getIconColor: (item) => item.iconColor ?? null
 };
