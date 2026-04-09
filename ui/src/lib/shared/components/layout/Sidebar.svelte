@@ -46,7 +46,7 @@
 	import TagTab from '$lib/features/tags/components/TagTab.svelte';
 	import CredentialsTab from '$lib/features/credentials/components/CredentialsTab.svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
-	import ShareTab from '$lib/features/shares/components/ShareTab.svelte';
+
 	import HomeTab from '$lib/features/home/components/HomeTab.svelte';
 
 	type OnboardingOperation = components['schemas']['OnboardingOperation'];
@@ -195,13 +195,6 @@
 					icon: entities.getIconComponent('Dependency'),
 					entityType: 'Dependency',
 					component: DependencyTab
-				},
-				{
-					id: entityUIConfig.Share!.tabId,
-					label: TAB_LABELS[entityUIConfig.Share!.tabId],
-					icon: entities.getIconComponent('Share'),
-					entityType: 'Share',
-					component: ShareTab
 				}
 			]
 		},

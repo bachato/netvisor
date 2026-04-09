@@ -7,7 +7,7 @@
 	import { Edit, Lock, Plus, Radar, Radio, RefreshCcw, Share2, Trash2 } from 'lucide-svelte';
 	import ExportButton from './ExportButton.svelte';
 	import ExportModal from './ExportModal.svelte';
-	import ShareModal from '$lib/features/shares/components/ShareModal.svelte';
+	import SharesModal from '$lib/features/shares/components/SharesModal.svelte';
 	import { tooltip } from '$lib/shared/actions/tooltip';
 	import { SvelteFlowProvider } from '@xyflow/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -810,7 +810,7 @@
 		onLock={handleLockFromConflicts}
 		onCancel={() => (isRefreshConflictsOpen = false)}
 	/>
-	<ShareModal
+	<SharesModal
 		name="topology-share"
 		isOpen={isShareModalOpen}
 		topologyId={currentTopology.id}
