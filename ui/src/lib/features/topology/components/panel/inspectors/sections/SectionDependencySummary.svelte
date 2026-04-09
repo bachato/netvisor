@@ -2,11 +2,14 @@
 	import type { Node } from '@xyflow/svelte';
 	import { useSvelteFlow } from '@xyflow/svelte';
 	import type { Topology } from '$lib/features/topology/types/base';
+	import { getContainerContents } from '$lib/features/topology/resolvers';
 	import {
 		inspector_dependencySummary,
 		inspector_crossBoundaryDeps,
 		inspector_noDependencies
 	} from '$lib/paraglide/messages';
+	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
+	import { DependencyDisplay } from '$lib/shared/components/forms/selection/display/DependencyDisplay.svelte';
 
 	let {
 		node,
@@ -18,16 +21,15 @@
 
 	const { getNodes } = useSvelteFlow();
 
-	// Find all element nodes in this container
-	let childServiceIds = $derived.by(() => {
-		const allNodes = getNodes();
-		return allNodes.filter((n) => n.type === 'Element' && n.parentId === node.id).map((n) => n.id);
+	// Find all element nodes in this container (including subcontainers)
+	let descendantNodeIds = $derived.by(() => {
+		return getContainerContents(node.id, getNodes()).elementNodeIds;
 	});
 
 	// Find dependencies that cross this container boundary
 	// (have members both inside and outside)
 	let crossBoundaryDeps = $derived.by(() => {
-		const childSet = new Set(childServiceIds);
+		const childSet = descendantNodeIds;
 		return topology.dependencies.filter((d) => {
 			const members = d.members;
 			let memberServiceIds: string[] = [];
@@ -59,9 +61,8 @@
 			</span>
 			<div class="space-y-1">
 				{#each crossBoundaryDeps as dep (dep.id)}
-					<div class="card card-static text-sm">
-						<span class="text-primary font-medium">{dep.name}</span>
-						<span class="text-tertiary ml-1 text-xs">{dep.dependency_type}</span>
+					<div class="card card-static">
+						<EntityDisplayWrapper item={dep} context={{}} displayComponent={DependencyDisplay} />
 					</div>
 				{/each}
 			</div>

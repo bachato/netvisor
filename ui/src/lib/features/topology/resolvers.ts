@@ -228,6 +228,75 @@ export function getContainerContents(containerId: string, allNodes: Node[]): Con
 	return { hostIds, serviceIds, interfaceIds, elementNodeIds, subcontainerIds };
 }
 
+// Entity→Node index — canonical resolver for mapping entity IDs to topology node IDs
+export interface EntityNodeIndex {
+	hostIdToNodes: Map<string, string[]>;
+	interfaceIdToNodes: Map<string, string[]>;
+	serviceIdToNodes: Map<string, string[]>;
+	ifEntryIdToNodes: Map<string, string[]>;
+	allElementNodeIds: Set<string>;
+	allContainerNodeIds: Set<string>;
+}
+
+/**
+ * Build an index mapping entity IDs to the topology node IDs that represent them.
+ * Single pass over topology.nodes. Use this instead of ad-hoc entity→node lookups.
+ */
+export function buildEntityNodeIndex(nodes: TopologyNode[]): EntityNodeIndex {
+	const hostIdToNodes = new Map<string, string[]>();
+	const interfaceIdToNodes = new Map<string, string[]>();
+	const serviceIdToNodes = new Map<string, string[]>();
+	const ifEntryIdToNodes = new Map<string, string[]>();
+	const allElementNodeIds = new Set<string>();
+	const allContainerNodeIds = new Set<string>();
+
+	for (const nd of nodes) {
+		if (nd.node_type === 'Container') {
+			allContainerNodeIds.add(nd.id);
+			continue;
+		}
+		if (nd.node_type !== 'Element') continue;
+
+		allElementNodeIds.add(nd.id);
+
+		const hostId = 'host_id' in nd ? (nd.host_id as string | undefined) : undefined;
+		if (hostId) {
+			const existing = hostIdToNodes.get(hostId);
+			if (existing) existing.push(nd.id);
+			else hostIdToNodes.set(hostId, [nd.id]);
+		}
+
+		if (nd.element_type === 'Interface') {
+			const ifaceId = 'interface_id' in nd ? (nd.interface_id as string | undefined) : undefined;
+			if (ifaceId) {
+				const existing = interfaceIdToNodes.get(ifaceId);
+				if (existing) existing.push(nd.id);
+				else interfaceIdToNodes.set(ifaceId, [nd.id]);
+			}
+		} else if (nd.element_type === 'Service') {
+			const existing = serviceIdToNodes.get(nd.id);
+			if (existing) existing.push(nd.id);
+			else serviceIdToNodes.set(nd.id, [nd.id]);
+		} else if (nd.element_type === 'Port') {
+			const ifEntryId = 'if_entry_id' in nd ? (nd.if_entry_id as string | undefined) : undefined;
+			if (ifEntryId) {
+				const existing = ifEntryIdToNodes.get(ifEntryId);
+				if (existing) existing.push(nd.id);
+				else ifEntryIdToNodes.set(ifEntryId, [nd.id]);
+			}
+		}
+	}
+
+	return {
+		hostIdToNodes,
+		interfaceIdToNodes,
+		serviceIdToNodes,
+		ifEntryIdToNodes,
+		allElementNodeIds,
+		allContainerNodeIds
+	};
+}
+
 // Public API
 export function resolveElementNode(
 	nodeId: string,
