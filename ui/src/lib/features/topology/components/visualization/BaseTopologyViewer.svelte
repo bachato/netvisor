@@ -20,7 +20,8 @@
 		topology_connectionsCount,
 		topology_viewModeTooltip,
 		topology_editModeTooltip,
-		common_edit
+		common_edit,
+		common_shortcuts
 	} from '$lib/paraglide/messages';
 	import TopologySidebarButton from './TopologySidebarButton.svelte';
 	import { type Node, type Edge } from '@xyflow/svelte';
@@ -108,6 +109,9 @@
 	// Edit mode toggle
 	export let editMode: boolean = false;
 	export let onToggleEditMode: (() => void) | null = null;
+
+	// Sidebar buttons collapse to icon-only after a brief delay
+	export let sidebarCollapsed: boolean = false;
 
 	// Resolve selection stores from context (share/embed) or fall back to global stores.
 	// These are the SINGLE source of truth for selection state.
@@ -1182,6 +1186,7 @@
 						title={editMode ? topology_editModeTooltip() : topology_viewModeTooltip()}
 						label={common_edit()}
 						active={editMode}
+						collapsed={sidebarCollapsed}
 					>
 						{#snippet icon()}
 							{#if editMode}
@@ -1196,6 +1201,7 @@
 					onclick={handleCollapseAll}
 					title={topology_collapseAll()}
 					label={topology_collapseAll()}
+					collapsed={sidebarCollapsed}
 				>
 					{#snippet icon()}
 						<Minimize2 class="h-4 w-4" />
@@ -1205,6 +1211,7 @@
 					onclick={handleExpandAll}
 					title={topology_expandAll()}
 					label={topology_expandAll()}
+					collapsed={sidebarCollapsed}
 				>
 					{#snippet icon()}
 						<Maximize2 class="h-4 w-4" />
@@ -1214,7 +1221,8 @@
 					<TopologySidebarButton
 						onclick={onOpenShortcuts}
 						title={topology_shortcutsTitle()}
-						label={topology_shortcutsTitle()}
+						label={common_shortcuts()}
+						collapsed={sidebarCollapsed}
 					>
 						{#snippet icon()}
 							<Keyboard class="h-4 w-4" />

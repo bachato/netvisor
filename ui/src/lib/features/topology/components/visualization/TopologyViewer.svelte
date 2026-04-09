@@ -52,16 +52,30 @@
 		editModeEnabled.set(editMode);
 	}
 
-	// Reset edit mode when leaving this tab (tabs stay mounted, just hidden)
+	// Sidebar buttons show labels briefly then collapse to icon-only
+	let sidebarCollapsed = $state(false);
+	let collapseTimer: ReturnType<typeof setTimeout> | null = null;
+
 	$effect(() => {
-		if (!isActive && editMode) {
-			editMode = false;
-			editModeEnabled.set(false);
+		if (isActive) {
+			// Show labels on tab activate, then collapse after 2s
+			sidebarCollapsed = false;
+			collapseTimer = setTimeout(() => {
+				sidebarCollapsed = true;
+			}, 2000);
+		} else {
+			// Reset edit mode when leaving this tab (tabs stay mounted, just hidden)
+			if (editMode) {
+				editMode = false;
+				editModeEnabled.set(false);
+			}
+			if (collapseTimer) clearTimeout(collapseTimer);
 		}
 	});
 
 	onDestroy(() => {
 		editModeEnabled.set(false);
+		if (collapseTimer) clearTimeout(collapseTimer);
 	});
 
 	export function triggerFitView() {
@@ -204,6 +218,7 @@
 			readonly={!editMode}
 			showControls={true}
 			{editMode}
+			{sidebarCollapsed}
 			onToggleEditMode={toggleEditMode}
 			onNodeDragStop={handleNodeDragStop}
 			onReconnect={handleReconnect}
