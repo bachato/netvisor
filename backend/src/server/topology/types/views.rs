@@ -163,10 +163,10 @@ impl TypeMetadataProvider for TopologyView {
 
     fn description(&self) -> &'static str {
         match self {
-            Self::L2Physical => "Physical layer 2 network topology",
-            Self::L3Logical => "Logical layer 3 network topology",
-            Self::Infrastructure => "Infrastructure and virtualization topology",
-            Self::Application => "Application and service dependency topology",
+            Self::L2Physical => "Switches, VLANs, and physical links",
+            Self::L3Logical => "Subnets, hosts, and IP connectivity",
+            Self::Infrastructure => "Servers, VMs, and containers",
+            Self::Application => "Services and their dependencies",
         }
     }
 

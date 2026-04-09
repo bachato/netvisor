@@ -559,11 +559,11 @@
 		<div class="space-y-6">
 			<!-- Header -->
 			<div
-				class="card card-static flex items-center justify-evenly gap-4 px-4 py-2"
+				class="card card-static flex items-center justify-evenly gap-2 px-2 py-2"
 				style="border-bottom: 2px solid {viewColorStyle.rgb}; transition: border-color 0.3s ease;"
 			>
 				{#if currentTopology}
-					<div class="flex items-center gap-4 py-2">
+					<div class="flex items-center gap-2">
 						<ExportButton onclick={() => (isExportModalOpen = true)} />
 						{#if !isReadOnly}
 							{#if currentUser && !currentUser.email_verified}
@@ -595,7 +595,7 @@
 									: ''}
 								use:tooltip
 							>
-								<div class="flex items-center p-2">
+								<div class="flex items-center">
 									<Radar class="mr-2 h-4 w-4 animate-pulse [animation-duration:5s]" />
 									{#if activeSession.progress > 0}
 										<span class="text-xs">{activeSession.progress}%</span>
@@ -613,8 +613,8 @@
 						{/if}
 						{#if hasCompletedFirstRebuild}
 							<div class="flex items-center">
-								<div class="mx-2 flex flex-col text-center">
-									<div class="flex justify-around gap-6">
+								<div class="flex flex-col text-center">
+									<div class="flex justify-around gap-4">
 										<button
 											onclick={handleToggleLock}
 											class={`text-xs ${currentTopology.is_locked ? 'btn-icon-info' : 'btn-icon'}`}
@@ -663,16 +663,14 @@
 								</div>
 								<!-- State Badge / Action Button -->
 								{#if stateConfig && !currentTopology.is_locked && !$autoRebuild && !showAppWizard}
-									<div class="flex flex-col items-center gap-2">
-										<div class="flex items-center">
-											<StateBadge
-												disabled={stateConfig?.disabled || false}
-												Icon={stateConfig.icon}
-												label={stateConfig.buttonText}
-												cls={stateConfig.class}
-												onClick={stateConfig.action}
-											/>
-										</div>
+									<div class="flex items-center">
+										<StateBadge
+											disabled={stateConfig?.disabled || false}
+											Icon={stateConfig.icon}
+											label={stateConfig.buttonText}
+											cls={stateConfig.class}
+											onClick={stateConfig.action}
+										/>
 									</div>
 								{/if}
 							</div>
@@ -707,7 +705,7 @@
 						<div class="card-divider-v self-stretch"></div>
 					{/if}
 
-					<div class="flex items-center gap-4 py-2">
+					<div class="flex items-center gap-2">
 						{#if currentTopology}
 							<button class="btn-primary" onclick={handleEditTopology}>
 								<Edit class="my-1 h-4 w-4" />
