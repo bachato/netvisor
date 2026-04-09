@@ -63,7 +63,6 @@
 		clearEdgeHoverState,
 		expandedBundles,
 		collapseAllBundles,
-		tagHiddenServiceIds,
 		searchHiddenNodeIds,
 		tagHiddenNodeIds
 	} from '../../interactions';
@@ -213,6 +212,7 @@
 	let prevView = get(activeView);
 	let lastRenderedTopoKey = '';
 	let lastRenderedView = '';
+	let fitViewPending = false;
 	let edgeHandles: Map<string, import('../../layout/elk-layout').EdgeHandles> = new Map();
 	// Cache measured node sizes per view so return visits skip the measurement pass
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
@@ -242,7 +242,6 @@
 		void $expandedPortNodeIds;
 		void $topologyOptions.local.bundle_edges;
 		void $topologyOptions.local.hide_edge_types;
-		void $tagHiddenServiceIds;
 		void loadTopologyData();
 	}
 
@@ -322,8 +321,6 @@
 				}
 
 				let collapsed = get(collapsedContainers);
-				const hiddenServices = get(tagHiddenServiceIds);
-
 				// Perspective switch fix: when switching views while all containers were
 				// collapsed, the old perspective's container IDs become stale. Detect this
 				// and auto-collapse the new perspective's root containers to preserve the
@@ -345,23 +342,14 @@
 								.map((n) => n.id);
 							collapseAll(allContainerIds);
 							collapsed = new Set(allContainerIds);
+							fitViewPending = true;
 						}
 					}
 				}
 
-				// Filter out hidden service element nodes before layout
-				let layoutNodes =
-					hiddenServices.size > 0
-						? topology.nodes.filter(
-								(n) =>
-									!(
-										n.node_type === 'Element' &&
-										'element_type' in n &&
-										n.element_type === 'Service' &&
-										hiddenServices.has(n.id)
-									)
-							)
-						: topology.nodes;
+				// All nodes participate in layout (hidden elements fade visually but
+				// keep their positions to preserve layout stability)
+				let layoutNodes = topology.nodes;
 
 				// Remove subcontainers with no remaining element children
 				const subcontainerIds = new Set(
@@ -431,9 +419,7 @@
 					':' +
 					sizeKey +
 					':' +
-					hiddenEdgeTypes.join(',') +
-					':h' +
-					hiddenServices.size;
+					hiddenEdgeTypes.join(',');
 				const isNewStructure = sessionStructureKey !== structureKey;
 
 				// Build/rebuild the layout graph when topology or hidden services change
@@ -788,7 +774,38 @@
 						const edgeKey = `${agg.source}->${agg.target}`;
 						let handles = edgeHandles.get(edgeKey);
 
-						// Compute handles on-the-fly from positions if not cached
+						// Derive handles from original element-level edges' cached handles
+						// so collapsed containers use the same handle directions as their children
+						if (!handles && agg.originalEdges.length > 0) {
+							const handleCounts = new Map<string, number>();
+							for (const origEdge of agg.originalEdges) {
+								const origKey = `${origEdge.source}->${origEdge.target}`;
+								const origHandles =
+									edgeHandles.get(origKey) ??
+									edgeHandles.get(`${origEdge.target}->${origEdge.source}`);
+								if (origHandles) {
+									const combo = `${origHandles.sourceHandle}|${origHandles.targetHandle}`;
+									handleCounts.set(combo, (handleCounts.get(combo) ?? 0) + 1);
+								}
+							}
+							if (handleCounts.size > 0) {
+								let bestCombo = '';
+								let bestCount = 0;
+								for (const [combo, count] of handleCounts) {
+									if (count > bestCount) {
+										bestCombo = combo;
+										bestCount = count;
+									}
+								}
+								const [srcH, tgtH] = bestCombo.split('|');
+								handles = {
+									sourceHandle: srcH as 'Top' | 'Bottom' | 'Left' | 'Right',
+									targetHandle: tgtH as 'Top' | 'Bottom' | 'Left' | 'Right'
+								};
+							}
+						}
+
+						// Fall back to position-based computation if no original handles found
 						// (force layout doesn't pre-compute handles)
 						if (!handles && layoutGraph) {
 							const srcPos = layoutGraph.getPosition(agg.source);
@@ -931,7 +948,8 @@
 				// Auto-fit viewport after layout completes:
 				// - on perspective switch (viewChanged && topologyChanged)
 				// - on first render / URL navigation (no previous layout)
-				if ((viewChanged && topologyChanged) || isFirstRender) {
+				if ((viewChanged && topologyChanged) || isFirstRender || fitViewPending) {
+					fitViewPending = false;
 					requestAnimationFrame(() => fitView({ padding: getFitViewPadding() }));
 				}
 			}

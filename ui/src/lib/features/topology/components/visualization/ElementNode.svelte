@@ -312,6 +312,11 @@
 			return true;
 		}
 
+		// Service/category filter: fade if this service element is hidden
+		if (hiddenServices.has(id) || nodeRenderData?.isCategoryHidden) {
+			return true;
+		}
+
 		// Search filter: fade if this node is hidden by search
 		if (nodeRenderData && searchHiddenNodes.has(nodeRenderData.interface_id)) {
 			return true;
@@ -324,19 +329,6 @@
 		// Check if this node is in the connected set
 		return !$connectedNodeIds.has(id);
 	});
-
-	// Element nodes whose type matches the view's element_entity should be fully hidden
-	// (not faded) when filtered out by tag or category filter.
-	let viewElementEntity = $derived(
-		(views.getMetadata($activeView) as { element_config?: { element_entity: string } } | null)
-			?.element_config?.element_entity
-	);
-	let shouldHideEntirely = $derived(
-		nodeRenderData?.elementType === viewElementEntity &&
-			(hiddenServices.has(id) ||
-				hiddenNodes.has(nodeRenderData.interface_id) ||
-				!!nodeRenderData.isCategoryHidden)
-	);
 
 	let nodeOpacity = $derived(shouldFadeOut ? 0.3 : 1);
 
@@ -408,7 +400,7 @@
 	});
 </script>
 
-{#if nodeRenderData && !shouldHideEntirely}
+{#if nodeRenderData}
 	<div
 		class={`${cardClass} ${isNewNode ? 'animate-pulse-highlight' : ''} ${serviceHoverShadowStyle ? 'animate-pulse-highlight-once' : ''}`}
 		style={`width: ${effectiveWidth}px; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${isNewNode ? `--pulse-color: ${discoveryColorHelper.rgb};` : ''} ${serviceHoverShadowStyle} ${tagHoverRingStyle}`}
