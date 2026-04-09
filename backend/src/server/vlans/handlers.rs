@@ -1,4 +1,4 @@
-use crate::server::auth::middleware::permissions::{Authorized, Member, Viewer};
+use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Viewer};
 use crate::server::shared::handlers::ordering::OrderField;
 use crate::server::shared::handlers::query::{
     FilterQueryExtractor, OrderDirection, PaginationParams,
@@ -267,7 +267,7 @@ pub struct VlanDiscoveryResponseItem {
 )]
 pub async fn discovery_upsert_vlans(
     State(state): State<Arc<AppState>>,
-    auth: Authorized<Viewer>,
+    auth: Authorized<IsDaemon>,
     Json(request): Json<VlanDiscoveryRequest>,
 ) -> ApiResult<Json<ApiResponse<VlanDiscoveryResponse>>> {
     let organization_id = auth
