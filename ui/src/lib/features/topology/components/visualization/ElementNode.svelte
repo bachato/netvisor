@@ -181,13 +181,16 @@
 
 						const showServices = servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0;
 
+						const hostLabel =
+							(data as TopologyNode).header ?? host.name || host.hostname || null;
+
 						return {
 							elementType,
 							footerText: null,
 							services: servicesOnHost,
 							hiddenOpenPorts,
-							headerText: host.name || host.hostname || null,
-							bodyText: showServices ? null : host.name || host.hostname,
+							headerText: hostLabel,
+							bodyText: showServices ? null : hostLabel,
 							showServices,
 							isVirtualized: host.virtualization !== null,
 							interface_id: id
