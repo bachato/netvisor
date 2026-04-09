@@ -60,9 +60,12 @@
 		updateConnectedNodes,
 		setEdgeHover,
 		getEdgeDisplayState,
+		clearEdgeHoverState,
 		expandedBundles,
 		collapseAllBundles,
-		tagHiddenServiceIds
+		tagHiddenServiceIds,
+		searchHiddenNodeIds,
+		tagHiddenNodeIds
 	} from '../../interactions';
 	import {
 		selectNode,
@@ -269,12 +272,11 @@
 			);
 
 			const hasActiveSelection = !!(curSelectedNode || curSelectedEdge);
+			const searchHidden = get(searchHiddenNodeIds);
+			const tagHidden = get(tagHiddenNodeIds);
 			const updatedEdges = currentEdges.map((edge) => {
-				const { shouldAnimate, shouldShowFull } = getEdgeDisplayState(
-					edge,
-					curSelectedNode,
-					curSelectedEdge
-				);
+				const { shouldAnimate, shouldShowFull, isEndpointSearchHidden, isEndpointTagHidden } =
+					getEdgeDisplayState(edge, curSelectedNode, curSelectedEdge, searchHidden, tagHidden);
 				const isEdgeSelected = curSelectedEdge?.id === edge.id;
 
 				return {
@@ -284,7 +286,9 @@
 						shouldShowFull,
 						shouldAnimate,
 						isSelected: isEdgeSelected,
-						hasActiveSelection
+						hasActiveSelection,
+						isEndpointSearchHidden,
+						isEndpointTagHidden
 					},
 					animated: false
 				};
@@ -981,13 +985,18 @@
 		// Compute display state from current selection
 		const curNode = get(selectionStores.selectedNode);
 		const curEdge = get(selectionStores.selectedEdge);
-		const { shouldAnimate, shouldShowFull } = getEdgeDisplayState(flowEdge, curNode, curEdge);
+		const searchHidden = get(searchHiddenNodeIds);
+		const tagHidden = get(tagHiddenNodeIds);
+		const { shouldAnimate, shouldShowFull, isEndpointSearchHidden, isEndpointTagHidden } =
+			getEdgeDisplayState(flowEdge, curNode, curEdge, searchHidden, tagHidden);
 		flowEdge.data = {
 			...flowEdge.data,
 			shouldShowFull,
 			shouldAnimate,
 			isSelected: curEdge?.id === flowEdge.id,
-			hasActiveSelection: !!(curNode || curEdge)
+			hasActiveSelection: !!(curNode || curEdge),
+			isEndpointSearchHidden,
+			isEndpointTagHidden
 		};
 
 		return flowEdge;
@@ -1052,8 +1061,11 @@
 		const curNode = get(selectionStores.selectedNode);
 		const curEdge = get(selectionStores.selectedEdge);
 		const hasActiveSelection = !!(curNode || curEdge);
+		const searchHidden = get(searchHiddenNodeIds);
+		const tagHidden = get(tagHiddenNodeIds);
 		const updatedEdges = currentEdges.map((e) => {
-			const { shouldAnimate, shouldShowFull } = getEdgeDisplayState(e, curNode, curEdge);
+			const { shouldAnimate, shouldShowFull, isEndpointSearchHidden, isEndpointTagHidden } =
+				getEdgeDisplayState(e, curNode, curEdge, searchHidden, tagHidden);
 			const isEdgeSelected = curEdge?.id === e.id;
 			return {
 				...e,
@@ -1062,7 +1074,9 @@
 					shouldShowFull,
 					shouldAnimate,
 					isSelected: isEdgeSelected,
-					hasActiveSelection
+					hasActiveSelection,
+					isEndpointSearchHidden,
+					isEndpointTagHidden
 				},
 				animated: false
 			};
@@ -1073,6 +1087,7 @@
 	function handlePaneClick() {
 		if (!viewportMoved) {
 			clearSelection(selectionStores);
+			clearEdgeHoverState();
 			syncEdgeDisplayState();
 		}
 		// Reset immediately after handling
@@ -1104,6 +1119,7 @@
 		if (selNodes.length === 0 && !viewportMoved) {
 			tick().then(() => {
 				clearSelection(selectionStores);
+				clearEdgeHoverState();
 				syncEdgeDisplayState();
 			});
 			return;

@@ -6,7 +6,6 @@
 		EdgeLabel,
 		getBezierPath,
 		getStraightPath,
-		type Edge,
 		EdgeReconnectAnchor
 	} from '@xyflow/svelte';
 	import { getContext } from 'svelte';
@@ -15,12 +14,7 @@
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { createColorHelper, type Color } from '$lib/shared/utils/styling';
 	import type { Topology, TopologyEdge } from '../../types/base';
-	import {
-		isExporting,
-		tagHiddenNodeIds,
-		hoveredEdgeType,
-		toggleBundleExpanded
-	} from '../../interactions';
+	import { isExporting, hoveredEdgeType, toggleBundleExpanded } from '../../interactions';
 	import { isDashedEdge } from '../../layout/edge-classification';
 
 	let {
@@ -61,12 +55,13 @@
 	let hasFanOffset = $derived(anyEdgeData?.bundleFanTotal != null);
 	let fanIndex = $derived((anyEdgeData?.bundleFanIndex as number) ?? 0);
 	let fanTotal = $derived((anyEdgeData?.bundleFanTotal as number) ?? 0);
-	// Check if either endpoint is hidden by tag filter
-	let isEndpointHiddenByTagFilter = $derived.by(() => {
-		const hiddenNodes = $tagHiddenNodeIds;
-		if (!edgeData) return false;
-		return hiddenNodes.has(edgeData.source as string) || hiddenNodes.has(edgeData.target as string);
-	});
+	// Endpoint hidden state — centralized in getEdgeDisplayState(), passed via edge data
+	let isEndpointHiddenByTagFilter = $derived(
+		(anyEdgeData?.isEndpointTagHidden as boolean) ?? false
+	);
+	let isEndpointHiddenBySearch = $derived(
+		(anyEdgeData?.isEndpointSearchHidden as boolean) ?? false
+	);
 	const edgeTypeMetadata = $derived(edgeData ? edgeTypes.getMetadata(edgeData.edge_type) : null);
 
 	// Get dependency reactively - updates when dependencies store changes
@@ -140,20 +135,22 @@
 		// Edge type hover: matching edges full opacity, non-matching fade
 		if (isEdgeTypeHovered) return 1;
 		if (isAnotherEdgeTypeHovered) return 0.2;
-		// Fade if either endpoint is hidden by tag filter
+		// Fade if either endpoint is hidden by tag or search filter
 		if (isEndpointHiddenByTagFilter) return 0.4;
+		if (isEndpointHiddenBySearch) return 0.4;
 		// Overlay edges: reduced opacity unless highlighted
 		if (isDashed && !shouldShowFull) return 0.5;
 		// Fade based on selection state
 		if (!$topologyOptions.local.no_fade_edges && !shouldShowFull) return 0.4;
 		return 1;
 	});
-	// Labels stay fully visible unless there's an active selection causing edges to fade
+	// Labels follow the same fade behavior as their parent edges
 	let labelOpacity = $derived.by(() => {
 		if ($isExporting) return 1;
 		if (isEdgeTypeHovered) return 1;
 		if (isAnotherEdgeTypeHovered) return 0.2;
 		if (isEndpointHiddenByTagFilter) return 0.4;
+		if (isEndpointHiddenBySearch) return 0.4;
 		const hasActiveSelection = !!(anyEdgeData?.hasActiveSelection as boolean);
 		if (!$topologyOptions.local.no_fade_edges && hasActiveSelection && !shouldShowFull) return 0.4;
 		return 1;

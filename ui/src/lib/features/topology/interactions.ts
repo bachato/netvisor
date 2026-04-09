@@ -94,6 +94,12 @@ export function collapseAllBundles(): void {
 	expandedBundles.set(new Set());
 }
 
+/** Clear all edge hover state — prevents stale hover from drag interactions */
+export function clearEdgeHoverState(): void {
+	edgeHoverState.set(new Map());
+	groupHoverState.set(new Map());
+}
+
 interface TagFilter {
 	hidden_host_tag_ids?: string[];
 	hidden_service_tag_ids?: string[];
@@ -553,19 +559,43 @@ export function setEdgeHover(edge: Edge, hovered: boolean, allEdges: Edge[]) {
 	}
 }
 
+export interface EdgeDisplayState {
+	shouldShowFull: boolean;
+	shouldAnimate: boolean;
+	isEndpointSearchHidden: boolean;
+	isEndpointTagHidden: boolean;
+}
+
 /**
- * Get display state for an edge based on hover and selection
- * Returns: { shouldShowFull, shouldAnimate }
+ * Get display state for an edge based on hover, selection, search, and tag filters.
+ * Single source of truth for edge visual state computation.
  */
 export function getEdgeDisplayState(
 	edge: Edge,
 	selectedNode: Node | null,
-	selectedEdge: Edge | null
-): { shouldShowFull: boolean; shouldAnimate: boolean } {
+	selectedEdge: Edge | null,
+	searchHidden?: Set<string>,
+	tagHidden?: Set<string>
+): EdgeDisplayState {
 	const edgeData = edge.data as TopologyEdge | undefined;
 	if (!edgeData) {
-		return { shouldShowFull: false, shouldAnimate: false };
+		return {
+			shouldShowFull: false,
+			shouldAnimate: false,
+			isEndpointSearchHidden: false,
+			isEndpointTagHidden: false
+		};
 	}
+
+	const source = edgeData.source as string;
+	const target = edgeData.target as string;
+
+	// Centralized endpoint-hidden checks
+	const isEndpointSearchHidden = searchHidden
+		? searchHidden.has(source) || searchHidden.has(target)
+		: false;
+	const isEndpointTagHidden = tagHidden ? tagHidden.has(source) || tagHidden.has(target) : false;
+
 	const edgeTypeMetadata = edgeTypes.getMetadata(edgeData.edge_type);
 	const isGroupEdge = edgeTypeMetadata.is_dependency_edge;
 
@@ -619,7 +649,7 @@ export function getEdgeDisplayState(
 			: false;
 	}
 
-	return { shouldShowFull, shouldAnimate };
+	return { shouldShowFull, shouldAnimate, isEndpointSearchHidden, isEndpointTagHidden };
 }
 
 /** Add all node IDs from an index map entry to matchSet (deduplicating) */
