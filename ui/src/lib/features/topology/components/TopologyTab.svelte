@@ -204,6 +204,7 @@
 
 	// Initialize selected topology when data loads
 	let lastHydratedId: string | null = null;
+	let isFirstHydration = true;
 	$effect(() => {
 		if (topologiesData.length > 0 && !$selectedTopologyId) {
 			// Priority 1: URL param topologyId
@@ -228,16 +229,19 @@
 		}
 	});
 
-	// Hydrate stores from topology options when a topology is first selected
+	// Hydrate stores from topology options when a topology is selected.
+	// On first hydration (page load), use the topology's stored view.
+	// On subsequent switches, preserve the user's current view.
 	$effect(() => {
 		if (currentTopology && currentTopology.id !== lastHydratedId) {
 			lastHydratedId = currentTopology.id;
-			hydrateStoresFromTopology(currentTopology);
+			hydrateStoresFromTopology(currentTopology, isFirstHydration);
 			// Override view from URL param on first hydration only
 			if (!urlViewConsumed && urlParams.view) {
 				urlViewConsumed = true;
 				activeView.set(urlParams.view);
 			}
+			isFirstHydration = false;
 		}
 	});
 
