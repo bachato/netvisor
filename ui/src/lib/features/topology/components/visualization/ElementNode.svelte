@@ -199,7 +199,7 @@
 					}
 
 					// Port elements: show port name + status/MAC info
-					if (elementType === 'Port') {
+					if (elementType === 'Interface') {
 						const ifEntryId =
 							'interface_id' in (data as Record<string, unknown>)
 								? ((data as Record<string, unknown>).interface_id as string)

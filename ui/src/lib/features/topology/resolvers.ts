@@ -310,7 +310,7 @@ export function resolveElementNode(
 	topology: Topology
 ): ElementRenderContext {
 	if (node.node_type !== 'Element') throw new Error(`Expected Element, got ${node.node_type}`);
-	const elementType = node.element_type ?? 'Interface'; // Default for backward compat
+	const elementType = node.element_type ?? 'IPAddress'; // Default for backward compat
 	return elementResolvers[elementType](nodeId, node, topology);
 }
 
