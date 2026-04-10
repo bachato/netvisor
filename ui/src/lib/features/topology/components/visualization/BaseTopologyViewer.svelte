@@ -549,26 +549,17 @@
 				}
 
 				// Defer collapse so ELK runs with everything expanded, giving real
-				// DOM-measured sizes and ELK-computed expanded dimensions.
-				// Only used on first load with persisted collapse and no cached sizes.
-				const deferCollapse =
-					isNewStructure &&
-					collapsed.size > 0 &&
-					(!prevExpandedSizes || prevExpandedSizes.size === 0);
-
-				// Separately track collapsed subcontainers that need expanded sizes
-				// computed (e.g., level 1→2 step where subcontainers were never expanded).
-				// These are temporarily expanded for ELK, then re-collapsed — but root
-				// containers keep their correct collapse state so ELK computes proper
-				// parent sizes.
-				const deferredSubIds = new Set<string>();
-				if (isNewStructure && !deferCollapse && collapsed.size > 0 && prevExpandedSizes) {
-					for (const id of collapsed) {
-						if (!prevExpandedSizes.has(id)) {
-							const node = layoutNodes.find((n) => n.id === id);
-							const isSubcontainer =
-								node?.node_type === 'Container' &&
-								!!(node as Record<string, unknown>).parent_container_id;
+				// DOM-measured sizes and ELK-computed expanded dimensions. Required when:
+				// - First load with persisted collapse (no previous expanded sizes)
+				// - Any collapsed container has children but no cached expanded size
+				//   (e.g., stepping from level 1 to level 2 — subcontainers were never expanded)
+				let deferCollapse = false;
+				if (isNewStructure && collapsed.size > 0) {
+					if (!prevExpandedSizes || prevExpandedSizes.size === 0) {
+						deferCollapse = true;
+					} else {
+						// Check if all collapsed containers with children have cached sizes
+						for (const id of collapsed) {
 							const hasChildren = layoutNodes.some(
 								(n) =>
 									(n.node_type === 'Element' &&
@@ -576,26 +567,18 @@
 									(n.node_type === 'Container' &&
 										(n as Record<string, unknown>).parent_container_id === id)
 							);
-							if (isSubcontainer && hasChildren) {
-								deferredSubIds.add(id);
+							if (hasChildren && !prevExpandedSizes.has(id)) {
+								deferCollapse = true;
+								break;
 							}
 						}
 					}
 				}
 
-				// Sync collapse state from store → graph (handles cascade internally).
-				// When deferring subcontainer collapse, exclude those IDs so ELK
-				// computes their expanded sizes while root containers stay correct.
+				// Sync collapse state from store → graph (handles cascade internally)
 				let collapseChanged = false;
 				if (!deferCollapse) {
-					if (deferredSubIds.size > 0) {
-						const collapsedExceptDeferred = new Set(
-							[...collapsed].filter((id) => !deferredSubIds.has(id))
-						);
-						collapseChanged = layoutGraph.syncCollapseState(collapsedExceptDeferred);
-					} else {
-						collapseChanged = layoutGraph.syncCollapseState(collapsed);
-					}
+					collapseChanged = layoutGraph.syncCollapseState(collapsed);
 				}
 
 				// Force ELK re-layout when a container was expanded but has no
@@ -907,6 +890,10 @@
 							forceEdgeHandles,
 							elementNodeSizes
 						);
+						// Recompute visible nodes — force layout path rebuilds the graph
+						// with collapse applied, so children of collapsed containers must
+						// be filtered out.
+						visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
 						console.log(
 							`[LAYOUT-DEBUG] Force layout applied: ${forceResult.nodePositions.size} positioned nodes (all-collapsed overview)`
 						);
@@ -917,16 +904,8 @@
 						// Then apply collapse state after, preserving the sizes.
 						// When deferring collapse, ELK runs with everything expanded
 						// using real DOM measurements. Otherwise, use actual collapse state.
-						// When deferring subcontainer collapse, exclude those IDs from the
-						// ELK collapsed set so ELK computes their expanded sizes.
-						const elkCollapsed = deferCollapse
-							? new Set<string>()
-							: deferredSubIds.size > 0
-								? new Set([...collapsed].filter((id) => !deferredSubIds.has(id)))
-								: collapsed;
-						// Include all layout nodes when deferring any collapse (so ELK
-						// sees the children of temporarily-expanded containers).
-						const elkNodes = deferCollapse || deferredSubIds.size > 0 ? layoutNodes : visibleNodes;
+						const elkCollapsed = deferCollapse ? new Set<string>() : collapsed;
+						const elkNodes = deferCollapse ? layoutNodes : visibleNodes;
 
 						const elkResult = await layoutEngine.compute({
 							nodes: elkNodes,
@@ -946,15 +925,7 @@
 						// Rebuild graph and apply ELK result
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						if (!deferCollapse) {
-							// When deferring subcontainer collapse, exclude those IDs
-							if (deferredSubIds.size > 0) {
-								const collapsedExceptDeferred = new Set(
-									[...collapsed].filter((id) => !deferredSubIds.has(id))
-								);
-								layoutGraph.syncCollapseState(collapsedExceptDeferred);
-							} else {
-								layoutGraph.syncCollapseState(collapsed);
-							}
+							layoutGraph.syncCollapseState(collapsed);
 							if (prevExpandedSizes) {
 								layoutGraph.restoreExpandedSizes(prevExpandedSizes);
 							}
@@ -972,12 +943,8 @@
 						// so all containers have their real expandedSize set first.
 						if (deferCollapse) {
 							layoutGraph.syncCollapseState(collapsed);
-							visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
-						}
-						// Collapse deferred subcontainers after ELK computed their
-						// expanded sizes. Root containers already had correct state.
-						if (deferredSubIds.size > 0) {
-							layoutGraph.syncCollapseState(collapsed);
+							// Recompute visible nodes now that collapse is applied —
+							// the earlier visibleNodes included all nodes (pre-collapse).
 							visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
 						}
 

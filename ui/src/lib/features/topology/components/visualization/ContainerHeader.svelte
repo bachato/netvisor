@@ -225,10 +225,12 @@
 				{headerText}{groupLabels.length > 0 ? ':' : ''}
 			</span>
 		{/if}
-		{#each visibleLabels as pill (pill.label)}
+		{#each visibleLabels.slice(0, 2) as pill (pill.label)}
 			<Tag label={pill.label} color={pill.color} />
 		{/each}
-		{#if hiddenLabelCount > 0}
+		{#if visibleLabels.length > 2}
+			<span class="text-tertiary whitespace-nowrap text-xs">+{visibleLabels.length - 2}</span>
+		{:else if hiddenLabelCount > 0}
 			<span class="text-tertiary whitespace-nowrap text-xs">+{hiddenLabelCount} more</span>
 		{/if}
 		<span data-fixed class="text-tertiary ml-auto whitespace-nowrap text-xs">
