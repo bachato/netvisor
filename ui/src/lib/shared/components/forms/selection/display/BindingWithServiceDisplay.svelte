@@ -30,8 +30,8 @@
 		binding: Binding,
 		context: BindingWithServiceContext
 	): string {
-		if (binding.type === 'Interface') {
-			const iface = context.interfaces.find((i) => i.id === binding.interface_id);
+		if (binding.type === 'IPAddress') {
+			const iface = context.interfaces.find((i) => i.id === binding.ip_address_id);
 			return iface
 				? formatInterfaceForBinding(iface, context.isContainerSubnet)
 				: 'Unknown Interface';

@@ -165,7 +165,7 @@
 							/>
 						</div>
 
-						{#if selectedPortBindings.length > 0 && item != highlightedItem && highlightedItem != null && !item.bindings.some((b) => b.type == 'Interface')}
+						{#if selectedPortBindings.length > 0 && item != highlightedItem && highlightedItem != null && !item.bindings.some((b) => b.type == 'IPAddress')}
 							<button
 								type="button"
 								onclick={(e) => {

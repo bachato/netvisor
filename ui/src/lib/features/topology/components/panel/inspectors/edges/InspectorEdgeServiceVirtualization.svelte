@@ -83,8 +83,8 @@
 			for (const binding of service.bindings) {
 				// Get interface_id based on binding type
 				let ifaceId: string | null = null;
-				if (binding.type === 'Interface') {
-					ifaceId = binding.interface_id;
+				if (binding.type === 'IPAddress') {
+					ifaceId = binding.ip_address_id;
 				} else if (binding.type === 'Port') {
 					ifaceId = binding.interface_id ?? null;
 				}

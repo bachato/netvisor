@@ -482,7 +482,7 @@
 					options={[] as InterfaceBinding[]}
 					optionDisplayComponent={IPAddressBindingDisplay}
 					itemDisplayComponent={IPAddressBindingDisplay}
-					items={(() => { console.log('[SCP] ipAddressBindings for', service.name, ':', interfaceBindings.length); return interfaceBindings; })()}
+					items={ipAddressBindings}
 					getItemContext={() => ({
 						service,
 						host,
