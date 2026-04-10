@@ -58,6 +58,14 @@
 		searchHiddenNodes = value;
 	});
 
+	// Subscribe to connected node IDs for reactivity (manual subscription needed
+	// because $derived.by may not read this store on initial evaluation, so auto-
+	// subscription via $connectedNodeIds would miss the first update)
+	let connectedNodes = $state(get(connectedNodeIds));
+	connectedNodeIds.subscribe((value) => {
+		connectedNodes = value;
+	});
+
 	// Subscribe to new node highlight store
 	let highlightedNewNodes = $state(get(newNodeIds));
 	newNodeIds.subscribe((value) => {
@@ -332,7 +340,7 @@
 		if (!nodeRenderData) return false;
 
 		// Check if this node is in the connected set
-		return !$connectedNodeIds.has(id);
+		return !connectedNodes.has(id);
 	});
 
 	let nodeOpacity = $derived(shouldFadeOut ? 0.3 : 1);
