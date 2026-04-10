@@ -616,6 +616,8 @@
 				const needsElk = isNewStructure || needsElkForExpand;
 
 				if (needsElk) {
+					// Whether we have cached expanded sizes from a previous layout
+					const hasRestorable = prevExpandedSizes && prevExpandedSizes.size > 0;
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 					const elementNodeSizes = new Map<string, { x: number; y: number }>();
 					const cachedSizes = isViewTransition ? viewSizeCache.get(currentView) : undefined;
@@ -773,7 +775,6 @@
 						// persisted collapse from localStorage), run ELK with everything
 						// EXPANDED so all containers get proper expandedSize computed.
 						// Then apply collapse state after, preserving the sizes.
-						const hasRestorable = prevExpandedSizes && prevExpandedSizes.size > 0;
 						const elkCollapsed = hasRestorable ? collapsed : new Set<string>();
 
 						// When running ELK expanded (no restorable sizes), use ALL
