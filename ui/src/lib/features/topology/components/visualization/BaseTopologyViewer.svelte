@@ -701,6 +701,12 @@
 
 				const isViewTransition = isNewStructure && viewChanged && topologyChanged;
 				const needsElk = isNewStructure || needsElkForExpand;
+
+				// Clear cached sizes for this view when structure changes (e.g., level
+				// 1→2 step). Sizes from all-collapsed mode are stale for expanded mode.
+				if (isNewStructure) {
+					viewSizeCache.delete(`${currentView}:${topology.id}`);
+				}
 				console.log(
 					`[LAYOUT-DEBUG] Layout decision: needsElk=${needsElk} isNewStructure=${isNewStructure} needsElkForExpand=${needsElkForExpand} deferCollapse=${deferCollapse} collapseChanged=${collapseChanged} collapsed=${collapsed.size}`
 				);
