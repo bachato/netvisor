@@ -5271,7 +5271,7 @@
         ]
       }
     },
-    "/api/v1/ip_addresses": {
+    "/api/v1/ip-addresses": {
       "get": {
         "tags": [
           "IP Addresses"
@@ -5443,7 +5443,7 @@
         ]
       }
     },
-    "/api/v1/ip_addresses/bulk-delete": {
+    "/api/v1/ip-addresses/bulk-delete": {
       "post": {
         "tags": [
           "IP Addresses"
@@ -5496,7 +5496,7 @@
         ]
       }
     },
-    "/api/v1/ip_addresses/export/csv": {
+    "/api/v1/ip-addresses/export/csv": {
       "get": {
         "tags": [
           "IP Addresses"
@@ -5592,7 +5592,7 @@
         ]
       }
     },
-    "/api/v1/ip_addresses/{id}": {
+    "/api/v1/ip-addresses/{id}": {
       "get": {
         "tags": [
           "IP Addresses"
@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-09T22:35:35.695086Z",
-              "id": "5cb49a2c-c920-4cf6-b733-def6087bc024",
+              "created_at": "2026-04-10T03:05:12.662914Z",
+              "id": "6e3c1009-9a58-43db-98a1-f400318796ee",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-09T22:35:35.695086Z"
+              "updated_at": "2026-04-10T03:05:12.662914Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-09T22:35:35.676298Z",
-                      "id": "f164ce92-83ad-424c-8f3c-737a3664fd0c",
+                      "created_at": "2026-04-10T03:05:12.640641Z",
+                      "id": "5c4d1365-3015-4b04-8186-d2f746da347e",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-09T22:35:35.676298Z"
+                      "updated_at": "2026-04-10T03:05:12.640641Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Proxmox Datacenter Manager",
+                  "service_definition": "Elasticsearch",
                   "source": {
                     "type": "Manual"
                   },
@@ -11991,14 +11991,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-09T22:35:35.690017Z",
-                  "id": "e118ad40-046b-46e7-8475-3b38ef835751",
+                  "created_at": "2026-04-10T03:05:12.656469Z",
+                  "id": "d4ad9d4b-093f-45bb-a2ba-6e56bf7a50be",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-09T22:35:35.690017Z"
+                  "updated_at": "2026-04-10T03:05:12.656469Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12007,7 +12007,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Proxmox Datacenter Manager",
+              "service_definition": "Elasticsearch",
               "source": {
                 "type": "Manual"
               },
@@ -13372,14 +13372,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-09T22:35:35.676706Z",
-          "id": "dc5d99c4-eafc-4b83-9740-bf690c99102a",
+          "created_at": "2026-04-10T03:05:12.641282Z",
+          "id": "c215bd3d-8f46-4f27-a9d8-86f4d65011dc",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-09T22:35:35.676706Z"
+          "updated_at": "2026-04-10T03:05:12.641282Z"
         }
       },
       "BindingBase": {
@@ -13905,7 +13905,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Proxmox Datacenter Manager",
+              "service_definition": "Elasticsearch",
               "tags": [],
               "virtualization": null
             }
@@ -15042,13 +15042,14 @@
             "items": {
               "$ref": "#/components/schemas/Interface"
             },
-            "description": "SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled"
+            "description": "SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled.\nOld daemons send this as \"if_entries\"."
           },
           "ip_addresses": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/IPAddress"
-            }
+            },
+            "description": "IP addresses for the host. Old daemons send this as \"interfaces\"."
           },
           "ports": {
             "type": "array",
@@ -15471,7 +15472,7 @@
               "edge_type": {
                 "type": "string",
                 "enum": [
-                  "IPAddress"
+                  "SameHost"
                 ]
               },
               "host_id": {
@@ -15615,7 +15616,7 @@
       "EdgeTypeDiscriminants": {
         "type": "string",
         "enum": [
-          "IPAddress",
+          "SameHost",
           "HostVirtualization",
           "ServiceVirtualization",
           "RequestPath",
@@ -16426,14 +16427,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-09T22:35:35.675741Z",
-                  "id": "d79f18a4-199f-4089-b457-69c923629346",
+                  "created_at": "2026-04-10T03:05:12.640175Z",
+                  "id": "641b6e5d-0b11-4f7a-b12b-7e10f1751197",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-09T22:35:35.675741Z"
+                  "updated_at": "2026-04-10T03:05:12.640175Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16442,7 +16443,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Proxmox Datacenter Manager",
+              "service_definition": "Elasticsearch",
               "source": {
                 "type": "Manual"
               },
@@ -16927,7 +16928,7 @@
               "null"
             ],
             "format": "uuid",
-            "description": "FK to IPAddress entity - this port's IP assignment (must be on same host)"
+            "description": "FK to IPAddress entity - this port's IP assignment (must be on same host).\nOld daemons send this as \"interface_id\"."
           },
           "lldp_chassis_id": {
             "oneOf": [
@@ -18618,14 +18619,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-09T22:35:35.663928Z",
-                        "id": "5183f61f-f83e-4330-82b6-7eb43f0f2a5c",
+                        "created_at": "2026-04-10T03:05:12.629190Z",
+                        "id": "77fb71ba-47f3-4f75-97c8-65d695505e4a",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-09T22:35:35.663928Z"
+                        "updated_at": "2026-04-10T03:05:12.629190Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18634,7 +18635,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Proxmox Datacenter Manager",
+                    "service_definition": "Elasticsearch",
                     "source": {
                       "type": "Manual"
                     },
@@ -18711,14 +18712,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-09T22:35:35.688607Z",
-                    "id": "187aaa5c-d673-4671-a4aa-6142a8f12d44",
+                    "created_at": "2026-04-10T03:05:12.654434Z",
+                    "id": "c3f5e3d0-de3d-4aaf-ab1f-4ae9319cb56a",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-09T22:35:35.688607Z"
+                    "updated_at": "2026-04-10T03:05:12.654434Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18727,7 +18728,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Proxmox Datacenter Manager",
+                "service_definition": "Elasticsearch",
                 "source": {
                   "type": "Manual"
                 },
@@ -19945,14 +19946,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-09T22:35:35.676571Z",
-              "id": "892673dc-fd37-406c-854d-496098a689a0",
+              "created_at": "2026-04-10T03:05:12.641100Z",
+              "id": "fce502fc-80ae-4069-a99e-c505d3fc95e9",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-09T22:35:35.676571Z"
+              "updated_at": "2026-04-10T03:05:12.641100Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19961,7 +19962,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Proxmox Datacenter Manager",
+          "service_definition": "Elasticsearch",
           "source": {
             "type": "Manual"
           },

@@ -1528,7 +1528,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/interfaces": {
+    "/api/v1/if-entries": {
         parameters: {
             query?: never;
             header?: never;
@@ -1550,7 +1550,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/interfaces/bulk-delete": {
+    "/api/v1/if-entries/bulk-delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1567,7 +1567,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/interfaces/export/csv": {
+    "/api/v1/if-entries/export/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -1587,7 +1587,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/interfaces/{id}": {
+    "/api/v1/if-entries/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1658,7 +1658,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/ip_addresses": {
+    "/api/v1/ip-addresses": {
         parameters: {
             query?: never;
             header?: never;
@@ -1679,7 +1679,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/ip_addresses/bulk-delete": {
+    "/api/v1/ip-addresses/bulk-delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1699,7 +1699,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/ip_addresses/export/csv": {
+    "/api/v1/ip-addresses/export/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -1719,7 +1719,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/ip_addresses/{id}": {
+    "/api/v1/ip-addresses/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-09T22:35:35.695089Z",
-             *       "id": "7e717cbc-b231-4db6-b9b3-0800c1f21bc3",
+             *       "created_at": "2026-04-10T03:05:12.662787Z",
+             *       "id": "2c76c110-d39b-42e4-81c3-458f97da899e",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-09T22:35:35.695089Z"
+             *       "updated_at": "2026-04-10T03:05:12.662787Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-09T22:35:35.676303Z",
-             *               "id": "fc48803e-edb0-4303-ba5b-5a9430b3b7d8",
+             *               "created_at": "2026-04-10T03:05:12.641104Z",
+             *               "id": "cfd642ec-3245-4a17-87f0-a17ac46ce357",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-09T22:35:35.676303Z"
+             *               "updated_at": "2026-04-10T03:05:12.641104Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Proxmox Datacenter Manager",
+             *           "service_definition": "Elasticsearch",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3529,14 +3529,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-09T22:35:35.689970Z",
-             *           "id": "516ee7e7-b697-43eb-b80e-026181a06a35",
+             *           "created_at": "2026-04-10T03:05:12.656312Z",
+             *           "id": "a33e9000-0e0e-4795-88b2-b11451541bdf",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-09T22:35:35.689970Z"
+             *           "updated_at": "2026-04-10T03:05:12.656312Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3545,7 +3545,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Proxmox Datacenter Manager",
+             *       "service_definition": "Elasticsearch",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3896,14 +3896,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-09T22:35:35.676720Z",
-         *       "id": "c4bc0e55-2f2a-4811-8547-7755bc2c6e36",
+         *       "created_at": "2026-04-10T03:05:12.641485Z",
+         *       "id": "ea7bbb95-0930-4c38-81fa-b7780bdc9879",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-09T22:35:35.676720Z"
+         *       "updated_at": "2026-04-10T03:05:12.641485Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4088,7 +4088,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Proxmox Datacenter Manager",
+         *           "service_definition": "Elasticsearch",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4510,8 +4510,12 @@ export interface components {
          */
         DiscoveryHostRequest: {
             host: components["schemas"]["Host"];
-            /** @description SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled */
+            /**
+             * @description SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled.
+             *     Old daemons send this as "if_entries".
+             */
             interfaces?: components["schemas"]["Interface"][];
+            /** @description IP addresses for the host. Old daemons send this as "interfaces". */
             ip_addresses: components["schemas"]["IPAddress"][];
             ports: components["schemas"]["Port"][];
             services: components["schemas"]["Service"][];
@@ -4647,7 +4651,7 @@ export interface components {
         EdgeStyle: "Straight" | "SmoothStep" | "Step" | "Bezier" | "SimpleBezier";
         EdgeType: {
             /** @enum {string} */
-            edge_type: "IPAddress";
+            edge_type: "SameHost";
             /** Format: uuid */
             host_id: string;
         } | {
@@ -4685,12 +4689,12 @@ export interface components {
             edge_type: "PhysicalLink";
             protocol: components["schemas"]["DiscoveryProtocol"];
             /** Format: uuid */
-            source_interface_id: string;
+            source_if_entry_id: string;
             /** Format: uuid */
-            target_interface_id: string;
+            target_if_entry_id: string;
         };
         /** @enum {string} */
-        EdgeTypeDiscriminants: "IPAddress" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke" | "PhysicalLink";
+        EdgeTypeDiscriminants: "SameHost" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke" | "PhysicalLink";
         /** @description Per-view configuration for an edge: disabled (not in this view) or active with properties */
         EdgeViewConfig: {
             /** @enum {string} */
@@ -4938,14 +4942,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-09T22:35:35.675735Z",
-         *               "id": "04c7bd36-b46b-4f31-9d02-5b1c3c4be450",
+         *               "created_at": "2026-04-10T03:05:12.640334Z",
+         *               "id": "722869f9-7d3e-46c2-a76b-67d66c95eb21",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-09T22:35:35.675735Z"
+         *               "updated_at": "2026-04-10T03:05:12.640334Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4954,7 +4958,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Proxmox Datacenter Manager",
+         *           "service_definition": "Elasticsearch",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5156,7 +5160,8 @@ export interface components {
             if_type: number;
             /**
              * Format: uuid
-             * @description FK to IPAddress entity - this port's IP assignment (must be on same host)
+             * @description FK to IPAddress entity - this port's IP assignment (must be on same host).
+             *     Old daemons send this as "interface_id".
              */
             ip_address_id?: string | null;
             lldp_chassis_id?: null | components["schemas"]["LldpChassisId"];
@@ -6075,14 +6080,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-09T22:35:35.676583Z",
-         *           "id": "3599a704-8750-4874-a28d-e5dc31eb4b35",
+         *           "created_at": "2026-04-10T03:05:12.641389Z",
+         *           "id": "2d1f2109-272e-48b3-9b57-03046bead244",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-09T22:35:35.676583Z"
+         *           "updated_at": "2026-04-10T03:05:12.641389Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6091,7 +6096,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Proxmox Datacenter Manager",
+         *       "service_definition": "Elasticsearch",
          *       "source": {
          *         "type": "Manual"
          *       },

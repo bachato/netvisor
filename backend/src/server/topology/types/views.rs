@@ -270,7 +270,7 @@ impl TopologyView {
 
         match self {
             Self::L3Logical => match edge_type {
-                IPAddress => active(true, Visible, Solid, WhenVisible, false, false),
+                SameHost => active(true, Visible, Solid, WhenVisible, false, false),
                 ServiceVirtualization => active(true, Visible, Solid, WhenVisible, true, false),
                 RequestPath => active(false, Visible, Dashed, WhenVisible, false, true),
                 HubAndSpoke => active(false, Visible, Dashed, WhenVisible, false, true),
@@ -279,7 +279,7 @@ impl TopologyView {
             },
             Self::L2Physical => match edge_type {
                 PhysicalLink => active(true, Visible, Solid, WhenVisible, false, false),
-                IPAddress => active(false, Hidden, Dashed, WhenVisible, false, false),
+                SameHost => active(false, Hidden, Dashed, WhenVisible, false, false),
                 HostVirtualization | ServiceVirtualization | RequestPath | HubAndSpoke => {
                     EdgeViewConfig::Disabled
                 }
@@ -287,13 +287,13 @@ impl TopologyView {
             Self::Infrastructure => match edge_type {
                 HostVirtualization => active(true, Hidden, Dashed, Always, true, false),
                 ServiceVirtualization => active(true, Hidden, Dashed, Always, true, false),
-                IPAddress | PhysicalLink | RequestPath | HubAndSpoke => EdgeViewConfig::Disabled,
+                SameHost | PhysicalLink | RequestPath | HubAndSpoke => EdgeViewConfig::Disabled,
             },
             Self::Application => match edge_type {
                 RequestPath => active(true, Visible, Solid, WhenVisible, false, true),
                 HubAndSpoke => active(true, Visible, Solid, WhenVisible, false, true),
                 ServiceVirtualization => active(true, Hidden, Dashed, Always, true, false),
-                IPAddress | HostVirtualization | PhysicalLink => EdgeViewConfig::Disabled,
+                SameHost | HostVirtualization | PhysicalLink => EdgeViewConfig::Disabled,
             },
         }
     }

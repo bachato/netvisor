@@ -43,7 +43,7 @@ function makeElement(id: string, subnetId: string, hostId?: string): TopologyNod
 	return {
 		id,
 		node_type: 'Element',
-		element_type: 'Interface',
+		element_type: 'IPAddress',
 		host_id: hostId ?? uuid(),
 		container_id: subnetId,
 		subnet_id: subnetId,
@@ -55,7 +55,7 @@ function makeElement(id: string, subnetId: string, hostId?: string): TopologyNod
 function makeEdge(
 	source: string,
 	target: string,
-	edgeType: string = 'IPAddress',
+	edgeType: string = 'SameHost',
 	viewConfig?: {
 		affects_layout: boolean;
 		default_visibility?: 'visible' | 'hidden';
@@ -82,7 +82,7 @@ function makeEdge(
 }
 
 /** Shorthand for a layout-affecting visible solid edge */
-function primaryEdge(source: string, target: string, edgeType: string = 'IPAddress'): TopologyEdge {
+function primaryEdge(source: string, target: string, edgeType: string = 'SameHost'): TopologyEdge {
 	return makeEdge(source, target, edgeType, { affects_layout: true });
 }
 
@@ -162,45 +162,45 @@ function makeTopology(
 
 describe('edge view config helpers', () => {
 	it('treats edges without view_config as disabled', () => {
-		const edge = { edge_type: 'Interface', source: 'a', target: 'b' } as TopologyEdge;
+		const edge = { edge_type: 'SameHost', source: 'a', target: 'b' } as TopologyEdge;
 		expect(isDisabledEdge(edge)).toBe(true);
 		expect(affectsLayout(edge)).toBe(false);
 	});
 
 	it('isDisabledEdge returns true for disabled config', () => {
-		const edge = makeEdge('a', 'b', 'IPAddress');
+		const edge = makeEdge('a', 'b', 'SameHost');
 		expect(isDisabledEdge(edge)).toBe(true);
 	});
 
 	it('isDisabledEdge returns false for active config', () => {
-		const edge = makeEdge('a', 'b', 'IPAddress', { affects_layout: true });
+		const edge = makeEdge('a', 'b', 'SameHost', { affects_layout: true });
 		expect(isDisabledEdge(edge)).toBe(false);
 	});
 
 	it('affectsLayout reads from view config', () => {
-		expect(affectsLayout(makeEdge('a', 'b', 'IPAddress', { affects_layout: true }))).toBe(true);
-		expect(affectsLayout(makeEdge('a', 'b', 'IPAddress', { affects_layout: false }))).toBe(false);
-		expect(affectsLayout(makeEdge('a', 'b', 'IPAddress'))).toBe(false); // disabled
+		expect(affectsLayout(makeEdge('a', 'b', 'SameHost', { affects_layout: true }))).toBe(true);
+		expect(affectsLayout(makeEdge('a', 'b', 'SameHost', { affects_layout: false }))).toBe(false);
+		expect(affectsLayout(makeEdge('a', 'b', 'SameHost'))).toBe(false); // disabled
 	});
 
 	it('isDashedEdge reads stroke from view config', () => {
 		expect(
-			isDashedEdge(makeEdge('a', 'b', 'IPAddress', { affects_layout: true, stroke: 'dashed' }))
+			isDashedEdge(makeEdge('a', 'b', 'SameHost', { affects_layout: true, stroke: 'dashed' }))
 		).toBe(true);
 		expect(
-			isDashedEdge(makeEdge('a', 'b', 'IPAddress', { affects_layout: true, stroke: 'solid' }))
+			isDashedEdge(makeEdge('a', 'b', 'SameHost', { affects_layout: true, stroke: 'solid' }))
 		).toBe(false);
 	});
 
 	it('isHiddenByDefault reads default_visibility from view config', () => {
 		expect(
 			isHiddenByDefault(
-				makeEdge('a', 'b', 'IPAddress', { affects_layout: true, default_visibility: 'hidden' })
+				makeEdge('a', 'b', 'SameHost', { affects_layout: true, default_visibility: 'hidden' })
 			)
 		).toBe(true);
 		expect(
 			isHiddenByDefault(
-				makeEdge('a', 'b', 'IPAddress', { affects_layout: true, default_visibility: 'visible' })
+				makeEdge('a', 'b', 'SameHost', { affects_layout: true, default_visibility: 'visible' })
 			)
 		).toBe(false);
 	});
@@ -251,8 +251,8 @@ describe('computeElkLayout', () => {
 		];
 
 		const edges: TopologyEdge[] = [
-			primaryEdge(elem1, elem3, 'IPAddress'), // primary: ext -> gw
-			primaryEdge(elem3, elem4, 'IPAddress'), // primary: gw -> lan
+			primaryEdge(elem1, elem3, 'SameHost'), // primary: ext -> gw
+			primaryEdge(elem3, elem4, 'SameHost'), // primary: gw -> lan
 			makeEdge(elem1, elem4, 'HostVirtualization') // overlay: should be ignored by layout
 		];
 
@@ -304,8 +304,8 @@ describe('computeElkLayout', () => {
 		];
 
 		const edges: TopologyEdge[] = [
-			primaryEdge(elem1, elem2, 'IPAddress'),
-			primaryEdge(elem2, elem3, 'IPAddress')
+			primaryEdge(elem1, elem2, 'SameHost'),
+			primaryEdge(elem2, elem3, 'SameHost')
 		];
 
 		const subnets = [
@@ -339,7 +339,7 @@ describe('computeElkLayout', () => {
 			makeElement(elem2, subnetId)
 		];
 
-		const edges: TopologyEdge[] = [primaryEdge(elem1, elem2, 'IPAddress')];
+		const edges: TopologyEdge[] = [primaryEdge(elem1, elem2, 'SameHost')];
 		const subnets = [makeSubnet(subnetId, 'Lan')];
 
 		const input = makeTopology(nodes, edges, subnets);
@@ -405,7 +405,7 @@ describe('computeElkLayout', () => {
 		// Create some primary edges between adjacent subnets
 		const edges: TopologyEdge[] = [];
 		for (let i = 0; i < elementIds.length - 1; i += 3) {
-			edges.push(primaryEdge(elementIds[i], elementIds[i + 1], 'IPAddress'));
+			edges.push(primaryEdge(elementIds[i], elementIds[i + 1], 'SameHost'));
 		}
 
 		const input = makeTopology(nodes, edges, subnets);
@@ -441,7 +441,7 @@ describe('computeElkLayout', () => {
 			makeElement(elem3, groupId)
 		];
 
-		const edges: TopologyEdge[] = [primaryEdge(elem1, elem2, 'IPAddress')];
+		const edges: TopologyEdge[] = [primaryEdge(elem1, elem2, 'SameHost')];
 		const subnets = [makeSubnet(subnetId, 'Lan')];
 
 		const input = makeTopology(nodes, edges, subnets);

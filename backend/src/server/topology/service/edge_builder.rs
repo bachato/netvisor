@@ -311,7 +311,7 @@ impl EdgeBuilder {
                                 id: Uuid::new_v4(),
                                 source: origin_ip_address.id,
                                 target: ip_address.id,
-                                edge_type: EdgeType::IPAddress { host_id: host.id },
+                                edge_type: EdgeType::SameHost { host_id: host.id },
                                 label,
                                 source_handle: EdgeHandle::Bottom,
                                 target_handle: EdgeHandle::Top,

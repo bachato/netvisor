@@ -26,16 +26,20 @@ use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 #[serde(tag = "type")]
 pub enum BindingType {
     #[schema(title = "IPAddress")]
+    #[serde(alias = "Interface")]
     /// IP address binding: Service is present at an IP address without a specific port.
     /// Used for non-port-bound services like gateways. Conflicts with port bindings on the same IP address.
-    IPAddress { ip_address_id: Uuid },
+    IPAddress {
+        #[serde(alias = "interface_id")]
+        ip_address_id: Uuid,
+    },
     #[schema(title = "Port")]
     /// Port binding: Service listens on a specific port, optionally on a specific IP address.
     /// If `ip_address_id` is `null`, the service listens on this port across all IP addresses,
     /// which supersedes any specific-IP-address bindings for the same port.
     Port {
         port_id: Uuid,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none", alias = "interface_id")]
         #[schema(required)]
         /// The IP address this port binding applies to. If `null`, the binding applies to all
         /// IP addresses on the host (and supersedes specific-IP-address bindings for this port).

@@ -51,11 +51,14 @@ pub enum ConflictBehavior {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DiscoveryHostRequest {
     pub host: Host,
+    /// IP addresses for the host. Old daemons send this as "interfaces".
+    #[serde(alias = "interfaces")]
     pub ip_addresses: Vec<IPAddress>,
     pub ports: Vec<Port>,
     pub services: Vec<Service>,
-    /// SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    /// SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled.
+    /// Old daemons send this as "if_entries".
+    #[serde(default, skip_serializing_if = "Vec::is_empty", alias = "if_entries")]
     pub interfaces: Vec<crate::server::interfaces::r#impl::base::Interface>,
     /// Integration-derived subnets (e.g., Docker bridge networks) — created during
     /// create_with_children after service dedup so virtualization.service_id is correct.

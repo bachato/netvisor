@@ -2,7 +2,7 @@
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import type { Topology, TopologyEdge } from '$lib/features/topology/types/base';
 
-	export const IPAddressEdgeDisplay: EntityDisplayComponent<TopologyEdge, EdgeDisplayContext> = {
+	export const SameHostEdgeDisplay: EntityDisplayComponent<TopologyEdge, EdgeDisplayContext> = {
 		getId: (edge) => edge.id,
 		getLabel: (edge, context) => {
 			if (!context?.topology || !('host_id' in edge)) return 'Interface';
@@ -18,8 +18,8 @@
 			if (targetIf?.ip_address) parts.push(targetIf.ip_address);
 			return parts.join(' ↔ ') || '';
 		},
-		getIcon: () => edgeTypes.getIconComponent('IPAddress'),
-		getIconColor: () => edgeTypes.getColorHelper('IPAddress').icon
+		getIcon: () => edgeTypes.getIconComponent('SameHost'),
+		getIconColor: () => edgeTypes.getColorHelper('SameHost').icon
 	};
 
 	export interface EdgeDisplayContext {
@@ -39,4 +39,4 @@
 	let { item, context }: Props = $props();
 </script>
 
-<ListSelectItem {item} {context} displayComponent={IPAddressEdgeDisplay} />
+<ListSelectItem {item} {context} displayComponent={SameHostEdgeDisplay} />

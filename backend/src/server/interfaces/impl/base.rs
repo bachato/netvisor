@@ -142,7 +142,9 @@ pub struct InterfaceBase {
     #[serde(default)]
     #[schema(value_type = Option<String>)]
     pub mac_address: Option<MacAddress>,
-    /// FK to IPAddress entity - this port's IP assignment (must be on same host)
+    /// FK to IPAddress entity - this port's IP assignment (must be on same host).
+    /// Old daemons send this as "interface_id".
+    #[serde(alias = "interface_id")]
     pub ip_address_id: Option<Uuid>,
 
     // Neighbor resolution (LLDP/CDP) - remote endpoint this port connects to
