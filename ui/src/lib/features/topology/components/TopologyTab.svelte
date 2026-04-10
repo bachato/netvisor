@@ -28,7 +28,6 @@
 		topologyOptions,
 		updateTopologyOptions,
 		hydrateStoresFromTopology,
-		applyApplicationHiddenCategories,
 		getTopologyParamsFromUrl,
 		pushTopologyParams,
 		type TopologyView
@@ -523,8 +522,6 @@
 				}
 			};
 		});
-		// Apply use-case-aware hidden categories for the Application view
-		applyApplicationHiddenCategories();
 		// Refresh rather than rebuild — safer if topology entered conflict state during wizard
 		handleRefresh();
 	}

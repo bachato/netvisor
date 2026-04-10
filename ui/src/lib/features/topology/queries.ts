@@ -48,22 +48,6 @@ export function sanitizeOptionsForApi(options: TopologyOptions): TopologyOptions
 type ServiceCategory = components['schemas']['ServiceCategory'];
 type TopologyLocalOptions = components['schemas']['TopologyLocalOptions'];
 
-/**
- * Compute hidden service categories for the Application view based on org use case.
- * Categories whose `application_relevant_use_cases` don't include the org's use case are hidden.
- * Falls back to just ['OpenPorts'] if use case is unknown.
- */
-function getApplicationHiddenCategories(useCase: string): ServiceCategory[] {
-	const hidden: ServiceCategory[] = ['OpenPorts'];
-	for (const cat of serviceCategoriesJson) {
-		const meta = cat.metadata as ServiceCategoryMetadata | null;
-		if (meta && !meta.application_relevant_use_cases.includes(useCase)) {
-			hidden.push(cat.id as ServiceCategory);
-		}
-	}
-	return hidden;
-}
-
 /** Get the org's use case from the query cache, defaulting to 'other' */
 function getOrgUseCase(): string {
 	const org = queryClient.getQueryData<Organization>(queryKeys.organizations.current());
@@ -71,35 +55,18 @@ function getOrgUseCase(): string {
 }
 
 /**
- * Apply use-case-aware hidden categories to the Application view
- * in the current topology options store.
- */
-export function applyApplicationHiddenCategories(): void {
-	topologyOptionsStore.update((store) => {
-		const hiddenCats = (store.request.hide_service_categories ?? {}) as Record<
-			string,
-			ServiceCategory[]
-		>;
-		return {
-			...store,
-			request: {
-				...store.request,
-				hide_service_categories: {
-					...hiddenCats,
-					Application: getApplicationHiddenCategories(getOrgUseCase())
-				}
-			}
-		};
-	});
-}
-
-/**
  * Get categories that are irrelevant for the org's use case (for grouping into
- * "Infrastructure Services"). Same source as getApplicationHiddenCategories but
- * excludes OpenPorts (handled separately by hide_service_categories).
+ * the "Infrastructure Services" ByServiceCategory element rule).
  */
 function getIrrelevantCategories(useCase: string): ServiceCategory[] {
-	return getApplicationHiddenCategories(useCase).filter((c) => c !== 'OpenPorts');
+	const categories: ServiceCategory[] = [];
+	for (const cat of serviceCategoriesJson) {
+		const meta = cat.metadata as ServiceCategoryMetadata | null;
+		if (meta && !meta.application_relevant_use_cases.includes(useCase)) {
+			categories.push(cat.id as ServiceCategory);
+		}
+	}
+	return categories;
 }
 
 /** Tracks the element rule ID of the "Infrastructure Services" ByServiceCategory rule */
@@ -178,13 +145,11 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 		}
 	}
 
-	// Hidden categories: OpenPorts for most views,
-	// Application gets use-case-aware filtering
-	const useCase = getOrgUseCase();
+	// Hidden categories: OpenPorts for all views (use-case-aware filtering
+	// is handled by the ByServiceCategory element rule instead)
 	const hideServiceCategories: Record<string, ServiceCategory[]> = {};
 	for (const p of ALL_VIEWS) {
-		hideServiceCategories[p] =
-			p === 'Application' ? getApplicationHiddenCategories(useCase) : ['OpenPorts'];
+		hideServiceCategories[p] = ['OpenPorts'];
 	}
 
 	return {
@@ -735,20 +700,7 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 		}
 
 		if (isInitial) {
-			// Enrich Application hidden categories with use-case-aware defaults
-			// if the backend only has the bare default [OpenPorts]
 			const request = { ...opts.request };
-			const hiddenCats = (request.hide_service_categories ?? {}) as Record<
-				string,
-				ServiceCategory[]
-			>;
-			const appHidden = hiddenCats['Application'] ?? [];
-			if (appHidden.length <= 1 && appHidden[0] === 'OpenPorts') {
-				request.hide_service_categories = {
-					...hiddenCats,
-					Application: getApplicationHiddenCategories(getOrgUseCase())
-				};
-			}
 
 			// Enrich ByServiceCategory with use-case-aware irrelevant categories
 			const useCase = getOrgUseCase();
