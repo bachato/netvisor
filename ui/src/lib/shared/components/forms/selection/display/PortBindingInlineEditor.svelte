@@ -89,7 +89,7 @@
 
 	// Create interface options with disabled state
 	let interfaceOptions = $derived(
-		host?.interfaces.map((iface) => {
+		host?.ip_addresses.map((iface) => {
 			// Check for Interface binding conflict - can't add Port binding if THIS service has Interface binding here
 			const thisServiceHasInterfaceBinding = service?.bindings.some(
 				(b) => b.type === 'Interface' && b.interface_id === iface.id && b.id !== binding.id

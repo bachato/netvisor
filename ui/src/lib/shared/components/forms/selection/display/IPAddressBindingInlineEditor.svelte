@@ -29,9 +29,9 @@
 	// Interface binding must have an interface_id - look up from host form data first (for unsaved hosts),
 	// then fall back to query data (for saved hosts)
 	let iface = $derived(
-		binding.interface_id
-			? (host?.interfaces.find((i) => i.id === binding.interface_id) ??
-					ipAddressesData.find((i) => i.id === binding.interface_id))
+		binding.ip_address_id
+			? (host?.ip_addresses.find((i) => i.id === binding.ip_address_id) ??
+					ipAddressesData.find((i) => i.id === binding.ip_address_id))
 			: null
 	);
 
@@ -42,7 +42,7 @@
 
 	// Create interface options with disabled state
 	let interfaceOptions = $derived(
-		host?.interfaces.map((iface) => {
+		host?.ip_addresses.map((iface) => {
 			// Can't add Interface binding if service has Port binding on "All Interfaces"
 			if (hasPortBindingOnAllIPAddresses && iface.id !== binding.interface_id) {
 				return {
