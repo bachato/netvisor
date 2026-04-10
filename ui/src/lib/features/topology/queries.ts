@@ -734,13 +734,23 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 				}
 			});
 		} else {
-			// SSE update: update request options, preserve all client-side local options.
-			// Local options (hide_edge_types, bundle_edges, etc.) are client-side state —
-			// the server returns whatever was last sent, which may be stale.
+			// SSE update or topology switch: update request options, preserve
+			// all client-side local options. Local options (hide_edge_types,
+			// bundle_edges, etc.) are client-side state — the server returns
+			// whatever was last sent, which may be stale.
 			topologyOptionsStore.update((current) => ({
 				request: opts.request,
 				perViewLocal: current.perViewLocal
 			}));
+
+			// Keep infrastructureRuleId in sync with the current topology's rules
+			// so isAutoCollapseContainer matches the correct containers.
+			for (const rule of opts.request.element_rules ?? []) {
+				if (typeof rule.rule === 'object' && 'ByServiceCategory' in rule.rule) {
+					infrastructureRuleId = rule.id;
+					break;
+				}
+			}
 		}
 	} finally {
 		hydrating = false;
