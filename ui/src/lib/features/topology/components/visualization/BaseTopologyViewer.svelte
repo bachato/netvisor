@@ -60,6 +60,7 @@
 		stepExpand,
 		stepCollapse,
 		inferCurrentLevel,
+		computeCollapsedForLevel,
 		getAutoCollapseIds,
 		buildElementToContainer,
 		computeCollapsedEdges
@@ -392,6 +393,24 @@
 						getInfrastructureRuleId()
 					);
 					collapseLevel.set(inferred);
+				}
+
+				// On view switch (same topology, different perspective), apply the
+				// current collapse level to the new view's containers. The old IDs
+				// are stale but the level intent should carry over.
+				if (viewChanged && topologyChanged && collapseLevelInferred) {
+					const currentLevel = get(collapseLevel);
+					const levelCollapsed = computeCollapsedForLevel(
+						currentLevel,
+						topology.nodes,
+						containerTypes,
+						getInfrastructureRuleId()
+					);
+					collapsedContainers.set(levelCollapsed);
+					collapsed = levelCollapsed;
+					console.log(
+						`[LAYOUT-DEBUG] View switch: applied level ${currentLevel} → ${levelCollapsed.size} collapsed`
+					);
 				}
 
 				// When topology identity changes, reset auto-collapse tracking
