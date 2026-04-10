@@ -272,6 +272,7 @@
 		void $expandedPortNodeIds;
 		void $bundleEdgesStore;
 		void $hideEdgeTypesStore;
+		console.log(`[COLLAPSE-LEVEL] in loadTopo reactive block: $collapseLevel=${$collapseLevel}`);
 		void loadTopologyData();
 	}
 
@@ -1544,16 +1545,20 @@
 	$: console.log(`[COLLAPSE-LEVEL] $collapseLevel=${$collapseLevel}, expandDisabled=${$collapseLevel === 4}, collapseDisabled=${$collapseLevel === 1}`);
 
 	function handleStepCollapse() {
+		console.log('[COLLAPSE-LEVEL] handleStepCollapse called');
 		stepCollapse(topology.nodes, containerTypes, getInfrastructureRuleId());
+		console.log(`[COLLAPSE-LEVEL] after stepCollapse: get(collapseLevel)=${get(collapseLevel)}, $collapseLevel=${$collapseLevel}`);
 		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
 	}
 
 	function handleStepExpand() {
+		console.log('[COLLAPSE-LEVEL] handleStepExpand called');
 		const { autoCollapseIds } = stepExpand(
 			topology.nodes,
 			containerTypes,
 			getInfrastructureRuleId()
 		);
+		console.log(`[COLLAPSE-LEVEL] after stepExpand: get(collapseLevel)=${get(collapseLevel)}, $collapseLevel=${$collapseLevel}`);
 		// Mark auto-collapse containers as "seen" so they don't re-collapse
 		for (const id of autoCollapseIds) seenAutoCollapseIds.add(id);
 		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
