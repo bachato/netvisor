@@ -124,6 +124,7 @@
 
 	// Sidebar buttons collapse to icon-only after a brief delay
 	export let sidebarCollapsed: boolean = false;
+	let stepperIsHovered = $state(false);
 
 	// Resolve selection stores from context (share/embed) or fall back to global stores.
 	// These are the SINGLE source of truth for selection state.
@@ -1566,29 +1567,41 @@
 						{/snippet}
 					</TopologySidebarButton>
 				{/if}
+				{@const stepperHovered = stepperIsHovered}
+				{@const showStepperLabel = !sidebarCollapsed || stepperHovered}
 				<div
-					class="flex flex-col items-center overflow-hidden rounded !border !border-gray-300 !bg-gray-50 !shadow-lg dark:!border-gray-600 dark:!bg-gray-700"
+					class="flex overflow-hidden rounded !border !border-gray-300 !bg-gray-50 !shadow-lg transition-all duration-300 ease-in-out dark:!border-gray-600 dark:!bg-gray-700"
 					title={getCollapseLevelName($collapseLevel)}
+					onpointerenter={() => (stepperIsHovered = true)}
+					onpointerleave={() => (stepperIsHovered = false)}
 				>
-					<button
-						class="flex items-center justify-center p-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-600"
-						onclick={handleStepExpand}
-						title={collapseLevelTooltipExpand}
-					>
-						<Expand class="h-3.5 w-3.5" />
-					</button>
+					<div class="flex flex-col items-center">
+						<button
+							class="flex items-center justify-center p-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-600"
+							onclick={handleStepExpand}
+							title={collapseLevelTooltipExpand}
+						>
+							<Expand class="h-3.5 w-3.5" />
+						</button>
+						<span
+							class="flex min-h-[1.25rem] items-center justify-center px-1 text-xs font-semibold text-gray-700 dark:text-gray-100"
+						>
+							{$collapseLevel}
+						</span>
+						<button
+							class="flex items-center justify-center p-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-600"
+							onclick={handleStepCollapse}
+							title={collapseLevelTooltipCollapse}
+						>
+							<Shrink class="h-3.5 w-3.5" />
+						</button>
+					</div>
 					<span
-						class="flex min-h-[1.25rem] items-center justify-center text-xs font-semibold text-gray-700 dark:text-gray-100"
+						class="flex items-center overflow-hidden whitespace-nowrap text-xs font-medium text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-100"
+						style="max-width: {showStepperLabel ? '150px' : '0px'}; opacity: {showStepperLabel ? 1 : 0}; padding-right: {showStepperLabel ? '8px' : '0px'};"
 					>
-						{$collapseLevel}
+						{getCollapseLevelName($collapseLevel)}
 					</span>
-					<button
-						class="flex items-center justify-center p-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-600"
-						onclick={handleStepCollapse}
-						title={collapseLevelTooltipCollapse}
-					>
-						<Shrink class="h-3.5 w-3.5" />
-					</button>
 				</div>
 				{#if onOpenShortcuts}
 					<TopologySidebarButton
