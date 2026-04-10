@@ -62,6 +62,7 @@ use crate::server::{
 };
 use chrono::{DateTime, Duration, Utc};
 use cidr::{IpCidr, Ipv4Cidr};
+use mac_address::MacAddress;
 use secrecy::SecretString;
 use semver::Version;
 use std::net::{IpAddr, Ipv4Addr};
@@ -106,7 +107,6 @@ struct DependencyServiceIds {
     grafana_hq: Uuid,
     uptime_kuma: Uuid,
     // RequestPath: binding-level members
-    pfsense_binding: Uuid,
     traefik_hq_binding: Uuid,
     gitea_hq_binding: Uuid,
     haproxy_dc_binding: Uuid,
@@ -155,7 +155,6 @@ impl DemoData {
             prometheus_hq: Uuid::new_v4(),
             grafana_hq: Uuid::new_v4(),
             uptime_kuma: Uuid::new_v4(),
-            pfsense_binding: Uuid::new_v4(),
             traefik_hq_binding: Uuid::new_v4(),
             gitea_hq_binding: Uuid::new_v4(),
             haproxy_dc_binding: Uuid::new_v4(),
@@ -275,7 +274,7 @@ fn generate_topologies(networks: &[Network], tags: &[Tag], now: DateTime<Utc>) -
 
 fn generate_tags(organization_id: Uuid, now: DateTime<Utc>) -> Vec<Tag> {
     // (name, description, color, is_application_group)
-    let tag_definitions: [(&str, &str, Color, bool); 11] = [
+    let tag_definitions: [(&str, &str, Color, bool); 13] = [
         (
             "Production",
             "Systems running in production",
@@ -322,6 +321,8 @@ fn generate_tags(organization_id: Uuid, now: DateTime<Utc>) -> Vec<Tag> {
             Color::Pink,
             true,
         ),
+        ("Storage", "Storage and backup systems", Color::Lime, true),
+        ("Messaging", "Message brokers and email", Color::Amber, true),
     ];
 
     tag_definitions
@@ -786,6 +787,12 @@ fn with_snmp(
     (host, ip_address)
 }
 
+/// Wraps a `create_host()` result to set the MAC address on the IP address.
+fn with_mac((host, mut ip_address): (Host, IPAddress), mac: [u8; 6]) -> (Host, IPAddress) {
+    ip_address.base.mac_address = Some(MacAddress::new(mac));
+    (host, ip_address)
+}
+
 /// Helper to create a service for a host.
 /// Returns (Service, Option<Port>) - the port must be added to the host's ports list.
 fn create_service(
@@ -986,6 +993,8 @@ fn generate_hosts_and_services(
     let web_tier_tag = find_tag("Web Tier");
     let backup_tag = find_tag("Backup Target");
     let devops_tag = find_tag("DevOps Pipeline");
+    let storage_tag = find_tag("Storage");
+    let messaging_tag = find_tag("Messaging");
 
     // Pre-generated service UUIDs for virtualization wiring
     let pve_hq1_svc_id = Uuid::new_v4(); // Proxmox VE on proxmox-hv01
@@ -999,7 +1008,6 @@ fn generate_hosts_and_services(
     let grafana_hq_svc_id = dep_svc_ids.grafana_hq;
     let uptime_kuma_svc_id = dep_svc_ids.uptime_kuma;
     // Binding UUIDs for RequestPath dependency wiring (pre-generated at top level)
-    let pfsense_binding_id = dep_svc_ids.pfsense_binding;
     let traefik_hq_binding_id = dep_svc_ids.traefik_hq_binding;
     let gitea_hq_binding_id = dep_svc_ids.gitea_hq_binding;
     let haproxy_dc_binding_id = dep_svc_ids.haproxy_dc_binding;
@@ -1032,17 +1040,20 @@ fn generate_hosts_and_services(
     // 1. pfSense Firewall (Critical) — with host-level SNMP credential override
     let mut pfsense = {
         let (host, ip_address) = with_snmp(
-            create_host(
-                "pfsense-fw01",
-                Some("pfsense-fw01.acme.local"),
-                Some("Primary pfSense firewall"),
-                hq,
-                hq_mgmt,
-                Ipv4Addr::new(10, 0, 1, 1),
-                critical_tag.into_iter().collect(),
-                network_devices_cred,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "pfsense-fw01",
+                    Some("pfsense-fw01.acme.local"),
+                    Some("Primary pfSense firewall"),
+                    hq,
+                    hq_mgmt,
+                    Ipv4Addr::new(10, 0, 1, 1),
+                    critical_tag.into_iter().collect(),
+                    network_devices_cred,
+                    None,
+                    now,
+                ),
+                [0xa4, 0xbe, 0x2b, 0x10, 0x01, 0x01],
             ),
             Some("pfSense 2.7.0-RELEASE (amd64) built on FreeBSD 14.0-CURRENT"),
             Some("1.3.6.1.4.1.12325.1.1"),
@@ -1053,7 +1064,7 @@ fn generate_hosts_and_services(
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
-        if let Some((mut svc, port)) = create_service(
+        if let Some((svc, port)) = create_service(
             "pfSense",
             "pfSense",
             &host,
@@ -1062,7 +1073,6 @@ fn generate_hosts_and_services(
             critical_tag.into_iter().collect(),
             now,
         ) {
-            svc.base.bindings[0].id = pfsense_binding_id;
             if let Some(p) = port {
                 ports.push(p);
             }
@@ -1086,17 +1096,20 @@ fn generate_hosts_and_services(
 
     // 2. UniFi Controller
     result.push(host_with_services!(
-        create_host(
-            "unifi-controller",
-            Some("unifi.acme.local"),
-            Some("UniFi Network Controller"),
-            hq,
-            hq_mgmt,
-            Ipv4Addr::new(10, 0, 1, 10),
-            vec![],
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "unifi-controller",
+                Some("unifi.acme.local"),
+                Some("UniFi Network Controller"),
+                hq,
+                hq_mgmt,
+                Ipv4Addr::new(10, 0, 1, 10),
+                vec![],
+                None,
+                None,
+                now
+            ),
+            [0xfc, 0xec, 0xda, 0x10, 0x02, 0x01],
         ),
         now,
         (
@@ -1110,17 +1123,20 @@ fn generate_hosts_and_services(
     // 3. Core switch (48 ports, SNMP/LLDP)
     result.push(host_with_services!(
         with_snmp(
-            create_host(
-                "unifi-usw-48",
-                Some("switch.acme.local"),
-                Some("UniFi Switch 48 PoE"),
-                hq,
-                hq_mgmt,
-                Ipv4Addr::new(10, 0, 1, 3),
-                vec![],
-                network_devices_cred,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "unifi-usw-48",
+                    Some("switch.acme.local"),
+                    Some("UniFi Switch 48 PoE"),
+                    hq,
+                    hq_mgmt,
+                    Ipv4Addr::new(10, 0, 1, 3),
+                    vec![],
+                    network_devices_cred,
+                    None,
+                    now,
+                ),
+                [0xfc, 0xec, 0xda, 0x10, 0x03, 0x01],
             ),
             Some("UniFi USW-48-PoE, 6.6.65, Linux 5.4.0"),
             Some("1.3.6.1.4.1.41112.1.6"),
@@ -1134,17 +1150,20 @@ fn generate_hosts_and_services(
 
     // 4. Pi-hole DNS
     result.push(host_with_services!(
-        create_host(
-            "pihole-dns01",
-            Some("pihole.acme.local"),
-            Some("Pi-hole DNS ad blocker"),
-            hq,
-            hq_mgmt,
-            Ipv4Addr::new(10, 0, 1, 5),
-            vec![],
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "pihole-dns01",
+                Some("pihole.acme.local"),
+                Some("Pi-hole DNS ad blocker"),
+                hq,
+                hq_mgmt,
+                Ipv4Addr::new(10, 0, 1, 5),
+                vec![],
+                None,
+                None,
+                now
+            ),
+            [0xdc, 0xa6, 0x32, 0x10, 0x04, 0x01],
         ),
         now,
         ("Pi-Hole", "Pi-hole", Some(PortType::Http), vec![]),
@@ -1152,17 +1171,20 @@ fn generate_hosts_and_services(
 
     // 5. Grafana (pre-generated ID for dependency wiring)
     {
-        let (host, ip_address) = create_host(
-            "grafana-mon",
-            Some("grafana.acme.local"),
-            Some("Grafana monitoring dashboard"),
-            hq,
-            hq_mgmt,
-            Ipv4Addr::new(10, 0, 1, 50),
-            monitoring_tag.into_iter().collect(),
-            None,
-            None,
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "grafana-mon",
+                Some("grafana.acme.local"),
+                Some("Grafana monitoring dashboard"),
+                hq,
+                hq_mgmt,
+                Ipv4Addr::new(10, 0, 1, 50),
+                monitoring_tag.into_iter().collect(),
+                None,
+                None,
+                now,
+            ),
+            [0xf8, 0xbc, 0x12, 0x10, 0x05, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
@@ -1192,17 +1214,20 @@ fn generate_hosts_and_services(
 
     // 6. Prometheus (pre-generated ID for dependency wiring)
     {
-        let (host, ip_address) = create_host(
-            "prometheus",
-            Some("prometheus.acme.local"),
-            Some("Prometheus metrics server"),
-            hq,
-            hq_mgmt,
-            Ipv4Addr::new(10, 0, 1, 51),
-            monitoring_tag.into_iter().collect(),
-            None,
-            None,
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "prometheus",
+                Some("prometheus.acme.local"),
+                Some("Prometheus metrics server"),
+                hq,
+                hq_mgmt,
+                Ipv4Addr::new(10, 0, 1, 51),
+                monitoring_tag.into_iter().collect(),
+                None,
+                None,
+                now,
+            ),
+            [0xf8, 0xbc, 0x12, 0x10, 0x06, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
@@ -1232,17 +1257,20 @@ fn generate_hosts_and_services(
 
     // 7. Uptime Kuma (pre-generated ID for dependency wiring)
     {
-        let (host, ip_address) = create_host(
-            "uptime-kuma",
-            Some("status.acme.local"),
-            Some("Uptime Kuma status page"),
-            hq,
-            hq_mgmt,
-            Ipv4Addr::new(10, 0, 1, 52),
-            monitoring_tag.into_iter().collect(),
-            None,
-            None,
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "uptime-kuma",
+                Some("status.acme.local"),
+                Some("Uptime Kuma status page"),
+                hq,
+                hq_mgmt,
+                Ipv4Addr::new(10, 0, 1, 52),
+                monitoring_tag.into_iter().collect(),
+                None,
+                None,
+                now,
+            ),
+            [0xf8, 0xbc, 0x12, 0x10, 0x07, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
@@ -1275,17 +1303,20 @@ fn generate_hosts_and_services(
     // 8. Proxmox Hypervisor 1 (pre-generated Proxmox VE service ID)
     {
         let (host, ip_address) = with_snmp(
-            create_host(
-                "proxmox-hv01",
-                Some("proxmox-hv01.acme.local"),
-                Some("Proxmox hypervisor node 1"),
-                hq,
-                hq_servers,
-                Ipv4Addr::new(10, 0, 20, 5),
-                production_tag.into_iter().collect(),
-                None,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "proxmox-hv01",
+                    Some("proxmox-hv01.acme.local"),
+                    Some("Proxmox hypervisor node 1"),
+                    hq,
+                    hq_servers,
+                    Ipv4Addr::new(10, 0, 20, 5),
+                    production_tag.into_iter().collect(),
+                    None,
+                    None,
+                    now,
+                ),
+                [0xf8, 0xbc, 0x12, 0x20, 0x08, 0x01],
             ),
             Some("Linux proxmox-hv01 6.8.12-1-pve #1 SMP PVE 6.8.12-1 x86_64"),
             Some("1.3.6.1.4.1.8072.3.2.10"),
@@ -1337,17 +1368,20 @@ fn generate_hosts_and_services(
     // 9. Proxmox Hypervisor 2 (pre-generated Proxmox VE service ID)
     {
         let (host, ip_address) = with_snmp(
-            create_host(
-                "proxmox-hv02",
-                Some("proxmox-hv02.acme.local"),
-                Some("Proxmox hypervisor node 2"),
-                hq,
-                hq_servers,
-                Ipv4Addr::new(10, 0, 20, 6),
-                production_tag.into_iter().collect(),
-                None,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "proxmox-hv02",
+                    Some("proxmox-hv02.acme.local"),
+                    Some("Proxmox hypervisor node 2"),
+                    hq,
+                    hq_servers,
+                    Ipv4Addr::new(10, 0, 20, 6),
+                    production_tag.into_iter().collect(),
+                    None,
+                    None,
+                    now,
+                ),
+                [0xf8, 0xbc, 0x12, 0x20, 0x09, 0x01],
             ),
             Some("Linux proxmox-hv02 6.8.12-1-pve #1 SMP PVE 6.8.12-1 x86_64"),
             Some("1.3.6.1.4.1.8072.3.2.10"),
@@ -1397,21 +1431,24 @@ fn generate_hosts_and_services(
 
     // 10. gitlab-vm — VM on hv01 (vm_id=100)
     result.push(host_with_services!(
-        create_host(
-            "gitlab-vm",
-            Some("gitlab.acme.local"),
-            Some("GitLab instance (VM on proxmox-hv01)"),
-            hq,
-            hq_servers,
-            Ipv4Addr::new(10, 0, 20, 10),
-            production_tag.into_iter().collect(),
-            None,
-            Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
-                vm_name: Some("gitlab-vm".to_string()),
-                vm_id: Some("100".to_string()),
-                service_id: pve_hq1_svc_id,
-            })),
-            now
+        with_mac(
+            create_host(
+                "gitlab-vm",
+                Some("gitlab.acme.local"),
+                Some("GitLab instance (VM on proxmox-hv01)"),
+                hq,
+                hq_servers,
+                Ipv4Addr::new(10, 0, 20, 10),
+                production_tag.into_iter().collect(),
+                None,
+                Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
+                    vm_name: Some("gitlab-vm".to_string()),
+                    vm_id: Some("100".to_string()),
+                    service_id: pve_hq1_svc_id,
+                })),
+                now
+            ),
+            [0x52, 0x54, 0x00, 0x20, 0x10, 0x01],
         ),
         now,
         (
@@ -1424,21 +1461,24 @@ fn generate_hosts_and_services(
 
     // 11. nextcloud-vm — VM on hv01 (vm_id=101)
     result.push(host_with_services!(
-        create_host(
-            "nextcloud-vm",
-            Some("cloud.acme.local"),
-            Some("Nextcloud file sharing (VM on proxmox-hv01)"),
-            hq,
-            hq_servers,
-            Ipv4Addr::new(10, 0, 20, 11),
-            production_tag.into_iter().collect(),
-            None,
-            Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
-                vm_name: Some("nextcloud-vm".to_string()),
-                vm_id: Some("101".to_string()),
-                service_id: pve_hq1_svc_id,
-            })),
-            now
+        with_mac(
+            create_host(
+                "nextcloud-vm",
+                Some("cloud.acme.local"),
+                Some("Nextcloud file sharing (VM on proxmox-hv01)"),
+                hq,
+                hq_servers,
+                Ipv4Addr::new(10, 0, 20, 11),
+                production_tag.into_iter().collect(),
+                None,
+                Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
+                    vm_name: Some("nextcloud-vm".to_string()),
+                    vm_id: Some("101".to_string()),
+                    service_id: pve_hq1_svc_id,
+                })),
+                now
+            ),
+            [0x52, 0x54, 0x00, 0x20, 0x11, 0x01],
         ),
         now,
         (
@@ -1454,21 +1494,24 @@ fn generate_hosts_and_services(
 
     // 12. keycloak-vm — VM on hv02 (vm_id=200)
     result.push(host_with_services!(
-        create_host(
-            "keycloak-vm",
-            Some("keycloak.acme.local"),
-            Some("Keycloak SSO (VM on proxmox-hv02)"),
-            hq,
-            hq_servers,
-            Ipv4Addr::new(10, 0, 20, 12),
-            production_tag.into_iter().collect(),
-            None,
-            Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
-                vm_name: Some("keycloak-vm".to_string()),
-                vm_id: Some("200".to_string()),
-                service_id: pve_hq2_svc_id,
-            })),
-            now
+        with_mac(
+            create_host(
+                "keycloak-vm",
+                Some("keycloak.acme.local"),
+                Some("Keycloak SSO (VM on proxmox-hv02)"),
+                hq,
+                hq_servers,
+                Ipv4Addr::new(10, 0, 20, 12),
+                production_tag.into_iter().collect(),
+                None,
+                Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
+                    vm_name: Some("keycloak-vm".to_string()),
+                    vm_id: Some("200".to_string()),
+                    service_id: pve_hq2_svc_id,
+                })),
+                now
+            ),
+            [0x52, 0x54, 0x00, 0x20, 0x12, 0x01],
         ),
         now,
         (
@@ -1491,7 +1534,7 @@ fn generate_hosts_and_services(
                 host_id,
                 subnet_id: hq_servers.id,
                 ip_address: IpAddr::V4(Ipv4Addr::new(10, 0, 20, 20)),
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xf8, 0xbc, 0x12, 0x20, 0x13, 0x01])),
                 name: Some("eth0".to_string()),
                 position: 0,
             },
@@ -1505,7 +1548,7 @@ fn generate_hosts_and_services(
                 host_id,
                 subnet_id: hq_docker.id,
                 ip_address: IpAddr::V4(Ipv4Addr::new(172, 17, 0, 1)),
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0x02, 0x42, 0xac, 0x11, 0x00, 0x01])),
                 name: Some("docker0".to_string()),
                 position: 1,
             },
@@ -1617,13 +1660,14 @@ fn generate_hosts_and_services(
             services.push(svc);
         }
         // Other container services on docker0
-        for (def_id, name, pt, cname, cid) in [
+        for (def_id, name, pt, cname, cid, tags) in [
             (
                 "Vaultwarden",
                 "Vaultwarden",
                 Some(PortType::Http8080),
                 "vaultwarden",
                 "d4e5f6a7b8c9",
+                devops_tag.into_iter().collect::<Vec<_>>(),
             ),
             (
                 "mailcow",
@@ -1631,6 +1675,7 @@ fn generate_hosts_and_services(
                 Some(PortType::Https8443),
                 "mailcow",
                 "j0k1l2m3n4o5",
+                messaging_tag.into_iter().collect::<Vec<_>>(),
             ),
         ] {
             if let Some((svc, port)) = create_container_service(
@@ -1642,7 +1687,7 @@ fn generate_hosts_and_services(
                 cname,
                 cid,
                 docker_hq_svc_id,
-                vec![],
+                tags,
                 now,
             ) {
                 if let Some(p) = port {
@@ -1662,17 +1707,20 @@ fn generate_hosts_and_services(
 
     // 14. Jenkins CI
     result.push(host_with_services!(
-        create_host(
-            "jenkins-ci",
-            Some("jenkins.acme.local"),
-            Some("Jenkins CI/CD server"),
-            hq,
-            hq_servers,
-            Ipv4Addr::new(10, 0, 20, 30),
-            production_tag.into_iter().collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "jenkins-ci",
+                Some("jenkins.acme.local"),
+                Some("Jenkins CI/CD server"),
+                hq,
+                hq_servers,
+                Ipv4Addr::new(10, 0, 20, 30),
+                production_tag.into_iter().collect(),
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0x20, 0x14, 0x01],
         ),
         now,
         (
@@ -1685,17 +1733,20 @@ fn generate_hosts_and_services(
 
     // 15. WireGuard VPN
     result.push(host_with_services!(
-        create_host(
-            "wireguard-vpn",
-            Some("vpn.acme.local"),
-            Some("WireGuard VPN server"),
-            hq,
-            hq_servers,
-            Ipv4Addr::new(10, 0, 20, 35),
-            vec![],
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "wireguard-vpn",
+                Some("vpn.acme.local"),
+                Some("WireGuard VPN server"),
+                hq,
+                hq_servers,
+                Ipv4Addr::new(10, 0, 20, 35),
+                vec![],
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0x20, 0x15, 0x01],
         ),
         now,
         (
@@ -1710,21 +1761,24 @@ fn generate_hosts_and_services(
 
     // 16. db-vm — VM on hv02 (vm_id=201)
     result.push(host_with_services!(
-        create_host(
-            "db-vm",
-            Some("db.acme.local"),
-            Some("Database server (VM on proxmox-hv02)"),
-            hq,
-            hq_storage,
-            Ipv4Addr::new(10, 0, 40, 10),
-            database_tag.into_iter().chain(critical_tag).collect(),
-            None,
-            Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
-                vm_name: Some("db-vm".to_string()),
-                vm_id: Some("201".to_string()),
-                service_id: pve_hq2_svc_id,
-            })),
-            now
+        with_mac(
+            create_host(
+                "db-vm",
+                Some("db.acme.local"),
+                Some("Database server (VM on proxmox-hv02)"),
+                hq,
+                hq_storage,
+                Ipv4Addr::new(10, 0, 40, 10),
+                database_tag.into_iter().chain(critical_tag).collect(),
+                None,
+                Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
+                    vm_name: Some("db-vm".to_string()),
+                    vm_id: Some("201".to_string()),
+                    service_id: pve_hq2_svc_id,
+                })),
+                now
+            ),
+            [0x52, 0x54, 0x00, 0x40, 0x16, 0x01],
         ),
         now,
         (
@@ -1744,17 +1798,20 @@ fn generate_hosts_and_services(
     // 17. TrueNAS Primary (pre-generated binding ID for Backup Flow dependency)
     {
         let (host, ip_address) = with_snmp(
-            create_host(
-                "truenas-primary",
-                Some("truenas.acme.local"),
-                Some("Primary NAS storage"),
-                hq,
-                hq_storage,
-                Ipv4Addr::new(10, 0, 40, 20),
-                critical_tag.into_iter().chain(backup_tag).collect(),
-                None,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "truenas-primary",
+                    Some("truenas.acme.local"),
+                    Some("Primary NAS storage"),
+                    hq,
+                    hq_storage,
+                    Ipv4Addr::new(10, 0, 40, 20),
+                    critical_tag.into_iter().chain(backup_tag).collect(),
+                    None,
+                    None,
+                    now,
+                ),
+                [0xd0, 0x50, 0x99, 0x40, 0x17, 0x01],
             ),
             Some("TrueNAS SCALE 24.04 (Dragonfish) - Kernel 6.6.44-production+truenas"),
             Some("1.3.6.1.4.1.50536.3"),
@@ -1771,7 +1828,7 @@ fn generate_hosts_and_services(
             &host,
             &ip_addresses[0],
             Some(PortType::Https),
-            backup_tag.into_iter().collect(),
+            [backup_tag, storage_tag].into_iter().flatten().collect(),
             now,
         ) {
             svc.base.bindings[0].id = truenas_binding_id;
@@ -1786,7 +1843,7 @@ fn generate_hosts_and_services(
             &host,
             &ip_addresses[0],
             Some(PortType::Nfs),
-            vec![],
+            storage_tag.into_iter().collect(),
             now,
         ) {
             if let Some(p) = port {
@@ -1805,17 +1862,20 @@ fn generate_hosts_and_services(
     // 18. Synology Backup
     result.push(host_with_services!(
         with_snmp(
-            create_host(
-                "synology-backup",
-                Some("synology.acme.local"),
-                Some("Synology backup NAS"),
-                hq,
-                hq_storage,
-                Ipv4Addr::new(10, 0, 40, 21),
-                backup_tag.into_iter().collect(),
-                None,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "synology-backup",
+                    Some("synology.acme.local"),
+                    Some("Synology backup NAS"),
+                    hq,
+                    hq_storage,
+                    Ipv4Addr::new(10, 0, 40, 21),
+                    backup_tag.into_iter().collect(),
+                    None,
+                    None,
+                    now,
+                ),
+                [0x00, 0x11, 0x32, 0x40, 0x18, 0x01],
             ),
             Some("Synology NAS DS1621+ DSM 7.2.1-69057 Update 5"),
             Some("1.3.6.1.4.1.6574.1"),
@@ -1828,46 +1888,58 @@ fn generate_hosts_and_services(
             "Synology DSM",
             "Synology DSM",
             Some(PortType::Https),
-            backup_tag.into_iter().collect()
+            [backup_tag, storage_tag].into_iter().flatten().collect()
         ),
     ));
 
     // -- Office LAN (10.0.10.x) --
 
     // 19-22. Workstations
-    for (name, hostname, desc, ip_last) in [
+    for (name, hostname, desc, ip_last, mac_last) in [
         (
             "ws-engineering-01",
             "ws-eng-01.acme.local",
             "Engineering workstation 1",
             101,
+            0x19u8,
         ),
         (
             "ws-engineering-02",
             "ws-eng-02.acme.local",
             "Engineering workstation 2",
             102,
+            0x20,
         ),
         (
             "ws-accounting-01",
             "ws-acct-01.acme.local",
             "Accounting workstation",
             103,
+            0x21,
         ),
-        ("ws-hr-01", "ws-hr-01.acme.local", "HR workstation", 104),
+        (
+            "ws-hr-01",
+            "ws-hr-01.acme.local",
+            "HR workstation",
+            104,
+            0x22,
+        ),
     ] {
         result.push(host_with_services!(
-            create_host(
-                name,
-                Some(hostname),
-                Some(desc),
-                hq,
-                hq_lan,
-                Ipv4Addr::new(10, 0, 10, ip_last),
-                vec![],
-                None,
-                None,
-                now
+            with_mac(
+                create_host(
+                    name,
+                    Some(hostname),
+                    Some(desc),
+                    hq,
+                    hq_lan,
+                    Ipv4Addr::new(10, 0, 10, ip_last),
+                    vec![],
+                    None,
+                    None,
+                    now
+                ),
+                [0xf8, 0xbc, 0x12, 0x10, mac_last, 0x01],
             ),
             now,
             ("Workstation", "Workstation", Some(PortType::Rdp), vec![]),
@@ -1879,17 +1951,20 @@ fn generate_hosts_and_services(
     // 23. UniFi AP Lobby
     result.push(host_with_services!(
         with_snmp(
-            create_host(
-                "unifi-ap-lobby",
-                Some("ap-lobby.acme.local"),
-                Some("UniFi AP - Main Lobby"),
-                hq,
-                hq_iot,
-                Ipv4Addr::new(10, 0, 30, 100),
-                iot_tag.into_iter().collect(),
-                network_devices_cred,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "unifi-ap-lobby",
+                    Some("ap-lobby.acme.local"),
+                    Some("UniFi AP - Main Lobby"),
+                    hq,
+                    hq_iot,
+                    Ipv4Addr::new(10, 0, 30, 100),
+                    iot_tag.into_iter().collect(),
+                    network_devices_cred,
+                    None,
+                    now,
+                ),
+                [0xfc, 0xec, 0xda, 0x30, 0x23, 0x01],
             ),
             Some("UniFi U6-Pro, 6.6.65, Linux 5.4.0"),
             Some("1.3.6.1.4.1.41112.1.6"),
@@ -1909,17 +1984,20 @@ fn generate_hosts_and_services(
     // 24. UniFi AP Floor 2
     result.push(host_with_services!(
         with_snmp(
-            create_host(
-                "unifi-ap-floor2",
-                Some("ap-floor2.acme.local"),
-                Some("UniFi AP - Floor 2"),
-                hq,
-                hq_iot,
-                Ipv4Addr::new(10, 0, 30, 101),
-                iot_tag.into_iter().collect(),
-                network_devices_cred,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "unifi-ap-floor2",
+                    Some("ap-floor2.acme.local"),
+                    Some("UniFi AP - Floor 2"),
+                    hq,
+                    hq_iot,
+                    Ipv4Addr::new(10, 0, 30, 101),
+                    iot_tag.into_iter().collect(),
+                    network_devices_cred,
+                    None,
+                    now,
+                ),
+                [0xfc, 0xec, 0xda, 0x30, 0x24, 0x01],
             ),
             Some("UniFi U6-LR, 6.6.65, Linux 5.4.0"),
             Some("1.3.6.1.4.1.41112.1.6"),
@@ -1938,17 +2016,20 @@ fn generate_hosts_and_services(
 
     // 25. Hue Bridge
     result.push(host_with_services!(
-        create_host(
-            "hue-bridge",
-            None,
-            Some("Philips Hue Bridge"),
-            hq,
-            hq_iot,
-            Ipv4Addr::new(10, 0, 30, 10),
-            iot_tag.into_iter().collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "hue-bridge",
+                None,
+                Some("Philips Hue Bridge"),
+                hq,
+                hq_iot,
+                Ipv4Addr::new(10, 0, 30, 10),
+                iot_tag.into_iter().collect(),
+                None,
+                None,
+                now
+            ),
+            [0x00, 0x17, 0x88, 0x30, 0x25, 0x01],
         ),
         now,
         (
@@ -1962,17 +2043,20 @@ fn generate_hosts_and_services(
     // 26. HP Printer
     result.push(host_with_services!(
         with_snmp(
-            create_host(
-                "printer-hp-main",
-                None,
-                Some("HP LaserJet Pro"),
-                hq,
-                hq_iot,
-                Ipv4Addr::new(10, 0, 30, 50),
-                iot_tag.into_iter().collect(),
-                None,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "printer-hp-main",
+                    None,
+                    Some("HP LaserJet Pro"),
+                    hq,
+                    hq_iot,
+                    Ipv4Addr::new(10, 0, 30, 50),
+                    iot_tag.into_iter().collect(),
+                    None,
+                    None,
+                    now,
+                ),
+                [0x3c, 0xd9, 0x2b, 0x30, 0x26, 0x01],
             ),
             Some("HP LaserJet Pro MFP M428fdw, Firmware 20230809"),
             Some("1.3.6.1.4.1.11.2.3.9.1"),
@@ -1991,17 +2075,20 @@ fn generate_hosts_and_services(
 
     // 27. Camera Entrance
     result.push(host_with_services!(
-        create_host(
-            "cam-entrance",
-            None,
-            Some("Entrance security camera"),
-            hq,
-            hq_iot,
-            Ipv4Addr::new(10, 0, 30, 60),
-            iot_tag.into_iter().collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "cam-entrance",
+                None,
+                Some("Entrance security camera"),
+                hq,
+                hq_iot,
+                Ipv4Addr::new(10, 0, 30, 60),
+                iot_tag.into_iter().collect(),
+                None,
+                None,
+                now
+            ),
+            [0xc0, 0x56, 0xe3, 0x30, 0x27, 0x01],
         ),
         now,
         (
@@ -2014,17 +2101,20 @@ fn generate_hosts_and_services(
 
     // 28. Camera Parking
     result.push(host_with_services!(
-        create_host(
-            "cam-parking",
-            None,
-            Some("Parking lot security camera"),
-            hq,
-            hq_iot,
-            Ipv4Addr::new(10, 0, 30, 61),
-            iot_tag.into_iter().collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "cam-parking",
+                None,
+                Some("Parking lot security camera"),
+                hq,
+                hq_iot,
+                Ipv4Addr::new(10, 0, 30, 61),
+                iot_tag.into_iter().collect(),
+                None,
+                None,
+                now
+            ),
+            [0xc0, 0x56, 0xe3, 0x30, 0x28, 0x01],
         ),
         now,
         (
@@ -2040,17 +2130,20 @@ fn generate_hosts_and_services(
     // 29. Guest AP
     result.push(host_with_services!(
         with_snmp(
-            create_host(
-                "guest-ap",
-                Some("guest-ap.acme.local"),
-                Some("Guest WiFi access point"),
-                hq,
-                hq_guest,
-                Ipv4Addr::new(10, 0, 100, 1),
-                iot_tag.into_iter().collect(),
-                network_devices_cred,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "guest-ap",
+                    Some("guest-ap.acme.local"),
+                    Some("Guest WiFi access point"),
+                    hq,
+                    hq_guest,
+                    Ipv4Addr::new(10, 0, 100, 1),
+                    iot_tag.into_iter().collect(),
+                    network_devices_cred,
+                    None,
+                    now,
+                ),
+                [0xfc, 0xec, 0xda, 0x00, 0x29, 0x01],
             ),
             Some("UniFi U6-Lite, 6.6.65, Linux 5.4.0"),
             Some("1.3.6.1.4.1.41112.1.6"),
@@ -2069,17 +2162,20 @@ fn generate_hosts_and_services(
 
     // 30. Bind9 secondary DNS (Management)
     result.push(host_with_services!(
-        create_host(
-            "bind9-dns",
-            Some("bind9.acme.local"),
-            Some("Bind9 secondary DNS server"),
-            hq,
-            hq_mgmt,
-            Ipv4Addr::new(10, 0, 1, 6),
-            vec![],
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "bind9-dns",
+                Some("bind9.acme.local"),
+                Some("Bind9 secondary DNS server"),
+                hq,
+                hq_mgmt,
+                Ipv4Addr::new(10, 0, 1, 6),
+                vec![],
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0x10, 0x30, 0x01],
         ),
         now,
         ("Bind9", "Bind9", Some(PortType::DnsUdp), vec![]),
@@ -2101,17 +2197,20 @@ fn generate_hosts_and_services(
     // 1. DC Firewall
     result.push(host_with_services!(
         with_snmp(
-            create_host(
-                "dc-fw01",
-                Some("fw01.dc.acme.io"),
-                Some("Data center firewall"),
-                dc,
-                dc_mgmt,
-                Ipv4Addr::new(172, 16, 0, 1),
-                critical_tag.into_iter().collect(),
-                network_devices_cred,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "dc-fw01",
+                    Some("fw01.dc.acme.io"),
+                    Some("Data center firewall"),
+                    dc,
+                    dc_mgmt,
+                    Ipv4Addr::new(172, 16, 0, 1),
+                    critical_tag.into_iter().collect(),
+                    network_devices_cred,
+                    None,
+                    now,
+                ),
+                [0x70, 0x4c, 0xa5, 0xdc, 0x01, 0x01],
             ),
             Some("FortiGate-60F v7.4.3, build 2573, 240514 (GA.F)"),
             Some("1.3.6.1.4.1.12356.101.1"),
@@ -2131,17 +2230,20 @@ fn generate_hosts_and_services(
     // 2. DC Switch (24 ports, LLDP)
     result.push(host_with_services!(
         with_snmp(
-            create_host(
-                "dc-switch-01",
-                Some("switch-01.dc.acme.io"),
-                Some("Data center managed switch"),
-                dc,
-                dc_mgmt,
-                Ipv4Addr::new(172, 16, 0, 2),
-                vec![],
-                network_devices_cred,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "dc-switch-01",
+                    Some("switch-01.dc.acme.io"),
+                    Some("Data center managed switch"),
+                    dc,
+                    dc_mgmt,
+                    Ipv4Addr::new(172, 16, 0, 2),
+                    vec![],
+                    network_devices_cred,
+                    None,
+                    now,
+                ),
+                [0x00, 0x1c, 0x73, 0xdc, 0x02, 0x01],
             ),
             Some("Arista DCS-7050SX3-48YC12, EOS-4.32.0F"),
             Some("1.3.6.1.4.1.30065.1.3011.7050.3735.48.3328.12"),
@@ -2156,17 +2258,20 @@ fn generate_hosts_and_services(
 
     // 3. Zabbix Monitoring
     result.push(host_with_services!(
-        create_host(
-            "zabbix-mon",
-            Some("zabbix.dc.acme.io"),
-            Some("Zabbix monitoring server"),
-            dc,
-            dc_mgmt,
-            Ipv4Addr::new(172, 16, 0, 10),
-            monitoring_tag.into_iter().collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "zabbix-mon",
+                Some("zabbix.dc.acme.io"),
+                Some("Zabbix monitoring server"),
+                dc,
+                dc_mgmt,
+                Ipv4Addr::new(172, 16, 0, 10),
+                monitoring_tag.into_iter().collect(),
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x03, 0x01],
         ),
         now,
         (
@@ -2181,21 +2286,24 @@ fn generate_hosts_and_services(
 
     // 4. HAProxy Load Balancer (pre-generated ID for dependency wiring)
     {
-        let (host, ip_address) = create_host(
-            "haproxy-lb01",
-            Some("lb01.dc.acme.io"),
-            Some("HAProxy load balancer"),
-            dc,
-            dc_dmz,
-            Ipv4Addr::new(172, 16, 30, 10),
-            production_tag
-                .into_iter()
-                .chain(critical_tag)
-                .chain(web_tier_tag)
-                .collect(),
-            None,
-            None,
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "haproxy-lb01",
+                Some("lb01.dc.acme.io"),
+                Some("HAProxy load balancer"),
+                dc,
+                dc_dmz,
+                Ipv4Addr::new(172, 16, 30, 10),
+                production_tag
+                    .into_iter()
+                    .chain(critical_tag)
+                    .chain(web_tier_tag)
+                    .collect(),
+                None,
+                None,
+                now,
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x04, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
@@ -2223,26 +2331,29 @@ fn generate_hosts_and_services(
         });
     }
 
-    // 5. App Server 01 (pre-generated Web App ID for dependency wiring)
+    // 5. App Server 01 (pre-generated Tomcat ID for dependency wiring)
     {
-        let (host, ip_address) = create_host(
-            "app-server-01",
-            Some("app-01.dc.acme.io"),
-            Some("Application server 1"),
-            dc,
-            dc_dmz,
-            Ipv4Addr::new(172, 16, 30, 20),
-            production_tag.into_iter().chain(web_tier_tag).collect(),
-            None,
-            None,
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "app-server-01",
+                Some("app-01.dc.acme.io"),
+                Some("Application server 1"),
+                dc,
+                dc_dmz,
+                Ipv4Addr::new(172, 16, 30, 20),
+                production_tag.into_iter().chain(web_tier_tag).collect(),
+                None,
+                None,
+                now,
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x05, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
-            "Web Service",
-            "Web Application",
+            "Tomcat",
+            "Tomcat",
             &host,
             &ip_addresses[0],
             Some(PortType::Http8080),
@@ -2279,22 +2390,25 @@ fn generate_hosts_and_services(
 
     // 6. App Server 02
     result.push(host_with_services!(
-        create_host(
-            "app-server-02",
-            Some("app-02.dc.acme.io"),
-            Some("Application server 2"),
-            dc,
-            dc_dmz,
-            Ipv4Addr::new(172, 16, 30, 21),
-            production_tag.into_iter().chain(web_tier_tag).collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "app-server-02",
+                Some("app-02.dc.acme.io"),
+                Some("Application server 2"),
+                dc,
+                dc_dmz,
+                Ipv4Addr::new(172, 16, 30, 21),
+                production_tag.into_iter().chain(web_tier_tag).collect(),
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x06, 0x01],
         ),
         now,
         (
-            "Web Service",
-            "Web Application",
+            "Tomcat",
+            "Tomcat",
             Some(PortType::Http8080),
             web_tier_tag.into_iter().collect()
         ),
@@ -2306,17 +2420,20 @@ fn generate_hosts_and_services(
     // 7. DC Proxmox Hypervisor (pre-generated Proxmox VE service ID)
     {
         let (host, ip_address) = with_snmp(
-            create_host(
-                "dc-proxmox-hv01",
-                Some("proxmox-hv01.dc.acme.io"),
-                Some("Data center Proxmox hypervisor"),
-                dc,
-                dc_compute,
-                Ipv4Addr::new(172, 16, 10, 5),
-                production_tag.into_iter().collect(),
-                None,
-                None,
-                now,
+            with_mac(
+                create_host(
+                    "dc-proxmox-hv01",
+                    Some("proxmox-hv01.dc.acme.io"),
+                    Some("Data center Proxmox hypervisor"),
+                    dc,
+                    dc_compute,
+                    Ipv4Addr::new(172, 16, 10, 5),
+                    production_tag.into_iter().collect(),
+                    None,
+                    None,
+                    now,
+                ),
+                [0xf8, 0xbc, 0x12, 0xdc, 0x07, 0x01],
             ),
             Some("Linux dc-proxmox-hv01 6.8.12-1-pve #1 SMP PVE 6.8.12-1 x86_64"),
             Some("1.3.6.1.4.1.8072.3.2.10"),
@@ -2366,21 +2483,24 @@ fn generate_hosts_and_services(
 
     // 8. argocd-vm — VM on dc-proxmox-hv01 (vm_id=300)
     result.push(host_with_services!(
-        create_host(
-            "argocd-vm",
-            Some("argocd.dc.acme.io"),
-            Some("ArgoCD (VM on dc-proxmox-hv01)"),
-            dc,
-            dc_compute,
-            Ipv4Addr::new(172, 16, 10, 10),
-            production_tag.into_iter().collect(),
-            None,
-            Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
-                vm_name: Some("argocd-vm".to_string()),
-                vm_id: Some("300".to_string()),
-                service_id: pve_dc_svc_id,
-            })),
-            now
+        with_mac(
+            create_host(
+                "argocd-vm",
+                Some("argocd.dc.acme.io"),
+                Some("ArgoCD (VM on dc-proxmox-hv01)"),
+                dc,
+                dc_compute,
+                Ipv4Addr::new(172, 16, 10, 10),
+                production_tag.into_iter().collect(),
+                None,
+                Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
+                    vm_name: Some("argocd-vm".to_string()),
+                    vm_id: Some("300".to_string()),
+                    service_id: pve_dc_svc_id,
+                })),
+                now
+            ),
+            [0x52, 0x54, 0x00, 0xdc, 0x08, 0x01],
         ),
         now,
         (
@@ -2393,21 +2513,24 @@ fn generate_hosts_and_services(
 
     // 9. graylog-vm — VM on dc-proxmox-hv01 (vm_id=301)
     result.push(host_with_services!(
-        create_host(
-            "graylog-vm",
-            Some("graylog.dc.acme.io"),
-            Some("Graylog log management (VM on dc-proxmox-hv01)"),
-            dc,
-            dc_compute,
-            Ipv4Addr::new(172, 16, 10, 11),
-            monitoring_tag.into_iter().collect(),
-            None,
-            Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
-                vm_name: Some("graylog-vm".to_string()),
-                vm_id: Some("301".to_string()),
-                service_id: pve_dc_svc_id,
-            })),
-            now
+        with_mac(
+            create_host(
+                "graylog-vm",
+                Some("graylog.dc.acme.io"),
+                Some("Graylog log management (VM on dc-proxmox-hv01)"),
+                dc,
+                dc_compute,
+                Ipv4Addr::new(172, 16, 10, 11),
+                monitoring_tag.into_iter().collect(),
+                None,
+                Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
+                    vm_name: Some("graylog-vm".to_string()),
+                    vm_id: Some("301".to_string()),
+                    service_id: pve_dc_svc_id,
+                })),
+                now
+            ),
+            [0x52, 0x54, 0x00, 0xdc, 0x09, 0x01],
         ),
         now,
         (
@@ -2421,21 +2544,24 @@ fn generate_hosts_and_services(
     // 10. mariadb-vm — VM on dc-proxmox-hv01 (vm_id=302, on Storage subnet)
     // Pre-generated MariaDB service ID for dependency wiring
     {
-        let (host, ip_address) = create_host(
-            "mariadb-vm",
-            Some("mariadb.dc.acme.io"),
-            Some("MariaDB database (VM on dc-proxmox-hv01)"),
-            dc,
-            dc_storage,
-            Ipv4Addr::new(172, 16, 20, 10),
-            database_tag.into_iter().collect(),
-            None,
-            Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
-                vm_name: Some("mariadb-vm".to_string()),
-                vm_id: Some("302".to_string()),
-                service_id: pve_dc_svc_id,
-            })),
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "mariadb-vm",
+                Some("mariadb.dc.acme.io"),
+                Some("MariaDB database (VM on dc-proxmox-hv01)"),
+                dc,
+                dc_storage,
+                Ipv4Addr::new(172, 16, 20, 10),
+                database_tag.into_iter().collect(),
+                None,
+                Some(HostVirtualization::Proxmox(ProxmoxVirtualization {
+                    vm_name: Some("mariadb-vm".to_string()),
+                    vm_id: Some("302".to_string()),
+                    service_id: pve_dc_svc_id,
+                })),
+                now,
+            ),
+            [0x52, 0x54, 0x00, 0xdc, 0x10, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
@@ -2475,7 +2601,7 @@ fn generate_hosts_and_services(
                 host_id,
                 subnet_id: dc_compute.id,
                 ip_address: IpAddr::V4(Ipv4Addr::new(172, 16, 10, 20)),
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xf8, 0xbc, 0x12, 0xdc, 0x11, 0x01])),
                 name: Some("eth0".to_string()),
                 position: 0,
             },
@@ -2489,7 +2615,7 @@ fn generate_hosts_and_services(
                 host_id,
                 subnet_id: dc_docker.id,
                 ip_address: IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1)),
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0x02, 0x42, 0xac, 0x12, 0x00, 0x01])),
                 name: Some("docker0".to_string()),
                 position: 1,
             },
@@ -2629,40 +2755,49 @@ fn generate_hosts_and_services(
 
     // 12. RabbitMQ
     result.push(host_with_services!(
-        create_host(
-            "rabbitmq-node01",
-            Some("mq.dc.acme.io"),
-            Some("RabbitMQ message broker"),
-            dc,
-            dc_compute,
-            Ipv4Addr::new(172, 16, 10, 30),
-            production_tag.into_iter().collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "rabbitmq-node01",
+                Some("mq.dc.acme.io"),
+                Some("RabbitMQ message broker"),
+                dc,
+                dc_compute,
+                Ipv4Addr::new(172, 16, 10, 30),
+                production_tag.into_iter().collect(),
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x12, 0x01],
         ),
         now,
         (
             "RabbitMQ",
             "RabbitMQ",
             Some(PortType::AMQP),
-            production_tag.into_iter().collect()
+            [production_tag, messaging_tag]
+                .into_iter()
+                .flatten()
+                .collect()
         ),
     ));
 
     // 13. Redis Cluster
     result.push(host_with_services!(
-        create_host(
-            "redis-cluster01",
-            Some("redis.dc.acme.io"),
-            Some("Redis cluster node"),
-            dc,
-            dc_compute,
-            Ipv4Addr::new(172, 16, 10, 31),
-            database_tag.into_iter().collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "redis-cluster01",
+                Some("redis.dc.acme.io"),
+                Some("Redis cluster node"),
+                dc,
+                dc_compute,
+                Ipv4Addr::new(172, 16, 10, 31),
+                database_tag.into_iter().collect(),
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x13, 0x01],
         ),
         now,
         (
@@ -2677,17 +2812,20 @@ fn generate_hosts_and_services(
 
     // 14. MinIO (pre-generated service ID for Storage Tier dependency)
     {
-        let (host, ip_address) = create_host(
-            "minio-storage",
-            Some("minio.dc.acme.io"),
-            Some("MinIO object storage"),
-            dc,
-            dc_storage,
-            Ipv4Addr::new(172, 16, 20, 20),
-            backup_tag.into_iter().collect(),
-            None,
-            None,
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "minio-storage",
+                Some("minio.dc.acme.io"),
+                Some("MinIO object storage"),
+                dc,
+                dc_storage,
+                Ipv4Addr::new(172, 16, 20, 20),
+                backup_tag.into_iter().collect(),
+                None,
+                None,
+                now,
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x14, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
@@ -2698,7 +2836,7 @@ fn generate_hosts_and_services(
             &host,
             &ip_addresses[0],
             Some(PortType::Https),
-            backup_tag.into_iter().collect(),
+            [backup_tag, storage_tag].into_iter().flatten().collect(),
             now,
         ) {
             svc.id = minio_dc_svc_id;
@@ -2717,17 +2855,20 @@ fn generate_hosts_and_services(
 
     // 15. Ceph (pre-generated service ID for Storage Tier dependency)
     {
-        let (host, ip_address) = create_host(
-            "ceph-node01",
-            Some("ceph.dc.acme.io"),
-            Some("Ceph storage node"),
-            dc,
-            dc_storage,
-            Ipv4Addr::new(172, 16, 20, 21),
-            backup_tag.into_iter().collect(),
-            None,
-            None,
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "ceph-node01",
+                Some("ceph.dc.acme.io"),
+                Some("Ceph storage node"),
+                dc,
+                dc_storage,
+                Ipv4Addr::new(172, 16, 20, 21),
+                backup_tag.into_iter().collect(),
+                None,
+                None,
+                now,
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x15, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
@@ -2738,7 +2879,7 @@ fn generate_hosts_and_services(
             &host,
             &ip_addresses[0],
             None,
-            backup_tag.into_iter().collect(),
+            [backup_tag, storage_tag].into_iter().flatten().collect(),
             now,
         ) {
             svc.id = ceph_dc_svc_id;
@@ -2757,17 +2898,20 @@ fn generate_hosts_and_services(
 
     // 16. Elasticsearch (pre-generated service ID for Storage Tier dependency)
     {
-        let (host, ip_address) = create_host(
-            "elasticsearch-dc",
-            Some("es.dc.acme.io"),
-            Some("Elasticsearch cluster"),
-            dc,
-            dc_storage,
-            Ipv4Addr::new(172, 16, 20, 30),
-            database_tag.into_iter().collect(),
-            None,
-            None,
-            now,
+        let (host, ip_address) = with_mac(
+            create_host(
+                "elasticsearch-dc",
+                Some("es.dc.acme.io"),
+                Some("Elasticsearch cluster"),
+                dc,
+                dc_storage,
+                Ipv4Addr::new(172, 16, 20, 30),
+                database_tag.into_iter().collect(),
+                None,
+                None,
+                now,
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x16, 0x01],
         );
         let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
@@ -2797,17 +2941,20 @@ fn generate_hosts_and_services(
 
     // 17. InfluxDB
     result.push(host_with_services!(
-        create_host(
-            "influxdb-metrics",
-            Some("influxdb.dc.acme.io"),
-            Some("InfluxDB metrics store"),
-            dc,
-            dc_storage,
-            Ipv4Addr::new(172, 16, 20, 31),
-            database_tag.into_iter().chain(monitoring_tag).collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "influxdb-metrics",
+                Some("influxdb.dc.acme.io"),
+                Some("InfluxDB metrics store"),
+                dc,
+                dc_storage,
+                Ipv4Addr::new(172, 16, 20, 31),
+                database_tag.into_iter().chain(monitoring_tag).collect(),
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x17, 0x01],
         ),
         now,
         (
@@ -2822,17 +2969,20 @@ fn generate_hosts_and_services(
 
     // 18. DC VPN
     result.push(host_with_services!(
-        create_host(
-            "dc-vpn",
-            Some("vpn.dc.acme.io"),
-            Some("Data center VPN endpoint"),
-            dc,
-            dc_vpn,
-            Ipv4Addr::new(10, 8, 0, 1),
-            vec![],
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "dc-vpn",
+                Some("vpn.dc.acme.io"),
+                Some("Data center VPN endpoint"),
+                dc,
+                dc_vpn,
+                Ipv4Addr::new(10, 8, 0, 1),
+                vec![],
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x18, 0x01],
         ),
         now,
         ("OpenVPN", "OpenVPN", Some(PortType::OpenVPN), vec![]),
@@ -2842,17 +2992,20 @@ fn generate_hosts_and_services(
 
     // 19. Cloudflared Tunnel (DMZ)
     result.push(host_with_services!(
-        create_host(
-            "cloudflared-tunnel",
-            Some("cloudflared.dc.acme.io"),
-            Some("Cloudflare tunnel endpoint"),
-            dc,
-            dc_dmz,
-            Ipv4Addr::new(172, 16, 30, 5),
-            production_tag.into_iter().collect(),
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "cloudflared-tunnel",
+                Some("cloudflared.dc.acme.io"),
+                Some("Cloudflare tunnel endpoint"),
+                dc,
+                dc_dmz,
+                Ipv4Addr::new(172, 16, 30, 5),
+                production_tag.into_iter().collect(),
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x19, 0x01],
         ),
         now,
         (
@@ -2865,17 +3018,20 @@ fn generate_hosts_and_services(
 
     // 20. DC Admin Workstation (Compute)
     result.push(host_with_services!(
-        create_host(
-            "dc-ws-admin",
-            Some("ws-admin.dc.acme.io"),
-            Some("DC admin workstation"),
-            dc,
-            dc_compute,
-            Ipv4Addr::new(172, 16, 10, 100),
-            vec![],
-            None,
-            None,
-            now
+        with_mac(
+            create_host(
+                "dc-ws-admin",
+                Some("ws-admin.dc.acme.io"),
+                Some("DC admin workstation"),
+                dc,
+                dc_compute,
+                Ipv4Addr::new(172, 16, 10, 100),
+                vec![],
+                None,
+                None,
+                now
+            ),
+            [0xf8, 0xbc, 0x12, 0xdc, 0x20, 0x01],
         ),
         now,
         ("Workstation", "Workstation", Some(PortType::Rdp), vec![]),
@@ -2989,7 +3145,7 @@ fn generate_if_entries(
                 speed_bps: Some(1_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xa4, 0xbe, 0x2b, 0x10, 0x01, 0x10])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: None,
@@ -3024,7 +3180,7 @@ fn generate_if_entries(
                 speed_bps: Some(1_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xa4, 0xbe, 0x2b, 0x10, 0x01, 0x11])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
@@ -3065,7 +3221,7 @@ fn generate_if_entries(
                 speed_bps: Some(1_000_000_000),
                 admin_status: IfAdminStatus::Down,
                 oper_status: IfOperStatus::Down,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xa4, 0xbe, 0x2b, 0x10, 0x01, 0x12])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: None,
@@ -3110,7 +3266,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xd0, 0x50, 0x99, 0x40, 0x17, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
@@ -3161,7 +3317,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xf8, 0xbc, 0x12, 0x20, 0x08, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
@@ -3247,7 +3403,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xf8, 0xbc, 0x12, 0x20, 0x09, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
@@ -3298,7 +3454,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xf8, 0xbc, 0x12, 0x20, 0x13, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
@@ -3357,7 +3513,7 @@ fn generate_if_entries(
                 speed_bps: Some(1_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xfc, 0xec, 0xda, 0x10, 0x03, 0x01])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("00:0d:b9:4a:f2:01".to_string())),
@@ -3399,7 +3555,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xfc, 0xec, 0xda, 0x10, 0x03, 0x02])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("3c:ec:ef:12:34:01".to_string())),
@@ -3441,7 +3597,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xfc, 0xec, 0xda, 0x10, 0x03, 0x03])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("d4:be:d9:56:78:01".to_string())),
@@ -3483,7 +3639,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xfc, 0xec, 0xda, 0x10, 0x03, 0x04])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("d4:be:d9:56:78:02".to_string())),
@@ -3525,7 +3681,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xfc, 0xec, 0xda, 0x10, 0x03, 0x05])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("aa:bb:cc:dd:ee:01".to_string())),
@@ -3567,7 +3723,7 @@ fn generate_if_entries(
                 speed_bps: Some(1_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xfc, 0xec, 0xda, 0x10, 0x03, 0x06])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("fc:ec:da:aa:bb:01".to_string())),
@@ -3610,7 +3766,14 @@ fn generate_if_entries(
                     speed_bps: Some(1_000_000_000),
                     admin_status: IfAdminStatus::Up,
                     oper_status: IfOperStatus::Down,
-                    mac_address: None,
+                    mac_address: Some(MacAddress::new([
+                        0xfc,
+                        0xec,
+                        0xda,
+                        0x10,
+                        0x03,
+                        port_num as u8,
+                    ])),
                     ip_address_id: None,
                     neighbor: None,
                     lldp_chassis_id: None,
@@ -3656,7 +3819,7 @@ fn generate_if_entries(
                 speed_bps: Some(1_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xfc, 0xec, 0xda, 0x30, 0x23, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
@@ -3707,7 +3870,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0x70, 0x4c, 0xa5, 0xdc, 0x01, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(dc_switch_mac.to_string())),
@@ -3758,7 +3921,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xf8, 0xbc, 0x12, 0xdc, 0x07, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(dc_switch_mac.to_string())),
@@ -3809,7 +3972,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xf8, 0xbc, 0x12, 0xdc, 0x11, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(dc_switch_mac.to_string())),
@@ -3860,7 +4023,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0xf8, 0xbc, 0x12, 0xdc, 0x04, 0x10])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(dc_switch_mac.to_string())),
@@ -3917,7 +4080,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0x00, 0x1c, 0x73, 0xdc, 0x02, 0x01])),
                 ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("a0:36:9f:11:22:01".to_string())),
@@ -3959,7 +4122,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0x00, 0x1c, 0x73, 0xdc, 0x02, 0x02])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("d4:be:d9:aa:bb:01".to_string())),
@@ -4001,7 +4164,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0x00, 0x1c, 0x73, 0xdc, 0x02, 0x03])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("aa:bb:cc:dd:ee:02".to_string())),
@@ -4043,7 +4206,7 @@ fn generate_if_entries(
                 speed_bps: Some(10_000_000_000),
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
-                mac_address: None,
+                mac_address: Some(MacAddress::new([0x00, 0x1c, 0x73, 0xdc, 0x02, 0x04])),
                 ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("11:22:33:44:55:01".to_string())),
@@ -4086,7 +4249,14 @@ fn generate_if_entries(
                     speed_bps: Some(1_000_000_000),
                     admin_status: IfAdminStatus::Up,
                     oper_status: IfOperStatus::Down,
-                    mac_address: None,
+                    mac_address: Some(MacAddress::new([
+                        0x00,
+                        0x1c,
+                        0x73,
+                        0xdc,
+                        0x02,
+                        port_num as u8,
+                    ])),
                     ip_address_id: None,
                     neighbor: None,
                     lldp_chassis_id: None,
@@ -4615,24 +4785,18 @@ fn generate_dependencies(
         },
     });
 
-    // 3. Network Access Path: pfSense → Traefik → Gitea
+    // 3. Reverse Proxy Path: Traefik → Gitea
     dependencies.push(Dependency {
         id: Uuid::new_v4(),
         created_at: now,
         updated_at: now,
         base: DependencyBase {
-            name: "Network Access Path".to_string(),
+            name: "Reverse Proxy Path".to_string(),
             network_id: hq.id,
-            description: Some(
-                "Traffic path from firewall through reverse proxy to code hosting".to_string(),
-            ),
+            description: Some("Traffic path through reverse proxy to code hosting".to_string()),
             dependency_type: DependencyType::RequestPath,
             members: DependencyMembers::Bindings {
-                binding_ids: vec![
-                    svc_ids.pfsense_binding,
-                    svc_ids.traefik_hq_binding,
-                    svc_ids.gitea_hq_binding,
-                ],
+                binding_ids: vec![svc_ids.traefik_hq_binding, svc_ids.gitea_hq_binding],
             },
             source: EntitySource::Manual,
             color: Color::Cyan,
@@ -4643,7 +4807,7 @@ fn generate_dependencies(
 
     // ===== DC Dependencies (3) =====
 
-    // 4. Web Traffic Flow: HAProxy → Web Application → MariaDB
+    // 4. Web Traffic Flow: HAProxy → Tomcat → MariaDB
     dependencies.push(Dependency {
         id: Uuid::new_v4(),
         created_at: now,
