@@ -722,14 +722,18 @@
 							elementNodeSizes
 						);
 					} else {
-						// Standard ELK layout for expanded or partially collapsed views
-						// Use prevExpandedSizes captured before graph rebuild (line ~440)
-						// so collapsed containers retain their expanded width in ELK.
+						// When there are no previous expanded sizes (first load with
+						// persisted collapse from localStorage), run ELK with everything
+						// EXPANDED so all containers get proper expandedSize computed.
+						// Then apply collapse state after, preserving the sizes.
+						const hasRestorable = prevExpandedSizes && prevExpandedSizes.size > 0;
+						const elkCollapsed = hasRestorable ? collapsed : new Set<string>();
+
 						const elkResult = await layoutEngine.compute({
 							nodes: visibleNodes,
 							edges: elevatedEdges,
 							topology: topology,
-							collapsedContainers: collapsed,
+							collapsedContainers: elkCollapsed,
 							expandedContainerSizes: prevExpandedSizes,
 							elementNodeSizes,
 							hiddenEdgeTypes: hiddenEdgeTypes
@@ -740,17 +744,17 @@
 						}
 						sessionStructureKey = structureKey;
 
-						// Rebuild graph and apply ELK result
+						// Rebuild graph and apply ELK result.
+						// When ELK ran with everything expanded (no restorable sizes),
+						// apply result BEFORE syncing collapse so all containers get
+						// expandedSize set. Then collapse afterward.
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
-						layoutGraph.syncCollapseState(collapsed);
-						// Restore expanded sizes and child positions for collapsed containers
-						// before applying ELK results — applyElkResult skips them since ELK
-						// only computes collapsed dims and skips their children entirely.
-						if (prevExpandedSizes) {
+						if (hasRestorable) {
+							layoutGraph.syncCollapseState(collapsed);
 							layoutGraph.restoreExpandedSizes(prevExpandedSizes);
-						}
-						if (prevChildPositions) {
-							layoutGraph.restoreContainerChildPositions(prevChildPositions);
+							if (prevChildPositions) {
+								layoutGraph.restoreContainerChildPositions(prevChildPositions);
+							}
 						}
 						layoutGraph.applyElkResult(
 							elkResult.nodePositions,
@@ -758,6 +762,11 @@
 							elkResult.elementNodeSizes,
 							elkResult.edgeHandles
 						);
+						// When ELK ran with everything expanded, apply collapse AFTER
+						// so expandedSize is already set on every container.
+						if (!hasRestorable) {
+							layoutGraph.syncCollapseState(collapsed);
+						}
 					}
 
 					// Cache measured sizes for this view so return visits skip measurement
