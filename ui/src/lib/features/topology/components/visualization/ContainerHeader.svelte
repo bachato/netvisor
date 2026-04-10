@@ -264,9 +264,12 @@
 							>{summary.headerText}{summary.labels.length > 0 ? ':' : ''}</span
 						>
 					{/if}
-					{#each summary.labels as pill (pill.label)}
+					{#each summary.labels.slice(0, 3) as pill (pill.label)}
 						<Tag label={pill.label} color={pill.color} />
 					{/each}
+					{#if summary.labels.length > 3}
+						<span class="text-tertiary text-xs">+{summary.labels.length - 3}</span>
+					{/if}
 					<span class="text-tertiary text-xs"
 						>({topology_elementCount({
 							count: summary.childCount,
