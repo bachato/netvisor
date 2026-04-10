@@ -191,6 +191,7 @@ export interface ContainerTypeMetadata {
 	title_style: 'External' | 'Inline';
 	is_subcontainer: boolean;
 	is_collapsible: boolean;
+	collapsed_by_default: boolean;
 	has_border: boolean;
 	padding: { top: number; left: number; bottom: number; right: number };
 	collapsed_size: { width: number; height: number };

@@ -12,7 +12,9 @@
 		topology_shortcutSelectAll,
 		topology_shortcutBoxSelect,
 		topology_shortcutToggleSelect,
-		topology_shortcutToggleEditMode
+		topology_shortcutToggleEditMode,
+		topology_shortcutStepExpand,
+		topology_shortcutStepCollapse
 	} from '$lib/paraglide/messages';
 	import KbdKey from '$lib/shared/components/feedback/KbdKey.svelte';
 
@@ -30,7 +32,9 @@
 		{ keys: ['?'], description: () => topology_shortcutHelp() },
 		{ keys: ['Ctrl/Cmd', 'A'], description: () => topology_shortcutSelectAll() },
 		{ keys: ['Shift', 'Drag'], description: () => topology_shortcutBoxSelect() },
-		{ keys: ['Shift', 'Click'], description: () => topology_shortcutToggleSelect() }
+		{ keys: ['Shift', 'Click'], description: () => topology_shortcutToggleSelect() },
+		{ keys: [']'], description: () => topology_shortcutStepExpand() },
+		{ keys: ['['], description: () => topology_shortcutStepCollapse() }
 	];
 </script>
 

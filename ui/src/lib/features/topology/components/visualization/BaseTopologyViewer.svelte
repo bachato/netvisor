@@ -15,11 +15,15 @@
 	import { Keyboard, Minimize2, Maximize2, PencilOff, Pencil } from 'lucide-svelte';
 	import {
 		topology_shortcutsTitle,
-		topology_collapseAll,
-		topology_expandAll,
+		topology_collapseLevelDown,
+		topology_expandLevelUp,
 		topology_connectionsCount,
 		topology_viewModeTooltip,
 		topology_editModeTooltip,
+		topology_levelFullyCollapsed,
+		topology_levelContainersExpanded,
+		topology_levelSubcontainersExpanded,
+		topology_levelFullyExpanded,
 		common_edit,
 		common_shortcuts
 	} from '$lib/paraglide/messages';
@@ -52,11 +56,15 @@
 	import { ElkLayoutEngine } from '../../layout/engine';
 	import {
 		collapsedContainers,
-		collapseAll,
-		expandAll,
+		collapseLevel,
+		stepExpand,
+		stepCollapse,
+		inferCurrentLevel,
+		getAutoCollapseIds,
 		buildElementToContainer,
 		computeCollapsedEdges
 	} from '../../collapse';
+	import type { CollapseLevel } from '../../collapse';
 	import {
 		updateConnectedNodes,
 		setEdgeHover,
@@ -214,6 +222,7 @@
 	let sessionStructureKey = '';
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
 	let seenAutoCollapseIds = new Set<string>();
+	let collapseLevelInferred = false;
 	let isMeasuring = false;
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
@@ -362,6 +371,19 @@
 				}
 
 				let collapsed = get(collapsedContainers);
+
+				// Infer collapse level from persisted collapsed state on first load
+				if (!collapseLevelInferred) {
+					collapseLevelInferred = true;
+					const inferred = inferCurrentLevel(
+						collapsed,
+						topology.nodes,
+						containerTypes,
+						getInfrastructureRuleId()
+					);
+					collapseLevel.set(inferred);
+				}
+
 				// Perspective switch: strip stale container IDs from previous
 				// perspective that don't exist in the new topology. Without this,
 				// stale IDs pollute deferCollapse, structureKey, and edge aggregation.
@@ -385,8 +407,10 @@
 							const allContainerIds = topology.nodes
 								.filter((n) => n.node_type === 'Container')
 								.map((n) => n.id);
-							collapseAll(allContainerIds);
-							collapsed = new Set(allContainerIds);
+							const allCollapsed = new Set(allContainerIds);
+							collapsedContainers.set(allCollapsed);
+							collapseLevel.set(1);
+							collapsed = allCollapsed;
 							fitViewPending = true;
 						} else if (staleCount > 0) {
 							collapsedContainers.set(validCollapsed);
@@ -873,19 +897,25 @@
 					// Auto-collapse containers whose type has collapsed_by_default metadata.
 					// Runs after layout so expanded sizes are cached for correct expand later.
 					// Only collapse containers we haven't seen before (so user can expand them).
+					// Skip at level 4 (fully expanded) — user explicitly wants everything open.
 					{
+						const currentLevel = get(collapseLevel);
 						const infraRuleId = getInfrastructureRuleId();
-						const autoCollapseIds = topology.nodes
-							.filter((n) => {
-								if (n.node_type !== 'Container') return false;
-								if (collapsed.has(n.id) || seenAutoCollapseIds.has(n.id)) return false;
-								const data = n as Record<string, unknown>;
-								const ct = data.container_type as string | undefined;
-								if (ct && containerTypes.getMetadata(ct).collapsed_by_default === true) return true;
-								if (infraRuleId && data.element_rule_id === infraRuleId) return true;
-								return false;
-							})
-							.map((n) => n.id);
+						const autoCollapseIds =
+							currentLevel === 4
+								? []
+								: topology.nodes
+										.filter((n) => {
+											if (n.node_type !== 'Container') return false;
+											if (collapsed.has(n.id) || seenAutoCollapseIds.has(n.id)) return false;
+											const data = n as Record<string, unknown>;
+											const ct = data.container_type as string | undefined;
+											if (ct && containerTypes.getMetadata(ct).collapsed_by_default === true)
+												return true;
+											if (infraRuleId && data.element_rule_id === infraRuleId) return true;
+											return false;
+										})
+										.map((n) => n.id);
 						if (autoCollapseIds.length > 0) {
 							console.log(
 								`[LAYOUT-DEBUG] Auto-collapse: ${autoCollapseIds
@@ -1418,15 +1448,44 @@
 		handleBoxSelect(selNodes, selectionStores);
 	}
 
-	function handleCollapseAll() {
-		const containerIds = topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id);
-		collapseAll(containerIds);
+	function getCollapseLevelName(level: CollapseLevel): string {
+		switch (level) {
+			case 1:
+				return topology_levelFullyCollapsed();
+			case 2:
+				return topology_levelContainersExpanded();
+			case 3:
+				return topology_levelSubcontainersExpanded();
+			case 4:
+				return topology_levelFullyExpanded();
+		}
+	}
+
+	$: collapseLevelTooltipCollapse = `${topology_collapseLevelDown()} (${$collapseLevel}/4: ${getCollapseLevelName($collapseLevel)})`;
+	$: collapseLevelTooltipExpand = `${topology_expandLevelUp()} (${$collapseLevel}/4: ${getCollapseLevelName($collapseLevel)})`;
+
+	function handleStepCollapse() {
+		stepCollapse(topology.nodes, containerTypes, getInfrastructureRuleId());
 		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
 	}
 
-	function handleExpandAll() {
-		expandAll();
+	function handleStepExpand() {
+		const { autoCollapseIds } = stepExpand(
+			topology.nodes,
+			containerTypes,
+			getInfrastructureRuleId()
+		);
+		// Mark auto-collapse containers as "seen" so they don't re-collapse
+		for (const id of autoCollapseIds) seenAutoCollapseIds.add(id);
 		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
+	}
+
+	export function triggerStepExpand() {
+		handleStepExpand();
+	}
+
+	export function triggerStepCollapse() {
+		handleStepCollapse();
 	}
 
 	// Merge preview edges into the edge store when they change
@@ -1508,9 +1567,10 @@
 					</TopologySidebarButton>
 				{/if}
 				<TopologySidebarButton
-					onclick={handleCollapseAll}
-					title={topology_collapseAll()}
-					label={topology_collapseAll()}
+					onclick={handleStepCollapse}
+					title={collapseLevelTooltipCollapse}
+					label={topology_collapseLevelDown()}
+					badge={$collapseLevel}
 					collapsed={sidebarCollapsed}
 				>
 					{#snippet icon()}
@@ -1518,9 +1578,10 @@
 					{/snippet}
 				</TopologySidebarButton>
 				<TopologySidebarButton
-					onclick={handleExpandAll}
-					title={topology_expandAll()}
-					label={topology_expandAll()}
+					onclick={handleStepExpand}
+					title={collapseLevelTooltipExpand}
+					label={topology_expandLevelUp()}
+					badge={$collapseLevel}
 					collapsed={sidebarCollapsed}
 				>
 					{#snippet icon()}
