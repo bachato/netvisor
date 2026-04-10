@@ -420,10 +420,10 @@
 
 		{#if nodeRenderData.subtitleText}
 			<div
-				class="text-primary truncate px-2 text-center font-mono text-sm font-medium {!nodeRenderData.headerText &&
+				class="text-primary truncate px-2 pt-2 text-center text-sm font-medium {!nodeRenderData.headerText &&
 				!nodeRenderData.showServices
-					? 'py-2'
-					: 'pt-0.5'}"
+					? 'pb-2'
+					: ''}"
 			>
 				{nodeRenderData.subtitleText}
 			</div>

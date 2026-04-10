@@ -1,0 +1,340 @@
+[
+  {
+    "id": "Subnet",
+    "name": "Subnet",
+    "description": "Network subnet container",
+    "category": null,
+    "icon": "network",
+    "color": "Blue",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 80,
+        "width": 200
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": false,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 25
+      },
+      "title_style": "External"
+    }
+  },
+  {
+    "id": "ServiceCategory",
+    "name": "Service category",
+    "description": "Services grouped by category",
+    "category": null,
+    "icon": "layers",
+    "color": "Fuchsia",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 80,
+        "width": 200
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": false,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 25
+      },
+      "title_style": "External"
+    }
+  },
+  {
+    "id": "ApplicationGroup",
+    "name": "Application group",
+    "description": "Services grouped by application group tag",
+    "category": null,
+    "icon": "workflow",
+    "color": "Purple",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 80,
+        "width": 200
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": false,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 25
+      },
+      "title_style": "External"
+    }
+  },
+  {
+    "id": "Root",
+    "name": "Root",
+    "description": "Root container",
+    "category": null,
+    "icon": "layers",
+    "color": "Gray",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 80,
+        "width": 200
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": false,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 25
+      },
+      "title_style": "External"
+    }
+  },
+  {
+    "id": "Host",
+    "name": "Host",
+    "description": "Physical network device",
+    "category": null,
+    "icon": "cable",
+    "color": "Amber",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 80,
+        "width": 200
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": false,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 25
+      },
+      "title_style": "External"
+    }
+  },
+  {
+    "id": "NestedTag",
+    "name": "Tag container",
+    "description": "Elements grouped by tag",
+    "category": null,
+    "icon": "tag",
+    "color": "Orange",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 40,
+        "width": 250
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": true,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 50
+      },
+      "title_style": "Inline"
+    }
+  },
+  {
+    "id": "NestedServiceCategory",
+    "name": "Service category container",
+    "description": "Elements grouped by service category",
+    "category": null,
+    "icon": "layers",
+    "color": "Purple",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 40,
+        "width": 250
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": true,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 50
+      },
+      "title_style": "Inline"
+    }
+  },
+  {
+    "id": "Virtualizer",
+    "name": "Virtualizer",
+    "description": "Hosts grouped by virtualizer",
+    "category": null,
+    "icon": "boxes",
+    "color": "Amber",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 40,
+        "width": 250
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": true,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 50
+      },
+      "title_style": "Inline"
+    }
+  },
+  {
+    "id": "BareMetal",
+    "name": "Bare metal",
+    "description": "Hosts with no virtualization",
+    "category": null,
+    "icon": "server",
+    "color": "Amber",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 40,
+        "width": 250
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": true,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 50
+      },
+      "title_style": "Inline"
+    }
+  },
+  {
+    "id": "Stack",
+    "name": "Docker stack",
+    "description": "Elements grouped by Docker Compose project",
+    "category": null,
+    "icon": "container",
+    "color": "Fuchsia",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 40,
+        "width": 250
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": true,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 50
+      },
+      "title_style": "Inline"
+    }
+  },
+  {
+    "id": "TrunkPort",
+    "name": "Trunk ports",
+    "description": "Trunk ports carrying multiple VLANs",
+    "category": null,
+    "icon": "network",
+    "color": "Amber",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 40,
+        "width": 250
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": true,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 50
+      },
+      "title_style": "Inline"
+    }
+  },
+  {
+    "id": "VLAN",
+    "name": "VLAN",
+    "description": "Access ports grouped by native VLAN",
+    "category": null,
+    "icon": "network",
+    "color": "Teal",
+    "metadata": {
+      "collapsed_by_default": false,
+      "collapsed_size": {
+        "height": 40,
+        "width": 250
+      },
+      "fill_icon": false,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": true,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 50
+      },
+      "title_style": "Inline"
+    }
+  },
+  {
+    "id": "PortOpStatus",
+    "name": "Port status",
+    "description": "Ports grouped by operational status",
+    "category": null,
+    "icon": "circle",
+    "color": "Gray",
+    "metadata": {
+      "collapsed_by_default": true,
+      "collapsed_size": {
+        "height": 40,
+        "width": 250
+      },
+      "fill_icon": true,
+      "has_border": true,
+      "is_collapsible": true,
+      "is_subcontainer": true,
+      "padding": {
+        "bottom": 25,
+        "left": 25,
+        "right": 25,
+        "top": 50
+      },
+      "title_style": "Inline"
+    }
+  }
+]

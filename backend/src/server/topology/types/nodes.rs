@@ -109,7 +109,7 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::ServiceCategory => EntityDiscriminants::Service.color(),
             ContainerType::ApplicationGroup => Concept::Application.color(),
             ContainerType::Root => Color::Gray,
-            ContainerType::Host => Concept::L2.color(),
+            ContainerType::Host => EntityDiscriminants::Host.color(),
             ContainerType::NestedTag => Color::Orange,
             ContainerType::NestedServiceCategory => Color::Purple,
             ContainerType::Virtualizer => Concept::Workloads.color(),

@@ -173,7 +173,7 @@
 	let colorHelper: ColorStyle = $derived(
 		nodeColor
 			? createColorHelper(nodeColor as Parameters<typeof createColorHelper>[0])
-			: createColorHelper('Gray')
+			: createColorHelper(containerMeta.color as Parameters<typeof createColorHelper>[0])
 	);
 
 	// Element rule header + tag pills (for subcontainers created by element rules)

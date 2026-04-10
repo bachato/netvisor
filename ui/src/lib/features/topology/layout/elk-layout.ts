@@ -39,8 +39,8 @@ const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
 	'elk.layered.spacing.edgeNodeBetweenLayers': '25',
 	'elk.edgeRouting': 'POLYLINE',
 	'elk.layered.spacing.edgeEdgeBetweenLayers': '25',
-	'elk.spacing.componentComponent': '50',
-	'elk.spacing.nodeNode': '50',
+	'elk.spacing.componentComponent': '75',
+	'elk.spacing.nodeNode': '75',
 	'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
 	'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
 	'elk.hierarchyHandling': 'SEPARATE_CHILDREN',
@@ -104,8 +104,8 @@ function buildElkGraph(
 			// Layered children: ELK optimizes child ordering for crossing minimization
 			// Box children: grid packing by size (default for most views)
 			// L2 uses narrow 0.3 for vertical port columns; subcontainers use
-			// wider 2.5 to spread children horizontally; root containers use 1.4
-			const aspectRatio = useLayeredChildren ? '0.3' : isSubcontainer ? '2.5' : '1.4';
+			// wider 5.0 to spread children horizontally; root containers use 1.4
+			const aspectRatio = useLayeredChildren ? '0.3' : isSubcontainer ? '5.0' : '1.4';
 			const childLayoutOptions: Record<string, string> = {
 				'elk.algorithm': 'box',
 				'elk.box.packingMode': 'SIMPLE',
