@@ -616,8 +616,6 @@
 				const needsElk = isNewStructure || needsElkForExpand;
 
 				if (needsElk) {
-					// Whether we have cached expanded sizes from a previous layout
-					const hasRestorable = prevExpandedSizes && prevExpandedSizes.size > 0;
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 					const elementNodeSizes = new Map<string, { x: number; y: number }>();
 					const cachedSizes = isViewTransition ? viewSizeCache.get(currentView) : undefined;
@@ -640,42 +638,10 @@
 						}
 					} else {
 						// First visit to view or non-view structural change:
-						// full DOM measurement pass.
-						// When running ELK expanded (!hasRestorable), measure ALL nodes
-						// including children of collapsed containers — use layoutNodes
-						// directly with no collapse filtering so ELK gets real sizes.
+						// full DOM measurement pass
 						isMeasuring = true;
 						edges.set([]);
-						let measureNodes: Node[];
-						if (!hasRestorable) {
-							// Build measurement nodes from ALL layoutNodes, treating
-							// everything as expanded so children get measured
-							measureNodes = sortFlowNodes(
-								layoutNodes.map((node) => ({
-									id: node.id,
-									type: node.node_type,
-									position: { x: 0, y: 0 },
-									...(node.node_type === 'Element' && { width: 250 }),
-									expandParent: true,
-									deletable: false,
-									selectable: false,
-									parentId:
-										node.node_type === 'Element'
-											? (node.container_id ??
-												resolveElementNode(node.id, node, topology).subnetId)
-											: node.node_type === 'Container' && node.parent_container_id
-												? (node.parent_container_id as string)
-												: undefined,
-									extent:
-										node.node_type === 'Element' || node.parent_container_id
-											? ('parent' as const)
-											: undefined,
-									data: node
-								}))
-							);
-						} else {
-							measureNodes = sortFlowNodes(buildFlowNodes(false));
-						}
+						const measureNodes = sortFlowNodes(buildFlowNodes(false));
 						nodes.set(measureNodes);
 
 						await tick();
@@ -775,18 +741,11 @@
 						// persisted collapse from localStorage), run ELK with everything
 						// EXPANDED so all containers get proper expandedSize computed.
 						// Then apply collapse state after, preserving the sizes.
-						const elkCollapsed = hasRestorable ? collapsed : new Set<string>();
-
-						// When running ELK expanded (no restorable sizes), use ALL
-						// nodes — visibleNodes excludes children of collapsed containers
-						// but ELK needs them to compute expanded layouts.
-						const elkNodes = hasRestorable ? visibleNodes : layoutNodes;
-
 						const elkResult = await layoutEngine.compute({
-							nodes: elkNodes,
+							nodes: visibleNodes,
 							edges: elevatedEdges,
 							topology: topology,
-							collapsedContainers: elkCollapsed,
+							collapsedContainers: collapsed,
 							expandedContainerSizes: prevExpandedSizes,
 							elementNodeSizes,
 							hiddenEdgeTypes: hiddenEdgeTypes
@@ -797,17 +756,14 @@
 						}
 						sessionStructureKey = structureKey;
 
-						// Rebuild graph and apply ELK result.
-						// When ELK ran with everything expanded (no restorable sizes),
-						// apply result BEFORE syncing collapse so all containers get
-						// expandedSize set. Then collapse afterward.
+						// Rebuild graph and apply ELK result
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
-						if (hasRestorable) {
-							layoutGraph.syncCollapseState(collapsed);
+						layoutGraph.syncCollapseState(collapsed);
+						if (prevExpandedSizes) {
 							layoutGraph.restoreExpandedSizes(prevExpandedSizes);
-							if (prevChildPositions) {
-								layoutGraph.restoreContainerChildPositions(prevChildPositions);
-							}
+						}
+						if (prevChildPositions) {
+							layoutGraph.restoreContainerChildPositions(prevChildPositions);
 						}
 						layoutGraph.applyElkResult(
 							elkResult.nodePositions,
@@ -815,10 +771,16 @@
 							elkResult.elementNodeSizes,
 							elkResult.edgeHandles
 						);
-						// When ELK ran with everything expanded, apply collapse AFTER
-						// so expandedSize is already set on every container.
-						if (!hasRestorable) {
-							layoutGraph.syncCollapseState(collapsed);
+
+						// For collapsed containers that have no cached expanded size
+						// (first load with localStorage-persisted collapse state),
+						// estimate expanded size from children analytically.
+						const view = topology?.options?.request?.view;
+						const ar = view === 'L2Physical' ? 0.3 : 1.4;
+						for (const container of layoutGraph.containers.values()) {
+							if (container.collapsed && container.expandedSize.width === 0) {
+								container.estimateExpandedSize(elementNodeSizes, ar);
+							}
 						}
 					}
 

@@ -146,6 +146,70 @@ export class LayoutContainer {
 		this.expandedSize = { width: this.expandedSize.width, height: newHeight };
 		return newHeight - oldHeight;
 	}
+
+	/**
+	 * Estimate expanded size from children using box packing.
+	 * Used for collapsed containers that were never laid out by ELK,
+	 * so they show at a reasonable width when collapsed.
+	 */
+	estimateExpandedSize(
+		elementNodeSizes: Map<string, { x: number; y: number }>,
+		aspectRatio: number
+	): void {
+		if (this.expandedSize.width > 0) return; // already computed
+
+		const children = this.allChildren;
+		if (children.length === 0) return;
+
+		const meta = containerTypes.getMetadata(this.containerType);
+		const p = meta.padding;
+		const spacing = 25;
+
+		// Get child sizes
+		const childSizes = children.map((c) => {
+			if (c instanceof LayoutContainer) {
+				return { w: c.size.width, h: c.size.height };
+			}
+			const measured = elementNodeSizes.get(c.id);
+			return { w: measured?.x ?? 250, h: measured?.y ?? 100 };
+		});
+
+		// Simple box packing: compute columns from aspect ratio
+		const avgW = childSizes.reduce((s, c) => s + c.w, 0) / childSizes.length;
+		const avgH = childSizes.reduce((s, c) => s + c.h, 0) / childSizes.length;
+		const totalArea = childSizes.reduce((s, c) => s + (c.w + spacing) * (c.h + spacing), 0);
+		const targetW = Math.sqrt(totalArea / Math.max(aspectRatio, 0.1));
+		const cols = Math.max(1, Math.round(targetW / (avgW + spacing)));
+
+		// Pack into columns
+		let x = p.left;
+		let y = p.top;
+		let col = 0;
+		let rowH = 0;
+		let maxRight = 0;
+		let maxBottom = 0;
+
+		for (const size of childSizes) {
+			if (col >= cols && cols > 1) {
+				x = p.left;
+				y += rowH + spacing;
+				rowH = 0;
+				col = 0;
+			}
+			const right = x + size.w;
+			const bottom = y + size.h;
+			if (right > maxRight) maxRight = right;
+			if (bottom > maxBottom) maxBottom = bottom;
+			rowH = Math.max(rowH, size.h);
+			x += size.w + spacing;
+			col++;
+		}
+
+		this.expandedSize = {
+			width: maxRight + p.right,
+			height: maxBottom + p.bottom
+		};
+	}
 }
 
 export class LayoutGraph {
