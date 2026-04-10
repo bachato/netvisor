@@ -1,5 +1,134 @@
 var TEST_PLANS = [
 {
+  "branch": "feat/compute-perspective",
+  "tests": [
+    {
+      "id": "workloads-bare-metal-host",
+      "category": "Workloads Perspective",
+      "description": "Bare metal host with services shows as container with service elements",
+      "steps": [
+        "Navigate to the topology view",
+        "Switch to the Workloads perspective",
+        "Find a bare metal host (no virtualization) that has services"
+      ],
+      "setup": "Ensure at least one host exists with non-virtualization services (e.g., Samba, NFS) and no hypervisor or Docker daemon.",
+      "expected": "Host appears as a container (external title style). Services appear as elements directly inside the host container. No sub-containers.",
+      "flow": "setup",
+      "sequence": 1,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-docker-host",
+      "category": "Workloads Perspective",
+      "description": "Docker host shows Docker sub-container with container elements",
+      "steps": [
+        "Navigate to the topology view",
+        "Switch to the Workloads perspective",
+        "Find a host running Docker with containers"
+      ],
+      "setup": "Ensure at least one host exists with a Docker daemon service and Docker containers discovered.",
+      "expected": "Host appears as a container. Inside it, a 'Docker' Virtualizer sub-container (inline title style) contains the Docker container services as elements.",
+      "flow": "setup",
+      "sequence": 2,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-proxmox-hypervisor",
+      "category": "Workloads Perspective",
+      "description": "Proxmox hypervisor shows VMs inside Virtualizer sub-container",
+      "steps": [
+        "Navigate to the topology view",
+        "Switch to the Workloads perspective",
+        "Find a Proxmox hypervisor host"
+      ],
+      "setup": "Ensure at least one host exists with a Proxmox VE service and VMs (hosts with HostVirtualization::Proxmox) assigned to it.",
+      "expected": "Hypervisor host appears as a container. Inside it, a 'Proxmox VE' Virtualizer sub-container contains the VMs as Host{} elements.",
+      "flow": "setup",
+      "sequence": 3,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-vm-not-container",
+      "category": "Workloads Perspective",
+      "description": "VMs do not appear as their own containers",
+      "steps": [
+        "Navigate to the topology view",
+        "Switch to the Workloads perspective",
+        "Verify VM hosts only appear as elements inside their hypervisor"
+      ],
+      "setup": "Ensure at least one Proxmox VM exists that also has services running on it.",
+      "expected": "The VM appears only as an element inside the hypervisor's Proxmox sub-container. It does NOT appear as a separate top-level Host container.",
+      "flow": "setup",
+      "sequence": 4,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-no-edges",
+      "category": "Workloads Perspective",
+      "description": "No edges are drawn in the Workloads perspective",
+      "steps": [
+        "Navigate to the topology view",
+        "Switch to the Workloads perspective",
+        "Observe the canvas"
+      ],
+      "expected": "No edges (lines) are drawn between any elements or containers. The nesting/containment is the only structural information.",
+      "flow": "setup",
+      "sequence": 5,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-perspective-name-icon",
+      "category": "Workloads Perspective",
+      "description": "Perspective shows correct name, icon, and color",
+      "steps": [
+        "Open the perspective switcher in the topology view",
+        "Find the Workloads perspective"
+      ],
+      "expected": "Perspective is named 'Workloads' with Amber color and Boxes icon.",
+      "flow": "setup",
+      "sequence": 6,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-inspector-element",
+      "category": "Workloads Perspective",
+      "description": "Inspector panel shows correct sections for selected element",
+      "steps": [
+        "Switch to Workloads perspective",
+        "Click on a workload element (VM or service)"
+      ],
+      "setup": "Ensure hosts with services exist.",
+      "expected": "Inspector panel shows: Identity, Host Detail, Virtualization, Services, Other Interfaces, Tags sections.",
+      "flow": "setup",
+      "sequence": 7,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-empty-host",
+      "category": "Workloads Perspective",
+      "description": "Host with no services still appears as container",
+      "steps": [
+        "Switch to Workloads perspective",
+        "Find a host that has no services"
+      ],
+      "setup": "Ensure at least one host exists with no services discovered on it.",
+      "expected": "Host appears as an empty container.",
+      "flow": "setup",
+      "sequence": 8,
+      "status": null,
+      "feedback": null
+    }
+  ]
+}
+,
+{
   "branch": "refactor/entity-naming",
   "tests": [
     {
@@ -127,106 +256,121 @@ var TEST_PLANS = [
 ,
 {
   "branch": "feat/app-irrelevant-category-group",
+  "tests": []
+}
+,
+{
+  "branch": "refactor/color-icon-compute",
   "tests": [
     {
-      "id": "infra-services-grouped",
-      "category": "Infrastructure Grouping",
-      "description": "Irrelevant categories are grouped into Infrastructure Services container",
+      "id": "compute-perspective-tab",
+      "category": "Perspective Rename",
+      "description": "Verify the Infrastructure perspective is now labeled 'Compute' in the topology view selector",
       "steps": [
-        "Open a topology in the Application perspective",
-        "Look for a container labeled 'Infrastructure Services' inside host containers"
+        "Navigate to the Topology page",
+        "Open the perspective/view selector dropdown"
       ],
-      "setup": "Ensure the network has hosts with services in infrastructure categories (DNS, DHCP, NTP, etc.) and application categories (Database, Storage, etc.)",
-      "expected": "Infrastructure categories (NetworkCore, NetworkAccess, RemoteAccess, etc.) appear inside an 'Infrastructure Services' subcontainer. Application-relevant services remain outside it.",
+      "expected": "The tab formerly labeled 'Infrastructure' now shows 'Compute' with a CPU icon and orange color",
       "flow": "setup",
       "sequence": 1,
       "status": null,
       "feedback": null
     },
     {
-      "id": "infra-services-collapsed",
-      "category": "Infrastructure Grouping",
-      "description": "Infrastructure Services container is collapsed by default",
+      "id": "compute-perspective-loads",
+      "category": "Perspective Rename",
+      "description": "Verify the Compute perspective loads and displays hosts correctly",
       "steps": [
-        "Open a topology in the Application perspective",
-        "Observe the Infrastructure Services containers"
+        "Select the 'Compute' perspective in the topology view selector",
+        "Observe the topology view"
       ],
-      "expected": "Infrastructure Services containers are collapsed (showing only the header, not expanded with child services visible)",
+      "setup": "Ensure at least 2 hosts exist with services on the default network",
+      "expected": "Hosts appear as elements in the Compute view with their services shown inline. Layout renders without errors.",
       "flow": "setup",
       "sequence": 2,
       "status": null,
       "feedback": null
     },
     {
-      "id": "infra-services-expandable",
-      "category": "Infrastructure Grouping",
-      "description": "Infrastructure Services container can be expanded to show grouped services",
+      "id": "entity-colors-l3",
+      "category": "Entity Colors",
+      "description": "Verify updated entity colors in L3 Logical view",
       "steps": [
-        "Open a topology in the Application perspective",
-        "Click on a collapsed Infrastructure Services container to expand it"
+        "Navigate to Topology > L3 Logical view",
+        "Observe the IP address nodes, subnet containers, and service badges"
       ],
-      "expected": "Container expands to reveal the individual infrastructure services inside",
+      "setup": "Ensure hosts with services exist across at least 2 subnets",
+      "expected": "IP address nodes use blue color, subnet containers use indigo, service badges use fuchsia. Port badges (if visible) use sky blue.",
       "flow": "setup",
       "sequence": 3,
       "status": null,
       "feedback": null
     },
     {
-      "id": "infra-services-user-editable",
-      "category": "Infrastructure Grouping",
-      "description": "ByServiceCategory rule is user-editable (can be removed)",
+      "id": "entity-colors-host-amber",
+      "category": "Entity Colors",
+      "description": "Verify Host entities use amber color consistently",
       "steps": [
-        "Open the topology options panel",
-        "Navigate to the element rules / grouping section",
-        "Attempt to remove the ByServiceCategory rule"
+        "Open the Compute perspective",
+        "Note the host element color",
+        "Switch to L3 Logical and observe host container color"
       ],
-      "expected": "The rule can be removed by the user (not locked/greyed out)",
+      "expected": "Hosts display in amber color in both Compute (as elements) and L3 (as containers/parent entities)",
       "flow": "setup",
       "sequence": 4,
       "status": null,
       "feedback": null
     },
     {
-      "id": "infra-services-use-case-aware",
-      "category": "Use Case Awareness",
-      "description": "Different org use cases result in different categories being grouped",
+      "id": "workloads-tab-visible",
+      "category": "Host Modal",
+      "description": "Verify the host modal Virtualization tab is renamed to Workloads",
       "steps": [
-        "Open Application perspective for an org with 'homelab' use case",
-        "Note which categories are in the Infrastructure Services container",
-        "Switch to or create an org with 'msp' use case",
-        "Note which categories are in the Infrastructure Services container"
+        "Open an existing host in the host editor modal",
+        "Look at the tab navigation"
       ],
-      "setup": "Have two organizations with different use cases (e.g., homelab and msp). Both should have services in NetworkAppliance category.",
-      "expected": "For homelab, NetworkAppliance services are grouped into Infrastructure Services. For MSP, NetworkAppliance services are NOT in Infrastructure Services (since they're application-relevant for MSPs).",
+      "setup": "Ensure at least one host exists with a Docker or Proxmox service",
+      "expected": "The tab formerly labeled 'Virtualization' now shows 'Workloads' with a Boxes icon",
       "status": null,
       "feedback": null
     },
     {
-      "id": "infra-services-first-match-wins",
-      "category": "Rule Composition",
-      "description": "Services claimed by ByTag or ByStack are not re-grouped into Infrastructure Services",
+      "id": "workloads-tab-functional",
+      "category": "Host Modal",
+      "description": "Verify the Workloads tab still shows virtualization manager services",
       "steps": [
-        "Open Application perspective",
-        "Verify that services in a tag group or stack group remain in their group even if their category is irrelevant"
+        "Open an existing host with Docker services in the host editor",
+        "Click the 'Workloads' tab",
+        "Observe the virtualization manager list"
       ],
-      "setup": "Create a tag and assign it to a service whose category is infrastructure-irrelevant (e.g., a DNS service). Configure ByTag rule with that tag.",
-      "expected": "The tagged DNS service appears in its tag group, not in Infrastructure Services",
-      "flow": "setup",
-      "sequence": 5,
+      "setup": "Ensure a host exists with a Docker service managing containers",
+      "expected": "The Workloads tab displays Docker service managers and their containers, identical functionality to the old Virtualization tab",
       "status": null,
       "feedback": null
     },
     {
-      "id": "categories-no-longer-hidden",
-      "category": "Category Hiding Removal",
-      "description": "Infrastructure categories are no longer hidden in Application view — they're grouped instead",
+      "id": "concept-colors-in-grouping",
+      "category": "Topology Grouping",
+      "description": "Verify concept colors appear correctly on grouping rule badges",
       "steps": [
-        "Open Application perspective",
-        "Check that services from previously-hidden categories (DNS, DHCP, etc.) are visible inside the collapsed Infrastructure Services container, not completely hidden"
+        "Open Topology > Compute perspective",
+        "Open the grouping rules panel",
+        "Observe the ByVirtualizer rule badge color"
       ],
-      "expected": "No categories are hidden in Application view except OpenPorts. Infrastructure categories appear inside the collapsed subcontainer.",
-      "flow": "setup",
-      "sequence": 6,
+      "expected": "ByVirtualizer rule badge uses orange color (Compute concept color), ByStack rule badge uses fuchsia (Containerization concept color)",
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "vlan-color-in-l2",
+      "category": "Entity Colors",
+      "description": "Verify VLAN entities use violet color in L2 Physical view",
+      "steps": [
+        "Navigate to Topology > L2 Physical view",
+        "Observe VLAN-related containers or badges if present"
+      ],
+      "setup": "Ensure hosts with VLAN-tagged interfaces exist",
+      "expected": "VLAN elements display in violet color with CircleDashed icon",
       "status": null,
       "feedback": null
     }
@@ -245,68 +389,82 @@ var TEST_PLANS = [
 ,
 {
   "branch": "fix/topo-visual-consistency",
+  "tests": []
+}
+,
+{
+  "branch": "fix/subcontainer-expand-sizing",
   "tests": [
     {
-      "id": "collapsed-edge-handles-match-expanded",
-      "category": "Collapsed Edge Handles",
-      "description": "Collapsed subcontainer edges use same handle directions as expanded child elements",
+      "id": "collapsed-default-width",
+      "category": "Collapsed Subcontainer Sizing",
+      "description": "Collapsed-by-default subcontainers show correct width matching their content",
       "steps": [
-        "Open a topology with multiple containers that have cross-container edges",
-        "Note the handle directions (left/right/top/bottom) on edges between elements in different containers",
-        "Collapse one of the containers",
-        "Observe the aggregated edge handle directions on the collapsed container"
+        "Navigate to the topology page",
+        "Select L2 Physical view for a network with hosts that have both Up and Down ports",
+        "Observe the 'Down' subcontainer (collapsed by default)"
       ],
-      "setup": "Ensure a topology exists with at least 2 containers and cross-container edges between their child elements.",
-      "expected": "The collapsed container's aggregated edge handles should use the same direction (e.g., left side) as the original element edges.",
+      "setup": "Ensure at least one host has multiple Down ports (10+) so the expanded width would be significantly wider than the default 250px collapsed_size.",
+      "expected": "The collapsed 'Down' subcontainer should be approximately the same width as the 'Up' subcontainer (matching the width its children would occupy when expanded), not a narrow 250px box.",
       "flow": "setup",
       "sequence": 1,
       "status": null,
       "feedback": null
     },
     {
-      "id": "collapsed-edge-handles-multiple-directions",
-      "category": "Collapsed Edge Handles",
-      "description": "When original edges have mixed directions, each aggregated edge keeps its original direction",
+      "id": "expand-collapsed-default-layout",
+      "category": "Collapsed Subcontainer Sizing",
+      "description": "Expanding a collapsed-by-default subcontainer lays out children in a grid",
       "steps": [
-        "Open a topology where a container has child elements with edges going in different directions (some left, some bottom)",
-        "Collapse the container",
-        "Check the aggregated edge handle directions"
+        "From the previous test state, click to expand the 'Down' subcontainer"
       ],
-      "setup": "Ensure a topology with a container whose children have edges in at least 2 different handle directions.",
-      "expected": "Each aggregated edge should keep the handle direction of its original element edge.",
+      "expected": "Child port elements should be laid out in a proper grid/box layout (matching how ELK would arrange them), not piled up on top of each other or in a single narrow column.",
       "flow": "setup",
       "sequence": 2,
       "status": null,
       "feedback": null
     },
     {
-      "id": "tag-hide-fade-application-services",
-      "category": "Tag Hide Consistency",
-      "description": "Tag-hidden services in Application perspective fade instead of disappearing",
+      "id": "expand-after-page-refresh",
+      "category": "Collapsed Subcontainer Sizing",
+      "description": "Expanding works correctly after page refresh with localStorage-persisted collapse state",
       "steps": [
-        "Open topology in Application perspective",
-        "Apply a tag filter that hides some services",
-        "Observe the filtered service elements"
+        "In L2 Physical view, observe the 'Down' subcontainer is collapsed",
+        "Refresh the page (F5)",
+        "After page loads, click to expand the 'Down' subcontainer"
       ],
-      "setup": "Ensure services have tags. Application perspective should show service elements.",
-      "expected": "Hidden service elements should fade to 30% opacity but remain visible.",
+      "setup": "Ensure the collapsed state is persisted to localStorage from a prior session.",
+      "expected": "Child port elements should be laid out in a proper grid, same as a fresh expand. ELK should re-run for the expand since it never computed expanded layout.",
       "flow": "setup",
-      "sequence": 3,
+      "sequence": 1,
       "status": null,
       "feedback": null
     },
     {
-      "id": "tag-hide-containers-also-fade",
-      "category": "Tag Hide Consistency",
-      "description": "Containers with hidden tags also fade consistently, including subcontainers and their children",
+      "id": "normal-collapse-expand-cycle",
+      "category": "Collapse/Expand Regression",
+      "description": "Normal collapse/expand cycle continues to work correctly",
       "steps": [
-        "Open topology in L3 perspective",
-        "Apply a tag filter that hides a subnet container that has subcontainers",
-        "Observe the container, subcontainers, and child elements"
+        "In the topology view, manually collapse an expanded container (e.g., a subnet)",
+        "Expand the same container again"
       ],
-      "expected": "Container, subcontainers, and all descendant elements should all fade to 30% opacity.",
+      "expected": "Container collapses to its collapsed representation and re-expands to show all children with correct layout — no regressions from the fix.",
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "expand-after-data-refresh",
+      "category": "Collapsed Subcontainer Sizing",
+      "description": "Expanding a collapsed-by-default subcontainer works after topology data refresh",
+      "steps": [
+        "Navigate to L2 Physical view with Down ports",
+        "Wait for a topology data refresh (or trigger a discovery scan)",
+        "Click to expand the 'Down' subcontainer"
+      ],
+      "setup": "Ensure topology polling or a manual refresh triggers a data reload while the Down subcontainer is still collapsed.",
+      "expected": "Children should be laid out correctly in a grid, not piled up. The expanded width should be correct.",
       "flow": "setup",
-      "sequence": 4,
+      "sequence": 1,
       "status": null,
       "feedback": null
     }

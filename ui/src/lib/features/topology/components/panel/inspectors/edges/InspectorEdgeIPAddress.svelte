@@ -42,8 +42,8 @@
 
 	let host = $derived(topology ? topology.hosts.find((h) => h.id == hostId) : null);
 
-	let sourceInterface = $derived(topology?.interfaces.find((i) => i.id == edge.source));
-	let targetInterface = $derived(topology?.interfaces.find((i) => i.id == edge.target));
+	let sourceInterface = $derived(topology?.ip_addresses.find((i) => i.id == edge.source));
+	let targetInterface = $derived(topology?.ip_addresses.find((i) => i.id == edge.target));
 
 	// Context for interface displays
 	let interfaceContext = $derived({ subnets: topology?.subnets ?? [] });
@@ -65,7 +65,7 @@
 			/>
 		</div>
 	{/if}
-	<span class="text-secondary mb-2 block text-sm font-medium">Interfaces</span>
+	<span class="text-secondary mb-2 block text-sm font-medium">IP Addresses</span>
 	{#if sourceInterface}
 		<div class="card card-static">
 			<EntityDisplayWrapper
