@@ -223,6 +223,7 @@
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
 	let seenAutoCollapseIds = new Set<string>();
 	let collapseLevelInferred = false;
+	let lastSeenTopologyId = '';
 	let isMeasuring = false;
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
@@ -385,9 +386,20 @@
 					collapseLevel.set(inferred);
 				}
 
+				// When topology identity changes, reset auto-collapse tracking
+				const topologyId = topology.id ?? '';
+				if (topologyId !== lastSeenTopologyId && lastSeenTopologyId !== '') {
+					seenAutoCollapseIds = new Set<string>();
+					console.log(
+						`[LAYOUT-DEBUG] Topology changed: ${lastSeenTopologyId.substring(0, 8)} → ${topologyId.substring(0, 8)}, reset seenAutoCollapseIds`
+					);
+				}
+				lastSeenTopologyId = topologyId;
+
 				// Strip stale container IDs that don't exist in the new topology.
 				// Runs on any topology change (perspective switch OR topology switch)
 				// to prevent stale IDs from polluting deferCollapse, structureKey, etc.
+				// Uses local variable (not store update) to avoid disruptive re-runs.
 				if (topologyChanged && collapsed.size > 0) {
 					const originalSize = collapsed.size;
 					const newContainerIds = new Set(
@@ -423,14 +435,8 @@
 					}
 
 					if (staleCount > 0) {
-						// Remove stale IDs from seenAutoCollapseIds so containers
-						// can be re-auto-collapsed when the user returns to that perspective.
-						const seenBefore = seenAutoCollapseIds.size;
-						for (const id of seenAutoCollapseIds) {
-							if (!newContainerIds.has(id)) seenAutoCollapseIds.delete(id);
-						}
 						console.log(
-							`[LAYOUT-DEBUG] Stripped ${staleCount} stale collapsed IDs (${originalSize} → ${validCollapsed.size}), seenAutoCollapseIds: ${seenBefore} → ${seenAutoCollapseIds.size}`
+							`[LAYOUT-DEBUG] Stripped ${staleCount} stale collapsed IDs (${originalSize} → ${validCollapsed.size})`
 						);
 					}
 				}
@@ -1270,6 +1276,16 @@
 						return;
 					}
 					isMeasuring = false;
+				}
+
+				// Sync local collapsed state back to store if topology switch
+				// stripped stale IDs (deferred to avoid mid-computation re-runs).
+				const currentStoreCollapsed = get(collapsedContainers);
+				if (
+					currentStoreCollapsed.size !== collapsed.size ||
+					[...currentStoreCollapsed].some((id) => !collapsed.has(id))
+				) {
+					collapsedContainers.set(collapsed);
 				}
 
 				const isFirstRender = lastRenderedTopoKey === '';
