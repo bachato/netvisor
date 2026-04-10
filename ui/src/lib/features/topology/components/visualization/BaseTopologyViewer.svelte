@@ -809,8 +809,10 @@
 					const allRootCollapsed =
 						rootContainerNodes.length > 0 && rootContainerNodes.every((n) => collapsed.has(n.id));
 
-					if (allRootCollapsed) {
-						// Force layout for all-collapsed overview mode
+					if (allRootCollapsed && currentView !== 'Workloads') {
+						// Force layout for all-collapsed overview mode (not Workloads —
+						// Workloads nodes have no inter-node edges so force layout
+						// scatters them randomly; ELK produces a compact grid instead)
 						const forceNodes: ForceNode[] = rootContainerNodes.map((n) => {
 							const measured = elementNodeSizes.get(n.id);
 							const meta = containerTypes.getMetadata(
@@ -1542,12 +1544,16 @@
 
 	$: collapseLevelTooltipCollapse = `${topology_collapseLevelDown()} (${$collapseLevel}/4: ${getCollapseLevelName($collapseLevel)})`;
 	$: collapseLevelTooltipExpand = `${topology_expandLevelUp()} (${$collapseLevel}/4: ${getCollapseLevelName($collapseLevel)})`;
-	$: console.log(`[COLLAPSE-LEVEL] $collapseLevel=${$collapseLevel}, expandDisabled=${$collapseLevel === 4}, collapseDisabled=${$collapseLevel === 1}`);
+	$: console.log(
+		`[COLLAPSE-LEVEL] $collapseLevel=${$collapseLevel}, expandDisabled=${$collapseLevel === 4}, collapseDisabled=${$collapseLevel === 1}`
+	);
 
 	function handleStepCollapse() {
 		console.log('[COLLAPSE-LEVEL] handleStepCollapse called');
 		stepCollapse(topology.nodes, containerTypes, getInfrastructureRuleId());
-		console.log(`[COLLAPSE-LEVEL] after stepCollapse: get(collapseLevel)=${get(collapseLevel)}, $collapseLevel=${$collapseLevel}`);
+		console.log(
+			`[COLLAPSE-LEVEL] after stepCollapse: get(collapseLevel)=${get(collapseLevel)}, $collapseLevel=${$collapseLevel}`
+		);
 		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
 	}
 
@@ -1558,7 +1564,9 @@
 			containerTypes,
 			getInfrastructureRuleId()
 		);
-		console.log(`[COLLAPSE-LEVEL] after stepExpand: get(collapseLevel)=${get(collapseLevel)}, $collapseLevel=${$collapseLevel}`);
+		console.log(
+			`[COLLAPSE-LEVEL] after stepExpand: get(collapseLevel)=${get(collapseLevel)}, $collapseLevel=${$collapseLevel}`
+		);
 		// Mark auto-collapse containers as "seen" so they don't re-collapse
 		for (const id of autoCollapseIds) seenAutoCollapseIds.add(id);
 		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
