@@ -123,9 +123,9 @@
 	}
 
 	// Compute nodeRenderData reactively
-	let nodeRenderData: ElementRenderData | null = $derived(
-		resolved
-			? (() => {
+	let nodeRenderData: ElementRenderData | null = $derived.by(() => {
+		if (!resolved) return null;
+		return (() => {
 					const elementType = resolved.elementType ?? 'Interface';
 
 					// Service elements: simpler rendering — single service with host name.
@@ -183,7 +183,7 @@
 						const showServices = servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0;
 
 						const hostLabel =
-							(data as TopologyNode).header ?? host.name || host.hostname || null;
+							(data as TopologyNode).header ?? (host.name || host.hostname || null);
 
 						return {
 							elementType,
@@ -302,9 +302,8 @@
 								: host.virtualization !== null,
 						interface_id: resolved?.interfaceId ?? ''
 					} as ElementRenderData;
-				})()
-			: null
-	);
+				})();
+	});
 
 	let isNewNode = $derived(nodeRenderData ? highlightedNewNodes.has(id) : false);
 
