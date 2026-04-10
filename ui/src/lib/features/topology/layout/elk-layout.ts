@@ -35,8 +35,8 @@ async function getElk(): Promise<import('elkjs/lib/elk-api')['default']> {
 const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
 	'elk.algorithm': 'layered',
 	'elk.direction': 'DOWN',
-	'elk.layered.spacing.nodeNodeBetweenLayers': '25',
-	'elk.layered.spacing.edgeNodeBetweenLayers': '25',
+	'elk.layered.spacing.nodeNodeBetweenLayers': '75',
+	'elk.layered.spacing.edgeNodeBetweenLayers': '50',
 	'elk.edgeRouting': 'POLYLINE',
 	'elk.layered.spacing.edgeEdgeBetweenLayers': '25',
 	'elk.spacing.componentComponent': '75',
