@@ -32,7 +32,7 @@
 			: '!border !border-gray-300 !bg-gray-50 !text-gray-700 hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600'}"
 	style="padding: 6px {showLabel ? '8px' : '6px'} 6px 6px; gap: {showLabel ? '6px' : '0px'};"
 	onclick={disabled ? undefined : onclick}
-	{disabled}
+	aria-disabled={disabled || undefined}
 	{title}
 	onpointerenter={() => (hovered = true)}
 	onpointerleave={() => (hovered = false)}
