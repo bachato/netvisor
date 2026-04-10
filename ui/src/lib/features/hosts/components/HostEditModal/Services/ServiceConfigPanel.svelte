@@ -26,7 +26,7 @@
 		hosts_services_bindingsHelp,
 		hosts_services_couldNotFindService,
 		hosts_services_couldNotFindServiceToRemove,
-		hosts_services_ipAddressBindingsHelp,
+		hosts_services_interfaceBindingsHelp,
 		hosts_services_namePlaceholder,
 		hosts_services_newBinding,
 		hosts_services_noAvailableInterfaces,
@@ -105,33 +105,28 @@
 	// Port Bindings Logic
 	let portBindings = $derived(service.bindings.filter((b) => b.type === 'Port') as PortBinding[]);
 
-	// DEBUG: trace binding data at runtime
-	$effect(() => {
-		console.log('[ServiceConfigPanel] service:', service.name, 'bindings:', JSON.stringify(service.bindings.map(b => ({ id: b.id, type: b.type, ip_address_id: (b as any).ip_address_id, interface_id: (b as any).interface_id, port_id: (b as any).port_id }))));
-		console.log('[ServiceConfigPanel] host.ip_addresses:', JSON.stringify(host.ip_addresses.map(i => ({ id: i.id, ip: (i as any).ip_address }))));
-	});
 
 	// Get the actual index of a binding in service.bindings array (for form field naming)
 	function getBindingIndex(bindingId: string): number {
 		return service.bindings.findIndex((b) => b.id === bindingId);
 	}
 
-	// IP Address Bindings Logic
+	// Interface Bindings Logic
 	let ipAddressBindings = $derived(
 		service.bindings.filter((b) => b.type === 'IPAddress') as IPAddressBinding[]
 	);
 
 	// Get interfaces that this service has Port bindings on
 	let interfacesWithPortBindingsThisService = $derived(
-		new Set(portBindings.map((b) => b.interface_id).filter((id): id is string => id !== null))
+		new Set(portBindings.map((b) => b.ip_address_id).filter((id): id is string => id !== null))
 	);
 
 	// Check if this service has a Port binding on "All Interfaces"
-	let hasPortBindingOnAllIPAddresses = $derived(portBindings.some((b) => b.interface_id === null));
+	let hasPortBindingOnAllIPAddresses = $derived(portBindings.some((b) => b.ip_address_id === null));
 
 	// Get interfaces that this service has Interface bindings on
 	let interfacesWithIPAddressBindingsThisService = $derived(
-		new Set(ipAddressBindings.map((b) => b.interface_id))
+		new Set(ipAddressBindings.map((b) => b.ip_address_id))
 	);
 
 	// Available port+interface combinations for new Port bindings
@@ -147,7 +142,7 @@
 				.filter((port) => {
 					// Check if this specific port+interface combo is already bound by this service
 					const alreadyBoundByThisService = portBindings.some(
-						(b) => b.port_id === port.id && b.interface_id === iface.id
+						(b) => b.port_id === port.id && b.ip_address_id === iface.id
 					);
 					if (alreadyBoundByThisService) return false;
 
@@ -160,14 +155,14 @@
 							(b) =>
 								b.type === 'Port' &&
 								(b as PortBinding).port_id === port.id &&
-								(b.interface_id === iface.id || b.interface_id === null)
+								(b.ip_address_id === iface.id || b.ip_address_id === null)
 						)
 					);
 					if (boundByOtherService) return false;
 
 					// Check if this service has bound this port to ALL interfaces (null)
 					const boundToAllIPAddresses = portBindings.some(
-						(b) => b.port_id === port.id && b.interface_id === null
+						(b) => b.port_id === port.id && b.ip_address_id === null
 					);
 					if (boundToAllIPAddresses) return false;
 
@@ -181,13 +176,13 @@
 
 	// Available interfaces for new Interface bindings
 	// Only includes saved interfaces (those already in global store)
-	let availableInterfacesForIPAddressBinding = $derived(
+	let availableIPAddressesForIPAddressBinding = $derived(
 		host.ip_addresses.filter((iface) => {
 			// Can't add Interface binding if service has Port binding on "All Interfaces"
 			if (hasPortBindingOnAllIPAddresses) return false;
 
 			// Can't add Interface binding if this service already has one on this interface
-			if (ipAddressBindings.some((b) => b.interface_id === iface.id)) {
+			if (ipAddressBindings.some((b) => b.ip_address_id === iface.id)) {
 				return false;
 			}
 
@@ -200,7 +195,7 @@
 		})
 	);
 
-	let canCreateIPAddressBinding = $derived(availableInterfacesForIPAddressBinding.length > 0);
+	let canCreateIPAddressBinding = $derived(availableIPAddressesForIPAddressBinding.length > 0);
 
 	// Port Binding Handlers
 	function handleCreatePortBinding() {
@@ -232,7 +227,7 @@
 			service_id: service.id,
 			network_id: service.network_id,
 			port_id: firstAvailable.port.id,
-			interface_id: firstAvailable.iface.id,
+			ip_address_id: firstAvailable.iface.id,
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString()
 		};
@@ -266,7 +261,7 @@
 		const updatedBindings = [...service.bindings];
 		updatedBindings[fullIndex] = {
 			...updatedBindings[fullIndex],
-			interface_id: binding.interface_id,
+			ip_address_id: binding.ip_address_id,
 			port_id: binding.port_id
 		} as PortBinding;
 
@@ -293,14 +288,14 @@
 			return;
 		}
 
-		const firstAvailable = availableInterfacesForIPAddressBinding[0];
+		const firstAvailable = availableIPAddressesForIPAddressBinding[0];
 
 		const binding: IPAddressBinding = {
-			type: 'Interface',
+			type: 'IPAddress',
 			id: uuidv4(),
 			service_id: service.id,
 			network_id: service.network_id,
-			interface_id: firstAvailable.id,
+			ip_address_id: firstAvailable.id,
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString()
 		};
@@ -317,8 +312,8 @@
 			return;
 		}
 
-		const interfaceBindingToRemove = ipAddressBindings[index];
-		const fullIndex = service.bindings.findIndex((b) => b.id === interfaceBindingToRemove.id);
+		const ipAddressBindingToRemove = ipAddressBindings[index];
+		const fullIndex = service.bindings.findIndex((b) => b.id === ipAddressBindingToRemove.id);
 
 		onChange({
 			...service,
@@ -329,13 +324,13 @@
 	function handleUpdateIPAddressBinding(binding: IPAddressBinding, index: number) {
 		if (!service) return;
 
-		const interfaceBindingToUpdate = ipAddressBindings[index];
-		const fullIndex = service.bindings.findIndex((b) => b.id === interfaceBindingToUpdate.id);
+		const ipAddressBindingToUpdate = ipAddressBindings[index];
+		const fullIndex = service.bindings.findIndex((b) => b.id === ipAddressBindingToUpdate.id);
 
 		const updatedBindings = [...service.bindings];
 		updatedBindings[fullIndex] = {
 			...updatedBindings[fullIndex],
-			interface_id: binding.interface_id
+			ip_address_id: binding.ip_address_id
 		} as IPAddressBinding;
 
 		onChange({
@@ -469,7 +464,7 @@
 			{#key service.id}
 				<ListManager
 					label={common_ipAddressBindings()}
-					helpText={hosts_services_ipAddressBindingsHelp()}
+					helpText={hosts_services_interfaceBindingsHelp()}
 					placeholder={hosts_services_selectBinding()}
 					createNewLabel={hosts_services_newBinding()}
 					allowDuplicates={false}

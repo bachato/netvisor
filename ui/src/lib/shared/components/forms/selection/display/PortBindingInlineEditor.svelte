@@ -59,11 +59,11 @@
 		for (const svc of otherServices) {
 			const hasConflict = svc.bindings.some((b) => {
 				// If either binding is to ALL_IP_ADDRESSES (null), they conflict
-				if (b.interface_id === null || interfaceId === null) {
+				if (b.ip_address_id === null || interfaceId === null) {
 					return true;
 				}
 				// Otherwise, they conflict only if they're the same specific interface
-				return b.interface_id === interfaceId;
+				return b.ip_address_id === interfaceId;
 			});
 			if (hasConflict) return svc;
 		}
@@ -75,11 +75,11 @@
 			);
 			const hasConflict = otherBindings.some((b) => {
 				// If either binding is to ALL_IP_ADDRESSES (null), they conflict
-				if (b.interface_id === null || interfaceId === null) {
+				if (b.ip_address_id === null || interfaceId === null) {
 					return true;
 				}
 				// Otherwise, they conflict only if they're the same specific interface
-				return b.interface_id === interfaceId;
+				return b.ip_address_id === interfaceId;
 			});
 			if (hasConflict) return service;
 		}
@@ -91,10 +91,10 @@
 	let interfaceOptions = $derived(
 		host?.ip_addresses.map((iface) => {
 			// Check for Interface binding conflict - can't add Port binding if THIS service has Interface binding here
-			const thisServiceHasInterfaceBinding = service?.bindings.some(
-				(b) => b.type === 'Interface' && b.interface_id === iface.id && b.id !== binding.id
+			const thisServiceHasIPAddressBinding = service?.bindings.some(
+				(b) => b.type === 'IPAddress' && b.ip_address_id === iface.id && b.id !== binding.id
 			);
-			if (thisServiceHasInterfaceBinding) {
+			if (thisServiceHasIPAddressBinding) {
 				return {
 					iface,
 					disabled: true,
@@ -117,8 +117,8 @@
 		(() => {
 			// Can't select "All Interfaces" if this service has ANY Interface bindings
 			// (since "All Interfaces" would include those interfaces)
-			const hasInterfaceBindings = service?.bindings.some((b) => b.type === 'Interface');
-			if (hasInterfaceBindings) {
+			const hasIPAddressBindings = service?.bindings.some((b) => b.type === 'IPAddress');
+			if (hasIPAddressBindings) {
 				return {
 					iface: ALL_IP_ADDRESSES,
 					disabled: true,
@@ -139,7 +139,7 @@
 	// Create port options with disabled state
 	let portOptions = $derived(
 		host?.ports.map((p) => {
-			const boundService = getConflictingService(p.id, binding.interface_id);
+			const boundService = getConflictingService(p.id, binding.ip_address_id);
 			return {
 				port: p,
 				disabled: boundService !== null && p.id !== binding.port_id,
@@ -153,7 +153,7 @@
 	const ALL_IP_ADDRESSES_SENTINEL = '__ALL_INTERFACES__';
 	let selectedInterface = $state(
 		untrack(() =>
-			binding.interface_id === null ? ALL_IP_ADDRESSES_SENTINEL : binding.interface_id
+			binding.ip_address_id === null ? ALL_IP_ADDRESSES_SENTINEL : binding.ip_address_id
 		)
 	);
 	let selectedPort = $state(untrack(() => binding.port_id ?? ''));
@@ -161,7 +161,7 @@
 	// Sync local state when binding changes externally
 	$effect(() => {
 		selectedInterface =
-			binding.interface_id === null ? ALL_IP_ADDRESSES_SENTINEL : binding.interface_id;
+			binding.ip_address_id === null ? ALL_IP_ADDRESSES_SENTINEL : binding.ip_address_id;
 		selectedPort = binding.port_id ?? '';
 	});
 
@@ -175,7 +175,7 @@
 		selectedInterface = newValue;
 
 		const interfaceId = newValue === ALL_IP_ADDRESSES_SENTINEL ? null : newValue;
-		if (interfaceId !== binding.interface_id) {
+		if (interfaceId !== binding.ip_address_id) {
 			// Check if current port is still valid on the new interface
 			const currentPortConflict = binding.port_id
 				? getConflictingService(binding.port_id, interfaceId)
@@ -185,9 +185,9 @@
 				// Current port conflicts on new interface OR no port selected - find first valid port
 				const firstValidPort = host?.ports.find((p) => !getConflictingService(p.id, interfaceId));
 				// Reset to valid port, or empty if none available
-				onUpdate({ interface_id: interfaceId, port_id: firstValidPort?.id ?? '' });
+				onUpdate({ ip_address_id: interfaceId, port_id: firstValidPort?.id ?? '' });
 			} else {
-				onUpdate({ interface_id: interfaceId });
+				onUpdate({ ip_address_id: interfaceId });
 			}
 		}
 	}

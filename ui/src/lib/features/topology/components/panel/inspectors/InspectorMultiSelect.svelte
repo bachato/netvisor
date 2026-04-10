@@ -345,16 +345,16 @@
 	});
 
 	// Binding disambiguation per selected interface
-	interface InterfaceBindingChoice {
+	interface IPAddressBindingChoice {
 		interfaceId: string;
 		interfaceName: string;
 		hostName: string;
 		bindings: { id: string; label: string }[];
 	}
 
-	let interfaceBindingChoices = $derived.by(() => {
+	let ipAddressBindingChoices = $derived.by(() => {
 		if (!topology) return [];
-		const choices: InterfaceBindingChoice[] = [];
+		const choices: IPAddressBindingChoice[] = [];
 		for (const node of nodes) {
 			const resolved = resolveElementNode(node.id, node.data as TopologyNode, topology);
 			if (!resolved.interfaceId) continue;
@@ -404,7 +404,7 @@
 
 	function initBindingSelections() {
 		bindingSelections.clear();
-		for (const choice of interfaceBindingChoices) {
+		for (const choice of ipAddressBindingChoices) {
 			bindingSelections.set(
 				choice.interfaceId,
 				choice.bindings.length === 1 ? choice.bindings[0].id : null
@@ -414,7 +414,7 @@
 
 	// Initialize binding selections reactively when choices change
 	$effect(() => {
-		void interfaceBindingChoices;
+		void ipAddressBindingChoices;
 		initBindingSelections();
 	});
 
@@ -706,7 +706,7 @@
 								body={dependencies_serviceBindingsInfoBody()}
 								dismissableKey="group-bindings-info"
 							/>
-							{#each interfaceBindingChoices as choice (choice.interfaceId)}
+							{#each ipAddressBindingChoices as choice (choice.interfaceId)}
 								<div class="card card-static space-y-1 p-2">
 									<div class="text-primary truncate text-xs font-medium">
 										{choice.hostName}

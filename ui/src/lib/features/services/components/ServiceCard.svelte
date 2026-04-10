@@ -68,7 +68,7 @@
 				const port = portsData.find((p) => p.id === binding.port_id);
 				if (!port) continue;
 
-				const interfaceId = binding.interface_id ?? null;
+				const interfaceId = binding.ip_address_id ?? null;
 				if (!grouped.has(interfaceId)) {
 					const iface = interfaceId ? ipAddressesData.find((i) => i.id === interfaceId) : null;
 					grouped.set(interfaceId, { iface: iface ?? null, ports: [] });
@@ -93,12 +93,12 @@
 	// Get interface bindings - look up interfaces from query data
 	let ifaces = $derived(
 		(() => {
-			const interfaceBindingIds = service.bindings
-				.filter((b) => b.type === 'Interface')
-				.map((b) => b.interface_id)
+			const ipAddressBindingIds = service.bindings
+				.filter((b) => b.type === 'IPAddress')
+				.map((b) => b.ip_address_id)
 				.filter((id): id is string => id !== null);
 
-			return interfaceBindingIds
+			return ipAddressBindingIds
 				.map((id) => ipAddressesData.find((i) => i.id === id))
 				.filter((i): i is Interface => i !== undefined);
 		})()
