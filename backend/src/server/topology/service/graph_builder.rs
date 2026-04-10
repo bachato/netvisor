@@ -114,60 +114,10 @@ impl GraphBuilder {
             return header_text;
         }
 
-        // P2: Show virtualization provider, if any
-        if let Some(service) = ctx.get_host_is_virtualized_by(&host.id) {
-            let virtualization_service_host = ctx.get_host_by_id(service.base.host_id);
-
-            let host_interface_subnet_ids: Vec<Uuid> =
-                host_interfaces.iter().map(|i| i.base.subnet_id).collect();
-            let virtualization_service_interface_subnet_ids: Vec<Uuid> = service
-                .base
-                .bindings
-                .iter()
-                .filter_map(|b| ctx.get_ip_address_by_id(b.ip_address_id()))
-                .map(|i| i.base.subnet_id)
-                .collect();
-
-            // Find shared subnets to determine which interface to use
-            let host_interface_subnet_ids_hashset: HashSet<&Uuid> =
-                host_interface_subnet_ids.iter().collect();
-            let virtualization_service_interface_subnet_ids_hashset: HashSet<&Uuid> =
-                virtualization_service_interface_subnet_ids.iter().collect();
-
-            let intersection: Vec<&Uuid> = host_interface_subnet_ids_hashset
-                .intersection(&virtualization_service_interface_subnet_ids_hashset)
-                .cloned()
-                .collect();
-
-            match intersection.first() {
-                Some(first) => {
-                    if let Some(ip_address) =
-                        host_interfaces.iter().find(|i| i.base.subnet_id == **first)
-                        && host_interface_subnet_ids
-                            .iter()
-                            .filter(|i| i == first)
-                            .count()
-                            == 1
-                        && virtualization_service_interface_subnet_ids
-                            .iter()
-                            .filter(|i| i == first)
-                            .count()
-                            == 1
-                    {
-                        let on = virtualization_service_host
-                            .map(|h| h.base.name.clone())
-                            .unwrap_or(ip_address.base.ip_address.to_string());
-
-                        if on == service.base.name {
-                            return Some(format!("VM: {}", service.base.name));
-                        } else {
-                            return Some(format!("VM: {} on {}", service.base.name, on));
-                        }
-                    }
-                    return Some(format!("VM: {}", service.base.name));
-                }
-                _ => return Some(format!("VM: {}", service.base.name)),
-            }
+        // P2: Virtualized hosts — show the VM's own hostname
+        // (VM status is indicated via colored text in the frontend)
+        if ctx.get_host_is_virtualized_by(&host.id).is_some() && host_has_name {
+            return Some(host.base.name.clone());
         }
 
         // P3: Show host if it differs from the first service name + isn't shown via interface edges

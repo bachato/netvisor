@@ -74,7 +74,7 @@
 		// Space used by non-tag elements (chevron, icon, header text)
 		const fixedEls = inlineContainerEl.querySelectorAll('[data-fixed]');
 		let fixedWidth = 0;
-		fixedEls.forEach((el) => fixedWidth += (el as HTMLElement).offsetWidth + TAG_GAP);
+		fixedEls.forEach((el) => (fixedWidth += (el as HTMLElement).offsetWidth + TAG_GAP));
 
 		let availableForTags = containerWidth - fixedWidth;
 		let count = 0;
@@ -82,7 +82,8 @@
 
 		for (let i = 0; i < tagWidths.length; i++) {
 			const needsMore = i < tagWidths.length - 1;
-			const extraWidth = (count > 0 ? TAG_GAP : 0) + tagWidths[i] + (needsMore ? TAG_GAP + MORE_WIDTH : 0);
+			const extraWidth =
+				(count > 0 ? TAG_GAP : 0) + tagWidths[i] + (needsMore ? TAG_GAP + MORE_WIDTH : 0);
 
 			if (usedWidth + extraWidth <= availableForTags) {
 				count++;
@@ -126,7 +127,11 @@
 
 <!-- Hidden measurement container for tag widths (shared by inline + collapsed-sub) -->
 {#if needsTruncation}
-	<div bind:this={inlineMeasureEl} class="pointer-events-none invisible absolute flex items-center gap-1" aria-hidden="true">
+	<div
+		bind:this={inlineMeasureEl}
+		class="pointer-events-none invisible absolute flex items-center gap-1"
+		aria-hidden="true"
+	>
 		{#each groupLabels as pill (pill.label)}
 			<span data-tag><Tag label={pill.label} color={pill.color} /></span>
 		{/each}
@@ -177,7 +182,7 @@
 			<span data-fixed><LogoComp class="h-4 w-4 flex-shrink-0" /></span>
 		{/if}
 		{#if headerText}
-			<span data-fixed class="text-tertiary whitespace-nowrap text-xs font-medium flex-shrink-0">
+			<span data-fixed class="text-tertiary flex-shrink-0 whitespace-nowrap text-xs font-medium">
 				{headerText}{groupLabels.length > 0 ? ':' : ''}
 			</span>
 		{/if}
@@ -204,10 +209,12 @@
 		<span data-fixed><ChevronRight class="text-secondary h-3.5 w-3.5 flex-shrink-0" /></span>
 		{#if iconComponent}
 			{@const IconComp = iconComponent}
-			<span data-fixed><IconComp
-				class={`h-3.5 w-3.5 flex-shrink-0 ${colorHelper.icon}`}
-				fill={fillIcon ? 'currentColor' : 'none'}
-			/></span>
+			<span data-fixed
+				><IconComp
+					class={`h-3.5 w-3.5 flex-shrink-0 ${colorHelper.icon}`}
+					fill={fillIcon ? 'currentColor' : 'none'}
+				/></span
+			>
 		{/if}
 		{#if logoComponent}
 			{@const LogoComp = logoComponent}
@@ -232,7 +239,7 @@
 	<!-- Collapsed root container: summary with subcontainer info -->
 	<div
 		class="rounded-xl border border-dashed border-gray-400 text-center text-sm font-semibold shadow-lg dark:border-gray-500"
-		style="background: var(--color-topology-node-bg); position: relative; overflow: visible; transition: box-shadow 0.15s ease-in-out; {tagHoverRingStyle}"
+		style="background: var(--color-topology-node-bg); position: relative; overflow: visible; transition: box-shadow 0.15s ease-in-out; border-top: 2px solid {colorHelper.rgb}; {tagHoverRingStyle}"
 	>
 		<div class="flex min-w-fit flex-col items-center gap-2 whitespace-nowrap px-6 py-4">
 			<span class="text-secondary text-base font-medium underline">

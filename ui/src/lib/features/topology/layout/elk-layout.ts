@@ -35,19 +35,19 @@ async function getElk(): Promise<import('elkjs/lib/elk-api')['default']> {
 const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
 	'elk.algorithm': 'layered',
 	'elk.direction': 'DOWN',
-	'elk.layered.spacing.nodeNodeBetweenLayers': '30',
-	'elk.layered.spacing.edgeNodeBetweenLayers': '15',
+	'elk.layered.spacing.nodeNodeBetweenLayers': '25',
+	'elk.layered.spacing.edgeNodeBetweenLayers': '25',
 	'elk.edgeRouting': 'POLYLINE',
-	'elk.layered.spacing.edgeEdgeBetweenLayers': '10',
+	'elk.layered.spacing.edgeEdgeBetweenLayers': '25',
 	'elk.spacing.componentComponent': '50',
-	'elk.spacing.nodeNode': '40',
+	'elk.spacing.nodeNode': '50',
 	'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
 	'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
 	'elk.hierarchyHandling': 'SEPARATE_CHILDREN',
 	'elk.layered.layering.strategy': 'NETWORK_SIMPLEX',
 	'elk.layered.compaction.postCompaction.strategy': 'LEFT_RIGHT_CONSTRAINT_LOCKING',
 	'elk.aspectRatio': '1.6',
-	'elk.padding': '[top=20,left=20,bottom=20,right=20]'
+	'elk.padding': '[top=25,left=25,bottom=25,right=25]'
 };
 
 /**
@@ -84,7 +84,6 @@ function buildElkGraph(
 			const containerType =
 				((node as Record<string, unknown>).container_type as string) ?? 'Subnet';
 			const meta = containerTypes.getMetadata(containerType);
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const isSubcontainer = meta.is_subcontainer;
 			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
 			if (parentId) parentContainerMap.set(node.id, parentId);
@@ -104,10 +103,13 @@ function buildElkGraph(
 
 			// Layered children: ELK optimizes child ordering for crossing minimization
 			// Box children: grid packing by size (default for most views)
+			// L2 uses narrow 0.3 for vertical port columns; subcontainers use
+			// wider 2.5 to spread children horizontally; root containers use 1.4
+			const aspectRatio = useLayeredChildren ? '0.3' : isSubcontainer ? '2.5' : '1.4';
 			const childLayoutOptions: Record<string, string> = {
 				'elk.algorithm': 'box',
 				'elk.box.packingMode': 'SIMPLE',
-				'elk.aspectRatio': useLayeredChildren ? '0.3' : '1.4',
+				'elk.aspectRatio': aspectRatio,
 				'elk.padding': padding,
 				'elk.nodeSize.constraints': 'MINIMUM_SIZE',
 				'elk.spacing.nodeNode': '25',
@@ -716,7 +718,7 @@ function buildElkGraph(
 				'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
 				'elk.layered.nodePlacement.strategy': 'SIMPLE',
 				'elk.hierarchyHandling': 'SEPARATE_CHILDREN',
-				'elk.padding': '[top=20,left=20,bottom=20,right=20]'
+				'elk.padding': '[top=25,left=25,bottom=25,right=25]'
 			}
 		: ROOT_LAYOUT_OPTIONS;
 

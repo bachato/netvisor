@@ -456,11 +456,7 @@
 				let needsElkForExpand = false;
 				if (collapseChanged) {
 					for (const c of layoutGraph.containers.values()) {
-						if (
-							!c.collapsed &&
-							c.expandedSize.width === 0 &&
-							c.allChildren.length > 0
-						) {
+						if (!c.collapsed && c.expandedSize.width === 0 && c.allChildren.length > 0) {
 							needsElkForExpand = true;
 							// Mark as seen so the auto-collapse block (below) doesn't
 							// immediately re-collapse what the user just expanded.
@@ -597,9 +593,7 @@
 					const elementNodeSizes = new Map<string, { x: number; y: number }>();
 					const cachedSizes = isViewTransition ? viewSizeCache.get(currentView) : undefined;
 					const expandCachedSizes =
-						needsElkForExpand && !isNewStructure
-							? viewSizeCache.get(currentView)
-							: undefined;
+						needsElkForExpand && !isNewStructure ? viewSizeCache.get(currentView) : undefined;
 
 					if (isViewTransition && cachedSizes) {
 						// Return visit to a previously-measured view: use cached sizes

@@ -57,10 +57,10 @@
 				onmouseenter={() => onHoverStart?.(item.value, item.color)}
 				onmouseleave={() => onHoverEnd?.()}
 				{disabled}
-				class="transition-opacity {disabled
+				class="transition-all {disabled
 					? 'cursor-not-allowed opacity-50'
 					: faded
-						? 'opacity-50 hover:opacity-75'
+						? 'opacity-50 grayscale hover:opacity-75 hover:grayscale-[50%] dark:opacity-40'
 						: 'opacity-100'}"
 			>
 				<Tag

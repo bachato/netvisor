@@ -111,7 +111,7 @@ impl TypeMetadataProvider for ContainerRule {
             ContainerRule::BySubnet => "Group nodes by network subnet",
             ContainerRule::MergeDockerBridges => "Merge Docker bridge subnets under their host",
             ContainerRule::ByApplicationGroup { .. } => "Group services by application group tag",
-            ContainerRule::ByHost => "Group ports by their host device",
+            ContainerRule::ByHost => "Group elements by host",
         }
     }
 
@@ -227,10 +227,8 @@ impl TypeMetadataProvider for ElementRule {
 
     fn description(&self) -> &'static str {
         match self {
-            ElementRule::ByServiceCategory { .. } => {
-                "Group nodes by service category within a container"
-            }
-            ElementRule::ByTag { .. } => "Group nodes by tag within a container",
+            ElementRule::ByServiceCategory { .. } => "Group elements by service category",
+            ElementRule::ByTag { .. } => "Group elements by tag",
             ElementRule::ByVirtualizer => "Group hosts by their virtualizer",
             ElementRule::ByStack => "Group by Docker Compose project",
             ElementRule::ByTrunkPort => "Group trunk ports (ports carrying multiple VLANs)",
