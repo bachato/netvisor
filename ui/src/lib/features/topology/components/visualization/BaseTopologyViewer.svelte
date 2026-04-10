@@ -556,8 +556,9 @@
 					hiddenEdgeTypes
 				);
 
-				// Use the graph to determine visible nodes
-				const visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
+				// Use the graph to determine visible nodes (recomputed after
+				// deferred collapse so children of collapsed containers are filtered)
+				let visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
 
 				// Helper: build SvelteFlow node array from topology nodes
 				const buildFlowNodes = (useGraph: boolean): Node[] => {
@@ -884,6 +885,9 @@
 						// so all containers have their real expandedSize set first.
 						if (deferCollapse) {
 							layoutGraph.syncCollapseState(collapsed);
+							// Recompute visible nodes now that collapse is applied —
+							// the earlier visibleNodes included all nodes (pre-collapse).
+							visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
 						}
 
 						// Log size mismatches between DOM-measured and ELK-computed
