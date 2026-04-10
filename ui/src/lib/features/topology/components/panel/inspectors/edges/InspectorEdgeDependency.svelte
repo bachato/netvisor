@@ -30,6 +30,7 @@
 	} from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { getTopologyEditState } from '$lib/features/topology/state';
+	import { clearSelection } from '$lib/features/topology/selection';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
@@ -73,6 +74,7 @@
 
 	function handleDelete() {
 		if (group && confirm(common_confirmDeleteName({ name: group.name }))) {
+			clearSelection();
 			deleteDependencyMutation.mutate(group.id);
 		}
 	}
