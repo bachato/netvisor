@@ -729,8 +729,12 @@
 						const hasRestorable = prevExpandedSizes && prevExpandedSizes.size > 0;
 						const elkCollapsed = hasRestorable ? collapsed : new Set<string>();
 
+						// When running ELK expanded (no restorable sizes), use ALL
+						// nodes — visibleNodes excludes children of collapsed containers
+						// but ELK needs them to compute expanded layouts.
+						const elkNodes = hasRestorable ? visibleNodes : layoutNodes;
 						const elkResult = await layoutEngine.compute({
-							nodes: visibleNodes,
+							nodes: elkNodes,
 							edges: elevatedEdges,
 							topology: topology,
 							collapsedContainers: elkCollapsed,
