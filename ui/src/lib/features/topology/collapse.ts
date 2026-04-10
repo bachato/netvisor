@@ -275,8 +275,10 @@ export function stepExpand(
 	const current = get(collapseLevel);
 	const newLevel = Math.min(current + 1, 4) as CollapseLevel;
 	const collapsed = computeCollapsedForLevel(newLevel, allNodes, containerTypesStore, infraRuleId);
+	console.log(`[COLLAPSE-LEVEL] stepExpand: ${current} → ${newLevel}, collapsed=${collapsed.size} containers`);
 	collapsedContainers.set(collapsed);
 	collapseLevel.set(newLevel);
+	console.log(`[COLLAPSE-LEVEL] stepExpand: store now=${get(collapseLevel)}`);
 
 	// At level 4, return auto-collapse IDs so caller can mark them as seen
 	const autoCollapseIds =
@@ -295,8 +297,10 @@ export function stepCollapse(
 	const current = get(collapseLevel);
 	const newLevel = Math.max(current - 1, 1) as CollapseLevel;
 	const collapsed = computeCollapsedForLevel(newLevel, allNodes, containerTypesStore, infraRuleId);
+	console.log(`[COLLAPSE-LEVEL] stepCollapse: ${current} → ${newLevel}, collapsed=${collapsed.size} containers`);
 	collapsedContainers.set(collapsed);
 	collapseLevel.set(newLevel);
+	console.log(`[COLLAPSE-LEVEL] stepCollapse: store now=${get(collapseLevel)}`);
 	return { newLevel };
 }
 

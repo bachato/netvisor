@@ -1463,6 +1463,7 @@
 
 	$: collapseLevelTooltipCollapse = `${topology_collapseLevelDown()} (${$collapseLevel}/4: ${getCollapseLevelName($collapseLevel)})`;
 	$: collapseLevelTooltipExpand = `${topology_expandLevelUp()} (${$collapseLevel}/4: ${getCollapseLevelName($collapseLevel)})`;
+	$: console.log(`[COLLAPSE-LEVEL] $collapseLevel=${$collapseLevel}, expandDisabled=${$collapseLevel === 4}, collapseDisabled=${$collapseLevel === 1}`);
 
 	function handleStepCollapse() {
 		stepCollapse(topology.nodes, containerTypes, getInfrastructureRuleId());
