@@ -28,7 +28,10 @@
 		{active
 		? '!border !border-blue-400 !bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!border-blue-500 dark:!bg-blue-900/40 dark:!text-blue-300 dark:hover:!bg-blue-800/50'
 		: '!border !border-gray-300 !bg-gray-50 !text-gray-700 hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600'}"
-	style="padding: 6px {showLabel ? '8px' : '6px'} 6px 6px; gap: {showLabel ? '6px' : '0px'}; {disabled ? 'opacity: 0.4; cursor: not-allowed; pointer-events: auto;' : ''}"
+	style:padding="6px {showLabel ? '8px' : '6px'} 6px 6px"
+	style:gap="{showLabel ? '6px' : '0px'}"
+	style:opacity={disabled ? '0.4' : undefined}
+	style:cursor={disabled ? 'not-allowed' : undefined}
 	onclick={disabled ? undefined : onclick}
 	{disabled}
 	{title}
