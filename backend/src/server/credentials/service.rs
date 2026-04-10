@@ -13,7 +13,7 @@ use crate::server::{
         },
     },
     hosts::{r#impl::base::Host, service::HostService},
-    interfaces::{r#impl::base::Interface, service::InterfaceService},
+    ip_addresses::{r#impl::base::IPAddress, service::IPAddressService},
     networks::service::NetworkService,
     organizations::service::OrganizationService,
     shared::{
@@ -40,7 +40,7 @@ pub struct CredentialService {
     entity_tag_service: Arc<EntityTagService>,
     #[allow(dead_code)]
     network_service: Arc<NetworkService>,
-    interface_service: Arc<InterfaceService>,
+    ip_address_service: Arc<IPAddressService>,
     organization_service: Arc<OrganizationService>,
     host_service: OnceLock<Arc<HostService>>,
     network_credential_storage: NetworkCredentialStorage,
@@ -131,7 +131,7 @@ impl CredentialService {
         event_bus: Arc<EventBus>,
         entity_tag_service: Arc<EntityTagService>,
         network_service: Arc<NetworkService>,
-        interface_service: Arc<InterfaceService>,
+        ip_address_service: Arc<IPAddressService>,
         organization_service: Arc<OrganizationService>,
         pool: sqlx::PgPool,
     ) -> Self {
@@ -140,7 +140,7 @@ impl CredentialService {
             event_bus,
             entity_tag_service,
             network_service,
-            interface_service,
+            ip_address_service,
             organization_service,
             host_service: OnceLock::new(),
             network_credential_storage: NetworkCredentialStorage::new(pool.clone()),
@@ -239,8 +239,8 @@ impl CredentialService {
         let host_filter = StorableFilter::<Host>::new_from_network_ids(&[network_id]);
         let hosts = host_service.get_all(host_filter).await?;
 
-        let interface_filter = StorableFilter::<Interface>::new_from_network_ids(&[network_id]);
-        let interfaces = self.interface_service.get_all(interface_filter).await?;
+        let interface_filter = StorableFilter::<IPAddress>::new_from_network_ids(&[network_id]);
+        let ip_addresses = self.ip_address_service.get_all(interface_filter).await?;
 
         // Get network's SNMP credentials (from junction table)
         let network_cred_ids = self.get_credential_ids_for_network(&network_id).await?;
@@ -297,12 +297,12 @@ impl CredentialService {
                                 }
                             },
                         };
-                        // If interface_ids is set, only create overrides for those interfaces
-                        let relevant_interfaces: Vec<_> = interfaces
+                        // If ip_address_ids is set, only create overrides for those ip_addresses
+                        let relevant_interfaces: Vec<_> = ip_addresses
                             .iter()
                             .filter(|i| {
                                 i.base.host_id == host.id
-                                    && match &assignment.interface_ids {
+                                    && match &assignment.ip_address_ids {
                                         Some(ids) => ids.contains(&i.id),
                                         None => true,
                                     }
@@ -349,12 +349,12 @@ impl CredentialService {
             .get()
             .ok_or_else(|| anyhow::anyhow!("HostService not initialized"))?;
 
-        // Fetch hosts + interfaces on network
+        // Fetch hosts + ip_addresses on network
         let host_filter = StorableFilter::<Host>::new_from_network_ids(&[network_id]);
         let hosts = host_service.get_all(host_filter).await?;
 
-        let interface_filter = StorableFilter::<Interface>::new_from_network_ids(&[network_id]);
-        let interfaces = self.interface_service.get_all(interface_filter).await?;
+        let interface_filter = StorableFilter::<IPAddress>::new_from_network_ids(&[network_id]);
+        let ip_addresses = self.ip_address_service.get_all(interface_filter).await?;
 
         // Fetch network-level credentials
         let network_cred_ids = self.get_credential_ids_for_network(&network_id).await?;
@@ -401,12 +401,12 @@ impl CredentialService {
                             }
                         });
 
-                        // Create IP overrides for relevant interfaces
-                        let relevant_interfaces: Vec<_> = interfaces
+                        // Create IP overrides for relevant ip_addresses
+                        let relevant_interfaces: Vec<_> = ip_addresses
                             .iter()
                             .filter(|i| {
                                 i.base.host_id == host.id
-                                    && match &assignment.interface_ids {
+                                    && match &assignment.ip_address_ids {
                                         Some(ids) => ids.contains(&i.id),
                                         None => true,
                                     }
@@ -421,7 +421,7 @@ impl CredentialService {
                                 credential_id: cred.id,
                             }));
 
-                        // Add target IP overrides (bootstrap IPs for new daemon hosts without interfaces)
+                        // Add target IP overrides (bootstrap IPs for new daemon hosts without ip_addresses)
                         if let Some(target_ips) = &cred.base.target_ips {
                             for ip in target_ips {
                                 mapping.ip_overrides.push(IpOverride {

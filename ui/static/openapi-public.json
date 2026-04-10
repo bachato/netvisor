@@ -1058,7 +1058,7 @@
             }
           },
           {
-            "name": "interface_id",
+            "name": "ip_address_id",
             "in": "query",
             "description": "Filter by interface ID",
             "required": false,
@@ -1152,7 +1152,7 @@
           "Bindings"
         ],
         "summary": "Create a new Binding",
-        "description": "Creates a binding that associates a service with a port or interface.\n\n### Binding Types\n\n- **Interface binding**: Service is present at an interface (IP address) without a specific port.\n  Used for non-port-bound services like gateways.\n- **Port binding (specific interface)**: Service listens on a specific port on a specific interface.\n- **Port binding (all interfaces)**: Service listens on a specific port on all interfaces\n  (`interface_id: null`).\n\n### Validation and Deduplication Rules\n\n- **Conflict detection**: Interface bindings conflict with port bindings on the same interface.\n  A port binding on all interfaces conflicts with any interface binding for the same service.\n- **All-interfaces precedence**: When creating a port binding with `interface_id: null`,\n  any existing specific-interface bindings for the same port are automatically removed,\n  as they are superseded by the all-interfaces binding.",
+        "description": "Creates a binding that associates a service with a port or interface.\n\n### Binding Types\n\n- **Interface binding**: Service is present at an interface (IP address) without a specific port.\n  Used for non-port-bound services like gateways.\n- **Port binding (specific ip_address)**: Service listens on a specific port on a specific interface.\n- **Port binding (all ip_addresses)**: Service listens on a specific port on all ip_addresses\n  (`ip_address_id: null`).\n\n### Validation and Deduplication Rules\n\n- **Conflict detection**: Interface bindings conflict with port bindings on the same interface.\n  A port binding on all ip_addresses conflicts with any interface binding for the same service.\n- **All-interfaces precedence**: When creating a port binding with `ip_address_id: null`,\n  any existing specific-interface bindings for the same port are automatically removed,\n  as they are superseded by the all-interfaces binding.",
         "operationId": "create_binding",
         "requestBody": {
           "content": {
@@ -1176,7 +1176,7 @@
             }
           },
           "400": {
-            "description": "Referenced port or interface does not exist",
+            "description": "Referenced port or ip_address does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -1299,7 +1299,7 @@
             }
           },
           {
-            "name": "interface_id",
+            "name": "ip_address_id",
             "in": "query",
             "description": "Filter by interface ID",
             "required": false,
@@ -1450,7 +1450,7 @@
             }
           },
           "400": {
-            "description": "Referenced port or interface does not exist",
+            "description": "Referenced port or ip_address does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -3767,7 +3767,7 @@
           "Hosts"
         ],
         "summary": "List all hosts",
-        "description": "Returns all hosts the authenticated user has access to, with their\ninterfaces, ports, and services included. Supports pagination via\n`limit` and `offset` query parameters, and ordering via `group_by`,\n`order_by`, and `order_direction`.",
+        "description": "Returns all hosts the authenticated user has access to, with their\nip_addresses, ports, and services included. Supports pagination via\n`limit` and `offset` query parameters, and ordering via `group_by`,\n`order_by`, and `order_direction`.",
         "operationId": "get_all_hosts",
         "parameters": [
           {
@@ -3919,7 +3919,7 @@
           "Hosts"
         ],
         "summary": "Create a new host",
-        "description": "Creates a host with optional interfaces, ports, and services.\nThe `source` field is automatically set to `Manual`.\n\n### Tag Validation\n\n- Tags must exist and belong to your organization\n- Duplicate tag UUIDs are automatically deduplicated\n- Invalid or cross-organization tag UUIDs return a 400 error\n\n",
+        "description": "Creates a host with optional ip_addresses, ports, and services.\nThe `source` field is automatically set to `Manual`.\n\n### Tag Validation\n\n- Tags must exist and belong to your organization\n- Duplicate tag UUIDs are automatically deduplicated\n- Invalid or cross-organization tag UUIDs return a 400 error\n\n",
         "operationId": "create_host",
         "requestBody": {
           "content": {
@@ -4187,7 +4187,7 @@
           "Hosts"
         ],
         "summary": "Export hosts with children to ZIP",
-        "description": "Exports all hosts matching the filter criteria along with their children\n(interfaces, ports, services, if_entries) as a ZIP archive containing\nseparate CSV files for each entity type.",
+        "description": "Exports all hosts matching the filter criteria along with their children\n(ip_addresses, ports, services, interfaces) as a ZIP archive containing\nseparate CSV files for each entity type.",
         "operationId": "export_hosts_zip",
         "parameters": [
           {
@@ -4337,7 +4337,7 @@
           "Hosts"
         ],
         "summary": "Consolidate hosts",
-        "description": "Merges all interfaces, ports, and services from `other_host` into\n`destination_host`, then deletes `other_host`. Both hosts must be\non the same network.\n\n### Merge Behavior\n\n- **Interfaces**: Transferred to destination. If an interface with matching subnet+IP or MAC\n  already exists on destination, bindings are remapped to use the existing interface.\n- **Ports**: Transferred to destination. If a port with the same number and protocol already\n  exists, bindings are remapped to use the existing port.\n- **Services**: Transferred to destination with deduplication.\n  See [upsert behavior](https://scanopy.net/docs/discovery/#upsert-behavior) for details.\n\n### Restrictions\n\n- Cannot consolidate a host with itself.\n- Cannot consolidate a host that has a daemon - consolidate into it instead.",
+        "description": "Merges all ip_addresses, ports, and services from `other_host` into\n`destination_host`, then deletes `other_host`. Both hosts must be\non the same network.\n\n### Merge Behavior\n\n- **Interfaces**: Transferred to destination. If an interface with matching subnet+IP or MAC\n  already exists on destination, bindings are remapped to use the existing interface.\n- **Ports**: Transferred to destination. If a port with the same number and protocol already\n  exists, bindings are remapped to use the existing port.\n- **Services**: Transferred to destination with deduplication.\n  See [upsert behavior](https://scanopy.net/docs/discovery/#upsert-behavior) for details.\n\n### Restrictions\n\n- Cannot consolidate a host with itself.\n- Cannot consolidate a host that has a daemon - consolidate into it instead.",
         "operationId": "consolidate_hosts",
         "parameters": [
           {
@@ -4409,7 +4409,7 @@
           "Hosts"
         ],
         "summary": "Get a host by ID",
-        "description": "Returns a single host with its interfaces, ports, and services.",
+        "description": "Returns a single host with its ip_addresses, ports, and services.",
         "operationId": "get_host_by_id",
         "parameters": [
           {
@@ -4459,7 +4459,7 @@
           "Hosts"
         ],
         "summary": "Update a host",
-        "description": "Updates host properties. Children (interfaces, ports, services)\nare managed via their own endpoints.\n\n### Tag Validation\n\n- Tags must exist and belong to your organization\n- Duplicate tag UUIDs are automatically deduplicated\n- Invalid or cross-organization tag UUIDs return a 400 error",
+        "description": "Updates host properties. Children (ip_addresses, ports, services)\nare managed via their own endpoints.\n\n### Tag Validation\n\n- Tags must exist and belong to your organization\n- Duplicate tag UUIDs are automatically deduplicated\n- Invalid or cross-organization tag UUIDs return a 400 error",
         "operationId": "update_host",
         "parameters": [
           {
@@ -4588,494 +4588,6 @@
     "/api/v1/if-entries": {
       "get": {
         "tags": [
-          "ifTable Entries"
-        ],
-        "summary": "List all ifTable Entries",
-        "operationId": "list_iftable_entries",
-        "parameters": [
-          {
-            "name": "host_id",
-            "in": "query",
-            "description": "Filter by host ID",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "network_id",
-            "in": "query",
-            "description": "Filter by network ID",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "ids",
-            "in": "query",
-            "description": "Filter by specific entity IDs (for selective loading)",
-            "required": false,
-            "schema": {
-              "type": [
-                "array",
-                "null"
-              ],
-              "items": {
-                "type": "string",
-                "format": "uuid"
-              }
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
-            "required": false,
-            "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "int32",
-              "maximum": 1000,
-              "minimum": 0
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "description": "Number of results to skip. Default: 0.",
-            "required": false,
-            "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "int32",
-              "minimum": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of ifTable Entries",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "description": "Response type for paginated list endpoints (pagination is always present in meta)",
-                  "required": [
-                    "success",
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/IfEntry"
-                      }
-                    },
-                    "error": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/PaginatedApiMeta"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "ifTable Entries"
-        ],
-        "summary": "Create a new IfEntry",
-        "description": "Creates an SNMP ifTable entry for a host. These are typically created by\nSNMP discovery, but can also be created manually.",
-        "operationId": "create_if_entry",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IfEntry"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "If entry created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_IfEntry"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Network mismatch or duplicate if_index",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/v1/if-entries/bulk-delete": {
-      "post": {
-        "tags": [
-          "ifTable Entries"
-        ],
-        "summary": "Bulk delete ifTable Entries",
-        "operationId": "bulk_delete_iftable_entries",
-        "requestBody": {
-          "description": "Array of ifTable Entry IDs to delete",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "ifTable Entries deleted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/v1/if-entries/export/csv": {
-      "get": {
-        "tags": [
-          "ifTable Entries"
-        ],
-        "summary": "Export ifTable Entries to CSV",
-        "description": "Export all ifTable Entries matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
-        "operationId": "export_iftable_entries_csv",
-        "parameters": [
-          {
-            "name": "host_id",
-            "in": "query",
-            "description": "Filter by host ID",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "network_id",
-            "in": "query",
-            "description": "Filter by network ID",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "ids",
-            "in": "query",
-            "description": "Filter by specific entity IDs (for selective loading)",
-            "required": false,
-            "schema": {
-              "type": [
-                "array",
-                "null"
-              ],
-              "items": {
-                "type": "string",
-                "format": "uuid"
-              }
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
-            "required": false,
-            "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "int32",
-              "maximum": 1000,
-              "minimum": 0
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "description": "Number of results to skip. Default: 0.",
-            "required": false,
-            "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "int32",
-              "minimum": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "CSV file containing ifTable Entries",
-            "content": {
-              "text/csv": {}
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/v1/if-entries/{id}": {
-      "get": {
-        "tags": [
-          "ifTable Entries"
-        ],
-        "summary": "Get ifTable Entry by ID",
-        "operationId": "get_iftable_entry_by_id",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ifTable Entry ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ifTable Entry found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_IfEntry"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "ifTable Entry not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "ifTable Entries"
-        ],
-        "summary": "Update an IfEntry",
-        "operationId": "update_if_entry",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "If entry ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IfEntry"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "If entry updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_IfEntry"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Network mismatch or invalid request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "If entry not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "ifTable Entries"
-        ],
-        "summary": "Delete ifTable Entry",
-        "operationId": "delete_iftable_entry",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ifTable Entry ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ifTable Entry deleted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "ifTable Entry not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "user_api_key": []
-          },
-          {
-            "session": []
-          }
-        ]
-      }
-    },
-    "/api/v1/interfaces": {
-      "get": {
-        "tags": [
           "Interfaces"
         ],
         "summary": "List all Interfaces",
@@ -5095,19 +4607,6 @@
             }
           },
           {
-            "name": "subnet_id",
-            "in": "query",
-            "description": "Filter by subnet ID",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "uuid"
-            }
-          },
-          {
             "name": "network_id",
             "in": "query",
             "description": "Filter by network ID",
@@ -5118,6 +4617,22 @@
                 "null"
               ],
               "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
             }
           },
           {
@@ -5201,8 +4716,9 @@
         "tags": [
           "Interfaces"
         ],
-        "summary": "Create a new interface\nPosition is automatically assigned to the end of the host's interface list.",
-        "operationId": "create_interface",
+        "summary": "Create a new Interface",
+        "description": "Creates an SNMP ifTable entry for a host. These are typically created by\nSNMP discovery, but can also be created manually.",
+        "operationId": "create_if_entry",
         "requestBody": {
           "content": {
             "application/json": {
@@ -5215,7 +4731,7 @@
         },
         "responses": {
           "200": {
-            "description": "Interface created successfully",
+            "description": "If entry created successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -5225,7 +4741,7 @@
             }
           },
           "400": {
-            "description": "Network mismatch or invalid request",
+            "description": "Network mismatch or duplicate if_index",
             "content": {
               "application/json": {
                 "schema": {
@@ -5245,14 +4761,15 @@
         ]
       }
     },
-    "/api/v1/interfaces/bulk-delete": {
+    "/api/v1/if-entries/bulk-delete": {
       "post": {
         "tags": [
           "Interfaces"
         ],
-        "summary": "Bulk delete interfaces\nRemaining interfaces for affected hosts are renumbered to maintain sequential positions.",
+        "summary": "Bulk delete Interfaces",
         "operationId": "bulk_delete_interfaces",
         "requestBody": {
+          "description": "Array of Interface IDs to delete",
           "content": {
             "application/json": {
               "schema": {
@@ -5268,21 +4785,11 @@
         },
         "responses": {
           "200": {
-            "description": "Interfaces deleted successfully",
+            "description": "Interfaces deleted",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "No IDs provided",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             }
@@ -5298,7 +4805,7 @@
         ]
       }
     },
-    "/api/v1/interfaces/export/csv": {
+    "/api/v1/if-entries/export/csv": {
       "get": {
         "tags": [
           "Interfaces"
@@ -5321,19 +4828,6 @@
             }
           },
           {
-            "name": "subnet_id",
-            "in": "query",
-            "description": "Filter by subnet ID",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "uuid"
-            }
-          },
-          {
             "name": "network_id",
             "in": "query",
             "description": "Filter by network ID",
@@ -5344,6 +4838,22 @@
                 "null"
               ],
               "format": "uuid"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Filter by specific entity IDs (for selective loading)",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
             }
           },
           {
@@ -5394,7 +4904,7 @@
         ]
       }
     },
-    "/api/v1/interfaces/{id}": {
+    "/api/v1/if-entries/{id}": {
       "get": {
         "tags": [
           "Interfaces"
@@ -5448,13 +4958,13 @@
         "tags": [
           "Interfaces"
         ],
-        "summary": "Update an interface\nPosition must be within valid range and not conflict with other interfaces.",
-        "operationId": "update_interface",
+        "summary": "Update an Interface",
+        "operationId": "update_if_entry",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "Interface ID",
+            "description": "If entry ID",
             "required": true,
             "schema": {
               "type": "string",
@@ -5474,7 +4984,7 @@
         },
         "responses": {
           "200": {
-            "description": "Interface updated successfully",
+            "description": "If entry updated successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -5494,7 +5004,7 @@
             }
           },
           "404": {
-            "description": "Interface not found",
+            "description": "If entry not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -5517,7 +5027,7 @@
         "tags": [
           "Interfaces"
         ],
-        "summary": "Delete an interface\nRemaining interfaces for the host are renumbered to maintain sequential positions.",
+        "summary": "Delete Interface",
         "operationId": "delete_interface",
         "parameters": [
           {
@@ -5533,7 +5043,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Interface deleted successfully",
+            "description": "Interface deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -5742,6 +5252,496 @@
           },
           "403": {
             "description": "Cannot revoke this invite",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ip_addresses": {
+      "get": {
+        "tags": [
+          "IP Addresses"
+        ],
+        "summary": "List all IP Addresses",
+        "operationId": "list_ip_addresses",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "description": "Filter by host ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "subnet_id",
+            "in": "query",
+            "description": "Filter by subnet ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of IP Addresses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Response type for paginated list endpoints (pagination is always present in meta)",
+                  "required": [
+                    "success",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/IPAddress"
+                      }
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedApiMeta"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "IP Addresses"
+        ],
+        "summary": "Create a new interface\nPosition is automatically assigned to the end of the host's interface list.",
+        "operationId": "create_ip_address",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPAddress"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Interface created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_IPAddress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Network mismatch or invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ip_addresses/bulk-delete": {
+      "post": {
+        "tags": [
+          "IP Addresses"
+        ],
+        "summary": "Bulk delete interfaces\nRemaining interfaces for affected hosts are renumbered to maintain sequential positions.",
+        "operationId": "bulk_delete_ip_addresses",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Interfaces deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_BulkDeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No IDs provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ip_addresses/export/csv": {
+      "get": {
+        "tags": [
+          "IP Addresses"
+        ],
+        "summary": "Export IP Addresses to CSV",
+        "description": "Export all IP Addresses matching the filter criteria to CSV format. Ignores pagination parameters (limit/offset) and exports all matching records.",
+        "operationId": "export_ip_addresses_csv",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "description": "Filter by host ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "subnet_id",
+            "in": "query",
+            "description": "Filter by subnet ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network_id",
+            "in": "query",
+            "description": "Filter by network ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "maximum": 1000,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip. Default: 0.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file containing IP Addresses",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ip_addresses/{id}": {
+      "get": {
+        "tags": [
+          "IP Addresses"
+        ],
+        "summary": "Get IP Address by ID",
+        "operationId": "get_ip_address_by_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "IP Address ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "IP Address found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_IPAddress"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "IP Address not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "IP Addresses"
+        ],
+        "summary": "Update an interface\nPosition must be within valid range and not conflict with other interfaces.",
+        "operationId": "update_ip_address",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Interface ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPAddress"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Interface updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_IPAddress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Network mismatch or invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Interface not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_api_key": []
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "IP Addresses"
+        ],
+        "summary": "Delete an interface\nRemaining interfaces for the host are renumbered to maintain sequential positions.",
+        "operationId": "delete_ip_address",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Interface ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Interface deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Interface not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -7054,7 +7054,7 @@
           "Services"
         ],
         "summary": "Create a new service",
-        "description": "Creates a service with optional bindings to interfaces or ports.\nThe `id`, `created_at`, `updated_at`, and `source` fields are generated server-side.\nBindings are specified without `service_id` or `network_id` - these are assigned automatically.\n\n### Binding Validation Rules\n\n- **Cross-host validation**: All bindings must reference ports/interfaces that belong to the\n  service's host. Bindings referencing entities from other hosts will be rejected.\n- **Deduplication**: Duplicate bindings in the same request are automatically deduplicated.\n- **All-interfaces precedence**: If a port binding with `interface_id: null` (all interfaces)\n  is included, any specific-interface bindings for the same port are automatically removed.\n- **Conflict detection**: Interface bindings conflict with port bindings on the same interface.\n  A port binding on all interfaces conflicts with any interface binding.",
+        "description": "Creates a service with optional bindings to ip_addresses or ports.\nThe `id`, `created_at`, `updated_at`, and `source` fields are generated server-side.\nBindings are specified without `service_id` or `network_id` - these are assigned automatically.\n\n### Binding Validation Rules\n\n- **Cross-host validation**: All bindings must reference ports/interfaces that belong to the\n  service's host. Bindings referencing entities from other hosts will be rejected.\n- **Deduplication**: Duplicate bindings in the same request are automatically deduplicated.\n- **All-interfaces precedence**: If a port binding with `ip_address_id: null` (all ip_addresses)\n  is included, any specific-interface bindings for the same port are automatically removed.\n- **Conflict detection**: Interface bindings conflict with port bindings on the same interface.\n  A port binding on all ip_addresses conflicts with any interface binding.",
         "operationId": "create_service",
         "requestBody": {
           "content": {
@@ -7375,7 +7375,7 @@
           "Services"
         ],
         "summary": "Update a service",
-        "description": "Updates an existing service. All binding validation rules from service creation apply here as well.\n\n## Binding Validation Rules\n\n- **Cross-host validation**: All bindings must reference ports/interfaces that belong to the\n  service's host. Bindings referencing entities from other hosts will be rejected.\n- **Deduplication**: Duplicate bindings are automatically deduplicated.\n- **All-interfaces precedence**: If a port binding with `interface_id: null` (all interfaces)\n  is included, any specific-interface bindings for the same port are automatically removed.\n- **Conflict detection**: Interface bindings conflict with port bindings on the same interface.",
+        "description": "Updates an existing service. All binding validation rules from service creation apply here as well.\n\n## Binding Validation Rules\n\n- **Cross-host validation**: All bindings must reference ports/interfaces that belong to the\n  service's host. Bindings referencing entities from other hosts will be rejected.\n- **Deduplication**: Duplicate bindings are automatically deduplicated.\n- **All-interfaces precedence**: If a port binding with `ip_address_id: null` (all ip_addresses)\n  is included, any specific-interface bindings for the same port are automatically removed.\n- **Conflict detection**: Interface bindings conflict with port bindings on the same interface.",
         "operationId": "update_service",
         "parameters": [
           {
@@ -8371,7 +8371,7 @@
           "Subnets"
         ],
         "summary": "Update a subnet",
-        "description": "Updates subnet properties. If the CIDR is being changed, validates that\nall existing interfaces on this subnet have IPs within the new CIDR range.",
+        "description": "Updates subnet properties. If the CIDR is being changed, validates that\nall existing ip_addresses on this subnet have IPs within the new CIDR range.",
         "operationId": "update_subnet",
         "parameters": [
           {
@@ -8407,7 +8407,7 @@
             }
           },
           "400": {
-            "description": "CIDR change would orphan existing interfaces",
+            "description": "CIDR change would orphan existing ip_addresses",
             "content": {
               "application/json": {
                 "schema": {
@@ -9913,7 +9913,7 @@
           "Vlans"
         ],
         "summary": "Bulk upsert VLANs from discovery",
-        "description": "Used by daemons to report discovered VLANs. Creates new VLANs or updates names.\nReturns the mapping of VLAN numbers to entity UUIDs for IfEntry construction.",
+        "description": "Used by daemons to report discovered VLANs. Creates new VLANs or updates names.\nReturns the mapping of VLAN numbers to entity UUIDs for Interface construction.",
         "operationId": "discovery_upsert_vlans",
         "requestBody": {
           "content": {
@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-09T18:31:36.526561Z",
-              "id": "0ac42c62-30e9-4631-ae71-0c2d5e434b84",
-              "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+              "created_at": "2026-04-09T22:35:35.695086Z",
+              "id": "5cb49a2c-c920-4cf6-b733-def6087bc024",
+              "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-09T18:31:36.526561Z"
+              "updated_at": "2026-04-09T22:35:35.695086Z"
             }
           },
           "error": {
@@ -11065,7 +11065,7 @@
         "properties": {
           "data": {
             "type": "object",
-            "description": "Response type for host endpoints.\nIncludes children (interfaces, ports, services, if_entries).",
+            "description": "Response type for host endpoints.\nIncludes children (ip_addresses, ports, services, interfaces).",
             "required": [
               "id",
               "created_at",
@@ -11075,10 +11075,10 @@
               "source",
               "hidden",
               "tags",
-              "interfaces",
+              "ip_addresses",
               "ports",
               "services",
-              "if_entries"
+              "interfaces"
             ],
             "properties": {
               "chassis_id": {
@@ -11116,17 +11116,17 @@
                 "type": "string",
                 "format": "uuid"
               },
-              "if_entries": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/IfEntry"
-                },
-                "description": "SNMP ifTable entries"
-              },
               "interfaces": {
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/Interface"
+                },
+                "description": "SNMP ifTable entries"
+              },
+              "ip_addresses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/IPAddress"
                 }
               },
               "management_url": {
@@ -11210,7 +11210,7 @@
               "hidden": false,
               "hostname": "web-server-01.local",
               "id": "550e8400-e29b-41d4-a716-446655440003",
-              "if_entries": [
+              "interfaces": [
                 {
                   "admin_status": "Up",
                   "cdp_address": null,
@@ -11225,7 +11225,7 @@
                   "if_index": 1,
                   "if_name": "Gi0/1",
                   "if_type": 6,
-                  "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                  "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "lldp_chassis_id": null,
                   "lldp_mgmt_addr": null,
                   "lldp_port_desc": null,
@@ -11240,7 +11240,7 @@
                   "updated_at": "2026-01-15T10:30:00Z"
                 }
               ],
-              "interfaces": [
+              "ip_addresses": [
                 {
                   "created_at": "2026-01-15T10:30:00Z",
                   "host_id": "550e8400-e29b-41d4-a716-446655440003",
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-09T18:31:36.514190Z",
-                      "id": "d1635935-fd20-4386-b1a5-c7509023d4fd",
-                      "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                      "created_at": "2026-04-09T22:35:35.676298Z",
+                      "id": "f164ce92-83ad-424c-8f3c-737a3664fd0c",
+                      "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-09T18:31:36.514190Z"
+                      "updated_at": "2026-04-09T22:35:35.676298Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "TP-Link EAP",
+                  "service_definition": "Proxmox Datacenter Manager",
                   "source": {
                     "type": "Manual"
                   },
@@ -11319,7 +11319,7 @@
           }
         }
       },
-      "ApiResponse_IfEntry": {
+      "ApiResponse_IPAddress": {
         "type": "object",
         "required": [
           "success",
@@ -11329,7 +11329,7 @@
           "data": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/IfEntryBase"
+                "$ref": "#/components/schemas/IPAddressBase"
               },
               {
                 "type": "object",
@@ -11356,7 +11356,19 @@
                   }
                 }
               }
-            ]
+            ],
+            "example": {
+              "created_at": "2026-01-15T10:30:00Z",
+              "host_id": "550e8400-e29b-41d4-a716-446655440003",
+              "id": "550e8400-e29b-41d4-a716-446655440005",
+              "ip_address": "192.168.1.100",
+              "mac_address": "DE:AD:BE:EF:CA:FE",
+              "name": "eth0",
+              "network_id": "550e8400-e29b-41d4-a716-446655440002",
+              "position": 0,
+              "subnet_id": "550e8400-e29b-41d4-a716-446655440004",
+              "updated_at": "2026-01-15T10:30:00Z"
+            }
           },
           "error": {
             "type": [
@@ -11409,19 +11421,7 @@
                   }
                 }
               }
-            ],
-            "example": {
-              "created_at": "2026-01-15T10:30:00Z",
-              "host_id": "550e8400-e29b-41d4-a716-446655440003",
-              "id": "550e8400-e29b-41d4-a716-446655440005",
-              "ip_address": "192.168.1.100",
-              "mac_address": "DE:AD:BE:EF:CA:FE",
-              "name": "eth0",
-              "network_id": "550e8400-e29b-41d4-a716-446655440002",
-              "position": 0,
-              "subnet_id": "550e8400-e29b-41d4-a716-446655440004",
-              "updated_at": "2026-01-15T10:30:00Z"
-            }
+            ]
           },
           "error": {
             "type": [
@@ -11991,14 +11991,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-09T18:31:36.523001Z",
-                  "id": "6516d3eb-b3cc-4539-944a-b28eb9511c06",
-                  "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                  "created_at": "2026-04-09T22:35:35.690017Z",
+                  "id": "e118ad40-046b-46e7-8475-3b38ef835751",
+                  "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-09T18:31:36.523001Z"
+                  "updated_at": "2026-04-09T22:35:35.690017Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12007,7 +12007,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "TP-Link EAP",
+              "service_definition": "Proxmox Datacenter Manager",
               "source": {
                 "type": "Manual"
               },
@@ -13372,14 +13372,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-09T18:31:36.514414Z",
-          "id": "f1ae597c-3ca6-4ba5-be9f-2ed11fc77a4d",
-          "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+          "created_at": "2026-04-09T22:35:35.676706Z",
+          "id": "dc5d99c4-eafc-4b83-9740-bf690c99102a",
+          "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-09T18:31:36.514414Z"
+          "updated_at": "2026-04-09T22:35:35.676706Z"
         }
       },
       "BindingBase": {
@@ -13411,11 +13411,11 @@
         "oneOf": [
           {
             "type": "object",
-            "title": "Interface",
+            "title": "IPAddress",
             "description": "Bind to an interface (service is present at this interface without a specific port)",
             "required": [
               "id",
-              "interface_id",
+              "ip_address_id",
               "type"
             ],
             "properties": {
@@ -13424,14 +13424,14 @@
                 "format": "uuid",
                 "description": "Client-provided UUID for this binding"
               },
-              "interface_id": {
+              "ip_address_id": {
                 "type": "string",
                 "format": "uuid"
               },
               "type": {
                 "type": "string",
                 "enum": [
-                  "Interface"
+                  "IPAddress"
                 ]
               }
             }
@@ -13439,7 +13439,7 @@
           {
             "type": "object",
             "title": "Port",
-            "description": "Bind to a port (optionally on a specific interface)",
+            "description": "Bind to a port (optionally on a specific ip_address)",
             "required": [
               "id",
               "port_id",
@@ -13451,13 +13451,13 @@
                 "format": "uuid",
                 "description": "Client-provided UUID for this binding"
               },
-              "interface_id": {
+              "ip_address_id": {
                 "type": [
                   "string",
                   "null"
                 ],
                 "format": "uuid",
-                "description": "null = bind to all interfaces"
+                "description": "null = bind to all ip_addresses"
               },
               "port_id": {
                 "type": "string",
@@ -13478,21 +13478,21 @@
         "oneOf": [
           {
             "type": "object",
-            "title": "Interface",
-            "description": "Interface binding: Service is present at an interface (IP address) without a specific port.\nUsed for non-port-bound services like gateways. Conflicts with port bindings on the same interface.",
+            "title": "IPAddress",
+            "description": "IP address binding: Service is present at an IP address without a specific port.\nUsed for non-port-bound services like gateways. Conflicts with port bindings on the same IP address.",
             "required": [
-              "interface_id",
+              "ip_address_id",
               "type"
             ],
             "properties": {
-              "interface_id": {
+              "ip_address_id": {
                 "type": "string",
                 "format": "uuid"
               },
               "type": {
                 "type": "string",
                 "enum": [
-                  "Interface"
+                  "IPAddress"
                 ]
               }
             }
@@ -13500,20 +13500,20 @@
           {
             "type": "object",
             "title": "Port",
-            "description": "Port binding: Service listens on a specific port, optionally on a specific interface.\nIf `interface_id` is `null`, the service listens on this port across all interfaces,\nwhich supersedes any specific-interface bindings for the same port.",
+            "description": "Port binding: Service listens on a specific port, optionally on a specific IP address.\nIf `ip_address_id` is `null`, the service listens on this port across all IP addresses,\nwhich supersedes any specific-IP-address bindings for the same port.",
             "required": [
               "port_id",
-              "interface_id",
+              "ip_address_id",
               "type"
             ],
             "properties": {
-              "interface_id": {
+              "ip_address_id": {
                 "type": [
                   "string",
                   "null"
                 ],
                 "format": "uuid",
-                "description": "The interface this port binding applies to. If `null`, the binding applies to all\ninterfaces on the host (and supersedes specific-interface bindings for this port)."
+                "description": "The IP address this port binding applies to. If `null`, the binding applies to all\nIP addresses on the host (and supersedes specific-IP-address bindings for this port)."
               },
               "port_id": {
                 "type": "string",
@@ -13528,7 +13528,7 @@
             }
           }
         ],
-        "description": "The type of binding - either to an interface or to a port.\n\nBindings associate a service with network resources (interfaces/ports) on a host.\n\n## Validation Rules\n\n- All bindings must reference ports/interfaces that belong to the same host as the service.\n- Interface bindings conflict with port bindings on the same interface.\n- A port binding on all interfaces (`interface_id: null`) conflicts with any interface binding.\n- When a port binding with `interface_id: null` is created, it supersedes (removes) any\n  existing specific-interface bindings for the same port."
+        "description": "The type of binding - either to an interface or to a port.\n\nBindings associate a service with network resources (ip_addresses/ports) on a host.\n\n## Validation Rules\n\n- All bindings must reference ports/interfaces that belong to the same host as the service.\n- Interface bindings conflict with port bindings on the same interface.\n- A port binding on all ip_addresses (`ip_address_id: null`) conflicts with any interface binding.\n- When a port binding with `ip_address_id: null` is created, it supersedes (removes) any\n  existing specific-interface bindings for the same port."
       },
       "BulkDeleteResponse": {
         "type": "object",
@@ -13683,21 +13683,21 @@
         "oneOf": [
           {
             "type": "object",
-            "title": "Interface",
-            "description": "Bind to an interface (service listens on all ports on this interface)",
+            "title": "IPAddress",
+            "description": "Bind to an interface (service listens on all ports on this ip_address)",
             "required": [
-              "interface_id",
+              "ip_address_id",
               "type"
             ],
             "properties": {
-              "interface_id": {
+              "ip_address_id": {
                 "type": "string",
                 "format": "uuid"
               },
               "type": {
                 "type": "string",
                 "enum": [
-                  "Interface"
+                  "IPAddress"
                 ]
               }
             }
@@ -13705,13 +13705,13 @@
           {
             "type": "object",
             "title": "Port",
-            "description": "Bind to a port (optionally on a specific interface)",
+            "description": "Bind to a port (optionally on a specific ip_address)",
             "required": [
               "port_id",
               "type"
             ],
             "properties": {
-              "interface_id": {
+              "ip_address_id": {
                 "type": [
                   "string",
                   "null"
@@ -13750,7 +13750,7 @@
       },
       "CreateHostRequest": {
         "type": "object",
-        "description": "Request type for creating a host with its associated interfaces, ports, and services.\nServer assigns `host_id`, `network_id`, and `source` to all children.\nClient must provide UUIDs for all entities, enabling services to reference\ninterfaces/ports by ID in the same request.",
+        "description": "Request type for creating a host with its associated ip_addresses, ports, and services.\nServer assigns `host_id`, `network_id`, and `source` to all children.\nClient must provide UUIDs for all entities, enabling services to reference\nip_addresses/ports by ID in the same request.",
         "required": [
           "name",
           "network_id",
@@ -13784,17 +13784,17 @@
               "null"
             ]
           },
-          "if_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IfEntryInput"
-            },
-            "description": "SNMP interface entries (ifTable data) - server assigns UUIDs"
-          },
           "interfaces": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/InterfaceInput"
+            },
+            "description": "SNMP interface entries (ifTable data) - server assigns UUIDs"
+          },
+          "ip_addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IPAddressInput"
             },
             "description": "Interfaces to create with this host (client provides UUIDs)"
           },
@@ -13823,7 +13823,7 @@
             "items": {
               "$ref": "#/components/schemas/ServiceInput"
             },
-            "description": "Services to create with this host (can reference interfaces/ports by their UUIDs)"
+            "description": "Services to create with this host (can reference ip_addresses/ports by their UUIDs)"
           },
           "sys_contact": {
             "type": [
@@ -13872,8 +13872,8 @@
           "description": "Primary web server",
           "hidden": false,
           "hostname": "web-server-01.local",
-          "if_entries": [],
-          "interfaces": [
+          "interfaces": [],
+          "ip_addresses": [
             {
               "id": "550e8400-e29b-41d4-a716-446655440005",
               "ip_address": "192.168.1.100",
@@ -13897,7 +13897,7 @@
               "bindings": [
                 {
                   "id": "550e8400-e29b-41d4-a716-446655440009",
-                  "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                  "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "type": "Port"
                 }
@@ -13905,7 +13905,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "TP-Link EAP",
+              "service_definition": "Proxmox Datacenter Manager",
               "tags": [],
               "virtualization": null
             }
@@ -14048,17 +14048,17 @@
       },
       "CredentialAssignment": {
         "type": "object",
-        "description": "A credential assigned to a host, optionally limited to specific interfaces.",
+        "description": "A credential assigned to a host, optionally limited to specific ip_addresses.",
         "required": [
           "credential_id",
-          "interface_ids"
+          "ip_address_ids"
         ],
         "properties": {
           "credential_id": {
             "type": "string",
             "format": "uuid"
           },
-          "interface_ids": {
+          "ip_address_ids": {
             "type": [
               "array",
               "null"
@@ -14067,7 +14067,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "Interface IDs to limit this credential to. None = all host interfaces."
+            "description": "Interface IDs to limit this credential to. None = all host ip_addresses."
           }
         }
       },
@@ -14141,7 +14141,7 @@
           },
           {
             "type": "object",
-            "description": "Docker API proxy credentials. Target IP determined from host interfaces at scan time.",
+            "description": "Docker API proxy credentials. Target IP determined from host ip_addresses at scan time.",
             "required": [
               "type"
             ],
@@ -14638,7 +14638,7 @@
             "items": {
               "$ref": "#/components/schemas/Subnet"
             },
-            "description": "Subnets detected from daemon's network interfaces. Server resolves these\nvia SubnetService::create (create-or-match by CIDR) to get real IDs.\nv0.15.0+ daemons populate this; pre-v0.15.0 daemons leave it empty."
+            "description": "Subnets detected from daemon's network ip_addresses. Server resolves these\nvia SubnetService::create (create-or-match by CIDR) to get real IDs.\nv0.15.0+ daemons populate this; pre-v0.15.0 daemons leave it empty."
           },
           "mode": {
             "$ref": "#/components/schemas/DaemonMode"
@@ -15029,7 +15029,7 @@
         "description": "Request type for daemon discovery - accepts full entities with IDs.\nUsed internally by daemons for host creation/upsert, NOT the external API.\nThis supports the discovery workflow where daemons manage entity IDs.",
         "required": [
           "host",
-          "interfaces",
+          "ip_addresses",
           "ports",
           "services"
         ],
@@ -15037,17 +15037,17 @@
           "host": {
             "$ref": "#/components/schemas/Host"
           },
-          "if_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IfEntry"
-            },
-            "description": "SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled"
-          },
           "interfaces": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Interface"
+            },
+            "description": "SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled"
+          },
+          "ip_addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IPAddress"
             }
           },
           "ports": {
@@ -15471,7 +15471,7 @@
               "edge_type": {
                 "type": "string",
                 "enum": [
-                  "Interface"
+                  "IPAddress"
                 ]
               },
               "host_id": {
@@ -15615,7 +15615,7 @@
       "EdgeTypeDiscriminants": {
         "type": "string",
         "enum": [
-          "Interface",
+          "IPAddress",
           "HostVirtualization",
           "ServiceVirtualization",
           "RequestPath",
@@ -15700,10 +15700,10 @@
               "element_type": {
                 "type": "string",
                 "enum": [
-                  "Interface"
+                  "IPAddress"
                 ]
               },
-              "interface_id": {
+              "ip_address_id": {
                 "type": [
                   "string",
                   "null"
@@ -15747,17 +15747,17 @@
           {
             "type": "object",
             "required": [
-              "if_entry_id",
+              "interface_id",
               "element_type"
             ],
             "properties": {
               "element_type": {
                 "type": "string",
                 "enum": [
-                  "Port"
+                  "Interface"
                 ]
               },
-              "if_entry_id": {
+              "interface_id": {
                 "type": "string",
                 "format": "uuid"
               }
@@ -15853,8 +15853,8 @@
           "Service",
           "Port",
           "Binding",
+          "IPAddress",
           "Interface",
-          "IfEntry",
           "Credential",
           "Subnet",
           "Vlan",
@@ -16063,7 +16063,7 @@
       },
       "HostBase": {
         "type": "object",
-        "description": "Base data for a Host entity (stored in database).\nChild entities (interfaces, ports, services) are stored in their own tables\nand queried by `host_id`. They are NOT stored on the host.",
+        "description": "Base data for a Host entity (stored in database).\nChild entities (ip_addresses, ports, services) are stored in their own tables\nand queried by `host_id`. They are NOT stored on the host.",
         "required": [
           "name",
           "network_id",
@@ -16219,7 +16219,7 @@
       },
       "HostResponse": {
         "type": "object",
-        "description": "Response type for host endpoints.\nIncludes children (interfaces, ports, services, if_entries).",
+        "description": "Response type for host endpoints.\nIncludes children (ip_addresses, ports, services, interfaces).",
         "required": [
           "id",
           "created_at",
@@ -16229,10 +16229,10 @@
           "source",
           "hidden",
           "tags",
-          "interfaces",
+          "ip_addresses",
           "ports",
           "services",
-          "if_entries"
+          "interfaces"
         ],
         "properties": {
           "chassis_id": {
@@ -16270,17 +16270,17 @@
             "type": "string",
             "format": "uuid"
           },
-          "if_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IfEntry"
-            },
-            "description": "SNMP ifTable entries"
-          },
           "interfaces": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Interface"
+            },
+            "description": "SNMP ifTable entries"
+          },
+          "ip_addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IPAddress"
             }
           },
           "management_url": {
@@ -16364,7 +16364,7 @@
           "hidden": false,
           "hostname": "web-server-01.local",
           "id": "550e8400-e29b-41d4-a716-446655440003",
-          "if_entries": [
+          "interfaces": [
             {
               "admin_status": "Up",
               "cdp_address": null,
@@ -16379,7 +16379,7 @@
               "if_index": 1,
               "if_name": "Gi0/1",
               "if_type": 6,
-              "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+              "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "lldp_chassis_id": null,
               "lldp_mgmt_addr": null,
               "lldp_port_desc": null,
@@ -16394,7 +16394,7 @@
               "updated_at": "2026-01-15T10:30:00Z"
             }
           ],
-          "interfaces": [
+          "ip_addresses": [
             {
               "created_at": "2026-01-15T10:30:00Z",
               "host_id": "550e8400-e29b-41d4-a716-446655440003",
@@ -16426,14 +16426,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-09T18:31:36.513890Z",
-                  "id": "01bb9efa-cca7-40b2-bc4a-d00b783a0f26",
-                  "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                  "created_at": "2026-04-09T22:35:35.675741Z",
+                  "id": "d79f18a4-199f-4089-b457-69c923629346",
+                  "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-09T18:31:36.513890Z"
+                  "updated_at": "2026-04-09T22:35:35.675741Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16442,7 +16442,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "TP-Link EAP",
+              "service_definition": "Proxmox Datacenter Manager",
               "source": {
                 "type": "Manual"
               },
@@ -16482,6 +16482,138 @@
           }
         ],
         "title": "HostVirtualization"
+      },
+      "IPAddress": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/IPAddressBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "created_at",
+              "updated_at"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              }
+            }
+          }
+        ],
+        "example": {
+          "created_at": "2026-01-15T10:30:00Z",
+          "host_id": "550e8400-e29b-41d4-a716-446655440003",
+          "id": "550e8400-e29b-41d4-a716-446655440005",
+          "ip_address": "192.168.1.100",
+          "mac_address": "DE:AD:BE:EF:CA:FE",
+          "name": "eth0",
+          "network_id": "550e8400-e29b-41d4-a716-446655440002",
+          "position": 0,
+          "subnet_id": "550e8400-e29b-41d4-a716-446655440004",
+          "updated_at": "2026-01-15T10:30:00Z"
+        }
+      },
+      "IPAddressBase": {
+        "type": "object",
+        "required": [
+          "network_id",
+          "host_id",
+          "subnet_id",
+          "ip_address",
+          "name"
+        ],
+        "properties": {
+          "host_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ip_address": {
+            "type": "string"
+          },
+          "mac_address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "MAC address discovered from ARP, SNMP, or Docker - immutable once set"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Position of this interface in the host's interface list (for ordering)"
+          },
+          "subnet_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "IPAddressInput": {
+        "type": "object",
+        "description": "Input for creating or updating an interface.\nUsed in both CreateHostRequest and UpdateHostRequest.\nClient must provide a UUID for the interface.",
+        "required": [
+          "id",
+          "subnet_id",
+          "ip_address"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-provided UUID for this interface"
+          },
+          "ip_address": {
+            "type": "string"
+          },
+          "mac_address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Position in the host's interface list (for ordering).\nIf omitted on create: appends to end of list.\nIf omitted on update: existing ip_addresses keep their positions; new ip_addresses append.\nMust be all specified or all omitted across all ip_addresses in the request."
+          },
+          "subnet_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "IdentifiedRule_ContainerRule": {
         "type": "object",
@@ -16658,10 +16790,23 @@
           "Testing"
         ]
       },
-      "IfEntry": {
+      "IfOperStatus": {
+        "type": "string",
+        "description": "SNMP ifOperStatus values per IF-MIB RFC 2863",
+        "enum": [
+          "Up",
+          "Down",
+          "Testing",
+          "Unknown",
+          "Dormant",
+          "NotPresent",
+          "LowerLayerDown"
+        ]
+      },
+      "Interface": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/IfEntryBase"
+            "$ref": "#/components/schemas/InterfaceBase"
           },
           {
             "type": "object",
@@ -16690,7 +16835,7 @@
           }
         ]
       },
-      "IfEntryBase": {
+      "InterfaceBase": {
         "type": "object",
         "required": [
           "host_id",
@@ -16776,13 +16921,13 @@
             "format": "int32",
             "description": "SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)"
           },
-          "interface_id": {
+          "ip_address_id": {
             "type": [
               "string",
               "null"
             ],
             "format": "uuid",
-            "description": "FK to Interface entity - this port's IP assignment (must be on same host)"
+            "description": "FK to IPAddress entity - this port's IP assignment (must be on same host)"
           },
           "lldp_chassis_id": {
             "oneOf": [
@@ -16856,7 +17001,7 @@
               },
               {
                 "$ref": "#/components/schemas/Neighbor",
-                "description": "Resolved neighbor connection (mutually exclusive: either IfEntry or Host)"
+                "description": "Resolved neighbor connection (mutually exclusive: either Interface or Host)"
               }
             ]
           },
@@ -16889,9 +17034,9 @@
           }
         }
       },
-      "IfEntryInput": {
+      "InterfaceInput": {
         "type": "object",
-        "description": "Input for creating an SNMP interface entry (ifTable data).\nUsed in CreateHostRequest. Server assigns UUIDs since nothing references\nIfEntry IDs at creation time (neighbor resolution is done server-side).",
+        "description": "Input for creating an SNMP interface entry (ifTable data).\nUsed in CreateHostRequest. Server assigns UUIDs since nothing references\nInterface IDs at creation time (neighbor resolution is done server-side).",
         "required": [
           "if_index",
           "if_descr"
@@ -16932,7 +17077,7 @@
             "format": "int32",
             "description": "SNMP ifType - IANAifType integer (6=ethernet, 24=loopback, etc.)"
           },
-          "interface_id": {
+          "ip_address_id": {
             "type": [
               "string",
               "null"
@@ -16965,151 +17110,6 @@
             ],
             "format": "int64",
             "description": "Interface speed in bits per second"
-          }
-        }
-      },
-      "IfOperStatus": {
-        "type": "string",
-        "description": "SNMP ifOperStatus values per IF-MIB RFC 2863",
-        "enum": [
-          "Up",
-          "Down",
-          "Testing",
-          "Unknown",
-          "Dormant",
-          "NotPresent",
-          "LowerLayerDown"
-        ]
-      },
-      "Interface": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/InterfaceBase"
-          },
-          {
-            "type": "object",
-            "required": [
-              "id",
-              "created_at",
-              "updated_at"
-            ],
-            "properties": {
-              "created_at": {
-                "type": "string",
-                "format": "date-time",
-                "readOnly": true
-              },
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "readOnly": true
-              },
-              "updated_at": {
-                "type": "string",
-                "format": "date-time",
-                "readOnly": true
-              }
-            }
-          }
-        ],
-        "example": {
-          "created_at": "2026-01-15T10:30:00Z",
-          "host_id": "550e8400-e29b-41d4-a716-446655440003",
-          "id": "550e8400-e29b-41d4-a716-446655440005",
-          "ip_address": "192.168.1.100",
-          "mac_address": "DE:AD:BE:EF:CA:FE",
-          "name": "eth0",
-          "network_id": "550e8400-e29b-41d4-a716-446655440002",
-          "position": 0,
-          "subnet_id": "550e8400-e29b-41d4-a716-446655440004",
-          "updated_at": "2026-01-15T10:30:00Z"
-        }
-      },
-      "InterfaceBase": {
-        "type": "object",
-        "required": [
-          "network_id",
-          "host_id",
-          "subnet_id",
-          "ip_address",
-          "name"
-        ],
-        "properties": {
-          "host_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "ip_address": {
-            "type": "string"
-          },
-          "mac_address": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "MAC address discovered from ARP, SNMP, or Docker - immutable once set"
-          },
-          "name": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "network_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "position": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Position of this interface in the host's interface list (for ordering)"
-          },
-          "subnet_id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        }
-      },
-      "InterfaceInput": {
-        "type": "object",
-        "description": "Input for creating or updating an interface.\nUsed in both CreateHostRequest and UpdateHostRequest.\nClient must provide a UUID for the interface.",
-        "required": [
-          "id",
-          "subnet_id",
-          "ip_address"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Client-provided UUID for this interface"
-          },
-          "ip_address": {
-            "type": "string"
-          },
-          "mac_address": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "name": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "position": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int32",
-            "description": "Position in the host's interface list (for ordering).\nIf omitted on create: appends to end of list.\nIf omitted on update: existing interfaces keep their positions; new interfaces append.\nMust be all specified or all omitted across all interfaces in the request."
-          },
-          "subnet_id": {
-            "type": "string",
-            "format": "uuid"
           }
         }
       },
@@ -17599,7 +17599,7 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "IfEntry"
+                  "Interface"
                 ]
               }
             }
@@ -18411,7 +18411,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "description": "Response type for host endpoints.\nIncludes children (interfaces, ports, services, if_entries).",
+              "description": "Response type for host endpoints.\nIncludes children (ip_addresses, ports, services, interfaces).",
               "required": [
                 "id",
                 "created_at",
@@ -18421,10 +18421,10 @@
                 "source",
                 "hidden",
                 "tags",
-                "interfaces",
+                "ip_addresses",
                 "ports",
                 "services",
-                "if_entries"
+                "interfaces"
               ],
               "properties": {
                 "chassis_id": {
@@ -18462,17 +18462,17 @@
                   "type": "string",
                   "format": "uuid"
                 },
-                "if_entries": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/IfEntry"
-                  },
-                  "description": "SNMP ifTable entries"
-                },
                 "interfaces": {
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Interface"
+                  },
+                  "description": "SNMP ifTable entries"
+                },
+                "ip_addresses": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IPAddress"
                   }
                 },
                 "management_url": {
@@ -18556,7 +18556,7 @@
                 "hidden": false,
                 "hostname": "web-server-01.local",
                 "id": "550e8400-e29b-41d4-a716-446655440003",
-                "if_entries": [
+                "interfaces": [
                   {
                     "admin_status": "Up",
                     "cdp_address": null,
@@ -18571,7 +18571,7 @@
                     "if_index": 1,
                     "if_name": "Gi0/1",
                     "if_type": 6,
-                    "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                    "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "lldp_chassis_id": null,
                     "lldp_mgmt_addr": null,
                     "lldp_port_desc": null,
@@ -18586,7 +18586,7 @@
                     "updated_at": "2026-01-15T10:30:00Z"
                   }
                 ],
-                "interfaces": [
+                "ip_addresses": [
                   {
                     "created_at": "2026-01-15T10:30:00Z",
                     "host_id": "550e8400-e29b-41d4-a716-446655440003",
@@ -18618,14 +18618,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-09T18:31:36.507666Z",
-                        "id": "deacac4c-a638-4248-b9a7-d8755cabe472",
-                        "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                        "created_at": "2026-04-09T22:35:35.663928Z",
+                        "id": "5183f61f-f83e-4330-82b6-7eb43f0f2a5c",
+                        "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-09T18:31:36.507666Z"
+                        "updated_at": "2026-04-09T22:35:35.663928Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18634,7 +18634,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "TP-Link EAP",
+                    "service_definition": "Proxmox Datacenter Manager",
                     "source": {
                       "type": "Manual"
                     },
@@ -18711,14 +18711,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-09T18:31:36.522069Z",
-                    "id": "8665e229-236c-45b5-9345-310cf2bdb549",
-                    "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+                    "created_at": "2026-04-09T22:35:35.688607Z",
+                    "id": "187aaa5c-d673-4671-a4aa-6142a8f12d44",
+                    "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-09T18:31:36.522069Z"
+                    "updated_at": "2026-04-09T22:35:35.688607Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18727,7 +18727,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "TP-Link EAP",
+                "service_definition": "Proxmox Datacenter Manager",
                 "source": {
                   "type": "Manual"
                 },
@@ -19945,14 +19945,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-09T18:31:36.514338Z",
-              "id": "728ea185-a623-4352-8a39-6aa1202efd75",
-              "interface_id": "550e8400-e29b-41d4-a716-446655440005",
+              "created_at": "2026-04-09T22:35:35.676571Z",
+              "id": "892673dc-fd37-406c-854d-496098a689a0",
+              "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-09T18:31:36.514338Z"
+              "updated_at": "2026-04-09T22:35:35.676571Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19961,7 +19961,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "TP-Link EAP",
+          "service_definition": "Proxmox Datacenter Manager",
           "source": {
             "type": "Manual"
           },
@@ -20669,25 +20669,25 @@
           "nodes",
           "edges",
           "hosts",
-          "interfaces",
+          "ip_addresses",
           "ports",
           "bindings",
           "subnets",
           "services",
           "dependencies",
-          "if_entries",
+          "interfaces",
           "entity_tags",
           "is_stale",
           "last_refreshed",
           "is_locked",
           "removed_hosts",
-          "removed_interfaces",
+          "removed_ip_addresses",
           "removed_subnets",
           "removed_services",
           "removed_dependencies",
           "removed_ports",
           "removed_bindings",
-          "removed_if_entries"
+          "removed_interfaces"
         ],
         "properties": {
           "bindings": {
@@ -20720,16 +20720,16 @@
               "$ref": "#/components/schemas/Host"
             }
           },
-          "if_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IfEntry"
-            }
-          },
           "interfaces": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Interface"
+            }
+          },
+          "ip_addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IPAddress"
             }
           },
           "is_locked": {
@@ -20806,14 +20806,14 @@
               "format": "uuid"
             }
           },
-          "removed_if_entries": {
+          "removed_interfaces": {
             "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
             }
           },
-          "removed_interfaces": {
+          "removed_ip_addresses": {
             "type": "array",
             "items": {
               "type": "string",
@@ -20931,7 +20931,7 @@
       },
       "TopologyMetadataUpdate": {
         "type": "object",
-        "description": "Lightweight request type for updating topology metadata.\n\nUsed for editing topology name/parent - instead of sending the entire topology\n(which includes all hosts, interfaces, services, etc.), only sends the metadata fields.\nFixes HTTP 413 errors on metadata edit operations.",
+        "description": "Lightweight request type for updating topology metadata.\n\nUsed for editing topology name/parent - instead of sending the entire topology\n(which includes all hosts, ip_addresses, services, etc.), only sends the metadata fields.\nFixes HTTP 413 errors on metadata edit operations.",
         "required": [
           "network_id",
           "name"
@@ -21028,7 +21028,7 @@
       },
       "TopologyRebuildRequest": {
         "type": "object",
-        "description": "Lightweight request type for topology rebuild/refresh operations.\n\nThis type only includes the fields actually needed by the server - entity data\n(hosts, interfaces, services, etc.) is fetched fresh from the database.\nUsing this instead of the full Topology dramatically reduces payload size\nfor large networks (from MBs to KBs), fixing HTTP 413 errors.",
+        "description": "Lightweight request type for topology rebuild/refresh operations.\n\nThis type only includes the fields actually needed by the server - entity data\n(hosts, ip_addresses, services, etc.) is fetched fresh from the database.\nUsing this instead of the full Topology dramatically reduces payload size\nfor large networks (from MBs to KBs), fixing HTTP 413 errors.",
         "required": [
           "network_id",
           "options"
@@ -21211,15 +21211,15 @@
             "type": "string",
             "format": "uuid"
           },
-          "interfaces": {
+          "ip_addresses": {
             "type": [
               "array",
               "null"
             ],
             "items": {
-              "$ref": "#/components/schemas/InterfaceInput"
+              "$ref": "#/components/schemas/IPAddressInput"
             },
-            "description": "Interfaces to sync with this host.\nIf Some, server will create/update/delete to match this list.\nIf None, existing interfaces are preserved."
+            "description": "Interfaces to sync with this host.\nIf Some, server will create/update/delete to match this list.\nIf None, existing ip_addresses are preserved."
           },
           "name": {
             "type": "string"
@@ -21744,7 +21744,7 @@
   "tags": [
     {
       "name": "Bindings",
-      "description": "Service bindings linking services to interfaces and/or ports. Defines where a service is accessible."
+      "description": "Service bindings linking services to IP addresses and/or ports. Defines where a service is accessible."
     },
     {
       "name": "Daemons",
@@ -21767,11 +21767,11 @@
       "description": "Network hosts (devices). Manage discovered or manually created hosts on your network."
     },
     {
-      "name": "ifTable Entries",
-      "description": "SNMP interface entries (ifTable). Physical and logical interfaces discovered via SNMP on hosts."
+      "name": "Interfaces",
+      "description": "SNMP ip_address entries (ifTable). Physical and logical ip_addresses discovered via SNMP on hosts."
     },
     {
-      "name": "Interfaces",
+      "name": "IP Addresses",
       "description": "Network interfaces on hosts. Each host can have multiple interfaces with different IP addresses."
     },
     {
@@ -21824,7 +21824,7 @@
     },
     {
       "name": "Vlans",
-      "description": "Virtual LANs discovered from network switches. VLANs segment network traffic and are associated with interfaces and subnets."
+      "description": "Virtual LANs discovered from network switches. VLANs segment network traffic and are associated with ip_addresses and subnets."
     },
     {
       "name": "auth",

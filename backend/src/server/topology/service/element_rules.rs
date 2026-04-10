@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use crate::server::{
-    if_entries::r#impl::base::IfOperStatus,
+    interfaces::r#impl::base::IfOperStatus,
     services::r#impl::categories::ServiceCategory,
     topology::types::{
         grouping::{ElementRule, GraphRule, IdentifiedRule},

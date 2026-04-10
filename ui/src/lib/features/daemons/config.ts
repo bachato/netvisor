@@ -117,7 +117,7 @@ export const fieldDefs: FieldDef[] = [
 		cliFlag: '--interfaces',
 		envVar: 'SCANOPY_INTERFACES',
 		helpText: () => m.daemons_config_interfacesHelp(),
-		placeholder: () => m.common_placeholderInterface(),
+		placeholder: () => m.common_placeholderIPAddress(),
 		section: () => m.common_runtime()
 	},
 	// Server Connection

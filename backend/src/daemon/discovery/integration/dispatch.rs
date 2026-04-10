@@ -160,12 +160,12 @@ pub struct ExecuteParams<'a> {
     pub host_naming_fallback: HostNamingFallback,
     pub created_subnets: &'a [Subnet],
     pub scanning_subnet: Option<&'a Subnet>,
-    pub interface_id: Option<Uuid>,
+    pub ip_address_id: Option<Uuid>,
 }
 
 /// Execute integrations whose probe succeeded and whose associated service was matched.
 ///
-/// Enriches host_data with integration-discovered services, ports, interfaces.
+/// Enriches host_data with integration-discovered services, ports, ip_addresses.
 /// Also populates credential_assignments for successful integrations.
 pub async fn execute_integrations(
     credential_mappings: &[CredentialMapping<CredentialQueryPayload>],
@@ -272,7 +272,7 @@ pub async fn execute_integrations(
             .credential_assignments
             .push(CredentialAssignment {
                 credential_id: *cred_id,
-                interface_ids: params.interface_id.map(|id| vec![id]),
+                ip_address_ids: params.ip_address_id.map(|id| vec![id]),
             });
     }
 

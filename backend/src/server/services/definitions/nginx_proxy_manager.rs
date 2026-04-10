@@ -12,7 +12,7 @@ impl ServiceDefinition for NginxProxyManager {
         "Nginx Proxy Manager"
     }
     fn description(&self) -> &'static str {
-        "Web-based Nginx proxy management interface"
+        "Web-based Nginx proxy management ip_address"
     }
     fn category(&self) -> ServiceCategory {
         ServiceCategory::ReverseProxy

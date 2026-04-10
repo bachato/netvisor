@@ -2,7 +2,7 @@
 //!
 //! Probe: credentialed SNMP check on UDP ports 161/1161.
 //! Execute: walks ifTable, queries LLDP/CDP/ARP/Entity-MIB/Bridge-FDB,
-//!          enriches HostData with system info, interfaces, and if_entries.
+//!          enriches HostData with system info, ip_addresses, and interfaces.
 //!
 //! Also contains low-level SNMP utilities (queries, session management, OIDs, types).
 
@@ -43,8 +43,10 @@ use crate::{
             types::CredentialAssignment,
         },
         hosts::r#impl::base::{Host, HostBase},
-        if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus, if_type},
-        interfaces::r#impl::base::{Interface, InterfaceBase},
+        interfaces::r#impl::base::{
+            IfAdminStatus, IfOperStatus, Interface, InterfaceBase, if_type,
+        },
+        ip_addresses::r#impl::base::{IPAddress, IPAddressBase},
         ports::r#impl::base::PortType,
         services::r#impl::patterns::ClientProbe,
         shared::types::entities::EntitySource,
@@ -353,13 +355,13 @@ impl DiscoveryIntegration for SnmpIntegration {
         if let Some(cred_id) = ctx.credential_id {
             host_data.add_credential_assignment(CredentialAssignment {
                 credential_id: cred_id,
-                interface_ids: None,
+                ip_address_ids: None,
             });
         }
 
-        // --- Convert SNMP ifTable entries to IfEntry entities ---
+        // --- Convert SNMP ifTable entries to Interface entities ---
         for entry in &snmp_if_entries {
-            let if_entry = convert_snmp_if_entry(
+            let interface = convert_snmp_if_entry(
                 entry,
                 network_id,
                 &lldp_neighbors,
@@ -368,7 +370,7 @@ impl DiscoveryIntegration for SnmpIntegration {
                 &port_vlan_membership,
                 &vlan_number_to_uuid,
             );
-            host_data.add_if_entry(if_entry);
+            host_data.add_if_entry(interface);
         }
 
         // --- Discover remote subnets from ipAddrTable ---
@@ -441,7 +443,7 @@ impl DiscoveryIntegration for SnmpIntegration {
                             .find(|e| e.if_index == entry.if_index)
                             .and_then(|e| e.if_phys_address);
 
-                        host_data.add_interface(Interface::new(InterfaceBase {
+                        host_data.add_ip_address(IPAddress::new(IPAddressBase {
                             network_id,
                             host_id: Uuid::nil(),
                             name: None,
@@ -482,7 +484,7 @@ impl DiscoveryIntegration for SnmpIntegration {
             if let Some(loopback_subnet) = loopback_subnet {
                 match ctx.ops.create_subnet(&loopback_subnet, ctx.cancel).await {
                     Ok(created_loopback) => {
-                        host_data.add_interface(Interface::new(InterfaceBase {
+                        host_data.add_ip_address(IPAddress::new(IPAddressBase {
                             network_id,
                             host_id: Uuid::nil(),
                             name: Some("lo".to_string()),
@@ -518,7 +520,7 @@ impl DiscoveryIntegration for SnmpIntegration {
                 .find(|s| s.base.cidr.contains(&arp_entry.ip_address));
 
             if let Some(remote_subnet) = matching_subnet {
-                let arp_interface = Interface::new(InterfaceBase {
+                let arp_interface = IPAddress::new(IPAddressBase {
                     network_id,
                     host_id: Uuid::nil(),
                     name: None,
@@ -567,7 +569,7 @@ impl DiscoveryIntegration for SnmpIntegration {
     }
 }
 
-/// Convert SNMP ifTable entry to IfEntry entity with LLDP/CDP/FDB neighbor data.
+/// Convert SNMP ifTable entry to Interface entity with LLDP/CDP/FDB neighbor data.
 /// Uses Uuid::nil() for host_id as placeholder - server will set correct host_id.
 fn convert_snmp_if_entry(
     entry: &IfTableEntry,
@@ -577,7 +579,7 @@ fn convert_snmp_if_entry(
     bridge_fdb: &[BridgeFdbEntry],
     port_vlan_membership: &[PortVlanMembership],
     vlan_number_to_uuid: &std::collections::HashMap<u16, Uuid>,
-) -> IfEntry {
+) -> Interface {
     // Find LLDP neighbor data for this port (match by local_port_index == if_index)
     let lldp_neighbor = lldp_neighbors
         .iter()
@@ -617,7 +619,7 @@ fn convert_snmp_if_entry(
         .map(|fdb| fdb.mac_address.to_string())
         .collect();
 
-    IfEntry::new(IfEntryBase {
+    Interface::new(InterfaceBase {
         host_id: Uuid::nil(), // Placeholder - server will set correct host_id
         network_id,
         if_index: entry.if_index,
@@ -629,7 +631,7 @@ fn convert_snmp_if_entry(
         admin_status: IfAdminStatus::from(entry.if_admin_status.unwrap_or(1)),
         oper_status: IfOperStatus::from(entry.if_oper_status.unwrap_or(1)),
         mac_address: entry.if_phys_address, // MAC from SNMP ifPhysAddress
-        interface_id: None,                 // Linked server-side via MAC matching
+        ip_address_id: None,                // Linked server-side via MAC matching
         neighbor: None,                     // Resolved server-side from LLDP/CDP data
         // LLDP raw data
         lldp_chassis_id,
@@ -683,7 +685,7 @@ pub async fn poll_device(
         .await
         .map_err(|_| anyhow::anyhow!("System info query timeout"))??;
 
-    let if_entries = timeout(SNMP_WALK_TIMEOUT, walk_if_table(ip, credential, port))
+    let interfaces = timeout(SNMP_WALK_TIMEOUT, walk_if_table(ip, credential, port))
         .await
         .map_err(|_| anyhow::anyhow!("ifTable walk timeout"))?
         .unwrap_or_default();
@@ -702,14 +704,14 @@ pub async fn poll_device(
         .unwrap_or_default();
 
     debug!(
-        "SNMP poll of {} complete: {} interfaces, {} LLDP neighbors, {} CDP neighbors",
+        "SNMP poll of {} complete: {} ip_addresses, {} LLDP neighbors, {} CDP neighbors",
         ip,
-        if_entries.len(),
+        interfaces.len(),
         lldp_neighbors.len(),
         cdp_neighbors.len()
     );
 
-    Ok((system_info, if_entries, lldp_neighbors, cdp_neighbors))
+    Ok((system_info, interfaces, lldp_neighbors, cdp_neighbors))
 }
 
 #[cfg(test)]

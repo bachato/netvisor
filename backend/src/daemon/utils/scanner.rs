@@ -332,7 +332,7 @@ pub fn can_arp_scan(use_npcap: bool) -> bool {
         tracing::warn!(
             "ARP scanning not available. Will fall back to TCP port scanning for host discovery. \
              For MACVLAN deployments, ensure: (1) container has NET_RAW and NET_ADMIN capabilities, \
-             (2) network interface is properly configured with a MAC address."
+             (2) network ip_address is properly configured with a MAC address."
         );
     }
 

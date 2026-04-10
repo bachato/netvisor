@@ -1,6 +1,6 @@
 use crate::server::bindings::r#impl::base::Binding;
 use crate::server::discovery::r#impl::types::DiscoveryType;
-use crate::server::interfaces::r#impl::base::Interface;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::ports::r#impl::base::{Port, PortType};
 use crate::server::services::definitions::ServiceDefinitionRegistry;
 use crate::server::services::r#impl::definitions::ServiceDefinitionExt;
@@ -105,7 +105,7 @@ pub struct DiscoverySessionServiceMatchParams<'a> {
 #[derive(Debug, Clone)]
 pub struct ServiceMatchBaselineParams<'a> {
     pub subnet: &'a Subnet,
-    pub interface: &'a Interface,
+    pub ip_address: &'a IPAddress,
     pub all_ports: &'a Vec<PortType>,
     pub endpoint_responses: &'a Vec<EndpointResponse>,
     pub virtualization: &'a Option<ServiceVirtualization>,
@@ -141,7 +141,7 @@ impl PartialEq for Service {
         }
 
         // For non-generic services: same host + definition = same service
-        // Handles: Plex discovered on multiple interfaces (different port UUIDs)
+        // Handles: Plex discovered on multiple ip_addresses (different port UUIDs)
         if !ServiceDefinitionExt::is_generic(&self.base.service_definition) {
             return true;
         }
@@ -289,11 +289,11 @@ impl Service {
         self.base.bindings.iter().find(|b| b.id() == id)
     }
 
-    pub fn to_bound_interface_ids(&self) -> Vec<Option<Uuid>> {
+    pub fn to_bound_ip_address_ids(&self) -> Vec<Option<Uuid>> {
         self.base
             .bindings
             .iter()
-            .map(|i| i.interface_id())
+            .map(|i| i.ip_address_id())
             .collect()
     }
 
@@ -362,7 +362,7 @@ impl Service {
         } = params.clone();
 
         let ServiceMatchBaselineParams {
-            interface,
+            ip_address,
             virtualization,
             ..
         } = baseline_params;
@@ -376,7 +376,7 @@ impl Service {
         if let Ok(mut result) = service_definition.discovery_pattern().matches(&params) {
             tracing::debug!(
                 service = %service_definition.name(),
-                host_ip = %interface.base.ip_address,
+                host_ip = %ip_address.base.ip_address,
                 network_id = %network_id,
                 daemon_id = %daemon_id,
                 discovery_type = ?discovery_type,
@@ -422,10 +422,10 @@ impl Service {
             let bindings: Vec<Binding> = if !result.ports.is_empty() {
                 ports
                     .iter()
-                    .map(|p| Binding::new_port_serviceless(p.id, Some(interface.id)))
+                    .map(|p| Binding::new_port_serviceless(p.id, Some(ip_address.id)))
                     .collect()
             } else {
-                vec![Binding::new_interface_serviceless(interface.id)]
+                vec![Binding::new_ip_address_serviceless(ip_address.id)]
             };
 
             let service = Service::new(ServiceBase {
@@ -447,7 +447,7 @@ impl Service {
         } else {
             tracing::trace!(
                 service = %service_definition.name(),
-                host_ip = %interface.base.ip_address,
+                host_ip = %ip_address.base.ip_address,
                 "Service pattern did not match"
             );
             None
@@ -490,14 +490,14 @@ mod tests {
         definition_id: &str,
         virtualization: Option<ServiceVirtualization>,
         port_ids: Vec<Uuid>,
-        interface_id: Option<Uuid>,
+        ip_address_id: Option<Uuid>,
     ) -> Service {
         let service_def = ServiceDefinitionRegistry::find_by_id(definition_id)
             .unwrap_or_else(|| ServiceDefinitionRegistry::all_service_definitions()[0].clone());
 
         let bindings = port_ids
             .into_iter()
-            .map(|pid| Binding::new_port_serviceless(pid, interface_id))
+            .map(|pid| Binding::new_port_serviceless(pid, ip_address_id))
             .collect();
 
         Service::new(ServiceBase {
@@ -582,7 +582,7 @@ mod tests {
 
         assert_eq!(
             network_svc, docker_svc,
-            "Non-generic services should match even with different port/interface UUIDs"
+            "Non-generic services should match even with different port/ip_address UUIDs"
         );
     }
 

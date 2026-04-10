@@ -107,9 +107,9 @@ impl LldpChassisId {
     /// Resolve this chassis ID to a host_id using the appropriate lookup strategy.
     ///
     /// The resolution strategy depends on the chassis ID subtype:
-    /// - MacAddress: Look up via interfaces.mac_address → host
-    /// - NetworkAddress: Look up via interfaces table (IP address)
-    /// - InterfaceName: Look up via if_entries.if_descr
+    /// - MacAddress: Look up via ip_addresses.mac_address → host
+    /// - NetworkAddress: Look up via ip_addresses table (IP address)
+    /// - InterfaceName: Look up via interfaces.if_descr
     /// - ChassisComponent/LocallyAssigned: Look up via hosts.chassis_id
     /// - InterfaceAlias/PortComponent: No reliable resolution strategy
     pub async fn resolve_host_id<R: LldpResolver>(
@@ -157,14 +157,14 @@ impl LldpPortId {
         }
     }
 
-    /// Resolve this port ID to an if_entry_id using the appropriate lookup strategy.
+    /// Resolve this port ID to an interface_id using the appropriate lookup strategy.
     ///
     /// Requires the host_id to be already known (from chassis ID resolution).
     ///
     /// The resolution strategy depends on the port ID subtype:
-    /// - MacAddress: Look up via if_entries.mac_address
-    /// - InterfaceName/InterfaceAlias: Look up via if_entries.if_descr
-    /// - NetworkAddress: Look up via interface_id FK on if_entries
+    /// - MacAddress: Look up via interfaces.mac_address
+    /// - InterfaceName/InterfaceAlias: Look up via interfaces.if_descr
+    /// - NetworkAddress: Look up via ip_address_id FK on interfaces
     /// - PortComponent/AgentCircuitId/LocallyAssigned: No reliable resolution
     pub async fn resolve_if_entry_id<R: LldpResolver>(
         &self,

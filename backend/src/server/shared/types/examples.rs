@@ -29,12 +29,12 @@ use crate::server::{
     },
     hosts::r#impl::{
         api::{
-            BindingInput, CreateHostRequest, HostResponse, InterfaceInput, PortInput, ServiceInput,
+            BindingInput, CreateHostRequest, HostResponse, IPAddressInput, PortInput, ServiceInput,
         },
         base::{Host, HostBase},
     },
-    if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus},
-    interfaces::r#impl::base::{Interface, InterfaceBase},
+    interfaces::r#impl::base::{IfAdminStatus, IfOperStatus, Interface, InterfaceBase},
+    ip_addresses::r#impl::base::{IPAddress, IPAddressBase},
     networks::r#impl::{Network, NetworkBase},
     organizations::r#impl::base::{Organization, OrganizationBase},
     ports::r#impl::base::{Port, PortBase, PortType, TransportProtocol},
@@ -155,12 +155,12 @@ pub fn subnet() -> Subnet {
 }
 
 /// Example Interface entity.
-pub fn interface() -> Interface {
-    Interface {
+pub fn ip_address() -> IPAddress {
+    IPAddress {
         id: ids::INTERFACE,
         created_at: example_timestamp(),
         updated_at: example_timestamp(),
-        base: InterfaceBase {
+        base: IPAddressBase {
             network_id: ids::NETWORK,
             host_id: ids::HOST,
             subnet_id: ids::SUBNET,
@@ -372,13 +372,13 @@ pub fn discovery() -> Discovery {
     }
 }
 
-/// Example IfEntry entity.
-pub fn if_entry() -> IfEntry {
-    IfEntry {
+/// Example Interface entity.
+pub fn interface() -> Interface {
+    Interface {
         id: ids::IF_ENTRY,
         created_at: example_timestamp(),
         updated_at: example_timestamp(),
-        base: IfEntryBase {
+        base: InterfaceBase {
             host_id: ids::HOST,
             network_id: ids::NETWORK,
             if_index: 1,
@@ -390,7 +390,7 @@ pub fn if_entry() -> IfEntry {
             admin_status: IfAdminStatus::Up,
             oper_status: IfOperStatus::Up,
             mac_address: Some(MacAddress::new([0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE])),
-            interface_id: Some(ids::INTERFACE),
+            ip_address_id: Some(ids::INTERFACE),
             neighbor: None,
             lldp_chassis_id: None,
             lldp_port_id: None,
@@ -434,7 +434,7 @@ pub fn create_host_request() -> CreateHostRequest {
         management_url: None,
         chassis_id: None,
         credential_assignments: vec![],
-        interfaces: vec![InterfaceInput {
+        ip_addresses: vec![IPAddressInput {
             id: ids::INTERFACE,
             subnet_id: ids::SUBNET,
             ip_address: IpAddr::V4(Ipv4Addr::new(192, 168, 1, 100)),
@@ -454,13 +454,13 @@ pub fn create_host_request() -> CreateHostRequest {
             bindings: vec![BindingInput::Port {
                 id: ids::BINDING,
                 port_id: ids::PORT,
-                interface_id: Some(ids::INTERFACE),
+                ip_address_id: Some(ids::INTERFACE),
             }],
             virtualization: None,
             tags: vec![],
             position: Some(0),
         }],
-        if_entries: vec![],
+        interfaces: vec![],
     }
 }
 
@@ -472,9 +472,9 @@ pub fn create_host_request() -> CreateHostRequest {
 pub fn host_response() -> HostResponse {
     HostResponse::from_host_with_children(
         host(),
-        vec![interface()],
+        vec![ip_address()],
         vec![port()],
         vec![service()],
-        vec![if_entry()],
+        vec![interface()],
     )
 }

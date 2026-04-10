@@ -202,11 +202,11 @@ function buildElkGraph(
 			const statusOrder = (n: TopologyNode): number => {
 				const status = (n as Record<string, unknown>).oper_status as string | undefined;
 				// oper_status isn't on the node directly — look it up from topology
-				const ifEntryId = (n as Record<string, unknown>).if_entry_id as string | undefined;
-				const ifEntry = ifEntryId
-					? input.topology?.if_entries.find((e) => e.id === ifEntryId)
+				const ifEntryId = (n as Record<string, unknown>).interface_id as string | undefined;
+				const iface = ifEntryId
+					? input.topology?.interfaces.find((e) => e.id === ifEntryId)
 					: undefined;
-				const s = ifEntry?.oper_status ?? status ?? '';
+				const s = iface?.oper_status ?? status ?? '';
 				if (s === 'Up') return 0;
 				if (s === 'Down') return 1;
 				return 2;
@@ -310,13 +310,13 @@ function buildElkGraph(
 				const ifEntryId = (() => {
 					const node = input.nodes.find((n) => n.id === child.id);
 					return node
-						? ((node as Record<string, unknown>).if_entry_id as string | undefined)
+						? ((node as Record<string, unknown>).interface_id as string | undefined)
 						: undefined;
 				})();
-				const ifEntry = ifEntryId
-					? input.topology?.if_entries.find((e) => e.id === ifEntryId)
+				const iface = ifEntryId
+					? input.topology?.interfaces.find((e) => e.id === ifEntryId)
 					: undefined;
-				if (ifEntry?.oper_status === 'Up') upCount++;
+				if (iface?.oper_status === 'Up') upCount++;
 			}
 			subcontainerUpCount.set(subId, upCount);
 		}

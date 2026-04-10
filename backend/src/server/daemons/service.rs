@@ -603,7 +603,7 @@ impl DaemonService {
 
         // Resolve interfaced subnets based on daemon version
         if supports_unified_discovery(daemon.base.version.as_ref()) {
-            // v0.15.0+ daemon: resolve full Subnet objects (empty = no interfaces)
+            // v0.15.0+ daemon: resolve full Subnet objects (empty = no ip_addresses)
             let mut resolved_ids = Vec::new();
             for subnet in status.interfaced_subnets {
                 match self.subnet_service.create(subnet, auth.clone()).await {
@@ -875,7 +875,7 @@ impl DaemonService {
                 if is_local {
                     assignments.push(CredentialAssignment {
                         credential_id: *id,
-                        interface_ids: None,
+                        ip_address_ids: None,
                     });
                 } else {
                     tracing::debug!(
@@ -1047,10 +1047,10 @@ impl DaemonService {
             match host_service
                 .discover_host(
                     host_request.host,
-                    host_request.interfaces,
+                    host_request.ip_addresses,
                     host_request.ports,
                     host_request.services,
-                    host_request.if_entries,
+                    host_request.interfaces,
                     host_request.subnets,
                     auth.clone(),
                     limit_ctx.as_ref(),
@@ -2022,16 +2022,18 @@ impl DaemonService {
         Ok(())
     }
 
-    /// After discovery creates a host with a loopback interface, scope any localhost-targeted
-    /// credentials to specifically the loopback interface instead of all interfaces.
+    /// After discovery creates a host with a loopback ip_address, scope any localhost-targeted
+    /// credentials to specifically the loopback interface instead of all ip_addresses.
     async fn scope_loopback_credentials(
         &self,
         host_id: &Uuid,
         host_service: &HostService,
     ) -> Result<()> {
         // Find the loopback interface for this host
-        let interfaces = host_service.get_interfaces_for_host(host_id).await?;
-        let loopback_interface = interfaces.iter().find(|i| i.base.ip_address.is_loopback());
+        let ip_addresses = host_service.get_ip_addresses_for_host(host_id).await?;
+        let loopback_interface = ip_addresses
+            .iter()
+            .find(|i| i.base.ip_address.is_loopback());
 
         let Some(loopback_iface) = loopback_interface else {
             return Ok(()); // No loopback interface on this host
@@ -2047,7 +2049,7 @@ impl DaemonService {
         let mut updated = false;
         let mut new_assignments = Vec::new();
         for assignment in assignments {
-            if assignment.interface_ids.is_some() {
+            if assignment.ip_address_ids.is_some() {
                 new_assignments.push(assignment);
                 continue;
             }
@@ -2069,7 +2071,7 @@ impl DaemonService {
             if is_loopback_cred {
                 new_assignments.push(CredentialAssignment {
                     credential_id: assignment.credential_id,
-                    interface_ids: Some(vec![loopback_id]),
+                    ip_address_ids: Some(vec![loopback_id]),
                 });
                 updated = true;
             } else {
@@ -2084,7 +2086,7 @@ impl DaemonService {
             tracing::debug!(
                 host_id = %host_id,
                 loopback_interface_id = %loopback_id,
-                "Scoped loopback credentials to loopback interface"
+                "Scoped loopback credentials to loopback ip_address"
             );
         }
 

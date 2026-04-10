@@ -79,12 +79,12 @@ impl Storable for NetworkCredential {
 // HostCredential (Junction Table)
 // =============================================================================
 
-/// A junction record linking a host to a credential, optionally scoped to interfaces.
+/// A junction record linking a host to a credential, optionally scoped to ip_addresses.
 #[derive(Debug, Clone, Default)]
 pub struct HostCredential {
     pub host_id: Uuid,
     pub credential_id: Uuid,
-    pub interface_ids: Option<Vec<Uuid>>,
+    pub ip_address_ids: Option<Vec<Uuid>>,
 }
 
 impl Display for HostCredential {
@@ -108,21 +108,25 @@ impl Storable for HostCredential {
         Self {
             host_id: base.0,
             credential_id: base.1,
-            interface_ids: base.2,
+            ip_address_ids: base.2,
         }
     }
 
     fn get_base(&self) -> Self::BaseData {
-        (self.host_id, self.credential_id, self.interface_ids.clone())
+        (
+            self.host_id,
+            self.credential_id,
+            self.ip_address_ids.clone(),
+        )
     }
 
     fn to_params(&self) -> Result<(Vec<&'static str>, Vec<SqlValue>)> {
         Ok((
-            vec!["host_id", "credential_id", "interface_ids"],
+            vec!["host_id", "credential_id", "ip_address_ids"],
             vec![
                 SqlValue::Uuid(self.host_id),
                 SqlValue::Uuid(self.credential_id),
-                SqlValue::OptionalUuidVec(self.interface_ids.clone()),
+                SqlValue::OptionalUuidVec(self.ip_address_ids.clone()),
             ],
         ))
     }
@@ -131,7 +135,7 @@ impl Storable for HostCredential {
         Ok(Self {
             host_id: row.get("host_id"),
             credential_id: row.get("credential_id"),
-            interface_ids: row.get("interface_ids"),
+            ip_address_ids: row.get("ip_address_ids"),
         })
     }
 }
@@ -238,7 +242,7 @@ impl HostCredentialStorage {
             .into_iter()
             .map(|r| CredentialAssignment {
                 credential_id: r.credential_id,
-                interface_ids: r.interface_ids,
+                ip_address_ids: r.ip_address_ids,
             })
             .collect())
     }
@@ -260,7 +264,7 @@ impl HostCredentialStorage {
                 .or_default()
                 .push(CredentialAssignment {
                     credential_id: record.credential_id,
-                    interface_ids: record.interface_ids,
+                    ip_address_ids: record.ip_address_ids,
                 });
         }
         Ok(map)
@@ -281,7 +285,7 @@ impl HostCredentialStorage {
             let record = HostCredential {
                 host_id: *host_id,
                 credential_id: assignment.credential_id,
-                interface_ids: assignment.interface_ids.clone(),
+                ip_address_ids: assignment.ip_address_ids.clone(),
             };
             tx.create(&record).await?;
         }

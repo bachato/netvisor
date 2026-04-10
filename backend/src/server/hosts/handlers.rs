@@ -1,8 +1,8 @@
 use crate::daemon::runtime::state::BufferedEntities;
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
-use crate::server::if_entries::r#impl::base::IfEntry;
 use crate::server::interfaces::r#impl::base::Interface;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::ports::r#impl::base::Port;
 use crate::server::services::r#impl::base::Service;
 use crate::server::shared::entities::EntityDiscriminants;
@@ -65,7 +65,7 @@ pub enum HostOrderField {
     /// Sort by virtualizing service name. Requires JOIN to services table.
     VirtualizedBy,
     NetworkId,
-    /// Sort by primary interface IP address. Requires JOIN to interfaces table.
+    /// Sort by primary interface IP address. Requires JOIN to ip_addresses table.
     InterfaceIp,
 }
 
@@ -91,7 +91,7 @@ impl OrderField for HostOrderField {
             Self::InterfaceIp => Some(
                 "LEFT JOIN (\
                     SELECT DISTINCT ON (host_id) host_id, ip_address \
-                    FROM interfaces \
+                    FROM ip_addresses \
                     ORDER BY host_id, position ASC\
                 ) AS primary_interface ON hosts.id = primary_interface.host_id",
             ),
@@ -189,7 +189,7 @@ pub fn create_router() -> OpenApiRouter<Arc<AppState>> {
 /// List all hosts
 ///
 /// Returns all hosts the authenticated user has access to, with their
-/// interfaces, ports, and services included. Supports pagination via
+/// ip_addresses, ports, and services included. Supports pagination via
 /// `limit` and `offset` query parameters, and ordering via `group_by`,
 /// `order_by`, and `order_direction`.
 #[utoipa::path(
@@ -264,7 +264,7 @@ async fn get_all_hosts(
 
 /// Get a host by ID
 ///
-/// Returns a single host with its interfaces, ports, and services.
+/// Returns a single host with its ip_addresses, ports, and services.
 #[utoipa::path(
     get,
     path = "/{id}",
@@ -318,7 +318,7 @@ async fn get_host_by_id(
 
 /// Create a new host
 ///
-/// Creates a host with optional interfaces, ports, and services.
+/// Creates a host with optional ip_addresses, ports, and services.
 /// The `source` field is automatically set to `Manual`.
 ///
 /// ### Tag Validation
@@ -410,16 +410,16 @@ async fn create_host(
             }
 
             // Check interface subnets are on the same network
-            for interface in &request.interfaces {
+            for ip_address in &request.ip_addresses {
                 if let Some(subnet) = state
                     .services
                     .subnet_service
-                    .get_by_id(&interface.subnet_id)
+                    .get_by_id(&ip_address.subnet_id)
                     .await?
                     && subnet.base.network_id != request.network_id
                 {
                     return Err(ApiError::bad_request(&format!(
-                        "Host is on network {}, cannot have an interface with a subnet \"{}\" which is on network {}.",
+                        "Host is on network {}, cannot have an ip_address with a subnet \"{}\" which is on network {}.",
                         request.network_id, subnet.base.name, subnet.base.network_id
                     )));
                 }
@@ -461,16 +461,23 @@ async fn create_host(
 
             let DiscoveryHostRequest {
                 host,
-                interfaces,
+                ip_addresses,
                 ports,
                 services,
-                if_entries,
+                interfaces,
                 subnets,
             } = discovery_request;
 
             let host_response = host_service
                 .discover_host(
-                    host, interfaces, ports, services, if_entries, subnets, entity, None,
+                    host,
+                    ip_addresses,
+                    ports,
+                    services,
+                    interfaces,
+                    subnets,
+                    entity,
+                    None,
                 )
                 .await?;
 
@@ -490,7 +497,7 @@ async fn create_host(
 
 /// Update a host
 ///
-/// Updates host properties. Children (interfaces, ports, services)
+/// Updates host properties. Children (ip_addresses, ports, services)
 /// are managed via their own endpoints.
 ///
 /// ### Tag Validation
@@ -648,7 +655,7 @@ async fn create_host_discovery(
 
 /// Consolidate hosts
 ///
-/// Merges all interfaces, ports, and services from `other_host` into
+/// Merges all ip_addresses, ports, and services from `other_host` into
 /// `destination_host`, then deletes `other_host`. Both hosts must be
 /// on the same network.
 ///
@@ -835,7 +842,7 @@ pub async fn bulk_delete_hosts(
 /// Export hosts with children to ZIP
 ///
 /// Exports all hosts matching the filter criteria along with their children
-/// (interfaces, ports, services, if_entries) as a ZIP archive containing
+/// (ip_addresses, ports, services, interfaces) as a ZIP archive containing
 /// separate CSV files for each entity type.
 #[utoipa::path(
     get,
@@ -875,11 +882,11 @@ async fn export_hosts_zip(
     let host_ids: Vec<Uuid> = hosts.iter().map(|h| h.id).collect();
 
     // Fetch children for these hosts
-    let interfaces = state
+    let ip_addresses = state
         .services
-        .interface_service
+        .ip_address_service
         .get_all(
-            StorableFilter::<Interface>::new_from_host_ids(&host_ids).network_ids(&network_ids),
+            StorableFilter::<IPAddress>::new_from_host_ids(&host_ids).network_ids(&network_ids),
         )
         .await?;
 
@@ -895,23 +902,26 @@ async fn export_hosts_zip(
         .get_all(StorableFilter::<Service>::new_from_host_ids(&host_ids).network_ids(&network_ids))
         .await?;
 
-    let if_entries = state
+    let interfaces = state
         .services
-        .if_entry_service
-        .get_all(StorableFilter::<IfEntry>::new_from_host_ids(&host_ids).network_ids(&network_ids))
+        .interface_service
+        .get_all(
+            StorableFilter::<Interface>::new_from_host_ids(&host_ids).network_ids(&network_ids),
+        )
         .await?;
 
     // Build CSVs
     let hosts_csv = build_csv(&hosts)
         .map_err(|e| ApiError::internal_error(&format!("Failed to build hosts CSV: {}", e)))?;
-    let interfaces_csv = build_csv(&interfaces)
-        .map_err(|e| ApiError::internal_error(&format!("Failed to build interfaces CSV: {}", e)))?;
+    let ip_addresses_csv = build_csv(&ip_addresses).map_err(|e| {
+        ApiError::internal_error(&format!("Failed to build ip_addresses CSV: {}", e))
+    })?;
     let ports_csv = build_csv(&ports)
         .map_err(|e| ApiError::internal_error(&format!("Failed to build ports CSV: {}", e)))?;
     let services_csv = build_csv(&services)
         .map_err(|e| ApiError::internal_error(&format!("Failed to build services CSV: {}", e)))?;
-    let if_entries_csv = build_csv(&if_entries)
-        .map_err(|e| ApiError::internal_error(&format!("Failed to build if_entries CSV: {}", e)))?;
+    let if_entries_csv = build_csv(&interfaces)
+        .map_err(|e| ApiError::internal_error(&format!("Failed to build interfaces CSV: {}", e)))?;
 
     // Build zip archive
     let mut buffer = Cursor::new(Vec::new());
@@ -924,9 +934,9 @@ async fn export_hosts_zip(
         zip.write_all(&hosts_csv)
             .map_err(|e| ApiError::internal_error(&format!("Failed to write zip: {}", e)))?;
 
-        zip.start_file("interfaces.csv", options)
+        zip.start_file("ip_addresses.csv", options)
             .map_err(|e| ApiError::internal_error(&format!("Failed to create zip: {}", e)))?;
-        zip.write_all(&interfaces_csv)
+        zip.write_all(&ip_addresses_csv)
             .map_err(|e| ApiError::internal_error(&format!("Failed to write zip: {}", e)))?;
 
         zip.start_file("ports.csv", options)
@@ -939,7 +949,7 @@ async fn export_hosts_zip(
         zip.write_all(&services_csv)
             .map_err(|e| ApiError::internal_error(&format!("Failed to write zip: {}", e)))?;
 
-        zip.start_file("if_entries.csv", options)
+        zip.start_file("interfaces.csv", options)
             .map_err(|e| ApiError::internal_error(&format!("Failed to create zip: {}", e)))?;
         zip.write_all(&if_entries_csv)
             .map_err(|e| ApiError::internal_error(&format!("Failed to write zip: {}", e)))?;

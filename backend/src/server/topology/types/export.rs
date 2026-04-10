@@ -19,7 +19,7 @@ fn mermaid_escape(s: &str) -> String {
 
 fn edge_type_name(edge_type: &EdgeType) -> &'static str {
     match edge_type {
-        EdgeType::Interface { .. } => "Interface",
+        EdgeType::IPAddress { .. } => "IP Address",
         EdgeType::HostVirtualization { .. } => "Host Virtualization",
         EdgeType::ServiceVirtualization { .. } => "Service Virtualization",
         EdgeType::RequestPath { .. } => "Request Path",
@@ -35,13 +35,18 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
     // Build lookup maps
     let subnets: HashMap<Uuid, _> = topology.base.subnets.iter().map(|s| (s.id, s)).collect();
     let hosts: HashMap<Uuid, _> = topology.base.hosts.iter().map(|h| (h.id, h)).collect();
-    let interfaces: HashMap<Uuid, _> = topology.base.interfaces.iter().map(|i| (i.id, i)).collect();
+    let ip_addresses: HashMap<Uuid, _> = topology
+        .base
+        .ip_addresses
+        .iter()
+        .map(|i| (i.id, i))
+        .collect();
 
     // Group Element nodes by subnet_id (only Interface elements have subnet_id)
     let mut nodes_by_subnet: HashMap<Uuid, Vec<_>> = HashMap::new();
     for node in &topology.base.nodes {
         if let NodeType::Element {
-            element: ElementEntityType::Interface { subnet_id, .. },
+            element: ElementEntityType::IPAddress { subnet_id, .. },
             ..
         } = &node.node_type
         {
@@ -68,7 +73,7 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
             for node in nodes {
                 if let NodeType::Element {
                     host_id,
-                    element: ElementEntityType::Interface { interface_id, .. },
+                    element: ElementEntityType::IPAddress { ip_address_id, .. },
                     ..
                 } = &node.node_type
                 {
@@ -77,8 +82,8 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
                         .map(|h| h.base.name.as_str())
                         .unwrap_or("Unknown Host");
 
-                    let ip = interface_id
-                        .and_then(|iid| interfaces.get(&iid))
+                    let ip = ip_address_id
+                        .and_then(|iid| ip_addresses.get(&iid))
                         .map(|i| i.base.ip_address.to_string())
                         .unwrap_or_default();
 
@@ -109,7 +114,7 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
     for edge in &topology.base.edges {
         let arrow = match &edge.edge_type {
             EdgeType::RequestPath { .. } | EdgeType::HubAndSpoke { .. } => "-->",
-            EdgeType::Interface { .. } | EdgeType::PhysicalLink { .. } => "---",
+            EdgeType::IPAddress { .. } | EdgeType::PhysicalLink { .. } => "---",
             EdgeType::HostVirtualization { .. } | EdgeType::ServiceVirtualization { .. } => "-.->",
         };
 
@@ -169,9 +174,9 @@ pub fn topology_to_confluence(topology: &Topology) -> String {
     writeln!(output).unwrap();
 
     // Build lookup maps for hosts table
-    let mut interfaces_by_host: HashMap<Uuid, Vec<String>> = HashMap::new();
-    for iface in &topology.base.interfaces {
-        interfaces_by_host
+    let mut ip_addresses_by_host: HashMap<Uuid, Vec<String>> = HashMap::new();
+    for iface in &topology.base.ip_addresses {
+        ip_addresses_by_host
             .entry(iface.base.host_id)
             .or_default()
             .push(iface.base.ip_address.to_string());
@@ -191,7 +196,7 @@ pub fn topology_to_confluence(topology: &Topology) -> String {
     writeln!(output, "|| Name || Hostname || IP Addresses || Services ||").unwrap();
     for host in &topology.base.hosts {
         let hostname = host.base.hostname.as_deref().unwrap_or("");
-        let ips = interfaces_by_host
+        let ips = ip_addresses_by_host
             .get(&host.id)
             .map(|v| v.join(", "))
             .unwrap_or_default();

@@ -8,8 +8,8 @@ use crate::server::{
     bindings::r#impl::base::Binding, credentials::r#impl::base::Credential,
     daemon_api_keys::r#impl::base::DaemonApiKey, daemons::r#impl::base::Daemon,
     dependencies::r#impl::base::Dependency, discovery::r#impl::base::Discovery,
-    hosts::r#impl::base::Host, if_entries::r#impl::base::IfEntry,
-    interfaces::r#impl::base::Interface, invites::r#impl::base::Invite, networks::r#impl::Network,
+    hosts::r#impl::base::Host, interfaces::r#impl::base::Interface, invites::r#impl::base::Invite,
+    ip_addresses::r#impl::base::IPAddress, networks::r#impl::Network,
     organizations::r#impl::base::Organization, ports::r#impl::base::Port,
     services::r#impl::base::Service, shared::storage::generic::GenericPostgresStorage,
     shares::r#impl::base::Share, subnets::r#impl::base::Subnet, tags::r#impl::base::Tag,
@@ -25,7 +25,7 @@ pub struct StorageFactory {
     pub users: Arc<GenericPostgresStorage<User>>,
     pub networks: Arc<GenericPostgresStorage<Network>>,
     pub hosts: Arc<GenericPostgresStorage<Host>>,
-    pub interfaces: Arc<GenericPostgresStorage<Interface>>,
+    pub ip_addresses: Arc<GenericPostgresStorage<IPAddress>>,
     pub dependencies: Arc<GenericPostgresStorage<Dependency>>,
     pub daemons: Arc<GenericPostgresStorage<Daemon>>,
     pub subnets: Arc<GenericPostgresStorage<Subnet>>,
@@ -39,7 +39,7 @@ pub struct StorageFactory {
     pub ports: Arc<GenericPostgresStorage<Port>>,
     pub bindings: Arc<GenericPostgresStorage<Binding>>,
     pub credentials: Arc<GenericPostgresStorage<Credential>>,
-    pub if_entries: Arc<GenericPostgresStorage<IfEntry>>,
+    pub interfaces: Arc<GenericPostgresStorage<Interface>>,
     pub vlans: Arc<GenericPostgresStorage<Vlan>>,
 }
 
@@ -79,7 +79,7 @@ impl StorageFactory {
             users: Arc::new(GenericPostgresStorage::new(pool.clone())),
             networks: Arc::new(GenericPostgresStorage::new(pool.clone())),
             hosts: Arc::new(GenericPostgresStorage::new(pool.clone())),
-            interfaces: Arc::new(GenericPostgresStorage::new(pool.clone())),
+            ip_addresses: Arc::new(GenericPostgresStorage::new(pool.clone())),
             dependencies: Arc::new(GenericPostgresStorage::new(pool.clone())),
             daemons: Arc::new(GenericPostgresStorage::new(pool.clone())),
             subnets: Arc::new(GenericPostgresStorage::new(pool.clone())),
@@ -89,7 +89,7 @@ impl StorageFactory {
             ports: Arc::new(GenericPostgresStorage::new(pool.clone())),
             bindings: Arc::new(GenericPostgresStorage::new(pool.clone())),
             credentials: Arc::new(GenericPostgresStorage::new(pool.clone())),
-            if_entries: Arc::new(GenericPostgresStorage::new(pool.clone())),
+            interfaces: Arc::new(GenericPostgresStorage::new(pool.clone())),
             vlans: Arc::new(GenericPostgresStorage::new(pool.clone())),
         })
     }

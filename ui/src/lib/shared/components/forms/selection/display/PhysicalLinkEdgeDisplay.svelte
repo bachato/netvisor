@@ -5,19 +5,19 @@
 	export const PhysicalLinkEdgeDisplay: EntityDisplayComponent<TopologyEdge, EdgeDisplayContext> = {
 		getId: (edge) => edge.id,
 		getLabel: (edge, context) => {
-			if (!context?.topology || !('source_if_entry_id' in edge)) return 'Physical Link';
-			const sourceIfEntry = context.topology.if_entries.find(
-				(e) => e.id === edge.source_if_entry_id
+			if (!context?.topology || !('source_interface_id' in edge)) return 'Physical Link';
+			const sourceInterface = context.topology.interfaces.find(
+				(e) => e.id === edge.source_interface_id
 			);
-			const targetIfEntry =
-				'target_if_entry_id' in edge
-					? context.topology.if_entries.find((e) => e.id === edge.target_if_entry_id)
+			const targetInterface =
+				'target_interface_id' in edge
+					? context.topology.interfaces.find((e) => e.id === edge.target_interface_id)
 					: null;
-			const sourceHost = sourceIfEntry
-				? context.topology.hosts.find((h) => h.id === sourceIfEntry.host_id)
+			const sourceHost = sourceInterface
+				? context.topology.hosts.find((h) => h.id === sourceInterface.host_id)
 				: null;
-			const targetHost = targetIfEntry
-				? context.topology.hosts.find((h) => h.id === targetIfEntry.host_id)
+			const targetHost = targetInterface
+				? context.topology.hosts.find((h) => h.id === targetInterface.host_id)
 				: null;
 			const sourceName = sourceHost?.name ?? 'Unknown';
 			const targetName = targetHost?.name ?? 'Unknown';

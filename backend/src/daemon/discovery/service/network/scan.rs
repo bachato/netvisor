@@ -8,7 +8,7 @@ use crate::daemon::utils::scanner::{
 };
 use crate::server::credentials::r#impl::mapping::CredentialQueryPayloadDiscriminants;
 use crate::server::discovery::r#impl::scan_settings::defaults;
-use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
+use crate::server::ip_addresses::r#impl::base::{IPAddress, IPAddressBase};
 use crate::server::ports::r#impl::base::PortType;
 use crate::server::services::r#impl::base::{Service, ServiceMatchBaselineParams};
 use crate::server::shared::types::entities::EntitySource;
@@ -283,7 +283,7 @@ impl NetworkScan {
 
                         // Use a background thread for the blocking recv, forward via channel.
                         // Hard timeout prevents infinite hangs if the ARP receiver thread
-                        // gets stuck (e.g., on bridge interfaces with continuous traffic).
+                        // gets stuck (e.g., on bridge ip_addresses with continuous traffic).
                         std::thread::spawn(move || {
                             let forwarder_start = Instant::now();
                             let forwarder_timeout = Duration::from_secs(600); // 10 minutes
@@ -502,7 +502,7 @@ impl NetworkScan {
                                         ..Default::default()
                                     });
                                     let host_id = host.id;
-                                    let interface = Interface::new(InterfaceBase {
+                                    let ip_address = IPAddress::new(IPAddressBase {
                                         network_id: early_subnet.base.network_id,
                                         host_id: Uuid::nil(),
                                         name: None,
@@ -513,10 +513,10 @@ impl NetworkScan {
                                     });
                                     let request = DiscoveryHostRequest {
                                         host,
-                                        interfaces: vec![interface],
+                                        ip_addresses: vec![ip_address],
                                         ports: vec![],
                                         services: vec![],
-                                        if_entries: vec![],
+                                        interfaces: vec![],
                                         subnets: vec![],
                                     };
                                     early_entity_buffer.push_host(request.clone()).await;
@@ -1095,7 +1095,7 @@ impl NetworkScan {
         // DNS hostname lookup (SNMP sysName fallback now handled by SnmpIntegration.execute())
         let hostname = self.get_hostname_for_ip(ip).await?;
         // MAC enrichment from SNMP ipAddrTable now handled by SnmpIntegration.execute()
-        let interface = Interface::new(InterfaceBase {
+        let ip_address = IPAddress::new(IPAddressBase {
             network_id: subnet.base.network_id,
             host_id: Uuid::nil(), // Placeholder - server will set correct host_id
             name: None,
@@ -1115,7 +1115,7 @@ impl NetworkScan {
             .build_host_from_scan(
                 ServiceMatchBaselineParams {
                     subnet,
-                    interface: &interface,
+                    ip_address: &ip_address,
                     all_ports: &open_ports,
                     endpoint_responses: &endpoint_responses,
                     virtualization: &None,
@@ -1141,7 +1141,7 @@ impl NetworkScan {
                 host_naming_fallback: self.host_naming_fallback,
                 created_subnets: &created_subnets,
                 scanning_subnet: Some(subnet),
-                interface_id: Some(interface.id),
+                ip_address_id: Some(ip_address.id),
             };
             dispatch::execute_integrations(
                 credential_mappings,
@@ -1154,14 +1154,14 @@ impl NetworkScan {
 
             // Extract final state from host_data
             let host = host_data.host;
-            let interfaces = host_data.interfaces;
+            let ip_addresses = host_data.ip_addresses;
             let ports = host_data.ports;
             let services = host_data.services;
-            let if_entries = host_data.if_entries;
+            let interfaces = host_data.interfaces;
             let subnets = host_data.subnets;
 
             let services_count = services.len();
-            let if_entries_count = if_entries.len();
+            let if_entries_count = interfaces.len();
             let docker_services = services
                 .iter()
                 .filter(|s| s.base.virtualization.is_some())
@@ -1171,21 +1171,27 @@ impl NetworkScan {
                     ip = %ip,
                     total_services = services_count,
                     docker_container_services = docker_services,
-                    interfaces = interfaces.len(),
+                    ip_addresses = ip_addresses.len(),
                     "Creating host with container services from integration"
                 );
             }
 
             if let Ok(host_response) = ops
                 .create_host(
-                    host, interfaces, ports, services, if_entries, subnets, &cancel,
+                    host,
+                    ip_addresses,
+                    ports,
+                    services,
+                    interfaces,
+                    subnets,
+                    &cancel,
                 )
                 .await
             {
                 tracing::info!(
                     ip = %ip,
                     services = services_count,
-                    if_entries = if_entries_count,
+                    interfaces = if_entries_count,
                     "Host created"
                 );
                 let host_data = DiscoveredHostData {
@@ -1194,7 +1200,7 @@ impl NetworkScan {
                         .iter()
                         .find(|s| s.base.service_definition.id() == "Docker")
                         .map(|s| s.id),
-                    interfaces: host_response.interfaces.clone(),
+                    ip_addresses: host_response.ip_addresses.clone(),
                 };
                 return Ok(Some((ip, host_response.to_host(), host_data)));
             } else {

@@ -12,8 +12,8 @@ use crate::server::{
     bindings::{r#impl::base::Binding, service::BindingService},
     dependencies::{r#impl::base::Dependency, service::DependencyService},
     hosts::{r#impl::base::Host, service::HostService},
-    if_entries::{r#impl::base::IfEntry, service::IfEntryService},
     interfaces::{r#impl::base::Interface, service::InterfaceService},
+    ip_addresses::{r#impl::base::IPAddress, service::IPAddressService},
     ports::{r#impl::base::Port, service::PortService},
     services::{r#impl::base::Service, service::ServiceService},
     shared::{
@@ -46,13 +46,13 @@ use crate::server::{
 pub struct TopologyService {
     storage: Arc<GenericPostgresStorage<Topology>>,
     host_service: Arc<HostService>,
-    interface_service: Arc<InterfaceService>,
+    ip_address_service: Arc<IPAddressService>,
     subnet_service: Arc<SubnetService>,
     dependency_service: Arc<DependencyService>,
     service_service: Arc<ServiceService>,
     port_service: Arc<PortService>,
     binding_service: Arc<BindingService>,
-    if_entry_service: Arc<IfEntryService>,
+    interface_service: Arc<InterfaceService>,
     tag_service: Arc<TagService>,
     vlan_service: Arc<VlanService>,
     pub(crate) network_service: Arc<crate::server::networks::service::NetworkService>,
@@ -95,7 +95,7 @@ impl CrudService<Topology> for TopologyService {
             entity
         };
 
-        let (hosts, interfaces, subnets, dependencies, ports, bindings, if_entries) =
+        let (hosts, ip_addresses, subnets, dependencies, ports, bindings, interfaces) =
             self.get_entity_data(topology.base.network_id).await?;
 
         let services = self.get_service_data(topology.base.network_id).await?;
@@ -108,13 +108,13 @@ impl CrudService<Topology> for TopologyService {
 
         let params = BuildGraphParams {
             hosts: &hosts,
-            interfaces: &interfaces,
+            ip_addresses: &ip_addresses,
             services: &services,
             subnets: &subnets,
             dependencies: &dependencies,
             ports: &ports,
             bindings: &bindings,
-            if_entries: &if_entries,
+            interfaces: &interfaces,
             entity_tags: &entity_tags,
             vlans: &vlans,
             old_edges: &[],
@@ -127,11 +127,11 @@ impl CrudService<Topology> for TopologyService {
 
         topology.set_entities(SetEntitiesParams {
             hosts,
-            interfaces,
+            ip_addresses,
             services,
             subnets,
             dependencies,
-            if_entries,
+            interfaces,
             entity_tags,
             vlans,
             ports,
@@ -167,13 +167,13 @@ impl CrudService<Topology> for TopologyService {
 pub struct BuildGraphParams<'a> {
     pub options: &'a TopologyOptions,
     pub hosts: &'a [Host],
-    pub interfaces: &'a [Interface],
+    pub ip_addresses: &'a [IPAddress],
     pub subnets: &'a [Subnet],
     pub services: &'a [Service],
     pub dependencies: &'a [Dependency],
     pub ports: &'a [Port],
     pub bindings: &'a [Binding],
-    pub if_entries: &'a [IfEntry],
+    pub interfaces: &'a [Interface],
     pub entity_tags: &'a [Tag],
     pub vlans: &'a [Vlan],
     pub old_nodes: &'a [Node],
@@ -185,13 +185,13 @@ impl TopologyService {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         host_service: Arc<HostService>,
-        interface_service: Arc<InterfaceService>,
+        ip_address_service: Arc<IPAddressService>,
         subnet_service: Arc<SubnetService>,
         dependency_service: Arc<DependencyService>,
         service_service: Arc<ServiceService>,
         port_service: Arc<PortService>,
         binding_service: Arc<BindingService>,
-        if_entry_service: Arc<IfEntryService>,
+        interface_service: Arc<InterfaceService>,
         tag_service: Arc<TagService>,
         vlan_service: Arc<VlanService>,
         network_service: Arc<crate::server::networks::service::NetworkService>,
@@ -201,14 +201,14 @@ impl TopologyService {
         let (staleness_tx, _) = broadcast::channel(100);
         Self {
             host_service,
-            interface_service,
+            ip_address_service,
             subnet_service,
             dependency_service,
             service_service,
             storage,
             port_service,
             binding_service,
-            if_entry_service,
+            interface_service,
             tag_service,
             vlan_service,
             network_service,
@@ -227,12 +227,12 @@ impl TopologyService {
     ) -> Result<
         (
             Vec<Host>,
-            Vec<Interface>,
+            Vec<IPAddress>,
             Vec<Subnet>,
             Vec<Dependency>,
             Vec<Port>,
             Vec<Binding>,
-            Vec<IfEntry>,
+            Vec<Interface>,
         ),
         Error,
     > {
@@ -242,9 +242,9 @@ impl TopologyService {
             .get_all(StorableFilter::<Host>::new_from_network_ids(&[network_id]).hidden_is(false))
             .await?;
 
-        let interfaces = self
-            .interface_service
-            .get_all(StorableFilter::<Interface>::new_from_network_ids(&[
+        let ip_addresses = self
+            .ip_address_service
+            .get_all(StorableFilter::<IPAddress>::new_from_network_ids(&[
                 network_id,
             ]))
             .await?;
@@ -272,21 +272,21 @@ impl TopologyService {
             ]))
             .await?;
 
-        let if_entries = self
-            .if_entry_service
-            .get_all(StorableFilter::<IfEntry>::new_from_network_ids(&[
+        let interfaces = self
+            .interface_service
+            .get_all(StorableFilter::<Interface>::new_from_network_ids(&[
                 network_id,
             ]))
             .await?;
 
         Ok((
             hosts,
-            interfaces,
+            ip_addresses,
             subnets,
             dependencies,
             ports,
             bindings,
-            if_entries,
+            interfaces,
         ))
     }
 
@@ -347,7 +347,7 @@ impl TopologyService {
         topology: &mut Topology,
         authentication: AuthenticatedEntity,
     ) -> Result<(), Error> {
-        let (hosts, interfaces, subnets, dependencies, ports, bindings, if_entries) =
+        let (hosts, ip_addresses, subnets, dependencies, ports, bindings, interfaces) =
             self.get_entity_data(topology.base.network_id).await?;
 
         let services = self.get_service_data(topology.base.network_id).await?;
@@ -359,13 +359,13 @@ impl TopologyService {
         let (nodes, edges) = self.build_graph(BuildGraphParams {
             options: &topology.base.options,
             hosts: &hosts,
-            interfaces: &interfaces,
+            ip_addresses: &ip_addresses,
             subnets: &subnets,
             services: &services,
             dependencies: &dependencies,
             ports: &ports,
             bindings: &bindings,
-            if_entries: &if_entries,
+            interfaces: &interfaces,
             entity_tags: &entity_tags,
             vlans: &vlans,
             old_nodes: &[],
@@ -375,13 +375,13 @@ impl TopologyService {
 
         topology.set_entities(SetEntitiesParams {
             hosts,
-            interfaces,
+            ip_addresses,
             services,
             subnets,
             dependencies,
             ports,
             bindings,
-            if_entries,
+            interfaces,
             entity_tags,
             vlans,
         });
@@ -397,13 +397,13 @@ impl TopologyService {
     pub fn build_graph(&self, params: BuildGraphParams) -> (Vec<Node>, Vec<Edge>) {
         let BuildGraphParams {
             hosts,
-            interfaces,
+            ip_addresses,
             subnets,
             services,
             dependencies,
             ports,
             bindings,
-            if_entries,
+            interfaces,
             entity_tags,
             vlans,
             old_edges,
@@ -415,13 +415,13 @@ impl TopologyService {
         // Create context to avoid parameter passing
         let ctx = TopologyContext::new(
             hosts,
-            interfaces,
+            ip_addresses,
             subnets,
             services,
             dependencies,
             ports,
             bindings,
-            if_entries,
+            interfaces,
             entity_tags,
             vlans,
             options,

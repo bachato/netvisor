@@ -12,7 +12,7 @@ impl ServiceDefinition for Unbound {
         "Unbound DNS"
     }
     fn description(&self) -> &'static str {
-        "Recursive DNS resolver with control interface"
+        "Recursive DNS resolver with control ip_address"
     }
     fn category(&self) -> ServiceCategory {
         ServiceCategory::DNS

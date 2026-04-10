@@ -5,13 +5,13 @@ use crate::server::{
     daemons::{r#impl::base::Daemon, service::DaemonService},
     hosts::r#impl::{
         api::{
-            BindingInput, ConflictBehavior, CreateHostRequest, HostResponse, InterfaceInput,
+            BindingInput, ConflictBehavior, CreateHostRequest, HostResponse, IPAddressInput,
             PortInput, ServiceInput, UpdateHostRequest,
         },
         base::{Host, HostBase},
     },
-    if_entries::{r#impl::base::IfEntry, service::IfEntryService},
     interfaces::{r#impl::base::Interface, service::InterfaceService},
+    ip_addresses::{r#impl::base::IPAddress, service::IPAddressService},
     ports::{r#impl::base::Port, service::PortService},
     services::{
         r#impl::{base::Service, definitions::ServiceDefinitionExt},
@@ -56,10 +56,10 @@ pub struct HostLimitContext {
 
 pub struct HostService {
     storage: Arc<GenericPostgresStorage<Host>>,
-    interface_service: Arc<InterfaceService>,
+    ip_address_service: Arc<IPAddressService>,
     port_service: Arc<PortService>,
     service_service: Arc<ServiceService>,
-    if_entry_service: Arc<IfEntryService>,
+    interface_service: Arc<InterfaceService>,
     pub daemon_service: Arc<DaemonService>,
     credential_service: Arc<CredentialService>,
     subnet_service: Arc<SubnetService>,
@@ -232,10 +232,10 @@ impl HostService {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         storage: Arc<GenericPostgresStorage<Host>>,
-        interface_service: Arc<InterfaceService>,
+        ip_address_service: Arc<IPAddressService>,
         port_service: Arc<PortService>,
         service_service: Arc<ServiceService>,
-        if_entry_service: Arc<IfEntryService>,
+        interface_service: Arc<InterfaceService>,
         daemon_service: Arc<DaemonService>,
         credential_service: Arc<CredentialService>,
         subnet_service: Arc<SubnetService>,
@@ -245,10 +245,10 @@ impl HostService {
     ) -> Self {
         Self {
             storage,
-            interface_service,
+            ip_address_service,
             port_service,
             service_service,
-            if_entry_service,
+            interface_service,
             daemon_service,
             credential_service,
             subnet_service,
@@ -264,9 +264,9 @@ impl HostService {
         self.port_service.get_for_host(host_id).await
     }
 
-    /// Get interfaces for a specific host
-    pub async fn get_interfaces_for_host(&self, host_id: &Uuid) -> Result<Vec<Interface>> {
-        self.interface_service.get_for_host(host_id).await
+    /// Get ip_addresses for a specific host
+    pub async fn get_ip_addresses_for_host(&self, host_id: &Uuid) -> Result<Vec<IPAddress>> {
+        self.ip_address_service.get_for_host(host_id).await
     }
 
     // =========================================================================
@@ -287,10 +287,14 @@ impl HostService {
             .await?;
         host.base.tags = tags;
 
-        let (interfaces, ports, services, if_entries) =
+        let (ip_addresses, ports, services, interfaces) =
             self.load_children_for_host(&host.id).await?;
         Ok(Some(HostResponse::from_host_with_children(
-            host, interfaces, ports, services, if_entries,
+            host,
+            ip_addresses,
+            ports,
+            services,
+            interfaces,
         )))
     }
 
@@ -305,7 +309,7 @@ impl HostService {
         }
 
         let host_ids: Vec<Uuid> = hosts.iter().map(|h| h.id).collect();
-        let (interfaces_map, ports_map, services_map, if_entries_map) =
+        let (ip_addresses_map, ports_map, services_map, if_entries_map) =
             self.load_children_for_hosts(&host_ids).await?;
 
         // Hydrate tags from junction table
@@ -321,11 +325,17 @@ impl HostService {
                 if let Some(tags) = tags_map.get(&host.id) {
                     host.base.tags = tags.clone();
                 }
-                let interfaces = interfaces_map.get(&host.id).cloned().unwrap_or_default();
+                let ip_addresses = ip_addresses_map.get(&host.id).cloned().unwrap_or_default();
                 let ports = ports_map.get(&host.id).cloned().unwrap_or_default();
                 let services = services_map.get(&host.id).cloned().unwrap_or_default();
-                let if_entries = if_entries_map.get(&host.id).cloned().unwrap_or_default();
-                HostResponse::from_host_with_children(host, interfaces, ports, services, if_entries)
+                let interfaces = if_entries_map.get(&host.id).cloned().unwrap_or_default();
+                HostResponse::from_host_with_children(
+                    host,
+                    ip_addresses,
+                    ports,
+                    services,
+                    interfaces,
+                )
             })
             .collect();
 
@@ -349,7 +359,7 @@ impl HostService {
         }
 
         let host_ids: Vec<Uuid> = result.items.iter().map(|h| h.id).collect();
-        let (interfaces_map, ports_map, services_map, if_entries_map) =
+        let (ip_addresses_map, ports_map, services_map, if_entries_map) =
             self.load_children_for_hosts(&host_ids).await?;
 
         // Hydrate tags from junction table
@@ -366,11 +376,17 @@ impl HostService {
                 if let Some(tags) = tags_map.get(&host.id) {
                     host.base.tags = tags.clone();
                 }
-                let interfaces = interfaces_map.get(&host.id).cloned().unwrap_or_default();
+                let ip_addresses = ip_addresses_map.get(&host.id).cloned().unwrap_or_default();
                 let ports = ports_map.get(&host.id).cloned().unwrap_or_default();
                 let services = services_map.get(&host.id).cloned().unwrap_or_default();
-                let if_entries = if_entries_map.get(&host.id).cloned().unwrap_or_default();
-                HostResponse::from_host_with_children(host, interfaces, ports, services, if_entries)
+                let interfaces = if_entries_map.get(&host.id).cloned().unwrap_or_default();
+                HostResponse::from_host_with_children(
+                    host,
+                    ip_addresses,
+                    ports,
+                    services,
+                    interfaces,
+                )
             })
             .collect();
 
@@ -384,8 +400,8 @@ impl HostService {
     async fn load_children_for_host(
         &self,
         host_id: &Uuid,
-    ) -> Result<(Vec<Interface>, Vec<Port>, Vec<Service>, Vec<IfEntry>)> {
-        let interfaces = self.interface_service.get_for_host(host_id).await?;
+    ) -> Result<(Vec<IPAddress>, Vec<Port>, Vec<Service>, Vec<Interface>)> {
+        let ip_addresses = self.ip_address_service.get_for_host(host_id).await?;
         let ports = self.port_service.get_for_host(host_id).await?;
         let services = self
             .service_service
@@ -394,9 +410,9 @@ impl HostService {
                 "position ASC",
             )
             .await?;
-        let if_entries = self.if_entry_service.get_for_host(host_id).await?;
+        let interfaces = self.interface_service.get_for_host(host_id).await?;
 
-        Ok((interfaces, ports, services, if_entries))
+        Ok((ip_addresses, ports, services, interfaces))
     }
 
     /// Batch load all children for multiple hosts.
@@ -404,12 +420,12 @@ impl HostService {
         &self,
         host_ids: &[Uuid],
     ) -> Result<(
-        HashMap<Uuid, Vec<Interface>>,
+        HashMap<Uuid, Vec<IPAddress>>,
         HashMap<Uuid, Vec<Port>>,
         HashMap<Uuid, Vec<Service>>,
-        HashMap<Uuid, Vec<IfEntry>>,
+        HashMap<Uuid, Vec<Interface>>,
     )> {
-        let interfaces_map = self.interface_service.get_for_hosts(host_ids).await?;
+        let ip_addresses_map = self.ip_address_service.get_for_hosts(host_ids).await?;
         let ports_map = self.port_service.get_for_hosts(host_ids).await?;
 
         // Load services ordered by position and group by host_id
@@ -429,23 +445,23 @@ impl HostService {
                 .push(service);
         }
 
-        // Load if_entries and group by host_id
-        let mut if_entries_map = self.if_entry_service.get_for_hosts(host_ids).await?;
+        // Load interfaces and group by host_id
+        let mut if_entries_map = self.interface_service.get_for_hosts(host_ids).await?;
         // Sort each host's entries by if_index
         for entries in if_entries_map.values_mut() {
             entries.sort_by_key(|e| e.base.if_index);
         }
 
-        Ok((interfaces_map, ports_map, services_map, if_entries_map))
+        Ok((ip_addresses_map, ports_map, services_map, if_entries_map))
     }
 
     // =========================================================================
     // Host creation with children
     // =========================================================================
 
-    /// Create a host with all its children (interfaces, ports, services, if_entries) from API request.
-    /// Client provides UUIDs for all entities, enabling services to reference interfaces/ports.
-    /// For API users: errors if a host with matching interfaces already exists.
+    /// Create a host with all its children (ip_addresses, ports, services, interfaces) from API request.
+    /// Client provides UUIDs for all entities, enabling services to reference ip_addresses/ports.
+    /// For API users: errors if a host with matching ip_addresses already exists.
     pub async fn create_from_request(
         &self,
         request: CreateHostRequest,
@@ -467,19 +483,23 @@ impl HostService {
             management_url,
             chassis_id,
             credential_assignments,
-            interfaces: interface_inputs,
+            ip_addresses: interface_inputs,
             ports: port_inputs,
             services: service_inputs,
-            if_entries: if_entry_inputs,
+            interfaces: if_entry_inputs,
         } = request;
 
         // Resolve and validate positions (no existing entities for create)
-        let empty_interfaces: Vec<Interface> = vec![];
+        let empty_interfaces: Vec<IPAddress> = vec![];
         let empty_services: Vec<Service> = vec![];
         let mut interface_inputs = interface_inputs;
         let mut service_inputs = service_inputs;
-        resolve_and_validate_input_positions(&mut interface_inputs, &empty_interfaces, "interface")
-            .map_err(|e| ValidationError::new(e.message))?;
+        resolve_and_validate_input_positions(
+            &mut interface_inputs,
+            &empty_interfaces,
+            "ip_address",
+        )
+        .map_err(|e| ValidationError::new(e.message))?;
         resolve_and_validate_input_positions(&mut service_inputs, &empty_services, "service")
             .map_err(|e| ValidationError::new(e.message))?;
 
@@ -510,8 +530,8 @@ impl HostService {
         };
         let host = Host::new(host_base);
 
-        // Build interfaces with client-provided IDs
-        let interfaces: Vec<Interface> = interface_inputs
+        // Build ip_addresses with client-provided IDs
+        let ip_addresses: Vec<IPAddress> = interface_inputs
             .into_iter()
             .map(|input| input.into_interface(host.id, network_id))
             .collect();
@@ -528,8 +548,8 @@ impl HostService {
             .map(|input| input.into_service(host.id, network_id, source.clone()))
             .collect();
 
-        // Build if_entries (server assigns UUIDs)
-        let if_entries: Vec<IfEntry> = if_entry_inputs
+        // Build interfaces (server assigns UUIDs)
+        let interfaces: Vec<Interface> = if_entry_inputs
             .into_iter()
             .map(|input| input.into_if_entry(host.id, network_id))
             .collect();
@@ -537,10 +557,10 @@ impl HostService {
         // Use unified creation with Error behavior for API users
         self.create_with_children(
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
-            if_entries,
+            interfaces,
             vec![], // No integration-derived subnets for API creates
             ConflictBehavior::Error,
             authentication,
@@ -557,7 +577,7 @@ impl HostService {
     /// Host deduplication happens in two stages:
     ///
     /// 1. **Interface-based matching** (this method): `find_matching_host_by_interfaces` compares
-    ///    incoming interfaces against existing hosts using MAC address or subnet+IP matching.
+    ///    incoming ip_addresses against existing hosts using MAC address or subnet+IP matching.
     ///    - For API users (ConflictBehavior::Error): Returns an error telling them to edit the existing host.
     ///    - For discovery (ConflictBehavior::Upsert): Sets `host.id = existing_host.id` so the
     ///      subsequent create() call will recognize this as an existing host.
@@ -569,15 +589,15 @@ impl HostService {
     /// This two-stage approach means:
     /// - Interface matching handles the "is this the same physical host?" question
     /// - ID matching handles the "should we upsert?" question (relies on ID being set correctly)
-    /// - Discovery always upserts when interfaces match, even if daemon reported a different host ID
+    /// - Discovery always upserts when ip_addresses match, even if daemon reported a different host ID
     #[allow(clippy::too_many_arguments)]
     async fn create_with_children(
         &self,
         mut host: Host,
-        interfaces: Vec<Interface>,
+        ip_addresses: Vec<IPAddress>,
         ports: Vec<Port>,
         services: Vec<Service>,
-        if_entries: Vec<IfEntry>,
+        interfaces: Vec<Interface>,
         subnets: Vec<crate::server::subnets::r#impl::base::Subnet>,
         conflict_behavior: ConflictBehavior,
         authentication: AuthenticatedEntity,
@@ -586,7 +606,7 @@ impl HostService {
         // Stage 1: Interface-based collision detection
         // Compares MAC addresses and subnet+IP to find hosts that represent the same physical machine
         let matching_result = self
-            .find_matching_host_by_interfaces(&host.base.network_id, &interfaces)
+            .find_matching_host_by_interfaces(&host.base.network_id, &ip_addresses)
             .await?;
 
         let is_new_host = matching_result.is_none();
@@ -596,7 +616,7 @@ impl HostService {
                 ConflictBehavior::Error => {
                     // API users should edit the existing host rather than create a duplicate
                     return Err(ValidationError::new(format!(
-                        "A host with matching interfaces already exists: '{}' (id: {}). \
+                        "A host with matching ip_addresses already exists: '{}' (id: {}). \
                          Edit the existing host instead of creating a new one.",
                         existing_host.base.name, existing_host.id
                     ))
@@ -611,7 +631,7 @@ impl HostService {
                             incoming_host_id = %host.id,
                             matched_host_id = %existing_host.id,
                             matched_host_name = %existing_host.base.name,
-                            "Setting host ID to match existing host found via interface comparison"
+                            "Setting host ID to match existing host found via ip_address comparison"
                         );
                         host.id = existing_host.id;
                     }
@@ -636,23 +656,23 @@ impl HostService {
         // These are needed because interface/port IDs may change during creation,
         // and service bindings need to be remapped to the new IDs
         let original_host = host.clone();
-        let original_interfaces = interfaces.clone();
+        let original_interfaces = ip_addresses.clone();
         let original_ports = ports.clone();
 
         // Stage 2: Create or upsert host via ID matching
         // If host.id was set to an existing host's ID above, this will trigger upsert_host()
         let mut created_host = self.create(host, authentication.clone()).await?;
 
-        // Capture daemon interface ID → IP mapping before interfaces are consumed.
-        // Used later to remap credential assignment interface_ids to server-assigned IDs.
-        let daemon_interface_ips: Vec<(Uuid, IpAddr)> = interfaces
+        // Capture daemon interface ID → IP mapping before ip_addresses are consumed.
+        // Used later to remap credential assignment ip_address_ids to server-assigned IDs.
+        let daemon_interface_ips: Vec<(Uuid, IpAddr)> = ip_addresses
             .iter()
             .map(|i| (i.id, i.base.ip_address))
             .collect();
 
-        // Order: ports → subnets → interfaces → services
-        // Subnets before interfaces (FK: interfaces.subnet_id → subnets.id).
-        // Interfaces before services (binding validation queries host interfaces).
+        // Order: ports → subnets → ip_addresses → services
+        // Subnets before ip_addresses (FK: ip_addresses.subnet_id → subnets.id).
+        // Interfaces before services (binding validation queries host ip_addresses).
         // Subnet virtualization.service_id needs the real (deduped) service ID, but
         // services aren't created yet. Solved by pre-computing service_id_remap from
         // existing_services_for_match before creating subnets.
@@ -692,9 +712,9 @@ impl HostService {
             created_ports.push(created);
         }
 
-        // Order: subnets → interfaces → services
-        // Subnets before interfaces (FK constraint: interfaces.subnet_id → subnets.id).
-        // Interfaces before services (binding validation queries host interfaces from DB).
+        // Order: subnets → ip_addresses → services
+        // Subnets before ip_addresses (FK constraint: ip_addresses.subnet_id → subnets.id).
+        // Interfaces before services (binding validation queries host ip_addresses from DB).
         // Subnets need the real service_id for dedup, but services haven't been created yet.
         // Solution: pre-compute service_id_remap by matching incoming services against
         // existing ones, then apply it to subnet virtualization before creation.
@@ -749,16 +769,16 @@ impl HostService {
             }
         }
 
-        // Create interfaces with correct host_id
-        // For Upsert: deduplicate by checking existing interfaces first
+        // Create ip_addresses with correct host_id
+        // For Upsert: deduplicate by checking existing ip_addresses first
         // Apply subnet_id_remap for virtualized subnets whose IDs changed during dedup
 
-        // Count how many incoming interfaces share each MAC address.
-        // Multiple incoming interfaces with the same MAC = VLAN sub-interfaces (or bridge/bond
-        // members) sharing a parent's MAC. These are distinct interfaces and must not be
+        // Count how many incoming ip_addresses share each MAC address.
+        // Multiple incoming ip_addresses with the same MAC = VLAN sub-interfaces (or bridge/bond
+        // members) sharing a parent's MAC. These are distinct ip_addresses and must not be
         // collapsed via MAC matching. A unique MAC (count == 1) indicates a standalone interface
         // that may have moved subnets (e.g., Docker container with DHCP, subnet reconfiguration).
-        let incoming_mac_counts: HashMap<MacAddress, usize> = interfaces
+        let incoming_mac_counts: HashMap<MacAddress, usize> = ip_addresses
             .iter()
             .filter_map(|i| i.base.mac_address)
             .fold(HashMap::new(), |mut acc, mac| {
@@ -767,18 +787,18 @@ impl HostService {
             });
 
         let mut created_interfaces = Vec::new();
-        for mut interface in interfaces {
-            interface.base.host_id = created_host.id;
+        for mut ip_address in ip_addresses {
+            ip_address.base.host_id = created_host.id;
 
             // Remap subnet_id if the subnet was deduped to an existing one
-            if let Some(&new_subnet_id) = subnet_id_remap.get(&interface.base.subnet_id) {
-                interface.base.subnet_id = new_subnet_id;
+            if let Some(&new_subnet_id) = subnet_id_remap.get(&ip_address.base.subnet_id) {
+                ip_address.base.subnet_id = new_subnet_id;
             }
 
             if matches!(conflict_behavior, ConflictBehavior::Upsert) {
                 // Check if interface already exists by ID
                 if let Some(existing_iface) =
-                    self.interface_service.get_by_id(&interface.id).await?
+                    self.ip_address_service.get_by_id(&ip_address.id).await?
                 {
                     created_interfaces.push(existing_iface);
                     continue;
@@ -786,13 +806,13 @@ impl HostService {
 
                 // Check by unique constraint (host_id, subnet_id, ip_address)
                 let filter =
-                    StorableFilter::<Interface>::new_from_host_ids(&[interface.base.host_id])
-                        .subnet_id(&interface.base.subnet_id);
-                let existing_by_key: Vec<Interface> =
-                    self.interface_service.get_all(filter).await?;
+                    StorableFilter::<IPAddress>::new_from_host_ids(&[ip_address.base.host_id])
+                        .subnet_id(&ip_address.base.subnet_id);
+                let existing_by_key: Vec<IPAddress> =
+                    self.ip_address_service.get_all(filter).await?;
                 if let Some(existing_iface) = existing_by_key
                     .into_iter()
-                    .find(|i| i.base.ip_address == interface.base.ip_address)
+                    .find(|i| i.base.ip_address == ip_address.base.ip_address)
                 {
                     created_interfaces.push(existing_iface);
                     continue;
@@ -804,25 +824,25 @@ impl HostService {
                 //
                 // Dual guard to prevent VLAN sub-interface collapse:
                 // - incoming_mac_counts == 1: this MAC is unique in the incoming batch,
-                //   so it's a standalone interface, not a VLAN sub-interface
+                //   so it's a standalone ip_address, not a VLAN sub-interface
                 // - existing_by_mac.len() == 1: only one existing interface has this MAC,
                 //   so there's an unambiguous 1:1 match (not a N:1 VLAN consolidation)
-                if let Some(mac) = &interface.base.mac_address
+                if let Some(mac) = &ip_address.base.mac_address
                     && incoming_mac_counts.get(mac).copied().unwrap_or(0) == 1
                 {
                     let mac_filter =
-                        StorableFilter::<Interface>::new_from_host_ids(&[interface.base.host_id])
+                        StorableFilter::<IPAddress>::new_from_host_ids(&[ip_address.base.host_id])
                             .mac_address(mac);
-                    let existing_by_mac: Vec<Interface> =
-                        self.interface_service.get_all(mac_filter).await?;
+                    let existing_by_mac: Vec<IPAddress> =
+                        self.ip_address_service.get_all(mac_filter).await?;
                     if existing_by_mac.len() == 1 {
                         let existing_iface = existing_by_mac.into_iter().next().unwrap();
                         tracing::debug!(
-                            interface_ip = %interface.base.ip_address,
+                            interface_ip = %ip_address.base.ip_address,
                             interface_mac = %mac,
                             existing_subnet_id = %existing_iface.base.subnet_id,
-                            incoming_subnet_id = %interface.base.subnet_id,
-                            "Found existing interface by MAC address (subnet_id differs, 1:1 MAC match)"
+                            incoming_subnet_id = %ip_address.base.subnet_id,
+                            "Found existing ip_address by MAC address (subnet_id differs, 1:1 MAC match)"
                         );
                         created_interfaces.push(existing_iface);
                         continue;
@@ -831,15 +851,15 @@ impl HostService {
             }
 
             let created = self
-                .interface_service
-                .create(interface, authentication.clone())
+                .ip_address_service
+                .create(ip_address, authentication.clone())
                 .await?;
             created_interfaces.push(created);
         }
 
         // Build scanner→DB interface ID mapping using positional correspondence.
         // original_interfaces and created_interfaces are 1:1 in order (the interface
-        // creation loop produces exactly one entry per input interface).
+        // creation loop produces exactly one entry per input ip_address).
         let interface_id_remap: std::collections::HashMap<Uuid, Uuid> = original_interfaces
             .iter()
             .zip(created_interfaces.iter())
@@ -974,10 +994,10 @@ impl HostService {
                         .filter_map(|b| {
                             if let BindingType::Port {
                                 port_id,
-                                interface_id,
+                                ip_address_id,
                             } = &b.base.binding_type
                             {
-                                Some((*port_id, *interface_id))
+                                Some((*port_id, *ip_address_id))
                             } else {
                                 None
                             }
@@ -996,7 +1016,7 @@ impl HostService {
                                             return false;
                                         };
                                         op_port == *port_id
-                                            && bindings_overlap(claim_iface, &b.interface_id())
+                                            && bindings_overlap(claim_iface, &b.ip_address_id())
                                     })
                             })
                         });
@@ -1020,7 +1040,7 @@ impl HostService {
                                     let Some(port_id) = b.port_id() else {
                                         return true;
                                     };
-                                    let bind_iface = b.interface_id();
+                                    let bind_iface = b.ip_address_id();
                                     !conflicting_claims.iter().any(|(cp, ci)| {
                                         *cp == port_id && bindings_overlap(ci, &bind_iface)
                                     })
@@ -1063,7 +1083,7 @@ impl HostService {
                                     let Some(port_id) = b.port_id() else {
                                         return true;
                                     };
-                                    let bind_iface = b.interface_id();
+                                    let bind_iface = b.ip_address_id();
                                     !conflicting_claims.iter().any(|(cp, ci)| {
                                         *cp == port_id && bindings_overlap(ci, &bind_iface)
                                     })
@@ -1111,10 +1131,10 @@ impl HostService {
             for binding in &reassigned.base.bindings {
                 if let BindingType::Port {
                     port_id,
-                    interface_id,
+                    ip_address_id,
                 } = &binding.base.binding_type
                 {
-                    batch_claimed.push((*port_id, *interface_id));
+                    batch_claimed.push((*port_id, *ip_address_id));
                 }
             }
 
@@ -1207,7 +1227,7 @@ impl HostService {
             if !interface_id_remap.is_empty() || !port_id_remap.is_empty() {
                 for svc in &created_services {
                     let needs_update = svc.base.bindings.iter().any(|b| {
-                        b.interface_id()
+                        b.ip_address_id()
                             .is_some_and(|id| interface_id_remap.contains_key(&id))
                             || b.port_id()
                                 .is_some_and(|id| port_id_remap.contains_key(&id))
@@ -1216,19 +1236,19 @@ impl HostService {
                         let mut updated = svc.clone();
                         for binding in &mut updated.base.bindings {
                             match &mut binding.base.binding_type {
-                                BindingType::Interface { interface_id } => {
-                                    if let Some(&new_id) = interface_id_remap.get(interface_id) {
-                                        *interface_id = new_id;
+                                BindingType::IPAddress { ip_address_id } => {
+                                    if let Some(&new_id) = interface_id_remap.get(ip_address_id) {
+                                        *ip_address_id = new_id;
                                     }
                                 }
                                 BindingType::Port {
                                     port_id,
-                                    interface_id,
+                                    ip_address_id,
                                 } => {
                                     if let Some(&new_id) = port_id_remap.get(port_id) {
                                         *port_id = new_id;
                                     }
-                                    if let Some(iface_id) = interface_id
+                                    if let Some(iface_id) = ip_address_id
                                         && let Some(&new_id) = interface_id_remap.get(iface_id)
                                     {
                                         *iface_id = new_id;
@@ -1262,28 +1282,28 @@ impl HostService {
                 .await?;
         }
 
-        // Create if_entries with correct host_id
+        // Create interfaces with correct host_id
         // Uses create_or_update_by_if_index for deduplication on (host_id, if_index)
         let mut created_if_entries = Vec::new();
-        for mut entry in if_entries {
+        for mut entry in interfaces {
             entry.base.host_id = created_host.id;
             entry.base.network_id = created_host.base.network_id;
 
             let created = self
-                .if_entry_service
+                .interface_service
                 .create_or_update_by_if_index(entry, authentication.clone())
                 .await?;
             created_if_entries.push(created);
         }
 
-        // Remap credential assignment interface_ids from daemon UUIDs to server UUIDs
+        // Remap credential assignment ip_address_ids from daemon UUIDs to server UUIDs
         // and persist to the host_credentials junction table.
         // credential_assignments is transient on HostBase (not stored in hosts table),
         // so we must persist via set_host_credentials and use the original input host's
         // assignments (created_host.base.credential_assignments is empty after DB round-trip).
         let mut remapped_assignments = original_host.base.credential_assignments.clone();
         for assignment in &mut remapped_assignments {
-            if let Some(ref mut ids) = assignment.interface_ids {
+            if let Some(ref mut ids) = assignment.ip_address_ids {
                 *ids = ids
                     .iter()
                     .filter_map(|daemon_id| {
@@ -1323,7 +1343,7 @@ impl HostService {
     }
 
     /// Update a host from an UpdateHostRequest
-    /// Optionally syncs interfaces and ports if provided in the request.
+    /// Optionally syncs ip_addresses and ports if provided in the request.
     pub async fn update_from_request(
         &self,
         request: UpdateHostRequest,
@@ -1345,7 +1365,7 @@ impl HostService {
             hidden,
             tags,
             expected_updated_at: _,
-            interfaces,
+            ip_addresses,
             ports,
             services,
             credential_assignments,
@@ -1409,10 +1429,15 @@ impl HostService {
             .update(&mut updated_host, authentication.clone())
             .await?;
 
-        // Sync interfaces only if provided (None means preserve existing)
-        if let Some(interfaces) = interfaces {
-            self.sync_interfaces(&updated.id, &network_id, interfaces, authentication.clone())
-                .await?;
+        // Sync ip_addresses only if provided (None means preserve existing)
+        if let Some(ip_addresses) = ip_addresses {
+            self.sync_interfaces(
+                &updated.id,
+                &network_id,
+                ip_addresses,
+                authentication.clone(),
+            )
+            .await?;
         }
 
         // Sync ports only if provided (None means preserve existing)
@@ -1428,41 +1453,45 @@ impl HostService {
         }
 
         // Load fresh children after sync
-        let (interfaces, ports, services, if_entries) =
+        let (ip_addresses, ports, services, interfaces) =
             self.load_children_for_host(&updated.id).await?;
 
         Ok(HostResponse::from_host_with_children(
-            updated, interfaces, ports, services, if_entries,
+            updated,
+            ip_addresses,
+            ports,
+            services,
+            interfaces,
         ))
     }
 
-    /// Sync interfaces for a host: delete removed, update existing, create new.
+    /// Sync ip_addresses for a host: delete removed, update existing, create new.
     /// Client provides UUIDs - if ID exists for this host, update; if not, create.
     async fn sync_interfaces(
         &self,
         host_id: &Uuid,
         network_id: &Uuid,
-        inputs: Vec<InterfaceInput>,
+        inputs: Vec<IPAddressInput>,
         authentication: AuthenticatedEntity,
     ) -> Result<()> {
         use std::collections::HashSet;
 
-        // Get existing interfaces for this host (needed for position resolution)
-        let existing = self.interface_service.get_for_host(host_id).await?;
+        // Get existing ip_addresses for this host (needed for position resolution)
+        let existing = self.ip_address_service.get_for_host(host_id).await?;
         let existing_ids: HashSet<Uuid> = existing.iter().map(|i| i.id).collect();
 
         // Resolve and validate positions
         let mut inputs = inputs;
-        resolve_and_validate_input_positions(&mut inputs, &existing, "interface")
+        resolve_and_validate_input_positions(&mut inputs, &existing, "ip_address")
             .map_err(|e| ValidationError::new(e.message))?;
 
         // All input IDs (client-provided)
         let input_ids: HashSet<Uuid> = inputs.iter().map(|i| i.id).collect();
 
-        // Delete interfaces that are not in the input list
+        // Delete ip_addresses that are not in the input list
         let to_delete: Vec<Uuid> = existing_ids.difference(&input_ids).copied().collect();
         if !to_delete.is_empty() {
-            self.interface_service
+            self.ip_address_service
                 .delete_many(&to_delete, authentication.clone())
                 .await?;
         }
@@ -1470,21 +1499,21 @@ impl HostService {
         // Process each input - create or update based on whether ID exists for this host
         for input in inputs {
             let id = input.id;
-            let mut interface = input.into_interface(*host_id, *network_id);
+            let mut ip_address = input.into_interface(*host_id, *network_id);
 
             if existing_ids.contains(&id) {
                 // Update existing interface - preserve created_at from existing
                 if let Some(existing_iface) = existing.iter().find(|i| i.id == id) {
-                    interface.preserve_immutable_fields(existing_iface);
+                    ip_address.preserve_immutable_fields(existing_iface);
                 }
 
-                self.interface_service
-                    .update(&mut interface, authentication.clone())
+                self.ip_address_service
+                    .update(&mut ip_address, authentication.clone())
                     .await?;
             } else {
                 // Create new interface with client-provided ID
-                self.interface_service
-                    .create(interface, authentication.clone())
+                self.ip_address_service
+                    .create(ip_address, authentication.clone())
                     .await?;
             }
         }
@@ -1579,7 +1608,7 @@ impl HostService {
         // which is required for port transfers between services to work correctly.
         let (losing_bindings, others): (Vec<_>, Vec<_>) = inputs.into_iter().partition(|input| {
             if let Some(existing_svc) = existing.iter().find(|s| s.id == input.id) {
-                // Get current port binding keys (port_id, interface_id)
+                // Get current port binding keys (port_id, ip_address_id)
                 let current_ports: HashSet<_> = existing_svc
                     .base
                     .bindings
@@ -1587,8 +1616,8 @@ impl HostService {
                     .filter_map(|b| match &b.base.binding_type {
                         BindingType::Port {
                             port_id,
-                            interface_id,
-                        } => Some((*port_id, *interface_id)),
+                            ip_address_id,
+                        } => Some((*port_id, *ip_address_id)),
                         _ => None,
                     })
                     .collect();
@@ -1600,9 +1629,9 @@ impl HostService {
                     .filter_map(|b| match b {
                         BindingInput::Port {
                             port_id,
-                            interface_id,
+                            ip_address_id,
                             ..
-                        } => Some((*port_id, *interface_id)),
+                        } => Some((*port_id, *ip_address_id)),
                         _ => None,
                     })
                     .collect();
@@ -1656,10 +1685,10 @@ impl HostService {
     pub async fn discover_host(
         &self,
         host: Host,
-        interfaces: Vec<Interface>,
+        ip_addresses: Vec<IPAddress>,
         ports: Vec<Port>,
         services: Vec<Service>,
-        if_entries: Vec<crate::server::if_entries::r#impl::base::IfEntry>,
+        interfaces: Vec<crate::server::interfaces::r#impl::base::Interface>,
         subnets: Vec<crate::server::subnets::r#impl::base::Subnet>,
         authentication: AuthenticatedEntity,
         limit_ctx: Option<&HostLimitContext>,
@@ -1667,10 +1696,10 @@ impl HostService {
         let host_response = self
             .create_with_children(
                 host,
-                interfaces,
+                ip_addresses,
                 ports,
                 services,
-                if_entries.clone(),
+                interfaces.clone(),
                 subnets,
                 ConflictBehavior::Upsert,
                 authentication.clone(),
@@ -1679,7 +1708,7 @@ impl HostService {
             .await?;
 
         // Link IfEntries to Interfaces via MAC address matching (if any were created)
-        if !if_entries.is_empty()
+        if !interfaces.is_empty()
             && let Err(e) = self
                 .link_if_entries_to_interfaces(&host_response.id, authentication)
                 .await
@@ -1687,75 +1716,75 @@ impl HostService {
             tracing::warn!(error = %e, "Failed to link IfEntries to Interfaces");
         }
 
-        // Auto-link subnets to VLANs based on IfEntry VLAN assignments
-        if !if_entries.is_empty() {
-            if let Err(e) = self.link_subnets_to_vlans(&host_response.id).await {
-                tracing::warn!(error = %e, "Failed to auto-link subnets to VLANs");
-            }
+        // Auto-link subnets to VLANs based on Interface VLAN assignments
+        if !interfaces.is_empty()
+            && let Err(e) = self.link_subnets_to_vlans(&host_response.id).await
+        {
+            tracing::warn!(error = %e, "Failed to auto-link subnets to VLANs");
         }
 
         Ok(host_response)
     }
 
-    /// Link IfEntry records to Interface records for a host by matching MAC addresses.
+    /// Link Interface records to Interface records for a host by matching MAC addresses.
     ///
-    /// For each IfEntry with a MAC address, finds an Interface on the same host with
-    /// the same MAC address and sets `if_entry.interface_id = interface.id`.
+    /// For each Interface with a MAC address, finds an Interface on the same host with
+    /// the same MAC address and sets `interface.ip_address_id = ip_address.id`.
     /// This enables PhysicalLink topology edges to have source/target Interface IDs.
     async fn link_if_entries_to_interfaces(
         &self,
         host_id: &Uuid,
         authentication: AuthenticatedEntity,
     ) -> Result<()> {
-        use crate::server::if_entries::r#impl::base::if_type;
+        use crate::server::interfaces::r#impl::base::if_type;
 
-        // Get all interfaces for this host
-        let interfaces = self.interface_service.get_for_host(host_id).await?;
+        // Get all ip_addresses for this host
+        let ip_addresses = self.ip_address_service.get_for_host(host_id).await?;
 
-        // Build MAC -> interface_id lookup
-        let mac_to_interface: std::collections::HashMap<_, _> = interfaces
+        // Build MAC -> ip_address_id lookup
+        let mac_to_interface: std::collections::HashMap<_, _> = ip_addresses
             .iter()
             .filter_map(|iface| iface.base.mac_address.map(|mac| (mac, iface.id)))
             .collect();
 
         // Find loopback interface (by IP address)
-        let loopback_interface_id = interfaces
+        let loopback_interface_id = ip_addresses
             .iter()
             .find(|iface| iface.base.ip_address.is_loopback())
             .map(|iface| iface.id);
 
         // Get all IfEntries for this host
-        let if_entries = self.if_entry_service.get_for_host(host_id).await?;
+        let interfaces = self.interface_service.get_for_host(host_id).await?;
 
         let mut linked_count = 0;
-        for mut if_entry in if_entries {
+        for mut interface in interfaces {
             // Skip if already linked
-            if if_entry.base.interface_id.is_some() {
+            if interface.base.ip_address_id.is_some() {
                 continue;
             }
 
             // Try loopback linking by if_type
-            let matched_interface_id = if if_entry.base.if_type == if_type::SOFTWARE_LOOPBACK {
+            let matched_interface_id = if interface.base.if_type == if_type::SOFTWARE_LOOPBACK {
                 loopback_interface_id
             } else {
                 // Try MAC-based linking
-                if_entry
+                interface
                     .base
                     .mac_address
                     .and_then(|mac| mac_to_interface.get(&mac).copied())
             };
 
-            if let Some(interface_id) = matched_interface_id {
-                if_entry.base.interface_id = Some(interface_id);
+            if let Some(ip_address_id) = matched_interface_id {
+                interface.base.ip_address_id = Some(ip_address_id);
                 if let Err(e) = self
-                    .if_entry_service
-                    .update(&mut if_entry, authentication.clone())
+                    .interface_service
+                    .update(&mut interface, authentication.clone())
                     .await
                 {
                     tracing::warn!(
-                        if_entry_id = %if_entry.id,
+                        interface_id = %interface.id,
                         error = %e,
-                        "Failed to link IfEntry to Interface"
+                        "Failed to link Interface to Interface"
                     );
                 } else {
                     linked_count += 1;
@@ -1774,29 +1803,29 @@ impl HostService {
         Ok(())
     }
 
-    /// Auto-link subnets to VLANs based on IfEntry native VLAN assignments.
+    /// Auto-link subnets to VLANs based on Interface native VLAN assignments.
     ///
-    /// For each IfEntry with a native_vlan_id and a linked interface (which has a subnet_id),
+    /// For each Interface with a native_vlan_id and a linked interface (which has a subnet_id),
     /// creates a subnet ↔ VLAN link in the junction table. Idempotent.
     async fn link_subnets_to_vlans(&self, host_id: &Uuid) -> Result<()> {
-        let if_entries = self.if_entry_service.get_for_host(host_id).await?;
         let interfaces = self.interface_service.get_for_host(host_id).await?;
+        let ip_addresses = self.ip_address_service.get_for_host(host_id).await?;
 
-        // Build interface_id → subnet_id lookup
-        let interface_to_subnet: std::collections::HashMap<Uuid, Uuid> = interfaces
+        // Build ip_address_id → subnet_id lookup
+        let interface_to_subnet: std::collections::HashMap<Uuid, Uuid> = ip_addresses
             .iter()
             .map(|i| (i.id, i.base.subnet_id))
             .collect();
 
         let mut linked_count = 0;
-        for if_entry in &if_entries {
-            let Some(vlan_id) = if_entry.base.native_vlan_id else {
+        for interface in &interfaces {
+            let Some(vlan_id) = interface.base.native_vlan_id else {
                 continue;
             };
-            let Some(interface_id) = if_entry.base.interface_id else {
+            let Some(ip_address_id) = interface.base.ip_address_id else {
                 continue;
             };
-            let Some(subnet_id) = interface_to_subnet.get(&interface_id) else {
+            let Some(subnet_id) = interface_to_subnet.get(&ip_address_id) else {
                 continue;
             };
 
@@ -1811,7 +1840,7 @@ impl HostService {
             tracing::debug!(
                 host_id = %host_id,
                 linked = linked_count,
-                "Auto-linked subnets to VLANs from IfEntry data"
+                "Auto-linked subnets to VLANs from Interface data"
             );
         }
 
@@ -1821,14 +1850,14 @@ impl HostService {
     /// Find an existing host that matches based on interface data (subnet+IP or MAC address).
     ///
     /// **Known limitation — VRRP/HSRP:** Routers sharing a virtual IP+subnet via VRRP or HSRP
-    /// could false-match on the IP+subnet branch. Virtual router MAC interfaces are filtered
+    /// could false-match on the IP+subnet branch. Virtual router MAC ip_addresses are filtered
     /// out (see `is_virtual_router_mac`), but the shared virtual IP on a real interface could
     /// still cause incorrect dedup. Full VRRP awareness would require tracking group membership.
     pub async fn find_matching_host_by_interfaces(
         &self,
         network_id: &Uuid,
-        incoming_interfaces: &[Interface],
-    ) -> Result<Option<(Host, Vec<Interface>)>> {
+        incoming_interfaces: &[IPAddress],
+    ) -> Result<Option<(Host, Vec<IPAddress>)>> {
         if incoming_interfaces.is_empty() {
             return Ok(None);
         }
@@ -1841,12 +1870,12 @@ impl HostService {
         }
 
         let host_ids: Vec<Uuid> = all_hosts.iter().map(|h| h.id).collect();
-        let interfaces_by_host = self.interface_service.get_for_hosts(&host_ids).await?;
+        let ip_addresses_by_host = self.ip_address_service.get_for_hosts(&host_ids).await?;
 
-        // Exclude loopback and virtual router (VRRP/HSRP) interfaces from matching.
+        // Exclude loopback and virtual router (VRRP/HSRP) ip_addresses from matching.
         // Loopbacks: every host has 127.0.0.1, so they would falsely match all hosts.
         // Virtual router MACs: shared across physical routers, would falsely merge peers.
-        let should_skip_for_matching = |iface: &Interface| {
+        let should_skip_for_matching = |iface: &IPAddress| {
             iface.base.ip_address.is_loopback()
                 || iface
                     .base
@@ -1864,7 +1893,7 @@ impl HostService {
             return Ok(None);
         }
 
-        // Count incoming interfaces per MAC to detect VLAN sub-interfaces.
+        // Count incoming ip_addresses per MAC to detect VLAN sub-interfaces.
         // Same approach as the upsert MAC fallback — shared MAC (count > 1) means
         // VLAN/bridge/bond sub-interfaces that must not trigger MAC-based host matching.
         // Unique MAC (count == 1) means a standalone interface safe for MAC matching
@@ -1878,7 +1907,7 @@ impl HostService {
             });
 
         for host in all_hosts {
-            let host_interfaces = interfaces_by_host
+            let host_interfaces = ip_addresses_by_host
                 .get(&host.id)
                 .cloned()
                 .unwrap_or_default();
@@ -1888,13 +1917,13 @@ impl HostService {
                     if should_skip_for_matching(existing_iface) {
                         continue;
                     }
-                    if interfaces_match(incoming_iface, existing_iface, &incoming_mac_counts) {
+                    if ip_addresses_match(incoming_iface, existing_iface, &incoming_mac_counts) {
                         tracing::debug!(
                             incoming_ip = %incoming_iface.base.ip_address,
                             existing_ip = %existing_iface.base.ip_address,
                             existing_host_id = %host.id,
                             existing_host_name = %host.base.name,
-                            "Found matching host via interface comparison"
+                            "Found matching host via ip_address comparison"
                         );
                         return Ok(Some((host, host_interfaces)));
                     }
@@ -2085,22 +2114,22 @@ impl HostService {
             destination_host
         );
 
-        // Get interfaces and ports for both hosts
+        // Get ip_addresses and ports for both hosts
         let dest_interfaces = self
-            .interface_service
+            .ip_address_service
             .get_for_host(&destination_host.id)
             .await?;
-        let other_interfaces = self.interface_service.get_for_host(&other_host.id).await?;
+        let other_interfaces = self.ip_address_service.get_for_host(&other_host.id).await?;
 
         let dest_ports = self.port_service.get_for_host(&destination_host.id).await?;
         let other_ports = self.port_service.get_for_host(&other_host.id).await?;
 
         // Build interface ID mapping: source_interface_id -> dest_interface_id
-        // Transfer non-conflicting interfaces to destination
+        // Transfer non-conflicting ip_addresses to destination
 
         // Count MACs per host to detect VLAN sub-interfaces. MAC-based conflict detection
         // is only safe when both sides have a unique MAC (count == 1). If either host has
-        // multiple interfaces sharing a MAC (VLANs/bridges/bonds), MAC matching would
+        // multiple ip_addresses sharing a MAC (VLANs/bridges/bonds), MAC matching would
         // incorrectly collapse distinct sub-interfaces during the merge.
         let dest_mac_counts: HashMap<MacAddress, usize> = dest_interfaces
             .iter()
@@ -2121,11 +2150,11 @@ impl HostService {
         for other_iface in &other_interfaces {
             // Check for conflict: same (subnet_id + ip_address) or same MAC (when 1:1)
             let matching_dest_iface = dest_interfaces.iter().find(|dest_iface| {
-                // Match by subnet + IP (always safe — same logical interface)
+                // Match by subnet + IP (always safe — same logical ip_address)
                 (dest_iface.base.subnet_id == other_iface.base.subnet_id
                     && dest_iface.base.ip_address == other_iface.base.ip_address)
                     // Match by MAC only when both hosts have a single interface with this MAC.
-                    // Multiple interfaces sharing a MAC = VLAN sub-interfaces that should
+                    // Multiple ip_addresses sharing a MAC = VLAN sub-interfaces that should
                     // be preserved separately, not collapsed during merge.
                     || (dest_iface.base.mac_address.is_some()
                         && dest_iface.base.mac_address == other_iface.base.mac_address
@@ -2145,20 +2174,20 @@ impl HostService {
                     source_interface_id = %other_iface.id,
                     dest_interface_id = %dest_iface.id,
                     ip = %other_iface.base.ip_address,
-                    "Interface conflict - mapping to existing destination interface"
+                    "IP address conflict - mapping to existing destination ip_address"
                 );
                 interface_id_map.insert(other_iface.id, dest_iface.id);
             } else {
                 // No conflict: transfer interface to destination host
                 let mut transferred = other_iface.clone();
                 transferred.base.host_id = destination_host.id;
-                self.interface_service
+                self.ip_address_service
                     .update(&mut transferred, authentication.clone())
                     .await?;
                 tracing::debug!(
-                    interface_id = %other_iface.id,
+                    ip_address_id = %other_iface.id,
                     ip = %other_iface.base.ip_address,
-                    "Transferred interface to destination host"
+                    "Transferred ip_address to destination host"
                 );
                 // Map to itself (ID unchanged, just host_id changed)
                 interface_id_map.insert(other_iface.id, other_iface.id);
@@ -2252,20 +2281,20 @@ impl HostService {
             // Remap binding IDs using our maps
             for binding in &mut service.base.bindings {
                 match &mut binding.base.binding_type {
-                    BindingType::Interface { interface_id } => {
-                        if let Some(&new_id) = interface_id_map.get(interface_id) {
-                            *interface_id = new_id;
+                    BindingType::IPAddress { ip_address_id } => {
+                        if let Some(&new_id) = interface_id_map.get(ip_address_id) {
+                            *ip_address_id = new_id;
                         } else {
                             tracing::warn!(
                                 service = %service.base.name,
-                                interface_id = %interface_id,
-                                "Interface not found in mapping during consolidation"
+                                ip_address_id = %ip_address_id,
+                                "IP address not found in mapping during consolidation"
                             );
                         }
                     }
                     BindingType::Port {
                         port_id,
-                        interface_id,
+                        ip_address_id,
                     } => {
                         if let Some(&new_port_id) = port_id_map.get(port_id) {
                             *port_id = new_port_id;
@@ -2276,16 +2305,16 @@ impl HostService {
                                 "Port not found in mapping during consolidation"
                             );
                         }
-                        if let Some(iface_id) = interface_id {
+                        if let Some(iface_id) = ip_address_id {
                             if let Some(&new_iface_id) = interface_id_map.get(iface_id) {
-                                *interface_id = Some(new_iface_id);
+                                *ip_address_id = Some(new_iface_id);
                             } else {
                                 tracing::warn!(
                                     service = %service.base.name,
-                                    interface_id = %iface_id,
-                                    "Interface not found in mapping, falling back to all-interfaces"
+                                    ip_address_id = %iface_id,
+                                    "IP address not found in mapping, falling back to all-ip_addresses"
                                 );
-                                *interface_id = None;
+                                *ip_address_id = None;
                             }
                         }
                     }
@@ -2333,8 +2362,8 @@ impl HostService {
             let mut migrated_count = 0usize;
 
             for other in &other_assignments {
-                // Remap interface_ids if present
-                let remapped_iface_ids = match &other.interface_ids {
+                // Remap ip_address_ids if present
+                let remapped_iface_ids = match &other.ip_address_ids {
                     None => None,
                     Some(ids) => {
                         let remapped: Vec<Uuid> = ids
@@ -2342,7 +2371,7 @@ impl HostService {
                             .filter_map(|id| interface_id_map.get(id).copied())
                             .collect();
                         if remapped.is_empty() {
-                            // All interfaces were dropped — skip this assignment
+                            // All ip_addresses were dropped — skip this assignment
                             continue;
                         }
                         Some(remapped)
@@ -2352,7 +2381,7 @@ impl HostService {
                 if let Some(dest_assignment) = dest_cred_map.get(&other.credential_id) {
                     // Both hosts have this credential — merge with broadest-scope-wins
                     let merged_iface_ids =
-                        match (&dest_assignment.interface_ids, &remapped_iface_ids) {
+                        match (&dest_assignment.ip_address_ids, &remapped_iface_ids) {
                             (None, _) | (_, None) => None, // Either is all-interfaces → all
                             (Some(dest_ids), Some(other_ids)) => {
                                 let mut union = dest_ids.clone();
@@ -2370,13 +2399,13 @@ impl HostService {
                         .iter_mut()
                         .find(|a| a.credential_id == other.credential_id)
                     {
-                        entry.interface_ids = merged_iface_ids;
+                        entry.ip_address_ids = merged_iface_ids;
                     }
                 } else {
                     // Only on other host — add to merged list
                     merged.push(CredentialAssignment {
                         credential_id: other.credential_id,
-                        interface_ids: remapped_iface_ids,
+                        ip_address_ids: remapped_iface_ids,
                     });
                 }
                 migrated_count += 1;
@@ -2402,20 +2431,20 @@ impl HostService {
             source_host_name = %other_host.base.name,
             dest_host_id = %updated_host.id,
             dest_host_name = %updated_host.base.name,
-            interfaces_mapped = %interface_id_map.len(),
+            ip_addresses_mapped = %interface_id_map.len(),
             ports_mapped = %port_id_map.len(),
             "Hosts consolidated"
         );
 
         // Return response with hydrated children
-        let (interfaces, ports, services, if_entries) =
+        let (ip_addresses, ports, services, interfaces) =
             self.load_children_for_host(&updated_host.id).await?;
         Ok(HostResponse::from_host_with_children(
             updated_host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
-            if_entries,
+            interfaces,
         ))
     }
 
@@ -2423,70 +2452,70 @@ impl HostService {
     // LLDP link resolution
     // =========================================================================
 
-    /// Resolve LLDP links for all if_entries in a network.
+    /// Resolve LLDP links for all interfaces in a network.
     ///
     /// Called by DiscoveryService when a discovery session completes successfully.
     /// This resolves LLDP neighbor data (chassis ID, port ID) to actual database
     /// entity references via the Neighbor enum.
     ///
     /// Resolution states:
-    /// - Full resolution: Both host and port identified → `Neighbor::IfEntry(id)`
+    /// - Full resolution: Both host and port identified → `Neighbor::Interface(id)`
     /// - Partial resolution: Only host identified → `Neighbor::Host(id)`
     ///
     /// Returns statistics about the resolution process.
     pub async fn resolve_lldp_links(&self, network_id: Uuid) -> Result<LldpResolutionStats> {
-        use crate::server::if_entries::r#impl::base::Neighbor;
+        use crate::server::interfaces::r#impl::base::Neighbor;
 
         let resolver = LldpResolverImpl::new(
-            self.if_entry_service.clone(),
             self.interface_service.clone(),
+            self.ip_address_service.clone(),
             self.storage.clone(),
         );
 
-        // Get all if_entries with unresolved LLDP/CDP neighbors in this network
-        let filter = StorableFilter::<IfEntry>::new_for_unresolved_lldp_in_network(network_id);
-        let unresolved = self.if_entry_service.get_all(filter).await?;
+        // Get all interfaces with unresolved LLDP/CDP neighbors in this network
+        let filter = StorableFilter::<Interface>::new_for_unresolved_lldp_in_network(network_id);
+        let unresolved = self.interface_service.get_all(filter).await?;
 
         let mut stats = LldpResolutionStats::default();
 
-        for mut if_entry in unresolved {
+        for mut interface in unresolved {
             stats.total += 1;
 
             // Try LLDP resolution first (more detailed data)
             // Only use chassis_id and port_id for neighbor resolution - these represent
             // actual physical connections. lldp_mgmt_addr is where you manage the device,
             // not necessarily the physical connection point.
-            let resolved_neighbor = if let Some(ref chassis_id) = if_entry.base.lldp_chassis_id {
+            let resolved_neighbor = if let Some(ref chassis_id) = interface.base.lldp_chassis_id {
                 // Resolve host from LLDP chassis ID
                 if let Some(host_id) = chassis_id.resolve_host_id(&resolver, network_id).await {
                     stats.hosts_resolved += 1;
 
                     // Try to resolve specific port
-                    if let Some(ref port_id) = if_entry.base.lldp_port_id
+                    if let Some(ref port_id) = interface.base.lldp_port_id
                         && let Some(remote_if_entry_id) =
                             port_id.resolve_if_entry_id(&resolver, host_id).await
                     {
                         stats.ports_resolved += 1;
-                        Some(Neighbor::IfEntry(remote_if_entry_id))
+                        Some(Neighbor::Interface(remote_if_entry_id))
                     } else {
                         Some(Neighbor::Host(host_id))
                     }
                 } else {
                     None
                 }
-            } else if let Some(ref device_id) = if_entry.base.cdp_device_id {
+            } else if let Some(ref device_id) = interface.base.cdp_device_id {
                 // CDP device_id is typically sysName, resolve against sys_name field
                 // Don't fall back to cdp_address - it's management address, not physical connection
                 if let Some(host_id) = resolver.find_host_by_sys_name(device_id, network_id).await {
                     stats.hosts_resolved += 1;
 
                     // Try CDP port resolution using cdp_port_id (long ifDescr format)
-                    if let Some(ref port_id) = if_entry.base.cdp_port_id
+                    if let Some(ref port_id) = interface.base.cdp_port_id
                         && let Some(remote_if_entry_id) =
                             resolver.find_if_entry_by_name(port_id, host_id).await
                     {
                         stats.ports_resolved += 1;
-                        Some(Neighbor::IfEntry(remote_if_entry_id))
+                        Some(Neighbor::Interface(remote_if_entry_id))
                     } else {
                         Some(Neighbor::Host(host_id))
                     }
@@ -2499,9 +2528,9 @@ impl HostService {
 
             // Persist resolved neighbor
             if let Some(neighbor) = resolved_neighbor {
-                if_entry.base.neighbor = Some(neighbor);
-                self.if_entry_service
-                    .update(&mut if_entry, AuthenticatedEntity::System)
+                interface.base.neighbor = Some(neighbor);
+                self.interface_service
+                    .update(&mut interface, AuthenticatedEntity::System)
                     .await?;
             }
         }
@@ -2521,21 +2550,21 @@ impl HostService {
     /// Called after resolve_lldp_links — only processes ports without LLDP/CDP data
     /// that have exactly one learned MAC address (direct physical connection).
     pub async fn resolve_fdb_links(&self, network_id: Uuid) -> Result<u32> {
-        use crate::server::if_entries::r#impl::base::Neighbor;
+        use crate::server::interfaces::r#impl::base::Neighbor;
 
         let resolver = LldpResolverImpl::new(
-            self.if_entry_service.clone(),
             self.interface_service.clone(),
+            self.ip_address_service.clone(),
             self.storage.clone(),
         );
 
-        let filter = StorableFilter::<IfEntry>::new_for_unresolved_fdb_in_network(network_id);
-        let unresolved = self.if_entry_service.get_all(filter).await?;
+        let filter = StorableFilter::<Interface>::new_for_unresolved_fdb_in_network(network_id);
+        let unresolved = self.interface_service.get_all(filter).await?;
 
         let mut resolved_count: u32 = 0;
 
-        for mut if_entry in unresolved {
-            let mac = match &if_entry.base.fdb_macs {
+        for mut interface in unresolved {
+            let mac = match &interface.base.fdb_macs {
                 Some(macs) if macs.len() == 1 => &macs[0],
                 _ => continue,
             };
@@ -2548,15 +2577,15 @@ impl HostService {
 
             // Try full resolution (specific port)
             let neighbor =
-                if let Some(if_entry_id) = resolver.find_if_entry_by_mac(mac, host_id).await {
-                    Neighbor::IfEntry(if_entry_id)
+                if let Some(interface_id) = resolver.find_if_entry_by_mac(mac, host_id).await {
+                    Neighbor::Interface(interface_id)
                 } else {
                     Neighbor::Host(host_id)
                 };
 
-            if_entry.base.neighbor = Some(neighbor);
-            self.if_entry_service
-                .update(&mut if_entry, AuthenticatedEntity::System)
+            interface.base.neighbor = Some(neighbor);
+            self.interface_service
+                .update(&mut interface, AuthenticatedEntity::System)
                 .await?;
             resolved_count += 1;
         }
@@ -2631,18 +2660,18 @@ impl HostService {
 /// Statistics from LLDP link resolution.
 #[derive(Default, Debug)]
 pub struct LldpResolutionStats {
-    /// Total number of if_entries with unresolved LLDP data
+    /// Total number of interfaces with unresolved LLDP data
     pub total: usize,
-    /// Number of if_entries where remote host was resolved
+    /// Number of interfaces where remote host was resolved
     pub hosts_resolved: usize,
-    /// Number of if_entries where remote port (if_entry) was resolved
+    /// Number of interfaces where remote port (interface) was resolved
     pub ports_resolved: usize,
 }
 
-/// Check whether a claimer's `(port_id, interface_id)` overlaps with an
-/// Open Ports binding's `(port_id, interface_id)`.
+/// Check whether a claimer's `(port_id, ip_address_id)` overlaps with an
+/// Open Ports binding's `(port_id, ip_address_id)`.
 /// Uses the same semantics as `partition_conflicting_bindings`:
-/// None (all interfaces) overlaps with anything, Some(a) overlaps Some(a).
+/// None (all ip_addresses) overlaps with anything, Some(a) overlaps Some(a).
 fn bindings_overlap(claim_iface: &Option<Uuid>, op_iface: &Option<Uuid>) -> bool {
     match (claim_iface, op_iface) {
         (None, _) | (_, None) => true,
@@ -2668,19 +2697,19 @@ fn is_virtual_router_mac(mac: &MacAddress) -> bool {
     || (bytes[0..4] == [0x00, 0x00, 0x0c, 0x9f] && (bytes[4] & 0xf0) == 0xf0)
 }
 
-/// Compare two interfaces for host dedup matching.
+/// Compare two ip_addresses for host dedup matching.
 ///
 /// Three match branches, checked in order:
 /// 1. **IP+subnet** (primary): same IP on the same subnet = same logical interface
 /// 2. **ID** (secondary): same non-nil database UUID = known same record
 /// 3. **MAC** (tertiary, conditional): same MAC address, but only when the MAC is unique
-///    among incoming interfaces (count == 1). Shared MACs (count > 1) indicate VLAN
-///    sub-interfaces, bridge members, or bond members — distinct interfaces that must
+///    among incoming ip_addresses (count == 1). Shared MACs (count > 1) indicate VLAN
+///    sub-interfaces, bridge members, or bond members — distinct ip_addresses that must
 ///    not be collapsed. Unique MACs indicate a standalone interface (e.g., a Docker
 ///    container whose IP changed via DHCP) where MAC is a valid identity anchor.
-fn interfaces_match(
-    incoming: &Interface,
-    existing: &Interface,
+fn ip_addresses_match(
+    incoming: &IPAddress,
+    existing: &IPAddress,
     incoming_mac_counts: &HashMap<MacAddress, usize>,
 ) -> bool {
     // Primary: same IP on same subnet
@@ -2703,12 +2732,12 @@ fn interfaces_match(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::server::interfaces::r#impl::base::InterfaceBase;
+    use crate::server::ip_addresses::r#impl::base::IPAddressBase;
 
-    fn make_interface(ip: IpAddr, subnet_id: Uuid, mac: Option<MacAddress>) -> Interface {
-        Interface {
+    fn make_interface(ip: IpAddr, subnet_id: Uuid, mac: Option<MacAddress>) -> IPAddress {
+        IPAddress {
             id: Uuid::new_v4(),
-            base: InterfaceBase {
+            base: IPAddressBase {
                 ip_address: ip,
                 subnet_id,
                 mac_address: mac,
@@ -2756,7 +2785,7 @@ mod tests {
         );
     }
 
-    // --- interfaces_match tests ---
+    // --- ip_addresses_match tests ---
 
     #[test]
     fn match_by_ip_subnet() {
@@ -2765,7 +2794,7 @@ mod tests {
         let a = make_interface(ip, subnet, None);
         let b = make_interface(ip, subnet, None);
         let counts = HashMap::new();
-        assert!(interfaces_match(&a, &b, &counts));
+        assert!(ip_addresses_match(&a, &b, &counts));
     }
 
     #[test]
@@ -2773,7 +2802,7 @@ mod tests {
         let a = make_interface("10.0.0.1".parse().unwrap(), Uuid::new_v4(), None);
         let b = make_interface("20.0.0.1".parse().unwrap(), Uuid::new_v4(), None);
         let counts = HashMap::new();
-        assert!(!interfaces_match(&a, &b, &counts));
+        assert!(!ip_addresses_match(&a, &b, &counts));
     }
 
     #[test]
@@ -2781,10 +2810,10 @@ mod tests {
         let mac = MacAddress::new([0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x01]);
         let a = make_interface("10.0.0.1".parse().unwrap(), Uuid::new_v4(), Some(mac));
         let b = make_interface("20.0.0.1".parse().unwrap(), Uuid::new_v4(), Some(mac));
-        // MAC appears only once in the incoming batch — standalone interface, safe to match
+        // MAC appears only once in the incoming batch — standalone ip_address, safe to match
         let counts = HashMap::from([(mac, 1)]);
         assert!(
-            interfaces_match(&a, &b, &counts),
+            ip_addresses_match(&a, &b, &counts),
             "Unique MAC in batch should allow MAC matching (Docker/DHCP case)"
         );
     }
@@ -2797,7 +2826,7 @@ mod tests {
         // MAC appears 3 times in the incoming batch — VLAN sub-interfaces, must not match
         let counts = HashMap::from([(mac, 3)]);
         assert!(
-            !interfaces_match(&a, &b, &counts),
+            !ip_addresses_match(&a, &b, &counts),
             "Shared MAC in batch (VLANs) must not match"
         );
     }

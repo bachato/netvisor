@@ -34,9 +34,9 @@ mod generated {
 
 /// Validates that a binding doesn't conflict with existing bindings.
 /// Rules:
-/// - Interface binding conflicts with port bindings on same interface OR port bindings on all interfaces
-/// - Port binding (specific interface) conflicts with interface binding on same interface
-/// - Port binding (all interfaces) conflicts with ANY interface binding for this service
+/// - Interface binding conflicts with port bindings on same interface OR port bindings on all ip_addresses
+/// - Port binding (specific ip_address) conflicts with interface binding on same interface
+/// - Port binding (all ip_addresses) conflicts with ANY interface binding for this service
 async fn validate_no_binding_type_conflict(
     state: &AppState,
     binding: &Binding,
@@ -49,29 +49,29 @@ async fn validate_no_binding_type_conflict(
     let existing = state.services.binding_service.get_all(filter).await?;
 
     match binding.base.binding_type {
-        BindingType::Interface { interface_id } => {
+        BindingType::IPAddress { ip_address_id } => {
             // Check for conflicting port bindings: same interface OR all-interfaces
             for existing_binding in existing {
                 if exclude_id == Some(existing_binding.id) {
                     continue;
                 }
 
-                // Conflict if port binding is on same interface OR on all interfaces
+                // Conflict if port binding is on same interface OR on all ip_addresses
                 if let BindingType::Port {
-                    interface_id: existing_iface,
+                    ip_address_id: existing_iface,
                     ..
                 } = existing_binding.base.binding_type
-                    && (existing_iface == Some(interface_id) || existing_iface.is_none())
+                    && (existing_iface == Some(ip_address_id) || existing_iface.is_none())
                 {
                     return Err(ApiError::conflict(
-                        "Cannot add interface binding: service already has a port binding on this interface \
-                             (or on all interfaces).",
+                        "Cannot add ip_address binding: service already has a port binding on this ip_address \
+                             (or on all ip_addresses).",
                     ));
                 }
             }
         }
         BindingType::Port {
-            interface_id: Some(interface_id),
+            ip_address_id: Some(ip_address_id),
             ..
         } => {
             // Check for conflicting interface binding on same interface
@@ -80,21 +80,22 @@ async fn validate_no_binding_type_conflict(
                     continue;
                 }
 
-                if let BindingType::Interface {
-                    interface_id: existing_iface,
+                if let BindingType::IPAddress {
+                    ip_address_id: existing_iface,
                 } = existing_binding.base.binding_type
-                    && existing_iface == interface_id
+                    && existing_iface == ip_address_id
                 {
                     return Err(ApiError::conflict(
-                        "Cannot add port binding: service already has an interface binding on this interface.",
+                        "Cannot add port binding: service already has an ip_address binding on this ip_address.",
                     ));
                 }
             }
         }
         BindingType::Port {
-            interface_id: None, ..
+            ip_address_id: None,
+            ..
         } => {
-            // Port binding on all interfaces: conflicts with ANY interface binding
+            // Port binding on all ip_addresses: conflicts with ANY interface binding
             for existing_binding in existing {
                 if exclude_id == Some(existing_binding.id) {
                     continue;
@@ -102,10 +103,10 @@ async fn validate_no_binding_type_conflict(
 
                 if matches!(
                     existing_binding.base.binding_type,
-                    BindingType::Interface { .. }
+                    BindingType::IPAddress { .. }
                 ) {
                     return Err(ApiError::conflict(
-                        "Cannot add port binding on all interfaces: service already has interface bindings.",
+                        "Cannot add port binding on all ip_addresses: service already has ip_address bindings.",
                     ));
                 }
             }
@@ -123,15 +124,15 @@ async fn validate_no_binding_type_conflict(
 ///
 /// - **Interface binding**: Service is present at an interface (IP address) without a specific port.
 ///   Used for non-port-bound services like gateways.
-/// - **Port binding (specific interface)**: Service listens on a specific port on a specific interface.
-/// - **Port binding (all interfaces)**: Service listens on a specific port on all interfaces
-///   (`interface_id: null`).
+/// - **Port binding (specific ip_address)**: Service listens on a specific port on a specific interface.
+/// - **Port binding (all ip_addresses)**: Service listens on a specific port on all ip_addresses
+///   (`ip_address_id: null`).
 ///
 /// ### Validation and Deduplication Rules
 ///
 /// - **Conflict detection**: Interface bindings conflict with port bindings on the same interface.
-///   A port binding on all interfaces conflicts with any interface binding for the same service.
-/// - **All-interfaces precedence**: When creating a port binding with `interface_id: null`,
+///   A port binding on all ip_addresses conflicts with any interface binding for the same service.
+/// - **All-interfaces precedence**: When creating a port binding with `ip_address_id: null`,
 ///   any existing specific-interface bindings for the same port are automatically removed,
 ///   as they are superseded by the all-interfaces binding.
 #[utoipa::path(
@@ -141,7 +142,7 @@ async fn validate_no_binding_type_conflict(
     request_body = Binding,
     responses(
         (status = 200, description = "Binding created (superseded bindings may be removed)", body = ApiResponse<Binding>),
-        (status = 400, description = "Referenced port or interface does not exist", body = ApiErrorResponse),
+        (status = 400, description = "Referenced port or ip_address does not exist", body = ApiErrorResponse),
         (status = 409, description = "Conflict with existing binding type", body = ApiErrorResponse),
     ),
      security(("user_api_key" = []), ("session" = []))
@@ -157,7 +158,7 @@ async fn create_binding(
     // (the all-interfaces binding supersedes them)
     if let BindingType::Port {
         port_id,
-        interface_id: None,
+        ip_address_id: None,
     } = &binding.base.binding_type
     {
         let service_id = binding.service_id();
@@ -168,7 +169,7 @@ async fn create_binding(
         for existing_binding in existing {
             if let BindingType::Port {
                 port_id: existing_port_id,
-                interface_id: Some(_),
+                ip_address_id: Some(_),
             } = &existing_binding.base.binding_type
                 && existing_port_id == port_id
             {
@@ -176,7 +177,7 @@ async fn create_binding(
                 tracing::info!(
                     binding_id = %existing_binding.id,
                     port_id = %existing_port_id,
-                    "Removing specific-interface binding superseded by all-interfaces binding"
+                    "Removing specific-ip_address binding superseded by all-ip_addresses binding"
                 );
                 state
                     .services
@@ -206,7 +207,7 @@ async fn create_binding(
     request_body = Binding,
     responses(
         (status = 200, description = "Binding updated", body = ApiResponse<Binding>),
-        (status = 400, description = "Referenced port or interface does not exist", body = ApiErrorResponse),
+        (status = 400, description = "Referenced port or ip_address does not exist", body = ApiErrorResponse),
         (status = 409, description = "Conflict with existing binding type", body = ApiErrorResponse),
     ),
      security(("user_api_key" = []), ("session" = []))

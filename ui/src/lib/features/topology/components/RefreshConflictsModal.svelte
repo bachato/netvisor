@@ -11,7 +11,7 @@
 		common_entity,
 		common_dependenciesLabel,
 		common_hosts,
-		common_interfaces,
+		common_ipAddresses,
 		common_lock,
 		common_ports,
 		common_rebuild,
@@ -115,7 +115,7 @@
 				names.push(`(+${unresolvedInterfaceCount} hidden by filters)`);
 			items.push({
 				id: 'interfaces-header',
-				name: `${common_interfaces()}: ${names.join(', ')}`
+				name: `${common_ipAddresses()}: ${names.join(', ')}`
 			});
 		}
 

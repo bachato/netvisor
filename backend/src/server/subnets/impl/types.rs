@@ -89,7 +89,7 @@ impl SubnetType {
     }
 
     pub fn from_interface_name(interface_name: &str) -> Self {
-        // Loopback interfaces (lo on Linux, lo0 on macOS)
+        // Loopback ip_addresses (lo on Linux, lo0 on macOS)
         if Self::match_interface_names(&["lo"], interface_name) {
             return SubnetType::Loopback;
         }
@@ -105,7 +105,7 @@ impl SubnetType {
             return SubnetType::VpnTunnel;
         }
 
-        // WiFi interfaces
+        // WiFi ip_addresses
         if Self::match_interface_names(&["wlan", "wifi", "wl"], interface_name) {
             return SubnetType::WiFi;
         }
@@ -125,7 +125,7 @@ impl SubnetType {
             return SubnetType::Dmz;
         }
 
-        // Management interfaces
+        // Management ip_addresses
         if Self::match_interface_names(&["mgmt", "ipmi", "bmc"], interface_name) {
             return SubnetType::Management;
         }
@@ -135,17 +135,17 @@ impl SubnetType {
             return SubnetType::Storage;
         }
 
-        // MacVLAN interfaces
+        // MacVLAN ip_addresses
         if Self::match_interface_names(&["macvlan", "mvlan"], interface_name) {
             return SubnetType::MacVlan;
         }
 
-        // ipvlan interfaces
+        // ipvlan ip_addresses
         if Self::match_interface_names(&["ipvlan"], interface_name) {
             return SubnetType::IpVlan;
         }
 
-        // Standard LAN interfaces (catch-all for ethernet and Linux bridges)
+        // Standard LAN ip_addresses (catch-all for ethernet and Linux bridges)
         // Note: "br" (e.g., br0) is a Linux bridge, commonly used on Unraid/Proxmox for LAN
         // This is distinct from "br-" which is Docker's bridge naming convention
         if Self::match_interface_names(&["eth", "en", "eno", "enp", "ens", "br"], interface_name) {

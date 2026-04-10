@@ -29,8 +29,8 @@ use crate::server::{
         base::{Host, HostBase},
         virtualization::{HostVirtualization, ProxmoxVirtualization},
     },
-    if_entries::r#impl::base::{IfAdminStatus, IfEntry, IfEntryBase, IfOperStatus},
-    interfaces::r#impl::base::{Interface, InterfaceBase},
+    interfaces::r#impl::base::{IfAdminStatus, IfOperStatus, Interface, InterfaceBase},
+    ip_addresses::r#impl::base::{IPAddress, IPAddressBase},
     networks::r#impl::{Network, NetworkBase},
     ports::r#impl::base::{Port, PortType},
     services::{
@@ -71,22 +71,22 @@ use uuid::Uuid;
 // Demo Data Container
 // ============================================================================
 
-/// A host bundled with its interfaces, ports, and services for creation via discover_host
+/// A host bundled with its ip_addresses, ports, and services for creation via discover_host
 pub struct HostWithServices {
     pub host: Host,
-    pub interfaces: Vec<Interface>,
+    pub ip_addresses: Vec<IPAddress>,
     pub ports: Vec<Port>,
     pub services: Vec<Service>,
 }
 
-/// Deferred neighbor update to apply after all if_entries exist.
+/// Deferred neighbor update to apply after all interfaces exist.
 /// Uses host_name + if_index to identify entries (stable across creation)
 /// instead of pre-generated UUIDs (which may not be preserved by storage).
 pub struct NeighborUpdate {
-    /// Source if_entry identifier
+    /// Source interface identifier
     pub source_host_name: String,
     pub source_if_index: i32,
-    /// Target if_entry identifier (for IfEntry neighbors)
+    /// Target interface identifier (for Interface neighbors)
     pub target_host_name: String,
     pub target_if_index: i32,
 }
@@ -134,7 +134,7 @@ pub struct DemoData {
     pub subnets: Vec<Subnet>,
     pub hosts_with_services: Vec<HostWithServices>,
     pub vlans: Vec<Vlan>,
-    pub if_entries: Vec<IfEntry>,
+    pub interfaces: Vec<Interface>,
     pub neighbor_updates: Vec<NeighborUpdate>,
     pub daemons: Vec<Daemon>,
     pub api_keys: Vec<DaemonApiKey>,
@@ -187,16 +187,16 @@ impl DemoData {
             now,
         );
 
-        // Collect hosts for daemon generation and if_entry generation
+        // Collect hosts for daemon generation and interface generation
         let hosts: Vec<&Host> = hosts_with_services.iter().map(|h| &h.host).collect();
-        let interfaces: Vec<&Interface> = hosts_with_services
+        let ip_addresses: Vec<&IPAddress> = hosts_with_services
             .iter()
-            .flat_map(|h| h.interfaces.iter())
+            .flat_map(|h| h.ip_addresses.iter())
             .collect();
 
         let vlans = generate_vlans(&networks, organization_id, now);
-        let (if_entries, neighbor_updates) =
-            generate_if_entries(&networks, &hosts, &interfaces, &vlans, now);
+        let (interfaces, neighbor_updates) =
+            generate_if_entries(&networks, &hosts, &ip_addresses, &vlans, now);
         let daemons = generate_daemons(&networks, &hosts, &subnets, now, user_id);
         let api_keys = generate_api_keys(&networks, now);
         let topologies = generate_topologies(&networks, &tags, now);
@@ -215,7 +215,7 @@ impl DemoData {
             subnets,
             vlans,
             hosts_with_services,
-            if_entries,
+            interfaces,
             neighbor_updates,
             daemons,
             api_keys,
@@ -710,7 +710,7 @@ fn generate_subnets(networks: &[Network], tags: &[Tag], now: DateTime<Utc>) -> V
 // ============================================================================
 
 /// Helper to create a host with a single interface.
-/// Returns (Host, Interface) - host has interface_ids: vec![] initially,
+/// Returns (Host,IPAddress) - host has ip_address_ids: vec![] initially,
 /// the server will populate it after creating the interface.
 #[allow(clippy::too_many_arguments)]
 fn create_host(
@@ -724,13 +724,13 @@ fn create_host(
     _snmp_credential_id: Option<Uuid>,
     virtualization: Option<HostVirtualization>,
     now: DateTime<Utc>,
-) -> (Host, Interface) {
+) -> (Host, IPAddress) {
     let host_id = Uuid::new_v4();
-    let interface = Interface {
+    let ip_address = IPAddress {
         id: Uuid::new_v4(),
         created_at: now,
         updated_at: now,
-        base: InterfaceBase {
+        base: IPAddressBase {
             network_id: network.id,
             host_id,
             subnet_id: subnet.id,
@@ -766,24 +766,24 @@ fn create_host(
             credential_assignments: vec![],
         },
     };
-    (host, interface)
+    (host, ip_address)
 }
 
 /// Wraps a `create_host()` result to add SNMP system information fields.
 fn with_snmp(
-    (mut host, interface): (Host, Interface),
+    (mut host, ip_address): (Host, IPAddress),
     sys_descr: Option<&str>,
     sys_object_id: Option<&str>,
     sys_location: Option<&str>,
     sys_contact: Option<&str>,
     chassis_id: Option<&str>,
-) -> (Host, Interface) {
+) -> (Host, IPAddress) {
     host.base.sys_descr = sys_descr.map(String::from);
     host.base.sys_object_id = sys_object_id.map(String::from);
     host.base.sys_location = sys_location.map(String::from);
     host.base.sys_contact = sys_contact.map(String::from);
     host.base.chassis_id = chassis_id.map(String::from);
-    (host, interface)
+    (host, ip_address)
 }
 
 /// Helper to create a service for a host.
@@ -792,7 +792,7 @@ fn create_service(
     service_def_id: &str,
     name: &str,
     host: &Host,
-    interface: &Interface,
+    ip_address: &IPAddress,
     port_type: Option<PortType>,
     tags: Vec<Uuid>,
     now: DateTime<Utc>,
@@ -801,10 +801,10 @@ fn create_service(
 
     let (bindings, port) = if let Some(pt) = port_type {
         let port = Port::new_hostless(pt);
-        let binding = Binding::new_port_serviceless(port.id, Some(interface.id));
+        let binding = Binding::new_port_serviceless(port.id, Some(ip_address.id));
         (vec![binding], Some(port))
     } else {
-        let binding = Binding::new_interface_serviceless(interface.id);
+        let binding = Binding::new_ip_address_serviceless(ip_address.id);
         (vec![binding], None)
     };
 
@@ -838,7 +838,7 @@ fn create_service_with_id(
     service_def_id: &str,
     name: &str,
     host: &Host,
-    interface: &Interface,
+    ip_address: &IPAddress,
     port_type: Option<PortType>,
     tags: Vec<Uuid>,
     now: DateTime<Utc>,
@@ -847,10 +847,10 @@ fn create_service_with_id(
 
     let (bindings, port) = if let Some(pt) = port_type {
         let port = Port::new_hostless(pt);
-        let binding = Binding::new_port_serviceless(port.id, Some(interface.id));
+        let binding = Binding::new_port_serviceless(port.id, Some(ip_address.id));
         (vec![binding], Some(port))
     } else {
-        let binding = Binding::new_interface_serviceless(interface.id);
+        let binding = Binding::new_ip_address_serviceless(ip_address.id);
         (vec![binding], None)
     };
 
@@ -882,7 +882,7 @@ fn create_container_service(
     service_def_id: &str,
     name: &str,
     host: &Host,
-    interface: &Interface,
+    ip_address: &IPAddress,
     port_type: Option<PortType>,
     container_name: &str,
     container_id: &str,
@@ -894,10 +894,10 @@ fn create_container_service(
 
     let (bindings, port) = if let Some(pt) = port_type {
         let port = Port::new_hostless(pt);
-        let binding = Binding::new_port_serviceless(port.id, Some(interface.id));
+        let binding = Binding::new_port_serviceless(port.id, Some(ip_address.id));
         (vec![binding], Some(port))
     } else {
-        let binding = Binding::new_interface_serviceless(interface.id);
+        let binding = Binding::new_ip_address_serviceless(ip_address.id);
         (vec![binding], None)
     };
 
@@ -929,15 +929,15 @@ fn create_container_service(
 
 /// Helper macro to create a host with its services bundled together.
 /// Ports are collected separately and bundled with the host.
-/// Takes a tuple of (Host, Interface) from create_host().
+/// Takes a tuple of (Host,IPAddress) from create_host().
 macro_rules! host_with_services {
     ($host_tuple:expr, $now:expr, $( ($svc_def:expr, $svc_name:expr, $port:expr, $tags:expr) ),* $(,)?) => {{
-        let (host, interface) = $host_tuple;
-        let interfaces = vec![interface];
+        let (host, ip_address) = $host_tuple;
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         $(
-            if let Some((svc, port)) = create_service($svc_def, $svc_name, &host, &interfaces[0], $port, $tags, $now) {
+            if let Some((svc, port)) = create_service($svc_def, $svc_name, &host, &ip_addresses[0], $port, $tags, $now) {
                 // Collect port separately if present
                 if let Some(p) = port {
                     ports.push(p);
@@ -945,7 +945,7 @@ macro_rules! host_with_services {
                 services.push(svc);
             }
         )*
-        HostWithServices { host, interfaces, ports, services }
+        HostWithServices { host, ip_addresses, ports, services }
     }};
 }
 
@@ -1031,7 +1031,7 @@ fn generate_hosts_and_services(
 
     // 1. pfSense Firewall (Critical) — with host-level SNMP credential override
     let mut pfsense = {
-        let (host, interface) = with_snmp(
+        let (host, ip_address) = with_snmp(
             create_host(
                 "pfsense-fw01",
                 Some("pfsense-fw01.acme.local"),
@@ -1050,14 +1050,14 @@ fn generate_hosts_and_services(
             Some("netops@acme-corp.com"),
             None,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
             "pfSense",
             "pfSense",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Https),
             critical_tag.into_iter().collect(),
             now,
@@ -1070,7 +1070,7 @@ fn generate_hosts_and_services(
         }
         HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         }
@@ -1079,7 +1079,7 @@ fn generate_hosts_and_services(
         .into_iter()
         .map(|id| CredentialAssignment {
             credential_id: id,
-            interface_ids: None,
+            ip_address_ids: None,
         })
         .collect();
     result.push(pfsense);
@@ -1152,7 +1152,7 @@ fn generate_hosts_and_services(
 
     // 5. Grafana (pre-generated ID for dependency wiring)
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "grafana-mon",
             Some("grafana.acme.local"),
             Some("Grafana monitoring dashboard"),
@@ -1164,7 +1164,7 @@ fn generate_hosts_and_services(
             None,
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((svc, port)) = create_service_with_id(
@@ -1172,7 +1172,7 @@ fn generate_hosts_and_services(
             "Grafana",
             "Grafana",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Http3000),
             monitoring_tag.into_iter().collect(),
             now,
@@ -1184,7 +1184,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -1192,7 +1192,7 @@ fn generate_hosts_and_services(
 
     // 6. Prometheus (pre-generated ID for dependency wiring)
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "prometheus",
             Some("prometheus.acme.local"),
             Some("Prometheus metrics server"),
@@ -1204,7 +1204,7 @@ fn generate_hosts_and_services(
             None,
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((svc, port)) = create_service_with_id(
@@ -1212,7 +1212,7 @@ fn generate_hosts_and_services(
             "Prometheus",
             "Prometheus",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Http9000),
             monitoring_tag.into_iter().collect(),
             now,
@@ -1224,7 +1224,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -1232,7 +1232,7 @@ fn generate_hosts_and_services(
 
     // 7. Uptime Kuma (pre-generated ID for dependency wiring)
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "uptime-kuma",
             Some("status.acme.local"),
             Some("Uptime Kuma status page"),
@@ -1244,7 +1244,7 @@ fn generate_hosts_and_services(
             None,
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((svc, port)) = create_service_with_id(
@@ -1252,7 +1252,7 @@ fn generate_hosts_and_services(
             "UptimeKuma",
             "Uptime Kuma",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Http3000),
             monitoring_tag.into_iter().collect(),
             now,
@@ -1264,7 +1264,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -1274,7 +1274,7 @@ fn generate_hosts_and_services(
 
     // 8. Proxmox Hypervisor 1 (pre-generated Proxmox VE service ID)
     {
-        let (host, interface) = with_snmp(
+        let (host, ip_address) = with_snmp(
             create_host(
                 "proxmox-hv01",
                 Some("proxmox-hv01.acme.local"),
@@ -1293,7 +1293,7 @@ fn generate_hosts_and_services(
             Some("sysadmin@acme-corp.com"),
             None,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service_with_id(
@@ -1301,7 +1301,7 @@ fn generate_hosts_and_services(
             "Proxmox VE",
             "Proxmox VE",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Https8443),
             production_tag.into_iter().collect(),
             now,
@@ -1316,7 +1316,7 @@ fn generate_hosts_and_services(
             "SSH",
             "SSH",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Ssh),
             vec![],
             now,
@@ -1328,7 +1328,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -1336,7 +1336,7 @@ fn generate_hosts_and_services(
 
     // 9. Proxmox Hypervisor 2 (pre-generated Proxmox VE service ID)
     {
-        let (host, interface) = with_snmp(
+        let (host, ip_address) = with_snmp(
             create_host(
                 "proxmox-hv02",
                 Some("proxmox-hv02.acme.local"),
@@ -1355,7 +1355,7 @@ fn generate_hosts_and_services(
             Some("sysadmin@acme-corp.com"),
             None,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((svc, port)) = create_service_with_id(
@@ -1363,7 +1363,7 @@ fn generate_hosts_and_services(
             "Proxmox VE",
             "Proxmox VE",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Https8443),
             production_tag.into_iter().collect(),
             now,
@@ -1377,7 +1377,7 @@ fn generate_hosts_and_services(
             "SSH",
             "SSH",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Ssh),
             vec![],
             now,
@@ -1389,7 +1389,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -1479,14 +1479,14 @@ fn generate_hosts_and_services(
         ),
     ));
 
-    // 13. docker-prod01 — Docker host (2 interfaces: eth0 on Servers, docker0 on DockerBridge)
+    // 13. docker-prod01 — Docker host (2 ip_addresses: eth0 on Servers, docker0 on DockerBridge)
     {
         let host_id = Uuid::new_v4();
-        let eth0 = Interface {
+        let eth0 = IPAddress {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: InterfaceBase {
+            base: IPAddressBase {
                 network_id: hq.id,
                 host_id,
                 subnet_id: hq_servers.id,
@@ -1496,11 +1496,11 @@ fn generate_hosts_and_services(
                 position: 0,
             },
         };
-        let docker0 = Interface {
+        let docker0 = IPAddress {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: InterfaceBase {
+            base: IPAddressBase {
                 network_id: hq.id,
                 host_id,
                 subnet_id: hq_docker.id,
@@ -1537,7 +1537,7 @@ fn generate_hosts_and_services(
                     .into_iter()
                     .map(|id| CredentialAssignment {
                         credential_id: id,
-                        interface_ids: None,
+                        ip_address_ids: None,
                     })
                     .collect(),
             },
@@ -1654,7 +1654,7 @@ fn generate_hosts_and_services(
 
         result.push(HostWithServices {
             host,
-            interfaces: vec![eth0, docker0],
+            ip_addresses: vec![eth0, docker0],
             ports,
             services,
         });
@@ -1743,7 +1743,7 @@ fn generate_hosts_and_services(
 
     // 17. TrueNAS Primary (pre-generated binding ID for Backup Flow dependency)
     {
-        let (host, interface) = with_snmp(
+        let (host, ip_address) = with_snmp(
             create_host(
                 "truenas-primary",
                 Some("truenas.acme.local"),
@@ -1762,14 +1762,14 @@ fn generate_hosts_and_services(
             Some("sysadmin@acme-corp.com"),
             None,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
             "TrueNAS",
             "TrueNAS",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Https),
             backup_tag.into_iter().collect(),
             now,
@@ -1784,7 +1784,7 @@ fn generate_hosts_and_services(
             "NFS",
             "NFS",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Nfs),
             vec![],
             now,
@@ -1796,7 +1796,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -2181,7 +2181,7 @@ fn generate_hosts_and_services(
 
     // 4. HAProxy Load Balancer (pre-generated ID for dependency wiring)
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "haproxy-lb01",
             Some("lb01.dc.acme.io"),
             Some("HAProxy load balancer"),
@@ -2197,14 +2197,14 @@ fn generate_hosts_and_services(
             None,
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
             "HAProxy",
             "HAProxy",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Https),
             web_tier_tag.into_iter().collect(),
             now,
@@ -2217,7 +2217,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -2225,7 +2225,7 @@ fn generate_hosts_and_services(
 
     // 5. App Server 01 (pre-generated Web App ID for dependency wiring)
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "app-server-01",
             Some("app-01.dc.acme.io"),
             Some("Application server 1"),
@@ -2237,14 +2237,14 @@ fn generate_hosts_and_services(
             None,
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
             "Web Service",
             "Web Application",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Http8080),
             web_tier_tag.into_iter().collect(),
             now,
@@ -2259,7 +2259,7 @@ fn generate_hosts_and_services(
             "SSH",
             "SSH",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Ssh),
             vec![],
             now,
@@ -2271,7 +2271,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -2305,7 +2305,7 @@ fn generate_hosts_and_services(
 
     // 7. DC Proxmox Hypervisor (pre-generated Proxmox VE service ID)
     {
-        let (host, interface) = with_snmp(
+        let (host, ip_address) = with_snmp(
             create_host(
                 "dc-proxmox-hv01",
                 Some("proxmox-hv01.dc.acme.io"),
@@ -2324,7 +2324,7 @@ fn generate_hosts_and_services(
             Some("sysadmin@acme-corp.com"),
             None,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((svc, port)) = create_service_with_id(
@@ -2332,7 +2332,7 @@ fn generate_hosts_and_services(
             "Proxmox VE",
             "Proxmox VE",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Https8443),
             production_tag.into_iter().collect(),
             now,
@@ -2346,7 +2346,7 @@ fn generate_hosts_and_services(
             "SSH",
             "SSH",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Ssh),
             vec![],
             now,
@@ -2358,7 +2358,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -2421,7 +2421,7 @@ fn generate_hosts_and_services(
     // 10. mariadb-vm — VM on dc-proxmox-hv01 (vm_id=302, on Storage subnet)
     // Pre-generated MariaDB service ID for dependency wiring
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "mariadb-vm",
             Some("mariadb.dc.acme.io"),
             Some("MariaDB database (VM on dc-proxmox-hv01)"),
@@ -2437,14 +2437,14 @@ fn generate_hosts_and_services(
             })),
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
             "MariaDB",
             "MariaDB",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::MySql),
             database_tag.into_iter().collect(),
             now,
@@ -2457,20 +2457,20 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
     }
 
-    // 11. dc-docker01 — Docker host (2 interfaces: eth0 on Compute, docker0 on DC Docker Bridge)
+    // 11. dc-docker01 — Docker host (2 ip_addresses: eth0 on Compute, docker0 on DC Docker Bridge)
     {
         let host_id = Uuid::new_v4();
-        let eth0 = Interface {
+        let eth0 = IPAddress {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: InterfaceBase {
+            base: IPAddressBase {
                 network_id: dc.id,
                 host_id,
                 subnet_id: dc_compute.id,
@@ -2480,11 +2480,11 @@ fn generate_hosts_and_services(
                 position: 0,
             },
         };
-        let docker0 = Interface {
+        let docker0 = IPAddress {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: InterfaceBase {
+            base: IPAddressBase {
                 network_id: dc.id,
                 host_id,
                 subnet_id: dc_docker.id,
@@ -2521,7 +2521,7 @@ fn generate_hosts_and_services(
                     .into_iter()
                     .map(|id| CredentialAssignment {
                         credential_id: id,
-                        interface_ids: None,
+                        ip_address_ids: None,
                     })
                     .collect(),
             },
@@ -2621,7 +2621,7 @@ fn generate_hosts_and_services(
 
         result.push(HostWithServices {
             host,
-            interfaces: vec![eth0, docker0],
+            ip_addresses: vec![eth0, docker0],
             ports,
             services,
         });
@@ -2677,7 +2677,7 @@ fn generate_hosts_and_services(
 
     // 14. MinIO (pre-generated service ID for Storage Tier dependency)
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "minio-storage",
             Some("minio.dc.acme.io"),
             Some("MinIO object storage"),
@@ -2689,14 +2689,14 @@ fn generate_hosts_and_services(
             None,
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
             "MinIO",
             "MinIO",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Https),
             backup_tag.into_iter().collect(),
             now,
@@ -2709,7 +2709,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -2717,7 +2717,7 @@ fn generate_hosts_and_services(
 
     // 15. Ceph (pre-generated service ID for Storage Tier dependency)
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "ceph-node01",
             Some("ceph.dc.acme.io"),
             Some("Ceph storage node"),
@@ -2729,14 +2729,14 @@ fn generate_hosts_and_services(
             None,
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
             "Ceph",
             "Ceph",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             None,
             backup_tag.into_iter().collect(),
             now,
@@ -2749,7 +2749,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -2757,7 +2757,7 @@ fn generate_hosts_and_services(
 
     // 16. Elasticsearch (pre-generated service ID for Storage Tier dependency)
     {
-        let (host, interface) = create_host(
+        let (host, ip_address) = create_host(
             "elasticsearch-dc",
             Some("es.dc.acme.io"),
             Some("Elasticsearch cluster"),
@@ -2769,14 +2769,14 @@ fn generate_hosts_and_services(
             None,
             now,
         );
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let mut ports = Vec::new();
         let mut services = Vec::new();
         if let Some((mut svc, port)) = create_service(
             "Elasticsearch",
             "Elasticsearch",
             &host,
-            &interfaces[0],
+            &ip_addresses[0],
             Some(PortType::Elasticsearch),
             database_tag.into_iter().collect(),
             now,
@@ -2789,7 +2789,7 @@ fn generate_hosts_and_services(
         }
         result.push(HostWithServices {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
         });
@@ -2928,16 +2928,16 @@ fn generate_vlans(networks: &[Network], organization_id: Uuid, now: DateTime<Utc
 fn generate_if_entries(
     networks: &[Network],
     hosts: &[&Host],
-    interfaces: &[&Interface],
+    ip_addresses: &[&IPAddress],
     vlans: &[Vlan],
     now: DateTime<Utc>,
-) -> (Vec<IfEntry>, Vec<NeighborUpdate>) {
-    let mut if_entries = Vec::new();
+) -> (Vec<Interface>, Vec<NeighborUpdate>) {
+    let mut interfaces = Vec::new();
     let mut neighbor_updates = Vec::new();
 
     let find_host = |name: &str| hosts.iter().find(|h| h.base.name == name).copied();
-    let find_interface = |host_id: Uuid| {
-        interfaces
+    let find_ip_address = |host_id: Uuid| {
+        ip_addresses
             .iter()
             .find(|i| i.base.host_id == host_id)
             .copied()
@@ -2964,21 +2964,21 @@ fn generate_if_entries(
     let dc_switch_mac = "78:45:c4:ab:cd:02";
 
     // ========================================================================
-    // HQ: pfSense firewall — multiple interfaces
+    // HQ: pfSense firewall — multiple ip_addresses
     // ========================================================================
     if let Some(host) = find_host("pfsense-fw01") {
         let network = networks
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
         // WAN interface
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -2990,7 +2990,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: None,
                 lldp_port_id: None,
@@ -3009,11 +3009,11 @@ fn generate_if_entries(
         });
 
         // LAN interface — connected to HQ switch port 1
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 2,
@@ -3025,7 +3025,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/1".to_string())),
@@ -3050,11 +3050,11 @@ fn generate_if_entries(
         });
 
         // OPT1 interface (disabled)
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 3,
@@ -3066,7 +3066,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Down,
                 oper_status: IfOperStatus::Down,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: None,
                 lldp_port_id: None,
@@ -3086,20 +3086,20 @@ fn generate_if_entries(
     }
 
     // ========================================================================
-    // HQ: TrueNAS — bonded interfaces, connected to switch port 2
+    // HQ: TrueNAS — bonded ip_addresses, connected to switch port 2
     // ========================================================================
     if let Some(host) = find_host("truenas-primary") {
         let network = networks
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3111,7 +3111,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/2".to_string())),
@@ -3144,13 +3144,13 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3162,7 +3162,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/3".to_string())),
@@ -3187,11 +3187,11 @@ fn generate_if_entries(
         });
 
         // Loopback
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 2,
@@ -3203,7 +3203,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: None,
                 lldp_port_id: None,
@@ -3230,13 +3230,13 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3248,7 +3248,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/4".to_string())),
@@ -3281,13 +3281,13 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3299,7 +3299,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/5".to_string())),
@@ -3332,7 +3332,7 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
         let pfsense_host = find_host("pfsense-fw01");
         let truenas_host = find_host("truenas-primary");
@@ -3342,11 +3342,11 @@ fn generate_if_entries(
         let ap_host = find_host("unifi-ap-lobby");
 
         // Port 1 ↔ pfsense-fw01
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3358,7 +3358,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("00:0d:b9:4a:f2:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("igb1".to_string())),
@@ -3384,11 +3384,11 @@ fn generate_if_entries(
         });
 
         // Port 2 ↔ truenas-primary
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 2,
@@ -3400,7 +3400,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("3c:ec:ef:12:34:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("lagg0".to_string())),
@@ -3426,11 +3426,11 @@ fn generate_if_entries(
         });
 
         // Port 3 ↔ proxmox-hv01
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 3,
@@ -3442,7 +3442,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("d4:be:d9:56:78:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("eno1".to_string())),
@@ -3468,11 +3468,11 @@ fn generate_if_entries(
         });
 
         // Port 4 ↔ proxmox-hv02
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 4,
@@ -3484,7 +3484,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("d4:be:d9:56:78:02".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("eno1".to_string())),
@@ -3510,11 +3510,11 @@ fn generate_if_entries(
         });
 
         // Port 5 ↔ docker-prod01
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 5,
@@ -3526,7 +3526,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("aa:bb:cc:dd:ee:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("eth0".to_string())),
@@ -3552,11 +3552,11 @@ fn generate_if_entries(
         });
 
         // Port 6 ↔ unifi-ap-lobby (deferred via NeighborUpdate)
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 6,
@@ -3568,7 +3568,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("fc:ec:da:aa:bb:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("eth0".to_string())),
@@ -3595,11 +3595,11 @@ fn generate_if_entries(
 
         // Ports 7-48 — empty/down
         for port_num in 7..=48 {
-            if_entries.push(IfEntry {
+            interfaces.push(Interface {
                 id: Uuid::new_v4(),
                 created_at: now,
                 updated_at: now,
-                base: IfEntryBase {
+                base: InterfaceBase {
                     host_id: host.id,
                     network_id: network.id,
                     if_index: port_num,
@@ -3611,7 +3611,7 @@ fn generate_if_entries(
                     admin_status: IfAdminStatus::Up,
                     oper_status: IfOperStatus::Down,
                     mac_address: None,
-                    interface_id: None,
+                    ip_address_id: None,
                     neighbor: None,
                     lldp_chassis_id: None,
                     lldp_port_id: None,
@@ -3632,20 +3632,20 @@ fn generate_if_entries(
     }
 
     // ========================================================================
-    // HQ: unifi-ap-lobby — single IfEntry for LLDP neighbor with switch port 6
+    // HQ: unifi-ap-lobby — single Interface for LLDP neighbor with switch port 6
     // ========================================================================
     if let Some(host) = find_host("unifi-ap-lobby") {
         let network = networks
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3657,7 +3657,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(hq_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/6".to_string())),
@@ -3690,13 +3690,13 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3708,7 +3708,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(dc_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/1".to_string())),
@@ -3741,13 +3741,13 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3759,7 +3759,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(dc_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/2".to_string())),
@@ -3792,13 +3792,13 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3810,7 +3810,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(dc_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/3".to_string())),
@@ -3843,13 +3843,13 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3861,7 +3861,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress(dc_switch_mac.to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("Port 1/0/4".to_string())),
@@ -3894,7 +3894,7 @@ fn generate_if_entries(
             .iter()
             .find(|n| n.id == host.base.network_id)
             .unwrap();
-        let interface = find_interface(host.id);
+        let ip_address = find_ip_address(host.id);
 
         let dc_fw = find_host("dc-fw01");
         let dc_proxmox = find_host("dc-proxmox-hv01");
@@ -3902,11 +3902,11 @@ fn generate_if_entries(
         let dc_haproxy = find_host("haproxy-lb01");
 
         // Port 1 ↔ dc-fw01
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 1,
@@ -3918,7 +3918,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: interface.map(|i| i.id),
+                ip_address_id: ip_address.map(|i| i.id),
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("a0:36:9f:11:22:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("port1".to_string())),
@@ -3944,11 +3944,11 @@ fn generate_if_entries(
         });
 
         // Port 2 ↔ dc-proxmox-hv01
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 2,
@@ -3960,7 +3960,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("d4:be:d9:aa:bb:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("eno1".to_string())),
@@ -3986,11 +3986,11 @@ fn generate_if_entries(
         });
 
         // Port 3 ↔ dc-docker01
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 3,
@@ -4002,7 +4002,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("aa:bb:cc:dd:ee:02".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("eth0".to_string())),
@@ -4028,11 +4028,11 @@ fn generate_if_entries(
         });
 
         // Port 4 ↔ haproxy-lb01
-        if_entries.push(IfEntry {
+        interfaces.push(Interface {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id: host.id,
                 network_id: network.id,
                 if_index: 4,
@@ -4044,7 +4044,7 @@ fn generate_if_entries(
                 admin_status: IfAdminStatus::Up,
                 oper_status: IfOperStatus::Up,
                 mac_address: None,
-                interface_id: None,
+                ip_address_id: None,
                 neighbor: None,
                 lldp_chassis_id: Some(LldpChassisId::MacAddress("11:22:33:44:55:01".to_string())),
                 lldp_port_id: Some(LldpPortId::InterfaceName("eth0".to_string())),
@@ -4071,11 +4071,11 @@ fn generate_if_entries(
 
         // Ports 5-24 — empty/down
         for port_num in 5..=24 {
-            if_entries.push(IfEntry {
+            interfaces.push(Interface {
                 id: Uuid::new_v4(),
                 created_at: now,
                 updated_at: now,
-                base: IfEntryBase {
+                base: InterfaceBase {
                     host_id: host.id,
                     network_id: network.id,
                     if_index: port_num,
@@ -4087,7 +4087,7 @@ fn generate_if_entries(
                     admin_status: IfAdminStatus::Up,
                     oper_status: IfOperStatus::Down,
                     mac_address: None,
-                    interface_id: None,
+                    ip_address_id: None,
                     neighbor: None,
                     lldp_chassis_id: None,
                     lldp_port_id: None,
@@ -4107,7 +4107,7 @@ fn generate_if_entries(
         }
     }
 
-    (if_entries, neighbor_updates)
+    (interfaces, neighbor_updates)
 }
 
 // ============================================================================

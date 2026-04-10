@@ -253,7 +253,7 @@ pub struct VlanDiscoveryResponseItem {
 /// Bulk upsert VLANs from discovery
 ///
 /// Used by daemons to report discovered VLANs. Creates new VLANs or updates names.
-/// Returns the mapping of VLAN numbers to entity UUIDs for IfEntry construction.
+/// Returns the mapping of VLAN numbers to entity UUIDs for Interface construction.
 #[utoipa::path(
     post,
     path = "/discovery",

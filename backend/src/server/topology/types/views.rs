@@ -202,12 +202,12 @@ impl TopologyView {
         match self {
             Self::L3Logical => ViewElementConfig {
                 parent_entity: Some(EntityDiscriminants::Host),
-                element_entity: EntityDiscriminants::Interface,
+                element_entity: EntityDiscriminants::IPAddress,
                 inline_entities: vec![EntityDiscriminants::Service],
             },
             Self::L2Physical => ViewElementConfig {
                 parent_entity: Some(EntityDiscriminants::Host),
-                element_entity: EntityDiscriminants::IfEntry,
+                element_entity: EntityDiscriminants::Interface,
                 inline_entities: vec![],
             },
             Self::Infrastructure => ViewElementConfig {
@@ -223,11 +223,11 @@ impl TopologyView {
         }
     }
 
-    /// Human-friendly plural label for element nodes (e.g. "host interfaces")
+    /// Human-friendly plural label for element nodes (e.g. "host ip_addresses")
     pub fn element_label(&self) -> &'static str {
         match self {
             Self::L2Physical => "ports",
-            Self::L3Logical => "host interfaces",
+            Self::L3Logical => "host ip_addresses",
             Self::Infrastructure => "hosts",
             Self::Application => "services",
         }
@@ -237,7 +237,7 @@ impl TopologyView {
     pub fn element_label_singular(&self) -> &'static str {
         match self {
             Self::L2Physical => "port",
-            Self::L3Logical => "host interface",
+            Self::L3Logical => "host ip_address",
             Self::Infrastructure => "host",
             Self::Application => "service",
         }
@@ -270,7 +270,7 @@ impl TopologyView {
 
         match self {
             Self::L3Logical => match edge_type {
-                Interface => active(true, Visible, Solid, WhenVisible, false, false),
+                IPAddress => active(true, Visible, Solid, WhenVisible, false, false),
                 ServiceVirtualization => active(true, Visible, Solid, WhenVisible, true, false),
                 RequestPath => active(false, Visible, Dashed, WhenVisible, false, true),
                 HubAndSpoke => active(false, Visible, Dashed, WhenVisible, false, true),
@@ -279,7 +279,7 @@ impl TopologyView {
             },
             Self::L2Physical => match edge_type {
                 PhysicalLink => active(true, Visible, Solid, WhenVisible, false, false),
-                Interface => active(false, Hidden, Dashed, WhenVisible, false, false),
+                IPAddress => active(false, Hidden, Dashed, WhenVisible, false, false),
                 HostVirtualization | ServiceVirtualization | RequestPath | HubAndSpoke => {
                     EdgeViewConfig::Disabled
                 }
@@ -287,13 +287,13 @@ impl TopologyView {
             Self::Infrastructure => match edge_type {
                 HostVirtualization => active(true, Hidden, Dashed, Always, true, false),
                 ServiceVirtualization => active(true, Hidden, Dashed, Always, true, false),
-                Interface | PhysicalLink | RequestPath | HubAndSpoke => EdgeViewConfig::Disabled,
+                IPAddress | PhysicalLink | RequestPath | HubAndSpoke => EdgeViewConfig::Disabled,
             },
             Self::Application => match edge_type {
                 RequestPath => active(true, Visible, Solid, WhenVisible, false, true),
                 HubAndSpoke => active(true, Visible, Solid, WhenVisible, false, true),
                 ServiceVirtualization => active(true, Hidden, Dashed, Always, true, false),
-                Interface | HostVirtualization | PhysicalLink => EdgeViewConfig::Disabled,
+                IPAddress | HostVirtualization | PhysicalLink => EdgeViewConfig::Disabled,
             },
         }
     }

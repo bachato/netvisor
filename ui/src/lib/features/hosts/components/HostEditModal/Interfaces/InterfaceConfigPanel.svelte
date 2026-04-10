@@ -1,143 +1,105 @@
 <script lang="ts">
+	import { useQueryClient } from '@tanstack/svelte-query';
+	import { queryKeys } from '$lib/api/query-client';
 	import type { Interface } from '$lib/features/hosts/types/base';
+	import { getHostByIdFromCache } from '$lib/features/hosts/queries';
+	import { getSubnetByIdFromCache } from '$lib/features/subnets/queries';
+	import ConfigHeader from '$lib/shared/components/forms/config/ConfigHeader.svelte';
+	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
+	import InfoRow from '$lib/shared/components/data/InfoRow.svelte';
+	import InterfaceDetailsCard from '$lib/features/hosts/components/InterfaceDetailsCard.svelte';
 	import {
-		required,
-		ipAddressFormat,
-		ipAddressInCidrFormat,
-		macFormat,
-		max
-	} from '$lib/shared/components/forms/validators';
-	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
-	import { entityRef } from '$lib/shared/components/data/types';
-	import type { Subnet } from '$lib/features/subnets/types/base';
-	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
-	import { entities } from '$lib/shared/stores/metadata';
-	import type { AnyFieldApi } from '@tanstack/svelte-form';
-	import {
-		common_ipAddress,
-		common_macAddress,
-		common_name,
-		common_placeholderInterface,
-		common_placeholderIpAddress,
-		hosts_interfaces_ipMustBeWithin,
-		hosts_interfaces_macFormat,
-		hosts_interfaces_macReadOnly
+		hosts_interfaces_cdpNeighbor,
+		hosts_interfaces_chassisId,
+		hosts_interfaces_index,
+		hosts_interfaces_lldpNeighbor,
+		hosts_interfaces_lldpSysDescr,
+		hosts_interfaces_managementAddress,
+		hosts_interfaces_portId,
+		hosts_interfaces_remoteAddress,
+		hosts_interfaces_remoteDevice,
+		hosts_interfaces_remotePlatform,
+		hosts_interfaces_remotePort,
+		hosts_interfaces_remoteSystemName
 	} from '$lib/paraglide/messages';
 
 	interface Props {
 		iface: Interface;
-		subnet: Subnet;
-		index: number;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		form: { Field: any };
-		onChange?: (iface: Interface) => void;
-		isEditing?: boolean;
 	}
 
-	let { iface, subnet, index, form, onChange = () => {}, isEditing = false }: Props = $props();
+	let { iface }: Props = $props();
 
-	// Field names for this interface in the form array
-	let ipFieldName = $derived(`interfaces[${index}].ip_address`);
-	let macFieldName = $derived(`interfaces[${index}].mac_address`);
-	let nameFieldName = $derived(`interfaces[${index}].name`);
+	const queryClient = useQueryClient();
 
-	// Notify parent of changes for real-time sync
-	function handleNameChange(value: string) {
-		onChange({ ...iface, name: value || null });
-	}
+	// Linked Interface + Subnet resolution
+	let linkedInterface = $derived.by(() => {
+		if (!iface.interface_id) return null;
+		const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
+		return allInterfaces.find((i) => i.id === iface.interface_id) ?? null;
+	});
 
-	function handleIpChange(value: string) {
-		onChange({ ...iface, ip_address: value });
-	}
+	let linkedSubnet = $derived.by(() => {
+		if (!linkedInterface) return null;
+		return getSubnetByIdFromCache(queryClient, linkedInterface.subnet_id);
+	});
 
-	function handleMacChange(value: string) {
-		onChange({ ...iface, mac_address: value || null });
-	}
+	// Neighbor resolution
+	let neighborHost = $derived.by(() => {
+		if (!iface.neighbor) return null;
+		if (iface.neighbor.type === 'Host') {
+			return getHostByIdFromCache(queryClient, iface.neighbor.id);
+		}
+		const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
+		const remoteEntry = allInterfaces.find((e) => e.id === iface.neighbor!.id);
+		if (remoteEntry) {
+			return getHostByIdFromCache(queryClient, remoteEntry.host_id);
+		}
+		return null;
+	});
+
+	let neighborInterface = $derived.by(() => {
+		if (!iface.neighbor || iface.neighbor.type !== 'Interface') return null;
+		const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
+		return allInterfaces.find((e) => e.id === iface.neighbor!.id) ?? null;
+	});
+
+	let cdpExpanded = $state(false);
+	let lldpExpanded = $state(false);
 </script>
 
-{#if subnet}
-	<div class="space-y-6">
-		<div class="border-b border-gray-600 pb-4">
-			<h3 class="text-primary flex items-center gap-1.5 text-sm font-medium">
-				Interface on
-				<EntityTag
-					entityRef={entityRef('Subnet', subnet.id, subnet)}
-					label={subnet?.name && subnet.name !== subnet.cidr
-						? `${subnet.name} (${subnet.cidr})`
-						: subnet.cidr}
-					icon={entities.getIconComponent('Subnet')}
-					color={entities.getColorHelper('Subnet').color}
-				/>
-			</h3>
-			{#if subnet?.description}
-				<p class="text-secondary mt-1 text-sm">{subnet.description}</p>
-			{/if}
-		</div>
+<div class="space-y-6">
+	<ConfigHeader
+		title={iface.if_name || iface.if_descr || `Interface ${iface.if_index}`}
+		subtitle={hosts_interfaces_index({ index: iface.if_index })}
+	/>
 
-		<div class="space-y-4">
-			<form.Field
-				name={nameFieldName}
-				validators={{
-					onBlur: ({ value }: { value: string }) => max(100)(value)
-				}}
-				listeners={{
-					onChange: ({ value }: { value: string }) => handleNameChange(value)
-				}}
-			>
-				{#snippet children(field: AnyFieldApi)}
-					<TextInput
-						label={common_name()}
-						id="interface_{iface.id}"
-						placeholder={common_placeholderInterface()}
-						{field}
-					/>
-				{/snippet}
-			</form.Field>
+	<InterfaceDetailsCard
+		{iface}
+		{linkedInterface}
+		{linkedSubnet}
+		{neighborHost}
+		{neighborInterface}
+	/>
 
-			<form.Field
-				name={ipFieldName}
-				validators={{
-					onBlur: ({ value }: { value: string }) =>
-						required(value) || ipAddressFormat(value) || ipAddressInCidrFormat(subnet.cidr)(value),
-					onChange: ({ value }: { value: string }) =>
-						required(value) || ipAddressFormat(value) || ipAddressInCidrFormat(subnet.cidr)(value)
-				}}
-				listeners={{
-					onChange: ({ value }: { value: string }) => handleIpChange(value)
-				}}
-			>
-				{#snippet children(field: AnyFieldApi)}
-					<TextInput
-						label={common_ipAddress()}
-						id="interface_ip_{iface.id}"
-						placeholder={subnet.cidr.includes(':') ? '2001:db8::1' : common_placeholderIpAddress()}
-						required={true}
-						helpText={hosts_interfaces_ipMustBeWithin({ cidr: subnet.cidr })}
-						{field}
-					/>
-				{/snippet}
-			</form.Field>
+	<!-- CDP Neighbor Info Section -->
+	<CollapsibleCard title={hosts_interfaces_cdpNeighbor()} bind:expanded={cdpExpanded}>
+		<InfoRow label={hosts_interfaces_remoteDevice()}>{iface.cdp_device_id || '-'}</InfoRow>
+		<InfoRow label={hosts_interfaces_remotePort()}>{iface.cdp_port_id || '-'}</InfoRow>
+		<InfoRow label={hosts_interfaces_remoteAddress()} mono>{iface.cdp_address || '-'}</InfoRow>
+		<InfoRow label={hosts_interfaces_remotePlatform()}>{iface.cdp_platform || '-'}</InfoRow>
+	</CollapsibleCard>
 
-			<form.Field
-				name={macFieldName}
-				validators={{
-					onBlur: ({ value }: { value: string }) => macFormat(value)
-				}}
-				listeners={{
-					onChange: ({ value }: { value: string }) => handleMacChange(value)
-				}}
-			>
-				{#snippet children(field: AnyFieldApi)}
-					<TextInput
-						label={common_macAddress()}
-						id="interface_mac_{iface.id}"
-						placeholder="00:1B:44:11:3A:B7"
-						helpText={isEditing ? hosts_interfaces_macReadOnly() : hosts_interfaces_macFormat()}
-						disabled={isEditing}
-						{field}
-					/>
-				{/snippet}
-			</form.Field>
-		</div>
-	</div>
-{/if}
+	<!-- LLDP Neighbor Info Section -->
+	<CollapsibleCard title={hosts_interfaces_lldpNeighbor()} bind:expanded={lldpExpanded}>
+		<InfoRow label={hosts_interfaces_chassisId()} mono
+			>{iface.lldp_chassis_id?.value || '-'}</InfoRow
+		>
+		<InfoRow label={hosts_interfaces_portId()} mono>{iface.lldp_port_id?.value || '-'}</InfoRow>
+		<InfoRow label={hosts_interfaces_remoteSystemName()}>{iface.lldp_sys_name || '-'}</InfoRow>
+		<InfoRow label={hosts_interfaces_remotePort()}>{iface.lldp_port_desc || '-'}</InfoRow>
+		<InfoRow label={hosts_interfaces_managementAddress()} mono
+			>{iface.lldp_mgmt_addr || '-'}</InfoRow
+		>
+		<InfoRow label={hosts_interfaces_lldpSysDescr()}>{iface.lldp_sys_desc || '-'}</InfoRow>
+	</CollapsibleCard>
+</div>

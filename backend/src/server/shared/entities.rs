@@ -1,8 +1,8 @@
 use crate::server::bindings::r#impl::base::Binding;
 use crate::server::credentials::r#impl::base::Credential;
-use crate::server::if_entries::r#impl::base::IfEntry;
 use crate::server::interfaces::r#impl::base::Interface;
 use crate::server::invites::r#impl::base::Invite;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::ports::r#impl::base::Port;
 use crate::server::services::r#impl::base::Service;
 use crate::server::shares::r#impl::base::Share;
@@ -90,8 +90,8 @@ pub enum Entity {
     Service(Service),
     Port(Port),
     Binding(Binding),
+    IPAddress(IPAddress),
     Interface(Interface),
-    IfEntry(IfEntry),
 
     Credential(Credential),
     Subnet(Subnet),
@@ -127,10 +127,10 @@ impl EntityMetadataProvider for EntityDiscriminants {
 
             EntityDiscriminants::Host => Color::Blue,
             EntityDiscriminants::Service => Color::Purple,
-            EntityDiscriminants::Interface => Color::Cyan,
+            EntityDiscriminants::IPAddress => Color::Cyan,
             EntityDiscriminants::Port => Color::Cyan,
             EntityDiscriminants::Binding => Color::Purple,
-            EntityDiscriminants::IfEntry => Color::Teal,
+            EntityDiscriminants::Interface => Color::Teal,
 
             EntityDiscriminants::Subnet => Color::Orange,
             EntityDiscriminants::Vlan => Color::Teal,
@@ -155,10 +155,10 @@ impl EntityMetadataProvider for EntityDiscriminants {
             EntityDiscriminants::Discovery => Icon::Radar,
             EntityDiscriminants::Host => Icon::Server,
             EntityDiscriminants::Service => Icon::Layers,
-            EntityDiscriminants::Interface => Icon::Binary,
+            EntityDiscriminants::IPAddress => Icon::Binary,
             EntityDiscriminants::Port => Icon::EthernetPort,
             EntityDiscriminants::Binding => Icon::Link,
-            EntityDiscriminants::IfEntry => Icon::Cable,
+            EntityDiscriminants::Interface => Icon::Cable,
             EntityDiscriminants::Credential => Icon::Asterisk,
             EntityDiscriminants::Subnet => Icon::Network,
             EntityDiscriminants::Vlan => Icon::Network,
@@ -248,9 +248,9 @@ impl From<Binding> for Entity {
     }
 }
 
-impl From<Interface> for Entity {
-    fn from(value: Interface) -> Self {
-        Self::Interface(value)
+impl From<IPAddress> for Entity {
+    fn from(value: IPAddress) -> Self {
+        Self::IPAddress(value)
     }
 }
 
@@ -290,9 +290,9 @@ impl From<Credential> for Entity {
     }
 }
 
-impl From<IfEntry> for Entity {
-    fn from(value: IfEntry) -> Self {
-        Self::IfEntry(value)
+impl From<Interface> for Entity {
+    fn from(value: Interface) -> Self {
+        Self::Interface(value)
     }
 }
 
@@ -305,9 +305,9 @@ impl From<EntityDiscriminants> for Entity {
             EntityDiscriminants::Vlan => Entity::Vlan(Vlan::default()),
             EntityDiscriminants::Dependency => Entity::Dependency(Dependency::default()),
             EntityDiscriminants::Port => Entity::Port(Port::default()),
-            EntityDiscriminants::Interface => Entity::Interface(Interface::default()),
+            EntityDiscriminants::IPAddress => Entity::IPAddress(IPAddress::default()),
             EntityDiscriminants::Binding => Entity::Binding(Binding::default()),
-            EntityDiscriminants::IfEntry => Entity::IfEntry(IfEntry::default()),
+            EntityDiscriminants::Interface => Entity::Interface(Interface::default()),
             EntityDiscriminants::Tag => Entity::Tag(Tag::default()),
             EntityDiscriminants::Network => Entity::Network(Network::default()),
             EntityDiscriminants::Organization => Entity::Organization(Organization::default()),

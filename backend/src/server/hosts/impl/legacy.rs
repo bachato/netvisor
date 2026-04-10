@@ -22,7 +22,7 @@ use crate::server::{
         api::{DiscoveryHostRequest, HostResponse},
         base::Host,
     },
-    interfaces::r#impl::base::{Interface, InterfaceBase},
+    ip_addresses::r#impl::base::{IPAddress, IPAddressBase},
     ports::r#impl::base::{Port, PortBase, PortType},
     services::{
         definitions::ServiceDefinitionRegistry,
@@ -72,7 +72,7 @@ pub struct LegacyHost {
 
     // Embedded children (old format had these directly on host)
     #[serde(default)]
-    pub interfaces: Vec<LegacyInterface>,
+    pub ip_addresses: Vec<LegacyIPAddress>,
     #[serde(default)]
     pub ports: Vec<LegacyPort>,
     /// Service IDs (old format had these as UUIDs, not full objects)
@@ -94,7 +94,7 @@ pub struct LegacyHost {
 
 /// Legacy interface format from old daemons (missing network_id, host_id, position).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LegacyInterface {
+pub struct LegacyIPAddress {
     pub id: Uuid,
     #[serde(default)]
     pub created_at: Option<DateTime<Utc>>,
@@ -108,14 +108,14 @@ pub struct LegacyInterface {
     pub name: Option<String>,
 }
 
-impl LegacyInterface {
+impl LegacyIPAddress {
     /// Convert to new Interface format, filling in missing fields.
-    pub fn into_interface(self, network_id: Uuid, host_id: Uuid) -> Interface {
-        Interface {
+    pub fn into_interface(self, network_id: Uuid, host_id: Uuid) -> IPAddress {
+        IPAddress {
             id: self.id,
             created_at: self.created_at.unwrap_or_else(Utc::now),
             updated_at: self.updated_at.unwrap_or_else(Utc::now),
-            base: InterfaceBase {
+            base: IPAddressBase {
                 network_id,
                 host_id,
                 subnet_id: self.subnet_id,
@@ -170,28 +170,28 @@ impl LegacyPort {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum LegacyBindingType {
-    Interface {
-        interface_id: Uuid,
+    IPAddress {
+        ip_address_id: Uuid,
     },
     Port {
         port_id: Uuid,
         #[serde(default)]
-        interface_id: Option<Uuid>,
+        ip_address_id: Option<Uuid>,
     },
 }
 
 impl LegacyBindingType {
     fn into_binding_type(self) -> BindingType {
         match self {
-            LegacyBindingType::Interface { interface_id } => {
-                BindingType::Interface { interface_id }
+            LegacyBindingType::IPAddress { ip_address_id } => {
+                BindingType::IPAddress { ip_address_id }
             }
             LegacyBindingType::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             } => BindingType::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             },
         }
     }
@@ -298,9 +298,9 @@ impl LegacyHostWithServicesRequest {
         let network_id = host.network_id;
         let host_id = host.id;
 
-        // Convert legacy interfaces to new format
-        let interfaces: Vec<Interface> = host
-            .interfaces
+        // Convert legacy ip_addresses to new format
+        let ip_addresses: Vec<IPAddress> = host
+            .ip_addresses
             .into_iter()
             .map(|i| i.into_interface(network_id, host_id))
             .collect();
@@ -347,10 +347,10 @@ impl LegacyHostWithServicesRequest {
 
         DiscoveryHostRequest {
             host: new_host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
-            if_entries: vec![], // Legacy requests don't include SNMP data
+            interfaces: vec![], // Legacy requests don't include SNMP data
             subnets: vec![],
         }
     }
@@ -380,7 +380,7 @@ pub struct LegacyHostResponse {
     pub tags: Vec<Uuid>,
 
     // Embedded children (old format expected these on host)
-    pub interfaces: Vec<Interface>,
+    pub ip_addresses: Vec<IPAddress>,
     pub ports: Vec<Port>,
     /// Service IDs (old format expected just UUIDs here)
     pub services: Vec<Uuid>,
@@ -416,7 +416,7 @@ impl LegacyHostWithServicesResponse {
                 description: response.description,
                 hidden: response.hidden,
                 tags: response.tags,
-                interfaces: response.interfaces,
+                ip_addresses: response.ip_addresses,
                 ports: response.ports,
                 services: service_ids,
                 target: LegacyTarget {

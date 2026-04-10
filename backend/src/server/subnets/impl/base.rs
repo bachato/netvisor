@@ -18,7 +18,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::server::{interfaces::r#impl::base::Interface, services::r#impl::base::Service};
+use crate::server::{ip_addresses::r#impl::base::IPAddress, services::r#impl::base::Service};
 
 fn deserialize_cidr<'de, D>(deserializer: D) -> Result<IpCidr, D::Error>
 where
@@ -116,7 +116,7 @@ impl Subnet {
         match ip_network {
             IpNetwork::V6(_) => None,
             IpNetwork::V4(ipv4_network) => {
-                // Non-loopback CIDRs on loopback interfaces (e.g. 10.99.0.0/24 aliased
+                // Non-loopback CIDRs on loopback ip_addresses (e.g. 10.99.0.0/24 aliased
                 // on lo0) are real networks, not loopback
                 if subnet_type.is_loopback() && ipv4_network.ip().octets()[0] != 127 {
                     subnet_type = SubnetType::Unknown;
@@ -156,17 +156,17 @@ impl Subnet {
 
     pub fn has_interface_with_service(
         &self,
-        host_interfaces: &[&Interface],
+        host_interfaces: &[&IPAddress],
         service: &Service,
     ) -> bool {
         service.base.bindings.iter().any(|binding| {
-            host_interfaces.iter().any(|interface| {
-                let interface_match = match binding.interface_id() {
-                    Some(id) => interface.id == id,
-                    None => true, // Listens on all interfaces
+            host_interfaces.iter().any(|ip_address| {
+                let interface_match = match binding.ip_address_id() {
+                    Some(id) => ip_address.id == id,
+                    None => true, // Listens on all ip_addresses
                 };
 
-                interface_match && interface.base.subnet_id == self.id
+                interface_match && ip_address.base.subnet_id == self.id
             })
         })
     }

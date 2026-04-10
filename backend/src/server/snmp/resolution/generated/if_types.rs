@@ -320,7 +320,7 @@ pub fn get_if_type_name(if_type: i32) -> Option<&'static str> {
 }
 
 /// Get a human-friendly description for an interface type.
-/// Returns a more readable version of the type name for common interfaces.
+/// Returns a more readable version of the type name for common ip_addresses.
 #[allow(dead_code)] // Used by SNMP collection module
 pub fn get_if_type_description(if_type: i32) -> &'static str {
     match if_type {

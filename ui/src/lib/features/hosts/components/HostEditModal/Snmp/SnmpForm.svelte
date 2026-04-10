@@ -15,9 +15,9 @@
 	import { entities } from '$lib/shared/stores/metadata';
 	import { CredentialDisplay } from '$lib/shared/components/forms/selection/display/CredentialDisplay.svelte';
 	import {
-		InterfaceDisplay,
-		type InterfaceDisplayContext
-	} from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
+		IPAddressDisplay,
+		type IPAddressDisplayContext
+	} from '$lib/shared/components/forms/selection/display/IPAddressDisplay.svelte';
 	import { credentialTypes } from '$lib/shared/stores/metadata';
 	import { getCredentialTypeId } from '$lib/features/credentials/types/base';
 	import DocsHint from '$lib/shared/components/feedback/DocsHint.svelte';
@@ -101,7 +101,7 @@
 			.filter((i): i is Interface => i != null);
 	}
 
-	function getInterfaceContext(): InterfaceDisplayContext {
+	function getInterfaceContext(): IPAddressDisplayContext {
 		return { subnets };
 	}
 
@@ -206,8 +206,8 @@
 						allowReorder={false}
 						options={formData.interfaces}
 						items={getScopedInterfaces(selectedIndex)}
-						optionDisplayComponent={InterfaceDisplay}
-						itemDisplayComponent={InterfaceDisplay}
+						optionDisplayComponent={IPAddressDisplay}
+						itemDisplayComponent={IPAddressDisplay}
 						getOptionContext={() => getInterfaceContext()}
 						getItemContext={() => getInterfaceContext()}
 						onAdd={(id) => addInterfaceToScope(selectedIndex, id)}

@@ -21,15 +21,15 @@ use crate::server::{
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type")]
 pub enum CreateBindingInput {
-    /// Bind to an interface (service listens on all ports on this interface)
-    #[schema(title = "Interface")]
-    Interface { interface_id: Uuid },
-    /// Bind to a port (optionally on a specific interface)
+    /// Bind to an interface (service listens on all ports on this ip_address)
+    #[schema(title = "IPAddress")]
+    IPAddress { ip_address_id: Uuid },
+    /// Bind to a port (optionally on a specific ip_address)
     #[schema(title = "Port")]
     Port {
         port_id: Uuid,
         #[serde(skip_serializing_if = "Option::is_none")]
-        interface_id: Option<Uuid>,
+        ip_address_id: Option<Uuid>,
     },
 }
 
@@ -37,15 +37,15 @@ impl CreateBindingInput {
     /// Convert to a full Binding with the given service_id and network_id.
     pub fn into_binding(self, service_id: Uuid, network_id: Uuid) -> Binding {
         let binding_type = match self {
-            CreateBindingInput::Interface { interface_id } => {
-                BindingType::Interface { interface_id }
+            CreateBindingInput::IPAddress { ip_address_id } => {
+                BindingType::IPAddress { ip_address_id }
             }
             CreateBindingInput::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             } => BindingType::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             },
         };
 

@@ -53,13 +53,13 @@ pub mod if_mib {
     /// ifTable - Interface table
     pub const IF_TABLE: &str = "1.3.6.1.2.1.2.2";
 
-    /// ifNumber.0 - Number of network interfaces
+    /// ifNumber.0 - Number of network ip_addresses
     pub const IF_NUMBER: &str = "1.3.6.1.2.1.2.1.0";
 
     /// ifEntry - Entry in interface table
     pub const IF_ENTRY: &str = "1.3.6.1.2.1.2.2.1";
 
-    /// Column OIDs within ifEntry (append .ifIndex for specific interface)
+    /// Column OIDs within ifEntry (append .ifIndex for specific ip_address)
     pub mod columns {
         /// ifIndex - Unique value for each interface
         pub const IF_INDEX: &str = "1.3.6.1.2.1.2.2.1.1";
@@ -97,7 +97,7 @@ pub mod if_mib {
         /// ifName - Textual name of interface
         pub const IF_NAME: &str = "1.3.6.1.2.1.31.1.1.1.1";
 
-        /// ifHighSpeed - Interface speed in Mbps (for interfaces > 4Gbps)
+        /// ifHighSpeed - Interface speed in Mbps (for ip_addresses > 4Gbps)
         pub const IF_HIGH_SPEED: &str = "1.3.6.1.2.1.31.1.1.1.15";
 
         /// ifAlias - User-configured description (configurable by NMS)

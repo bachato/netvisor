@@ -50,7 +50,7 @@ pub fn scan_subnet(
     {
         if use_npcap {
             match broadcast::scan_subnet(
-                interface,
+                ip_address,
                 source_ip,
                 source_mac,
                 targets.clone(),

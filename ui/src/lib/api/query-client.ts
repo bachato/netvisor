@@ -78,10 +78,10 @@ export const queryKeys = {
 		details: () => [...queryKeys.hosts.all, 'detail'] as const,
 		detail: (id: string) => [...queryKeys.hosts.details(), id] as const
 	},
-	interfaces: {
-		all: ['interfaces'] as const,
-		byHost: (hostId: string) => [...queryKeys.interfaces.all, 'host', hostId] as const,
-		detail: (id: string) => [...queryKeys.interfaces.all, 'detail', id] as const
+	ipAddresses: {
+		all: ['ipAddresses'] as const,
+		byHost: (hostId: string) => [...queryKeys.ipAddresses.all, 'host', hostId] as const,
+		detail: (id: string) => [...queryKeys.ipAddresses.all, 'detail', id] as const
 	},
 	ports: {
 		all: ['ports'] as const,
@@ -145,9 +145,9 @@ export const queryKeys = {
 		all: ['credentials'] as const,
 		detail: (id: string) => [...queryKeys.credentials.all, 'detail', id] as const
 	},
-	ifEntries: {
-		all: ['ifEntries'] as const,
-		byHost: (hostId: string) => [...queryKeys.ifEntries.all, 'host', hostId] as const
+	interfaces: {
+		all: ['interfaces'] as const,
+		byHost: (hostId: string) => [...queryKeys.interfaces.all, 'host', hostId] as const
 	},
 	topology: {
 		all: ['topology'] as const,

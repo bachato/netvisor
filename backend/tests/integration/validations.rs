@@ -50,10 +50,10 @@ async fn test_service_network_validation(ctx: &TestContext) -> Result<(), String
         management_url: None,
         chassis_id: None,
         credential_assignments: vec![],
-        interfaces: vec![],
+        ip_addresses: vec![],
         ports: vec![],
         services: vec![],
-        if_entries: vec![],
+        interfaces: vec![],
     };
     let created_host: HostResponse = ctx.client.post("/api/v1/hosts", &host_request).await?;
 

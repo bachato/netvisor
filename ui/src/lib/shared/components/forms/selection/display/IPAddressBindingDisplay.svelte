@@ -3,10 +3,10 @@
 	import type { InterfaceBinding, Service } from '$lib/features/services/types/base';
 	import type { HostFormData, Interface } from '$lib/features/hosts/types/base';
 	import type { EntityDisplayComponent } from '../types';
-	import InterfaceBindingInlineEditor from './InterfaceBindingInlineEditor.svelte';
+	import IPAddressBindingInlineEditor from './IPAddressBindingInlineEditor.svelte';
 
 	// Context for binding display within form editing
-	export interface InterfaceBindingDisplayContext {
+	export interface IPAddressBindingDisplayContext {
 		service: Service;
 		host: HostFormData;
 		services: Service[];
@@ -24,12 +24,12 @@
 			: (iface.name ? iface.name + ': ' : '') + iface.ip_address;
 	}
 
-	export const InterfaceBindingDisplay: EntityDisplayComponent<
+	export const IPAddressBindingDisplay: EntityDisplayComponent<
 		InterfaceBinding,
-		InterfaceBindingDisplayContext
+		IPAddressBindingDisplayContext
 	> = {
 		getId: (binding: InterfaceBinding) => binding.id,
-		getLabel: (binding: InterfaceBinding, context: InterfaceBindingDisplayContext) => {
+		getLabel: (binding: InterfaceBinding, context: IPAddressBindingDisplayContext) => {
 			const interfacesData = context?.interfaces ?? [];
 			const isContainerSubnetFn = context?.isContainerSubnet ?? (() => false);
 			const iface = interfacesData.find((i) => i.id === binding.interface_id);
@@ -42,7 +42,7 @@
 		getIcon: () => entities.getIconComponent('Interface'),
 		getIconColor: () => entities.getColorHelper('Interface').icon,
 		getTags: () => [],
-		getCategory: (binding: InterfaceBinding, context: InterfaceBindingDisplayContext) => {
+		getCategory: (binding: InterfaceBinding, context: IPAddressBindingDisplayContext) => {
 			const servicesData = context?.services ?? [];
 			const service = servicesData.find((s) => s.bindings.some((b) => b.id === binding.id));
 			if (!service) return null;
@@ -51,7 +51,7 @@
 			return serviceType?.category || null;
 		},
 		supportsInlineEdit: true,
-		InlineEditorComponent: InterfaceBindingInlineEditor
+		InlineEditorComponent: IPAddressBindingInlineEditor
 	};
 </script>
 
@@ -59,7 +59,7 @@
 	import ListSelectItem from '../ListSelectItem.svelte';
 
 	export let item: InterfaceBinding;
-	export let context: InterfaceBindingDisplayContext;
+	export let context: IPAddressBindingDisplayContext;
 </script>
 
-<ListSelectItem {item} {context} displayComponent={InterfaceBindingDisplay} />
+<ListSelectItem {item} {context} displayComponent={IPAddressBindingDisplay} />

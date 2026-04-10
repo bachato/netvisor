@@ -11,9 +11,9 @@ use crate::server::{
     discovery::service::DiscoveryService,
     email::{brevo::BrevoEmailProvider, smtp::SmtpEmailProvider, traits::EmailService},
     hosts::service::HostService,
-    if_entries::service::IfEntryService,
     interfaces::service::InterfaceService,
     invites::service::InviteService,
+    ip_addresses::service::IPAddressService,
     logging::service::LoggingService,
     metrics::service::MetricsService,
     networks::service::NetworkService,
@@ -47,7 +47,7 @@ pub struct ServiceFactory {
     pub auth_service: Arc<AuthService>,
     pub network_service: Arc<NetworkService>,
     pub host_service: Arc<HostService>,
-    pub interface_service: Arc<InterfaceService>,
+    pub ip_address_service: Arc<IPAddressService>,
     pub dependency_service: Arc<DependencyService>,
     pub subnet_service: Arc<SubnetService>,
     pub daemon_service: Arc<DaemonService>,
@@ -72,7 +72,7 @@ pub struct ServiceFactory {
     pub port_service: Arc<PortService>,
     pub binding_service: Arc<BindingService>,
     pub credential_service: Arc<CredentialService>,
-    pub if_entry_service: Arc<IfEntryService>,
+    pub interface_service: Arc<InterfaceService>,
     pub vlan_service: Arc<VlanService>,
 }
 
@@ -141,8 +141,8 @@ impl ServiceFactory {
             event_bus.clone(),
         ));
 
-        let interface_service = Arc::new(InterfaceService::new(
-            storage.interfaces.clone(),
+        let ip_address_service = Arc::new(IPAddressService::new(
+            storage.ip_addresses.clone(),
             event_bus.clone(),
         ));
 
@@ -182,11 +182,11 @@ impl ServiceFactory {
             entity_tag_service.clone(),
         ));
 
-        // IfEntryService needs InterfaceService for validation
-        let if_entry_service = Arc::new(IfEntryService::new(
-            storage.if_entries.clone(),
+        // InterfaceService needs IPAddressService for validation
+        let interface_service = Arc::new(InterfaceService::new(
+            storage.interfaces.clone(),
             event_bus.clone(),
-            interface_service.clone(),
+            ip_address_service.clone(),
         ));
 
         let credential_service = Arc::new(CredentialService::new(
@@ -194,7 +194,7 @@ impl ServiceFactory {
             event_bus.clone(),
             entity_tag_service.clone(),
             network_service.clone(),
-            interface_service.clone(),
+            ip_address_service.clone(),
             organization_service.clone(),
             storage.pool.clone(),
         ));
@@ -227,10 +227,10 @@ impl ServiceFactory {
         // HostService needs DaemonService
         let host_service = Arc::new(HostService::new(
             storage.hosts.clone(),
-            interface_service.clone(),
+            ip_address_service.clone(),
             port_service.clone(),
             service_service.clone(),
-            if_entry_service.clone(),
+            interface_service.clone(),
             daemon_service.clone(),
             credential_service.clone(),
             subnet_service.clone(),
@@ -247,13 +247,13 @@ impl ServiceFactory {
 
         let topology_service = Arc::new(TopologyService::new(
             host_service.clone(),
-            interface_service.clone(),
+            ip_address_service.clone(),
             subnet_service.clone(),
             dependency_service.clone(),
             service_service.clone(),
             port_service.clone(),
             binding_service.clone(),
-            if_entry_service.clone(),
+            interface_service.clone(),
             tag_service.clone(),
             vlan_service.clone(),
             network_service.clone(),
@@ -414,7 +414,7 @@ impl ServiceFactory {
             auth_service,
             network_service,
             host_service,
-            interface_service,
+            ip_address_service,
             dependency_service,
             subnet_service,
             daemon_service,
@@ -439,7 +439,7 @@ impl ServiceFactory {
             port_service,
             binding_service,
             credential_service,
-            if_entry_service,
+            interface_service,
             vlan_service,
         })
     }

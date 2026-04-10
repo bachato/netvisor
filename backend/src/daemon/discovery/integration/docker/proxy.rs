@@ -203,7 +203,7 @@ pub async fn execute(
     ctx.ops.report_progress(20).await.ok();
 
     // Build interface map from containers + subnets
-    let mut host_interfaces = host_data.interfaces.clone();
+    let mut host_interfaces = host_data.ip_addresses.clone();
     let containers_interfaces_and_subnets =
         scanner.get_container_interfaces(&containers, &all_subnets, &mut host_interfaces);
 
@@ -231,8 +231,8 @@ pub async fn execute(
         for port in result.ports {
             host_data.add_port(port);
         }
-        for interface in result.interfaces {
-            host_data.add_interface(interface);
+        for ip_address in result.ip_addresses {
+            host_data.add_ip_address(ip_address);
         }
     }
 

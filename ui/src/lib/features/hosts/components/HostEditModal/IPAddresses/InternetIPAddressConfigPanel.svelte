@@ -12,8 +12,8 @@
 	import {
 		common_ipAddress,
 		common_name,
-		hosts_interfaces_ipMustBeWithin,
-		hosts_interfaces_subnet
+		hosts_ipAddresses_ipMustBeWithin,
+		hosts_ipAddresses_subnet
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -78,7 +78,7 @@
 {#if subnet}
 	<div class="space-y-6">
 		<ConfigHeader
-			title={hosts_interfaces_subnet({ name: subnet?.name ? subnet.name : subnet.cidr })}
+			title={hosts_ipAddresses_subnet({ name: subnet?.name ? subnet.name : subnet.cidr })}
 			subtitle={subnet?.description}
 		/>
 
@@ -116,7 +116,7 @@
 					<p class="mt-1 text-xs text-red-400">{ipError}</p>
 				{:else}
 					<p class="text-tertiary mt-1 text-xs">
-						{hosts_interfaces_ipMustBeWithin({ cidr: subnet.cidr })}
+						{hosts_ipAddresses_ipMustBeWithin({ cidr: subnet.cidr })}
 					</p>
 				{/if}
 			</div>

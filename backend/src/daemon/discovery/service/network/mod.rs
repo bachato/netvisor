@@ -17,17 +17,17 @@ use crate::daemon::utils::scanner::ScanConcurrencyController;
 use crate::server::credentials::r#impl::mapping::CredentialQueryPayloadDiscriminants;
 use crate::server::discovery::r#impl::scan_settings::ScanSettings;
 use crate::server::discovery::r#impl::types::HostNamingFallback;
-use crate::server::interfaces::r#impl::base::Interface;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::services::r#impl::base::Service;
 use crate::server::subnets::r#impl::base::Subnet;
 
 /// Per-host data discovered during deep_scan_host().
 /// Used by subsequent discovery phases (e.g., Docker container scanning) to link
-/// containers to the correct virtualizing service and provide host interfaces.
+/// containers to the correct virtualizing service and provide host ip_addresses.
 #[derive(Debug, Clone, Default)]
 pub struct DiscoveredHostData {
     pub docker_service_id: Option<Uuid>,
-    pub interfaces: Vec<Interface>,
+    pub ip_addresses: Vec<IPAddress>,
 }
 
 /// Grace period to wait for late ARP arrivals after the last deep scan completes

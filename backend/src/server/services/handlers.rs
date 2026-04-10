@@ -274,7 +274,7 @@ async fn get_all_services(
 
 /// Create a new service
 ///
-/// Creates a service with optional bindings to interfaces or ports.
+/// Creates a service with optional bindings to ip_addresses or ports.
 /// The `id`, `created_at`, `updated_at`, and `source` fields are generated server-side.
 /// Bindings are specified without `service_id` or `network_id` - these are assigned automatically.
 ///
@@ -283,10 +283,10 @@ async fn get_all_services(
 /// - **Cross-host validation**: All bindings must reference ports/interfaces that belong to the
 ///   service's host. Bindings referencing entities from other hosts will be rejected.
 /// - **Deduplication**: Duplicate bindings in the same request are automatically deduplicated.
-/// - **All-interfaces precedence**: If a port binding with `interface_id: null` (all interfaces)
+/// - **All-interfaces precedence**: If a port binding with `ip_address_id: null` (all ip_addresses)
 ///   is included, any specific-interface bindings for the same port are automatically removed.
 /// - **Conflict detection**: Interface bindings conflict with port bindings on the same interface.
-///   A port binding on all interfaces conflicts with any interface binding.
+///   A port binding on all ip_addresses conflicts with any interface binding.
 #[utoipa::path(
     post,
     path = "",
@@ -339,7 +339,7 @@ pub async fn create_service(
 /// - **Cross-host validation**: All bindings must reference ports/interfaces that belong to the
 ///   service's host. Bindings referencing entities from other hosts will be rejected.
 /// - **Deduplication**: Duplicate bindings are automatically deduplicated.
-/// - **All-interfaces precedence**: If a port binding with `interface_id: null` (all interfaces)
+/// - **All-interfaces precedence**: If a port binding with `ip_address_id: null` (all ip_addresses)
 ///   is included, any specific-interface bindings for the same port are automatically removed.
 /// - **Conflict detection**: Interface bindings conflict with port bindings on the same interface.
 #[utoipa::path(

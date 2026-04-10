@@ -9,7 +9,7 @@ use crate::server::{
     },
     dependencies::{r#impl::base::Dependency, service::DependencyService},
     hosts::{r#impl::base::Host, service::HostService},
-    interfaces::r#impl::base::Interface,
+    ip_addresses::r#impl::base::IPAddress,
     ports::r#impl::base::Port,
     services::r#impl::{base::Service, patterns::MatchDetails},
     shared::{
@@ -505,28 +505,28 @@ impl ServiceService {
             .get()
             .expect("host_service not initialized");
 
-        // Get all ports and interfaces for this host
+        // Get all ports and ip_addresses for this host
         let host_ports = host_service.get_ports_for_host(host_id).await?;
-        let host_interfaces = host_service.get_interfaces_for_host(host_id).await?;
+        let host_interfaces = host_service.get_ip_addresses_for_host(host_id).await?;
 
         let valid_port_ids: std::collections::HashSet<Uuid> =
             host_ports.iter().map(|p| p.id).collect();
-        let valid_interface_ids: std::collections::HashSet<Uuid> =
+        let valid_ip_address_ids: std::collections::HashSet<Uuid> =
             host_interfaces.iter().map(|i| i.id).collect();
 
         for binding in bindings {
             match &binding.base.binding_type {
-                BindingType::Interface { interface_id } => {
-                    if !valid_interface_ids.contains(interface_id) {
+                BindingType::IPAddress { ip_address_id } => {
+                    if !valid_ip_address_ids.contains(ip_address_id) {
                         return Err(ValidationError::new(format!(
-                            "Interface binding references interface {} which does not belong to this host",
-                            interface_id
+                            "IP address binding references ip_address {} which does not belong to this host",
+                            ip_address_id
                         )).into());
                     }
                 }
                 BindingType::Port {
                     port_id,
-                    interface_id,
+                    ip_address_id,
                 } => {
                     if !valid_port_ids.contains(port_id) {
                         return Err(ValidationError::new(format!(
@@ -535,11 +535,11 @@ impl ServiceService {
                         ))
                         .into());
                     }
-                    if let Some(iface_id) = interface_id
-                        && !valid_interface_ids.contains(iface_id)
+                    if let Some(iface_id) = ip_address_id
+                        && !valid_ip_address_ids.contains(iface_id)
                     {
                         return Err(ValidationError::new(format!(
-                                "Port binding references interface {} which does not belong to this host",
+                                "Port binding references ip_address {} which does not belong to this host",
                                 iface_id
                             )).into());
                     }
@@ -552,22 +552,22 @@ impl ServiceService {
 
     /// Check if a new binding is already covered by existing bindings.
     /// A Port binding with a specific interface is covered if there's already
-    /// a Port binding for the same port with interface_id = None (all interfaces).
+    /// a Port binding for the same port with ip_address_id = None (all ip_addresses).
     fn is_binding_covered_by_existing(
         new_binding: &Binding,
         existing_bindings: &[Binding],
     ) -> bool {
         match &new_binding.base.binding_type {
-            // A Port binding with a specific interface is covered by an "all interfaces" binding for the same port
+            // A Port binding with a specific interface is covered by an "all ip_addresses" binding for the same port
             BindingType::Port {
                 port_id,
-                interface_id: Some(_),
+                ip_address_id: Some(_),
             } => existing_bindings.iter().any(|existing| {
                 matches!(
                     &existing.base.binding_type,
                     BindingType::Port {
                         port_id: existing_port_id,
-                        interface_id: None,
+                        ip_address_id: None,
                     } if existing_port_id == port_id
                 )
             }),
@@ -578,9 +578,9 @@ impl ServiceService {
 
     /// Validates that a binding doesn't conflict with existing bindings.
     /// Rules:
-    /// - Interface binding conflicts with port bindings on same interface OR port bindings on all interfaces
-    /// - Port binding (specific interface) conflicts with interface binding on same interface
-    /// - Port binding (all interfaces) conflicts with ANY interface binding
+    /// - Interface binding conflicts with port bindings on same interface OR port bindings on all ip_addresses
+    /// - Port binding (specific ip_address) conflicts with interface binding on same interface
+    /// - Port binding (all ip_addresses) conflicts with ANY interface binding
     ///
     /// Returns None if valid, Some(error_message) if conflict found.
     fn validate_binding_no_conflict(
@@ -588,46 +588,47 @@ impl ServiceService {
         existing_bindings: &[Binding],
     ) -> Option<&'static str> {
         match new_binding {
-            BindingType::Interface { interface_id } => {
+            BindingType::IPAddress { ip_address_id } => {
                 // Check for conflicting port bindings: same interface OR all-interfaces
                 for existing in existing_bindings {
                     if let BindingType::Port {
-                        interface_id: existing_iface,
+                        ip_address_id: existing_iface,
                         ..
                     } = &existing.base.binding_type
-                        && (*existing_iface == Some(*interface_id) || existing_iface.is_none())
+                        && (*existing_iface == Some(*ip_address_id) || existing_iface.is_none())
                     {
                         return Some(
-                            "Cannot add interface binding: service already has a port binding on this interface (or on all interfaces).",
+                            "Cannot add ip_address binding: service already has a port binding on this ip_address (or on all ip_addresses).",
                         );
                     }
                 }
             }
             BindingType::Port {
-                interface_id: Some(interface_id),
+                ip_address_id: Some(ip_address_id),
                 ..
             } => {
                 // Check for conflicting interface binding on same interface
                 for existing in existing_bindings {
-                    if let BindingType::Interface {
-                        interface_id: existing_iface,
+                    if let BindingType::IPAddress {
+                        ip_address_id: existing_iface,
                     } = &existing.base.binding_type
-                        && existing_iface == interface_id
+                        && existing_iface == ip_address_id
                     {
                         return Some(
-                            "Cannot add port binding: service already has an interface binding on this interface.",
+                            "Cannot add port binding: service already has an ip_address binding on this ip_address.",
                         );
                     }
                 }
             }
             BindingType::Port {
-                interface_id: None, ..
+                ip_address_id: None,
+                ..
             } => {
-                // Port binding on all interfaces: conflicts with ANY interface binding
+                // Port binding on all ip_addresses: conflicts with ANY interface binding
                 for existing in existing_bindings {
-                    if matches!(existing.base.binding_type, BindingType::Interface { .. }) {
+                    if matches!(existing.base.binding_type, BindingType::IPAddress { .. }) {
                         return Some(
-                            "Cannot add port binding on all interfaces: service already has interface bindings.",
+                            "Cannot add port binding on all ip_addresses: service already has ip_address bindings.",
                         );
                     }
                 }
@@ -648,7 +649,7 @@ impl ServiceService {
             .filter_map(|b| {
                 if let BindingType::Port {
                     port_id,
-                    interface_id: None,
+                    ip_address_id: None,
                 } = &b.base.binding_type
                 {
                     Some(*port_id)
@@ -666,13 +667,13 @@ impl ServiceService {
             // Skip specific-interface port bindings when an all-interfaces binding exists for the same port
             if let BindingType::Port {
                 port_id,
-                interface_id: Some(_),
+                ip_address_id: Some(_),
             } = &binding.base.binding_type
                 && all_interface_port_ids.contains(port_id)
             {
                 tracing::debug!(
                     port_id = %port_id,
-                    "Deduplicating specific-interface binding superseded by all-interfaces binding"
+                    "Deduplicating specific-ip_address binding superseded by all-ip_addresses binding"
                 );
                 continue;
             }
@@ -716,8 +717,8 @@ impl ServiceService {
     /// Returns the remaining bindings after removal.
     /// Remove port bindings that overlap with the given claims.
     ///
-    /// `claims_to_remove` contains `(port_id, claimer_interface_id)` pairs.
-    /// A binding is removed if its port_id matches a claim AND the interfaces
+    /// `claims_to_remove` contains `(port_id, claimer_ip_address_id)` pairs.
+    /// A binding is removed if its port_id matches a claim AND the ip_addresses
     /// overlap (None overlaps anything, Some(a) overlaps Some(a)).
     ///
     /// Note: the daemon's OpenPorts upsert later in the batch sets the
@@ -742,7 +743,7 @@ impl ServiceService {
                 let Some(port_id) = b.port_id() else {
                     return true; // Keep interface-only bindings
                 };
-                let bind_iface = b.interface_id();
+                let bind_iface = b.ip_address_id();
                 // Keep if no claim overlaps this binding
                 !claims_to_remove.iter().any(|(claim_port, claim_iface)| {
                     *claim_port == port_id
@@ -762,7 +763,7 @@ impl ServiceService {
     /// Partition bindings into non-conflicting and conflicting sets.
     ///
     /// A binding conflicts if another service on the same host already has a port binding
-    /// to the same port on the same interface (or either is "all interfaces").
+    /// to the same port on the same interface (or either is "all ip_addresses").
     ///
     /// Also checks against `batch_claimed` for in-batch conflict detection during discovery.
     ///
@@ -789,10 +790,10 @@ impl ServiceService {
                 s.base.bindings.into_iter().filter_map(|b| {
                     if let BindingType::Port {
                         port_id,
-                        interface_id,
+                        ip_address_id,
                     } = b.base.binding_type
                     {
-                        Some((port_id, interface_id))
+                        Some((port_id, ip_address_id))
                     } else {
                         None
                     }
@@ -817,17 +818,17 @@ impl ServiceService {
         for binding in bindings {
             if let BindingType::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             } = &binding.base.binding_type
             {
                 let has_conflict = all_claimed.iter().any(|(claimed_port, claimed_iface)| {
                     if claimed_port != port_id {
                         return false;
                     }
-                    // Conflict if same port AND interfaces overlap:
-                    // - Either is "all interfaces" (None) -> conflict
+                    // Conflict if same port AND ip_addresses overlap:
+                    // - Either is "all ip_addresses" (None) -> conflict
                     // - Both specific and same interface -> conflict
-                    match (interface_id, claimed_iface) {
+                    match (ip_address_id, claimed_iface) {
                         (None, _) | (_, None) => true,
                         (Some(a), Some(b)) => a == b,
                     }
@@ -871,20 +872,20 @@ impl ServiceService {
         for binding in bindings {
             if let BindingType::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             } = &binding.base.binding_type
             {
                 let conflicting_service = other_services.iter().find(|s| {
                     s.base.bindings.iter().any(|b| {
                         if let BindingType::Port {
                             port_id: existing_port,
-                            interface_id: existing_iface,
+                            ip_address_id: existing_iface,
                         } = &b.base.binding_type
                         {
                             if existing_port != port_id {
                                 return false;
                             }
-                            match (interface_id, existing_iface) {
+                            match (ip_address_id, existing_iface) {
                                 (None, _) | (_, None) => true,
                                 (Some(a), Some(b)) => a == b,
                             }
@@ -940,7 +941,7 @@ impl ServiceService {
 
         for new_service_binding in &new_service_data.base.bindings {
             // Check if this binding is already covered by existing bindings
-            // (e.g., a specific interface binding is covered by an "all interfaces" binding for the same port)
+            // (e.g., a specific interface binding is covered by an "all ip_addresses" binding for the same port)
             let is_covered = Self::is_binding_covered_by_existing(
                 new_service_binding,
                 &existing_service.base.bindings,
@@ -948,13 +949,13 @@ impl ServiceService {
 
             if is_covered {
                 tracing::trace!(
-                    "Skipping binding {:?} - already covered by existing all-interfaces binding",
+                    "Skipping binding {:?} - already covered by existing all-ip_addresses binding",
                     new_service_binding.base.binding_type
                 );
                 continue;
             }
 
-            // Check for binding type conflicts (Interface vs Port on same interface)
+            // Check for binding type conflicts (Interface vs Port on same ip_address)
             if let Some(conflict_msg) = Self::validate_binding_no_conflict(
                 &new_service_binding.base.binding_type,
                 &existing_service.base.bindings,
@@ -967,11 +968,11 @@ impl ServiceService {
                 continue;
             }
 
-            // If new binding is "all interfaces" port binding, remove specific interface bindings for same port
+            // If new binding is "all ip_addresses" port binding, remove specific interface bindings for same port
             // (the all-interfaces binding supersedes them)
             if let BindingType::Port {
                 port_id,
-                interface_id: None,
+                ip_address_id: None,
             } = &new_service_binding.base.binding_type
             {
                 let before_count = existing_service.base.bindings.len();
@@ -979,11 +980,11 @@ impl ServiceService {
                     // Log each comparison for debugging
                     if let BindingType::Port {
                         port_id: existing_port_id,
-                        interface_id: existing_interface_id,
+                        ip_address_id: existing_ip_address_id,
                     } = &existing.base.binding_type
                     {
                         let dominated =
-                            existing_interface_id.is_some() && existing_port_id == port_id;
+                            existing_ip_address_id.is_some() && existing_port_id == port_id;
 
                         return !dominated;
                     }
@@ -1196,18 +1197,18 @@ impl ServiceService {
         Ok(())
     }
 
-    /// Update bindings to match ports and interfaces available on new host
-    /// `original_interfaces` and `updated_interfaces` are the interfaces for the respective hosts
+    /// Update bindings to match ports and ip_addresses available on new host
+    /// `original_interfaces` and `updated_interfaces` are the ip_addresses for the respective hosts
     /// `original_ports` and `updated_ports` are the ports for the respective hosts
     #[allow(clippy::too_many_arguments)]
     pub async fn reassign_service_interface_bindings(
         &self,
         service: Service,
         original_host: &Host,
-        original_interfaces: &[Interface],
+        original_interfaces: &[IPAddress],
         original_ports: &[Port],
         updated_host: &Host,
-        updated_interfaces: &[Interface],
+        updated_interfaces: &[IPAddress],
         updated_ports: &[Port],
         interface_id_remap: &std::collections::HashMap<Uuid, Uuid>,
     ) -> Service {
@@ -1233,24 +1234,24 @@ impl ServiceService {
             .filter_map(|b| {
                 // Look up original interface from the provided slice
                 let original_interface = b
-                    .interface_id()
+                    .ip_address_id()
                     .and_then(|id| original_interfaces.iter().find(|i| i.id == id));
 
                 match &mut b.base.binding_type {
-                    BindingType::Interface { interface_id } => {
-                        if let Some(original_interface) = original_interface {
-                            let new_interface: Option<&Interface> =
-                                updated_interfaces.iter().find(|i| *i == original_interface);
+                    BindingType::IPAddress { ip_address_id } => {
+                        if let Some(original_ip_address) = original_interface {
+                            let new_ip_address: Option<&IPAddress> =
+                                updated_interfaces.iter().find(|i| *i == original_ip_address);
 
-                            if let Some(new_interface) = new_interface {
-                                *interface_id = new_interface.id;
+                            if let Some(new_ip_address) = new_ip_address {
+                                *ip_address_id = new_ip_address.id;
                                 return Some(*b);
                             }
                         }
                         // Structural match failed — try direct ID remap (handles subnet_id
                         // mismatch on second scan where scanner subnet UUIDs differ from DB)
-                        if let Some(&new_id) = interface_id_remap.get(interface_id) {
-                            *interface_id = new_id;
+                        if let Some(&new_id) = interface_id_remap.get(ip_address_id) {
+                            *ip_address_id = new_id;
                             return Some(*b);
                         }
                         // Interface binding couldn't be matched - this can happen during consolidation
@@ -1259,37 +1260,37 @@ impl ServiceService {
                         tracing::warn!(
                             service_id = %service_id,
                             service_name = %service_name,
-                            original_interface_id = ?b.interface_id(),
-                            "Dropping interface binding during reassignment: \
-                             no matching interface found on destination host"
+                            original_interface_id = ?b.ip_address_id(),
+                            "Dropping ip_address binding during reassignment: \
+                             no matching ip_address found on destination host"
                         );
                         None::<Binding>
                     }
                     BindingType::Port {
                         port_id,
-                        interface_id,
+                        ip_address_id,
                     } => {
                         if let Some(original_port) =
                             original_ports.iter().find(|p| p.id == *port_id)
                             && let Some(new_port) =
                                 updated_ports.iter().find(|p| *p == original_port)
                         {
-                            let new_interface: Option<Option<Interface>> = match original_interface
+                            let new_ip_address: Option<Option<IPAddress>> = match original_interface
                             {
-                                // None interface = listen on all interfaces, assume same for new host
+                                // None interface = listen on all ip_addresses, assume same for new host
                                 None => Some(None),
-                                Some(original_interface) => {
+                                Some(original_ip_address) => {
                                     match updated_interfaces
                                         .iter()
-                                        .find(|i| *i == original_interface)
+                                        .find(|i| *i == original_ip_address)
                                     {
-                                        Some(found_interface) => {
-                                            Some(Some(found_interface.clone()))
+                                        Some(found_ip_address) => {
+                                            Some(Some(found_ip_address.clone()))
                                         }
                                         None => {
                                             // Structural match failed — try direct ID remap
                                             // (handles subnet_id mismatch on second scan)
-                                            if let Some(&new_id) = interface_id_remap.get(&original_interface.id) {
+                                            if let Some(&new_id) = interface_id_remap.get(&original_ip_address.id) {
                                                 if let Some(found) = updated_interfaces.iter().find(|i| i.id == new_id) {
                                                     Some(Some(found.clone()))
                                                 } else {
@@ -1298,8 +1299,8 @@ impl ServiceService {
                                                         service_name = %service_name,
                                                         port_number = %new_port.base.port_type.config().number,
                                                         remapped_interface_id = %new_id,
-                                                        "Port binding interface remap target not found - \
-                                                         falling back to 'all interfaces'"
+                                                        "Port binding ip_address remap target not found - \
+                                                         falling back to 'all ip_addresses'"
                                                     );
                                                     Some(None)
                                                 }
@@ -1308,9 +1309,9 @@ impl ServiceService {
                                                     service_id = %service_id,
                                                     service_name = %service_name,
                                                     port_number = %new_port.base.port_type.config().number,
-                                                    original_interface_ip = %original_interface.base.ip_address,
-                                                    "Port binding interface not found on destination host - \
-                                                     falling back to 'all interfaces'"
+                                                    original_interface_ip = %original_ip_address.base.ip_address,
+                                                    "Port binding ip_address not found on destination host - \
+                                                     falling back to 'all ip_addresses'"
                                                 );
                                                 Some(None)
                                             }
@@ -1319,12 +1320,12 @@ impl ServiceService {
                                 }
                             };
 
-                            match new_interface {
+                            match new_ip_address {
                                 None => return None,
-                                Some(new_interface) => {
+                                Some(new_ip_address) => {
                                     *port_id = new_port.id;
-                                    *interface_id = match new_interface {
-                                        Some(new_interface) => Some(new_interface.id),
+                                    *ip_address_id = match new_ip_address {
+                                        Some(new_ip_address) => Some(new_ip_address.id),
                                         None => None,
                                     };
                                     return Some(*b);

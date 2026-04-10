@@ -6,9 +6,9 @@ use crate::server::{
     dependencies::{dependency_members::DependencyMemberRecord, r#impl::base::Dependency},
     discovery::r#impl::base::Discovery,
     hosts::r#impl::base::Host,
-    if_entries::r#impl::base::IfEntry,
     interfaces::r#impl::base::Interface,
     invites::r#impl::base::Invite,
+    ip_addresses::r#impl::base::IPAddress,
     networks::r#impl::Network,
     organizations::r#impl::base::Organization,
     ports::r#impl::base::Port,
@@ -151,9 +151,9 @@ fn get_entity_deserializers() -> HashMap<&'static str, DeserializeFn> {
     );
 
     map.insert(
-        Interface::table_name(),
+        IPAddress::table_name(),
         Box::new(|row| {
-            Interface::from_row(row)?;
+            IPAddress::from_row(row)?;
             Ok(())
         }),
     );
@@ -215,9 +215,9 @@ fn get_entity_deserializers() -> HashMap<&'static str, DeserializeFn> {
     map.insert("network_credentials", Box::new(|_row| Ok(())));
 
     map.insert(
-        IfEntry::table_name(),
+        Interface::table_name(),
         Box::new(|row| {
-            IfEntry::from_row(row)?;
+            Interface::from_row(row)?;
             Ok(())
         }),
     );

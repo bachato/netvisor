@@ -1,6 +1,6 @@
 //! Self-report phase: daemon reports itself as a host on the network.
 //!
-//! Runs on first discovery only. Creates the daemon host with its interfaces,
+//! Runs on first discovery only. Creates the daemon host with its ip_addresses,
 //! Scanopy service, and bindings on bound subnets.
 
 use std::net::{IpAddr, Ipv4Addr};
@@ -15,7 +15,7 @@ use crate::daemon::utils::base::DaemonUtils;
 use crate::server::bindings::r#impl::base::Binding;
 use crate::server::discovery::r#impl::types::DiscoveryType;
 use crate::server::hosts::r#impl::base::{Host, HostBase};
-use crate::server::interfaces::r#impl::base::{ALL_INTERFACES_IP, Interface};
+use crate::server::ip_addresses::r#impl::base::{ALL_IP_ADDRESSES_IP, IPAddress};
 use crate::server::ports::r#impl::base::Port;
 use crate::server::ports::r#impl::base::PortType;
 use crate::server::services::definitions::scanopy_daemon::ScanopyDaemon;
@@ -27,7 +27,7 @@ use crate::server::shared::types::entities::{DiscoveryMetadata, EntitySource};
 use crate::server::subnets::r#impl::base::Subnet;
 
 impl DiscoveryRunner {
-    /// Self-report phase: detect interfaces, create daemon host with Scanopy service.
+    /// Self-report phase: detect ip_addresses, create daemon host with Scanopy service.
     /// Only runs on first discovery (is_first_run check in caller).
     pub(super) async fn run_self_report_phase(
         &self,
@@ -53,9 +53,9 @@ impl DiscoveryRunner {
         let binding_address = self.service.config_store.get_bind_address().await?;
         let binding_ip = IpAddr::V4(binding_address.parse::<Ipv4Addr>()?);
 
-        // Get interfaces
+        // Get ip_addresses
         let interface_filter = self.service.config_store.get_interfaces().await?;
-        let (interfaces, _, _) = utils
+        let (ip_addresses, _, _) = utils
             .get_own_interfaces(
                 DiscoveryType::from(self),
                 daemon_id,
@@ -68,8 +68,8 @@ impl DiscoveryRunner {
             return Err(anyhow::anyhow!("Discovery cancelled"));
         }
 
-        // Filter interfaces to those with matching created subnets
-        let interfaces: Vec<Interface> = interfaces
+        // Filter ip_addresses to those with matching created subnets
+        let ip_addresses: Vec<IPAddress> = ip_addresses
             .into_iter()
             .filter_map(|mut i| {
                 if let Some(subnet) = created_subnets
@@ -83,16 +83,16 @@ impl DiscoveryRunner {
             })
             .collect();
 
-        let daemon_bound_subnet_ids: Vec<Uuid> = if binding_address == ALL_INTERFACES_IP.to_string()
-        {
-            created_subnets.iter().map(|s| s.id).collect()
-        } else {
-            created_subnets
-                .iter()
-                .filter(|s| s.base.cidr.contains(&binding_ip))
-                .map(|s| s.id)
-                .collect()
-        };
+        let daemon_bound_subnet_ids: Vec<Uuid> =
+            if binding_address == ALL_IP_ADDRESSES_IP.to_string() {
+                created_subnets.iter().map(|s| s.id).collect()
+            } else {
+                created_subnets
+                    .iter()
+                    .filter(|s| s.base.cidr.contains(&binding_ip))
+                    .map(|s| s.id)
+                    .collect()
+            };
 
         let own_port = Port::new_hostless(PortType::new_tcp(
             self.service.config_store.get_port().await?,
@@ -129,7 +129,7 @@ impl DiscoveryRunner {
         host.id = host_id;
 
         let daemon_service_definition = ScanopyDaemon;
-        let daemon_service_bound_interfaces: Vec<&Interface> = interfaces
+        let daemon_service_bound_interfaces: Vec<&IPAddress> = ip_addresses
             .iter()
             .filter(|i| daemon_bound_subnet_ids.contains(&i.base.subnet_id))
             .collect();
@@ -158,7 +158,7 @@ impl DiscoveryRunner {
 
         ops.create_host(
             host,
-            interfaces.clone(),
+            ip_addresses.clone(),
             vec![own_port],
             vec![daemon_service],
             vec![],

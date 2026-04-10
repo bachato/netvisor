@@ -17,6 +17,7 @@ export const entityToExportPath: Record<EntityDiscriminants, string | null> = {
 	Host: 'hosts',
 	Service: 'services',
 	Subnet: 'subnets',
+	IPAddress: 'ip-addresses',
 	Interface: 'interfaces',
 	Port: 'ports',
 	Binding: 'bindings',
@@ -28,7 +29,6 @@ export const entityToExportPath: Record<EntityDiscriminants, string | null> = {
 	Discovery: 'discoveries',
 	Topology: 'topologies',
 	User: 'users',
-	IfEntry: 'if-entries',
 	Credential: 'credentials',
 	// API keys use auth paths
 	UserApiKey: 'auth/keys',

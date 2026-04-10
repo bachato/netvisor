@@ -1,7 +1,7 @@
 use crate::server::bindings::r#impl::base::Binding;
 use crate::server::dependencies::r#impl::base::Dependency;
-use crate::server::if_entries::r#impl::base::IfEntry;
 use crate::server::interfaces::r#impl::base::Interface;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::ports::r#impl::base::Port;
 use crate::server::services::r#impl::base::Service;
 use crate::server::shared::entities::EntityDiscriminants;
@@ -77,26 +77,26 @@ impl Storable for Topology {
                     edges,
                     options,
                     hosts,
-                    interfaces,
+                    ip_addresses,
                     ports,
                     bindings,
                     services,
                     subnets,
                     dependencies,
-                    if_entries,
+                    interfaces,
                     is_stale,
                     last_refreshed,
                     is_locked,
                     locked_at,
                     locked_by,
                     removed_hosts,
-                    removed_interfaces,
+                    removed_ip_addresses,
                     removed_services,
                     removed_subnets,
                     removed_dependencies,
                     removed_bindings,
                     removed_ports,
-                    removed_if_entries,
+                    removed_interfaces,
                     parent_id,
                     tags,
                     entity_tags,
@@ -115,26 +115,26 @@ impl Storable for Topology {
                 "edges",
                 "options",
                 "hosts",
-                "interfaces",
+                "ip_addresses",
                 "subnets",
                 "dependencies",
                 "services",
                 "bindings",
                 "ports",
-                "if_entries",
+                "interfaces",
                 "is_stale",
                 "last_refreshed",
                 "is_locked",
                 "locked_at",
                 "locked_by",
                 "removed_hosts",
-                "removed_interfaces",
+                "removed_ip_addresses",
                 "removed_services",
                 "removed_subnets",
                 "removed_dependencies",
                 "removed_bindings",
                 "removed_ports",
-                "removed_if_entries",
+                "removed_interfaces",
                 "parent_id",
                 "tags",
                 "entity_tags",
@@ -150,26 +150,26 @@ impl Storable for Topology {
                 SqlValue::Edges(edges),
                 SqlValue::TopologyOptions(options),
                 SqlValue::Hosts(hosts),
-                SqlValue::Interfaces(interfaces),
+                SqlValue::IPAddresses(ip_addresses),
                 SqlValue::Subnets(subnets),
                 SqlValue::Dependencies(dependencies),
                 SqlValue::Services(services),
                 SqlValue::Bindings(bindings),
                 SqlValue::Ports(ports),
-                SqlValue::IfEntries(if_entries),
+                SqlValue::Interfaces(interfaces),
                 SqlValue::Bool(is_stale),
                 SqlValue::Timestamp(last_refreshed),
                 SqlValue::Bool(is_locked),
                 SqlValue::OptionTimestamp(locked_at),
                 SqlValue::OptionalUuid(locked_by),
                 SqlValue::UuidArray(removed_hosts),
-                SqlValue::UuidArray(removed_interfaces),
+                SqlValue::UuidArray(removed_ip_addresses),
                 SqlValue::UuidArray(removed_services),
                 SqlValue::UuidArray(removed_subnets),
                 SqlValue::UuidArray(removed_dependencies),
                 SqlValue::UuidArray(removed_bindings),
                 SqlValue::UuidArray(removed_ports),
-                SqlValue::UuidArray(removed_if_entries),
+                SqlValue::UuidArray(removed_interfaces),
                 SqlValue::OptionalUuid(parent_id),
                 SqlValue::UuidArray(tags),
                 SqlValue::Tags(entity_tags),
@@ -190,9 +190,9 @@ impl Storable for Topology {
 
         let hosts: Vec<Host> = serde_json::from_value(row.get::<serde_json::Value, _>("hosts"))
             .map_err(|e| anyhow::anyhow!("Failed to deserialize hosts: {}", e))?;
-        let interfaces: Vec<Interface> =
-            serde_json::from_value(row.get::<serde_json::Value, _>("interfaces"))
-                .map_err(|e| anyhow::anyhow!("Failed to deserialize interfaces: {}", e))?;
+        let ip_addresses: Vec<IPAddress> =
+            serde_json::from_value(row.get::<serde_json::Value, _>("ip_addresses"))
+                .map_err(|e| anyhow::anyhow!("Failed to deserialize ip_addresses: {}", e))?;
         let subnets: Vec<Subnet> =
             serde_json::from_value(row.get::<serde_json::Value, _>("subnets"))
                 .map_err(|e| anyhow::anyhow!("Failed to deserialize subnets: {}", e))?;
@@ -210,9 +210,9 @@ impl Storable for Topology {
             serde_json::from_value(row.get::<serde_json::Value, _>("bindings"))
                 .map_err(|e| anyhow::anyhow!("Failed to deserialize bindings: {}", e))?;
 
-        let if_entries: Vec<IfEntry> =
-            serde_json::from_value(row.get::<serde_json::Value, _>("if_entries"))
-                .map_err(|e| anyhow::anyhow!("Failed to deserialize if_entries: {}", e))?;
+        let interfaces: Vec<Interface> =
+            serde_json::from_value(row.get::<serde_json::Value, _>("interfaces"))
+                .map_err(|e| anyhow::anyhow!("Failed to deserialize interfaces: {}", e))?;
 
         let entity_tags: Vec<Tag> =
             serde_json::from_value(row.get::<serde_json::Value, _>("entity_tags"))
@@ -235,23 +235,23 @@ impl Storable for Topology {
                 locked_by: row.get("locked_by"),
                 removed_dependencies: row.get("removed_dependencies"),
                 removed_hosts: row.get("removed_hosts"),
-                removed_interfaces: row.get("removed_interfaces"),
+                removed_ip_addresses: row.get("removed_ip_addresses"),
                 removed_services: row.get("removed_services"),
                 removed_subnets: row.get("removed_subnets"),
                 removed_ports: row.get("removed_ports"),
                 removed_bindings: row.get("removed_bindings"),
-                removed_if_entries: row.get("removed_if_entries"),
+                removed_interfaces: row.get("removed_interfaces"),
                 parent_id: row.get("parent_id"),
                 nodes,
                 edges,
                 hosts,
-                interfaces,
+                ip_addresses,
                 subnets,
                 bindings,
                 ports,
                 services,
                 dependencies,
-                if_entries,
+                interfaces,
                 options,
                 tags: row.get("tags"),
                 entity_tags,

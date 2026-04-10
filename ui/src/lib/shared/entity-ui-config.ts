@@ -7,8 +7,8 @@ import type { EntityDiscriminants } from '$lib/api/entities';
 import type { EntityDisplayComponent } from '$lib/shared/components/forms/selection/types';
 import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
+import { IPAddressDisplay } from '$lib/shared/components/forms/selection/display/IPAddressDisplay.svelte';
 import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
-import { IfEntryDisplay } from '$lib/shared/components/forms/selection/display/IfEntryDisplay.svelte';
 import { SubnetDisplay } from '$lib/shared/components/forms/selection/display/SubnetDisplay.svelte';
 import { DaemonDisplay } from '$lib/shared/components/forms/selection/display/DaemonDisplay.svelte';
 import { DependencyDisplay } from '$lib/shared/components/forms/selection/display/DependencyDisplay.svelte';
@@ -54,19 +54,19 @@ export const TAB_LABELS: Record<string, string> = {
 export const entityUIConfig: Record<EntityDiscriminants, EntityUIConfig | null> = {
 	Host: { tabId: 'hosts', modalName: 'host-editor', displayComponent: HostDisplay },
 	Service: { tabId: 'services', modalName: 'service-editor', displayComponent: ServiceDisplay },
+	IPAddress: {
+		tabId: 'hosts',
+		displayComponent: IPAddressDisplay,
+		parentType: 'Host',
+		parentIdField: 'host_id',
+		modalTab: 'ip-addresses'
+	},
 	Interface: {
 		tabId: 'hosts',
 		displayComponent: InterfaceDisplay,
 		parentType: 'Host',
 		parentIdField: 'host_id',
 		modalTab: 'interfaces'
-	},
-	IfEntry: {
-		tabId: 'hosts',
-		displayComponent: IfEntryDisplay,
-		parentType: 'Host',
-		parentIdField: 'host_id',
-		modalTab: 'if-entries'
 	},
 	Port: { tabId: 'hosts', parentType: 'Host', parentIdField: 'host_id', modalTab: 'ports' },
 	Binding: {

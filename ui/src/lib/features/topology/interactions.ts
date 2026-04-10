@@ -13,9 +13,9 @@ import { elevateEdgesToContainers } from './layout/edge-elevation';
 import { getContainerContents, buildEntityNodeIndex } from './resolvers';
 import { getHostFromInterfaceIdFromCache } from '../hosts/queries';
 import {
-	getInterfacesForHostFromCache,
-	getInterfacesForSubnetFromCache
-} from '../interfaces/queries';
+	getIPAddressesForHostFromCache,
+	getIPAddressesForSubnetFromCache
+} from '../ip-addresses/queries';
 import { getSubnetByIdFromCache } from '../subnets/queries';
 
 // Shared stores for hover state across all component instances
@@ -304,7 +304,7 @@ function getVirtualizedContainerNodes(
 	const dockerHost = getHostFromInterfaceIdFromCache(queryClient, dockerHostInterfaceId);
 	if (dockerHost) {
 		// Get all interfaces for this host from the cache
-		const hostInterfaces = getInterfacesForHostFromCache(queryClient, dockerHost.id);
+		const hostInterfaces = getIPAddressesForHostFromCache(queryClient, dockerHost.id);
 		const hostInterfaceSubnetIds = hostInterfaces.map((i) => i.subnet_id);
 
 		const dockerBridgeSubnets = hostInterfaceSubnetIds
@@ -313,7 +313,7 @@ function getVirtualizedContainerNodes(
 			.filter((s) => subnetTypes.getMetadata(s.subnet_type).is_for_containers);
 
 		const interfacesOnDockerSubnets = dockerBridgeSubnets.flatMap((s) =>
-			getInterfacesForSubnetFromCache(queryClient, s.id)
+			getIPAddressesForSubnetFromCache(queryClient, s.id)
 		);
 
 		for (const iface of interfacesOnDockerSubnets) {

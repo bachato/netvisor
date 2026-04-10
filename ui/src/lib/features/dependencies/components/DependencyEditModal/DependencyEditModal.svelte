@@ -12,7 +12,6 @@
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { useHostsQuery } from '$lib/features/hosts/queries';
-	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import InlineInfo from '$lib/shared/components/feedback/InlineInfo.svelte';
@@ -83,7 +82,7 @@
 	const servicesQuery = useServicesCacheQuery();
 	const networksQuery = useNetworksQuery();
 	const hostsQuery = useHostsQuery({ limit: 0 });
-	const interfacesQuery = useInterfacesQuery();
+	const ipAddressesQuery = useInterfacesQuery();
 	const portsQuery = usePortsQuery();
 	const subnetsQuery = useSubnetsQuery();
 
@@ -91,7 +90,7 @@
 	let isServicesLoading = $derived(hostsQuery.isPending);
 	let networksData = $derived(networksQuery.data ?? []);
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
-	let interfacesData = $derived(interfacesQuery.data ?? []);
+	let ipAddressesData = $derived(ipAddressesQuery.data ?? []);
 	let portsData = $derived(portsQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 	let defaultNetworkId = $derived(networksData[0]?.id ?? '');
@@ -105,7 +104,7 @@
 	let bindingContext = $derived({
 		services: servicesData,
 		hosts: hostsData,
-		interfaces: interfacesData,
+		interfaces: ipAddressesData,
 		ports: portsData,
 		isContainerSubnet: isContainerSubnetFn
 	});

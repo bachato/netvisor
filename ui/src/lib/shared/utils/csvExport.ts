@@ -101,7 +101,7 @@ export async function downloadTopologyExport(
 
 /**
  * Download ZIP export for hosts with all children.
- * Returns a zip containing hosts.csv, interfaces.csv, ports.csv, services.csv, if_entries.csv
+ * Returns a zip containing hosts.csv, interfaces.csv, ports.csv, services.csv, interfaces.csv
  */
 export async function downloadHostsZip(params: CsvExportParams): Promise<void> {
 	const baseUrl = getServerUrl();

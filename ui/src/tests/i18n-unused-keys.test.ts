@@ -20,11 +20,11 @@ const ALLOWED_DUPLICATE_KEYS = new Set([
 	'snmp_operStatusTesting',
 	// System Description - used in both LLDP neighbor info and SNMP system info contexts
 	// These may need different translations in some languages
-	'hosts_ifEntries_lldpSysDescr',
+	'hosts_ipAddresses_lldpSysDescr',
 	'hosts_snmp_sysDescr',
-	// Chassis ID - used in both ifEntry LLDP info and SNMP system info contexts
+	// Chassis ID - used in both interface LLDP info and SNMP system info contexts
 	// These may need different translations in some languages
-	'hosts_ifEntries_chassisId',
+	'hosts_ipAddresses_chassisId',
 	'hosts_snmp_chassisId'
 ]);
 
@@ -42,7 +42,7 @@ const ALLOWED_SINGLE_WORD_KEYS = new Set([
 	// SNMP placeholders - context-specific defaults
 	'snmp_communityStringPlaceholder',
 	// LLDP/CDP neighbor context - specific to network discovery protocol terminology
-	'hosts_ifEntries_neighbor',
+	'hosts_ipAddresses_neighbor',
 	// Discovery legacy label - context-specific label for non-Unified discovery types
 	'discovery_legacyType'
 ]);

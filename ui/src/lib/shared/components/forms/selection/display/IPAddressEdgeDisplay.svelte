@@ -2,7 +2,7 @@
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import type { Topology, TopologyEdge } from '$lib/features/topology/types/base';
 
-	export const InterfaceEdgeDisplay: EntityDisplayComponent<TopologyEdge, EdgeDisplayContext> = {
+	export const IPAddressEdgeDisplay: EntityDisplayComponent<TopologyEdge, EdgeDisplayContext> = {
 		getId: (edge) => edge.id,
 		getLabel: (edge, context) => {
 			if (!context?.topology || !('host_id' in edge)) return 'Interface';
@@ -39,4 +39,4 @@
 	let { item, context }: Props = $props();
 </script>
 
-<ListSelectItem {item} {context} displayComponent={InterfaceEdgeDisplay} />
+<ListSelectItem {item} {context} displayComponent={IPAddressEdgeDisplay} />

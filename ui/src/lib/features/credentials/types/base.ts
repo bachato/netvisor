@@ -7,8 +7,8 @@ export type CredentialBase = components['schemas']['CredentialBase'];
 export type CredentialType = components['schemas']['CredentialType'];
 export type CredentialOrderField = components['schemas']['CredentialOrderField'];
 
-// Re-export SNMP types still used by other features (IfEntry display, etc.)
-export type IfEntry = components['schemas']['IfEntry'];
+// Re-export SNMP types still used by other features (Interface display, etc.)
+export type Interface = components['schemas']['Interface'];
 export type IfAdminStatus = components['schemas']['IfAdminStatus'];
 export type IfOperStatus = components['schemas']['IfOperStatus'];
 

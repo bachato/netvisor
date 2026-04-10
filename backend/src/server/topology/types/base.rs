@@ -1,8 +1,8 @@
 use crate::server::bindings::r#impl::base::Binding;
 use crate::server::dependencies::r#impl::base::Dependency;
 use crate::server::hosts::r#impl::base::Host;
-use crate::server::if_entries::r#impl::base::IfEntry;
 use crate::server::interfaces::r#impl::base::Interface;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::ports::r#impl::base::Port;
 use crate::server::services::r#impl::base::Service;
 use crate::server::services::r#impl::categories::ServiceCategory;
@@ -32,8 +32,8 @@ pub struct SetEntitiesParams {
     pub dependencies: Vec<Dependency>,
     pub ports: Vec<Port>,
     pub bindings: Vec<Binding>,
+    pub ip_addresses: Vec<IPAddress>,
     pub interfaces: Vec<Interface>,
-    pub if_entries: Vec<IfEntry>,
     pub entity_tags: Vec<Tag>,
     pub vlans: Vec<Vlan>,
 }
@@ -70,12 +70,12 @@ impl Topology {
     pub fn clear_stale(&mut self) {
         self.base.removed_dependencies = vec![];
         self.base.removed_hosts = vec![];
-        self.base.removed_interfaces = vec![];
+        self.base.removed_ip_addresses = vec![];
         self.base.removed_services = vec![];
         self.base.removed_subnets = vec![];
         self.base.removed_bindings = vec![];
         self.base.removed_ports = vec![];
-        self.base.removed_if_entries = vec![];
+        self.base.removed_interfaces = vec![];
         self.base.is_stale = false;
         self.base.last_refreshed = Utc::now()
     }
@@ -87,8 +87,8 @@ impl Topology {
         self.base.dependencies = params.dependencies;
         self.base.ports = params.ports;
         self.base.bindings = params.bindings;
+        self.base.ip_addresses = params.ip_addresses;
         self.base.interfaces = params.interfaces;
-        self.base.if_entries = params.if_entries;
         self.base.entity_tags = params.entity_tags;
         self.base.vlans = params.vlans;
     }
@@ -116,13 +116,13 @@ pub struct TopologyBase {
 
     // Entities
     pub hosts: Vec<Host>,
-    pub interfaces: Vec<Interface>,
+    pub ip_addresses: Vec<IPAddress>,
     pub ports: Vec<Port>,
     pub bindings: Vec<Binding>,
     pub subnets: Vec<Subnet>,
     pub services: Vec<Service>,
     pub dependencies: Vec<Dependency>,
-    pub if_entries: Vec<IfEntry>,
+    pub interfaces: Vec<Interface>,
 
     // Tag definitions for filtering
     pub entity_tags: Vec<Tag>,
@@ -139,13 +139,13 @@ pub struct TopologyBase {
     pub locked_by: Option<Uuid>,
 
     pub removed_hosts: Vec<Uuid>,
-    pub removed_interfaces: Vec<Uuid>,
+    pub removed_ip_addresses: Vec<Uuid>,
     pub removed_subnets: Vec<Uuid>,
     pub removed_services: Vec<Uuid>,
     pub removed_dependencies: Vec<Uuid>,
     pub removed_ports: Vec<Uuid>,
     pub removed_bindings: Vec<Uuid>,
-    pub removed_if_entries: Vec<Uuid>,
+    pub removed_interfaces: Vec<Uuid>,
 }
 
 impl TopologyBase {
@@ -158,25 +158,25 @@ impl TopologyBase {
             edges: vec![],
             hosts: vec![],
             ports: vec![],
-            interfaces: vec![],
+            ip_addresses: vec![],
             subnets: vec![],
             bindings: vec![],
             services: vec![],
             dependencies: vec![],
-            if_entries: vec![],
+            interfaces: vec![],
             is_stale: true,
             last_refreshed: Utc::now(),
             is_locked: false,
             locked_at: None,
             locked_by: None,
             removed_hosts: vec![],
-            removed_interfaces: vec![],
+            removed_ip_addresses: vec![],
             removed_subnets: vec![],
             removed_services: vec![],
             removed_dependencies: vec![],
             removed_bindings: vec![],
             removed_ports: vec![],
-            removed_if_entries: vec![],
+            removed_interfaces: vec![],
             parent_id: None,
             tags: vec![],
             entity_tags: vec![],
@@ -330,7 +330,7 @@ impl Default for TopologyRequestOptions {
 /// Lightweight request type for topology rebuild/refresh operations.
 ///
 /// This type only includes the fields actually needed by the server - entity data
-/// (hosts, interfaces, services, etc.) is fetched fresh from the database.
+/// (hosts, ip_addresses, services, etc.) is fetched fresh from the database.
 /// Using this instead of the full Topology dramatically reduces payload size
 /// for large networks (from MBs to KBs), fixing HTTP 413 errors.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -399,7 +399,7 @@ pub struct TopologyNodeResizeUpdate {
 /// Lightweight request type for updating topology metadata.
 ///
 /// Used for editing topology name/parent - instead of sending the entire topology
-/// (which includes all hosts, interfaces, services, etc.), only sends the metadata fields.
+/// (which includes all hosts, ip_addresses, services, etc.), only sends the metadata fields.
 /// Fixes HTTP 413 errors on metadata edit operations.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TopologyMetadataUpdate {

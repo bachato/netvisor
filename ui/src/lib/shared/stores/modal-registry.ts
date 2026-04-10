@@ -115,7 +115,7 @@ export function initModalFromUrl(): void {
 
 /**
  * Navigate to an entity's tab and open its edit modal.
- * For sub-entities (Interface, IfEntry, etc.), opens the parent Host's modal on the relevant tab.
+ * For sub-entities (Interface, Interface, etc.), opens the parent Host's modal on the relevant tab.
  */
 export function navigateToEntity(
 	entityType: EntityDiscriminants,

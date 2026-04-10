@@ -123,10 +123,10 @@ async fn test_host_crud(ctx: &TestContext) -> Result<(), String> {
         management_url: None,
         chassis_id: None,
         credential_assignments: vec![],
-        interfaces: vec![],
+        ip_addresses: vec![],
         ports: vec![],
         services: vec![],
-        if_entries: vec![],
+        interfaces: vec![],
     };
 
     let created: HostResponse = ctx.client.post("/api/v1/hosts", &request).await?;
@@ -150,7 +150,7 @@ async fn test_host_crud(ctx: &TestContext) -> Result<(), String> {
         hidden: fetched.hidden,
         tags: fetched.tags.clone(),
         expected_updated_at: None,    // No optimistic locking for this test
-        interfaces: None,             // Keep existing interfaces
+        ip_addresses: None,           // Keep existing IP addresses
         ports: None,                  // Keep existing ports
         services: None,               // Keep existing services
         credential_assignments: None, // Keep existing credentials
@@ -194,10 +194,10 @@ async fn test_service_crud(ctx: &TestContext) -> Result<(), String> {
         management_url: None,
         chassis_id: None,
         credential_assignments: vec![],
-        interfaces: vec![],
+        ip_addresses: vec![],
         ports: vec![],
         services: vec![],
-        if_entries: vec![],
+        interfaces: vec![],
     };
     let created_host: HostResponse = ctx.client.post("/api/v1/hosts", &host_request).await?;
 

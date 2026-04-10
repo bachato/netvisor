@@ -214,8 +214,8 @@ const entityTypeToQueryKeyName: Record<EntityDiscriminants, keyof typeof queryKe
 	Tag: null,
 	Port: null,
 	Binding: null,
+	IPAddress: null,
 	Interface: null,
-	IfEntry: null,
 	Topology: null,
 	Unknown: null
 };

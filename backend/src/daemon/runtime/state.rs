@@ -41,7 +41,7 @@ pub struct DaemonStatus {
     /// Backwards compat: pre-v0.15.0 daemons send capabilities instead of interfaced_subnets.
     #[serde(default)]
     pub capabilities: DaemonCapabilities,
-    /// Subnets detected from daemon's network interfaces. Server resolves these
+    /// Subnets detected from daemon's network ip_addresses. Server resolves these
     /// via SubnetService::create (create-or-match by CIDR) to get real IDs.
     /// v0.15.0+ daemons populate this; pre-v0.15.0 daemons leave it empty.
     #[serde(default)]
@@ -63,7 +63,7 @@ fn default_true() -> bool {
 /// Used to batch entity creation when server polls daemon (ServerPoll mode).
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct BufferedEntities {
-    /// Hosts with their interfaces, ports, and services
+    /// Hosts with their ip_addresses, ports, and services
     pub hosts: Vec<DiscoveryHostRequest>,
     /// Discovered subnets
     pub subnets: Vec<Subnet>,
@@ -95,7 +95,7 @@ pub struct DiscoveryPollResponse {
 pub struct CreatedEntitiesPayload {
     /// Subnets: (pending_id, actual_subnet) pairs
     pub subnets: Vec<(Uuid, Subnet)>,
-    /// Hosts: (pending_id, actual_host_response) pairs - includes children (interfaces, ports, services)
+    /// Hosts: (pending_id, actual_host_response) pairs - includes children (ip_addresses, ports, services)
     pub hosts: Vec<(Uuid, HostResponse)>,
     /// Set when a host was skipped due to billing host limit (limit value, org_id)
     #[serde(skip)]
@@ -139,14 +139,14 @@ impl DaemonState {
 impl DaemonState {
     /// Get lightweight daemon status (name, mode, version, capabilities).
     /// Note: URL is intentionally not included - server manages URL via provisioning.
-    /// Detects interfaces and Docker socket freshly on every call.
+    /// Detects ip_addresses and Docker socket freshly on every call.
     pub async fn get_status(&self) -> DaemonStatus {
         let name = self.config.get_name().await.unwrap_or_default();
         let mode = self.config.get_mode().await.unwrap_or_default();
         let version = Version::parse(env!("CARGO_PKG_VERSION")).ok();
         let ready_for_work = !self.discovery_manager.is_discovery_running().await;
 
-        // Detect interfaces fresh — cheap NIC enumeration
+        // Detect ip_addresses fresh — cheap NIC enumeration
         let interfaced_subnets = self.detect_interfaced_subnets().await.unwrap_or_default();
         // Detect Docker socket availability — cheap local socket check
         let has_docker_socket = self.detect_docker_socket().await;
@@ -165,7 +165,7 @@ impl DaemonState {
         }
     }
 
-    /// Detect subnets from daemon's network interfaces.
+    /// Detect subnets from daemon's network ip_addresses.
     async fn detect_interfaced_subnets(&self) -> anyhow::Result<Vec<Subnet>> {
         let daemon_id = self.config.get_id().await?;
         let network_id = match self.config.get_network_id().await? {

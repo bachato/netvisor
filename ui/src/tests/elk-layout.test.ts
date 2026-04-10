@@ -127,7 +127,7 @@ function makeTopology(
 			entity_tags: [],
 			ports: [],
 			bindings: [],
-			if_entries: [],
+			interfaces: [],
 			tags: [],
 			removed_hosts: [],
 			removed_interfaces: [],

@@ -4,9 +4,9 @@ use scanopy::server::daemons::r#impl::base::Daemon;
 use scanopy::server::dependencies::r#impl::base::Dependency;
 use scanopy::server::discovery::r#impl::base::Discovery;
 use scanopy::server::hosts::r#impl::base::Host;
-use scanopy::server::if_entries::r#impl::base::IfEntry;
 use scanopy::server::interfaces::r#impl::base::Interface;
 use scanopy::server::invites::r#impl::base::Invite;
+use scanopy::server::ip_addresses::r#impl::base::IPAddress;
 use scanopy::server::networks::r#impl::Network;
 use scanopy::server::organizations::r#impl::base::Organization;
 use scanopy::server::ports::r#impl::base::Port;
@@ -353,11 +353,11 @@ async fn generate_entity_metadata_json() -> Result<(), Box<dyn std::error::Error
         EntityMetadataEntry::new::<Network>("network"),
         EntityMetadataEntry::new::<Host>("host"),
         EntityMetadataEntry::new::<Subnet>("subnet"),
-        EntityMetadataEntry::new::<Interface>("interface"),
+        EntityMetadataEntry::new::<IPAddress>("ip_address"),
         EntityMetadataEntry::new::<Port>("port"),
         EntityMetadataEntry::new::<Service>("service"),
         EntityMetadataEntry::new::<Binding>("binding"),
-        EntityMetadataEntry::new::<IfEntry>("if_entry"),
+        EntityMetadataEntry::new::<Interface>("interface"),
         // Discovery & Daemons
         EntityMetadataEntry::new::<Daemon>("daemon"),
         EntityMetadataEntry::new::<DaemonApiKey>("daemon_api_key"),

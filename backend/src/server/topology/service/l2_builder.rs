@@ -7,7 +7,7 @@ use super::{
     view::ViewBuilder,
 };
 use crate::server::{
-    if_entries::r#impl::base::Neighbor,
+    interfaces::r#impl::base::Neighbor,
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType, EdgeViewConfig},
         grouping::GroupingConfig,
@@ -15,7 +15,7 @@ use crate::server::{
     },
 };
 
-/// if_type values to exclude from L2 view (virtual/software interfaces)
+/// if_type values to exclude from L2 view (virtual/software ip_addresses)
 const EXCLUDED_IF_TYPES: &[i32] = &[
     24,  // softwareLoopback
     53,  // propVirtual
@@ -40,13 +40,13 @@ impl ViewBuilder for L2Builder {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
 
-        // 1. Build PhysicalLink edges using if_entry_id as source/target
-        //    (unlike create_physical_link_edges which uses interface_id)
+        // 1. Build PhysicalLink edges using interface_id as source/target
+        //    (unlike create_physical_link_edges which uses ip_address_id)
         let mut processed_pairs: HashSet<(Uuid, Uuid)> = HashSet::new();
 
         for source_entry in ctx.get_if_entries_with_neighbor() {
             let target_if_entry_id = match &source_entry.base.neighbor {
-                Some(Neighbor::IfEntry(id)) => *id,
+                Some(Neighbor::Interface(id)) => *id,
                 _ => continue,
             };
 
@@ -78,8 +78,8 @@ impl ViewBuilder for L2Builder {
 
             edges.push(Edge {
                 id: Uuid::new_v4(),
-                source: source_entry.id, // if_entry_id, not interface_id
-                target: target_entry.id, // if_entry_id, not interface_id
+                source: source_entry.id, // interface_id, not ip_address_id
+                target: target_entry.id, // interface_id, not ip_address_id
                 edge_type: EdgeType::PhysicalLink {
                     source_if_entry_id: source_entry.id,
                     target_if_entry_id: target_entry.id,
@@ -94,7 +94,7 @@ impl ViewBuilder for L2Builder {
         }
 
         // 2. Determine qualifying hosts:
-        //    - Hosts with any IfEntry that has LLDP/CDP neighbor data
+        //    - Hosts with any Interface that has LLDP/CDP neighbor data
         //    - Hosts that are targets of physical links
         let mut qualifying_host_ids: HashSet<Uuid> = HashSet::new();
 
@@ -103,7 +103,7 @@ impl ViewBuilder for L2Builder {
             qualifying_host_ids.insert(entry.base.host_id);
         }
 
-        // Hosts that are targets (look up target if_entry → host_id)
+        // Hosts that are targets (look up target interface → host_id)
         for edge in &edges {
             if let EdgeType::PhysicalLink {
                 target_if_entry_id, ..
@@ -155,8 +155,8 @@ impl ViewBuilder for L2Builder {
                     entry.id,
                     container_id,
                     host_id,
-                    ElementEntityType::Port {
-                        if_entry_id: entry.id,
+                    ElementEntityType::Interface {
+                        interface_id: entry.id,
                     },
                 );
                 node.header = Some(entry.display_name().to_string());
@@ -167,14 +167,14 @@ impl ViewBuilder for L2Builder {
         // 5. Apply element rules (ByTag already has L2Physical in applicable_views)
         let if_entry_lookup: std::collections::HashMap<
             Uuid,
-            &crate::server::if_entries::r#impl::base::IfEntry,
-        > = ctx.if_entries.iter().map(|e| (e.id, e)).collect();
+            &crate::server::interfaces::r#impl::base::Interface,
+        > = ctx.interfaces.iter().map(|e| (e.id, e)).collect();
         apply_element_rules(&mut nodes, &grouping.element_rules, |node| {
             if let NodeType::Element { host_id, .. } = &node.node_type {
                 let host = host_lookup.get(host_id)?;
                 let tag_ids: HashSet<Uuid> = host.base.tags.iter().copied().collect();
-                let if_entry = if_entry_lookup.get(&node.id);
-                let native_vlan_id = if_entry.and_then(|e| e.base.native_vlan_id);
+                let interface = if_entry_lookup.get(&node.id);
+                let native_vlan_id = interface.and_then(|e| e.base.native_vlan_id);
                 let resolved_vlan = native_vlan_id.and_then(|vid| ctx.get_vlan_by_id(vid));
                 Some(ElementMatchData {
                     categories: HashSet::new(),
@@ -184,10 +184,10 @@ impl ViewBuilder for L2Builder {
                     native_vlan_id,
                     vlan_number: resolved_vlan.map(|v| v.base.vlan_number),
                     vlan_name: resolved_vlan.map(|v| v.base.name.clone()),
-                    is_trunk_port: if_entry
+                    is_trunk_port: interface
                         .and_then(|e| e.base.vlan_ids.as_ref())
                         .is_some_and(|v| !v.is_empty()),
-                    oper_status: if_entry.map(|e| e.base.oper_status),
+                    oper_status: interface.map(|e| e.base.oper_status),
                 })
             } else {
                 None
@@ -203,7 +203,7 @@ mod tests {
     use super::*;
     use crate::server::{
         hosts::r#impl::base::{Host, HostBase},
-        if_entries::r#impl::base::{IfEntry, IfEntryBase, Neighbor},
+        interfaces::r#impl::base::{Interface, InterfaceBase, Neighbor},
         topology::{
             service::context::TopologyContext,
             types::{
@@ -232,12 +232,12 @@ mod tests {
         if_index: i32,
         if_type: i32,
         neighbor: Option<Neighbor>,
-    ) -> IfEntry {
-        IfEntry {
+    ) -> Interface {
+        Interface {
             id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
-            base: IfEntryBase {
+            base: InterfaceBase {
                 host_id,
                 if_index,
                 if_descr: format!("GigabitEthernet0/{if_index}"),
@@ -272,7 +272,7 @@ mod tests {
         let h1 = make_host("server-1");
         let ie1 = make_if_entry(h1.id, 1, 6, None);
         let hosts = vec![h1];
-        let if_entries = vec![ie1];
+        let interfaces = vec![ie1];
         let options = TopologyOptions::default();
         let ctx = TopologyContext::new(
             &hosts,
@@ -282,7 +282,7 @@ mod tests {
             &[],
             &[],
             &[],
-            &if_entries,
+            &interfaces,
             &[],
             &[],
             &options,
@@ -305,10 +305,10 @@ mod tests {
 
         // ie1 has neighbor pointing to ie2
         let mut ie1_with_neighbor = ie1.clone();
-        ie1_with_neighbor.base.neighbor = Some(Neighbor::IfEntry(ie2.id));
+        ie1_with_neighbor.base.neighbor = Some(Neighbor::Interface(ie2.id));
 
         let hosts = vec![h1, h2];
-        let if_entries = vec![ie1_with_neighbor, ie2];
+        let interfaces = vec![ie1_with_neighbor, ie2];
         let options = TopologyOptions::default();
         let ctx = TopologyContext::new(
             &hosts,
@@ -318,7 +318,7 @@ mod tests {
             &[],
             &[],
             &[],
-            &if_entries,
+            &interfaces,
             &[],
             &[],
             &options,
@@ -366,10 +366,10 @@ mod tests {
 
         // Create neighbor link
         let mut ie_eth_linked = ie_eth.clone();
-        ie_eth_linked.base.neighbor = Some(Neighbor::IfEntry(ie2.id));
+        ie_eth_linked.base.neighbor = Some(Neighbor::Interface(ie2.id));
 
         let hosts = vec![h1, h2];
-        let if_entries = vec![ie_eth_linked, ie_lo, ie_vlan, ie_tun, ie2];
+        let interfaces = vec![ie_eth_linked, ie_lo, ie_vlan, ie_tun, ie2];
         let options = TopologyOptions::default();
         let ctx = TopologyContext::new(
             &hosts,
@@ -379,7 +379,7 @@ mod tests {
             &[],
             &[],
             &[],
-            &if_entries,
+            &interfaces,
             &[],
             &[],
             &options,
@@ -407,12 +407,12 @@ mod tests {
 
         // Both entries point to each other (bidirectional LLDP)
         let mut ie1_linked = ie1.clone();
-        ie1_linked.base.neighbor = Some(Neighbor::IfEntry(ie2.id));
+        ie1_linked.base.neighbor = Some(Neighbor::Interface(ie2.id));
         let mut ie2_linked = ie2.clone();
-        ie2_linked.base.neighbor = Some(Neighbor::IfEntry(ie1_linked.id));
+        ie2_linked.base.neighbor = Some(Neighbor::Interface(ie1_linked.id));
 
         let hosts = vec![h1, h2];
-        let if_entries = vec![ie1_linked, ie2_linked];
+        let interfaces = vec![ie1_linked, ie2_linked];
         let options = TopologyOptions::default();
         let ctx = TopologyContext::new(
             &hosts,
@@ -422,7 +422,7 @@ mod tests {
             &[],
             &[],
             &[],
-            &if_entries,
+            &interfaces,
             &[],
             &[],
             &options,

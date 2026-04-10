@@ -10,7 +10,6 @@
 	import { entities } from '$lib/shared/stores/metadata';
 	import ModalHeaderIcon from '$lib/shared/components/layout/ModalHeaderIcon.svelte';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
-	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
 	import {
 		common_back,
@@ -44,12 +43,12 @@
 	// Use limit: 0 to get all hosts for consolidation modal dropdown
 	const hostsQuery = useHostsQuery({ limit: 0 });
 	const servicesQuery = useServicesCacheQuery();
-	const interfacesQuery = useInterfacesQuery();
+	const ipAddressesQuery = useInterfacesQuery();
 	const portsQuery = usePortsQuery();
 
 	let hostsData = $derived(hostsQuery.data?.items ?? []);
 	let servicesData = $derived(servicesQuery.data ?? []);
-	let interfacesData = $derived(interfacesQuery.data ?? []);
+	let ipAddressesData = $derived(ipAddressesQuery.data ?? []);
 	let portsData = $derived(portsQuery.data ?? []);
 
 	let selectedDestinationHostId = $state('');
@@ -80,7 +79,7 @@
 
 			// Get children counts from query data
 			const services = servicesData.filter((s) => s.host_id === otherHost.id);
-			const interfaces = interfacesData.filter((i) => i.host_id === otherHost.id);
+			const interfaces = ipAddressesData.filter((i) => i.host_id === otherHost.id);
 			const ports = portsData.filter((p) => p.host_id === otherHost.id);
 
 			const actions = [

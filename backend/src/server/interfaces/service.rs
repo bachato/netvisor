@@ -1,23 +1,24 @@
+use anyhow::Result;
+use std::{collections::HashMap, sync::Arc};
 use uuid::Uuid;
+use validator::ValidationError;
 
 use crate::server::{
     auth::middleware::auth::AuthenticatedEntity,
-    interfaces::r#impl::base::Interface,
+    interfaces::r#impl::base::{Interface, Neighbor},
+    ip_addresses::service::IPAddressService,
     shared::{
         events::bus::EventBus,
         services::traits::{ChildCrudService, CrudService, EventBusService},
         storage::{filter::StorableFilter, generic::GenericPostgresStorage, traits::Storage},
-        types::api::ValidationError,
     },
     tags::entity_tags::EntityTagService,
 };
-use anyhow::Result;
-use std::collections::HashMap;
-use std::sync::Arc;
 
 pub struct InterfaceService {
     storage: Arc<GenericPostgresStorage<Interface>>,
     event_bus: Arc<EventBus>,
+    ip_address_service: Arc<IPAddressService>,
 }
 
 impl EventBusService<Interface> for InterfaceService {
@@ -47,113 +48,137 @@ impl CrudService<Interface> for InterfaceService {
 impl ChildCrudService<Interface> for InterfaceService {}
 
 impl InterfaceService {
-    pub fn new(storage: Arc<GenericPostgresStorage<Interface>>, event_bus: Arc<EventBus>) -> Self {
-        Self { storage, event_bus }
+    pub fn new(
+        storage: Arc<GenericPostgresStorage<Interface>>,
+        event_bus: Arc<EventBus>,
+        ip_address_service: Arc<IPAddressService>,
+    ) -> Self {
+        Self {
+            storage,
+            event_bus,
+            ip_address_service,
+        }
     }
 
-    /// Get all interfaces for a specific host, ordered by position
+    /// Get all if entries for a specific host, ordered by ifIndex
     pub async fn get_for_host(&self, host_id: &Uuid) -> Result<Vec<Interface>> {
         let filter = StorableFilter::<Interface>::new_from_host_ids(&[*host_id]);
-        self.storage.get_all_ordered(filter, "position ASC").await
+        self.storage.get_all_ordered(filter, "if_index ASC").await
     }
 
-    /// Get interfaces for multiple hosts, ordered by position within each host
+    /// Get if entries for multiple hosts, ordered by ifIndex within each host
     pub async fn get_for_hosts(&self, host_ids: &[Uuid]) -> Result<HashMap<Uuid, Vec<Interface>>> {
         if host_ids.is_empty() {
             return Ok(HashMap::new());
         }
 
         let filter = StorableFilter::<Interface>::new_from_host_ids(host_ids);
-        let interfaces = self.storage.get_all_ordered(filter, "position ASC").await?;
+        let entries = self
+            .storage
+            .get_all_ordered(filter, "host_id ASC, if_index ASC")
+            .await?;
 
         let mut result: HashMap<Uuid, Vec<Interface>> = HashMap::new();
-        for interface in interfaces {
-            result
-                .entry(interface.base.host_id)
-                .or_default()
-                .push(interface);
+        for entry in entries {
+            result.entry(entry.base.host_id).or_default().push(entry);
         }
-
         Ok(result)
     }
 
-    /// Get all interfaces for a specific subnet
-    pub async fn get_for_subnet(&self, subnet_id: &Uuid) -> Result<Vec<Interface>> {
-        let filter = StorableFilter::<Interface>::new_from_subnet_id(subnet_id);
-        self.storage.get_all(filter).await
-    }
+    /// Validate FK relationships for an Interface.
+    ///
+    /// Validates:
+    /// - ip_address_id must reference an Interface on the same host
+    /// - If both Interface and Interface have MAC addresses, they should match
+    /// - neighbor (when Interface) must reference an Interface on a different host, same network
+    ///
+    /// Note: Neighbor::Host validation is done in handlers (requires access to HostService)
+    pub async fn validate_relationships(&self, entry: &Interface) -> Result<()> {
+        // 1. ip_address_id: must be on SAME host, and MAC addresses should match if both present
+        if let Some(ip_address_id) = entry.base.ip_address_id {
+            let ip_address = self
+                .ip_address_service
+                .get_by_id(&ip_address_id)
+                .await?
+                .ok_or_else(|| {
+                    ValidationError::new("ip_address_id references a non-existent Interface")
+                })?;
 
-    // =========================================================================
-    // Position management helpers (for direct API operations)
-    // =========================================================================
+            if ip_address.base.host_id != entry.base.host_id {
+                return Err(ValidationError::new(
+                    "ip_address_id must reference an Interface on the same host",
+                )
+                .into());
+            }
 
-    /// Get the next available position for a new interface on a host.
-    /// Returns the count of existing interfaces (which becomes the next position).
-    pub async fn get_next_position_for_host(&self, host_id: &Uuid) -> Result<i32> {
-        let existing = self.get_for_host(host_id).await?;
-        Ok(existing.len() as i32)
-    }
-
-    /// Validate that a position is valid for an interface update.
-    /// Position must be within range [0, count-1] and not conflict with other interfaces.
-    pub async fn validate_position_for_update(
-        &self,
-        interface_id: &Uuid,
-        host_id: &Uuid,
-        new_position: i32,
-    ) -> Result<()> {
-        let all_interfaces = self.get_for_host(host_id).await?;
-        let max_position = (all_interfaces.len() as i32) - 1;
-
-        if new_position < 0 || new_position > max_position {
-            return Err(ValidationError::new(format!(
-                "Interface position {} is out of range. Valid positions are 0 to {}.",
-                new_position, max_position
-            ))
-            .into());
+            // Validate MAC address consistency if both have MAC addresses
+            if let (Some(if_entry_mac), Some(ip_address_mac)) =
+                (&entry.base.mac_address, &ip_address.base.mac_address)
+                && if_entry_mac != ip_address_mac
+            {
+                return Err(ValidationError::new(
+                    "ip_address_id references an Interface with a different MAC address",
+                )
+                .into());
+            }
         }
 
-        // Check for duplicate position (excluding self)
-        if all_interfaces
-            .iter()
-            .any(|i| i.id != *interface_id && i.base.position == new_position)
-        {
-            return Err(ValidationError::new(format!(
-                "Interface position {} is already used by another interface.",
-                new_position
-            ))
-            .into());
+        // 2. neighbor (Interface variant): must be on DIFFERENT host, same network
+        if let Some(Neighbor::Interface(neighbor_id)) = &entry.base.neighbor {
+            // Cannot connect to self
+            if *neighbor_id == entry.id {
+                return Err(ValidationError::new("Interface cannot connect to itself").into());
+            }
+
+            // Get the neighbor Interface
+            let neighbor_interface = self.get_by_id(neighbor_id).await?.ok_or_else(|| {
+                ValidationError::new("neighbor Interface references a non-existent Interface")
+            })?;
+
+            // Must be different host
+            if neighbor_interface.base.host_id == entry.base.host_id {
+                return Err(
+                    ValidationError::new("neighbor Interface must be on a different host").into(),
+                );
+            }
+
+            // Must be same network
+            if neighbor_interface.base.network_id != entry.base.network_id {
+                return Err(
+                    ValidationError::new("neighbor Interface must be in the same network").into(),
+                );
+            }
         }
+
+        // Note: Neighbor::Host validation is handled in handlers which have access to HostService
 
         Ok(())
     }
 
-    /// Renumber all interfaces for a host to ensure sequential positions (0, 1, 2, ...).
-    /// Called after deleting interface(s) to close gaps.
-    pub async fn renumber_interfaces_for_host(
+    /// Create or update an interface based on host_id + if_index (unique identifier)
+    /// Used during SNMP discovery to upsert interface table entries.
+    /// Skips validation for discovery flow (data comes from trusted SNMP source).
+    pub async fn create_or_update_by_if_index(
         &self,
-        host_id: &Uuid,
+        entry: Interface,
         authentication: AuthenticatedEntity,
-    ) -> Result<()> {
-        let mut interfaces = self.get_for_host(host_id).await?;
+    ) -> Result<Interface> {
+        // Check for existing entry with same host_id and if_index
+        let existing = self
+            .get_for_host(&entry.base.host_id)
+            .await?
+            .into_iter()
+            .find(|e| e.base.if_index == entry.base.if_index);
 
-        // Interfaces are already ordered by position, so just assign sequential positions
-        let mut needs_update = false;
-        for (i, iface) in interfaces.iter_mut().enumerate() {
-            let expected_position = i as i32;
-            if iface.base.position != expected_position {
-                needs_update = true;
-                iface.base.position = expected_position;
-            }
+        if let Some(existing_entry) = existing {
+            // Update existing entry, preserving the ID
+            let mut updated = entry;
+            updated.id = existing_entry.id;
+            updated.created_at = existing_entry.created_at;
+            self.update(&mut updated, authentication).await
+        } else {
+            // Create new entry
+            self.create(entry, authentication).await
         }
-
-        // Only update if there are gaps to close
-        if needs_update {
-            for iface in &mut interfaces {
-                self.update(iface, authentication.clone()).await?;
-            }
-        }
-
-        Ok(())
     }
 }

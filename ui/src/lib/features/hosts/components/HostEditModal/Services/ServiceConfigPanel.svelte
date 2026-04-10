@@ -8,7 +8,7 @@
 	import { v4 as uuidv4 } from 'uuid';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import { PortBindingDisplay } from '$lib/shared/components/forms/selection/display/PortBindingDisplay.svelte';
-	import { InterfaceBindingDisplay } from '$lib/shared/components/forms/selection/display/InterfaceBindingDisplay.svelte';
+	import { IPAddressBindingDisplay } from '$lib/shared/components/forms/selection/display/IPAddressBindingDisplay.svelte';
 	import MatchDetails from './MatchDetails.svelte';
 	import type { HostFormData } from '$lib/features/hosts/types/base';
 	import TagPicker from '$lib/features/tags/components/TagPicker.svelte';
@@ -20,7 +20,7 @@
 	import {
 		common_bindings,
 		common_details,
-		common_interfaceBindings,
+		common_ipAddressBindings,
 		common_name,
 		common_portBindings,
 		hosts_services_bindingsHelp,
@@ -121,7 +121,7 @@
 	);
 
 	// Check if this service has a Port binding on "All Interfaces"
-	let hasPortBindingOnAllInterfaces = $derived(portBindings.some((b) => b.interface_id === null));
+	let hasPortBindingOnAllIPAddresses = $derived(portBindings.some((b) => b.interface_id === null));
 
 	// Get interfaces that this service has Interface bindings on
 	let interfacesWithInterfaceBindingsThisService = $derived(
@@ -160,10 +160,10 @@
 					if (boundByOtherService) return false;
 
 					// Check if this service has bound this port to ALL interfaces (null)
-					const boundToAllInterfaces = portBindings.some(
+					const boundToAllIPAddresses = portBindings.some(
 						(b) => b.port_id === port.id && b.interface_id === null
 					);
-					if (boundToAllInterfaces) return false;
+					if (boundToAllIPAddresses) return false;
 
 					return true;
 				})
@@ -178,7 +178,7 @@
 	let availableInterfacesForInterfaceBinding = $derived(
 		host.interfaces.filter((iface) => {
 			// Can't add Interface binding if service has Port binding on "All Interfaces"
-			if (hasPortBindingOnAllInterfaces) return false;
+			if (hasPortBindingOnAllIPAddresses) return false;
 
 			// Can't add Interface binding if this service already has one on this interface
 			if (interfaceBindings.some((b) => b.interface_id === iface.id)) {
@@ -462,7 +462,7 @@
 		<div class="space-y-4">
 			{#key service.id}
 				<ListManager
-					label={common_interfaceBindings()}
+					label={common_ipAddressBindings()}
 					helpText={hosts_services_interfaceBindingsHelp()}
 					placeholder={hosts_services_selectBinding()}
 					createNewLabel={hosts_services_newBinding()}
@@ -474,8 +474,8 @@
 					allowAddFromOptions={false}
 					disableCreateNewButton={!canCreateInterfaceBinding}
 					options={[] as InterfaceBinding[]}
-					optionDisplayComponent={InterfaceBindingDisplay}
-					itemDisplayComponent={InterfaceBindingDisplay}
+					optionDisplayComponent={IPAddressBindingDisplay}
+					itemDisplayComponent={IPAddressBindingDisplay}
 					items={interfaceBindings}
 					getItemContext={() => ({
 						service,

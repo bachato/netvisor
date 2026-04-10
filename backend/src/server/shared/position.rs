@@ -1,7 +1,7 @@
 //! Generic position handling for ordered entities.
 //!
 //! Provides traits and utilities for entities that have a position field
-//! for ordering within a parent collection (e.g., interfaces within a host,
+//! for ordering within a parent collection (e.g., ip_addresses within a host,
 //! services within a host, bindings within a group).
 //!
 //! # Example
@@ -9,7 +9,7 @@
 //! ```rust,ignore
 //! use crate::server::shared::position::{Positioned, validate_input_positions};
 //!
-//! impl Positioned for Interface {
+//! impl Positioned for IPAddress {
 //!     fn position(&self) -> i32 { self.base.position }
 //!     fn set_position(&mut self, p: i32) { self.base.position = p; }
 //!     fn id(&self) -> Uuid { self.id }
@@ -44,7 +44,7 @@ pub trait Positioned {
 }
 
 /// Trait for input types (create/update requests) that carry an optional position field.
-/// Used for ServiceInput, InterfaceInput in host create/update requests.
+/// Used for ServiceInput, IPAddressInput in host create/update requests.
 pub trait PositionedInput {
     /// Get the position from the input (None if omitted)
     fn position(&self) -> Option<i32>;
@@ -799,7 +799,7 @@ mod tests {
 
     #[test]
     fn test_capitalize() {
-        assert_eq!(capitalize("interface"), "Interface");
+        assert_eq!(capitalize("ip_address"), "Ip_address");
         assert_eq!(capitalize("service"), "Service");
         assert_eq!(capitalize(""), "");
         assert_eq!(capitalize("a"), "A");

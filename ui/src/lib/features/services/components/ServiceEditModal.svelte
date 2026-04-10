@@ -9,7 +9,6 @@
 	import type { Service } from '../types/base';
 	import ServiceConfigPanel from '$lib/features/hosts/components/HostEditModal/Services/ServiceConfigPanel.svelte';
 	import type { Host, HostFormData } from '$lib/features/hosts/types/base';
-	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import {
@@ -21,22 +20,22 @@
 	} from '$lib/paraglide/messages';
 
 	// TanStack Query hooks to get child entities for hydrating host form data
-	const interfacesQuery = useInterfacesQuery();
+	const ipAddressesQuery = useInterfacesQuery();
 	const portsQuery = usePortsQuery();
 	const servicesQuery = useServicesCacheQuery();
-	let interfacesData = $derived(interfacesQuery.data ?? []);
+	let ipAddressesData = $derived(ipAddressesQuery.data ?? []);
 	let portsData = $derived(portsQuery.data ?? []);
 	let servicesData = $derived(servicesQuery.data ?? []);
 
 	// Hydrate host to form data for ServiceConfigPanel
 	function hydrateHostToFormData(host: Host): HostFormData {
-		const hostInterfaces = interfacesData.filter((i) => i.host_id === host.id);
+		const hostInterfaces = ipAddressesData.filter((i) => i.host_id === host.id);
 		const hostPorts = portsData.filter((p) => p.host_id === host.id);
 		const hostServices = servicesData.filter((s) => s.host_id === host.id);
 
 		return {
 			...host,
-			interfaces: hostInterfaces,
+			ip_addresses: hostInterfaces,
 			ports: hostPorts,
 			services: hostServices,
 			// SNMP fields - spread from host, default to null if not present
@@ -47,7 +46,7 @@
 			management_url: host.management_url ?? null,
 			chassis_id: host.chassis_id ?? null,
 			credential_assignments: host.credential_assignments ?? [],
-			if_entries: [] // IfEntries not available in this context
+			interfaces: [] // Interfaces not available in this context
 		};
 	}
 

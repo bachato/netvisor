@@ -467,8 +467,8 @@ mod tests {
             base: BindingBase {
                 service_id,
                 network_id: Uuid::new_v4(),
-                binding_type: BindingType::Interface {
-                    interface_id: Uuid::new_v4(),
+                binding_type: BindingType::IPAddress {
+                    ip_address_id: Uuid::new_v4(),
                 },
             },
         }

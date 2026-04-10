@@ -5,9 +5,8 @@
 	import type { Service } from '../types/base';
 	import type { Host, Interface, Port } from '$lib/features/hosts/types/base';
 	import { formatPort } from '$lib/shared/utils/formatting';
-	import { formatInterface } from '$lib/features/hosts/queries';
+	import { formatIPAddress } from '$lib/features/hosts/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
-	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
 	import { SvelteMap } from 'svelte/reactivity';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
@@ -15,7 +14,7 @@
 	import {
 		common_delete,
 		common_edit,
-		common_interfaceBindings,
+		common_ipAddressBindings,
 		common_notAssigned,
 		common_portBindings,
 		common_tags,
@@ -24,12 +23,12 @@
 
 	// TanStack Query hooks
 	const subnetsQuery = useSubnetsQuery();
-	const interfacesQuery = useInterfacesQuery();
+	const ipAddressesQuery = useInterfacesQuery();
 	const portsQuery = usePortsQuery();
 
 	// Derived data from queries
 	let subnetsData = $derived(subnetsQuery.data ?? []);
-	let interfacesData = $derived(interfacesQuery.data ?? []);
+	let ipAddressesData = $derived(ipAddressesQuery.data ?? []);
 	let portsData = $derived(portsQuery.data ?? []);
 
 	// Helper to check if subnet is a container subnet
@@ -70,7 +69,7 @@
 
 				const interfaceId = binding.interface_id ?? null;
 				if (!grouped.has(interfaceId)) {
-					const iface = interfaceId ? interfacesData.find((i) => i.id === interfaceId) : null;
+					const iface = interfaceId ? ipAddressesData.find((i) => i.id === interfaceId) : null;
 					grouped.set(interfaceId, { iface: iface ?? null, ports: [] });
 				}
 				grouped.get(interfaceId)!.ports.push(port);
@@ -99,7 +98,7 @@
 				.filter((id): id is string => id !== null);
 
 			return interfaceBindingIds
-				.map((id) => interfacesData.find((i) => i.id === id))
+				.map((id) => ipAddressesData.find((i) => i.id === id))
 				.filter((i): i is Interface => i !== undefined);
 		})()
 	);
@@ -127,10 +126,10 @@
 				emptyText: common_notAssigned()
 			},
 			{
-				label: common_interfaceBindings(),
+				label: common_ipAddressBindings(),
 				value: ifaces.map((iface: Interface) => ({
 					id: iface.id,
-					label: formatInterface(iface, isContainerSubnetFn),
+					label: formatIPAddress(iface, isContainerSubnetFn),
 					color: entities.getColorHelper('Interface').color,
 					entityRef: entityRef('Interface', iface.id, iface, { subnets: subnetsData })
 				})),

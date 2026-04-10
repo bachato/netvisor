@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { IfEntry, Interface } from '$lib/features/hosts/types/base';
+	import type { Interface } from '$lib/features/hosts/types/base';
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import type { Host } from '$lib/features/hosts/types/base';
 	import { getAdminStatusLabels, getOperStatusLabels } from '$lib/features/credentials/types/base';
@@ -17,13 +17,13 @@
 		common_speed,
 		common_status,
 		common_unknown,
-		hosts_ifEntries_adminStatus,
-		hosts_ifEntries_aliasDescription,
-		hosts_ifEntries_index,
-		hosts_ifEntries_nativeVlan,
-		hosts_ifEntries_neighbor,
-		hosts_ifEntries_operStatus,
-		hosts_ifEntries_taggedVlans
+		hosts_interfaces_adminStatus,
+		hosts_interfaces_aliasDescription,
+		hosts_interfaces_index,
+		hosts_interfaces_nativeVlan,
+		hosts_interfaces_neighbor,
+		hosts_interfaces_operStatus,
+		hosts_interfaces_taggedVlans
 	} from '$lib/paraglide/messages';
 
 	interface VlanInfo {
@@ -33,22 +33,22 @@
 	}
 
 	interface Props {
-		ifEntry: IfEntry;
+		iface: Interface;
 		linkedInterface?: Interface | null;
 		linkedSubnet?: Subnet | null;
 		neighborHost?: Host | null;
-		neighborIfEntry?: IfEntry | null;
+		neighborInterface?: Interface | null;
 		nativeVlan?: VlanInfo | null;
 		taggedVlans?: VlanInfo[];
 		showStatus?: boolean;
 	}
 
 	let {
-		ifEntry,
+		iface,
 		linkedInterface = null,
 		linkedSubnet = null,
 		neighborHost = null,
-		neighborIfEntry = null,
+		neighborInterface = null,
 		nativeVlan = null,
 		taggedVlans = [],
 		showStatus = true
@@ -62,11 +62,11 @@
 		return `${speed} bps`;
 	}
 
-	let adminStatusLabel = $derived(getAdminStatusLabels()[ifEntry.admin_status] ?? common_unknown());
-	let operStatusLabel = $derived(getOperStatusLabels()[ifEntry.oper_status] ?? common_unknown());
+	let adminStatusLabel = $derived(getAdminStatusLabels()[iface.admin_status] ?? common_unknown());
+	let operStatusLabel = $derived(getOperStatusLabels()[iface.oper_status] ?? common_unknown());
 
 	let operStatusColor: Color = $derived.by(() => {
-		switch (ifEntry.oper_status) {
+		switch (iface.oper_status) {
 			case 'Up':
 				return 'Green';
 			case 'Down':
@@ -84,20 +84,20 @@
 
 {#if showStatus}
 	<CollapsibleCard title={common_status()} bind:expanded={statusExpanded}>
-		<InfoRow label={hosts_ifEntries_adminStatus()}>{adminStatusLabel}</InfoRow>
-		<InfoRow label={hosts_ifEntries_operStatus()}>
+		<InfoRow label={hosts_interfaces_adminStatus()}>{adminStatusLabel}</InfoRow>
+		<InfoRow label={hosts_interfaces_operStatus()}>
 			<Tag label={operStatusLabel} color={operStatusColor} />
 		</InfoRow>
 	</CollapsibleCard>
 {/if}
 
 <CollapsibleCard title={common_details()} bind:expanded={detailsExpanded}>
-	<InfoRow label="ifName">{ifEntry.if_name || '-'}</InfoRow>
-	<InfoRow label="ifType">{ifEntry.if_type || '-'}</InfoRow>
-	<InfoRow label={common_macAddress()} mono>{ifEntry.mac_address || '-'}</InfoRow>
-	<InfoRow label={common_speed()}>{formatSpeed(ifEntry.speed_bps)}</InfoRow>
-	<InfoRow label={hosts_ifEntries_aliasDescription()}>{ifEntry.if_alias || '-'}</InfoRow>
-	<InfoRow label={hosts_ifEntries_index({ index: ifEntry.if_index })}>{ifEntry.if_index}</InfoRow>
+	<InfoRow label="ifName">{iface.if_name || '-'}</InfoRow>
+	<InfoRow label="ifType">{iface.if_type || '-'}</InfoRow>
+	<InfoRow label={common_macAddress()} mono>{iface.mac_address || '-'}</InfoRow>
+	<InfoRow label={common_speed()}>{formatSpeed(iface.speed_bps)}</InfoRow>
+	<InfoRow label={hosts_interfaces_aliasDescription()}>{iface.if_alias || '-'}</InfoRow>
+	<InfoRow label={hosts_interfaces_index({ index: iface.if_index })}>{iface.if_index}</InfoRow>
 
 	<InfoRow label={common_ipAddress()}>
 		{#if linkedInterface}
@@ -126,13 +126,13 @@
 	</InfoRow>
 
 	{#if nativeVlan}
-		<InfoRow label={hosts_ifEntries_nativeVlan()}>
+		<InfoRow label={hosts_interfaces_nativeVlan()}>
 			<Tag label="VLAN {nativeVlan.vlan_number} ({nativeVlan.name})" color="Teal" />
 		</InfoRow>
 	{/if}
 
 	{#if taggedVlans.length > 0}
-		<InfoRow label={hosts_ifEntries_taggedVlans()}>
+		<InfoRow label={hosts_interfaces_taggedVlans()}>
 			<div class="flex flex-wrap gap-1">
 				{#each taggedVlans as vlan}
 					<Tag label="VLAN {vlan.vlan_number}" color="Teal" />
@@ -141,17 +141,17 @@
 		</InfoRow>
 	{/if}
 
-	<InfoRow label={hosts_ifEntries_neighbor()}>
-		{#if ifEntry.neighbor}
+	<InfoRow label={hosts_interfaces_neighbor()}>
+		{#if iface.neighbor}
 			<div class="flex flex-wrap items-center gap-1">
-				{#if neighborIfEntry}
+				{#if neighborInterface}
 					<EntityTag
-						entityRef={entityRef('IfEntry', neighborIfEntry.id, neighborIfEntry)}
-						label={neighborIfEntry.if_name ||
-							neighborIfEntry.if_descr ||
-							`Index ${neighborIfEntry.if_index}`}
-						icon={entities.getIconComponent('IfEntry')}
-						color={entities.getColorHelper('IfEntry').color}
+						entityRef={entityRef('Interface', neighborInterface.id, neighborInterface)}
+						label={neighborInterface.if_name ||
+							neighborInterface.if_descr ||
+							`Index ${neighborInterface.if_index}`}
+						icon={entities.getIconComponent('Interface')}
+						color={entities.getColorHelper('Interface').color}
 					/>
 					<span class="text-tertiary text-xs">on</span>
 				{/if}

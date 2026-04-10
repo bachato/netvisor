@@ -149,7 +149,7 @@ impl Entity for Vlan {
 
     const ENTITY_NAME_SINGULAR: &'static str = "Vlan";
     const ENTITY_NAME_PLURAL: &'static str = "Vlans";
-    const ENTITY_DESCRIPTION: &'static str = "Virtual LANs discovered from network switches. VLANs segment network traffic and are associated with interfaces and subnets.";
+    const ENTITY_DESCRIPTION: &'static str = "Virtual LANs discovered from network switches. VLANs segment network traffic and are associated with ip_addresses and subnets.";
 
     fn entity_category() -> EntityCategory {
         EntityCategory::NetworkInfrastructure

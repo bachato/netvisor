@@ -480,7 +480,7 @@ pub async fn populate_demo_data(
         .await?;
 
     // 5. Hosts + children — bypass discover_host (no collisions in fresh org)
-    // Flatten hosts, interfaces, ports, services from HostWithServices bundles
+    // Flatten hosts, ip_addresses, ports, services from HostWithServices bundles
     let mut all_hosts = Vec::new();
     let mut all_interfaces = Vec::new();
     let mut all_ports = Vec::new();
@@ -489,7 +489,7 @@ pub async fn populate_demo_data(
         let host_id = hws.host.id;
         let network_id = hws.host.base.network_id;
         all_hosts.push(hws.host.clone());
-        all_interfaces.extend(hws.interfaces.clone());
+        all_interfaces.extend(hws.ip_addresses.clone());
         all_ports.extend(
             hws.ports
                 .iter()
@@ -508,7 +508,7 @@ pub async fn populate_demo_data(
 
     state
         .services
-        .interface_service
+        .ip_address_service
         .create_many(&all_interfaces, entity.clone())
         .await?;
 
@@ -544,9 +544,9 @@ pub async fn populate_demo_data(
 
     // 5.5. IfEntries (depends on hosts)
     // Resolve neighbor relationships in memory before inserting, so we can set
-    // neighbor_if_entry_id directly and avoid N individual UPDATEs after insert.
+    // neighbor_interface_id directly and avoid N individual UPDATEs after insert.
     {
-        use crate::server::if_entries::r#impl::base::Neighbor;
+        use crate::server::interfaces::r#impl::base::Neighbor;
         use std::collections::HashMap;
 
         let host_id_to_name: HashMap<Uuid, String> = all_hosts
@@ -555,7 +555,7 @@ pub async fn populate_demo_data(
             .collect();
 
         let mut if_entry_lookup: HashMap<(String, i32), Uuid> = HashMap::new();
-        for entry in &demo_data.if_entries {
+        for entry in &demo_data.interfaces {
             if let Some(host_name) = host_id_to_name.get(&entry.base.host_id) {
                 if_entry_lookup.insert((host_name.clone(), entry.base.if_index), entry.id);
             }
@@ -580,18 +580,18 @@ pub async fn populate_demo_data(
             }
         }
 
-        // Apply neighbors to if_entries before inserting
-        let mut if_entries = demo_data.if_entries;
-        for entry in &mut if_entries {
+        // Apply neighbors to interfaces before inserting
+        let mut interfaces = demo_data.interfaces;
+        for entry in &mut interfaces {
             if let Some(&target_id) = neighbor_map.get(&entry.id) {
-                entry.base.neighbor = Some(Neighbor::IfEntry(target_id));
+                entry.base.neighbor = Some(Neighbor::Interface(target_id));
             }
         }
 
         state
             .services
-            .if_entry_service
-            .create_many(&if_entries, entity.clone())
+            .interface_service
+            .create_many(&interfaces, entity.clone())
             .await?;
     }
 
@@ -719,9 +719,9 @@ async fn reset_organization_data(
     use crate::server::dependencies::r#impl::base::Dependency;
     use crate::server::discovery::r#impl::base::Discovery;
     use crate::server::hosts::r#impl::base::Host;
-    use crate::server::if_entries::r#impl::base::IfEntry;
     use crate::server::interfaces::r#impl::base::Interface;
     use crate::server::invites::r#impl::base::Invite;
+    use crate::server::ip_addresses::r#impl::base::IPAddress;
     use crate::server::ports::r#impl::base::Port;
     use crate::server::services::r#impl::base::Service;
     use crate::server::shares::r#impl::base::Share;
@@ -791,9 +791,11 @@ async fn reset_organization_data(
         .await?;
     state
         .services
-        .if_entry_service
+        .interface_service
         .storage()
-        .delete_by_filter(StorableFilter::<IfEntry>::new_from_network_ids(net_filter))
+        .delete_by_filter(StorableFilter::<Interface>::new_from_network_ids(
+            net_filter,
+        ))
         .await?;
     state
         .services
@@ -815,9 +817,9 @@ async fn reset_organization_data(
         .await?;
     state
         .services
-        .interface_service
+        .ip_address_service
         .storage()
-        .delete_by_filter(StorableFilter::<Interface>::new_from_network_ids(
+        .delete_by_filter(StorableFilter::<IPAddress>::new_from_network_ids(
             net_filter,
         ))
         .await?;

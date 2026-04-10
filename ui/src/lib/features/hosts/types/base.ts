@@ -5,6 +5,7 @@ import type { components } from '$lib/api/schema';
 export type Host = components['schemas']['Host'];
 export type HostVirtualization = components['schemas']['HostVirtualization'];
 export type ProxmoxVirtualization = components['schemas']['ProxmoxVirtualization'];
+export type IPAddress = components['schemas']['IPAddress'];
 export type Interface = components['schemas']['Interface'];
 export type Port = components['schemas']['Port'];
 export type Service = components['schemas']['Service'];
@@ -16,13 +17,12 @@ export type HostResponse = components['schemas']['HostResponse'];
 // API request types - consolidated input types (used for both create and update)
 export type CreateHostRequest = components['schemas']['CreateHostRequest'];
 export type UpdateHostRequest = components['schemas']['UpdateHostRequest'];
-export type InterfaceInput = components['schemas']['InterfaceInput'];
+export type IPAddressInput = components['schemas']['IPAddressInput'];
 export type PortInput = components['schemas']['PortInput'];
 export type ServiceInput = components['schemas']['ServiceInput'];
 export type BindingInput = components['schemas']['BindingInput'];
 
 // SNMP types
-export type IfEntry = components['schemas']['IfEntry'];
 export type IfAdminStatus = components['schemas']['IfAdminStatus'];
 export type IfOperStatus = components['schemas']['IfOperStatus'];
 
@@ -61,12 +61,12 @@ export interface HostFormData {
 	credential_assignments: CredentialAssignment[];
 
 	// Children for form editing (managed separately from host in stores)
-	interfaces: Interface[];
+	ip_addresses: IPAddress[];
 	ports: Port[];
 	services: Service[];
 
-	// IfEntry list (populated by discovery, read-only)
-	if_entries: IfEntry[];
+	// Interface list (populated by discovery, read-only)
+	interfaces: Interface[];
 }
 
 // Request type for creating a host (needs form data with children)
@@ -78,8 +78,8 @@ export interface CreateHostWithServicesRequest {
 // Request type for updating a host with children
 export interface UpdateHostWithServicesRequest {
 	host: Host;
-	/** Interfaces to sync - if provided, will create/update/delete to match */
-	interfaces: Interface[] | null;
+	/** IP addresses to sync - if provided, will create/update/delete to match */
+	ip_addresses: IPAddress[] | null;
 	/** Ports to sync - if provided, will create/update/delete to match */
 	ports: Port[] | null;
 	/** Services to sync - if provided, will create/update/delete to match */
@@ -87,12 +87,12 @@ export interface UpdateHostWithServicesRequest {
 }
 
 // Frontend-specific types
-export interface AllInterfaces {
+export interface AllIPAddresses {
 	id: null;
 	name: string;
 }
 
-export const ALL_INTERFACES: AllInterfaces = {
+export const ALL_IP_ADDRESSES: AllIPAddresses = {
 	id: null,
-	name: 'All Interfaces'
+	name: 'All IP Addresses'
 };

@@ -9,7 +9,7 @@ use crate::server::{
         types::DependencyType,
     },
     hosts::r#impl::base::{Host, HostBase},
-    interfaces::r#impl::base::{Interface, InterfaceBase},
+    ip_addresses::r#impl::base::{IPAddress, IPAddressBase},
     networks::r#impl::{Network, NetworkBase},
     organizations::r#impl::base::{Organization, OrganizationBase},
     ports::r#impl::base::{Port, PortBase, PortType},
@@ -101,8 +101,8 @@ pub fn host(network_id: &Uuid) -> Host {
     })
 }
 
-pub fn interface(network_id: &Uuid, subnet_id: &Uuid) -> Interface {
-    Interface::new(InterfaceBase {
+pub fn ip_address(network_id: &Uuid, subnet_id: &Uuid) -> IPAddress {
+    IPAddress::new(IPAddressBase {
         network_id: *network_id,
         subnet_id: *subnet_id,
         ip_address: IpAddr::V4(Ipv4Addr::new(192, 168, 1, 100)),

@@ -5,7 +5,7 @@
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { topology_connectionsCount, common_dependenciesLabel } from '$lib/paraglide/messages';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
-	import { InterfaceEdgeDisplay } from '$lib/shared/components/forms/selection/display/InterfaceEdgeDisplay.svelte';
+	import { IPAddressEdgeDisplay } from '$lib/shared/components/forms/selection/display/IPAddressEdgeDisplay.svelte';
 	import { PhysicalLinkEdgeDisplay } from '$lib/shared/components/forms/selection/display/PhysicalLinkEdgeDisplay.svelte';
 	import { HostVirtualizationEdgeDisplay } from '$lib/shared/components/forms/selection/display/HostVirtualizationEdgeDisplay.svelte';
 	import { DependencyDisplay } from '$lib/shared/components/forms/selection/display/DependencyDisplay.svelte';
@@ -123,7 +123,7 @@
 	function getDisplayComponent(edgeType: string) {
 		switch (edgeType) {
 			case 'Interface':
-				return InterfaceEdgeDisplay;
+				return IPAddressEdgeDisplay;
 			case 'PhysicalLink':
 				return PhysicalLinkEdgeDisplay;
 			case 'HostVirtualization':

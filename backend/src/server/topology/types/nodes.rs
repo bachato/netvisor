@@ -245,23 +245,23 @@ impl TypeMetadataProvider for ContainerType {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Hash, ToSchema)]
 #[serde(tag = "element_type")]
 pub enum ElementEntityType {
-    Interface {
+    IPAddress {
         subnet_id: Uuid,
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        interface_id: Option<Uuid>,
+        ip_address_id: Option<Uuid>,
     },
     Service {},
     Host {},
-    Port {
-        if_entry_id: Uuid,
+    Interface {
+        interface_id: Uuid,
     },
 }
 
 impl Default for ElementEntityType {
     fn default() -> Self {
-        Self::Interface {
+        Self::IPAddress {
             subnet_id: Uuid::nil(),
-            interface_id: None,
+            ip_address_id: None,
         }
     }
 }
@@ -269,10 +269,10 @@ impl Default for ElementEntityType {
 impl From<&ElementEntityType> for EntityDiscriminants {
     fn from(eet: &ElementEntityType) -> Self {
         match eet {
-            ElementEntityType::Interface { .. } => EntityDiscriminants::Interface,
+            ElementEntityType::IPAddress { .. } => EntityDiscriminants::IPAddress,
             ElementEntityType::Service {} => EntityDiscriminants::Service,
             ElementEntityType::Host {} => EntityDiscriminants::Host,
-            ElementEntityType::Port { .. } => EntityDiscriminants::IfEntry,
+            ElementEntityType::Interface { .. } => EntityDiscriminants::Interface,
         }
     }
 }
@@ -325,7 +325,7 @@ pub struct ContainerChild {
     pub id: Uuid,
     pub header: Option<String>,
     pub host_id: Uuid,
-    pub interface_id: Option<Uuid>,
+    pub ip_address_id: Option<Uuid>,
     pub size: Uxy,
     pub edges: Vec<Edge>,
 }
@@ -389,7 +389,7 @@ mod tests {
     }
 
     #[test]
-    fn test_element_interface_round_trip() {
+    fn test_element_ip_address_round_trip() {
         let container_id = Uuid::new_v4();
         let host_id = Uuid::new_v4();
         let subnet_id = Uuid::new_v4();
@@ -397,17 +397,17 @@ mod tests {
         let node_type = NodeType::Element {
             container_id,
             host_id,
-            element: ElementEntityType::Interface {
+            element: ElementEntityType::IPAddress {
                 subnet_id,
-                interface_id: Some(iface_id),
+                ip_address_id: Some(iface_id),
             },
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "Element");
-        assert_eq!(json["element_type"], "Interface");
+        assert_eq!(json["element_type"], "IPAddress");
         assert_eq!(json["subnet_id"], subnet_id.to_string());
         assert_eq!(json["host_id"], host_id.to_string());
-        assert_eq!(json["interface_id"], iface_id.to_string());
+        assert_eq!(json["ip_address_id"], iface_id.to_string());
 
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
@@ -425,9 +425,9 @@ mod tests {
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "Element");
         assert_eq!(json["element_type"], "Service");
-        // Service elements don't have subnet_id or interface_id
+        // Service elements don't have subnet_id or ip_address_id
         assert!(json.get("subnet_id").is_none());
-        assert!(json.get("interface_id").is_none());
+        assert!(json.get("ip_address_id").is_none());
 
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
@@ -442,9 +442,9 @@ mod tests {
         let node_type = NodeType::Element {
             container_id,
             host_id,
-            element: ElementEntityType::Interface {
+            element: ElementEntityType::IPAddress {
                 subnet_id,
-                interface_id: None,
+                ip_address_id: None,
             },
         };
         let json = serde_json::to_value(&node_type).unwrap();
@@ -452,7 +452,7 @@ mod tests {
         assert_eq!(json["container_id"], container_id.to_string());
         assert_eq!(json["host_id"], host_id.to_string());
         assert_eq!(json["subnet_id"], subnet_id.to_string());
-        assert!(json.get("interface_id").is_none());
+        assert!(json.get("ip_address_id").is_none());
     }
 
     #[test]
@@ -509,11 +509,11 @@ mod tests {
     #[test]
     fn test_entity_discriminant_mapping() {
         assert_eq!(
-            EntityDiscriminants::from(&ElementEntityType::Interface {
+            EntityDiscriminants::from(&ElementEntityType::IPAddress {
                 subnet_id: Uuid::nil(),
-                interface_id: None,
+                ip_address_id: None,
             }),
-            EntityDiscriminants::Interface
+            EntityDiscriminants::IPAddress
         );
         assert_eq!(
             EntityDiscriminants::from(&ElementEntityType::Service {}),
@@ -524,27 +524,27 @@ mod tests {
             EntityDiscriminants::Host
         );
         assert_eq!(
-            EntityDiscriminants::from(&ElementEntityType::Port {
-                if_entry_id: Uuid::nil(),
+            EntityDiscriminants::from(&ElementEntityType::Interface {
+                interface_id: Uuid::nil(),
             }),
-            EntityDiscriminants::IfEntry
+            EntityDiscriminants::Interface
         );
     }
 
     #[test]
-    fn test_element_port_round_trip() {
+    fn test_element_interface_round_trip() {
         let container_id = Uuid::new_v4();
         let host_id = Uuid::new_v4();
-        let if_entry_id = Uuid::new_v4();
+        let interface_id = Uuid::new_v4();
         let node_type = NodeType::Element {
             container_id,
             host_id,
-            element: ElementEntityType::Port { if_entry_id },
+            element: ElementEntityType::Interface { interface_id },
         };
         let json = serde_json::to_value(&node_type).unwrap();
         assert_eq!(json["node_type"], "Element");
-        assert_eq!(json["element_type"], "Port");
-        assert_eq!(json["if_entry_id"], if_entry_id.to_string());
+        assert_eq!(json["element_type"], "Interface");
+        assert_eq!(json["interface_id"], interface_id.to_string());
 
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);

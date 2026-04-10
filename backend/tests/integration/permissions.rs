@@ -139,10 +139,10 @@ async fn test_cannot_create_host_on_other_network(
         management_url: None,
         chassis_id: None,
         credential_assignments: vec![],
-        interfaces: vec![],
+        ip_addresses: vec![],
         ports: vec![],
         services: vec![],
-        if_entries: vec![],
+        interfaces: vec![],
     };
 
     // Should get 401 Unauthorized (or 403 Forbidden)

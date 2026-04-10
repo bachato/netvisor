@@ -1,6 +1,6 @@
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsDaemon, Member, Or, Viewer};
-use crate::server::interfaces::r#impl::base::Interface;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::networks::r#impl::Network;
 use crate::server::shared::extractors::Query;
 use crate::server::shared::handlers::ordering::OrderField;
@@ -295,7 +295,7 @@ async fn create_subnet(
 /// Update a subnet
 ///
 /// Updates subnet properties. If the CIDR is being changed, validates that
-/// all existing interfaces on this subnet have IPs within the new CIDR range.
+/// all existing ip_addresses on this subnet have IPs within the new CIDR range.
 #[utoipa::path(
     put,
     path = "/{id}",
@@ -304,7 +304,7 @@ async fn create_subnet(
     request_body = Subnet,
     responses(
         (status = 200, description = "Subnet updated", body = ApiResponse<Subnet>),
-        (status = 400, description = "CIDR change would orphan existing interfaces", body = ApiErrorResponse),
+        (status = 400, description = "CIDR change would orphan existing ip_addresses", body = ApiErrorResponse),
         (status = 404, description = "Subnet not found", body = ApiErrorResponse),
     ),
      security(("user_api_key" = []), ("session" = []))
@@ -325,19 +325,19 @@ async fn update_subnet(
         .ok_or_else(|| ApiError::entity_not_found::<Subnet>(id))?;
 
     if current.base.cidr != subnet.base.cidr {
-        // CIDR is changing - validate that all existing interfaces are within the new CIDR
-        let filter = StorableFilter::<Interface>::new_from_subnet_id(&id);
-        let interfaces = state
+        // CIDR is changing - validate that all existing ip_addresses are within the new CIDR
+        let filter = StorableFilter::<IPAddress>::new_from_subnet_id(&id);
+        let ip_addresses = state
             .services
-            .interface_service
+            .ip_address_service
             .get_all(filter)
             .await
             .map_err(|e| ApiError::internal_error(&e.to_string()))?;
 
-        for interface in &interfaces {
-            if !subnet.base.cidr.contains(&interface.base.ip_address) {
+        for ip_address in &ip_addresses {
+            if !subnet.base.cidr.contains(&ip_address.base.ip_address) {
                 return Err(ApiError::interface_ip_out_of_range(
-                    &interface.base.ip_address.to_string(),
+                    &ip_address.base.ip_address.to_string(),
                     &subnet.base.cidr.to_string(),
                 ));
             }

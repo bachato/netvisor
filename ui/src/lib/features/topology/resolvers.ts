@@ -84,13 +84,9 @@ const elementResolvers: Record<
 	},
 	Port: (nodeId, node, topology) => {
 		const hostId = 'host_id' in node ? (node.host_id as string) : undefined;
-		const ifEntryId = 'if_entry_id' in node ? (node.if_entry_id as string) : undefined;
+		const ifEntryId = 'interface_id' in node ? (node.interface_id as string) : undefined;
 		const host = topology.hosts.find((h) => h.id === hostId);
-		const ifEntry = ifEntryId ? topology.if_entries.find((e) => e.id === ifEntryId) : undefined;
-		// Resolve interface from the IfEntry's interface_id for inspector sections
-		const interfaceId = ifEntry?.interface_id ?? undefined;
-		const iface = interfaceId ? topology.interfaces.find((i) => i.id === interfaceId) : undefined;
-
+		const iface = ifEntryId ? topology.interfaces.find((e) => e.id === ifEntryId) : undefined;
 		return {
 			elementType: 'Port' as ElementEntityType,
 			host,
@@ -278,7 +274,7 @@ export function buildEntityNodeIndex(nodes: TopologyNode[]): EntityNodeIndex {
 			if (existing) existing.push(nd.id);
 			else serviceIdToNodes.set(nd.id, [nd.id]);
 		} else if (nd.element_type === 'Port') {
-			const ifEntryId = 'if_entry_id' in nd ? (nd.if_entry_id as string | undefined) : undefined;
+			const ifEntryId = 'interface_id' in nd ? (nd.interface_id as string | undefined) : undefined;
 			if (ifEntryId) {
 				const existing = ifEntryIdToNodes.get(ifEntryId);
 				if (existing) existing.push(nd.id);

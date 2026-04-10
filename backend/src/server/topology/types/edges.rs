@@ -157,9 +157,9 @@ pub enum EdgeStyle {
 #[strum_discriminants(derive(Display, Hash, Serialize, Deserialize, EnumIter, ToSchema))]
 #[serde(tag = "edge_type")]
 pub enum EdgeType {
-    Interface {
+    IPAddress {
         host_id: Uuid,
-    }, // Connecting hosts with interfaces in multiple subnets
+    }, // Connecting hosts with ip_addresses in multiple subnets
     HostVirtualization {
         vm_service_id: Uuid,
     },
@@ -196,10 +196,10 @@ impl EntityMetadataProvider for EdgeType {
         match self {
             EdgeType::RequestPath { .. } => EntityDiscriminants::Dependency.color(),
             EdgeType::HubAndSpoke { .. } => EntityDiscriminants::Dependency.color(),
-            EdgeType::Interface { .. } => EntityDiscriminants::Host.color(),
+            EdgeType::IPAddress { .. } => EntityDiscriminants::Host.color(),
             EdgeType::HostVirtualization { .. } => Concept::Virtualization.color(),
             EdgeType::ServiceVirtualization { .. } => Concept::Virtualization.color(),
-            EdgeType::PhysicalLink { .. } => EntityDiscriminants::IfEntry.color(),
+            EdgeType::PhysicalLink { .. } => EntityDiscriminants::Interface.color(),
         }
     }
 
@@ -207,10 +207,10 @@ impl EntityMetadataProvider for EdgeType {
         match self {
             EdgeType::RequestPath { .. } => DependencyTypeDiscriminants::RequestPath.icon(),
             EdgeType::HubAndSpoke { .. } => DependencyTypeDiscriminants::HubAndSpoke.icon(),
-            EdgeType::Interface { .. } => EntityDiscriminants::Host.icon(),
+            EdgeType::IPAddress { .. } => EntityDiscriminants::Host.icon(),
             EdgeType::HostVirtualization { .. } => Concept::Virtualization.icon(),
             EdgeType::ServiceVirtualization { .. } => Concept::Virtualization.icon(),
-            EdgeType::PhysicalLink { .. } => EntityDiscriminants::IfEntry.icon(),
+            EdgeType::PhysicalLink { .. } => EntityDiscriminants::Interface.icon(),
         }
     }
 }
@@ -220,7 +220,7 @@ impl TypeMetadataProvider for EdgeType {
         match self {
             EdgeType::RequestPath { .. } => EdgeStyle::SmoothStep.into(),
             EdgeType::HubAndSpoke { .. } => DependencyTypeDiscriminants::HubAndSpoke.name(),
-            EdgeType::Interface { .. } => "Host Interface",
+            EdgeType::IPAddress { .. } => "Host IP Address",
             EdgeType::HostVirtualization { .. } => "Virtualized Host",
             EdgeType::ServiceVirtualization { .. } => "Virtualized Service",
             EdgeType::PhysicalLink { .. } => "Physical Link",
@@ -231,7 +231,7 @@ impl TypeMetadataProvider for EdgeType {
         let edge_style: &str = match &self {
             EdgeType::RequestPath { .. } => EdgeStyle::Bezier.into(),
             EdgeType::HubAndSpoke { .. } => EdgeStyle::Bezier.into(),
-            EdgeType::Interface { .. } => EdgeStyle::Bezier.into(),
+            EdgeType::IPAddress { .. } => EdgeStyle::Bezier.into(),
             EdgeType::HostVirtualization { .. } => EdgeStyle::Bezier.into(),
             EdgeType::ServiceVirtualization { .. } => EdgeStyle::Bezier.into(),
             EdgeType::PhysicalLink { .. } => EdgeStyle::Bezier.into(),
@@ -242,7 +242,7 @@ impl TypeMetadataProvider for EdgeType {
         let has_end_marker = match &self {
             EdgeType::RequestPath { .. } => true,
             EdgeType::HubAndSpoke { .. } => true,
-            EdgeType::Interface { .. } => false,
+            EdgeType::IPAddress { .. } => false,
             EdgeType::HostVirtualization { .. } => false,
             EdgeType::ServiceVirtualization { .. } => false,
             EdgeType::PhysicalLink { .. } => false, // No markers - bidirectional link
@@ -250,7 +250,7 @@ impl TypeMetadataProvider for EdgeType {
 
         let is_host_edge = matches!(
             self,
-            EdgeType::Interface { .. } | EdgeType::ServiceVirtualization { .. }
+            EdgeType::IPAddress { .. } | EdgeType::ServiceVirtualization { .. }
         );
         let is_dependency_edge = matches!(
             self,

@@ -215,7 +215,7 @@ pub async fn walk_if_table(
     result.sort_by_key(|e| e.if_index);
 
     debug!(
-        "SNMP ifTable walk from {} returned {} interfaces",
+        "SNMP ifTable walk from {} returned {} ip_addresses",
         ip,
         result.len()
     );

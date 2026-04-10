@@ -9,7 +9,7 @@ use super::{
 };
 use crate::server::{
     hosts::r#impl::virtualization::HostVirtualization,
-    if_entries::r#impl::base::Neighbor,
+    interfaces::r#impl::base::Neighbor,
     services::r#impl::{definitions::ServiceDefinitionExt, virtualization::ServiceVirtualization},
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType, EdgeViewConfig},
@@ -241,14 +241,14 @@ impl ViewBuilder for InfrastructureBuilder {
         // Track processed pairs to avoid duplicate edges (A→B and B→A from bidirectional LLDP).
         let mut processed_pairs: HashSet<(Uuid, Uuid)> = HashSet::new();
 
-        for source_entry in ctx.if_entries {
+        for source_entry in ctx.interfaces {
             let Some(ref neighbor) = source_entry.base.neighbor else {
                 continue;
             };
 
-            // Resolve target host_id and target if_entry_id from neighbor variant
+            // Resolve target host_id and target interface_id from neighbor variant
             let (target_host_id, target_if_entry_id) = match neighbor {
-                Neighbor::IfEntry(id) => match ctx.get_if_entry_by_id(*id) {
+                Neighbor::Interface(id) => match ctx.get_if_entry_by_id(*id) {
                     Some(target_entry) => (target_entry.base.host_id, *id),
                     None => continue,
                 },

@@ -12,11 +12,11 @@ import type { Component } from 'svelte';
 import { views } from '$lib/shared/stores/metadata';
 
 import SectionIdentity from './sections/SectionIdentity.svelte';
-import SectionIfEntryData from './sections/SectionIfEntryData.svelte';
+import SectionInterfaceData from './sections/SectionInterfaceData.svelte';
 import SectionServices from './sections/SectionServices.svelte';
 import SectionDependencies from './sections/SectionDependencies.svelte';
 import SectionHostDetail from './sections/SectionHostDetail.svelte';
-import SectionOtherInterfaces from './sections/SectionOtherInterfaces.svelte';
+import SectionOtherIPAddresses from './sections/SectionOtherIPAddresses.svelte';
 import SectionTags from './sections/SectionTags.svelte';
 import SectionPortBindings from './sections/SectionPortBindings.svelte';
 import SectionSubnetDetail from './sections/SectionSubnetDetail.svelte';
@@ -51,12 +51,12 @@ export interface ViewInspectorConfig {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SECTION_COMPONENTS: Record<InspectorSection, Component<any>> = {
 	Identity: SectionIdentity,
-	IfEntryData: SectionIfEntryData,
+	IfEntryData: SectionInterfaceData,
 	Services: SectionServices,
 	Dependencies: SectionDependencies,
 	HostDetail: SectionHostDetail,
 	Virtualization: SectionVirtualization,
-	OtherInterfaces: SectionOtherInterfaces,
+	OtherInterfaces: SectionOtherIPAddresses,
 	Tags: SectionTags,
 	PortBindings: SectionPortBindings,
 	SubnetDetail: SectionSubnetDetail,

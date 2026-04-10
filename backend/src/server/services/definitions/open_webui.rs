@@ -12,7 +12,7 @@ impl ServiceDefinition for OpenWebUI {
         "Open WebUI"
     }
     fn description(&self) -> &'static str {
-        "Open, extensible, user-friendly interface for AI"
+        "Open, extensible, user-friendly ip_address for AI"
     }
     fn category(&self) -> ServiceCategory {
         ServiceCategory::Development

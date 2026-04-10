@@ -12,7 +12,7 @@ impl ServiceDefinition for FreePBX {
         "FreePBX"
     }
     fn description(&self) -> &'static str {
-        "PBX web interface"
+        "PBX web ip_address"
     }
     fn category(&self) -> ServiceCategory {
         ServiceCategory::Telephony

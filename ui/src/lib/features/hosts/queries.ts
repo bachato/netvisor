@@ -17,18 +17,17 @@ import type {
 	Host,
 	HostResponse,
 	HostFormData,
+	IPAddress,
 	Interface,
 	Port,
 	CreateHostWithServicesRequest,
 	UpdateHostWithServicesRequest,
 	CreateHostRequest,
 	UpdateHostRequest,
-	InterfaceInput,
+	IPAddressInput,
 	PortInput,
 	ServiceInput,
-	BindingInput,
-	AllInterfaces,
-	IfEntry
+	BindingInput
 } from './types/base';
 import type { Service } from '$lib/features/services/types/base';
 import type { components } from '$lib/api/schema';
@@ -44,7 +43,7 @@ export type { Host, HostResponse, HostFormData, Interface, Port };
  */
 export function toHostPrimitive(response: HostResponse): Host {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const { interfaces, ports, services, if_entries, ...hostFields } = response;
+	const { ip_addresses, ports, services, interfaces, ...hostFields } = response;
 
 	// Normalize optional fields from HostResponse to required nullable fields in Host
 	return {
@@ -62,7 +61,7 @@ export function toHostPrimitive(response: HostResponse): Host {
  */
 export function formDataToHostPrimitive(formData: HostFormData): Host {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const { interfaces, ports, services, if_entries, ...hostFields } = formData;
+	const { ip_addresses, ports, services, interfaces, ...hostFields } = formData;
 	return hostFields;
 }
 
@@ -70,18 +69,18 @@ export function formDataToHostPrimitive(formData: HostFormData): Host {
  * Helper to convert Service binding to BindingInput format for API
  */
 function toBindingInput(binding: Service['bindings'][0]): BindingInput {
-	if (binding.type === 'Interface') {
+	if (binding.type === 'IPAddress') {
 		return {
-			type: 'Interface',
+			type: 'IPAddress',
 			id: binding.id,
-			interface_id: binding.interface_id
+			ip_address_id: binding.ip_address_id
 		};
 	} else {
 		return {
 			type: 'Port',
 			id: binding.id,
 			port_id: binding.port_id,
-			interface_id: binding.interface_id ?? undefined
+			ip_address_id: binding.ip_address_id ?? undefined
 		};
 	}
 }
@@ -99,8 +98,8 @@ function toCreateHostRequest(formData: HostFormData): CreateHostRequest {
 		virtualization: formData.virtualization,
 		hidden: formData.hidden,
 		tags: formData.tags,
-		interfaces: formData.interfaces.map(
-			(iface, index): InterfaceInput => ({
+		ip_addresses: formData.ip_addresses.map(
+			(iface, index): IPAddressInput => ({
 				id: iface.id,
 				subnet_id: iface.subnet_id,
 				ip_address: iface.ip_address,
@@ -204,19 +203,19 @@ export function useHostsQuery(optionsOrGetter: HostQueryOptions | (() => HostQue
 				const responses = data.data;
 
 				// Extract child data from current response
-				const allInterfaces = responses.flatMap((r) => r.interfaces);
+				const allIPAddresses = responses.flatMap((r) => r.ip_addresses);
 				const allPorts = responses.flatMap((r) => r.ports);
 				const allServices = responses.flatMap((r) => r.services);
-				const allIfEntries = responses.flatMap((r) => r.if_entries);
+				const allInterfaces = responses.flatMap((r) => r.interfaces);
 
 				// Get host IDs from current response to merge correctly
 				const currentHostIds = new Set(responses.map((r) => r.id));
 
 				// Merge: keep data from other hosts, update current hosts
-				queryClient.setQueryData<Interface[]>(queryKeys.interfaces.all, (old) => {
-					if (!old) return allInterfaces;
+				queryClient.setQueryData<IPAddress[]>(queryKeys.ipAddresses.all, (old) => {
+					if (!old) return allIPAddresses;
 					const others = old.filter((i) => !currentHostIds.has(i.host_id));
-					return [...others, ...allInterfaces];
+					return [...others, ...allIPAddresses];
 				});
 
 				queryClient.setQueryData<Port[]>(queryKeys.ports.all, (old) => {
@@ -231,10 +230,10 @@ export function useHostsQuery(optionsOrGetter: HostQueryOptions | (() => HostQue
 					return [...others, ...allServices];
 				});
 
-				queryClient.setQueryData<IfEntry[]>(queryKeys.ifEntries.all, (old) => {
-					if (!old) return allIfEntries;
+				queryClient.setQueryData<Interface[]>(queryKeys.interfaces.all, (old) => {
+					if (!old) return allInterfaces;
 					const others = old.filter((e) => !currentHostIds.has(e.host_id));
-					return [...others, ...allIfEntries];
+					return [...others, ...allInterfaces];
 				});
 
 				// Return host primitives with pagination metadata
@@ -312,8 +311,8 @@ export function useCreateHostMutation() {
 			queryClient.setQueryData<Service[]>(queryKeys.services.all, (old) =>
 				old ? [...old, ...response.services] : response.services
 			);
-			queryClient.setQueryData<IfEntry[]>(queryKeys.ifEntries.all, (old) =>
-				old ? [...old, ...response.if_entries] : response.if_entries
+			queryClient.setQueryData<Interface[]>(queryKeys.interfaces.all, (old) =>
+				old ? [...old, ...response.interfaces] : response.interfaces
 			);
 		}
 	}));
@@ -340,9 +339,9 @@ export function useUpdateHostMutation() {
 				credential_assignments: data.host.credential_assignments ?? undefined,
 				expected_updated_at: data.host.updated_at,
 				// Only send arrays if provided (undefined = preserve existing)
-				interfaces: data.interfaces
-					? data.interfaces.map(
-							(iface, index): InterfaceInput => ({
+				ip_addresses: data.ip_addresses
+					? data.ip_addresses.map(
+							(iface, index): IPAddressInput => ({
 								id: iface.id,
 								subnet_id: iface.subnet_id,
 								ip_address: iface.ip_address,
@@ -410,10 +409,10 @@ export function useUpdateHostMutation() {
 				return [...others, ...response.services];
 			});
 
-			// Replace ifEntries for this host
-			queryClient.setQueryData<IfEntry[]>(queryKeys.ifEntries.all, (old) => {
+			// Replace interfaces for this host
+			queryClient.setQueryData<Interface[]>(queryKeys.interfaces.all, (old) => {
 				const others = old?.filter((e) => e.host_id !== hostId) ?? [];
-				return [...others, ...response.if_entries];
+				return [...others, ...response.interfaces];
 			});
 		}
 	}));
@@ -485,8 +484,8 @@ export function useDeleteHostMutation() {
 				queryKeys.services.all,
 				(old) => old?.filter((s) => s.host_id !== id) ?? []
 			);
-			queryClient.setQueryData<IfEntry[]>(
-				queryKeys.ifEntries.all,
+			queryClient.setQueryData<Interface[]>(
+				queryKeys.interfaces.all,
 				(old) => old?.filter((e) => e.host_id !== id) ?? []
 			);
 		}
@@ -526,8 +525,8 @@ export function useBulkDeleteHostsMutation() {
 				queryKeys.services.all,
 				(old) => old?.filter((s) => !idSet.has(s.host_id)) ?? []
 			);
-			queryClient.setQueryData<IfEntry[]>(
-				queryKeys.ifEntries.all,
+			queryClient.setQueryData<Interface[]>(
+				queryKeys.interfaces.all,
 				(old) => old?.filter((e) => !idSet.has(e.host_id)) ?? []
 			);
 		}
@@ -581,10 +580,10 @@ export function useConsolidateHostsMutation() {
 					old?.filter((s) => s.host_id !== otherHostId && s.host_id !== response.id) ?? [];
 				return [...others, ...response.services];
 			});
-			queryClient.setQueryData<IfEntry[]>(queryKeys.ifEntries.all, (old) => {
+			queryClient.setQueryData<Interface[]>(queryKeys.interfaces.all, (old) => {
 				const others =
 					old?.filter((e) => e.host_id !== otherHostId && e.host_id !== response.id) ?? [];
-				return [...others, ...response.if_entries];
+				return [...others, ...response.interfaces];
 			});
 
 			if (otherHostName) {
@@ -597,8 +596,8 @@ export function useConsolidateHostsMutation() {
 /**
  * Format an interface for display
  */
-export function formatInterface(
-	i: Interface | AllInterfaces,
+export function formatIPAddress(
+	i: IPAddress | AllIPAddresses,
 	isContainerSubnetFn: (subnetId: string) => boolean
 ): string {
 	if (i.id == null) return i.name;
@@ -615,17 +614,17 @@ export function hydrateHostToFormData(
 	host: Host,
 	queryClient: ReturnType<typeof useQueryClient>
 ): HostFormData {
-	const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
+	const allIPAddresses = queryClient.getQueryData<IPAddress[]>(queryKeys.ipAddresses.all) ?? [];
 	const allPorts = queryClient.getQueryData<Port[]>(queryKeys.ports.all) ?? [];
 	const allServices = queryClient.getQueryData<Service[]>(queryKeys.services.all) ?? [];
-	const allIfEntries = queryClient.getQueryData<IfEntry[]>(queryKeys.ifEntries.all) ?? [];
+	const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
 
 	return {
 		...host,
-		interfaces: allInterfaces.filter((i) => i.host_id === host.id),
+		ip_addresses: allIPAddresses.filter((i) => i.host_id === host.id),
 		ports: allPorts.filter((p) => p.host_id === host.id),
 		services: allServices.filter((s) => s.host_id === host.id),
-		if_entries: allIfEntries.filter((e) => e.host_id === host.id),
+		interfaces: allInterfaces.filter((e) => e.host_id === host.id),
 		// SNMP fields from host
 		sys_descr: host.sys_descr ?? null,
 		sys_object_id: host.sys_object_id ?? null,
@@ -657,7 +656,7 @@ export function createEmptyHostFormData(defaultNetworkId?: string): HostFormData
 		tags: [],
 		hostname: null,
 		services: [],
-		interfaces: [],
+		ip_addresses: [],
 		ports: [],
 		source: {
 			type: 'Manual'
@@ -673,7 +672,7 @@ export function createEmptyHostFormData(defaultNetworkId?: string): HostFormData
 		management_url: null,
 		chassis_id: null,
 		credential_assignments: [],
-		if_entries: []
+		interfaces: []
 	};
 }
 

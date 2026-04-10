@@ -318,10 +318,12 @@ async fn resolve_entity_scope(
         }
         EntityDiscriminants::Port => resolve_scope(s.port_service.as_ref(), entity_id).await,
         EntityDiscriminants::Binding => resolve_scope(s.binding_service.as_ref(), entity_id).await,
+        EntityDiscriminants::IPAddress => {
+            resolve_scope(s.ip_address_service.as_ref(), entity_id).await
+        }
         EntityDiscriminants::Interface => {
             resolve_scope(s.interface_service.as_ref(), entity_id).await
         }
-        EntityDiscriminants::IfEntry => resolve_scope(s.if_entry_service.as_ref(), entity_id).await,
         EntityDiscriminants::Credential => {
             resolve_scope(s.credential_service.as_ref(), entity_id).await
         }

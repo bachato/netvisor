@@ -12,7 +12,7 @@ impl ServiceDefinition for Portainer {
         "Portainer"
     }
     fn description(&self) -> &'static str {
-        "Container management web interface"
+        "Container management web ip_address"
     }
     fn category(&self) -> ServiceCategory {
         ServiceCategory::Virtualization

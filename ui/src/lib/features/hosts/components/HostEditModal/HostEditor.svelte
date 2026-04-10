@@ -5,7 +5,7 @@
 	import type {
 		Host,
 		HostFormData,
-		IfEntry,
+		Interface,
 		CreateHostWithServicesRequest,
 		UpdateHostWithServicesRequest
 	} from '$lib/features/hosts/types/base';
@@ -18,7 +18,7 @@
 	import { queryKeys } from '$lib/api/query-client';
 	import DetailsForm from './Details/HostDetailsForm.svelte';
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
-	import InterfacesForm from './Interfaces/InterfacesForm.svelte';
+	import IPAddressesForm from './IPAddresses/IPAddressesForm.svelte';
 	import ServicesForm from './Services/ServicesForm.svelte';
 	import { concepts, entities, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { Service } from '$lib/features/services/types/base';
@@ -27,7 +27,7 @@
 	import PortsForm from './Ports/PortsForm.svelte';
 	import VirtualizationForm from './Virtualization/VirtualizationForm.svelte';
 	import SnmpForm from './Snmp/SnmpForm.svelte';
-	import IfEntriesForm from './IfEntries/IfEntriesForm.svelte';
+	import InterfacesForm from './Interfaces/InterfacesForm.svelte';
 	import EntityMetadataSection from '$lib/shared/components/forms/EntityMetadataSection.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { pushError } from '$lib/shared/stores/feedback';
@@ -38,8 +38,8 @@
 		common_deleting,
 		common_details,
 		common_editName,
-		common_ifEntries,
 		common_interfaces,
+		common_ipAddresses,
 		common_next,
 		common_ports,
 		common_saving,
@@ -53,7 +53,7 @@
 		hosts_editor_updateHost,
 		hosts_editor_virtualizationDesc,
 		hosts_failedToSave,
-		hosts_ifEntries_subtitle,
+		hosts_interfaces_subtitle,
 		hosts_validation_interfaceIndex,
 		hosts_validation_portField,
 		hosts_validation_serviceIndex,
@@ -86,14 +86,14 @@
 	let networksData = $derived(networksQuery.data ?? []);
 	let defaultNetworkId = $derived(networksData[0]?.id ?? '');
 
-	// Subscribe to ifEntries cache for this host - reactive to cache updates
-	// Since ifEntries are read-only (populated by SNMP discovery), we bypass formData
+	// Subscribe to interfaces cache for this host - reactive to cache updates
+	// Since interfaces are read-only (populated by SNMP discovery), we bypass formData
 	// and read directly from the cache for both tab visibility and form data
-	const ifEntriesQuery = createQuery(() => ({
-		queryKey: [...queryKeys.ifEntries.all, 'forHost', host?.id ?? 'none'],
+	const interfacesQuery = createQuery(() => ({
+		queryKey: [...queryKeys.interfaces.all, 'forHost', host?.id ?? 'none'],
 		queryFn: () => {
-			const allIfEntries = queryClient.getQueryData<IfEntry[]>(queryKeys.ifEntries.all) ?? [];
-			return allIfEntries.filter((e) => e.host_id === host?.id);
+			const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
+			return allInterfaces.filter((e) => e.host_id === host?.id);
 		},
 		enabled: !!host && isOpen,
 		// Check cache frequently since we're reading from another query's cache
@@ -101,7 +101,7 @@
 		refetchInterval: 2000 // Poll while modal is open
 	}));
 
-	let hostIfEntries = $derived(ifEntriesQuery.data ?? []);
+	let hostInterfaces = $derived(interfacesQuery.data ?? []);
 
 	let loading = $state(false);
 	let deleting = $state(false);
@@ -280,7 +280,7 @@
 	let activeTab = $state('details');
 	let furthestReached = $state(0);
 
-	// Sub-entity deep link: when navigating to a specific interface/port/ifEntry
+	// Sub-entity deep link: when navigating to a specific interface/port/interface
 	let pendingSubEntityId = $state<string | null>(null);
 
 	function handleSubEntityNavigation(subEntityId: string) {
@@ -306,17 +306,17 @@
 		...(isEditing
 			? [
 					{
-						id: 'if-entries',
-						label: common_ifEntries(),
-						icon: entities.getIconComponent('IfEntry'),
-						description: hosts_ifEntries_subtitle()
+						id: 'interfaces',
+						label: common_interfaces(),
+						icon: entities.getIconComponent('Interface'),
+						description: hosts_interfaces_subtitle()
 					}
 				]
 			: []),
 		{
-			id: 'interfaces',
-			label: common_interfaces(),
-			icon: entities.getIconComponent('Interface'),
+			id: 'ip-addresses',
+			label: common_ipAddresses(),
+			icon: entities.getIconComponent('IPAddress'),
 			description: hosts_editor_interfacesDesc(),
 			disabled: !isEditing && furthestReached < 2
 		},
@@ -515,10 +515,10 @@
 				</div>
 			{/if}
 
-			<!-- Interfaces Tab -->
-			{#if activeTab === 'interfaces'}
+			<!-- IP Addresses Tab -->
+			{#if activeTab === 'ip-addresses'}
 				<div class="flex h-full flex-col">
-					<InterfacesForm
+					<IPAddressesForm
 						bind:formData
 						{form}
 						{isEditing}
@@ -567,10 +567,10 @@
 				</div>
 			{/if}
 
-			<!-- IfEntries Tab -->
-			{#if activeTab === 'if-entries'}
+			<!-- Interfaces Tab -->
+			{#if activeTab === 'interfaces'}
 				<div class="flex h-full flex-col">
-					<IfEntriesForm ifEntries={hostIfEntries} bind:targetEntityId={pendingSubEntityId} />
+					<InterfacesForm interfaces={hostInterfaces} bind:targetEntityId={pendingSubEntityId} />
 				</div>
 			{/if}
 		</div>

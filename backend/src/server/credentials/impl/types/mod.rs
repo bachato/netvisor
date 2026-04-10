@@ -42,7 +42,7 @@ fn default_docker_port() -> u16 {
 pub enum CredentialType {
     /// SNMPv2c community string for querying network devices
     SnmpV2c { community: SecretValue },
-    /// Docker API proxy credentials. Target IP determined from host interfaces at scan time.
+    /// Docker API proxy credentials. Target IP determined from host ip_addresses at scan time.
     DockerProxy {
         /// Port for the Docker API proxy (default 2375)
         #[serde(default = "default_docker_port")]

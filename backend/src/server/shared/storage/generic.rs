@@ -85,9 +85,9 @@ where
             Some(c) if c.contains("ports") => {
                 "A port with this number and protocol already exists on this host".to_string()
             }
-            // interfaces(host_id, subnet_id, ip_address)
-            Some(c) if c.contains("interfaces") => {
-                "An interface with this IP address already exists on this host".to_string()
+            // ip_addresses(host_id, subnet_id, ip_address)
+            Some(c) if c.contains("ip_addresses") => {
+                "An ip_address with this IP address already exists on this host".to_string()
             }
             // tags(organization_id, name)
             Some(c) if c.contains("tags") => "A tag with this name already exists".to_string(),
@@ -139,7 +139,7 @@ where
             SqlValue::IpCidr(v) => query.bind(serde_json::to_string(v)?),
             SqlValue::ServiceDefinition(v) => query.bind(serde_json::to_string(v)?),
             SqlValue::OptionalServiceVirtualization(v) => query.bind(serde_json::to_value(v)?),
-            SqlValue::Interfaces(v) => query.bind(serde_json::to_value(v)?),
+            SqlValue::IPAddresses(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::Ports(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::Bindings(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::OptionalHostVirtualization(v) => query.bind(serde_json::to_value(v)?),
@@ -170,7 +170,7 @@ where
             SqlValue::Subnets(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::Services(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::Dependencies(v) => query.bind(serde_json::to_value(v)?),
-            SqlValue::IfEntries(v) => query.bind(serde_json::to_value(v)?),
+            SqlValue::Interfaces(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::Tags(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::Vlans(v) => query.bind(serde_json::to_value(v)?),
             SqlValue::PlanLimitNotifications(v) => query.bind(serde_json::to_value(v)?),

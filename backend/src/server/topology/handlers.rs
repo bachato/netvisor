@@ -226,7 +226,7 @@ async fn create_topology(
 
     let service = Topology::get_service(&state);
 
-    let (hosts, interfaces, subnets, dependencies, ports, bindings, if_entries) =
+    let (hosts, ip_addresses, subnets, dependencies, ports, bindings, interfaces) =
         service.get_entity_data(topology.base.network_id).await?;
 
     let services = service.get_service_data(topology.base.network_id).await?;
@@ -240,13 +240,13 @@ async fn create_topology(
     let (nodes, edges) = service.build_graph(BuildGraphParams {
         options: &topology.base.options,
         hosts: &hosts,
-        interfaces: &interfaces,
+        ip_addresses: &ip_addresses,
         subnets: &subnets,
         services: &services,
         dependencies: &dependencies,
         ports: &ports,
         bindings: &bindings,
-        if_entries: &if_entries,
+        interfaces: &interfaces,
         entity_tags: &entity_tags,
         vlans: &vlans,
         old_edges: &[],
@@ -256,13 +256,13 @@ async fn create_topology(
 
     topology.set_entities(SetEntitiesParams {
         hosts,
-        interfaces,
+        ip_addresses,
         services,
         subnets,
         dependencies,
         ports,
         bindings,
-        if_entries,
+        interfaces,
         entity_tags,
         vlans,
     });
@@ -335,7 +335,7 @@ async fn refresh(
     // Update options from request
     topology.base.options = request.options;
 
-    let (hosts, interfaces, subnets, dependencies, ports, bindings, if_entries) =
+    let (hosts, ip_addresses, subnets, dependencies, ports, bindings, interfaces) =
         service.get_entity_data(request.network_id).await?;
 
     let services = service.get_service_data(request.network_id).await?;
@@ -349,12 +349,12 @@ async fn refresh(
     topology.set_entities(SetEntitiesParams {
         hosts,
         services,
-        interfaces,
+        ip_addresses,
         subnets,
         dependencies,
         ports,
         bindings,
-        if_entries,
+        interfaces,
         entity_tags,
         vlans,
     });
@@ -409,7 +409,7 @@ async fn rebuild(
     // Update options from request
     topology.base.options = request.options.clone();
 
-    let (hosts, interfaces, subnets, dependencies, ports, bindings, if_entries) =
+    let (hosts, ip_addresses, subnets, dependencies, ports, bindings, interfaces) =
         service.get_entity_data(request.network_id).await?;
 
     let services = service.get_service_data(request.network_id).await?;
@@ -423,13 +423,13 @@ async fn rebuild(
     let (nodes, edges) = service.build_graph(BuildGraphParams {
         options: &topology.base.options,
         hosts: &hosts,
-        interfaces: &interfaces,
+        ip_addresses: &ip_addresses,
         subnets: &subnets,
         services: &services,
         dependencies: &dependencies,
         ports: &ports,
         bindings: &bindings,
-        if_entries: &if_entries,
+        interfaces: &interfaces,
         entity_tags: &entity_tags,
         vlans: &vlans,
         old_nodes: &request.nodes,
@@ -440,12 +440,12 @@ async fn rebuild(
     topology.set_entities(SetEntitiesParams {
         hosts,
         services,
-        interfaces,
+        ip_addresses,
         subnets,
         dependencies,
         ports,
         bindings,
-        if_entries,
+        interfaces,
         entity_tags,
         vlans,
     });
@@ -671,7 +671,7 @@ async fn update_node_resize(
 /// Update topology metadata
 ///
 /// Lightweight endpoint for editing topology name and parent. Instead of sending
-/// the entire topology (which includes all hosts, interfaces, services, etc.),
+/// the entire topology (which includes all hosts, ip_addresses, services, etc.),
 /// only sends the metadata fields.
 /// Fixes HTTP 413 errors on metadata edit operations for large topologies.
 #[utoipa::path(

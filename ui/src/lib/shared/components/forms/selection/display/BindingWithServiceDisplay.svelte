@@ -3,7 +3,7 @@
 	import type { Binding, Service } from '$lib/features/services/types/base';
 	import type { Host, Interface, Port } from '$lib/features/hosts/types/base';
 	import { formatPort } from '$lib/shared/utils/formatting';
-	import { ALL_INTERFACES } from '$lib/features/hosts/types/base';
+	import { ALL_IP_ADDRESSES } from '$lib/features/hosts/types/base';
 
 	// Context for binding display - needs access to services, hosts, interfaces, ports
 	export interface BindingWithServiceContext {
@@ -16,7 +16,7 @@
 
 	// Helper to format interface for display
 	function formatInterfaceForBinding(
-		iface: Interface | typeof ALL_INTERFACES,
+		iface: Interface | typeof ALL_IP_ADDRESSES,
 		isContainerSubnet: (subnetId: string) => boolean
 	): string {
 		if (iface.id == null) return iface.name;
@@ -39,7 +39,7 @@
 			const port = context.ports.find((p) => p.id === binding.port_id);
 			const iface = binding.interface_id
 				? context.interfaces.find((i) => i.id === binding.interface_id)
-				: ALL_INTERFACES;
+				: ALL_IP_ADDRESSES;
 			const portFormatted = port ? formatPort(port) : 'Unknown Port';
 			const interfaceFormatted = iface
 				? formatInterfaceForBinding(iface, context.isContainerSubnet)

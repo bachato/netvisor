@@ -5,7 +5,7 @@ use crate::server::credentials::r#impl::mapping::{CredentialMapping, CredentialQ
 use crate::server::daemons::r#impl::api::DaemonDiscoveryRequest;
 use crate::server::discovery::r#impl::types::DiscoveryType;
 use crate::server::hosts::r#impl::base::Host;
-use crate::server::interfaces::r#impl::base::Interface;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::subnets::r#impl::base::Subnet;
 use anyhow::{Error, Result};
 use futures::future::join_all;
@@ -346,7 +346,7 @@ impl DiscoveryRunner {
             return Ok(());
         };
 
-        let interface = Interface::new(crate::server::interfaces::r#impl::base::InterfaceBase {
+        let ip_address = IPAddress::new(crate::server::ip_addresses::r#impl::base::IPAddressBase {
             network_id: subnet.base.network_id,
             host_id: Uuid::nil(),
             name: None,
@@ -358,7 +358,7 @@ impl DiscoveryRunner {
 
         let params = crate::server::services::r#impl::base::ServiceMatchBaselineParams {
             subnet,
-            interface: &interface,
+            ip_address: &ip_address,
             all_ports: &probe_results.additional_ports.to_vec(),
             endpoint_responses: &vec![],
             virtualization: &None,
@@ -390,7 +390,7 @@ impl DiscoveryRunner {
             host_naming_fallback: self.host_naming_fallback,
             created_subnets,
             scanning_subnet: None,
-            interface_id: Some(interface.id),
+            ip_address_id: Some(ip_address.id),
         };
 
         dispatch::execute_integrations(
@@ -404,16 +404,16 @@ impl DiscoveryRunner {
         // Persist results
         tracing::info!(
             services = host_data.services.len(),
-            interfaces = host_data.interfaces.len(),
+            ip_addresses = host_data.ip_addresses.len(),
             "Persisting localhost integration results"
         );
 
         ops.create_host(
             host_data.host,
-            host_data.interfaces,
+            host_data.ip_addresses,
             host_data.ports,
             host_data.services,
-            host_data.if_entries,
+            host_data.interfaces,
             host_data.subnets,
             cancel,
         )

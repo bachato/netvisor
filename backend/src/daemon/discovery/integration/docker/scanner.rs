@@ -20,7 +20,7 @@ use crate::daemon::utils::base::{DaemonUtils, PlatformDaemonUtils};
 use crate::daemon::utils::scanner::scan_endpoints;
 use crate::server::bindings::r#impl::base::{Binding, BindingDiscriminants};
 use crate::server::discovery::r#impl::types::HostNamingFallback;
-use crate::server::interfaces::r#impl::base::{ALL_INTERFACES_IP, Interface, InterfaceBase};
+use crate::server::ip_addresses::r#impl::base::{ALL_IP_ADDRESSES_IP, IPAddress, IPAddressBase};
 use crate::server::ports::r#impl::base::{Port, PortType};
 use crate::server::services::r#impl::base::{Service, ServiceMatchBaselineParams};
 use crate::server::services::r#impl::endpoints::{Endpoint, EndpointResponse};
@@ -32,16 +32,16 @@ use crate::server::subnets::r#impl::types::SubnetTypeDiscriminants;
 
 type IpPortHashMap = HashMap<IpAddr, Vec<PortType>>;
 
-/// Result of scanning a single container — services, ports, and interfaces
+/// Result of scanning a single container — services, ports, and ip_addresses
 /// to be merged into the parent host's HostData rather than creating separate host entities.
 pub struct ContainerScanResult {
     pub services: Vec<Service>,
     pub ports: Vec<Port>,
-    pub interfaces: Vec<Interface>,
+    pub ip_addresses: Vec<IPAddress>,
 }
 
 pub struct ProcessContainerParams<'a> {
-    pub containers_interfaces_and_subnets: &'a HashMap<String, Vec<(Interface, Subnet)>>,
+    pub containers_interfaces_and_subnets: &'a HashMap<String, Vec<(IPAddress, Subnet)>>,
     pub container: &'a ContainerInspectResponse,
     pub container_summary: &'a ContainerSummary,
     pub docker_service_id: &'a Uuid,
@@ -91,7 +91,7 @@ impl<'a> DockerScanner<'a> {
     pub async fn scan_and_process_containers(
         &self,
         containers: Vec<(ContainerInspectResponse, ContainerSummary)>,
-        containers_interfaces_and_subnets: &HashMap<String, Vec<(Interface, Subnet)>>,
+        containers_interfaces_and_subnets: &HashMap<String, Vec<(IPAddress, Subnet)>>,
         progress: Arc<AtomicU8>,
     ) -> Result<Vec<ContainerScanResult>> {
         let concurrent_scans = 15usize;
@@ -251,11 +251,11 @@ impl<'a> DockerScanner<'a> {
             .get(container_id)
             .unwrap_or(empty_vec_ref);
 
-        for (interface, subnet) in container_interfaces_and_subnets {
+        for (ip_address, subnet) in container_interfaces_and_subnets {
             let empty_client_responses = std::collections::HashMap::new();
             let params = ServiceMatchBaselineParams {
                 subnet,
-                interface,
+                ip_address,
                 all_ports: &open_ports,
                 endpoint_responses: &endpoint_responses,
                 virtualization: &Some(ServiceVirtualization::Docker(DockerVirtualization {
@@ -278,7 +278,7 @@ impl<'a> DockerScanner<'a> {
                 return Ok(Some(ContainerScanResult {
                     services: host_data.services,
                     ports: host_data.ports,
-                    interfaces: host_data.interfaces,
+                    ip_addresses: host_data.ip_addresses,
                 }));
             }
         }
@@ -319,19 +319,19 @@ impl<'a> DockerScanner<'a> {
         if container_interfaces_and_subnets.is_empty() {
             tracing::warn!(
                 container = ?container.name,
-                "No interfaces found for bridge container - Docker bridge subnets may not have been created"
+                "No ip_addresses found for bridge container - Docker bridge subnets may not have been created"
             );
             return Ok(None);
         }
 
-        for (interface, subnet) in container_interfaces_and_subnets {
+        for (ip_address, subnet) in container_interfaces_and_subnets {
             if cancel.is_cancelled() {
                 return Err(Error::msg("Discovery was cancelled"));
             }
 
             let mut endpoint_responses = if let Some(name) = &container.name {
                 self.scan_container_endpoints(
-                    interface,
+                    ip_address,
                     &host_to_container_port_map,
                     name.trim_start_matches("/"),
                     cancel.clone(),
@@ -350,7 +350,7 @@ impl<'a> DockerScanner<'a> {
                 let accept_invalid_certs = self.accept_invalid_certs;
                 let external_responses = self
                     .scan_container_endpoints_external(
-                        interface,
+                        ip_address,
                         &host_to_container_port_map,
                         cancel.clone(),
                         accept_invalid_certs,
@@ -360,7 +360,7 @@ impl<'a> DockerScanner<'a> {
                     tracing::debug!(
                         "External endpoint probing found {} responses for container at {}",
                         external_responses.len(),
-                        interface.base.ip_address
+                        ip_address.base.ip_address
                     );
                     endpoint_responses.extend(external_responses);
                 }
@@ -370,13 +370,13 @@ impl<'a> DockerScanner<'a> {
                 tracing::debug!(
                     "Found {} endpoint responses for container at {}",
                     endpoint_responses.len(),
-                    interface.base.ip_address
+                    ip_address.base.ip_address
                 );
             }
 
             let empty_vec_ref: &Vec<_> = &Vec::new();
-            let container_ports_on_interface = container_ips_to_container_ports
-                .get(&interface.base.ip_address)
+            let container_ports_on_ip_address = container_ips_to_container_ports
+                .get(&ip_address.base.ip_address)
                 .unwrap_or(empty_vec_ref);
 
             let empty_client_responses = std::collections::HashMap::new();
@@ -385,8 +385,8 @@ impl<'a> DockerScanner<'a> {
                 .build_host_from_scan(
                     ServiceMatchBaselineParams {
                         subnet,
-                        interface,
-                        all_ports: container_ports_on_interface,
+                        ip_address,
+                        all_ports: container_ports_on_ip_address,
                         endpoint_responses: &endpoint_responses,
                         virtualization: &Some(ServiceVirtualization::Docker(
                             DockerVirtualization {
@@ -406,10 +406,10 @@ impl<'a> DockerScanner<'a> {
                 )
                 .await
             {
-                // Add all interfaces relevant to container to the interfaces vec
+                // Add all ip_addresses relevant to container to the ip_addresses vec
                 container_interfaces_and_subnets.iter().for_each(|(i, _)| {
-                    if !host_data.interfaces.contains(i) {
-                        host_data.interfaces.push(i.clone())
+                    if !host_data.ip_addresses.contains(i) {
+                        host_data.ip_addresses.push(i.clone())
                     }
                 });
 
@@ -425,7 +425,7 @@ impl<'a> DockerScanner<'a> {
                 host_data.services.iter_mut().for_each(|s| {
                     // Add all host port + IPs and any container ports which weren't matched
                     // We know they are open on this host even if no services matched them
-                    container_ports_on_interface
+                    container_ports_on_ip_address
                         .iter()
                         .for_each(|container_port| {
                             // Add bindings for container ports which weren't matched
@@ -444,7 +444,7 @@ impl<'a> DockerScanner<'a> {
                                 {
                                     s.base.bindings.push(Binding::new_port_serviceless(
                                         unmatched_container_port.id,
-                                        Some(interface.id),
+                                        Some(ip_address.id),
                                     ))
                                 }
                                 _ => (),
@@ -454,7 +454,7 @@ impl<'a> DockerScanner<'a> {
                     // Add bindings for all host ports, provided there's an interface
                     host_ip_to_host_ports.iter().for_each(|(ip, pbs)| {
                         pbs.iter().for_each(|pb| {
-                            // If there's an existing port and existing non-docker bindings, they'll need to be replaced if listener is on all interfaces otherwise there'll be duplicate bindings
+                            // If there's an existing port and existing non-docker bindings, they'll need to be replaced if listener is on all ip_addresses otherwise there'll be duplicate bindings
                             let (port, existing_non_docker_bindings) =
                                 match host_data.ports.iter().find(|p| p.base.port_type == *pb) {
                                     // Port exists on host, so get IDs of existing non-Docker bridge service bindings
@@ -468,14 +468,14 @@ impl<'a> DockerScanner<'a> {
                                                     && port_id == existing_port.id
                                                 {
                                                     // Only include if it's NOT on a Docker bridge
-                                                    // Look up interface in the interfaces vec
-                                                    if let Some(interface_id) = b.interface_id()
-                                                        && let Some(interface) = host_data
-                                                            .interfaces
+                                                    // Look up interface in the ip_addresses vec
+                                                    if let Some(ip_address_id) = b.ip_address_id()
+                                                        && let Some(ip_address) = host_data
+                                                            .ip_addresses
                                                             .iter()
-                                                            .find(|i| i.id == interface_id)
+                                                            .find(|i| i.id == ip_address_id)
                                                         && !docker_bridge_subnet_ids
-                                                            .contains(&interface.base.subnet_id)
+                                                            .contains(&ip_address.base.subnet_id)
                                                     {
                                                         return Some(b.id());
                                                     }
@@ -488,22 +488,22 @@ impl<'a> DockerScanner<'a> {
                                     None => (Port::new_hostless(*pb), vec![]),
                                 };
 
-                            // Get host interface from the interfaces vec
+                            // Get host interface from the ip_addresses vec
                             let host_interface = host_data
-                                .interfaces
+                                .ip_addresses
                                 .iter()
                                 .find(|i| i.base.ip_address == *ip);
 
-                            // Add binding to specific interface, or all interfaces if it's on ALL_INTERFACES_IP
+                            // Add binding to specific ip_address, or all ip_addresses if it's on ALL_IP_ADDRESSES_IP
                             match host_interface {
-                                Some(host_interface) => {
+                                Some(host_ip_address) => {
                                     s.base.bindings.push(Binding::new_port_serviceless(
                                         port.id,
-                                        Some(host_interface.id),
+                                        Some(host_ip_address.id),
                                     ));
                                     host_data.ports.push(port);
                                 }
-                                None if *ip == ALL_INTERFACES_IP => {
+                                None if *ip == ALL_IP_ADDRESSES_IP => {
                                     // Remove existing non-Docker bridge bindings for this port
                                     s.base.bindings = s
                                         .base
@@ -513,24 +513,24 @@ impl<'a> DockerScanner<'a> {
                                         .cloned()
                                         .collect();
 
-                                    // Add bindings for all non-Docker bridge interfaces
+                                    // Add bindings for all non-Docker bridge ip_addresses
                                     // Use the interface ID from the `interfaces` list (not container_interfaces_and_subnets)
                                     // because Interface::eq deduplication at lines 617-621 may have matched
                                     // different interface objects with different UUIDs
-                                    for (interface, subnet) in container_interfaces_and_subnets {
+                                    for (ip_address, subnet) in container_interfaces_and_subnets {
                                         if subnet.base.subnet_type.discriminant()
                                             != SubnetTypeDiscriminants::DockerBridge
                                         {
-                                            // Find the matching interface in the interfaces list
-                                            if let Some(matched_interface) = host_data
-                                                .interfaces
+                                            // Find the matching interface in the ip_addresses list
+                                            if let Some(matched_ip_address) = host_data
+                                                .ip_addresses
                                                 .iter()
-                                                .find(|i| *i == interface)
+                                                .find(|i| *i == ip_address)
                                             {
                                                 s.base.bindings.push(
                                                     Binding::new_port_serviceless(
                                                         port.id,
-                                                        Some(matched_interface.id),
+                                                        Some(matched_ip_address.id),
                                                     ),
                                                 );
                                             }
@@ -546,16 +546,16 @@ impl<'a> DockerScanner<'a> {
 
                     // Remove any interface bindings which are now superceded by port bindings
                     // (interface binding is implicit in port binding)
-                    let interface_ids_with_port_binding: Vec<Uuid> = s
+                    let ip_address_ids_with_port_binding: Vec<Uuid> = s
                         .base
                         .bindings
                         .clone()
                         .into_iter()
                         .filter_map(|b| {
                             if b.base.binding_type.discriminant() == BindingDiscriminants::Port
-                                && let Some(interface_id) = b.interface_id()
+                                && let Some(ip_address_id) = b.ip_address_id()
                             {
-                                return Some(interface_id);
+                                return Some(ip_address_id);
                             }
                             None
                         })
@@ -563,15 +563,15 @@ impl<'a> DockerScanner<'a> {
 
                     s.base.bindings.retain(|b| {
                         b.base.binding_type.discriminant() == BindingDiscriminants::Port
-                            || !interface_ids_with_port_binding
-                                .contains(&b.interface_id().unwrap_or_default())
+                            || !ip_address_ids_with_port_binding
+                                .contains(&b.ip_address_id().unwrap_or_default())
                     });
                 });
 
                 return Ok(Some(ContainerScanResult {
                     services: host_data.services,
                     ports: host_data.ports,
-                    interfaces: host_data.interfaces,
+                    ip_addresses: host_data.ip_addresses,
                 }));
             }
         }
@@ -581,7 +581,7 @@ impl<'a> DockerScanner<'a> {
 
     async fn scan_container_endpoints(
         &self,
-        interface: &Interface,
+        ip_address: &IPAddress,
         host_to_container_port_map: &HashMap<(IpAddr, u16), u16>,
         container_name: &str,
         cancel: CancellationToken,
@@ -750,7 +750,7 @@ impl<'a> DockerScanner<'a> {
 
                     // Also add the container-internal endpoint
                     let container_endpoint = Endpoint {
-                        ip: Some(interface.base.ip_address), // Container's IP on the bridge network
+                        ip: Some(ip_address.base.ip_address), // Container's IP on the bridge network
                         port_type: PortType::new_tcp(endpoint.port_type.number()), // Container port, not host port
                         protocol: endpoint.protocol,
                         path: endpoint.path.clone(),
@@ -774,7 +774,7 @@ impl<'a> DockerScanner<'a> {
     /// back to container ports for the pattern matcher.
     async fn scan_container_endpoints_external(
         &self,
-        interface: &Interface,
+        ip_address: &IPAddress,
         host_to_container_port_map: &HashMap<(IpAddr, u16), u16>,
         cancel: CancellationToken,
         accept_invalid_certs: bool,
@@ -824,7 +824,7 @@ impl<'a> DockerScanner<'a> {
                 }
 
                 // Resolve 0.0.0.0 to the Docker host's IP
-                let probe_ip = if *host_ip == ALL_INTERFACES_IP {
+                let probe_ip = if *host_ip == ALL_IP_ADDRESSES_IP {
                     self.host_ip
                 } else {
                     *host_ip
@@ -877,7 +877,7 @@ impl<'a> DockerScanner<'a> {
                             // Container-port response for pattern matching
                             endpoint_responses.push(EndpointResponse {
                                 endpoint: Endpoint {
-                                    ip: Some(interface.base.ip_address),
+                                    ip: Some(ip_address.base.ip_address),
                                     port_type: endpoint.port_type,
                                     protocol: endpoint.protocol,
                                     path: endpoint.path.clone(),
@@ -975,7 +975,7 @@ impl<'a> DockerScanner<'a> {
     fn get_ports_from_container(
         &self,
         container_summary: &ContainerSummary,
-        container_interfaces_and_subnets: &[(Interface, Subnet)],
+        container_interfaces_and_subnets: &[(IPAddress, Subnet)],
     ) -> (IpPortHashMap, IpPortHashMap, HashMap<(IpAddr, u16), u16>) {
         let mut host_ip_to_host_ports: IpPortHashMap = HashMap::new();
         let mut container_ips_to_container_ports: IpPortHashMap = HashMap::new();
@@ -1038,8 +1038,8 @@ impl<'a> DockerScanner<'a> {
         &self,
         containers: &[(ContainerInspectResponse, ContainerSummary)],
         subnets: &[Subnet],
-        host_interfaces: &mut [Interface],
-    ) -> HashMap<String, Vec<(Interface, Subnet)>> {
+        host_interfaces: &mut [IPAddress],
+    ) -> HashMap<String, Vec<(IPAddress, Subnet)>> {
         // Created subnets may differ from discovered if there are existing subnets with the same CIDR, so we need to update interface subnet_id references
         let host_interfaces_and_subnets = host_interfaces
             .iter_mut()
@@ -1055,9 +1055,9 @@ impl<'a> DockerScanner<'a> {
 
                 None
             })
-            .collect::<Vec<(Interface, Subnet)>>();
+            .collect::<Vec<(IPAddress, Subnet)>>();
 
-        // Collect interfaces from containers
+        // Collect ip_addresses from containers
         containers
             .iter()
             .filter_map(|(container, _)| {
@@ -1068,7 +1068,8 @@ impl<'a> DockerScanner<'a> {
                     .unwrap_or_default()
                     == "host";
 
-                let mut interfaces_and_subnets: Vec<(Interface, Subnet)> = if host_networking_mode {
+                let mut ip_addresses_and_subnets: Vec<(IPAddress, Subnet)> = if host_networking_mode
+                {
                     host_interfaces_and_subnets.clone()
                 }
                 // Containers not in host networking mode
@@ -1093,7 +1094,7 @@ impl<'a> DockerScanner<'a> {
                                             .and_then(|mac_str| mac_str.parse::<MacAddress>().ok());
 
                                         return Some((
-                                            Interface::new(InterfaceBase {
+                                            IPAddress::new(IPAddressBase {
                                                 network_id: subnet.base.network_id,
                                                 host_id: Uuid::nil(), // Placeholder - server will set correct host_id
                                                 subnet_id: subnet.id,
@@ -1114,7 +1115,7 @@ impl<'a> DockerScanner<'a> {
 
                                 None
                             })
-                            .collect::<Vec<(Interface, Subnet)>>()
+                            .collect::<Vec<(IPAddress, Subnet)>>()
                     } else {
                         Vec::new()
                     }
@@ -1122,13 +1123,13 @@ impl<'a> DockerScanner<'a> {
                     Vec::new()
                 };
 
-                // Merge in host interfaces
-                interfaces_and_subnets.extend(host_interfaces_and_subnets.clone());
+                // Merge in host ip_addresses
+                ip_addresses_and_subnets.extend(host_interfaces_and_subnets.clone());
 
                 container
                     .id
                     .as_ref()
-                    .map(|id| (id.clone(), interfaces_and_subnets))
+                    .map(|id| (id.clone(), ip_addresses_and_subnets))
             })
             .collect()
     }

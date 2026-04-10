@@ -62,7 +62,7 @@ impl ViewBuilder for L3Builder {
 mod tests {
     use super::*;
     use crate::server::hosts::r#impl::base::{Host, HostBase};
-    use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
+    use crate::server::ip_addresses::r#impl::base::{IPAddress, IPAddressBase};
     use crate::server::services::r#impl::base::{Service, ServiceBase};
     use crate::server::services::r#impl::categories::ServiceCategory;
     use crate::server::services::r#impl::definitions::ServiceDefinition;
@@ -100,11 +100,11 @@ mod tests {
     #[test]
     fn test_l3_bytag_service_tag_inheritance() {
         // Full L3Builder test: tag on service only, not host
-        // Interface should inherit service tags for ByTag matching
+        // IP address should inherit service tags for ByTag matching
         let network_id = Uuid::new_v4();
         let subnet_id = Uuid::new_v4();
         let host_id = Uuid::new_v4();
-        let interface_id = Uuid::new_v4();
+        let ip_address_id = Uuid::new_v4();
         let tag_id = Uuid::new_v4();
 
         let host = Host {
@@ -131,11 +131,11 @@ mod tests {
             },
         };
 
-        let interface = Interface {
-            id: interface_id,
+        let ip_address = IPAddress {
+            id: ip_address_id,
             created_at: Utc::now(),
             updated_at: Utc::now(),
-            base: InterfaceBase {
+            base: IPAddressBase {
                 network_id,
                 host_id,
                 subnet_id,
@@ -177,14 +177,14 @@ mod tests {
         })];
 
         let hosts = vec![host];
-        let interfaces = vec![interface];
+        let ip_addresses = vec![ip_address];
         let subnets = vec![subnet];
         let services = vec![service];
         let tags = vec![tag];
 
         let ctx = TopologyContext::new(
             &hosts,
-            &interfaces,
+            &ip_addresses,
             &subnets,
             &services,
             &[],
@@ -217,12 +217,12 @@ mod tests {
         // The interface element should be inside the tag container
         let element = nodes
             .iter()
-            .find(|n| n.id == interface_id)
-            .expect("Interface element should exist");
+            .find(|n| n.id == ip_address_id)
+            .expect("IP address element should exist");
         if let NodeType::Element { container_id, .. } = &element.node_type {
             assert_eq!(
                 *container_id, tag_container.id,
-                "Interface should be grouped under NestedTag via service tag inheritance"
+                "IP address should be grouped under NestedTag via service tag inheritance"
             );
         } else {
             panic!("Expected Element node type");

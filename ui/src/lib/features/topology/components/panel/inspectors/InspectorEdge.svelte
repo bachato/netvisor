@@ -3,7 +3,7 @@
 	import type { TopologyEdge } from '$lib/features/topology/types/base';
 	import { activeView, aggregatedEdgeOriginals } from '$lib/features/topology/queries';
 	import InspectorEdgeGroup from './edges/InspectorEdgeGroup.svelte';
-	import InspectorEdgeInterface from './edges/InspectorEdgeInterface.svelte';
+	import InspectorEdgeIPAddress from './edges/InspectorEdgeIPAddress.svelte';
 	import InspectorEdgeHostVirtualization from './edges/InspectorEdgeHostVirtualization.svelte';
 	import InspectorEdgeServiceVirtualization from './edges/InspectorEdgeServiceVirtualization.svelte';
 	import InspectorEdgePhysicalLink from './edges/InspectorEdgePhysicalLink.svelte';
@@ -33,7 +33,7 @@
 			{view}
 		/>
 	{:else if edgeData.edge_type === 'Interface'}
-		<InspectorEdgeInterface {edge} hostId={edgeData.host_id} {view} />
+		<InspectorEdgeIPAddress {edge} hostId={edgeData.host_id} {view} />
 	{:else if edgeData.edge_type === 'HostVirtualization'}
 		<InspectorEdgeHostVirtualization {edge} vmServiceId={edgeData.vm_service_id} />
 	{:else if edgeData.edge_type === 'ServiceVirtualization'}
@@ -43,8 +43,8 @@
 		/>
 	{:else if edgeData.edge_type === 'PhysicalLink'}
 		<InspectorEdgePhysicalLink
-			sourceIfEntryId={edgeData.source_if_entry_id}
-			targetIfEntryId={edgeData.target_if_entry_id}
+			sourceInterfaceId={edgeData.source_interface_id}
+			targetInterfaceId={edgeData.target_interface_id}
 			protocol={edgeData.protocol}
 		/>
 	{:else}

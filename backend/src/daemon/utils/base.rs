@@ -1,5 +1,5 @@
 use crate::server::discovery::r#impl::types::DiscoveryType;
-use crate::server::interfaces::r#impl::base::{Interface, InterfaceBase};
+use crate::server::ip_addresses::r#impl::base::{IPAddress, IPAddressBase};
 use crate::server::shared::storage::traits::Storable;
 use crate::server::shared::types::entities::{DiscoveryMetadata, EntitySource};
 use crate::server::subnets::r#impl::base::{Subnet, SubnetBase};
@@ -71,7 +71,7 @@ pub trait DaemonUtils {
         interface_filter: &[String],
     ) -> Result<
         (
-            Vec<Interface>,
+            Vec<IPAddress>,
             Vec<Subnet>,
             HashMap<IpCidr, Option<MacAddress>>,
         ),
@@ -80,7 +80,7 @@ pub trait DaemonUtils {
         let all_interfaces = pnet::datalink::interfaces();
 
         // Apply interface filter if specified
-        let interfaces: Vec<_> = if interface_filter.is_empty() {
+        let ip_addresses: Vec<_> = if interface_filter.is_empty() {
             all_interfaces
         } else {
             let filtered: Vec<_> = all_interfaces
@@ -91,13 +91,13 @@ pub trait DaemonUtils {
             if filtered.is_empty() {
                 tracing::warn!(
                     filter = ?interface_filter,
-                    "No interfaces matched the filter. Check --interface argument."
+                    "No ip_addresses matched the filter. Check --ip_address argument."
                 );
             } else {
                 tracing::debug!(
                     filter = ?interface_filter,
                     matched = filtered.len(),
-                    "Filtered interfaces by --interfaces argument"
+                    "Filtered ip_addresses by --ip_addresses argument"
                 );
             }
 
@@ -105,20 +105,20 @@ pub trait DaemonUtils {
         };
 
         tracing::debug!(
-            interface_count = interfaces.len(),
-            "Enumerating network interfaces"
+            interface_count = ip_addresses.len(),
+            "Enumerating network ip_addresses"
         );
 
-        for interface in &interfaces {
+        for ip_address in &ip_addresses {
             tracing::debug!(
-                name = %interface.name,
-                index = interface.index,
-                is_up = interface.is_up(),
-                is_loopback = interface.is_loopback(),
-                mac = ?interface.mac,
-                ips = ?interface.ips,
-                flags = interface.flags,
-                "Found interface"
+                name = %ip_address.name,
+                index = ip_address.index,
+                is_up = ip_address.is_up(),
+                is_loopback = ip_address.is_loopback(),
+                mac = ?ip_address.mac,
+                ips = ?ip_address.ips,
+                flags = ip_address.flags,
+                "Found ip_address"
             );
         }
 
@@ -126,16 +126,16 @@ pub trait DaemonUtils {
         let mut potential_subnets: Vec<(String, IpNetwork)> = Vec::new();
         let mut interface_data: Vec<(String, IpAddr, Option<MacAddress>)> = Vec::new();
 
-        for interface in interfaces.into_iter() {
-            let name = interface.name.clone();
-            let mac_address = match interface.mac {
+        for ip_address in ip_addresses.into_iter() {
+            let name = ip_address.name.clone();
+            let mac_address = match ip_address.mac {
                 Some(mac) if !mac.octets().iter().all(|o| *o == 0) => {
                     Some(MacAddress::new(mac.octets()))
                 }
                 _ => None,
             };
 
-            for ip in interface.ips.iter() {
+            for ip in ip_address.ips.iter() {
                 // APIPA (169.254.x.x) is defined as exactly /16 by RFC 3927.
                 // Windows can report bogus prefixes (e.g. /0) via pnet — correct them.
                 let ip = match ip {
@@ -147,7 +147,7 @@ pub trait DaemonUtils {
                         tracing::warn!(
                             ip = %v4.ip(),
                             reported_prefix = v4.prefix(),
-                            "Correcting APIPA interface prefix to /16"
+                            "Correcting APIPA ip_address prefix to /16"
                         );
                         IpNetwork::V4(pnet::ipnetwork::Ipv4Network::new(v4.ip(), 16).unwrap_or(*v4))
                     }
@@ -173,8 +173,8 @@ pub trait DaemonUtils {
             }
         }
 
-        // Third pass: assign all interfaces to appropriate subnets
-        let mut interfaces = Vec::new();
+        // Third pass: assign all ip_addresses to appropriate subnets
+        let mut ip_addresses = Vec::new();
         let mut cidr_to_mac = HashMap::new();
 
         for (interface_name, ip_addr, mac_address) in interface_data {
@@ -194,21 +194,21 @@ pub trait DaemonUtils {
                     })
                     .or_insert(mac_address);
 
-                interfaces.push(Interface::new(InterfaceBase {
+                ip_addresses.push(IPAddress::new(IPAddressBase {
                     network_id: subnet.base.network_id,
                     host_id: Uuid::nil(), // Placeholder - server will set correct host_id
                     name: Some(interface_name),
                     subnet_id: subnet.id,
                     ip_address: ip_addr,
                     mac_address,
-                    position: interfaces.len() as i32,
+                    position: ip_addresses.len() as i32,
                 }));
             }
         }
 
         let subnets: Vec<Subnet> = subnet_map.into_values().collect();
 
-        Ok((interfaces, subnets, cidr_to_mac))
+        Ok((ip_addresses, subnets, cidr_to_mac))
     }
 
     async fn new_docker_client(

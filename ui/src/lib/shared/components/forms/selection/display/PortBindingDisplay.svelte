@@ -3,7 +3,7 @@
 	import { formatPort } from '$lib/shared/utils/formatting';
 	import type { PortBinding, Service } from '$lib/features/services/types/base';
 	import {
-		ALL_INTERFACES,
+		ALL_IP_ADDRESSES,
 		type HostFormData,
 		type Interface,
 		type Port
@@ -23,7 +23,7 @@
 
 	// Helper to format interface for display
 	function formatInterfaceForBinding(
-		iface: Interface | typeof ALL_INTERFACES,
+		iface: Interface | typeof ALL_IP_ADDRESSES,
 		isContainerSubnet: (subnetId: string) => boolean
 	): string {
 		if (iface.id == null) return iface.name;
@@ -43,7 +43,7 @@
 				const port = portsData.find((p) => p.id === binding.port_id);
 				const iface = binding.interface_id
 					? interfacesData.find((i) => i.id === binding.interface_id)
-					: ALL_INTERFACES;
+					: ALL_IP_ADDRESSES;
 				const portFormatted = port ? formatPort(port) : 'Unknown Port';
 				const interfaceFormatted = iface
 					? formatInterfaceForBinding(iface, isContainerSubnetFn)

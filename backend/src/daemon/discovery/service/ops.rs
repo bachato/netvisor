@@ -36,8 +36,8 @@ use crate::{
             base::{Host, HostBase},
             virtualization::HostVirtualization,
         },
-        if_entries::r#impl::base::IfEntry,
         interfaces::r#impl::base::Interface,
+        ip_addresses::r#impl::base::IPAddress,
         ports::r#impl::base::{Port, PortType},
         services::{
             definitions::{ServiceDefinitionRegistry, gateway::Gateway},
@@ -74,8 +74,8 @@ pub struct HostData {
     pub host: Host,
     pub services: Vec<Service>,
     pub ports: Vec<Port>,
+    pub ip_addresses: Vec<IPAddress>,
     pub interfaces: Vec<Interface>,
-    pub if_entries: Vec<IfEntry>,
     pub subnets: Vec<Subnet>,
 }
 
@@ -84,16 +84,16 @@ impl HostData {
         host: Host,
         services: Vec<Service>,
         ports: Vec<Port>,
+        ip_addresses: Vec<IPAddress>,
         interfaces: Vec<Interface>,
-        if_entries: Vec<IfEntry>,
         subnets: Vec<Subnet>,
     ) -> Self {
         Self {
             host,
             services,
             ports,
+            ip_addresses,
             interfaces,
-            if_entries,
             subnets,
         }
     }
@@ -180,10 +180,13 @@ impl HostData {
     /// Set MAC on the interface matching the given IP address.
     /// Used by SNMP to enrich MAC from ipAddrTable when ARP didn't provide one.
     pub fn with_mac_for_ip(&mut self, ip: IpAddr, mac: MacAddress) -> &mut Self {
-        if let Some(interface) = self.interfaces.iter_mut().find(|i| i.base.ip_address == ip)
-            && interface.base.mac_address.is_none()
+        if let Some(ip_address) = self
+            .ip_addresses
+            .iter_mut()
+            .find(|i| i.base.ip_address == ip)
+            && ip_address.base.mac_address.is_none()
         {
-            interface.base.mac_address = Some(mac);
+            ip_address.base.mac_address = Some(mac);
         }
         self
     }
@@ -200,13 +203,13 @@ impl HostData {
         self
     }
 
-    pub fn add_interface(&mut self, i: Interface) -> &mut Self {
-        self.interfaces.push(i);
+    pub fn add_ip_address(&mut self, i: IPAddress) -> &mut Self {
+        self.ip_addresses.push(i);
         self
     }
 
-    pub fn add_if_entry(&mut self, ie: IfEntry) -> &mut Self {
-        self.if_entries.push(ie);
+    pub fn add_if_entry(&mut self, ie: Interface) -> &mut Self {
+        self.interfaces.push(ie);
         self
     }
 
@@ -226,7 +229,7 @@ impl HostData {
         if self.host.base.hostname.is_none() {
             // Check if host.name was set to IP as fallback — if so, override with hostname
             let ip_str = self
-                .interfaces
+                .ip_addresses
                 .first()
                 .map(|i| i.base.ip_address.to_string());
             if ip_str.as_deref() == Some(&self.host.base.name) {
@@ -606,10 +609,10 @@ impl DiscoveryOps {
     pub async fn create_host(
         &self,
         host: Host,
-        interfaces: Vec<Interface>,
+        ip_addresses: Vec<IPAddress>,
         ports: Vec<Port>,
         services: Vec<Service>,
-        if_entries: Vec<IfEntry>,
+        interfaces: Vec<Interface>,
         subnets: Vec<Subnet>,
         cancel: &CancellationToken,
     ) -> Result<HostResponse, Error> {
@@ -618,10 +621,10 @@ impl DiscoveryOps {
 
         let request = DiscoveryHostRequest {
             host,
-            interfaces,
+            ip_addresses,
             ports,
             services,
-            if_entries,
+            interfaces,
             subnets,
         };
 
@@ -666,10 +669,10 @@ impl DiscoveryOps {
 
                 Ok(HostResponse::from_host_with_children(
                     actual_host,
-                    request.interfaces,
+                    request.ip_addresses,
                     request.ports,
                     request.services,
-                    request.if_entries,
+                    request.interfaces,
                 ))
             }
         }
@@ -877,7 +880,7 @@ impl DiscoveryOps {
         hostname: Option<String>,
         host_naming_fallback: HostNamingFallback,
     ) -> Result<Option<HostData>, Error> {
-        let ServiceMatchBaselineParams { interface, .. } = params;
+        let ServiceMatchBaselineParams { ip_address, .. } = params;
 
         let daemon_id = self.daemon_id().await?;
         let network_id = self.network_id().await?;
@@ -911,7 +914,7 @@ impl DiscoveryOps {
             credential_assignments: vec![],
         });
 
-        let interfaces = vec![interface.clone()];
+        let ip_addresses = vec![ip_address.clone()];
 
         let (services, ports) =
             self.match_services(&host, &params, &gateway_ips, &daemon_id, &network_id)?;
@@ -929,15 +932,15 @@ impl DiscoveryOps {
         {
             host.base.name = best_service_name
         } else if host_naming_fallback == HostNamingFallback::Ip {
-            host.base.name = interface.base.ip_address.to_string()
+            host.base.name = ip_address.base.ip_address.to_string()
         } else if let Some(best_service_name) = best_service_name {
             host.base.name = best_service_name
         } else {
-            host.base.name = interface.base.ip_address.to_string()
+            host.base.name = ip_address.base.ip_address.to_string()
         }
 
         tracing::info!(
-            ip = %interface.base.ip_address,
+            ip = %ip_address.base.ip_address,
             host_name = %host.base.name,
             service_count = %services.len(),
             port_count = %ports.len(),
@@ -948,7 +951,7 @@ impl DiscoveryOps {
             host,
             services,
             ports,
-            interfaces,
+            ip_addresses,
             vec![],
             vec![],
         )))

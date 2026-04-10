@@ -238,7 +238,7 @@ fn scan_subnet_background(
                         }
                     }
 
-                    // Check stop condition after processing - on bridge interfaces,
+                    // Check stop condition after processing - on bridge ip_addresses,
                     // the Err/timeout path may never fire because LAN traffic
                     // arrives continuously via the raw socket
                     if sending_done_recv.load(Ordering::Relaxed) {

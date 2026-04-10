@@ -21,7 +21,7 @@ use uuid::Uuid;
 #[derive(Default)]
 struct TopologyChanges {
     updated_hosts: bool,
-    updated_interfaces: bool,
+    updated_ip_addresses: bool,
     updated_services: bool,
     updated_subnets: bool,
     updated_dependencies: bool,
@@ -29,13 +29,13 @@ struct TopologyChanges {
     updated_bindings: bool,
     updated_if_entries: bool,
     removed_hosts: HashSet<Uuid>,
-    removed_interfaces: HashSet<Uuid>,
+    removed_ip_addresses: HashSet<Uuid>,
     removed_services: HashSet<Uuid>,
     removed_subnets: HashSet<Uuid>,
     removed_dependencies: HashSet<Uuid>,
     removed_ports: HashSet<Uuid>,
     removed_bindings: HashSet<Uuid>,
-    removed_if_entries: HashSet<Uuid>,
+    removed_interfaces: HashSet<Uuid>,
     should_mark_stale: bool,
     clear_stale: bool,
 }
@@ -45,14 +45,14 @@ impl EventSubscriber for TopologyService {
     fn event_filter(&self) -> EventFilter {
         EventFilter::entity_only(HashMap::from([
             (EntityDiscriminants::Host, None),
-            (EntityDiscriminants::Interface, None),
+            (EntityDiscriminants::IPAddress, None),
             (EntityDiscriminants::Service, None),
             (EntityDiscriminants::Subnet, None),
             (EntityDiscriminants::Dependency, None),
             (EntityDiscriminants::Port, None),
             (EntityDiscriminants::Binding, None),
-            (EntityDiscriminants::IfEntry, None), // LLDP neighbor changes trigger edge rebuild
-            (EntityDiscriminants::Tag, None),     // App-group tag changes trigger staleness
+            (EntityDiscriminants::Interface, None), // LLDP neighbor changes trigger edge rebuild
+            (EntityDiscriminants::Tag, None),       // App-group tag changes trigger staleness
             (
                 EntityDiscriminants::Topology,
                 Some(vec![EntityOperation::Created, EntityOperation::Updated]),
@@ -131,8 +131,8 @@ impl EventSubscriber for TopologyService {
                     if entity_event.operation == EntityOperation::Deleted {
                         match entity_event.entity_type {
                             Entity::Host(_) => changes.removed_hosts.insert(entity_event.entity_id),
-                            Entity::Interface(_) => {
-                                changes.removed_interfaces.insert(entity_event.entity_id)
+                            Entity::IPAddress(_) => {
+                                changes.removed_ip_addresses.insert(entity_event.entity_id)
                             }
                             Entity::Service(_) => {
                                 changes.removed_services.insert(entity_event.entity_id)
@@ -147,8 +147,8 @@ impl EventSubscriber for TopologyService {
                             Entity::Binding(_) => {
                                 changes.removed_bindings.insert(entity_event.entity_id)
                             }
-                            Entity::IfEntry(_) => {
-                                changes.removed_if_entries.insert(entity_event.entity_id)
+                            Entity::Interface(_) => {
+                                changes.removed_interfaces.insert(entity_event.entity_id)
                             }
                             _ => false,
                         };
@@ -163,13 +163,13 @@ impl EventSubscriber for TopologyService {
                         // It's safe to automatically update entities
                         match entity_event.entity_type {
                             Entity::Host(_) => changes.updated_hosts = true,
-                            Entity::Interface(_) => changes.updated_interfaces = true,
+                            Entity::IPAddress(_) => changes.updated_ip_addresses = true,
                             Entity::Service(_) => changes.updated_services = true,
                             Entity::Subnet(_) => changes.updated_subnets = true,
                             Entity::Dependency(_) => changes.updated_dependencies = true,
                             Entity::Port(_) => changes.updated_ports = true,
                             Entity::Binding(_) => changes.updated_bindings = true,
-                            Entity::IfEntry(_) => changes.updated_if_entries = true,
+                            Entity::Interface(_) => changes.updated_if_entries = true,
                             _ => (),
                         };
                     }
@@ -205,7 +205,7 @@ impl EventSubscriber for TopologyService {
             let network_filter = StorageFilter::<Topology>::new_from_network_ids(&[network_id]);
             let topologies = self.get_all(network_filter).await?;
 
-            let (hosts, interfaces, subnets, dependencies, ports, bindings, if_entries) =
+            let (hosts, ip_addresses, subnets, dependencies, ports, bindings, interfaces) =
                 self.get_entity_data(network_id).await?;
 
             if let Some(changes) = topology_updates.get(&network_id) {
@@ -218,9 +218,9 @@ impl EventSubscriber for TopologyService {
                             topology.base.removed_hosts.push(*host_id);
                         }
                     }
-                    for interface_id in &changes.removed_interfaces {
-                        if !topology.base.removed_interfaces.contains(interface_id) {
-                            topology.base.removed_interfaces.push(*interface_id);
+                    for ip_address_id in &changes.removed_ip_addresses {
+                        if !topology.base.removed_ip_addresses.contains(ip_address_id) {
+                            topology.base.removed_ip_addresses.push(*ip_address_id);
                         }
                     }
                     for service_id in &changes.removed_services {
@@ -248,9 +248,9 @@ impl EventSubscriber for TopologyService {
                             topology.base.removed_bindings.push(*binding_id);
                         }
                     }
-                    for if_entry_id in &changes.removed_if_entries {
-                        if !topology.base.removed_if_entries.contains(if_entry_id) {
-                            topology.base.removed_if_entries.push(*if_entry_id);
+                    for interface_id in &changes.removed_interfaces {
+                        if !topology.base.removed_interfaces.contains(interface_id) {
+                            topology.base.removed_interfaces.push(*interface_id);
                         }
                     }
 
@@ -270,8 +270,8 @@ impl EventSubscriber for TopologyService {
                         topology.base.hosts = hosts.clone()
                     }
 
-                    if changes.updated_interfaces && changes.removed_interfaces.is_empty() {
-                        topology.base.interfaces = interfaces.clone()
+                    if changes.updated_ip_addresses && changes.removed_ip_addresses.is_empty() {
+                        topology.base.ip_addresses = ip_addresses.clone()
                     }
 
                     if changes.updated_services && changes.removed_services.is_empty() {
@@ -294,8 +294,8 @@ impl EventSubscriber for TopologyService {
                         topology.base.bindings = bindings.clone();
                     }
 
-                    if changes.updated_if_entries && changes.removed_if_entries.is_empty() {
-                        topology.base.if_entries = if_entries.clone();
+                    if changes.updated_if_entries && changes.removed_interfaces.is_empty() {
+                        topology.base.interfaces = interfaces.clone();
                     }
 
                     // Update topology in database

@@ -24,9 +24,9 @@ use crate::server::dependencies::r#impl::base::Dependency;
 use crate::server::discovery::r#impl::base::Discovery;
 use crate::server::hosts::handlers::HostOrderField;
 use crate::server::hosts::r#impl::base::Host;
-use crate::server::if_entries::r#impl::base::IfEntry;
 use crate::server::interfaces::r#impl::base::Interface;
 use crate::server::invites::r#impl::base::Invite;
+use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::networks::r#impl::Network;
 use crate::server::organizations::r#impl::base::Organization;
 use crate::server::ports::r#impl::base::Port;
@@ -184,8 +184,8 @@ Resources are scoped to your **organization** and **network(s)**:
         (name = Discovery::ENTITY_NAME_PLURAL, description = Discovery::ENTITY_DESCRIPTION),
         (name = Dependency::ENTITY_NAME_PLURAL, description = Dependency::ENTITY_DESCRIPTION),
         (name = Host::ENTITY_NAME_PLURAL, description = Host::ENTITY_DESCRIPTION),
-        (name = IfEntry::ENTITY_NAME_PLURAL, description = IfEntry::ENTITY_DESCRIPTION),
         (name = Interface::ENTITY_NAME_PLURAL, description = Interface::ENTITY_DESCRIPTION),
+        (name = IPAddress::ENTITY_NAME_PLURAL, description = IPAddress::ENTITY_DESCRIPTION),
         (name = Invite::ENTITY_NAME_PLURAL, description = Invite::ENTITY_DESCRIPTION),
         (name = Network::ENTITY_NAME_PLURAL, description = Network::ENTITY_DESCRIPTION),
         (name = Organization::ENTITY_NAME_PLURAL, description = Organization::ENTITY_DESCRIPTION),

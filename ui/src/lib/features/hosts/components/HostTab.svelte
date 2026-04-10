@@ -53,7 +53,6 @@
 	} from '../queries';
 	import { useServicesByIds, useServicesCacheQuery } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
-	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
 	import { useNetworksQuery } from '$lib/features/networks/queries';
 	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import type { components } from '$lib/api/schema';
@@ -95,7 +94,7 @@
 	);
 	const networksQuery = useNetworksQuery();
 	useDaemonsQuery();
-	const interfacesQuery = useInterfacesQuery();
+	const ipAddressesQuery = useInterfacesQuery();
 
 	// Selective service lookup - only fetches services needed for virtualization display
 	// Extract service IDs from visible hosts for "Virtualized By" field
@@ -121,7 +120,7 @@
 	const servicesCacheQuery = useServicesCacheQuery();
 	let allServicesData = $derived(servicesCacheQuery.data ?? []);
 	let networksData = $derived(networksQuery.data ?? []);
-	let interfacesData = $derived(interfacesQuery.data ?? []);
+	let ipAddressesData = $derived(ipAddressesQuery.data ?? []);
 	// Only show full loading on initial load (no data yet)
 	let isInitialLoading = $derived(hostsQuery.isPending && !hostsQuery.data);
 
@@ -213,7 +212,7 @@
 					label: hosts_fields_interfaceIp(),
 					type: 'string',
 					getValue: (host) => {
-						const iface = interfacesData
+						const iface = ipAddressesData
 							.filter((i) => i.host_id === host.id)
 							.sort((a, b) => (a.position ?? 0) - (b.position ?? 0))[0];
 						return iface?.ip_address ?? '';

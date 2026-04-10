@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-	import { ALL_INTERFACES, type Interface, type Port } from '$lib/features/hosts/types/base';
+	import { ALL_IP_ADDRESSES, type Interface, type Port } from '$lib/features/hosts/types/base';
 	import type { EntityDisplayComponent } from '../types';
 	import { entities, ports } from '$lib/shared/stores/metadata';
 	import type { Service } from '$lib/features/services/types/base';
@@ -13,7 +13,7 @@
 
 	// Helper to format interface for display
 	function formatInterfaceForPort(
-		iface: Interface | typeof ALL_INTERFACES,
+		iface: Interface | typeof ALL_IP_ADDRESSES,
 		isContainerSubnet: (subnetId: string) => boolean
 	): string {
 		if (iface.id == null) return iface.name;
@@ -53,7 +53,7 @@
 								.map((b) => {
 									let iface = b.interface_id
 										? interfacesData.find((i) => i.id === b.interface_id)
-										: ALL_INTERFACES;
+										: ALL_IP_ADDRESSES;
 									if (iface) {
 										return formatInterfaceForPort(iface, isContainerSubnetFn);
 									} else {

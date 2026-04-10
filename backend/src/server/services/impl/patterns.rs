@@ -360,7 +360,7 @@ impl Pattern<'_> {
 
         let ServiceMatchBaselineParams {
             subnet,
-            interface,
+            ip_address,
             endpoint_responses,
             virtualization,
             ..
@@ -538,7 +538,7 @@ impl Pattern<'_> {
                             actual,
                             format!(
                                 "Response for {}:{}{} {}",
-                                interface.base.ip_address,
+                                ip_address.base.ip_address,
                                 port_base.number(),
                                 path,
                                 match_reason.join(" and ")
@@ -565,7 +565,7 @@ impl Pattern<'_> {
             }
 
             Pattern::MacVendor(vendor_string) => {
-                if let Some(mac_address) = interface.base.mac_address {
+                if let Some(mac_address) = ip_address.base.mac_address {
                     let mac_str = mac_address.to_string();
                     let Some(entry) = oui::lookup_by_mac(&mac_str) else {
                         return Err(anyhow!(
@@ -602,8 +602,8 @@ impl Pattern<'_> {
                     }
                 } else {
                     Err(anyhow!(
-                        "Interface {} does not have a mac address",
-                        interface.base.ip_address
+                        "IPAddress {} does not have a mac address",
+                        ip_address.base.ip_address
                     ))
                 }
             }
@@ -744,9 +744,9 @@ impl Pattern<'_> {
 
                 let count_gateways_in_subnet = gateway_ips_in_subnet.len();
                 let host_ip_in_routing_table =
-                    gateway_ips_in_subnet.contains(&&interface.base.ip_address);
+                    gateway_ips_in_subnet.contains(&&ip_address.base.ip_address);
 
-                let last_octet_1_or_254 = match interface.base.ip_address {
+                let last_octet_1_or_254 = match ip_address.base.ip_address {
                     IpAddr::V4(ipv4) => {
                         let octets = ipv4.octets();
                         octets[3] == 1 || octets[3] == 254
@@ -950,7 +950,7 @@ mod tests {
 
     use crate::{
         server::{
-            interfaces::r#impl::base::Interface,
+            ip_addresses::r#impl::base::IPAddress,
             ports::r#impl::base::PortType,
             services::{
                 definitions::ServiceDefinitionRegistry,
@@ -966,12 +966,12 @@ mod tests {
             },
             subnets::r#impl::base::Subnet,
         },
-        tests::{interface, subnet},
+        tests::{ip_address, subnet},
     };
 
     struct TestContext {
         subnet: Subnet,
-        interface: Interface,
+        ip_address: IPAddress,
         pi: Box<dyn ServiceDefinition>,
         host_id: Uuid,
         daemon_id: Uuid,
@@ -989,12 +989,12 @@ mod tests {
             let organization = organization();
             let network = network(&organization.id);
             let subnet = subnet(&network.id);
-            let interface = interface(&network.id, &subnet.id);
+            let ip_address = ip_address(&network.id, &subnet.id);
             let pi = ServiceDefinitionRegistry::find_by_id("Pi-Hole")
                 .expect("Pi-hole service not found");
 
             let endpoint_responses = vec![EndpointResponse {
-                endpoint: Endpoint::http(Some(interface.base.ip_address), "/admin"),
+                endpoint: Endpoint::http(Some(ip_address.base.ip_address), "/admin"),
                 body: "Pi-hole".to_string(),
                 headers: HashMap::new(),
                 status: 200,
@@ -1002,7 +1002,7 @@ mod tests {
 
             Self {
                 subnet,
-                interface,
+                ip_address,
                 pi,
                 host_id: Uuid::new_v4(),
                 network_id: Uuid::new_v4(),
@@ -1046,7 +1046,7 @@ mod tests {
         ) -> ServiceMatchBaselineParams<'a> {
             ServiceMatchBaselineParams {
                 subnet: &self.subnet,
-                interface: &self.interface,
+                ip_address: &self.ip_address,
                 all_ports,
                 endpoint_responses: &self.endpoint_responses,
                 virtualization: &self.virtualization,
@@ -1172,7 +1172,7 @@ mod tests {
         let ports = vec![PortType::Https];
         let endpoint_responses = vec![EndpointResponse {
             endpoint: Endpoint::for_pattern(PortType::Https, "/")
-                .use_ip(ctx.interface.base.ip_address),
+                .use_ip(ctx.ip_address.base.ip_address),
             body: "Authentication required".to_string(),
             headers: HashMap::from([("x-jenkins".to_string(), "2.541.3".to_string())]),
             status: 403,
@@ -1180,7 +1180,7 @@ mod tests {
         let client_responses = HashMap::new();
         let baseline = ServiceMatchBaselineParams {
             subnet: &ctx.subnet,
-            interface: &ctx.interface,
+            ip_address: &ctx.ip_address,
             all_ports: &ports,
             endpoint_responses: &endpoint_responses,
             virtualization: &ctx.virtualization,
@@ -1216,7 +1216,7 @@ mod tests {
         let ports = vec![PortType::Http8080];
         let endpoint_responses = vec![EndpointResponse {
             endpoint: Endpoint::for_pattern(PortType::Http8080, "/")
-                .use_ip(ctx.interface.base.ip_address),
+                .use_ip(ctx.ip_address.base.ip_address),
             body: "powered by jenkins.io".to_string(),
             headers: HashMap::new(),
             status: 200,
@@ -1224,7 +1224,7 @@ mod tests {
         let client_responses = HashMap::new();
         let baseline = ServiceMatchBaselineParams {
             subnet: &ctx.subnet,
-            interface: &ctx.interface,
+            ip_address: &ctx.ip_address,
             all_ports: &ports,
             endpoint_responses: &endpoint_responses,
             virtualization: &ctx.virtualization,
@@ -1317,7 +1317,7 @@ mod tests {
     fn test_mac_vendor_pattern_match() {
         let mut ctx = TestContext::new();
         // Set a known Sonos MAC address (B8:E9:37 is a Sonos OUI prefix)
-        ctx.interface.base.mac_address = Some("B8:E9:37:00:00:01".parse().expect("valid MAC"));
+        ctx.ip_address.base.mac_address = Some("B8:E9:37:00:00:01".parse().expect("valid MAC"));
 
         let ports = vec![];
         let baseline = ctx.create_baseline_params(&ports);
@@ -1347,7 +1347,7 @@ mod tests {
 
         assert!(
             result.is_err(),
-            "MacVendor should error when interface has no MAC"
+            "MacVendor should error when ip_address has no MAC"
         );
     }
 }

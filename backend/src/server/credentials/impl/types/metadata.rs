@@ -37,14 +37,14 @@ pub enum ScopeModel {
     PerHost,
 }
 
-/// A credential assigned to a host, optionally limited to specific interfaces.
+/// A credential assigned to a host, optionally limited to specific ip_addresses.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ToSchema)]
 pub struct CredentialAssignment {
     pub credential_id: Uuid,
-    /// Interface IDs to limit this credential to. None = all host interfaces.
+    /// Interface IDs to limit this credential to. None = all host ip_addresses.
     #[serde(default)]
     #[schema(required)]
-    pub interface_ids: Option<Vec<Uuid>>,
+    pub ip_address_ids: Option<Vec<Uuid>>,
 }
 
 impl CredentialTypeDiscriminants {

@@ -203,7 +203,7 @@ impl DaemonRuntimeService {
             tracing::debug!(target: LOG_TARGET, daemon_id = %daemon_id, "Polling server for work");
 
             let path = format!("/api/daemons/{}/request-work", daemon_id);
-            // Detect interfaces fresh — cheap NIC enumeration
+            // Detect ip_addresses fresh — cheap NIC enumeration
             let interfaced_subnets = self.detect_interfaced_subnets().await.unwrap_or_default();
             // Detect Docker socket — cheap local socket check
             let has_docker_socket = self.detect_docker_socket().await;
@@ -341,7 +341,7 @@ impl DaemonRuntimeService {
         }
     }
 
-    /// Detect subnets from daemon's network interfaces.
+    /// Detect subnets from daemon's network ip_addresses.
     async fn detect_interfaced_subnets(
         &self,
     ) -> Result<Vec<crate::server::subnets::r#impl::base::Subnet>> {

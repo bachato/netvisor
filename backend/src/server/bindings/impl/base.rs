@@ -10,14 +10,14 @@ use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 
 /// The type of binding - either to an interface or to a port.
 ///
-/// Bindings associate a service with network resources (interfaces/ports) on a host.
+/// Bindings associate a service with network resources (ip_addresses/ports) on a host.
 ///
 /// ## Validation Rules
 ///
 /// - All bindings must reference ports/interfaces that belong to the same host as the service.
 /// - Interface bindings conflict with port bindings on the same interface.
-/// - A port binding on all interfaces (`interface_id: null`) conflicts with any interface binding.
-/// - When a port binding with `interface_id: null` is created, it supersedes (removes) any
+/// - A port binding on all ip_addresses (`ip_address_id: null`) conflicts with any interface binding.
+/// - When a port binding with `ip_address_id: null` is created, it supersedes (removes) any
 ///   existing specific-interface bindings for the same port.
 #[derive(
     Copy, Debug, Clone, Serialize, Deserialize, Eq, PartialEq, EnumDiscriminants, ToSchema,
@@ -25,21 +25,21 @@ use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
 #[strum_discriminants(derive(IntoStaticStr))]
 #[serde(tag = "type")]
 pub enum BindingType {
-    #[schema(title = "Interface")]
-    /// Interface binding: Service is present at an interface (IP address) without a specific port.
-    /// Used for non-port-bound services like gateways. Conflicts with port bindings on the same interface.
-    Interface { interface_id: Uuid },
+    #[schema(title = "IPAddress")]
+    /// IP address binding: Service is present at an IP address without a specific port.
+    /// Used for non-port-bound services like gateways. Conflicts with port bindings on the same IP address.
+    IPAddress { ip_address_id: Uuid },
     #[schema(title = "Port")]
-    /// Port binding: Service listens on a specific port, optionally on a specific interface.
-    /// If `interface_id` is `null`, the service listens on this port across all interfaces,
-    /// which supersedes any specific-interface bindings for the same port.
+    /// Port binding: Service listens on a specific port, optionally on a specific IP address.
+    /// If `ip_address_id` is `null`, the service listens on this port across all IP addresses,
+    /// which supersedes any specific-IP-address bindings for the same port.
     Port {
         port_id: Uuid,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[schema(required)]
-        /// The interface this port binding applies to. If `null`, the binding applies to all
-        /// interfaces on the host (and supersedes specific-interface bindings for this port).
-        interface_id: Option<Uuid>,
+        /// The IP address this port binding applies to. If `null`, the binding applies to all
+        /// IP addresses on the host (and supersedes specific-IP-address bindings for this port).
+        ip_address_id: Option<Uuid>,
     },
 }
 
@@ -47,7 +47,7 @@ impl Default for BindingType {
     fn default() -> Self {
         BindingType::Port {
             port_id: Uuid::nil(),
-            interface_id: Some(Uuid::nil()),
+            ip_address_id: Some(Uuid::nil()),
         }
     }
 }
@@ -101,17 +101,17 @@ impl Hash for BindingBase {
 impl Hash for BindingType {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
-            BindingType::Interface { interface_id } => {
-                "interface".hash(state);
-                interface_id.hash(state);
+            BindingType::IPAddress { ip_address_id } => {
+                "ip_address".hash(state);
+                ip_address_id.hash(state);
             }
             BindingType::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             } => {
                 "port".hash(state);
                 port_id.hash(state);
-                interface_id.hash(state);
+                ip_address_id.hash(state);
             }
         }
     }
@@ -167,23 +167,23 @@ impl ChangeTriggersTopologyStaleness<Binding> for Binding {
 impl Display for Binding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.base.binding_type {
-            BindingType::Interface { interface_id } => {
-                write!(f, "Interface binding {} -> {}", self.id, interface_id)
+            BindingType::IPAddress { ip_address_id } => {
+                write!(f, "IP address binding {} -> {}", self.id, ip_address_id)
             }
             BindingType::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             } => {
-                if let Some(iface_id) = interface_id {
+                if let Some(addr_id) = ip_address_id {
                     write!(
                         f,
-                        "Port binding {} -> {} (interface {})",
-                        self.id, port_id, iface_id
+                        "Port binding {} -> {} (ip_address {})",
+                        self.id, port_id, addr_id
                     )
                 } else {
                     write!(
                         f,
-                        "Port binding {} -> {} (all interfaces)",
+                        "Port binding {} -> {} (all ip_addresses)",
                         self.id, port_id
                     )
                 }
@@ -226,16 +226,16 @@ impl Binding {
         self.base.binding_type
     }
 
-    pub fn interface_id(&self) -> Option<Uuid> {
+    pub fn ip_address_id(&self) -> Option<Uuid> {
         match self.base.binding_type {
-            BindingType::Interface { interface_id } => Some(interface_id),
-            BindingType::Port { interface_id, .. } => interface_id,
+            BindingType::IPAddress { ip_address_id } => Some(ip_address_id),
+            BindingType::Port { ip_address_id, .. } => ip_address_id,
         }
     }
 
     pub fn port_id(&self) -> Option<Uuid> {
         match self.base.binding_type {
-            BindingType::Interface { .. } => None,
+            BindingType::IPAddress { .. } => None,
             BindingType::Port { port_id, .. } => Some(port_id),
         }
     }
@@ -248,11 +248,11 @@ impl Binding {
     }
 
     // Legacy convenience constructors (full versions)
-    pub fn new_interface(service_id: Uuid, network_id: Uuid, interface_id: Uuid) -> Self {
+    pub fn new_ip_address(service_id: Uuid, network_id: Uuid, ip_address_id: Uuid) -> Self {
         Self::new(BindingBase::new(
             service_id,
             network_id,
-            BindingType::Interface { interface_id },
+            BindingType::IPAddress { ip_address_id },
         ))
     }
 
@@ -260,27 +260,27 @@ impl Binding {
         service_id: Uuid,
         network_id: Uuid,
         port_id: Uuid,
-        interface_id: Option<Uuid>,
+        ip_address_id: Option<Uuid>,
     ) -> Self {
         Self::new(BindingBase::new(
             service_id,
             network_id,
             BindingType::Port {
                 port_id,
-                interface_id,
+                ip_address_id,
             },
         ))
     }
 
-    // Serviceless convenience constructors (renamed from _placeholder)
-    pub fn new_interface_serviceless(interface_id: Uuid) -> Self {
-        Self::new_serviceless(BindingType::Interface { interface_id })
+    // Serviceless convenience constructors
+    pub fn new_ip_address_serviceless(ip_address_id: Uuid) -> Self {
+        Self::new_serviceless(BindingType::IPAddress { ip_address_id })
     }
 
-    pub fn new_port_serviceless(port_id: Uuid, interface_id: Option<Uuid>) -> Self {
+    pub fn new_port_serviceless(port_id: Uuid, ip_address_id: Option<Uuid>) -> Self {
         Self::new_serviceless(BindingType::Port {
             port_id,
-            interface_id,
+            ip_address_id,
         })
     }
 }

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { Node } from '@xyflow/svelte';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
-	import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
+	import { IPAddressDisplay } from '$lib/shared/components/forms/selection/display/IPAddressDisplay.svelte';
 	import type { Topology } from '$lib/features/topology/types/base';
 	import type { ElementRenderContext } from '$lib/features/topology/resolvers';
 	import {
-		common_interfaces,
-		inspector_otherInterface,
-		inspector_otherInterfaces
+		common_ipAddresses,
+		inspector_otherIPAddress,
+		inspector_otherIPAddresses
 	} from '$lib/paraglide/messages';
 
 	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
@@ -40,9 +40,9 @@
 		<span class="text-secondary mb-2 block text-sm font-medium">
 			{isInterfaceElement
 				? otherInterfaces.length > 1
-					? inspector_otherInterfaces()
-					: inspector_otherInterface()
-				: common_interfaces()}
+					? inspector_otherIPAddresses()
+					: inspector_otherIPAddress()
+				: common_ipAddresses()}
 		</span>
 		<div class="space-y-1">
 			{#each otherInterfaces as iface (iface.id)}
@@ -50,7 +50,7 @@
 					<EntityDisplayWrapper
 						context={interfaceContext}
 						item={iface}
-						displayComponent={InterfaceDisplay}
+						displayComponent={IPAddressDisplay}
 					/>
 				</div>
 			{/each}

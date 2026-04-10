@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { formatInterface } from '$lib/features/hosts/queries';
-	import { useInterfacesQuery } from '$lib/features/interfaces/queries';
+	import { formatIPAddress } from '$lib/features/hosts/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import type { HostFormData } from '$lib/features/hosts/types/base';
 	import type { InterfaceBinding, Service } from '$lib/features/services/types/base';
 
 	// TanStack Query hooks
-	const interfacesQuery = useInterfacesQuery();
+	const ipAddressesQuery = useInterfacesQuery();
 	const subnetsQuery = useSubnetsQuery();
-	let interfacesData = $derived(interfacesQuery.data ?? []);
+	let ipAddressesData = $derived(ipAddressesQuery.data ?? []);
 	let subnetsData = $derived(subnetsQuery.data ?? []);
 
 	// Helper to check if subnet is a container subnet
@@ -31,12 +30,12 @@
 	let iface = $derived(
 		binding.interface_id
 			? (host?.interfaces.find((i) => i.id === binding.interface_id) ??
-					interfacesData.find((i) => i.id === binding.interface_id))
+					ipAddressesData.find((i) => i.id === binding.interface_id))
 			: null
 	);
 
 	// Check if this service has a Port binding on "All Interfaces" (interface_id === null)
-	let hasPortBindingOnAllInterfaces = $derived(
+	let hasPortBindingOnAllIPAddresses = $derived(
 		service?.bindings.some((b) => b.type === 'Port' && b.interface_id === null) ?? false
 	);
 
@@ -44,7 +43,7 @@
 	let interfaceOptions = $derived(
 		host?.interfaces.map((iface) => {
 			// Can't add Interface binding if service has Port binding on "All Interfaces"
-			if (hasPortBindingOnAllInterfaces && iface.id !== binding.interface_id) {
+			if (hasPortBindingOnAllIPAddresses && iface.id !== binding.interface_id) {
 				return {
 					iface,
 					disabled: true,
@@ -114,14 +113,14 @@
 						class="text-secondary rounded px-2 py-1 text-sm"
 						style="border: 1px solid var(--color-border-input); background: var(--color-bg-input)"
 					>
-						{iface ? formatInterface(iface, isContainerSubnetFn) : 'Unknown Interface'}
+						{iface ? formatIPAddress(iface, isContainerSubnetFn) : 'Unknown Interface'}
 					</div>
 				{:else if host.interfaces.length > 0}
 					<!-- Multiple interfaces - show as dropdown -->
 					<select class="input-field w-full" value={selectedValue} onchange={handleChange}>
 						{#each interfaceOptions as { iface, disabled, reason } (iface.id)}
 							<option value={iface.id} {disabled}>
-								{formatInterface(iface, isContainerSubnetFn)}{disabled && reason
+								{formatIPAddress(iface, isContainerSubnetFn)}{disabled && reason
 									? ` - ${reason}`
 									: ''}
 							</option>

@@ -201,16 +201,16 @@
 					// Port elements: show port name + status/MAC info
 					if (elementType === 'Port') {
 						const ifEntryId =
-							'if_entry_id' in (data as Record<string, unknown>)
-								? ((data as Record<string, unknown>).if_entry_id as string)
+							'interface_id' in (data as Record<string, unknown>)
+								? ((data as Record<string, unknown>).interface_id as string)
 								: undefined;
-						const ifEntry = ifEntryId
-							? topology?.if_entries.find((e) => e.id === ifEntryId)
+						const iface = ifEntryId
+							? topology?.interfaces.find((e) => e.id === ifEntryId)
 							: undefined;
 
 						let speed: string | null = null;
-						if (ifEntry?.speed_bps) {
-							const bps = ifEntry.speed_bps;
+						if (iface?.speed_bps) {
+							const bps = iface?.speed_bps;
 							if (bps >= 1_000_000_000) speed = `${(bps / 1_000_000_000).toFixed(0)}G`;
 							else if (bps >= 1_000_000) speed = `${(bps / 1_000_000).toFixed(0)}M`;
 							else speed = `${bps} bps`;
@@ -226,11 +226,11 @@
 							services: [],
 							hiddenOpenPorts: [],
 							interface_id: '',
-							portStatus: ifEntry
+							portStatus: iface
 								? {
-										operStatus: ifEntry.oper_status,
+										operStatus: iface.oper_status,
 										speed,
-										macAddress: ifEntry.mac_address ?? null
+										macAddress: iface.mac_address ?? null
 									}
 								: undefined
 						} as ElementRenderData;

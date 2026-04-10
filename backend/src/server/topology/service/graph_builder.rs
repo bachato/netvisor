@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::server::{
     hosts::r#impl::base::Host,
-    interfaces::r#impl::base::Interface,
+    ip_addresses::r#impl::base::IPAddress,
     services::r#impl::virtualization::ServiceVirtualization,
     subnets::r#impl::types::SubnetType,
     topology::{
@@ -43,12 +43,12 @@ impl GraphBuilder {
     /// Returns a map of host_id → primary_subnet_id (first DockerBridge subnet found).
     fn compute_docker_bridge_grouping(ctx: &TopologyContext) -> HashMap<Uuid, Uuid> {
         let mut mapping: HashMap<Uuid, Uuid> = HashMap::new();
-        for interface in ctx.interfaces {
-            let Some(subnet) = ctx.get_subnet_by_id(interface.base.subnet_id) else {
+        for ip_address in ctx.ip_addresses {
+            let Some(subnet) = ctx.get_subnet_by_id(ip_address.base.subnet_id) else {
                 continue;
             };
             if subnet.base.subnet_type == SubnetType::DockerBridge {
-                mapping.entry(interface.base.host_id).or_insert(subnet.id);
+                mapping.entry(ip_address.base.host_id).or_insert(subnet.id);
             }
         }
         mapping
@@ -88,11 +88,11 @@ impl GraphBuilder {
     fn determine_subnet_child_header_text(
         &self,
         ctx: &TopologyContext,
-        interface: &Interface,
+        ip_address: &IPAddress,
         host: &Host,
         subnet_type: &SubnetType,
     ) -> Option<String> {
-        let host_interfaces = ctx.get_interfaces_for_host(host.id);
+        let host_interfaces = ctx.get_ip_addresses_for_host(host.id);
         let host_has_name = host.base.name != "Unknown Device" && !host.base.name.is_empty();
 
         // P1: Docker containers — always show "Docker @", never VM header
@@ -100,11 +100,11 @@ impl GraphBuilder {
             let header_text = if host_has_name {
                 Some("Docker @ ".to_owned() + &host.base.name.clone())
             } else {
-                // Generate a label from non-docker interface, if there is one
+                // Generate a label from non-docker ip_address, if there is one
                 host_interfaces
                     .iter()
                     .find(|i| {
-                        ctx.get_subnet_from_interface_id(i.id)
+                        ctx.get_subnet_from_ip_address_id(i.id)
                             .map(|s| s.base.subnet_type != SubnetType::DockerBridge)
                             .unwrap_or(false)
                     })
@@ -124,7 +124,7 @@ impl GraphBuilder {
                 .base
                 .bindings
                 .iter()
-                .filter_map(|b| ctx.get_interface_by_id(b.interface_id()))
+                .filter_map(|b| ctx.get_ip_address_by_id(b.ip_address_id()))
                 .map(|i| i.base.subnet_id)
                 .collect();
 
@@ -141,7 +141,7 @@ impl GraphBuilder {
 
             match intersection.first() {
                 Some(first) => {
-                    if let Some(interface) =
+                    if let Some(ip_address) =
                         host_interfaces.iter().find(|i| i.base.subnet_id == **first)
                         && host_interface_subnet_ids
                             .iter()
@@ -156,7 +156,7 @@ impl GraphBuilder {
                     {
                         let on = virtualization_service_host
                             .map(|h| h.base.name.clone())
-                            .unwrap_or(interface.base.ip_address.to_string());
+                            .unwrap_or(ip_address.base.ip_address.to_string());
 
                         if on == service.base.name {
                             return Some(format!("VM: {}", service.base.name));
@@ -178,11 +178,11 @@ impl GraphBuilder {
             None => false,
         };
 
-        let host_name_is_interface_ip = interface.base.ip_address.to_string() == host.base.name;
+        let host_name_is_interface_ip = ip_address.base.ip_address.to_string() == host.base.name;
 
-        // Count of other interfaces that will actually have a node (ie services on that interface > 0)
+        // Count of other ip_addresses that will actually have a node (ie services on that interface > 0)
         // so an interface edge will be created
-        let interfaces_with_node: Vec<&&Interface> = host_interfaces
+        let ip_addresses_with_node: Vec<&&IPAddress> = host_interfaces
             .iter()
             .filter(|i| !ctx.get_services_bound_to_interface(i.id).is_empty())
             .collect();
@@ -190,7 +190,7 @@ impl GraphBuilder {
         if !host_name_is_interface_ip
             && !first_service_name_matches_host_name
             && host_has_name
-            && interfaces_with_node.len() < 2
+            && ip_addresses_with_node.len() < 2
         {
             return Some(host.base.name.clone());
         }
@@ -198,8 +198,8 @@ impl GraphBuilder {
         None
     }
 
-    /// Group host interfaces by subnet
-    /// If group_docker_bridges_by_host is true, all DockerBridge interfaces for a given host
+    /// Group host ip_addresses by subnet
+    /// If group_docker_bridges_by_host is true, all DockerBridge ip_addresses for a given host
     /// are consolidated into one subnet
     fn group_children_by_subnet(
         &mut self,
@@ -210,15 +210,15 @@ impl GraphBuilder {
     ) -> HashMap<Uuid, Vec<ContainerChild>> {
         let mut children_by_subnet: HashMap<Uuid, Vec<ContainerChild>> = HashMap::new();
 
-        // Track DockerBridge interfaces by host (only used if grouping is enabled)
+        // Track DockerBridge ip_addresses by host (only used if grouping is enabled)
         // Map: (host_id, primary_subnet_id) -> Vec<subnet_id>)
         let mut docker_subnets_by_host: HashMap<(Uuid, Uuid), Vec<Uuid>> = HashMap::new();
 
-        for interface in ctx.interfaces {
-            let Some(host) = ctx.get_host_by_id(interface.base.host_id) else {
+        for ip_address in ctx.ip_addresses {
+            let Some(host) = ctx.get_host_by_id(ip_address.base.host_id) else {
                 continue;
             };
-            let subnet = ctx.get_subnet_by_id(interface.base.subnet_id);
+            let subnet = ctx.get_subnet_by_id(ip_address.base.subnet_id);
             if subnet
                 .map(|s| s.base.subnet_type.exclude_from_topology())
                 .unwrap_or(false)
@@ -228,17 +228,17 @@ impl GraphBuilder {
             let subnet_type = subnet.map(|s| s.base.subnet_type).unwrap_or_default();
 
             // Update source/target handles for edges
-            let edges = ChildAnchorPlanner::plan_anchors(interface.id, all_edges, ctx);
+            let edges = ChildAnchorPlanner::plan_anchors(ip_address.id, all_edges, ctx);
 
             let header_text =
-                self.determine_subnet_child_header_text(ctx, interface, host, &subnet_type);
+                self.determine_subnet_child_header_text(ctx, ip_address, host, &subnet_type);
 
             let child = ContainerChild {
-                id: interface.id,
+                id: ip_address.id,
                 host_id: host.id,
                 size: Uxy::default(),
                 header: header_text,
-                interface_id: Some(interface.id),
+                ip_address_id: Some(ip_address.id),
                 edges,
             };
 
@@ -252,7 +252,7 @@ impl GraphBuilder {
                     docker_subnets_by_host
                         .entry((host.id, *subnet_grouping_id))
                         .or_default()
-                        .push(interface.base.subnet_id);
+                        .push(ip_address.base.subnet_id);
 
                     children_by_subnet
                         .entry(*subnet_grouping_id)
@@ -261,7 +261,7 @@ impl GraphBuilder {
                 }
             } else {
                 children_by_subnet
-                    .entry(interface.base.subnet_id)
+                    .entry(ip_address.base.subnet_id)
                     .or_default()
                     .push(child);
             }
@@ -298,9 +298,9 @@ impl GraphBuilder {
                 child.id,
                 subnet_id,
                 child.host_id,
-                ElementEntityType::Interface {
+                ElementEntityType::IPAddress {
                     subnet_id,
-                    interface_id: child.interface_id,
+                    ip_address_id: child.ip_address_id,
                 },
             );
             node.size = child.size;
@@ -348,7 +348,7 @@ impl GraphBuilder {
                 tag_ids.extend(service.base.tags.iter().copied());
             }
             // Resolve compose_project only for elements inside Docker subnets.
-            // LAN interfaces shouldn't be grouped by stack.
+            // LAN ip_addresses shouldn't be grouped by stack.
             let is_docker_subnet = ctx
                 .subnets
                 .iter()
@@ -360,14 +360,14 @@ impl GraphBuilder {
             } else {
                 let mut projects: HashSet<&str> = HashSet::new();
                 let services_iter: Box<dyn Iterator<Item = _>> =
-                    if let Some(iface_id) = child.interface_id {
+                    if let Some(iface_id) = child.ip_address_id {
                         // Interface-specific: only services bound to this interface
                         Box::new(ctx.services.iter().filter(move |s| {
                             s.base.host_id == child.host_id
                                 && s.base
                                     .bindings
                                     .iter()
-                                    .any(|b| b.interface_id() == Some(iface_id))
+                                    .any(|b| b.ip_address_id() == Some(iface_id))
                         }))
                     } else {
                         // Fallback: all services on the host
@@ -570,9 +570,9 @@ mod tests {
             id,
             container_id,
             host_id,
-            ElementEntityType::Interface {
+            ElementEntityType::IPAddress {
                 subnet_id: container_id,
-                interface_id: Some(id),
+                ip_address_id: Some(id),
             },
         );
         node.size = Uxy { x: 100, y: 50 };
@@ -583,7 +583,7 @@ mod tests {
         ContainerChild {
             id,
             host_id,
-            interface_id: Some(id),
+            ip_address_id: Some(id),
             header: None,
             size: Uxy { x: 100, y: 50 },
             edges: vec![],
@@ -869,7 +869,7 @@ mod tests {
         if let NodeType::Element { container_id, .. } = &element.node_type {
             assert_eq!(
                 *container_id, tag_group.id,
-                "Interface should be grouped by service tag inheritance"
+                "IP address should be grouped by service tag inheritance"
             );
         }
 

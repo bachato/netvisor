@@ -18,7 +18,7 @@ pub struct BindingCsvRow {
     pub id: Uuid,
     pub service_id: Uuid,
     pub binding_type: String,
-    pub interface_id: Option<Uuid>,
+    pub ip_address_id: Option<Uuid>,
     pub port_id: Option<Uuid>,
     pub network_id: Uuid,
     pub created_at: DateTime<Utc>,
@@ -41,12 +41,12 @@ impl Storable for Binding {
     }
 
     fn to_params(&self) -> Result<(Vec<&'static str>, Vec<SqlValue>), anyhow::Error> {
-        let (binding_type, interface_id, port_id) = match self.base.binding_type {
-            BindingType::Interface { interface_id } => ("Interface", Some(interface_id), None),
+        let (binding_type, ip_address_id, port_id) = match self.base.binding_type {
+            BindingType::IPAddress { ip_address_id } => ("IPAddress", Some(ip_address_id), None),
             BindingType::Port {
                 port_id,
-                interface_id,
-            } => ("Port", interface_id, Some(port_id)),
+                ip_address_id,
+            } => ("Port", ip_address_id, Some(port_id)),
         };
 
         Ok((
@@ -55,7 +55,7 @@ impl Storable for Binding {
                 "service_id",
                 "network_id",
                 "binding_type",
-                "interface_id",
+                "ip_address_id",
                 "port_id",
                 "created_at",
                 "updated_at",
@@ -65,7 +65,7 @@ impl Storable for Binding {
                 SqlValue::Uuid(self.base.service_id),
                 SqlValue::Uuid(self.base.network_id),
                 SqlValue::String(binding_type.to_string()),
-                SqlValue::OptionalUuid(interface_id),
+                SqlValue::OptionalUuid(ip_address_id),
                 SqlValue::OptionalUuid(port_id),
                 SqlValue::Timestamp(self.created_at),
                 SqlValue::Timestamp(self.updated_at),
@@ -80,21 +80,21 @@ impl Storable for Binding {
         let created_at: DateTime<Utc> = row.get("created_at");
         let updated_at: DateTime<Utc> = row.get("updated_at");
         let binding_type_str: String = row.get("binding_type");
-        let interface_id: Option<Uuid> = row.get("interface_id");
+        let ip_address_id: Option<Uuid> = row.get("ip_address_id");
         let port_id: Option<Uuid> = row.get("port_id");
 
         let binding_type = match binding_type_str.as_str() {
-            "Interface" => {
-                let interface_id = interface_id
-                    .ok_or_else(|| anyhow::anyhow!("Interface binding missing interface_id"))?;
-                BindingType::Interface { interface_id }
+            "IPAddress" => {
+                let ip_address_id = ip_address_id
+                    .ok_or_else(|| anyhow::anyhow!("IPAddress binding missing ip_address_id"))?;
+                BindingType::IPAddress { ip_address_id }
             }
             "Port" => {
                 let port_id =
                     port_id.ok_or_else(|| anyhow::anyhow!("Port binding missing port_id"))?;
                 BindingType::Port {
                     port_id,
-                    interface_id, // Can be None for "all interfaces"
+                    ip_address_id,
                 }
             }
             _ => {
@@ -138,18 +138,18 @@ impl Entity for Binding {
     type CsvRow = BindingCsvRow;
 
     fn to_csv_row(&self) -> Self::CsvRow {
-        let (binding_type, interface_id, port_id) = match self.base.binding_type {
-            BindingType::Interface { interface_id } => ("Interface", Some(interface_id), None),
+        let (binding_type, ip_address_id, port_id) = match self.base.binding_type {
+            BindingType::IPAddress { ip_address_id } => ("IPAddress", Some(ip_address_id), None),
             BindingType::Port {
                 port_id,
-                interface_id,
-            } => ("Port", interface_id, Some(port_id)),
+                ip_address_id,
+            } => ("Port", ip_address_id, Some(port_id)),
         };
         BindingCsvRow {
             id: self.id,
             service_id: self.base.service_id,
             binding_type: binding_type.to_string(),
-            interface_id,
+            ip_address_id,
             port_id,
             network_id: self.base.network_id,
             created_at: self.created_at,
@@ -163,7 +163,7 @@ impl Entity for Binding {
 
     const ENTITY_NAME_SINGULAR: &'static str = "Binding";
     const ENTITY_NAME_PLURAL: &'static str = "Bindings";
-    const ENTITY_DESCRIPTION: &'static str = "Service bindings linking services to interfaces and/or ports. Defines where a service is accessible.";
+    const ENTITY_DESCRIPTION: &'static str = "Service bindings linking services to IP addresses and/or ports. Defines where a service is accessible.";
 
     fn entity_category() -> EntityCategory {
         EntityCategory::NetworkInfrastructure

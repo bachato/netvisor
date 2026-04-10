@@ -436,7 +436,7 @@ mod tests {
         assert_eq!(to_snake_case("UserApiKey"), "user_api_key");
         assert_eq!(to_snake_case("Credential"), "credential");
         assert_eq!(to_snake_case("Network"), "network");
-        assert_eq!(to_snake_case("IfEntry"), "if_entry");
+        assert_eq!(to_snake_case("Interface"), "interface");
     }
 
     #[test]

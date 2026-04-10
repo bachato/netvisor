@@ -3,9 +3,9 @@
 	import { useSvelteFlow } from '@xyflow/svelte';
 	import { Crosshair } from 'lucide-svelte';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
-	import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
+	import { IPAddressDisplay } from '$lib/shared/components/forms/selection/display/IPAddressDisplay.svelte';
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
-	import { IfEntryDisplay } from '$lib/shared/components/forms/selection/display/IfEntryDisplay.svelte';
+	import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import type { Topology, TopologyNode } from '$lib/features/topology/types/base';
 	import type { TopologyEditState } from '$lib/features/topology/state';
@@ -51,7 +51,7 @@
 	});
 
 	// For Interface elements: show the interface
-	let thisInterface = $derived(elementContext?.iface ?? null);
+	let thisIPAddress = $derived(elementContext?.iface ?? null);
 	let interfaceDisplayContext = $derived({ subnets: topology.subnets });
 
 	// For Service elements: show the service
@@ -69,12 +69,12 @@
 		entityTags: topology.entity_tags
 	});
 
-	// For Port elements: show the IfEntry
-	let thisIfEntry = $derived.by(() => {
+	// For Port elements: show the Interface
+	let thisInterface = $derived.by(() => {
 		if (elementContext?.elementType !== 'Port') return null;
 		const nodeData = node.data as TopologyNode;
-		const ifEntryId = 'if_entry_id' in nodeData ? (nodeData.if_entry_id as string) : undefined;
-		return ifEntryId ? (topology.if_entries.find((e) => e.id === ifEntryId) ?? null) : null;
+		const ifEntryId = 'interface_id' in nodeData ? (nodeData.interface_id as string) : undefined;
+		return ifEntryId ? (topology.interfaces.find((e) => e.id === ifEntryId) ?? null) : null;
 	});
 
 	// For Host containers: show the host
@@ -107,20 +107,20 @@
 			<Crosshair class="h-3.5 w-3.5" />
 		</button>
 	</div>
-	{#if thisIfEntry}
+	{#if thisInterface}
 		<div class="card card-static">
 			<EntityDisplayWrapper
 				context={undefined}
-				item={thisIfEntry}
-				displayComponent={IfEntryDisplay}
+				item={thisInterface}
+				displayComponent={InterfaceDisplay}
 			/>
 		</div>
-	{:else if thisInterface}
+	{:else if thisIPAddress}
 		<div class="card card-static">
 			<EntityDisplayWrapper
 				context={interfaceDisplayContext}
-				item={thisInterface}
-				displayComponent={InterfaceDisplay}
+				item={thisIPAddress}
+				displayComponent={IPAddressDisplay}
 			/>
 		</div>
 	{:else if thisService}

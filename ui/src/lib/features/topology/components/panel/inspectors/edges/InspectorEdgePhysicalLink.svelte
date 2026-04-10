@@ -1,7 +1,7 @@
 <script lang="ts">
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
-	import { IfEntryDisplay } from '$lib/shared/components/forms/selection/display/IfEntryDisplay.svelte';
+	import { IPAddressDisplay } from '$lib/shared/components/forms/selection/display/IPAddressDisplay.svelte';
 	import { useTopologiesQuery, selectedTopologyId } from '$lib/features/topology/queries';
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { getContext } from 'svelte';
@@ -9,12 +9,12 @@
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 
 	let {
-		sourceIfEntryId,
-		targetIfEntryId,
+		sourceInterfaceId,
+		targetInterfaceId,
 		protocol
 	}: {
-		sourceIfEntryId?: string;
-		targetIfEntryId?: string;
+		sourceInterfaceId?: string;
+		targetInterfaceId?: string;
 		protocol?: 'LLDP' | 'CDP';
 	} = $props();
 
@@ -26,14 +26,14 @@
 		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
 	);
 
-	// Derive IfEntry and Host data
-	let sourceIfEntry = $derived(topology?.if_entries.find((e) => e.id === sourceIfEntryId));
-	let targetIfEntry = $derived(topology?.if_entries.find((e) => e.id === targetIfEntryId));
+	// Derive Interface and Host data
+	let sourceInterface = $derived(topology?.interfaces.find((e) => e.id === sourceInterfaceId));
+	let targetInterface = $derived(topology?.interfaces.find((e) => e.id === targetInterfaceId));
 	let sourceHost = $derived(
-		sourceIfEntry ? topology?.hosts.find((h) => h.id === sourceIfEntry.host_id) : null
+		sourceInterface ? topology?.hosts.find((h) => h.id === sourceInterface.host_id) : null
 	);
 	let targetHost = $derived(
-		targetIfEntry ? topology?.hosts.find((h) => h.id === targetIfEntry.host_id) : null
+		targetInterface ? topology?.hosts.find((h) => h.id === targetInterface.host_id) : null
 	);
 </script>
 
@@ -44,7 +44,7 @@
 		</div>
 	{/if}
 
-	{#if sourceHost || sourceIfEntry}
+	{#if sourceHost || sourceInterface}
 		<span class="text-secondary mb-2 block text-sm font-medium">Source</span>
 		{#if sourceHost}
 			<div class="card card-static">
@@ -57,18 +57,18 @@
 				/>
 			</div>
 		{/if}
-		{#if sourceIfEntry}
+		{#if sourceInterface}
 			<div class="card card-static">
 				<EntityDisplayWrapper
 					context={undefined}
-					item={sourceIfEntry}
-					displayComponent={IfEntryDisplay}
+					item={sourceInterface}
+					displayComponent={IPAddressDisplay}
 				/>
 			</div>
 		{/if}
 	{/if}
 
-	{#if targetHost || targetIfEntry}
+	{#if targetHost || targetInterface}
 		<span class="text-secondary mb-2 block text-sm font-medium">Target</span>
 		{#if targetHost}
 			<div class="card card-static">
@@ -81,12 +81,12 @@
 				/>
 			</div>
 		{/if}
-		{#if targetIfEntry}
+		{#if targetInterface}
 			<div class="card card-static">
 				<EntityDisplayWrapper
 					context={undefined}
-					item={targetIfEntry}
-					displayComponent={IfEntryDisplay}
+					item={targetInterface}
+					displayComponent={IPAddressDisplay}
 				/>
 			</div>
 		{/if}

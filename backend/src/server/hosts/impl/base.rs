@@ -12,7 +12,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 /// Base data for a Host entity (stored in database).
-/// Child entities (interfaces, ports, services) are stored in their own tables
+/// Child entities (ip_addresses, ports, services) are stored in their own tables
 /// and queried by `host_id`. They are NOT stored on the host.
 #[derive(Debug, Clone, Serialize, Validate, Deserialize, Eq, PartialEq, Hash, ToSchema)]
 pub struct HostBase {

@@ -2,7 +2,7 @@
 	import type { Edge } from '@xyflow/svelte';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
-	import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
+	import { IPAddressDisplay } from '$lib/shared/components/forms/selection/display/IPAddressDisplay.svelte';
 	import {
 		useTopologiesQuery,
 		selectedTopologyId,
@@ -71,7 +71,7 @@
 			<EntityDisplayWrapper
 				context={interfaceContext}
 				item={sourceInterface}
-				displayComponent={InterfaceDisplay}
+				displayComponent={IPAddressDisplay}
 			/>
 		</div>
 	{/if}
@@ -81,7 +81,7 @@
 			<EntityDisplayWrapper
 				context={interfaceContext}
 				item={targetInterface}
-				displayComponent={InterfaceDisplay}
+				displayComponent={IPAddressDisplay}
 			/>
 		</div>
 	{/if}

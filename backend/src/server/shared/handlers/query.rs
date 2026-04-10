@@ -256,7 +256,7 @@ pub struct BindingQuery {
     /// Filter by port ID
     pub port_id: Option<Uuid>,
     /// Filter by interface ID
-    pub interface_id: Option<Uuid>,
+    pub ip_address_id: Option<Uuid>,
     /// Maximum number of results to return (1-1000, default: 50). Use 0 for no limit.
     #[param(minimum = 0, maximum = 1000)]
     pub limit: Option<u32>,
@@ -285,8 +285,8 @@ impl FilterQueryExtractor for BindingQuery {
             Some(id) => filter.uuid_column("port_id", &id),
             None => filter,
         };
-        filter = match self.interface_id {
-            Some(id) => filter.uuid_column("interface_id", &id),
+        filter = match self.ip_address_id {
+            Some(id) => filter.uuid_column("ip_address_id", &id),
             None => filter,
         };
 
@@ -301,9 +301,9 @@ impl FilterQueryExtractor for BindingQuery {
     }
 }
 
-/// Query for filtering interfaces by host_id, subnet_id, and/or network_id.
+/// Query for filtering ip_addresses by host_id, subnet_id, and/or network_id.
 #[derive(Deserialize, Default, Debug, Clone, IntoParams)]
-pub struct InterfaceQuery {
+pub struct IPAddressQuery {
     /// Filter by host ID
     pub host_id: Option<Uuid>,
     /// Filter by subnet ID
@@ -318,7 +318,7 @@ pub struct InterfaceQuery {
     pub offset: Option<u32>,
 }
 
-impl FilterQueryExtractor for InterfaceQuery {
+impl FilterQueryExtractor for IPAddressQuery {
     fn apply_to_filter<T: Storable>(
         &self,
         filter: StorableFilter<T>,
