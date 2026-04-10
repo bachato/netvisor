@@ -100,7 +100,7 @@ if (browser) {
 	});
 }
 
-export const collapseLevel = writable<CollapseLevel>(loadLevelFromStorage() ?? 3);
+export const collapseLevel = writable<CollapseLevel>(loadLevelFromStorage() ?? 1);
 
 if (browser) {
 	let levelInitialized = false;
@@ -200,8 +200,8 @@ export function inferCurrentLevel(
 	// If all containers are collapsed, that's level 1
 	const allContainers = allNodes.filter((n) => n.node_type === 'Container');
 	if (allContainers.every((n) => collapsed.has(n.id))) return 1;
-	// Default: return 3 (subcontainers expanded)
-	return 3;
+	// Default: return 1 (conservative)
+	return 1;
 }
 
 function setsEqual(a: Set<string>, b: Set<string>): boolean {

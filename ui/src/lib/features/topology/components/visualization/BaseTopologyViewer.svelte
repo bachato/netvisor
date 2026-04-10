@@ -223,6 +223,7 @@
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
 	let seenAutoCollapseIds = new Set<string>();
 	let collapseLevelInferred = false;
+	let lastSeenTopologyId = '';
 	let isMeasuring = false;
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
@@ -350,7 +351,6 @@
 				const topologyChanged = topoKey !== lastRenderedTopoKey;
 				if (topologyChanged) {
 					viewSizeCache.clear();
-					seenAutoCollapseIds = new Set<string>();
 				}
 				console.log(
 					`[LAYOUT-DEBUG] loadTopologyData gen=${thisGeneration} view=${currentView} viewChanged=${viewChanged} topologyChanged=${topologyChanged} nodes=${topology.nodes.length} edges=${topology.edges.length}`
@@ -385,55 +385,55 @@
 					collapseLevel.set(inferred);
 				}
 
-				// Perspective switch: strip stale container IDs from previous
-				// perspective that don't exist in the new topology. Without this,
-				// stale IDs pollute deferCollapse, structureKey, and edge aggregation.
-				if (viewChanged && topologyChanged && collapsed.size > 0) {
-					const originalSize = collapsed.size;
-					const newContainerIds = new Set(
-						topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id)
+				// When topology identity changes, reset auto-collapse tracking
+				// and strip stale collapsed IDs (updates store directly).
+				const topologyId = topology.id ?? '';
+				if (topologyId !== lastSeenTopologyId && lastSeenTopologyId !== '') {
+					seenAutoCollapseIds = new Set<string>();
+					collapseLevelInferred = false; // re-infer after auto-collapse on new topology
+					console.log(
+						`[LAYOUT-DEBUG] Topology changed: ${lastSeenTopologyId.substring(0, 8)} → ${topologyId.substring(0, 8)}, reset seenAutoCollapseIds`
 					);
-					const validCollapsed = new Set([...collapsed].filter((id) => newContainerIds.has(id)));
-					const staleCount = originalSize - validCollapsed.size;
 
-					// If ALL old root containers were collapsed, preserve "overview mode"
-					// by auto-collapsing all new containers
-					if (layoutGraph) {
-						const oldRootIds = [...layoutGraph.containers.values()]
-							.filter((c) => !c.parent)
-							.map((c) => c.id);
-						const wasFullyCollapsed =
-							oldRootIds.length > 0 && oldRootIds.every((id) => collapsed.has(id));
-						if (wasFullyCollapsed) {
-							const allContainerIds = topology.nodes
-								.filter((n) => n.node_type === 'Container')
-								.map((n) => n.id);
-							const allCollapsed = new Set(allContainerIds);
-							collapsedContainers.set(allCollapsed);
-							collapseLevel.set(1);
-							collapsed = allCollapsed;
-							fitViewPending = true;
+					// Strip stale collapsed IDs and update store
+					if (collapsed.size > 0) {
+						const newContainerIds = new Set(
+							topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id)
+						);
+						const validCollapsed = new Set([...collapsed].filter((id) => newContainerIds.has(id)));
+						const staleCount = collapsed.size - validCollapsed.size;
+
+						// If ALL old root containers were collapsed, preserve "overview mode"
+						if (layoutGraph) {
+							const oldRootIds = [...layoutGraph.containers.values()]
+								.filter((c) => !c.parent)
+								.map((c) => c.id);
+							const wasFullyCollapsed =
+								oldRootIds.length > 0 && oldRootIds.every((id) => collapsed.has(id));
+							if (wasFullyCollapsed) {
+								const allContainerIds = topology.nodes
+									.filter((n) => n.node_type === 'Container')
+									.map((n) => n.id);
+								const allCollapsed = new Set(allContainerIds);
+								collapsedContainers.set(allCollapsed);
+								collapseLevel.set(1);
+								collapsed = allCollapsed;
+								fitViewPending = true;
+							} else if (staleCount > 0) {
+								collapsedContainers.set(validCollapsed);
+								collapsed = validCollapsed;
+							}
 						} else if (staleCount > 0) {
 							collapsedContainers.set(validCollapsed);
 							collapsed = validCollapsed;
 						}
-					} else if (staleCount > 0) {
-						collapsedContainers.set(validCollapsed);
-						collapsed = validCollapsed;
-					}
 
-					if (staleCount > 0) {
-						// Remove stale IDs from seenAutoCollapseIds so containers
-						// can be re-auto-collapsed when the user returns to that perspective.
-						const seenBefore = seenAutoCollapseIds.size;
-						for (const id of seenAutoCollapseIds) {
-							if (!newContainerIds.has(id)) seenAutoCollapseIds.delete(id);
+						if (staleCount > 0) {
+							console.log(`[LAYOUT-DEBUG] Stripped ${staleCount} stale collapsed IDs`);
 						}
-						console.log(
-							`[LAYOUT-DEBUG] Stripped ${staleCount} stale collapsed IDs (${originalSize} → ${validCollapsed.size}), seenAutoCollapseIds: ${seenBefore} → ${seenAutoCollapseIds.size}`
-						);
 					}
 				}
+				lastSeenTopologyId = topologyId;
 
 				// All nodes participate in layout (hidden elements fade visually but
 				// keep their positions to preserve layout stability)
@@ -557,7 +557,7 @@
 				);
 
 				// Use the graph to determine visible nodes
-				let visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
+				const visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
 
 				// Helper: build SvelteFlow node array from topology nodes
 				const buildFlowNodes = (useGraph: boolean): Node[] => {
@@ -884,9 +884,6 @@
 						// so all containers have their real expandedSize set first.
 						if (deferCollapse) {
 							layoutGraph.syncCollapseState(collapsed);
-							// Recompute visible nodes now that collapse is applied —
-							// the earlier visibleNodes included all nodes (pre-collapse).
-							visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
 						}
 
 						// Log size mismatches between DOM-measured and ELK-computed
@@ -935,15 +932,17 @@
 								(infraRuleId && data.element_rule_id === infraRuleId)
 							);
 						});
-						// Skip at level 4 (fully expanded) — user explicitly wants everything open
-						const autoCollapseIds =
-							currentLevel === 4
-								? []
-								: allCandidates
-										.filter((n) => !collapsed.has(n.id) && !seenAutoCollapseIds.has(n.id))
-										.map((n) => n.id);
+						// Skip at level 4 only if the user explicitly set it via the stepper —
+						// not if it was inferred from an empty collapsed set (e.g., after topology switch).
+						// collapseLevelInferred=false means level needs re-inference, so don't trust it.
+						const userExplicitlyExpandedAll = currentLevel === 4 && collapseLevelInferred;
+						const autoCollapseIds = userExplicitlyExpandedAll
+							? []
+							: allCandidates
+									.filter((n) => !collapsed.has(n.id) && !seenAutoCollapseIds.has(n.id))
+									.map((n) => n.id);
 						console.log(
-							`[LAYOUT-DEBUG] Auto-collapse: level=${currentLevel}, ${allCandidates.length} candidates, ${allCandidates.filter((n) => collapsed.has(n.id)).length} already collapsed, ${allCandidates.filter((n) => seenAutoCollapseIds.has(n.id)).length} already seen, ${autoCollapseIds.length} will auto-collapse`
+							`[LAYOUT-DEBUG] Auto-collapse: level=${currentLevel} inferred=${collapseLevelInferred} skipL4=${userExplicitlyExpandedAll}, ${allCandidates.length} candidates, ${allCandidates.filter((n) => collapsed.has(n.id)).length} already collapsed, ${allCandidates.filter((n) => seenAutoCollapseIds.has(n.id)).length} already seen, ${autoCollapseIds.length} will auto-collapse`
 						);
 						if (autoCollapseIds.length > 0) {
 							console.log(
@@ -959,6 +958,18 @@
 							const next = new Set(collapsed);
 							for (const id of autoCollapseIds) next.add(id);
 							collapsedContainers.set(next);
+						}
+						// Re-infer level after auto-collapse so it reflects actual state
+						if (!collapseLevelInferred) {
+							collapseLevelInferred = true;
+							const newCollapsed = get(collapsedContainers);
+							const inferred = inferCurrentLevel(
+								newCollapsed,
+								topology.nodes,
+								containerTypes,
+								getInfrastructureRuleId()
+							);
+							collapseLevel.set(inferred);
 						}
 					}
 				}
@@ -1595,28 +1606,30 @@
 						{/snippet}
 					</TopologySidebarButton>
 				{/if}
-				<TopologySidebarButton
-					onclick={handleStepExpand}
-					title={collapseLevelTooltipExpand}
-					label="{$collapseLevel}/4 {getCollapseLevelName($collapseLevel)}"
-					disabled={$collapseLevel === 4}
-					collapsed={sidebarCollapsed}
+				<div
+					class="flex flex-col items-center overflow-hidden rounded !border !border-gray-300 !bg-gray-50 !shadow-lg dark:!border-gray-600 dark:!bg-gray-700"
+					title={getCollapseLevelName($collapseLevel)}
 				>
-					{#snippet icon()}
-						<Expand class="h-4 w-4" />
-					{/snippet}
-				</TopologySidebarButton>
-				<TopologySidebarButton
-					onclick={handleStepCollapse}
-					title={collapseLevelTooltipCollapse}
-					label="{$collapseLevel}/4 {getCollapseLevelName($collapseLevel)}"
-					disabled={$collapseLevel === 1}
-					collapsed={sidebarCollapsed}
-				>
-					{#snippet icon()}
-						<Shrink class="h-4 w-4" />
-					{/snippet}
-				</TopologySidebarButton>
+					<button
+						class="flex items-center justify-center p-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-600"
+						onclick={handleStepExpand}
+						title={collapseLevelTooltipExpand}
+					>
+						<Expand class="h-3.5 w-3.5" />
+					</button>
+					<span
+						class="flex min-h-[1.25rem] items-center justify-center text-xs font-semibold text-gray-700 dark:text-gray-100"
+					>
+						{$collapseLevel}
+					</span>
+					<button
+						class="flex items-center justify-center p-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-600"
+						onclick={handleStepCollapse}
+						title={collapseLevelTooltipCollapse}
+					>
+						<Shrink class="h-3.5 w-3.5" />
+					</button>
+				</div>
 				{#if onOpenShortcuts}
 					<TopologySidebarButton
 						onclick={onOpenShortcuts}
