@@ -549,14 +549,32 @@
 					layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 				}
 
-				// On first load with persisted collapse (no previous expanded sizes),
-				// defer collapse so measurement + ELK run with everything expanded.
-				// This gives us real DOM-measured sizes and real ELK-computed expanded
-				// dimensions. Collapse is applied after applyElkResult.
-				const deferCollapse =
-					isNewStructure &&
-					collapsed.size > 0 &&
-					(!prevExpandedSizes || prevExpandedSizes.size === 0);
+				// Defer collapse so ELK runs with everything expanded, giving real
+				// DOM-measured sizes and ELK-computed expanded dimensions. Required when:
+				// - First load with persisted collapse (no previous expanded sizes)
+				// - Any collapsed container has children but no cached expanded size
+				//   (e.g., stepping from level 1 to level 2 — subcontainers were never expanded)
+				let deferCollapse = false;
+				if (isNewStructure && collapsed.size > 0) {
+					if (!prevExpandedSizes || prevExpandedSizes.size === 0) {
+						deferCollapse = true;
+					} else {
+						// Check if all collapsed containers with children have cached sizes
+						for (const id of collapsed) {
+							const hasChildren = layoutNodes.some(
+								(n) =>
+									(n.node_type === 'Element' &&
+										(n as Record<string, unknown>).container_id === id) ||
+									(n.node_type === 'Container' &&
+										(n as Record<string, unknown>).parent_container_id === id)
+							);
+							if (hasChildren && !prevExpandedSizes.has(id)) {
+								deferCollapse = true;
+								break;
+							}
+						}
+					}
+				}
 
 				// Sync collapse state from store → graph (handles cascade internally)
 				let collapseChanged = false;
