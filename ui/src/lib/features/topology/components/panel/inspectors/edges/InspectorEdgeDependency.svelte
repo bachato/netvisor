@@ -74,8 +74,9 @@
 
 	function handleDelete() {
 		if (group && confirm(common_confirmDeleteName({ name: group.name }))) {
-			clearSelection();
-			deleteDependencyMutation.mutate(group.id);
+			deleteDependencyMutation.mutate(group.id, {
+				onSuccess: () => clearSelection()
+			});
 		}
 	}
 
