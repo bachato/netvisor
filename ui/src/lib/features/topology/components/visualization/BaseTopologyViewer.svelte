@@ -968,11 +968,6 @@
 				if (!isMeasuring) {
 					// Cached-size path (no measurement pass): set nodes and edges atomically
 					// in one synchronous batch — old layout swaps to new in a single frame
-					console.log('[loadTopologyData] nodes.set called', {
-						isNewStructure: sessionStructureKey !== structureKey,
-						nodeCount: allNodes.length,
-						trigger: new Error().stack?.split('\n')[2]?.trim()
-					});
 					nodes.set(allNodes);
 					edges.set(flowEdges);
 				} else {
