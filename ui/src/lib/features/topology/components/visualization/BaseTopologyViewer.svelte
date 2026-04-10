@@ -387,59 +387,55 @@
 				}
 
 				// When topology identity changes, reset auto-collapse tracking
+				// and strip stale collapsed IDs (updates store directly).
 				const topologyId = topology.id ?? '';
 				if (topologyId !== lastSeenTopologyId && lastSeenTopologyId !== '') {
 					seenAutoCollapseIds = new Set<string>();
 					console.log(
 						`[LAYOUT-DEBUG] Topology changed: ${lastSeenTopologyId.substring(0, 8)} → ${topologyId.substring(0, 8)}, reset seenAutoCollapseIds`
 					);
-				}
-				lastSeenTopologyId = topologyId;
 
-				// Strip stale container IDs that don't exist in the new topology.
-				// Runs on any topology change (perspective switch OR topology switch)
-				// to prevent stale IDs from polluting deferCollapse, structureKey, etc.
-				// Uses local variable (not store update) to avoid disruptive re-runs.
-				if (topologyChanged && collapsed.size > 0) {
-					const originalSize = collapsed.size;
-					const newContainerIds = new Set(
-						topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id)
-					);
-					const validCollapsed = new Set([...collapsed].filter((id) => newContainerIds.has(id)));
-					const staleCount = originalSize - validCollapsed.size;
+					// Strip stale collapsed IDs and update store
+					if (collapsed.size > 0) {
+						const newContainerIds = new Set(
+							topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id)
+						);
+						const validCollapsed = new Set([...collapsed].filter((id) => newContainerIds.has(id)));
+						const staleCount = collapsed.size - validCollapsed.size;
 
-					// If ALL old root containers were collapsed, preserve "overview mode"
-					// by auto-collapsing all new containers
-					if (layoutGraph) {
-						const oldRootIds = [...layoutGraph.containers.values()]
-							.filter((c) => !c.parent)
-							.map((c) => c.id);
-						const wasFullyCollapsed =
-							oldRootIds.length > 0 && oldRootIds.every((id) => collapsed.has(id));
-						if (wasFullyCollapsed) {
-							const allContainerIds = topology.nodes
-								.filter((n) => n.node_type === 'Container')
-								.map((n) => n.id);
-							const allCollapsed = new Set(allContainerIds);
-							collapsedContainers.set(allCollapsed);
-							collapseLevel.set(1);
-							collapsed = allCollapsed;
-							fitViewPending = true;
+						// If ALL old root containers were collapsed, preserve "overview mode"
+						if (layoutGraph) {
+							const oldRootIds = [...layoutGraph.containers.values()]
+								.filter((c) => !c.parent)
+								.map((c) => c.id);
+							const wasFullyCollapsed =
+								oldRootIds.length > 0 && oldRootIds.every((id) => collapsed.has(id));
+							if (wasFullyCollapsed) {
+								const allContainerIds = topology.nodes
+									.filter((n) => n.node_type === 'Container')
+									.map((n) => n.id);
+								const allCollapsed = new Set(allContainerIds);
+								collapsedContainers.set(allCollapsed);
+								collapseLevel.set(1);
+								collapsed = allCollapsed;
+								fitViewPending = true;
+							} else if (staleCount > 0) {
+								collapsedContainers.set(validCollapsed);
+								collapsed = validCollapsed;
+							}
 						} else if (staleCount > 0) {
 							collapsedContainers.set(validCollapsed);
 							collapsed = validCollapsed;
 						}
-					} else if (staleCount > 0) {
-						collapsedContainers.set(validCollapsed);
-						collapsed = validCollapsed;
-					}
 
-					if (staleCount > 0) {
-						console.log(
-							`[LAYOUT-DEBUG] Stripped ${staleCount} stale collapsed IDs (${originalSize} → ${validCollapsed.size})`
-						);
+						if (staleCount > 0) {
+							console.log(
+								`[LAYOUT-DEBUG] Stripped ${staleCount} stale collapsed IDs`
+							);
+						}
 					}
 				}
+				lastSeenTopologyId = topologyId;
 
 				// All nodes participate in layout (hidden elements fade visually but
 				// keep their positions to preserve layout stability)
@@ -1276,16 +1272,6 @@
 						return;
 					}
 					isMeasuring = false;
-				}
-
-				// Sync local collapsed state back to store if topology switch
-				// stripped stale IDs (deferred to avoid mid-computation re-runs).
-				const currentStoreCollapsed = get(collapsedContainers);
-				if (
-					currentStoreCollapsed.size !== collapsed.size ||
-					[...currentStoreCollapsed].some((id) => !collapsed.has(id))
-				) {
-					collapsedContainers.set(collapsed);
 				}
 
 				const isFirstRender = lastRenderedTopoKey === '';

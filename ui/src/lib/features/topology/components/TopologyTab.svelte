@@ -121,9 +121,12 @@
 	let currentInspectorConfig = $derived(getInspectorConfig($activeView));
 
 	// Auto-open wizard when entering a view with app-group picker and no app-group tags
+	// Wait for tags query to load before deciding — otherwise empty pre-load state triggers wizard
+	let tagsLoaded = $derived(!tagsQuery.isLoading && !tagsQuery.isPending);
 	$effect(() => {
 		if (
 			isActive &&
+			tagsLoaded &&
 			currentInspectorConfig.show_application_group_picker &&
 			appGroupTags.length === 0 &&
 			!wizardOpen
