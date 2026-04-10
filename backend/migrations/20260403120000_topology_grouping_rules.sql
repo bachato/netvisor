@@ -32,7 +32,7 @@ SET options = jsonb_set(
                     END
                 ),
                 'L2Physical', '[]'::jsonb,
-                'Infrastructure', (
+                'Compute', (
                     CASE
                         WHEN COALESCE((options->'request'->>'group_docker_bridges_by_host')::boolean, true)
                         THEN jsonb_build_array(
@@ -93,7 +93,7 @@ SET options = jsonb_set(
             jsonb_build_object(
                 'L3Logical', COALESCE(options->'request'->'hide_service_categories', '["OpenPorts"]'::jsonb),
                 'L2Physical', '["OpenPorts"]'::jsonb,
-                'Infrastructure', '["OpenPorts"]'::jsonb,
+                'Compute', '["OpenPorts"]'::jsonb,
                 'Application', '["OpenPorts"]'::jsonb
             )
         )

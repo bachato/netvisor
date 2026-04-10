@@ -25,7 +25,9 @@
 
 			// Filter bindings relevant to the interface(s)
 			let bindingsOnInterface = service.bindings.filter((b) =>
-				b.ip_address_id ? context.ipAddressId == b.ip_address_id || context.ipAddressId == null : true
+				b.ip_address_id
+					? context.ipAddressId == b.ip_address_id || context.ipAddressId == null
+					: true
 			);
 
 			// Show actual port numbers when ports are available in context

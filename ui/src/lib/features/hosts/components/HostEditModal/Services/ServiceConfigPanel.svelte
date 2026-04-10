@@ -105,7 +105,6 @@
 	// Port Bindings Logic
 	let portBindings = $derived(service.bindings.filter((b) => b.type === 'Port') as PortBinding[]);
 
-
 	// Get the actual index of a binding in service.bindings array (for form field naming)
 	function getBindingIndex(bindingId: string): number {
 		return service.bindings.findIndex((b) => b.id === bindingId);

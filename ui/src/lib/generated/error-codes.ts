@@ -70,7 +70,7 @@ export const ERROR_CODES = {
 
 export type ErrorCode = keyof typeof ERROR_CODES;
 
-export interface ErrorParams {
+export ip_address ErrorParams {
   validation_required: { field: string | number };
   validation_empty: { field: string | number };
   validation_invalid_email: Record<string, never>;

@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-10T03:05:12.662914Z",
-              "id": "6e3c1009-9a58-43db-98a1-f400318796ee",
+              "created_at": "2026-04-10T04:28:27.789815Z",
+              "id": "9950392a-30ba-4761-a40b-c72e8d131ab9",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-10T03:05:12.662914Z"
+              "updated_at": "2026-04-10T04:28:27.789815Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-10T03:05:12.640641Z",
-                      "id": "5c4d1365-3015-4b04-8186-d2f746da347e",
+                      "created_at": "2026-04-10T04:28:27.769875Z",
+                      "id": "d889f012-e720-45ea-a16f-8c999dd426c0",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-10T03:05:12.640641Z"
+                      "updated_at": "2026-04-10T04:28:27.769875Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Elasticsearch",
+                  "service_definition": "Jaeger",
                   "source": {
                     "type": "Manual"
                   },
@@ -11991,14 +11991,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-10T03:05:12.656469Z",
-                  "id": "d4ad9d4b-093f-45bb-a2ba-6e56bf7a50be",
+                  "created_at": "2026-04-10T04:28:27.784615Z",
+                  "id": "691de987-1f06-41db-8083-7de2569cfd5b",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-10T03:05:12.656469Z"
+                  "updated_at": "2026-04-10T04:28:27.784615Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12007,7 +12007,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Elasticsearch",
+              "service_definition": "Jaeger",
               "source": {
                 "type": "Manual"
               },
@@ -13372,14 +13372,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-10T03:05:12.641282Z",
-          "id": "c215bd3d-8f46-4f27-a9d8-86f4d65011dc",
+          "created_at": "2026-04-10T04:28:27.770279Z",
+          "id": "728e883b-1876-44c0-92b0-d891686e3450",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-10T03:05:12.641282Z"
+          "updated_at": "2026-04-10T04:28:27.770279Z"
         }
       },
       "BindingBase": {
@@ -13657,7 +13657,11 @@
           "Blue",
           "Indigo",
           "Purple",
+          "Fuchsia",
+          "Violet",
+          "Sky",
           "Gray",
+          "Lime",
           "Yellow"
         ]
       },
@@ -13905,7 +13909,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Elasticsearch",
+              "service_definition": "Jaeger",
               "tags": [],
               "virtualization": null
             }
@@ -16427,14 +16431,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-10T03:05:12.640175Z",
-                  "id": "641b6e5d-0b11-4f7a-b12b-7e10f1751197",
+                  "created_at": "2026-04-10T04:28:27.769330Z",
+                  "id": "3f5511a9-1ac6-414f-8a7d-a2153463c74d",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-10T03:05:12.640175Z"
+                  "updated_at": "2026-04-10T04:28:27.769330Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16443,7 +16447,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Elasticsearch",
+              "service_definition": "Jaeger",
               "source": {
                 "type": "Manual"
               },
@@ -18619,14 +18623,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-10T03:05:12.629190Z",
-                        "id": "77fb71ba-47f3-4f75-97c8-65d695505e4a",
+                        "created_at": "2026-04-10T04:28:27.756925Z",
+                        "id": "626e4d89-667b-4513-8d37-3304ce32cb0d",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-10T03:05:12.629190Z"
+                        "updated_at": "2026-04-10T04:28:27.756925Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18635,7 +18639,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Elasticsearch",
+                    "service_definition": "Jaeger",
                     "source": {
                       "type": "Manual"
                     },
@@ -18712,14 +18716,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-10T03:05:12.654434Z",
-                    "id": "c3f5e3d0-de3d-4aaf-ab1f-4ae9319cb56a",
+                    "created_at": "2026-04-10T04:28:27.783172Z",
+                    "id": "fc3bbaf6-62a6-42da-ae1b-d285f53ae9fe",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-10T03:05:12.654434Z"
+                    "updated_at": "2026-04-10T04:28:27.783172Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18728,7 +18732,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Elasticsearch",
+                "service_definition": "Jaeger",
                 "source": {
                   "type": "Manual"
                 },
@@ -19946,14 +19950,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-10T03:05:12.641100Z",
-              "id": "fce502fc-80ae-4069-a99e-c505d3fc95e9",
+              "created_at": "2026-04-10T04:28:27.770146Z",
+              "id": "e33b085b-138c-4310-b3d3-7e4fa8d4ec88",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-10T03:05:12.641100Z"
+              "updated_at": "2026-04-10T04:28:27.770146Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19962,7 +19966,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Elasticsearch",
+          "service_definition": "Jaeger",
           "source": {
             "type": "Manual"
           },
@@ -21080,7 +21084,7 @@
               "enum": [
                 "L2Physical",
                 "L3Logical",
-                "Infrastructure",
+                "Compute",
                 "Application"
               ]
             }
@@ -21108,7 +21112,7 @@
               "enum": [
                 "L2Physical",
                 "L3Logical",
-                "Infrastructure",
+                "Compute",
                 "Application"
               ]
             }
@@ -21154,7 +21158,7 @@
         "enum": [
           "L2Physical",
           "L3Logical",
-          "Infrastructure",
+          "Compute",
           "Application"
         ]
       },

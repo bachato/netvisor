@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-10T03:05:12.662787Z",
-             *       "id": "2c76c110-d39b-42e4-81c3-458f97da899e",
+             *       "created_at": "2026-04-10T04:28:27.789818Z",
+             *       "id": "c423a19b-c4f6-4ef4-870a-a1c97a6d663b",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-10T03:05:12.662787Z"
+             *       "updated_at": "2026-04-10T04:28:27.789818Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-10T03:05:12.641104Z",
-             *               "id": "cfd642ec-3245-4a17-87f0-a17ac46ce357",
+             *               "created_at": "2026-04-10T04:28:27.769861Z",
+             *               "id": "64c624b6-8dad-44af-b469-9d4432761f47",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-10T03:05:12.641104Z"
+             *               "updated_at": "2026-04-10T04:28:27.769861Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Elasticsearch",
+             *           "service_definition": "Jaeger",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3529,14 +3529,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-10T03:05:12.656312Z",
-             *           "id": "a33e9000-0e0e-4795-88b2-b11451541bdf",
+             *           "created_at": "2026-04-10T04:28:27.784599Z",
+             *           "id": "4a106ac3-233f-411f-9d88-e03e286ee5bc",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-10T03:05:12.656312Z"
+             *           "updated_at": "2026-04-10T04:28:27.784599Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3545,7 +3545,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Elasticsearch",
+             *       "service_definition": "Jaeger",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3896,14 +3896,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-10T03:05:12.641485Z",
-         *       "id": "ea7bbb95-0930-4c38-81fa-b7780bdc9879",
+         *       "created_at": "2026-04-10T04:28:27.770269Z",
+         *       "id": "8836969d-64ac-44a7-8473-e90c1ee70638",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-10T03:05:12.641485Z"
+         *       "updated_at": "2026-04-10T04:28:27.770269Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4021,7 +4021,7 @@ export interface components {
             email: string;
         };
         /** @enum {string} */
-        Color: "Pink" | "Rose" | "Red" | "Amber" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Gray" | "Yellow";
+        Color: "Pink" | "Rose" | "Red" | "Amber" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Fuchsia" | "Violet" | "Sky" | "Gray" | "Lime" | "Yellow";
         /** @enum {string} */
         ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "Root" | "Host" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack" | "TrunkPort" | "VLAN" | "PortOpStatus";
         /**
@@ -4088,7 +4088,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Elasticsearch",
+         *           "service_definition": "Jaeger",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4942,14 +4942,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-10T03:05:12.640334Z",
-         *               "id": "722869f9-7d3e-46c2-a76b-67d66c95eb21",
+         *               "created_at": "2026-04-10T04:28:27.769325Z",
+         *               "id": "1e882d7e-6a38-4533-b5d0-68afbeca75c4",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-10T03:05:12.640334Z"
+         *               "updated_at": "2026-04-10T04:28:27.769325Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4958,7 +4958,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Elasticsearch",
+         *           "service_definition": "Jaeger",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -6080,14 +6080,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-10T03:05:12.641389Z",
-         *           "id": "2d1f2109-272e-48b3-9b57-03046bead244",
+         *           "created_at": "2026-04-10T04:28:27.770130Z",
+         *           "id": "d0825cdc-51f7-4b16-b7a7-2a1ab6c9c301",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-10T03:05:12.641389Z"
+         *           "updated_at": "2026-04-10T04:28:27.770130Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6096,7 +6096,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Elasticsearch",
+         *       "service_definition": "Jaeger",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6518,7 +6518,7 @@ export interface components {
          * @description Which topology view is being rendered
          * @enum {string}
          */
-        TopologyView: "L2Physical" | "L3Logical" | "Infrastructure" | "Application";
+        TopologyView: "L2Physical" | "L3Logical" | "Compute" | "Application";
         /** @enum {string} */
         TransportProtocol: "Udp" | "Tcp";
         /**

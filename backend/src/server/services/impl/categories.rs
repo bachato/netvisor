@@ -109,7 +109,7 @@ impl EntityMetadataProvider for ServiceCategory {
             ServiceCategory::Storage => Icon::HardDrive,
             ServiceCategory::Media => Icon::CirclePlay,
             ServiceCategory::HomeAutomation => Icon::House,
-            ServiceCategory::Virtualization => Concept::Virtualization.icon(),
+            ServiceCategory::Virtualization => Concept::Containerization.icon(),
             ServiceCategory::Backup => Icon::DatabaseBackup,
 
             // Network Services
@@ -165,7 +165,7 @@ impl EntityMetadataProvider for ServiceCategory {
             ServiceCategory::Storage => Color::Green,
             ServiceCategory::Media => Color::Blue,
             ServiceCategory::HomeAutomation => Color::Blue,
-            ServiceCategory::Virtualization => Concept::Virtualization.color(),
+            ServiceCategory::Virtualization => Concept::Containerization.color(),
             ServiceCategory::Backup => Color::Gray,
 
             // Network Services

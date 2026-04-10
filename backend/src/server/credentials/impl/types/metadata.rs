@@ -85,8 +85,8 @@ impl EntityMetadataProvider for CredentialTypeDiscriminants {
         // Fallback icon when the service logo is unavailable
         match self {
             Self::SnmpV2c => Concept::SNMP.icon(),
-            Self::DockerProxy => Concept::Virtualization.icon(),
-            Self::DockerSocket => Concept::Virtualization.icon(),
+            Self::DockerProxy => Concept::Containerization.icon(),
+            Self::DockerSocket => Concept::Containerization.icon(),
         }
     }
 }

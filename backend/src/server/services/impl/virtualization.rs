@@ -63,10 +63,10 @@ impl HasId for ServiceVirtualization {
 
 impl EntityMetadataProvider for ServiceVirtualization {
     fn color(&self) -> Color {
-        Concept::Virtualization.color()
+        Concept::Containerization.color()
     }
     fn icon(&self) -> Icon {
-        Concept::Virtualization.icon()
+        Concept::Containerization.icon()
     }
 }
 

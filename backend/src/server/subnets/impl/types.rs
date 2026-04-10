@@ -231,9 +231,9 @@ impl EntityMetadataProvider for SubnetType {
             SubnetType::WiFi => Color::Teal,
 
             SubnetType::Management => Color::Gray,
-            SubnetType::DockerBridge => Concept::Virtualization.color(),
-            SubnetType::MacVlan => Concept::Virtualization.color(),
-            SubnetType::IpVlan => Concept::Virtualization.color(),
+            SubnetType::DockerBridge => Concept::Containerization.color(),
+            SubnetType::MacVlan => Concept::Containerization.color(),
+            SubnetType::IpVlan => Concept::Containerization.color(),
             SubnetType::Storage => Concept::Storage.color(),
             SubnetType::Loopback => Color::Gray,
 

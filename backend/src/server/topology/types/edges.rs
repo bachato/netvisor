@@ -198,7 +198,7 @@ impl EntityMetadataProvider for EdgeType {
             EdgeType::HubAndSpoke { .. } => EntityDiscriminants::Dependency.color(),
             EdgeType::SameHost { .. } => EntityDiscriminants::Host.color(),
             EdgeType::HostVirtualization { .. } => Concept::Virtualization.color(),
-            EdgeType::ServiceVirtualization { .. } => Concept::Virtualization.color(),
+            EdgeType::ServiceVirtualization { .. } => Concept::Containerization.color(),
             EdgeType::PhysicalLink { .. } => EntityDiscriminants::Interface.color(),
         }
     }
@@ -209,7 +209,7 @@ impl EntityMetadataProvider for EdgeType {
             EdgeType::HubAndSpoke { .. } => DependencyTypeDiscriminants::HubAndSpoke.icon(),
             EdgeType::SameHost { .. } => EntityDiscriminants::Host.icon(),
             EdgeType::HostVirtualization { .. } => Concept::Virtualization.icon(),
-            EdgeType::ServiceVirtualization { .. } => Concept::Virtualization.icon(),
+            EdgeType::ServiceVirtualization { .. } => Concept::Containerization.icon(),
             EdgeType::PhysicalLink { .. } => EntityDiscriminants::Interface.icon(),
         }
     }

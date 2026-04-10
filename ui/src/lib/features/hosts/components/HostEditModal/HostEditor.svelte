@@ -45,13 +45,13 @@
 		common_saving,
 		common_serviceConfiguration,
 		common_services,
-		common_virtualization,
+		common_workloads,
 		hosts_createHost,
 		hosts_editor_basicInfo,
 		hosts_editor_interfacesDesc,
 		hosts_editor_snmpTabDesc,
 		hosts_editor_updateHost,
-		hosts_editor_virtualizationDesc,
+		hosts_editor_workloadsDesc,
 		hosts_failedToSave,
 		hosts_interfaces_subtitle,
 		hosts_validation_interfaceIndex,
@@ -337,10 +337,10 @@
 		...(isEditing
 			? [
 					{
-						id: 'virtualization',
-						label: common_virtualization(),
-						icon: concepts.getIconComponent('Virtualization'),
-						description: hosts_editor_virtualizationDesc()
+						id: 'workloads',
+						label: common_workloads(),
+						icon: concepts.getIconComponent('Workloads'),
+						description: hosts_editor_workloadsDesc()
 					}
 				]
 			: [])
@@ -550,7 +550,7 @@
 			{/if}
 
 			<!-- Virtualization Tab -->
-			{#if activeTab === 'virtualization'}
+			{#if activeTab === 'workloads'}
 				<div class="flex h-full flex-col">
 					<VirtualizationForm
 						virtualizationManagerServices={vmManagerServices}

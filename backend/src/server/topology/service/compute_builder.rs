@@ -23,9 +23,9 @@ const FLAT_ROOT_ID: Uuid = Uuid::from_bytes([
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
 ]);
 
-pub struct InfrastructureBuilder;
+pub struct ComputeBuilder;
 
-impl InfrastructureBuilder {
+impl ComputeBuilder {
     /// Resolve which virtualizer host manages a given host.
     ///
     /// - Proxmox VM: host.virtualization.Proxmox.service_id → service.host_id
@@ -136,7 +136,7 @@ impl InfrastructureBuilder {
     }
 }
 
-impl ViewBuilder for InfrastructureBuilder {
+impl ViewBuilder for ComputeBuilder {
     fn build(&self, ctx: &TopologyContext, grouping: &GroupingConfig) -> (Vec<Node>, Vec<Edge>) {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
@@ -396,7 +396,7 @@ mod tests {
     fn test_empty_topology() {
         let options = TopologyOptions::default();
         let ctx = TopologyContext::new(&[], &[], &[], &[], &[], &[], &[], &[], &[], &[], &options);
-        let builder = InfrastructureBuilder;
+        let builder = ComputeBuilder;
         let (nodes, edges) = builder.build(&ctx, &infra_grouping());
         // Only the Root container, no elements
         assert_eq!(nodes.len(), 1);
@@ -430,7 +430,7 @@ mod tests {
             &options,
         );
 
-        let builder = InfrastructureBuilder;
+        let builder = ComputeBuilder;
         let (nodes, _edges) = builder.build(&ctx, &infra_grouping());
 
         // 1 Root container + 2 elements (no BareMetal — bare metal hosts stay ungrouped)
@@ -479,7 +479,7 @@ mod tests {
             &options,
         );
 
-        let builder = InfrastructureBuilder;
+        let builder = ComputeBuilder;
         let (nodes, _edges) = builder.build(&ctx, &infra_grouping());
 
         // 3 host elements + 1 Root + 1 Virtualizer subcontainer
@@ -559,7 +559,7 @@ mod tests {
             &options,
         );
 
-        let builder = InfrastructureBuilder;
+        let builder = ComputeBuilder;
         let (nodes, _edges) = builder.build(&ctx, &infra_grouping());
 
         // 5 host elements + 1 Root + 1 Virtualizer = 7 (no BareMetal)
@@ -605,7 +605,7 @@ mod tests {
             &options,
         );
 
-        let builder = InfrastructureBuilder;
+        let builder = ComputeBuilder;
         let (_nodes, edges) = builder.build(&ctx, &infra_grouping());
 
         // HostVirtualization edge connects hypervisor host to VM host

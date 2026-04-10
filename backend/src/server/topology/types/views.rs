@@ -38,7 +38,7 @@ pub enum TopologyView {
     L2Physical,
     #[default]
     L3Logical,
-    Infrastructure,
+    Compute,
     Application,
 }
 
@@ -137,7 +137,7 @@ impl EntityMetadataProvider for TopologyView {
         match self {
             Self::L2Physical => Concept::L2.color(),
             Self::L3Logical => Concept::L3.color(),
-            Self::Infrastructure => Concept::Infrastructure.color(),
+            Self::Compute => Concept::Compute.color(),
             Self::Application => Concept::Application.color(),
         }
     }
@@ -146,7 +146,7 @@ impl EntityMetadataProvider for TopologyView {
         match self {
             Self::L2Physical => Concept::L2.icon(),
             Self::L3Logical => Concept::L3.icon(),
-            Self::Infrastructure => Concept::Infrastructure.icon(),
+            Self::Compute => Concept::Compute.icon(),
             Self::Application => Concept::Application.icon(),
         }
     }
@@ -157,7 +157,7 @@ impl TypeMetadataProvider for TopologyView {
         match self {
             Self::L2Physical => "L2 Physical",
             Self::L3Logical => "L3 Logical",
-            Self::Infrastructure => "Infrastructure",
+            Self::Compute => "Compute",
             Self::Application => "Application",
         }
     }
@@ -166,7 +166,7 @@ impl TypeMetadataProvider for TopologyView {
         match self {
             Self::L2Physical => "Switches, VLANs, and physical links",
             Self::L3Logical => "Subnets, hosts, and IP connectivity",
-            Self::Infrastructure => "Servers, VMs, and containers",
+            Self::Compute => "Servers, VMs, and containers",
             Self::Application => "Services and their dependencies",
         }
     }
@@ -210,7 +210,7 @@ impl TopologyView {
                 element_entity: EntityDiscriminants::Interface,
                 inline_entities: vec![],
             },
-            Self::Infrastructure => ViewElementConfig {
+            Self::Compute => ViewElementConfig {
                 parent_entity: None,
                 element_entity: EntityDiscriminants::Host,
                 inline_entities: vec![EntityDiscriminants::Service],
@@ -228,7 +228,7 @@ impl TopologyView {
         match self {
             Self::L2Physical => "ports",
             Self::L3Logical => "host IP addresses",
-            Self::Infrastructure => "hosts",
+            Self::Compute => "hosts",
             Self::Application => "services",
         }
     }
@@ -238,7 +238,7 @@ impl TopologyView {
         match self {
             Self::L2Physical => "port",
             Self::L3Logical => "host IP address",
-            Self::Infrastructure => "host",
+            Self::Compute => "host",
             Self::Application => "service",
         }
     }
@@ -284,7 +284,7 @@ impl TopologyView {
                     EdgeViewConfig::Disabled
                 }
             },
-            Self::Infrastructure => match edge_type {
+            Self::Compute => match edge_type {
                 HostVirtualization => active(true, Hidden, Dashed, Always, true, false),
                 ServiceVirtualization => active(true, Hidden, Dashed, Always, true, false),
                 SameHost | PhysicalLink | RequestPath | HubAndSpoke => EdgeViewConfig::Disabled,
@@ -336,7 +336,7 @@ impl TopologyView {
                 dependency_creation: Some(DependencyMemberType::Services),
                 show_application_group_picker: true,
             },
-            Self::Infrastructure => ViewInspectorConfig {
+            Self::Compute => ViewInspectorConfig {
                 element_sections: vec![
                     InspectorSection::Identity,
                     InspectorSection::HostDetail,

@@ -126,182 +126,175 @@
 	let nodeRenderData: ElementRenderData | null = $derived.by(() => {
 		if (!resolved) return null;
 		return (() => {
-					const elementType = resolved.elementType ?? 'Interface';
+			const elementType = resolved.elementType ?? 'Interface';
 
-					// Service elements: simpler rendering — single service with host name.
-					// Intentionally does NOT read $topologyOptions here — category/tag
-					// fading is handled by shouldFadeOut via hiddenServices store, so
-					// category toggles don't trigger nodeRenderData recomputation.
-					if (elementType === 'Service') {
-						const service = resolved.services[0];
-						return {
-							elementType,
-							footerText: null,
-							services: service ? [service] : [],
-							hiddenOpenPorts: [],
-							headerText: host?.name ?? null,
-							bodyText: service ? null : 'Unknown Service',
-							showServices: !!service,
-							isVirtualized: false,
-							isCategoryHidden: false,
-							ip_address_id: id
-						} as ElementRenderData;
-					}
+			// Service elements: simpler rendering — single service with host name.
+			// Intentionally does NOT read $topologyOptions here — category/tag
+			// fading is handled by shouldFadeOut via hiddenServices store, so
+			// category toggles don't trigger nodeRenderData recomputation.
+			if (elementType === 'Service') {
+				const service = resolved.services[0];
+				return {
+					elementType,
+					footerText: null,
+					services: service ? [service] : [],
+					hiddenOpenPorts: [],
+					headerText: host?.name ?? null,
+					bodyText: service ? null : 'Unknown Service',
+					showServices: !!service,
+					isVirtualized: false,
+					isCategoryHidden: false,
+					ip_address_id: id
+				} as ElementRenderData;
+			}
 
-					// Host elements: show host name with services
-					if (elementType === 'Host') {
-						if (!host || !resolved.hostId) return null;
+			// Host elements: show host name with services
+			if (elementType === 'Host') {
+				if (!host || !resolved.hostId) return null;
 
-						const hiddenCategories =
-							(
-								($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>
-							)[$activeView] ?? [];
+				const hiddenCategories =
+					(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
+						$activeView
+					] ?? [];
 
-						type CategoryType = (typeof hiddenCategories)[number];
-						// Services visible in card: exclude OpenPorts hidden by category or tag
-						// (non-OpenPorts stay and render faded when hidden)
-						const servicesOnHost = visibleServicesForHost.filter((s) => {
-							const category = serviceDefinitions.getCategory(s.service_definition);
-							if (
-								category === 'OpenPorts' &&
-								(hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id))
-							)
-								return false;
-							return true;
-						});
+				type CategoryType = (typeof hiddenCategories)[number];
+				// Services visible in card: exclude OpenPorts hidden by category or tag
+				// (non-OpenPorts stay and render faded when hidden)
+				const servicesOnHost = visibleServicesForHost.filter((s) => {
+					const category = serviceDefinitions.getCategory(s.service_definition);
+					if (
+						category === 'OpenPorts' &&
+						(hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id))
+					)
+						return false;
+					return true;
+				});
 
-						// OpenPorts hidden by category OR tag → collapsed indicator
-						const hiddenOpenPorts = visibleServicesForHost.filter((s) => {
-							const category = serviceDefinitions.getCategory(s.service_definition);
-							if (category !== 'OpenPorts') return false;
-							return (
-								hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id)
-							);
-						});
+				// OpenPorts hidden by category OR tag → collapsed indicator
+				const hiddenOpenPorts = visibleServicesForHost.filter((s) => {
+					const category = serviceDefinitions.getCategory(s.service_definition);
+					if (category !== 'OpenPorts') return false;
+					return hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id);
+				});
 
-						const showServices = servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0;
+				const showServices = servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0;
 
-						const hostLabel =
-							(data as TopologyNode).header ?? (host.name || host.hostname || null);
+				const hostLabel = (data as TopologyNode).header ?? (host.name || host.hostname || null);
 
-						return {
-							elementType,
-							footerText: null,
-							services: servicesOnHost,
-							hiddenOpenPorts,
-							headerText: hostLabel,
-							bodyText: showServices ? null : hostLabel,
-							showServices,
-							isVirtualized: host.virtualization !== null,
-							ip_address_id: id
-						} as ElementRenderData;
-					}
+				return {
+					elementType,
+					footerText: null,
+					services: servicesOnHost,
+					hiddenOpenPorts,
+					headerText: hostLabel,
+					bodyText: showServices ? null : hostLabel,
+					showServices,
+					isVirtualized: host.virtualization !== null,
+					ip_address_id: id
+				} as ElementRenderData;
+			}
 
-					// Port elements: show port name + status/MAC info
-					if (elementType === 'Interface') {
-						const ifEntryId =
-							'interface_id' in (data as Record<string, unknown>)
-								? ((data as Record<string, unknown>).interface_id as string)
-								: undefined;
-						const iface = ifEntryId
-							? topology?.interfaces.find((e) => e.id === ifEntryId)
-							: undefined;
+			// Port elements: show port name + status/MAC info
+			if (elementType === 'Interface') {
+				const ifEntryId =
+					'interface_id' in (data as Record<string, unknown>)
+						? ((data as Record<string, unknown>).interface_id as string)
+						: undefined;
+				const iface = ifEntryId ? topology?.interfaces.find((e) => e.id === ifEntryId) : undefined;
 
-						let speed: string | null = null;
-						if (iface?.speed_bps) {
-							const bps = iface?.speed_bps;
-							if (bps >= 1_000_000_000) speed = `${(bps / 1_000_000_000).toFixed(0)}G`;
-							else if (bps >= 1_000_000) speed = `${(bps / 1_000_000).toFixed(0)}M`;
-							else speed = `${bps} bps`;
-						}
+				let speed: string | null = null;
+				if (iface?.speed_bps) {
+					const bps = iface?.speed_bps;
+					if (bps >= 1_000_000_000) speed = `${(bps / 1_000_000_000).toFixed(0)}G`;
+					else if (bps >= 1_000_000) speed = `${(bps / 1_000_000).toFixed(0)}M`;
+					else speed = `${bps} bps`;
+				}
 
-						return {
-							elementType,
-							headerText: (data as TopologyNode).header ?? null,
-							footerText: null,
-							bodyText: null,
-							showServices: false,
-							isVirtualized: false,
-							services: [],
-							hiddenOpenPorts: [],
-							ip_address_id: '',
-							portStatus: iface
-								? {
-										operStatus: iface.oper_status,
-										speed,
-										macAddress: iface.mac_address ?? null
-									}
-								: undefined
-						} as ElementRenderData;
-					}
+				return {
+					elementType,
+					headerText: (data as TopologyNode).header ?? null,
+					footerText: null,
+					bodyText: null,
+					showServices: false,
+					isVirtualized: false,
+					services: [],
+					hiddenOpenPorts: [],
+					ip_address_id: '',
+					portStatus: iface
+						? {
+								operStatus: iface.oper_status,
+								speed,
+								macAddress: iface.mac_address ?? null
+							}
+						: undefined
+				} as ElementRenderData;
+			}
 
-					// Interface elements: existing behavior
-					if (!host || !resolved.hostId) return null;
+			// Interface elements: existing behavior
+			if (!host || !resolved.hostId) return null;
 
-					const hiddenCategories =
-						(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
-							$activeView
-						] ?? [];
+			const hiddenCategories =
+				(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
+					$activeView
+				] ?? [];
 
-					// All services bound to this interface (after tag filtering)
-					const allServicesOnIPAddress = visibleServicesForHost
-						? visibleServicesForHost.filter((s) =>
-								s.bindings.some(
-									(b) => b.interface_id == null || (iface && b.interface_id == iface.id)
-								)
-							)
-						: [];
+			// All services bound to this interface (after tag filtering)
+			const allServicesOnIPAddress = visibleServicesForHost
+				? visibleServicesForHost.filter((s) =>
+						s.bindings.some((b) => b.interface_id == null || (iface && b.interface_id == iface.id))
+					)
+				: [];
 
-					// Split into visible services and hidden open ports
-					// OpenPorts hidden by category or tag go to collapsed indicator
-					// Non-OpenPorts stay and render faded when hidden
-					type CategoryType = (typeof hiddenCategories)[number];
-					const servicesOnIPAddress = allServicesOnIPAddress.filter((s) => {
-						const category = serviceDefinitions.getCategory(s.service_definition);
-						if (
-							category === 'OpenPorts' &&
-							(hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id))
-						)
-							return false;
-						return true;
-					});
+			// Split into visible services and hidden open ports
+			// OpenPorts hidden by category or tag go to collapsed indicator
+			// Non-OpenPorts stay and render faded when hidden
+			type CategoryType = (typeof hiddenCategories)[number];
+			const servicesOnIPAddress = allServicesOnIPAddress.filter((s) => {
+				const category = serviceDefinitions.getCategory(s.service_definition);
+				if (
+					category === 'OpenPorts' &&
+					(hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id))
+				)
+					return false;
+				return true;
+			});
 
-					const hiddenOpenPorts = allServicesOnIPAddress.filter((s) => {
-						const category = serviceDefinitions.getCategory(s.service_definition);
-						if (category !== 'OpenPorts') return false;
-						return hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id);
-					});
+			const hiddenOpenPorts = allServicesOnIPAddress.filter((s) => {
+				const category = serviceDefinitions.getCategory(s.service_definition);
+				if (category !== 'OpenPorts') return false;
+				return hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id);
+			});
 
-					let bodyText: string | null = null;
-					let footerText: string | null = null;
-					let subtitleText: string | null = null;
-					let headerText: string | null = (data as TopologyNode).header ?? null;
-					let showServices = servicesOnIPAddress.length != 0 || hiddenOpenPorts.length != 0;
+			let bodyText: string | null = null;
+			let footerText: string | null = null;
+			let subtitleText: string | null = null;
+			let headerText: string | null = (data as TopologyNode).header ?? null;
+			let showServices = servicesOnIPAddress.length != 0 || hiddenOpenPorts.length != 0;
 
-					if (iface && !isContainerSubnetValue) {
-						subtitleText = (iface.name ? iface.name + ': ' : '') + iface.ip_address;
-					}
+			if (iface && !isContainerSubnetValue) {
+				subtitleText = (iface.name ? iface.name + ': ' : '') + iface.ip_address;
+			}
 
-					if (!showServices) {
-						bodyText = host.name;
-					}
+			if (!showServices) {
+				bodyText = host.name;
+			}
 
-					return {
-						elementType,
-						footerText,
-						subtitleText,
-						services: servicesOnIPAddress,
-						hiddenOpenPorts,
-						headerText,
-						bodyText,
-						showServices,
-						isVirtualized:
-							headerText?.startsWith('Docker @') || isContainerSubnetValue
-								? false
-								: host.virtualization !== null,
-						ip_address_id: resolved?.ipAddressId ?? ''
-					} as ElementRenderData;
-				})();
+			return {
+				elementType,
+				footerText,
+				subtitleText,
+				services: servicesOnIPAddress,
+				hiddenOpenPorts,
+				headerText,
+				bodyText,
+				showServices,
+				isVirtualized:
+					headerText?.startsWith('Docker @') || isContainerSubnetValue
+						? false
+						: host.virtualization !== null,
+				ip_address_id: resolved?.ipAddressId ?? ''
+			} as ElementRenderData;
+		})();
 	});
 
 	let isNewNode = $derived(nodeRenderData ? highlightedNewNodes.has(id) : false);
@@ -493,7 +486,8 @@
 									>{service.bindings
 										.map((b) => {
 											if (
-												(b.ip_address_id == nodeRenderData.ip_address_id || b.ip_address_id == null) &&
+												(b.ip_address_id == nodeRenderData.ip_address_id ||
+													b.ip_address_id == null) &&
 												b.type == 'Port' &&
 												b.port_id
 											) {

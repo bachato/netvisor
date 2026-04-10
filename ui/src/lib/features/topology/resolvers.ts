@@ -35,15 +35,11 @@ const elementResolvers: Record<
 		const isInfra = 'is_infra' in node ? (node.is_infra as boolean) : false;
 
 		const host = topology.hosts.find((h) => h.id === hostId);
-		const iface = ipAddressId
-			? topology.ip_addresses.find((i) => i.id === ipAddressId)
-			: undefined;
+		const iface = ipAddressId ? topology.ip_addresses.find((i) => i.id === ipAddressId) : undefined;
 		const services = topology.services.filter(
 			(s) =>
 				s.host_id === hostId &&
-				s.bindings.some(
-					(b) => b.ip_address_id === ipAddressId || b.ip_address_id === null
-				)
+				s.bindings.some((b) => b.ip_address_id === ipAddressId || b.ip_address_id === null)
 		);
 
 		return {
@@ -94,9 +90,7 @@ const elementResolvers: Record<
 		const hostId = 'host_id' in node ? (node.host_id as string) : undefined;
 		const interfaceId = 'interface_id' in node ? (node.interface_id as string) : undefined;
 		const host = topology.hosts.find((h) => h.id === hostId);
-		const iface = interfaceId
-			? topology.interfaces.find((e) => e.id === interfaceId)
-			: undefined;
+		const iface = interfaceId ? topology.interfaces.find((e) => e.id === interfaceId) : undefined;
 		return {
 			elementType: 'Interface' as ElementEntityType,
 			host,
