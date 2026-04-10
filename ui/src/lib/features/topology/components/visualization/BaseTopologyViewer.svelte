@@ -351,6 +351,15 @@
 				const topologyChanged = topoKey !== lastRenderedTopoKey;
 				if (topologyChanged) {
 					viewSizeCache.clear();
+					// Remove seenAutoCollapseIds entries that don't exist in the new
+					// topology (e.g., L2 PortOpStatus IDs when switching to Workloads).
+					// This allows them to be re-auto-collapsed on return.
+					const newContainerIds = new Set(
+						topology.nodes.filter((n) => n.node_type === 'Container').map((n) => n.id)
+					);
+					for (const id of seenAutoCollapseIds) {
+						if (!newContainerIds.has(id)) seenAutoCollapseIds.delete(id);
+					}
 				}
 				console.log(
 					`[LAYOUT-DEBUG] loadTopologyData gen=${thisGeneration} view=${currentView} viewChanged=${viewChanged} topologyChanged=${topologyChanged} nodes=${topology.nodes.length} edges=${topology.edges.length}`
