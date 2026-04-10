@@ -374,8 +374,8 @@ impl EdgeBuilder {
                     source: source_ip_address_id,
                     target: target_ip_address_id,
                     edge_type: EdgeType::PhysicalLink {
-                        source_interface_id: source_entry.id,
-                        target_interface_id: target_entry.id,
+                        source_entity_id: source_entry.id,
+                        target_entity_id: target_entry.id,
                         protocol: DiscoveryProtocol::LLDP, // TODO: Support CDP when implemented
                     },
                     label,

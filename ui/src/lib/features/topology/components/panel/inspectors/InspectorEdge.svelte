@@ -43,8 +43,8 @@
 		/>
 	{:else if edgeData.edge_type === 'PhysicalLink'}
 		<InspectorEdgePhysicalLink
-			sourceInterfaceId={edgeData.source_interface_id}
-			targetInterfaceId={edgeData.target_interface_id}
+			sourceEntityId={edgeData.source_entity_id}
+			targetEntityId={edgeData.target_entity_id}
 			protocol={edgeData.protocol}
 		/>
 	{:else}

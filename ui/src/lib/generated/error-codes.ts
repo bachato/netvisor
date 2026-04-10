@@ -76,7 +76,7 @@ export const ERROR_CODES = {
 
 export type ErrorCode = keyof typeof ERROR_CODES;
 
-export interface ErrorParams {
+export type ErrorParams = {
 	validation_required: { field: string | number };
 	validation_empty: { field: string | number };
 	validation_invalid_email: Record<string, never>;
@@ -141,4 +141,4 @@ export interface ErrorParams {
 	external_service_error: { service: string | number; reason: string | number };
 	database_error: Record<string, never>;
 	database_duplicate_entry: { field: string | number };
-}
+};

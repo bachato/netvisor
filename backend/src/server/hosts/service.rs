@@ -2124,7 +2124,7 @@ impl HostService {
         let dest_ports = self.port_service.get_for_host(&destination_host.id).await?;
         let other_ports = self.port_service.get_for_host(&other_host.id).await?;
 
-        // Build interface ID mapping: source_interface_id -> dest_interface_id
+        // Build interface ID mapping: source interface ID -> dest interface ID
         // Transfer non-conflicting ip_addresses to destination
 
         // Count MACs per host to detect VLAN sub-interfaces. MAC-based conflict detection

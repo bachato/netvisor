@@ -81,8 +81,8 @@ impl ViewBuilder for L2Builder {
                 source: source_entry.id, // interface_id, not ip_address_id
                 target: target_entry.id, // interface_id, not ip_address_id
                 edge_type: EdgeType::PhysicalLink {
-                    source_interface_id: source_entry.id,
-                    target_interface_id: target_entry.id,
+                    source_entity_id: source_entry.id,
+                    target_entity_id: target_entry.id,
                     protocol: DiscoveryProtocol::default(),
                 },
                 label,
@@ -106,10 +106,9 @@ impl ViewBuilder for L2Builder {
         // Hosts that are targets (look up target interface → host_id)
         for edge in &edges {
             if let EdgeType::PhysicalLink {
-                target_interface_id,
-                ..
+                target_entity_id, ..
             } = &edge.edge_type
-                && let Some(entry) = ctx.get_if_entry_by_id(*target_interface_id)
+                && let Some(entry) = ctx.get_if_entry_by_id(*target_entity_id)
             {
                 qualifying_host_ids.insert(entry.base.host_id);
             }

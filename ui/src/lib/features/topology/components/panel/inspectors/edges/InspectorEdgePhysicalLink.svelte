@@ -9,12 +9,12 @@
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 
 	let {
-		sourceInterfaceId,
-		targetInterfaceId,
+		sourceEntityId,
+		targetEntityId,
 		protocol
 	}: {
-		sourceInterfaceId?: string;
-		targetInterfaceId?: string;
+		sourceEntityId?: string;
+		targetEntityId?: string;
 		protocol?: 'LLDP' | 'CDP';
 	} = $props();
 
@@ -27,8 +27,8 @@
 	);
 
 	// Derive Interface and Host data
-	let sourceInterface = $derived(topology?.interfaces.find((e) => e.id === sourceInterfaceId));
-	let targetInterface = $derived(topology?.interfaces.find((e) => e.id === targetInterfaceId));
+	let sourceInterface = $derived(topology?.interfaces.find((e) => e.id === sourceEntityId));
+	let targetInterface = $derived(topology?.interfaces.find((e) => e.id === targetEntityId));
 	let sourceHost = $derived(
 		sourceInterface ? topology?.hosts.find((h) => h.id === sourceInterface.host_id) : null
 	);

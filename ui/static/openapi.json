@@ -13115,14 +13115,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-10T05:51:18.469153Z",
-              "id": "e9402978-18a1-45a6-a99b-637603a7520d",
+              "created_at": "2026-04-10T23:06:03.676753Z",
+              "id": "fecf1304-9794-42ee-b9aa-41b56e47e1f4",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-10T05:51:18.469153Z"
+              "updated_at": "2026-04-10T23:06:03.676753Z"
             }
           },
           "error": {
@@ -14021,14 +14021,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-10T05:51:18.449903Z",
-                      "id": "691b327f-b75d-488a-bca4-3523d3c97f77",
+                      "created_at": "2026-04-10T23:06:03.659698Z",
+                      "id": "1bf1070b-285c-4125-9056-aff7c3f1afa7",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-10T05:51:18.449903Z"
+                      "updated_at": "2026-04-10T23:06:03.659698Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -14037,7 +14037,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Tautulli",
+                  "service_definition": "Amazon Echo",
                   "source": {
                     "type": "Manual"
                   },
@@ -14740,14 +14740,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-10T05:51:18.463826Z",
-                  "id": "8e32c6c4-e28e-437f-8683-939a03e1ad2a",
+                  "created_at": "2026-04-10T23:06:03.672072Z",
+                  "id": "92212dfc-e538-48b8-9559-b25da24adcd5",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-10T05:51:18.463826Z"
+                  "updated_at": "2026-04-10T23:06:03.672072Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14756,7 +14756,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Tautulli",
+              "service_definition": "Amazon Echo",
               "source": {
                 "type": "Manual"
               },
@@ -16121,14 +16121,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-10T05:51:18.450317Z",
-          "id": "a5f5aea3-acfe-42ec-9890-81f0aca44ebf",
+          "created_at": "2026-04-10T23:06:03.660055Z",
+          "id": "32730a1c-9252-4272-aa9b-96b23f8e199e",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-10T05:51:18.450317Z"
+          "updated_at": "2026-04-10T23:06:03.660055Z"
         }
       },
       "BindingBase": {
@@ -16658,7 +16658,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Tautulli",
+              "service_definition": "Amazon Echo",
               "tags": [],
               "virtualization": null
             }
@@ -17779,7 +17779,7 @@
       },
       "DiscoveryHostRequest": {
         "type": "object",
-        "description": "Request type for daemon discovery - accepts full entities with IDs.\nUsed internally by daemons for host creation/upsert, NOT the external API.\nThis supports the discovery workflow where daemons manage entity IDs.",
+        "description": "Request type for daemon discovery - accepts full entities with IDs.\nUsed internally by daemons for host creation/upsert, NOT the external API.\nThis supports the discovery workflow where daemons manage entity IDs.\n\n## Backwards compatibility (daemons < v0.16.0)\n\nPre-v0.16.0 daemons send the old field layout:\n  - `interfaces` → IPAddress data (now `ip_addresses`)\n  - `if_entries` → SNMP Interface data (now `interfaces`)\n\nThe custom deserializer detects the old layout (missing `ip_addresses` field)\nand remaps fields automatically. This can be removed once all daemons are ≥ v0.16.0.",
         "required": [
           "host",
           "ip_addresses",
@@ -17795,14 +17795,13 @@
             "items": {
               "$ref": "#/components/schemas/Interface"
             },
-            "description": "SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled.\nOld daemons send this as \"if_entries\"."
+            "description": "SNMP interface entries (ifTable data) - optional, populated when SNMP is enabled."
           },
           "ip_addresses": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/IPAddress"
-            },
-            "description": "IP addresses for the host. Old daemons send this as \"interfaces\"."
+            }
           },
           "ports": {
             "type": "array",
@@ -18339,8 +18338,8 @@
             "type": "object",
             "description": "Physical link discovered via LLDP/CDP neighbor discovery",
             "required": [
-              "source_if_entry_id",
-              "target_if_entry_id",
+              "source_entity_id",
+              "target_entity_id",
               "protocol",
               "edge_type"
             ],
@@ -18354,11 +18353,11 @@
               "protocol": {
                 "$ref": "#/components/schemas/DiscoveryProtocol"
               },
-              "source_if_entry_id": {
+              "source_entity_id": {
                 "type": "string",
                 "format": "uuid"
               },
-              "target_if_entry_id": {
+              "target_entity_id": {
                 "type": "string",
                 "format": "uuid"
               }
@@ -19180,14 +19179,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-10T05:51:18.449344Z",
-                  "id": "c390b2ea-05ae-4785-a4ad-05e2117fcb6e",
+                  "created_at": "2026-04-10T23:06:03.659220Z",
+                  "id": "543da835-fc54-4796-8f54-a38508d38f22",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-10T05:51:18.449344Z"
+                  "updated_at": "2026-04-10T23:06:03.659220Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -19196,7 +19195,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Tautulli",
+              "service_definition": "Amazon Echo",
               "source": {
                 "type": "Manual"
               },
@@ -19457,6 +19456,11 @@
                         "items": {
                           "$ref": "#/components/schemas/ServiceCategory"
                         }
+                      },
+                      "is_infra_rule": {
+                        "type": "boolean",
+                        "description": "Set by the backend on the default infrastructure rule.\nFrontend uses this to identify the infra container for auto-collapse.",
+                        "readOnly": true
                       },
                       "title": {
                         "type": [
@@ -21372,14 +21376,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-10T05:51:18.437439Z",
-                        "id": "c8644108-93d5-4c42-9791-26f749a12107",
+                        "created_at": "2026-04-10T23:06:03.648588Z",
+                        "id": "4f885f09-7287-4a35-a8fc-d573d99431e7",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-10T05:51:18.437439Z"
+                        "updated_at": "2026-04-10T23:06:03.648588Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -21388,7 +21392,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Tautulli",
+                    "service_definition": "Amazon Echo",
                     "source": {
                       "type": "Manual"
                     },
@@ -21465,14 +21469,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-10T05:51:18.462435Z",
-                    "id": "1ed1670c-4d6c-4f37-a0eb-58fa0c4d27bb",
+                    "created_at": "2026-04-10T23:06:03.670764Z",
+                    "id": "ff3092ef-4eef-491e-9e97-662633257001",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-10T05:51:18.462435Z"
+                    "updated_at": "2026-04-10T23:06:03.670764Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -21481,7 +21485,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Tautulli",
+                "service_definition": "Amazon Echo",
                 "source": {
                   "type": "Manual"
                 },
@@ -22699,14 +22703,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-10T05:51:18.450176Z",
-              "id": "62ba82ba-7792-4303-93ef-0e8bb824c2fb",
+              "created_at": "2026-04-10T23:06:03.659938Z",
+              "id": "62c523d3-73fc-49a2-8744-46a83ade8b0b",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-10T05:51:18.450176Z"
+              "updated_at": "2026-04-10T23:06:03.659938Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -22715,7 +22719,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Tautulli",
+          "service_definition": "Amazon Echo",
           "source": {
             "type": "Manual"
           },

@@ -5,13 +5,13 @@
 	export const PhysicalLinkEdgeDisplay: EntityDisplayComponent<TopologyEdge, EdgeDisplayContext> = {
 		getId: (edge) => edge.id,
 		getLabel: (edge, context) => {
-			if (!context?.topology || !('source_interface_id' in edge)) return 'Physical Link';
+			if (!context?.topology || !('source_entity_id' in edge)) return 'Physical Link';
 			const sourceInterface = context.topology.interfaces.find(
-				(e) => e.id === edge.source_interface_id
+				(e) => e.id === edge.source_entity_id
 			);
 			const targetInterface =
-				'target_interface_id' in edge
-					? context.topology.interfaces.find((e) => e.id === edge.target_interface_id)
+				'target_entity_id' in edge
+					? context.topology.interfaces.find((e) => e.id === edge.target_entity_id)
 					: null;
 			const sourceHost = sourceInterface
 				? context.topology.hosts.find((h) => h.id === sourceInterface.host_id)
