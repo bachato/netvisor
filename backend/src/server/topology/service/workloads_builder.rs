@@ -7,6 +7,7 @@ use super::{
     view::ViewBuilder,
 };
 use crate::server::{
+    dependencies::r#impl::{base::DependencyMembers, types::DependencyType},
     services::r#impl::definitions::ServiceDefinitionExt,
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType, EdgeViewConfig},
@@ -339,6 +340,113 @@ impl ViewBuilder for WorkloadsBuilder {
                 is_multi_hop: false,
                 view_config: EdgeViewConfig::default(),
             });
+        }
+
+        // --- Dependency edges (connecting host containers) ---
+
+        // Build service_id → host_id lookup
+        let service_to_host: HashMap<Uuid, Uuid> = ctx
+            .services
+            .iter()
+            .map(|s| (s.id, s.base.host_id))
+            .collect();
+
+        // Build binding_id → service_id lookup
+        let binding_to_service: HashMap<Uuid, Uuid> = ctx
+            .services
+            .iter()
+            .flat_map(|s| s.base.bindings.iter().map(move |b| (b.id, s.id)))
+            .collect();
+
+        // Set of host IDs that have containers (non-VM hosts)
+        let host_container_ids: HashSet<Uuid> = ctx
+            .hosts
+            .iter()
+            .filter(|h| h.base.virtualization.is_none())
+            .map(|h| h.id)
+            .collect();
+
+        for dep in ctx.dependencies {
+            // Resolve to ordered service IDs
+            let service_ids: Vec<Uuid> = match &dep.base.members {
+                DependencyMembers::Services { service_ids } => service_ids.clone(),
+                DependencyMembers::Bindings { binding_ids } => {
+                    let mut ids = Vec::new();
+                    for binding_id in binding_ids {
+                        if let Some(&service_id) = binding_to_service.get(binding_id)
+                            && ids.last() != Some(&service_id)
+                        {
+                            ids.push(service_id);
+                        }
+                    }
+                    ids
+                }
+            };
+
+            // Map service IDs to host container IDs, deduplicating consecutive same-host entries
+            let host_container_chain: Vec<Uuid> = service_ids
+                .iter()
+                .filter_map(|sid| {
+                    let host_id = service_to_host.get(sid)?;
+                    if host_container_ids.contains(host_id) {
+                        Some(Self::container_id_for_host(*host_id))
+                    } else {
+                        None
+                    }
+                })
+                .fold(Vec::new(), |mut acc, cid| {
+                    if acc.last() != Some(&cid) {
+                        acc.push(cid);
+                    }
+                    acc
+                });
+
+            if host_container_chain.len() < 2 {
+                continue;
+            }
+
+            match dep.base.dependency_type {
+                DependencyType::RequestPath => {
+                    for window in host_container_chain.windows(2) {
+                        edges.push(Edge {
+                            id: Uuid::new_v4(),
+                            source: window[0],
+                            target: window[1],
+                            edge_type: EdgeType::RequestPath {
+                                dependency_id: dep.id,
+                                source_binding_id: Uuid::nil(),
+                                target_binding_id: Uuid::nil(),
+                            },
+                            label: Some(dep.base.name.clone()),
+                            source_handle: EdgeHandle::Bottom,
+                            target_handle: EdgeHandle::Top,
+                            is_multi_hop: false,
+                            view_config: EdgeViewConfig::default(),
+                        });
+                    }
+                }
+                DependencyType::HubAndSpoke => {
+                    if let Some((&hub_id, spokes)) = host_container_chain.split_first() {
+                        for &spoke_id in spokes {
+                            edges.push(Edge {
+                                id: Uuid::new_v4(),
+                                source: hub_id,
+                                target: spoke_id,
+                                edge_type: EdgeType::HubAndSpoke {
+                                    dependency_id: dep.id,
+                                    source_binding_id: Uuid::nil(),
+                                    target_binding_id: Uuid::nil(),
+                                },
+                                label: Some(dep.base.name.clone()),
+                                source_handle: EdgeHandle::Bottom,
+                                target_handle: EdgeHandle::Top,
+                                is_multi_hop: false,
+                                view_config: EdgeViewConfig::default(),
+                            });
+                        }
+                    }
+                }
+            }
         }
 
         (nodes, edges)

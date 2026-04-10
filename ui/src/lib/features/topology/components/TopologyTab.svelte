@@ -771,6 +771,15 @@
 						onClearSelection={clearMultiSelect}
 						onGroupCreated={() => {
 							clearMultiSelect();
+							updateTopologyOptions((opts) => ({
+								...opts,
+								local: {
+									...opts.local,
+									hide_edge_types: opts.local.hide_edge_types.filter(
+										(e) => e !== 'RequestPath' && e !== 'HubAndSpoke'
+									)
+								}
+							}));
 							handleRefresh();
 						}}
 					/>

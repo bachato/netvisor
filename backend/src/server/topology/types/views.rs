@@ -285,11 +285,10 @@ impl TopologyView {
             },
             Self::Workloads => match edge_type {
                 PhysicalLink => active(true, Hidden, Dashed, WhenVisible, false, false),
-                HostVirtualization
-                | ServiceVirtualization
-                | SameHost
-                | RequestPath
-                | HubAndSpoke => EdgeViewConfig::Disabled,
+                RequestPath | HubAndSpoke => {
+                    active(false, Hidden, Dashed, WhenVisible, false, true)
+                }
+                HostVirtualization | ServiceVirtualization | SameHost => EdgeViewConfig::Disabled,
             },
             Self::Application => match edge_type {
                 RequestPath => active(true, Visible, Solid, WhenVisible, false, true),
@@ -351,7 +350,7 @@ impl TopologyView {
                     InspectorSection::ElementSummary,
                 ],
                 bulk_tag_entity,
-                dependency_creation: None,
+                dependency_creation: Some(DependencyMemberType::Services),
                 show_application_group_picker: false,
             },
             Self::L2Physical => ViewInspectorConfig {
