@@ -713,6 +713,19 @@ function buildElkGraph(
 		// Root options set via ternary below
 	}
 	const isWorkloads = view === 'Workloads';
+
+	// Workloads: assign descending priority so box packing places
+	// highest-workload containers first (top-left).
+	// Backend sends containers sorted by descending workload count,
+	// so first container gets highest priority.
+	if (isWorkloads) {
+		for (let i = 0; i < rootContainers.length; i++) {
+			const container = rootContainers[i];
+			if (!container.layoutOptions) container.layoutOptions = {};
+			container.layoutOptions['elk.priority'] = String(rootContainers.length - i);
+		}
+	}
+
 	const rootOptions = useLayeredChildren
 		? {
 				'elk.algorithm': 'layered',
@@ -730,9 +743,12 @@ function buildElkGraph(
 			}
 		: isWorkloads
 			? {
-					...ROOT_LAYOUT_OPTIONS,
-					'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
-					'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES'
+					'elk.algorithm': 'box',
+					'elk.box.packingMode': 'SIMPLE',
+					'elk.aspectRatio': '1.6',
+					'elk.spacing.nodeNode': '75',
+					'elk.spacing.componentComponent': '75',
+					'elk.padding': '[top=25,left=25,bottom=25,right=25]'
 				}
 			: ROOT_LAYOUT_OPTIONS;
 
