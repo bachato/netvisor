@@ -519,13 +519,13 @@
 							const graphPos = layoutGraph.getPosition(node.id);
 							const expandedSize = !isElement ? layoutGraph.getExpandedSize(node.id) : undefined;
 							position = graphPos ?? { x: node.position.x, y: node.position.y };
-							if (isNodeCollapsed && isSubContainer && !isElement) {
-								console.log(`[SC] buildFlowNodes collapsed sub ${node.id.substring(0,8)} expandedSize=${JSON.stringify(expandedSize)} containerSize=${JSON.stringify(containerSize)}`);
-							}
 							// Sub-containers keep expanded width when collapsed to prevent overlap on expand
 							// Root containers use collapsed size from metadata
 							const isSubContainer =
 								!isElement && node.node_type === 'Container' && !!node.parent_container_id;
+							if (isNodeCollapsed && isSubContainer) {
+								console.log(`[SC] buildFlowNodes collapsed sub ${node.id.substring(0,8)} expandedSize=${JSON.stringify(expandedSize)} containerSize=${JSON.stringify(containerSize)}`);
+							}
 							width = isNodeCollapsed
 								? isSubContainer
 									? (expandedSize?.width ?? containerSize?.width ?? undefined)
