@@ -96,10 +96,13 @@ function buildElkGraph(
 			const measured = input.elementNodeSizes?.get(node.id);
 			const collapsedWidth = measured?.x ?? meta.collapsed_size.width;
 			const collapsedHeight = measured?.y ?? meta.collapsed_size.height;
-			// Use expanded width for collapsed containers so ELK reserves horizontal
-			// space — prevents neighbors from being placed where they'd overlap on expand
+			// Use the larger of expanded and collapsed width so ELK reserves
+			// enough space for both states — expanded content and collapsed
+			// display (which can be wider due to subgroup summary tags).
 			const expandedWidth = input.expandedContainerSizes?.get(node.id)?.width;
-			const elkCollapsedWidth = expandedWidth ?? collapsedWidth;
+			const elkCollapsedWidth = expandedWidth
+				? Math.max(expandedWidth, collapsedWidth)
+				: collapsedWidth;
 
 			// Layered children: ELK optimizes child ordering for crossing minimization
 			// Box children: grid packing by size (default for most views)
