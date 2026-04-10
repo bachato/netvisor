@@ -132,9 +132,11 @@ function buildElkGraph(
 						children: [],
 						layoutOptions: {
 							...childLayoutOptions,
-							// Use metadata collapsed size as minimum, not DOM-measured
-							// collapsed size (which includes title/tags and can be too wide)
-							'elk.nodeSize.minimum': `(${meta.collapsed_size.width},${meta.collapsed_size.height})`
+							// Subcontainers: use metadata collapsed size as minimum so
+							// expanded size is driven by children, not collapsed title/tags.
+							// Root containers: use DOM-measured size since their collapsed
+							// display (subgroup summaries) can be wider than children.
+							'elk.nodeSize.minimum': `(${isSubcontainer ? meta.collapsed_size.width : collapsedWidth},${isSubcontainer ? meta.collapsed_size.height : collapsedHeight})`
 						}
 					};
 			containers.set(node.id, elkNode);
