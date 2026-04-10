@@ -26,7 +26,15 @@
 
 	let { binding, onUpdate = () => {}, service = undefined, host = undefined }: Props = $props();
 
-	// Interface binding must have an interface_id - look up from host form data first (for unsaved hosts),
+	$effect(() => {
+		console.log('[IPAddressBindingInlineEditor]', {
+			binding_keys: Object.keys(binding),
+			ip_address_id: binding.ip_address_id,
+			host_ip_count: host?.ip_addresses?.length,
+		});
+	});
+
+	// IP address binding must have an ip_address_id - look up from host form data first (for unsaved hosts),
 	// then fall back to query data (for saved hosts)
 	let iface = $derived(
 		binding.ip_address_id
