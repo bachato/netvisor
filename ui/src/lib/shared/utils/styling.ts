@@ -151,6 +151,36 @@ export const COLOR_MAP: Record<Color, ColorStyle> = {
 		stroke: 'stroke-purple-600 dark:stroke-purple-400',
 		rgb: 'rgb(168, 85, 247)' // purple-500
 	},
+	Fuchsia: {
+		color: 'Fuchsia',
+		text: 'text-fuchsia-600 dark:text-fuchsia-400',
+		bg: 'bg-fuchsia-100 border-fuchsia-300 dark:bg-fuchsia-900/50 dark:border-fuchsia-600',
+		border: 'border-fuchsia-300 dark:border-fuchsia-600',
+		icon: 'text-fuchsia-600 dark:text-fuchsia-400',
+		ring: 'ring-fuchsia-400',
+		stroke: 'stroke-fuchsia-600 dark:stroke-fuchsia-400',
+		rgb: 'rgb(217, 70, 239)' // fuchsia-500
+	},
+	Violet: {
+		color: 'Violet',
+		text: 'text-violet-600 dark:text-violet-400',
+		bg: 'bg-violet-100 border-violet-300 dark:bg-violet-900/50 dark:border-violet-600',
+		border: 'border-violet-300 dark:border-violet-600',
+		icon: 'text-violet-600 dark:text-violet-400',
+		ring: 'ring-violet-400',
+		stroke: 'stroke-violet-600 dark:stroke-violet-400',
+		rgb: 'rgb(139, 92, 246)' // violet-500
+	},
+	Sky: {
+		color: 'Sky',
+		text: 'text-sky-600 dark:text-sky-400',
+		bg: 'bg-sky-100 border-sky-300 dark:bg-sky-900/50 dark:border-sky-600',
+		border: 'border-sky-300 dark:border-sky-600',
+		icon: 'text-sky-600 dark:text-sky-400',
+		ring: 'ring-sky-400',
+		stroke: 'stroke-sky-600 dark:stroke-sky-400',
+		rgb: 'rgb(14, 165, 233)' // sky-500
+	},
 	Gray: {
 		color: 'Gray',
 		text: 'text-gray-600 dark:text-gray-400',
@@ -160,6 +190,16 @@ export const COLOR_MAP: Record<Color, ColorStyle> = {
 		ring: 'ring-gray-400',
 		stroke: 'stroke-gray-600 dark:stroke-gray-400',
 		rgb: 'rgb(107, 114, 128)' // gray-500
+	},
+	Lime: {
+		color: 'Lime',
+		text: 'text-lime-600 dark:text-lime-400',
+		bg: 'bg-lime-100 border-lime-300 dark:bg-lime-900/50 dark:border-lime-600',
+		border: 'border-lime-300 dark:border-lime-600',
+		icon: 'text-lime-600 dark:text-lime-400',
+		ring: 'ring-lime-400',
+		stroke: 'stroke-lime-600 dark:stroke-lime-400',
+		rgb: 'rgb(132, 204, 22)' // lime-500
 	}
 };
 
