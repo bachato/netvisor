@@ -8,4 +8,4 @@ export type Binding = components['schemas']['Binding'];
 
 // Utility types for binding discrimination
 export type PortBinding = Binding & { type: 'Port' };
-export type InterfaceBinding = Binding & { type: 'Interface' };
+export type IPAddressBinding = Binding & { type: 'IPAddress' };

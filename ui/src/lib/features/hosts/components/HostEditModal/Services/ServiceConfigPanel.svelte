@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { InterfaceBinding, PortBinding, Service } from '$lib/features/services/types/base';
+	import type { IPAddressBinding, PortBinding, Service } from '$lib/features/services/types/base';
 	import { serviceCategories, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
@@ -26,7 +26,7 @@
 		hosts_services_bindingsHelp,
 		hosts_services_couldNotFindService,
 		hosts_services_couldNotFindServiceToRemove,
-		hosts_services_interfaceBindingsHelp,
+		hosts_services_ipAddressBindingsHelp,
 		hosts_services_namePlaceholder,
 		hosts_services_newBinding,
 		hosts_services_noAvailableInterfaces,
@@ -116,9 +116,9 @@
 		return service.bindings.findIndex((b) => b.id === bindingId);
 	}
 
-	// Interface Bindings Logic
-	let interfaceBindings = $derived(
-		service.bindings.filter((b) => b.type === 'Interface') as InterfaceBinding[]
+	// IP Address Bindings Logic
+	let ipAddressBindings = $derived(
+		service.bindings.filter((b) => b.type === 'IPAddress') as IPAddressBinding[]
 	);
 
 	// Get interfaces that this service has Port bindings on
@@ -130,8 +130,8 @@
 	let hasPortBindingOnAllIPAddresses = $derived(portBindings.some((b) => b.interface_id === null));
 
 	// Get interfaces that this service has Interface bindings on
-	let interfacesWithInterfaceBindingsThisService = $derived(
-		new Set(interfaceBindings.map((b) => b.interface_id))
+	let interfacesWithIPAddressBindingsThisService = $derived(
+		new Set(ipAddressBindings.map((b) => b.interface_id))
 	);
 
 	// Available port+interface combinations for new Port bindings
@@ -139,7 +139,7 @@
 	let availablePortCombinations = $derived(
 		host.ip_addresses.flatMap((iface) => {
 			// Can't add Port binding if THIS service has an Interface binding on this interface
-			if (interfacesWithInterfaceBindingsThisService.has(iface.id)) {
+			if (interfacesWithIPAddressBindingsThisService.has(iface.id)) {
 				return [];
 			}
 
@@ -181,13 +181,13 @@
 
 	// Available interfaces for new Interface bindings
 	// Only includes saved interfaces (those already in global store)
-	let availableInterfacesForInterfaceBinding = $derived(
+	let availableInterfacesForIPAddressBinding = $derived(
 		host.ip_addresses.filter((iface) => {
 			// Can't add Interface binding if service has Port binding on "All Interfaces"
 			if (hasPortBindingOnAllIPAddresses) return false;
 
 			// Can't add Interface binding if this service already has one on this interface
-			if (interfaceBindings.some((b) => b.interface_id === iface.id)) {
+			if (ipAddressBindings.some((b) => b.interface_id === iface.id)) {
 				return false;
 			}
 
@@ -200,7 +200,7 @@
 		})
 	);
 
-	let canCreateInterfaceBinding = $derived(availableInterfacesForInterfaceBinding.length > 0);
+	let canCreateIPAddressBinding = $derived(availableInterfacesForIPAddressBinding.length > 0);
 
 	// Port Binding Handlers
 	function handleCreatePortBinding() {
@@ -277,7 +277,7 @@
 	}
 
 	// Interface Binding Handlers
-	function handleCreateInterfaceBinding() {
+	function handleCreateIPAddressBinding() {
 		if (!service) {
 			pushWarning(hosts_services_couldNotFindService());
 			return;
@@ -288,14 +288,14 @@
 			return;
 		}
 
-		if (!canCreateInterfaceBinding) {
+		if (!canCreateIPAddressBinding) {
 			pushWarning(hosts_services_noAvailableInterfaces());
 			return;
 		}
 
-		const firstAvailable = availableInterfacesForInterfaceBinding[0];
+		const firstAvailable = availableInterfacesForIPAddressBinding[0];
 
-		const binding: InterfaceBinding = {
+		const binding: IPAddressBinding = {
 			type: 'Interface',
 			id: uuidv4(),
 			service_id: service.id,
@@ -311,13 +311,13 @@
 		});
 	}
 
-	function handleRemoveInterfaceBinding(index: number) {
+	function handleRemoveIPAddressBinding(index: number) {
 		if (!service) {
 			pushWarning(hosts_services_couldNotFindServiceToRemove());
 			return;
 		}
 
-		const interfaceBindingToRemove = interfaceBindings[index];
+		const interfaceBindingToRemove = ipAddressBindings[index];
 		const fullIndex = service.bindings.findIndex((b) => b.id === interfaceBindingToRemove.id);
 
 		onChange({
@@ -326,17 +326,17 @@
 		});
 	}
 
-	function handleUpdateInterfaceBinding(binding: InterfaceBinding, index: number) {
+	function handleUpdateIPAddressBinding(binding: IPAddressBinding, index: number) {
 		if (!service) return;
 
-		const interfaceBindingToUpdate = interfaceBindings[index];
+		const interfaceBindingToUpdate = ipAddressBindings[index];
 		const fullIndex = service.bindings.findIndex((b) => b.id === interfaceBindingToUpdate.id);
 
 		const updatedBindings = [...service.bindings];
 		updatedBindings[fullIndex] = {
 			...updatedBindings[fullIndex],
 			interface_id: binding.interface_id
-		} as InterfaceBinding;
+		} as IPAddressBinding;
 
 		onChange({
 			...service,
@@ -469,7 +469,7 @@
 			{#key service.id}
 				<ListManager
 					label={common_ipAddressBindings()}
-					helpText={hosts_services_interfaceBindingsHelp()}
+					helpText={hosts_services_ipAddressBindingsHelp()}
 					placeholder={hosts_services_selectBinding()}
 					createNewLabel={hosts_services_newBinding()}
 					allowDuplicates={false}
@@ -478,8 +478,8 @@
 					allowReorder={false}
 					allowCreateNew={true}
 					allowAddFromOptions={false}
-					disableCreateNewButton={!canCreateInterfaceBinding}
-					options={[] as InterfaceBinding[]}
+					disableCreateNewButton={!canCreateIPAddressBinding}
+					options={[] as IPAddressBinding[]}
 					optionDisplayComponent={IPAddressBindingDisplay}
 					itemDisplayComponent={IPAddressBindingDisplay}
 					items={ipAddressBindings}
@@ -490,11 +490,11 @@
 						ip_addresses: host.ip_addresses,
 						isContainerSubnet: isContainerSubnetFn
 					})}
-					onCreateNew={handleCreateInterfaceBinding}
-					onRemove={handleRemoveInterfaceBinding}
-					onEdit={handleUpdateInterfaceBinding}
+					onCreateNew={handleCreateIPAddressBinding}
+					onRemove={handleRemoveIPAddressBinding}
+					onEdit={handleUpdateIPAddressBinding}
 					onItemUpdate={(binding, index, updates) =>
-						handleUpdateInterfaceBinding({ ...binding, ...updates }, index)}
+						handleUpdateIPAddressBinding({ ...binding, ...updates }, index)}
 				/>
 			{/key}
 		</div>
