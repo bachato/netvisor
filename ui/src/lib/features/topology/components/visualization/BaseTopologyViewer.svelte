@@ -648,10 +648,35 @@
 
 						const forceResult = computeForceLayout(forceNodes, forceLinks);
 
+						// Compute edge handles for force-layout edges
+						const forceEdgeHandles = new Map<
+							string,
+							import('../../layout/elk-layout').EdgeHandles
+						>();
+						const forceNodeSizes = new Map(
+							forceNodes.map((n) => [n.id, { w: n.width, h: n.height }])
+						);
+						for (const edge of elevatedEdges) {
+							const srcPos = forceResult.nodePositions.get(edge.source as string);
+							const tgtPos = forceResult.nodePositions.get(edge.target as string);
+							const srcSize = forceNodeSizes.get(edge.source as string);
+							const tgtSize = forceNodeSizes.get(edge.target as string);
+							if (srcPos && tgtPos && srcSize && tgtSize) {
+								forceEdgeHandles.set(
+									`${edge.source}->${edge.target}`,
+									computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize)
+								);
+							}
+						}
+
 						sessionStructureKey = structureKey;
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						layoutGraph.syncCollapseState(collapsed);
-						layoutGraph.applyForceResult(forceResult.nodePositions, new Map(), elementNodeSizes);
+						layoutGraph.applyForceResult(
+							forceResult.nodePositions,
+							forceEdgeHandles,
+							elementNodeSizes
+						);
 					} else {
 						// Standard ELK layout for expanded or partially collapsed views
 						const expandedContainerSizes = layoutGraph?.getExpandedContainerSizes();
@@ -757,12 +782,9 @@
 				// collapse()/expand() with proper targeted reflowChildren(changedChildId).
 				// No additional blanket reflow needed here.
 
-				// Skip handle preservation on view change
+				// Use handles from the most recent layout computation
 				edgeHandles = layoutGraph?.edgeHandles ?? new Map();
-				if (currentView !== prevView) {
-					edgeHandles = new Map();
-					prevView = currentView;
-				}
+				prevView = currentView;
 
 				// Build final nodes with positions from graph
 				const needsLayout = isNewStructure || portsChanged || collapseChanged;
