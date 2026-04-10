@@ -105,6 +105,12 @@
 	// Port Bindings Logic
 	let portBindings = $derived(service.bindings.filter((b) => b.type === 'Port') as PortBinding[]);
 
+	// DEBUG: trace binding data at runtime
+	$effect(() => {
+		console.log('[ServiceConfigPanel] service:', service.name, 'bindings:', JSON.stringify(service.bindings.map(b => ({ id: b.id, type: b.type, ip_address_id: (b as any).ip_address_id, interface_id: (b as any).interface_id, port_id: (b as any).port_id }))));
+		console.log('[ServiceConfigPanel] host.ip_addresses:', JSON.stringify(host.ip_addresses.map(i => ({ id: i.id, ip: (i as any).ip_address }))));
+	});
+
 	// Get the actual index of a binding in service.bindings array (for form field naming)
 	function getBindingIndex(bindingId: string): number {
 		return service.bindings.findIndex((b) => b.id === bindingId);
