@@ -3,11 +3,18 @@
  *
  * Tracks which containers are collapsed, persists to localStorage,
  * and provides edge aggregation for collapsed containers.
+ *
+ * Supports leveled collapse/expand with 4 levels:
+ *   1 = Fully collapsed
+ *   2 = Containers expanded, subcontainers collapsed
+ *   3 = Subcontainers expanded (except collapsed-by-default and infrastructure)
+ *   4 = Fully expanded
  */
 
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import type { TopologyEdge, TopologyNode } from './types/base';
+import type { ContainerTypeMetadata } from '$lib/shared/stores/metadata';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,11 +28,18 @@ export interface AggregatedEdge {
 	originalEdges: TopologyEdge[];
 }
 
+export type CollapseLevel = 1 | 2 | 3 | 4;
+
+interface ContainerTypesAccessor {
+	getMetadata: (id: string | null) => ContainerTypeMetadata;
+}
+
 // ---------------------------------------------------------------------------
 // Store & persistence
 // ---------------------------------------------------------------------------
 
 const COLLAPSED_STORAGE_KEY = 'scanopy_topology_collapsed_containers';
+const LEVEL_STORAGE_KEY = 'scanopy_topology_collapse_level';
 
 function loadCollapsedFromStorage(): Set<string> {
 	if (!browser) return new Set();
@@ -50,6 +64,29 @@ function saveCollapsedToStorage(collapsed: Set<string>): void {
 	}
 }
 
+function loadLevelFromStorage(): CollapseLevel | null {
+	if (!browser) return null;
+	try {
+		const stored = localStorage.getItem(LEVEL_STORAGE_KEY);
+		if (stored !== null) {
+			const num = parseInt(stored, 10);
+			if (num >= 1 && num <= 4) return num as CollapseLevel;
+		}
+	} catch {
+		// ignore
+	}
+	return null;
+}
+
+function saveLevelToStorage(level: CollapseLevel): void {
+	if (!browser) return;
+	try {
+		localStorage.setItem(LEVEL_STORAGE_KEY, String(level));
+	} catch {
+		// ignore
+	}
+}
+
 export const collapsedContainers = writable<Set<string>>(loadCollapsedFromStorage());
 
 // Persist on change (skip first subscription call)
@@ -61,6 +98,131 @@ if (browser) {
 		}
 		collapsedInitialized = true;
 	});
+}
+
+export const collapseLevel = writable<CollapseLevel>(loadLevelFromStorage() ?? 1);
+
+if (browser) {
+	let levelInitialized = false;
+	collapseLevel.subscribe((value) => {
+		if (levelInitialized) {
+			saveLevelToStorage(value);
+		}
+		levelInitialized = true;
+	});
+}
+
+// ---------------------------------------------------------------------------
+// Level computation
+// ---------------------------------------------------------------------------
+
+/**
+ * Check if a container node is an "auto-collapse" candidate:
+ * either collapsed_by_default or matches the infrastructure rule.
+ */
+function isAutoCollapseContainer(
+	node: TopologyNode,
+	containerTypesStore: ContainerTypesAccessor,
+	infraRuleId: string | null
+): boolean {
+	if (node.node_type !== 'Container') return false;
+	const data = node as Record<string, unknown>;
+	const ct = data.container_type as string | undefined;
+	if (ct && containerTypesStore.getMetadata(ct).collapsed_by_default === true) return true;
+	if (infraRuleId && data.element_rule_id === infraRuleId) return true;
+	return false;
+}
+
+/**
+ * Compute the set of container IDs that should be collapsed at a given level.
+ */
+export function computeCollapsedForLevel(
+	level: CollapseLevel,
+	allNodes: TopologyNode[],
+	containerTypesStore: ContainerTypesAccessor,
+	infraRuleId: string | null
+): Set<string> {
+	const containers = allNodes.filter((n) => n.node_type === 'Container');
+
+	switch (level) {
+		case 1: {
+			// All containers collapsed
+			return new Set(containers.map((n) => n.id));
+		}
+		case 2: {
+			// Root containers expanded, all subcontainers collapsed
+			const collapsed = new Set<string>();
+			for (const node of containers) {
+				const data = node as Record<string, unknown>;
+				const ct = data.container_type as string | undefined;
+				const isSub = ct ? containerTypesStore.getMetadata(ct).is_subcontainer : false;
+				if (isSub) {
+					collapsed.add(node.id);
+				}
+			}
+			return collapsed;
+		}
+		case 3: {
+			// Subcontainers expanded except collapsed-by-default and infrastructure
+			const collapsed = new Set<string>();
+			for (const node of containers) {
+				if (isAutoCollapseContainer(node, containerTypesStore, infraRuleId)) {
+					collapsed.add(node.id);
+				}
+			}
+			return collapsed;
+		}
+		case 4: {
+			// Everything expanded
+			return new Set();
+		}
+	}
+}
+
+/**
+ * Infer the closest collapse level from the current collapsed set.
+ * Returns exact match only; defaults to 1 if no match.
+ */
+export function inferCurrentLevel(
+	collapsed: Set<string>,
+	allNodes: TopologyNode[],
+	containerTypesStore: ContainerTypesAccessor,
+	infraRuleId: string | null
+): CollapseLevel {
+	// Check from most expanded to most collapsed
+	for (const level of [4, 3, 2, 1] as CollapseLevel[]) {
+		const expected = computeCollapsedForLevel(level, allNodes, containerTypesStore, infraRuleId);
+		if (setsEqual(collapsed, expected)) return level;
+	}
+	// No exact match — determine closest by checking which level would expand more
+	// If nothing is collapsed, that's level 4
+	if (collapsed.size === 0) return 4;
+	// If all containers are collapsed, that's level 1
+	const allContainers = allNodes.filter((n) => n.node_type === 'Container');
+	if (allContainers.every((n) => collapsed.has(n.id))) return 1;
+	// Default: return 1 (conservative)
+	return 1;
+}
+
+function setsEqual(a: Set<string>, b: Set<string>): boolean {
+	if (a.size !== b.size) return false;
+	for (const item of a) {
+		if (!b.has(item)) return false;
+	}
+	return true;
+}
+
+/**
+ * Get the IDs of auto-collapse containers (for marking as seen when at level 4).
+ */
+export function getAutoCollapseIds(
+	allNodes: TopologyNode[],
+	containerTypesStore: ContainerTypesAccessor,
+	infraRuleId: string | null
+): string[] {
+	return allNodes
+		.filter((n) => isAutoCollapseContainer(n, containerTypesStore, infraRuleId))
+		.map((n) => n.id);
 }
 
 // ---------------------------------------------------------------------------
@@ -101,12 +263,41 @@ export function toggleCollapse(containerId: string, allNodes?: TopologyNode[]): 
 	});
 }
 
-export function collapseAll(containerIds: string[]): void {
-	collapsedContainers.set(new Set(containerIds));
+/**
+ * Step expand level up by one. Returns the new level and the set of
+ * auto-collapse IDs that should be marked as "seen" (relevant at level 4).
+ */
+export function stepExpand(
+	allNodes: TopologyNode[],
+	containerTypesStore: ContainerTypesAccessor,
+	infraRuleId: string | null
+): { newLevel: CollapseLevel; autoCollapseIds: string[] } {
+	const current = get(collapseLevel);
+	const newLevel = Math.min(current + 1, 4) as CollapseLevel;
+	const collapsed = computeCollapsedForLevel(newLevel, allNodes, containerTypesStore, infraRuleId);
+	collapsedContainers.set(collapsed);
+	collapseLevel.set(newLevel);
+
+	// At level 4, return auto-collapse IDs so caller can mark them as seen
+	const autoCollapseIds =
+		newLevel === 4 ? getAutoCollapseIds(allNodes, containerTypesStore, infraRuleId) : [];
+	return { newLevel, autoCollapseIds };
 }
 
-export function expandAll(): void {
-	collapsedContainers.set(new Set());
+/**
+ * Step collapse level down by one.
+ */
+export function stepCollapse(
+	allNodes: TopologyNode[],
+	containerTypesStore: ContainerTypesAccessor,
+	infraRuleId: string | null
+): { newLevel: CollapseLevel } {
+	const current = get(collapseLevel);
+	const newLevel = Math.max(current - 1, 1) as CollapseLevel;
+	const collapsed = computeCollapsedForLevel(newLevel, allNodes, containerTypesStore, infraRuleId);
+	collapsedContainers.set(collapsed);
+	collapseLevel.set(newLevel);
+	return { newLevel };
 }
 
 // ---------------------------------------------------------------------------
