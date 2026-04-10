@@ -206,6 +206,12 @@
 			case '?':
 				shortcutsHelpOpen = !shortcutsHelpOpen;
 				break;
+			case ']':
+				baseViewer?.triggerStepExpand();
+				break;
+			case '[':
+				baseViewer?.triggerStepCollapse();
+				break;
 		}
 	}
 </script>
