@@ -804,7 +804,7 @@
 	"hosts_ipAddresses_deleteMessage": "This interface has bindings from the following services. Deleting it will remove those bindings.",
 	"hosts_ipAddresses_deleteTitle": "Delete Interface",
 	"hosts_ipAddresses_emptyMessage": "No interfaces configured. Add one to get started.",
-	"hosts_ipAddresses_helpText": "Configure network interfaces and addresses. Drag to reorder.",
+	"hosts_ipAddresses_helpText": "Configure host IP addresses. Drag to reorder.",
 	"hosts_ipAddresses_ipMustBeWithin": "Must be within {cidr}",
 	"hosts_ipAddresses_macFormat": "Format: XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX",
 	"hosts_ipAddresses_macReadOnly": "MAC addresses cannot be changed after creation",

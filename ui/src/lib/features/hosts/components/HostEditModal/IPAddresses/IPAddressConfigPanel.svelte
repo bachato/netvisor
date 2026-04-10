@@ -59,7 +59,7 @@
 	<div class="space-y-6">
 		<div class="border-b border-gray-600 pb-4">
 			<h3 class="text-primary flex items-center gap-1.5 text-sm font-medium">
-				Interface on
+				{common_ipAddress()} on
 				<EntityTag
 					entityRef={entityRef('Subnet', subnet.id, subnet)}
 					label={subnet?.name && subnet.name !== subnet.cidr

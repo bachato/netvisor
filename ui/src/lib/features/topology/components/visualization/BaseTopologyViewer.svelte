@@ -577,12 +577,27 @@
 							extent:
 								node.node_type == 'Element' || node.parent_container_id ? 'parent' : undefined,
 							data: isNodeCollapsed
-								? {
-										...node,
-										isCollapsed: true,
-										childCount: layoutGraph?.getChildCount(node.id) ?? 0,
-										subgroupSummaries: layoutGraph?.getSubgroupSummaries(node.id) ?? []
-									}
+								? (() => {
+										const totalCount = layoutGraph?.getChildCount(node.id) ?? 0;
+										const summaries = layoutGraph?.getSubgroupSummaries(node.id) ?? [];
+										// Exclude infrastructure services subgroup from workload count
+										const infraId = getInfrastructureRuleId();
+										let excludedCount = 0;
+										if (infraId) {
+											for (const s of summaries) {
+												const groupNode = topology.nodes.find((n) => n.id === s.groupId);
+												if (groupNode && (groupNode as Record<string, unknown>).element_rule_id === infraId) {
+													excludedCount += s.childCount;
+												}
+											}
+										}
+										return {
+											...node,
+											isCollapsed: true,
+											childCount: totalCount - excludedCount,
+											subgroupSummaries: summaries
+										};
+									})()
 								: node
 						};
 					});
@@ -733,6 +748,22 @@
 						// nodes — visibleNodes excludes children of collapsed containers
 						// but ELK needs them to compute expanded layouts.
 						const elkNodes = hasRestorable ? visibleNodes : layoutNodes;
+
+						if (!hasRestorable) {
+							// The measurement pass rendered collapsed containers, so
+							// elementNodeSizes has their DOM-measured collapsed widths
+							// (e.g., 183px for short text, 986px for many tags).
+							// Remove these so ELK auto-sizes containers from children.
+							// Also add default sizes for unmeasured child elements.
+							for (const node of layoutNodes) {
+								if (node.node_type === 'Container') {
+									elementNodeSizes.delete(node.id);
+								} else if (node.node_type === 'Element' && !elementNodeSizes.has(node.id)) {
+									elementNodeSizes.set(node.id, { x: 250, y: 100 });
+								}
+							}
+						}
+
 						const elkResult = await layoutEngine.compute({
 							nodes: elkNodes,
 							edges: elevatedEdges,
