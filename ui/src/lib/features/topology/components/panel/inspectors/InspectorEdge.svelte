@@ -11,7 +11,7 @@
 
 	let { edge }: { edge: Edge } = $props();
 
-	let edgeData = $derived(edge.data as (TopologyEdge & { isAggregated?: boolean }) | undefined);
+	let edgeData = $derived(edge?.data as (TopologyEdge & { isAggregated?: boolean }) | undefined);
 	let view = $derived($activeView);
 	let originalEdges = $derived(
 		edgeData?.isAggregated ? $aggregatedEdgeOriginals.get(edge.id) : undefined
