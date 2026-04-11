@@ -221,7 +221,6 @@
 	// Track ELK layout — only skip within same session when structure unchanged
 	let layoutGraph: LayoutGraph | null = null;
 	let sessionStructureKey = '';
-	let sessionBaseKey = '';
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
 	let seenAutoCollapseIds = new Set<string>();
 	let collapseLevelInferred = false;
@@ -521,16 +520,21 @@
 				}
 
 				// Run ELK on structure/collapse changes, skip for edge-only re-renders.
-				// All collapsed IDs (not just root) are in the key so subcontainer
-				// collapse also triggers ELK re-layout for tighter gap compaction.
+				// All collapsed IDs (not just root) trigger ELK re-layout with full
+				// DOM measurement so containers reposition for tight gap compaction.
 				const opts = get(topologyOptions);
 				const sizeKey = `${opts.request.hide_ports}`;
-				const baseKey =
-					currentView + ':' + topoKey + ':' + sizeKey + ':' + hiddenEdgeTypes.join(',');
 				const structureKey =
-					baseKey + ':' + Array.from(collapsed).sort().join(',');
+					currentView +
+					':' +
+					topoKey +
+					':' +
+					Array.from(collapsed).sort().join(',') +
+					':' +
+					sizeKey +
+					':' +
+					hiddenEdgeTypes.join(',');
 				const isNewStructure = sessionStructureKey !== structureKey;
-				const isNewBaseStructure = sessionBaseKey !== baseKey;
 
 				// Capture expanded sizes and child positions from the current graph
 				// BEFORE rebuilding — the rebuild resets all sizes to zero.
@@ -733,64 +737,31 @@
 				const isViewTransition = isNewStructure && viewChanged && topologyChanged;
 				const needsElk = isNewStructure || needsElkForExpand;
 
-				// Invalidate cached sizes for containers whose collapse state changed.
-				// Element sizes don't change on collapse, so they stay cached.
-				// Full cache clear only when topology data/view changes.
-				if (isNewBaseStructure) {
+				// Clear cached sizes for this view when structure changes (e.g., level
+				// 1→2 step). Sizes from all-collapsed mode are stale for expanded mode.
+				if (isNewStructure) {
 					viewSizeCache.delete(`${currentView}:${topology.id}`);
-				} else if (isNewStructure) {
-					const viewCacheMap = viewSizeCache.get(`${currentView}:${topology.id}`);
-					if (viewCacheMap) {
-						for (const c of layoutGraph?.containers.values() ?? []) {
-							const shouldBeCollapsed = collapsed.has(c.id);
-							if (c.collapsed !== shouldBeCollapsed) {
-								viewCacheMap.delete(c.id);
-							}
-						}
-					}
 				}
 				console.log(
 					`[LAYOUT-DEBUG] Layout decision: needsElk=${needsElk} isNewStructure=${isNewStructure} needsElkForExpand=${needsElkForExpand} deferCollapse=${deferCollapse} collapseChanged=${collapseChanged} collapsed=${collapsed.size}`
+				);
+
+				// Capture current node positions for FLIP animation (before
+				// measurement pass moves nodes to origin). Used to animate
+				// from old positions to new ELK positions after layout.
+				const preLayoutNodes = needsElk ? getNodes() : [];
+				const preLayoutPositions = new Map(
+					preLayoutNodes.map((n) => [n.id, { ...n.position }])
 				);
 
 				if (needsElk) {
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 					const elementNodeSizes = new Map<string, { x: number; y: number }>();
 					const viewCacheKey = `${currentView}:${topology.id}`;
-					// Use cached sizes when only collapse changed (element sizes are
-					// still valid; container entries were already invalidated above).
-					const collapseOnlyCachedSizes =
-						isNewStructure && !isNewBaseStructure
-							? viewSizeCache.get(viewCacheKey)
-							: undefined;
 					const cachedSizes = isViewTransition ? viewSizeCache.get(viewCacheKey) : undefined;
 					const expandCachedSizes =
 						needsElkForExpand && !isNewStructure ? viewSizeCache.get(viewCacheKey) : undefined;
-					if (collapseOnlyCachedSizes) {
-						// Collapse-only re-layout: use cached sizes if ALL visible nodes
-						// have entries. For pure collapses (nodes disappear) this is always
-						// true. For expands (new nodes appear), some will be missing —
-						// fall through to measurement pass for accurate sizes.
-						let cacheComplete = true;
-						for (const node of visibleNodes) {
-							const cached = collapseOnlyCachedSizes.get(node.id);
-							if (cached) {
-								elementNodeSizes.set(node.id, cached);
-							} else if (node.node_type === 'Container') {
-								// Containers without cache: omit so ELK uses metadata defaults
-							} else {
-								cacheComplete = false;
-								break;
-							}
-						}
-						if (!cacheComplete) {
-							// Missing element sizes — clear and fall through to measurement
-							elementNodeSizes.clear();
-						}
-					}
-					if (collapseOnlyCachedSizes && elementNodeSizes.size > 0) {
-						// Cache was complete — skip measurement
-					} else if (isViewTransition && cachedSizes) {
+					if (isViewTransition && cachedSizes) {
 						// Return visit to a previously-measured view: use cached sizes
 						// so the old layout stays visible (no measurement pass / container hide)
 						for (const node of visibleNodes) {
@@ -918,7 +889,6 @@
 						}
 
 						sessionStructureKey = structureKey;
-						sessionBaseKey = baseKey;
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						layoutGraph.syncCollapseState(collapsed);
 						layoutGraph.applyForceResult(
@@ -957,7 +927,6 @@
 							return;
 						}
 						sessionStructureKey = structureKey;
-						sessionBaseKey = baseKey;
 
 						// Rebuild graph and apply ELK result
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
@@ -1427,15 +1396,58 @@
 						pendingEdges = [];
 					}
 
-					// Reveal after positioned nodes + edges have painted
-					// Double rAF ensures the compositing pass completes before revealing
-					await tick();
-					await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-					if (isStale()) {
+					// FLIP animation: if collapse changed, reveal at OLD positions
+					// then animate to NEW positions. Otherwise just reveal.
+					const collapsedSetChanged =
+						prevCollapsedForAnim.size !== collapsed.size ||
+						[...collapsed].some((id) => !prevCollapsedForAnim.has(id)) ||
+						[...prevCollapsedForAnim].some((id) => !collapsed.has(id));
+
+					if (collapsedSetChanged && preLayoutPositions.size > 0) {
+						// FLIP: set nodes at old positions, reveal, then animate to new
+						const newPositionNodes = getNodes();
+						const flipNodes = newPositionNodes.map((n) => {
+							const oldPos = preLayoutPositions.get(n.id);
+							return oldPos ? { ...n, position: oldPos } : n;
+						});
+						nodes.set(flipNodes);
+						await tick();
+						isMeasuring = false; // reveal at old positions
+						prevCollapsedForAnim = new Set(collapsed);
+
+						// Identify expanding containers for two-phase child reveal
+						animatingExpandIds = new Set(
+							[...preLayoutPositions.keys()].filter(
+								(id) =>
+									!collapsed.has(id) &&
+									layoutGraph?.containers.has(id) &&
+									!allNodes.some(
+										(n) => n.id === id && n.parentId && preLayoutPositions.has(n.parentId)
+									)
+							)
+						);
+
+						await tick();
+						animateLayout = true;
+						nodes.set(allNodes); // animate to new ELK positions
+						edges.set(flowEdges);
+						setTimeout(() => {
+							animateLayout = false;
+							animatingExpandIds = new Set();
+						}, 350);
+					} else {
+						// Non-collapse structural change: reveal immediately
+						await tick();
+						await new Promise((r) =>
+							requestAnimationFrame(() => requestAnimationFrame(r))
+						);
+						if (isStale()) {
+							isMeasuring = false;
+							return;
+						}
+						prevCollapsedForAnim = new Set(collapsed);
 						isMeasuring = false;
-						return;
 					}
-					isMeasuring = false;
 				}
 
 				const isFirstRender = lastRenderedTopoKey === '';
