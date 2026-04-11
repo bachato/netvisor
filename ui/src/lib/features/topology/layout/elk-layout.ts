@@ -399,7 +399,6 @@ function buildElkGraph(
 	// elements connecting to "left" targets get left-side ports, "right" targets
 	// get right-side ports.
 	const edges: ElkExtendedEdge[] = [];
-	const edgeRoots = new Map<string, { srcRoot: string; tgtRoot: string }>();
 	const seenEdges = new Set<string>();
 	let edgeIndex = 0;
 
@@ -554,13 +553,11 @@ function buildElkGraph(
 			const tgtPortId = targetPortIds.get(e.target);
 			const tgtEndpoint = tgtPortId ?? e.tgtRoot;
 
-			const edgeId = `elk-edge-${edgeIndex++}`;
 			edges.push({
-				id: edgeId,
+				id: `elk-edge-${edgeIndex++}`,
 				sources: [srcPortId],
 				targets: [tgtEndpoint]
 			});
-			edgeRoots.set(edgeId, { srcRoot: e.srcRoot, tgtRoot: e.tgtRoot });
 		}
 	}
 
@@ -784,88 +781,6 @@ function buildElkGraph(
 		}
 	}
 
-	// For default views (not L2, not Workloads): wrap connected container groups
-	// in virtual layered containers, then box-pack at root. This preserves
-	// edge-driven layering within connected groups while packing disconnected
-	// containers densely beside them.
-	const wrapperIds = new Set<string>();
-	if (!useLayeredChildren && !isWorkloads) {
-		// Build adjacency among root containers from cross-container edges
-		const rootIdSet = new Set(rootContainers.map((c) => c.id));
-		const adj = new Map<string, Set<string>>();
-		for (const c of rootContainers) adj.set(c.id, new Set());
-		for (const [, roots] of edgeRoots) {
-			if (rootIdSet.has(roots.srcRoot) && rootIdSet.has(roots.tgtRoot)) {
-				adj.get(roots.srcRoot)!.add(roots.tgtRoot);
-				adj.get(roots.tgtRoot)!.add(roots.srcRoot);
-			}
-		}
-
-		// BFS to find connected components
-		const visited = new Set<string>();
-		const components: string[][] = [];
-		for (const c of rootContainers) {
-			if (visited.has(c.id)) continue;
-			const comp: string[] = [];
-			const queue = [c.id];
-			while (queue.length > 0) {
-				const id = queue.shift()!;
-				if (visited.has(id)) continue;
-				visited.add(id);
-				comp.push(id);
-				for (const n of adj.get(id) ?? []) if (!visited.has(n)) queue.push(n);
-			}
-			components.push(comp);
-		}
-
-		// Wrap connected components (≥2 containers) in virtual layered containers
-		const wrappedIds = new Set<string>();
-		const wrappers: ElkNode[] = [];
-		let wrapperIndex = 0;
-
-		for (const comp of components) {
-			if (comp.length < 2) continue;
-			const compSet = new Set(comp);
-			const wrapperId = `wrapper-${wrapperIndex++}`;
-			wrapperIds.add(wrapperId);
-
-			const wrapperChildren = rootContainers.filter((c) => compSet.has(c.id));
-
-			// Move edges internal to this component into the wrapper
-			const wrapperEdges: ElkExtendedEdge[] = [];
-			const keptEdges: ElkExtendedEdge[] = [];
-			for (const edge of edges) {
-				const roots = edgeRoots.get(edge.id);
-				if (roots && compSet.has(roots.srcRoot) && compSet.has(roots.tgtRoot)) {
-					wrapperEdges.push(edge);
-				} else {
-					keptEdges.push(edge);
-				}
-			}
-			edges.length = 0;
-			edges.push(...keptEdges);
-
-			wrappers.push({
-				id: wrapperId,
-				children: wrapperChildren,
-				edges: wrapperEdges,
-				layoutOptions: {
-					...ROOT_LAYOUT_OPTIONS,
-					'elk.padding': '[top=0,left=0,bottom=0,right=0]'
-				}
-			});
-
-			for (const id of comp) wrappedIds.add(id);
-		}
-
-		if (wrappers.length > 0) {
-			const kept = rootContainers.filter((c) => !wrappedIds.has(c.id));
-			rootContainers.length = 0;
-			rootContainers.push(...kept, ...wrappers);
-		}
-	}
-
-	const hasWrappers = wrapperIds.size > 0;
 	const rootOptions = useLayeredChildren
 		? {
 				'elk.algorithm': 'layered',
@@ -887,16 +802,7 @@ function buildElkGraph(
 					'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
 					'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES'
 				}
-			: hasWrappers
-				? {
-						'elk.algorithm': 'box',
-						'elk.box.packingMode': 'SIMPLE',
-						'elk.aspectRatio': '1.6',
-						'elk.spacing.nodeNode': '75',
-						'elk.spacing.componentComponent': '75',
-						'elk.padding': '[top=25,left=25,bottom=25,right=25]'
-					}
-				: ROOT_LAYOUT_OPTIONS;
+			: ROOT_LAYOUT_OPTIONS;
 
 	const graph: ElkNode = {
 		id: 'root',
@@ -905,7 +811,7 @@ function buildElkGraph(
 		edges
 	};
 
-	return { graph, containerIds, wrapperIds };
+	return { graph, containerIds };
 }
 
 /**
@@ -1045,22 +951,6 @@ function mapElkResults(
 				);
 			}
 		}
-	}
-
-	// Log ELK result: positions and sizes
-	{
-		const containerEntries: Record<
-			string,
-			{ pos: { x: number; y: number }; size: { width: number; height: number } }
-		> = {};
-		for (const [id, size] of containerSizes) {
-			const pos = nodePositions.get(id);
-			containerEntries[id.substring(0, 8)] = { pos: pos ?? { x: 0, y: 0 }, size };
-		}
-		console.log(
-			`[LAYOUT-DEBUG] ELK result: ${nodePositions.size} positioned nodes, ${containerSizes.size} container sizes`
-		);
-		console.log(`[LAYOUT-DEBUG] ELK container positions/sizes:`, containerEntries);
 	}
 
 	// Snap container positions to the 25px grid so they align with SvelteFlow's snapGrid.
@@ -1319,24 +1209,110 @@ export function applySubgroupCollapseAdjustment(
 }
 
 /**
- * Flatten virtual wrapper nodes from the ELK result, adding wrapper offsets
- * to child positions so they appear at root level.
+ * Repack disconnected root containers beside the connected layout.
+ * ELK's layered algorithm places disconnected containers in separate layers,
+ * wasting vertical space. This post-processing step moves them to available
+ * space beside the connected component, producing a denser layout.
  */
-function flattenWrappers(result: ElkNode, wrapperIds: Set<string>) {
-	if (!result.children || wrapperIds.size === 0) return;
-	const flatChildren: ElkNode[] = [];
-	for (const child of result.children) {
-		if (wrapperIds.has(child.id) && child.children) {
-			for (const wrapped of child.children) {
-				wrapped.x = (wrapped.x ?? 0) + (child.x ?? 0);
-				wrapped.y = (wrapped.y ?? 0) + (child.y ?? 0);
-				flatChildren.push(wrapped);
-			}
-		} else {
-			flatChildren.push(child);
+function repackDisconnectedContainers(
+	result: ElkLayoutResult,
+	input: ElkLayoutInput
+): ElkLayoutResult {
+	const view = input.topology?.options?.request?.view;
+	if (view === 'L2Physical' || view === 'Workloads') return result;
+
+	// Build element → root container mapping
+	const parentContainerMap = new Map<string, string>();
+	const rootContainerIds = new Set<string>();
+	for (const node of input.nodes) {
+		if (node.node_type === 'Container') {
+			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
+			if (parentId) parentContainerMap.set(node.id, parentId);
+			else rootContainerIds.add(node.id);
 		}
 	}
-	result.children = flatChildren;
+
+	const elementToRoot = new Map<string, string>();
+	for (const node of input.nodes) {
+		if (node.node_type === 'Element') {
+			let rootId = node.container_id;
+			while (parentContainerMap.has(rootId)) rootId = parentContainerMap.get(rootId)!;
+			elementToRoot.set(node.id, rootId);
+		}
+	}
+
+	// Identify connected root containers (have cross-container layout-affecting edges)
+	const connectedIds = new Set<string>();
+	for (const edge of input.edges) {
+		if (!affectsLayout(edge)) continue;
+		const srcRoot = elementToRoot.get(edge.source);
+		const tgtRoot = elementToRoot.get(edge.target);
+		if (srcRoot && tgtRoot && srcRoot !== tgtRoot) {
+			connectedIds.add(srcRoot);
+			connectedIds.add(tgtRoot);
+		}
+	}
+
+	// Find disconnected root containers
+	const disconnectedIds: string[] = [];
+	for (const id of rootContainerIds) {
+		if (!connectedIds.has(id) && result.containerSizes.has(id)) {
+			disconnectedIds.push(id);
+		}
+	}
+
+	if (disconnectedIds.length === 0 || connectedIds.size === 0) return result;
+
+	// Compute bounding box of connected containers
+	const SPACING = 75;
+	let connTop = Infinity;
+	let connRight = 0;
+	let connBottom = 0;
+	for (const id of connectedIds) {
+		const pos = result.nodePositions.get(id);
+		const size = result.containerSizes.get(id);
+		if (pos && size) {
+			connTop = Math.min(connTop, pos.y);
+			connRight = Math.max(connRight, pos.x + size.width);
+			connBottom = Math.max(connBottom, pos.y + size.height);
+		}
+	}
+
+	// Sort disconnected containers by height descending for better shelf packing
+	disconnectedIds.sort((a, b) => {
+		const sA = result.containerSizes.get(a)?.height ?? 0;
+		const sB = result.containerSizes.get(b)?.height ?? 0;
+		return sB - sA;
+	});
+
+	// Place disconnected containers beside the connected layout using shelf packing.
+	// Fill a column to the right of the connected group. When the column exceeds
+	// the connected group's height, start a new row below everything.
+	const nodePositions = new Map(result.nodePositions);
+	let x = connRight + SPACING;
+	let y = connTop;
+	let shelfBottom = connBottom;
+	let maxColumnWidth = 0;
+
+	for (const id of disconnectedIds) {
+		const size = result.containerSizes.get(id);
+		if (!size) continue;
+
+		// If this container would overflow the connected group's height,
+		// start a new column or row
+		if (y + size.height > shelfBottom + SPACING && y > connTop) {
+			// Move to next column
+			x += maxColumnWidth + SPACING;
+			y = connTop;
+			maxColumnWidth = 0;
+		}
+
+		nodePositions.set(id, { x, y });
+		y += size.height + SPACING;
+		maxColumnWidth = Math.max(maxColumnWidth, size.width);
+	}
+
+	return { ...result, nodePositions };
 }
 
 /**
@@ -1353,44 +1329,12 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 		};
 	}
 
-	const containers = input.nodes.filter((n) => n.node_type === 'Container');
-	const elements = input.nodes.filter((n) => n.node_type === 'Element');
-	const collapsed = input.collapsedContainers ?? new Set<string>();
-	const sizeHits = input.elementNodeSizes ? [...input.elementNodeSizes.keys()].length : 0;
-	console.log(
-		`[LAYOUT-DEBUG] ELK input: ${input.nodes.length} nodes (${containers.length} containers, ${elements.length} elements), ${input.edges.length} edges, ${collapsed.size} collapsed, ${sizeHits} measured sizes, ${input.expandedContainerSizes?.size ?? 0} cached expanded sizes`
-	);
-
 	const elk = await getElk();
 
 	// Pass 1: compute layout with FIXED_SIDE ports (no position info).
 	// This gives us actual element positions within box-packed containers.
-	const { graph: graph1, containerIds, wrapperIds: wrapperIds1 } = buildElkGraph(input);
-	{
-		// Log ELK graph structure
-		let totalChildren = 0;
-		let totalEdges = graph1.edges?.length ?? 0;
-		const childrenPerContainer: Record<string, number> = {};
-		function countChildren(node: ElkNode) {
-			if (node.children) {
-				for (const child of node.children) {
-					if (containerIds.has(child.id)) {
-						childrenPerContainer[child.id.substring(0, 8)] = child.children?.length ?? 0;
-						totalEdges += child.edges?.length ?? 0;
-					}
-					totalChildren++;
-					countChildren(child);
-				}
-			}
-		}
-		countChildren(graph1);
-		console.log(
-			`[LAYOUT-DEBUG] ELK graph: ${graph1.children?.length ?? 0} root containers, ${totalChildren} total nodes, ${totalEdges} total edges`
-		);
-		console.log(`[LAYOUT-DEBUG] ELK children per container:`, childrenPerContainer);
-	}
+	const { graph: graph1, containerIds } = buildElkGraph(input);
 	const result1 = await elk.layout(graph1);
-	flattenWrappers(result1, wrapperIds1);
 
 	// Extract actual element AND subcontainer positions from pass 1
 	const elementPositions = new Map<
@@ -1424,13 +1368,12 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 	if (result1.children) extractPositions(result1.children);
 
 	// Pass 2: rebuild graph with FIXED_POS ports at actual element positions
-	const {
-		graph: graph2,
-		containerIds: cids2,
-		wrapperIds: wrapperIds2
-	} = buildElkGraph(input, elementPositions, subcontainerPositions);
+	const { graph: graph2, containerIds: cids2 } = buildElkGraph(
+		input,
+		elementPositions,
+		subcontainerPositions
+	);
 	const result2 = await elk.layout(graph2);
-	flattenWrappers(result2, wrapperIds2);
 
 	// L2: top-align layers by shifting each layer's top node to the same Y.
 	// ELK centers layers independently, causing vertical misalignment.
@@ -1457,5 +1400,6 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 		}
 	}
 
-	return mapElkResults(result2, cids2, input);
+	const layoutResult = mapElkResults(result2, cids2, input);
+	return repackDisconnectedContainers(layoutResult, input);
 }
