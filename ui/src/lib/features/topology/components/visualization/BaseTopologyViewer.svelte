@@ -1378,65 +1378,51 @@
 					nodes.set(animPhaseNodes);
 					edges.set(flowEdges);
 				} else {
-					// Measurement path: container is hidden, set positioned nodes + edges,
-					// then reveal after paint completes
-					edges.set([]);
-					nodes.set(allNodes);
-
-					pendingEdges = flowEdges;
-
-					// Wait for nodes to render, then set edges
-					await tick();
-					if (isStale()) {
-						isMeasuring = false;
-						return;
-					}
-					if (pendingEdges.length > 0) {
-						edges.set(pendingEdges);
-						pendingEdges = [];
-					}
-
-					// FLIP animation: if collapse changed, reveal at OLD positions
-					// then animate to NEW positions. Otherwise just reveal.
+					// Measurement path: container is hidden during measurement.
+					// For collapse changes, use FLIP: reveal at old positions first,
+					// then animate to new ELK positions.
 					const collapsedSetChanged =
 						prevCollapsedForAnim.size !== collapsed.size ||
 						[...collapsed].some((id) => !prevCollapsedForAnim.has(id)) ||
 						[...prevCollapsedForAnim].some((id) => !collapsed.has(id));
 
 					if (collapsedSetChanged && preLayoutPositions.size > 0) {
-						// FLIP: set nodes at old positions, reveal, then animate to new
-						const newPositionNodes = getNodes();
-						const flipNodes = newPositionNodes.map((n) => {
+						// FLIP: reveal at old positions, then animate to new
+						// 1. Set nodes at OLD positions with new collapse state
+						const flipNodes = allNodes.map((n) => {
 							const oldPos = preLayoutPositions.get(n.id);
 							return oldPos ? { ...n, position: oldPos } : n;
 						});
 						nodes.set(flipNodes);
-						await tick();
-						isMeasuring = false; // reveal at old positions
-						prevCollapsedForAnim = new Set(collapsed);
-
-						// Identify expanding containers for two-phase child reveal
-						animatingExpandIds = new Set(
-							[...preLayoutPositions.keys()].filter(
-								(id) =>
-									!collapsed.has(id) &&
-									layoutGraph?.containers.has(id) &&
-									!allNodes.some(
-										(n) => n.id === id && n.parentId && preLayoutPositions.has(n.parentId)
-									)
-							)
-						);
-
-						await tick();
-						animateLayout = true;
-						nodes.set(allNodes); // animate to new ELK positions
 						edges.set(flowEdges);
+						await tick();
+
+						// 2. Reveal — user sees old positions (looks like nothing changed)
+						isMeasuring = false;
+						prevCollapsedForAnim = new Set(collapsed);
+						await tick();
+						await new Promise((r) => requestAnimationFrame(r));
+
+						// 3. Animate to new ELK positions
+						animateLayout = true;
+						nodes.set(allNodes);
 						setTimeout(() => {
 							animateLayout = false;
-							animatingExpandIds = new Set();
 						}, 350);
 					} else {
-						// Non-collapse structural change: reveal immediately
+						// Non-collapse structural change: reveal with final layout
+						edges.set([]);
+						nodes.set(allNodes);
+						pendingEdges = flowEdges;
+						await tick();
+						if (isStale()) {
+							isMeasuring = false;
+							return;
+						}
+						if (pendingEdges.length > 0) {
+							edges.set(pendingEdges);
+							pendingEdges = [];
+						}
 						await tick();
 						await new Promise((r) =>
 							requestAnimationFrame(() => requestAnimationFrame(r))
