@@ -1,4 +1,5 @@
 use crate::server::auth::r#impl::oidc::OidcProviderMetadata;
+use crate::server::license::service::LicenseService;
 use crate::server::shared::types::api::ApiResponse;
 use crate::server::{
     auth::r#impl::oidc::OidcProviderConfig, shared::services::factory::ServiceFactory,
@@ -144,6 +145,9 @@ pub struct ServerConfig {
     // Populated from SCANOPY_EXTERNAL_SERVICE_<NAME>_ALLOWED_IPS env vars
     #[serde(default)]
     pub external_service_allowed_ips: HashMap<String, Vec<String>>,
+
+    // License key for commercial self-hosted deployments
+    pub license_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
@@ -168,6 +172,7 @@ pub struct PublicConfigResponse {
     pub posthog_key: Option<String>,
     pub needs_cookie_consent: bool,
     pub deployment_type: DeploymentType,
+    pub license_status: Option<String>,
 }
 
 impl Default for ServerConfig {
@@ -197,6 +202,7 @@ impl Default for ServerConfig {
             metrics_token: None,
             brevo_api_key: None,
             external_service_allowed_ips: HashMap::new(),
+            license_key: None,
         }
     }
 }
@@ -326,6 +332,7 @@ pub struct AppState {
     pub config: ServerConfig,
     pub services: ServiceFactory,
     pub session_store: SessionManagerLayer<PostgresStore>,
+    pub license_service: Arc<LicenseService>,
 }
 
 impl AppState {
@@ -334,10 +341,17 @@ impl AppState {
             StorageFactory::new(&config.database_url(), config.use_secure_session_cookies).await?;
         let services = ServiceFactory::new(&storage, Some(config.clone())).await?;
 
+        let is_commercial = cfg!(feature = "commercial");
+        let license_service = Arc::new(LicenseService::new(
+            config.license_key.clone(),
+            is_commercial,
+        ));
+
         Ok(Arc::new(Self {
             config,
             services,
             session_store: storage.sessions,
+            license_service,
         }))
     }
 }
@@ -377,6 +391,12 @@ pub async fn get_public_config(State(state): State<Arc<AppState>>) -> impl IntoR
         .unwrap_or_default();
 
     let deployment_type = get_deployment_type(state.clone());
+    let license_status = state
+        .license_service
+        .current_status()
+        .await
+        .as_api_string()
+        .map(String::from);
 
     (
         [(CACHE_CONTROL, "no-store, no-cache, must-revalidate")],
@@ -398,6 +418,7 @@ pub async fn get_public_config(State(state): State<Arc<AppState>>) -> impl IntoR
             needs_cookie_consent: state.config.posthog_key.is_some()
                 || state.config.brevo_api_key.is_some(),
             deployment_type,
+            license_status,
         })),
     )
 }

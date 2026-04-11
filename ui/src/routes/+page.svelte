@@ -3,6 +3,7 @@
 	import Toast from '$lib/shared/components/feedback/Toast.svelte';
 	import EmailVerificationBanner from '$lib/shared/components/feedback/EmailVerificationBanner.svelte';
 	import DemoBanner from '$lib/shared/components/feedback/DemoBanner.svelte';
+	import LicenseLockedBanner from '$lib/shared/components/feedback/LicenseLockedBanner.svelte';
 	import Sidebar from '$lib/shared/components/layout/Sidebar.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import { discoverySSEManager } from '$lib/features/discovery/queries';
@@ -198,6 +199,9 @@
 			{/if}
 			{#if organization?.plan?.type === 'Demo'}
 				<DemoBanner />
+			{/if}
+			{#if configQuery.data?.license_status === 'expired' || configQuery.data?.license_status === 'invalid'}
+				<LicenseLockedBanner status={configQuery.data.license_status} />
 			{/if}
 			<div class="p-8 [&_.sticky]:sticky [&_.sticky]:top-0">
 				<!-- Programmatically render all tabs based on sidebar config -->

@@ -15,6 +15,7 @@ use scanopy::server::{
     },
     billing::plans::get_purchasable_plans,
     config::{AppState, ServerCli, ServerConfig, get_deployment_type},
+    license::middleware::license_guard_middleware,
     shared::handlers::{
         cache::AppCache,
         factory::{create_public_share_routes, create_router},
@@ -170,6 +171,16 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    // License key periodic re-validation (every 5 minutes)
+    let license_revalidate = state.license_service.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(300));
+        loop {
+            interval.tick().await;
+            license_revalidate.revalidate().await;
+        }
+    });
+
     tracing::info!(target: LOG_TARGET, "  Background tasks started");
 
     let (base_router, _openapi) = create_router(state.clone());
@@ -299,6 +310,10 @@ async fn main() -> anyhow::Result<()> {
             ))
             .layer(middleware::from_fn_with_state(
                 state.clone(),
+                license_guard_middleware,
+            ))
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
                 request_logging_middleware,
             ))
             .layer(Extension(app_cache))
@@ -402,6 +417,26 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!(target: LOG_TARGET, "  Public URL:      {}", public_url);
     tracing::info!(target: LOG_TARGET, "  Log level:       {}", log_level);
     tracing::info!(target: LOG_TARGET, "  Deployment:      {:?}", deployment_type);
+    {
+        let license_status = state.license_service.current_status().await;
+        match &license_status {
+            scanopy::server::license::types::LicenseStatus::NotRequired => {
+                tracing::info!(target: LOG_TARGET, "  License:         not required (community)");
+            }
+            scanopy::server::license::types::LicenseStatus::Valid(claims) => {
+                let exp = chrono::DateTime::from_timestamp(claims.exp, 0)
+                    .map(|d| d.format("%Y-%m-%d").to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+                tracing::info!(target: LOG_TARGET, "  License:         valid (expires {})", exp);
+            }
+            scanopy::server::license::types::LicenseStatus::Expired(_) => {
+                tracing::warn!(target: LOG_TARGET, "  License:         EXPIRED — server is in read-only mode");
+            }
+            scanopy::server::license::types::LicenseStatus::Invalid(reason) => {
+                tracing::error!(target: LOG_TARGET, "  License:         INVALID ({}) — server is in read-only mode", reason);
+            }
+        }
+    }
     if web_external_path.is_some() {
         tracing::info!(target: LOG_TARGET, "  Web UI:          enabled");
     } else {

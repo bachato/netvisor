@@ -750,9 +750,7 @@
 				// measurement pass moves nodes to origin). Used to animate
 				// from old positions to new ELK positions after layout.
 				const preLayoutNodes = needsElk ? getNodes() : [];
-				const preLayoutPositions = new Map(
-					preLayoutNodes.map((n) => [n.id, { ...n.position }])
-				);
+				const preLayoutPositions = new Map(preLayoutNodes.map((n) => [n.id, { ...n.position }]));
 
 				if (needsElk) {
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
@@ -1438,9 +1436,7 @@
 					} else {
 						// Non-collapse structural change: reveal immediately
 						await tick();
-						await new Promise((r) =>
-							requestAnimationFrame(() => requestAnimationFrame(r))
-						);
+						await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 						if (isStale()) {
 							isMeasuring = false;
 							return;

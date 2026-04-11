@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-10T23:06:03.676757Z",
-              "id": "1aa80e0b-ffbf-48fe-a961-8f764ff54bfc",
+              "created_at": "2026-04-11T20:05:19.873592Z",
+              "id": "ec9241d8-e9a3-44fa-b605-0879f0da00ea",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-10T23:06:03.676757Z"
+              "updated_at": "2026-04-11T20:05:19.873592Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-10T23:06:03.659718Z",
-                      "id": "af2bf40c-9572-4edb-b3c2-55065ce5101e",
+                      "created_at": "2026-04-11T20:05:19.858129Z",
+                      "id": "1686b5c8-5055-45e0-a8c3-43ff8b1b0ec6",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-10T23:06:03.659718Z"
+                      "updated_at": "2026-04-11T20:05:19.858129Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Amazon Echo",
+                  "service_definition": "BACnet",
                   "source": {
                     "type": "Manual"
                   },
@@ -11819,6 +11819,12 @@
               "has_integrated_daemon": {
                 "type": "boolean"
               },
+              "license_status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "needs_cookie_consent": {
                 "type": "boolean"
               },
@@ -11991,14 +11997,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-10T23:06:03.672084Z",
-                  "id": "ed3d2715-b813-46db-85a2-f95436f9089c",
+                  "created_at": "2026-04-11T20:05:19.869225Z",
+                  "id": "f0f90957-57bc-41fb-b625-8cb8d86c52e1",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-10T23:06:03.672084Z"
+                  "updated_at": "2026-04-11T20:05:19.869225Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12007,7 +12013,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Amazon Echo",
+              "service_definition": "BACnet",
               "source": {
                 "type": "Manual"
               },
@@ -13372,14 +13378,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-10T23:06:03.660083Z",
-          "id": "89e5c802-dc67-427e-b0f6-be66ffa963f0",
+          "created_at": "2026-04-11T20:05:19.858319Z",
+          "id": "dc995a21-c1bc-42f4-89e2-b7d3416986bb",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-10T23:06:03.660083Z"
+          "updated_at": "2026-04-11T20:05:19.858319Z"
         }
       },
       "BindingBase": {
@@ -13909,7 +13915,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Amazon Echo",
+              "service_definition": "BACnet",
               "tags": [],
               "virtualization": null
             }
@@ -16430,14 +16436,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-10T23:06:03.659228Z",
-                  "id": "f66e9bb4-da54-4222-9da7-56da36c734dd",
+                  "created_at": "2026-04-11T20:05:19.857855Z",
+                  "id": "29e36bf5-8cca-4312-b313-16fcbd33a598",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-10T23:06:03.659228Z"
+                  "updated_at": "2026-04-11T20:05:19.857855Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16446,7 +16452,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Amazon Echo",
+              "service_definition": "BACnet",
               "source": {
                 "type": "Manual"
               },
@@ -18627,14 +18633,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-10T23:06:03.648628Z",
-                        "id": "f07029df-592c-44c8-a589-391f6bfbfed9",
+                        "created_at": "2026-04-11T20:05:19.848897Z",
+                        "id": "f4306529-609d-43e6-a7b6-e7bf3a9054ba",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-10T23:06:03.648628Z"
+                        "updated_at": "2026-04-11T20:05:19.848897Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18643,7 +18649,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Amazon Echo",
+                    "service_definition": "BACnet",
                     "source": {
                       "type": "Manual"
                     },
@@ -18720,14 +18726,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-10T23:06:03.670775Z",
-                    "id": "3290b41e-abdc-40a5-85c2-2495f2b886bb",
+                    "created_at": "2026-04-11T20:05:19.868311Z",
+                    "id": "5bbdcb49-7db5-4ace-8dc3-8203f098713f",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-10T23:06:03.670775Z"
+                    "updated_at": "2026-04-11T20:05:19.868311Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18736,7 +18742,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Amazon Echo",
+                "service_definition": "BACnet",
                 "source": {
                   "type": "Manual"
                 },
@@ -19552,6 +19558,12 @@
           "has_integrated_daemon": {
             "type": "boolean"
           },
+          "license_status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "needs_cookie_consent": {
             "type": "boolean"
           },
@@ -19954,14 +19966,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-10T23:06:03.659961Z",
-              "id": "5b043dcf-011a-4f94-928b-f6d392592640",
+              "created_at": "2026-04-11T20:05:19.858250Z",
+              "id": "e646ffbe-d2e9-45cc-ae83-a3150540e7ca",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-10T23:06:03.659961Z"
+              "updated_at": "2026-04-11T20:05:19.858250Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19970,7 +19982,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Amazon Echo",
+          "service_definition": "BACnet",
           "source": {
             "type": "Manual"
           },

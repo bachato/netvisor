@@ -27,7 +27,11 @@ export interface PublicServerConfig {
 	posthog_key: string | null;
 	needs_cookie_consent: boolean;
 	deployment_type: DeploymentType;
+	license_status: 'valid' | 'expired' | 'invalid' | null;
 }
+
+export const isLicenseLocked = (cfg: PublicServerConfig) =>
+	cfg.license_status === 'expired' || cfg.license_status === 'invalid';
 
 // Helper functions for deployment type checks
 export const isCloud = (cfg: PublicServerConfig) => cfg.deployment_type === 'cloud';

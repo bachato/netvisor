@@ -97,7 +97,7 @@ fn generate_typescript(codes: &[ErrorCodeInfo]) -> String {
     output.push_str("export type ErrorCode = keyof typeof ERROR_CODES;\n\n");
 
     // ErrorParams interface
-    output.push_str("export ip_address ErrorParams {\n");
+    output.push_str("export interface ErrorParams {\n");
     for info in codes {
         if info.params.is_empty() {
             output.push_str(&format!("  {}: Record<string, never>;\n", info.code));

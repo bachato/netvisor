@@ -2,6 +2,7 @@
 	import { AlertTriangle } from 'lucide-svelte';
 	import { useResendVerificationMutation } from '$lib/features/auth/queries';
 	import { pushSuccess } from '$lib/shared/stores/feedback';
+	import AppBanner from './AppBanner.svelte';
 
 	let { email }: { email: string } = $props();
 
@@ -17,20 +18,15 @@
 	}
 </script>
 
-<div
-	class="border-b border-yellow-300 bg-yellow-100 px-4 py-2 dark:border-yellow-600/30 dark:bg-yellow-900/20"
->
-	<div class="mx-auto flex items-center justify-center gap-2 text-sm">
-		<AlertTriangle class="h-4 w-4 shrink-0 text-warning" />
-		<span class="text-warning">
-			Please verify your email. Check your inbox for a verification link.
-		</span>
+<AppBanner variant="warning" icon={AlertTriangle}>
+	Please verify your email. Check your inbox for a verification link.
+	{#snippet actions()}
 		<button
 			onclick={handleResend}
 			disabled={resendMutation.isPending}
-			class="ml-2 rounded px-2 py-0.5 text-xs font-medium text-warning underline hover:no-underline disabled:opacity-50"
+			class="ml-2 rounded px-2 py-0.5 text-xs font-medium underline hover:no-underline disabled:opacity-50"
 		>
 			{resendMutation.isPending ? 'Sending...' : 'Resend'}
 		</button>
-	</div>
-</div>
+	{/snippet}
+</AppBanner>

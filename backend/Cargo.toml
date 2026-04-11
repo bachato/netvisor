@@ -20,6 +20,10 @@ path = "src/bin/generate-error-codes.rs"
 name = "generate-fixtures"
 path = "src/bin/generate-fixtures.rs"
 
+[[bin]]
+name = "license"
+path = "src/bin/license.rs"
+
 [lib]
 name = "scanopy"
 path = "src/lib.rs"
@@ -84,6 +88,7 @@ pem = "3"
 rustls = "0.21"
 webpki-roots = "0.25"
 base64ct = "=1.6.0"
+jsonwebtoken = "9"
 
 # === Configuration and Logging ===
 config = "0.14"

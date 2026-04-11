@@ -15,6 +15,7 @@ pub mod hosts;
 pub mod interfaces;
 pub mod invites;
 pub mod ip_addresses;
+pub mod license;
 pub mod logging;
 pub mod metrics;
 pub mod networks;

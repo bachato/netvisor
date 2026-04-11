@@ -82,6 +82,10 @@ pub enum ErrorCode {
     /// Email verification required for this feature
     AuthEmailVerificationRequired,
 
+    // === License ===
+    /// Server is in read-only mode due to license issue
+    LicenseLocked,
+
     // === Generic Entity Operations ===
     /// Entity was not found
     EntityNotFound { entity: String, id: String },
@@ -233,6 +237,9 @@ impl ErrorCode {
                 "Daemon is trying to register with an API key that has not yet been created"
             }
             Self::AuthDemoMode => "This action is disabled in demo mode",
+            Self::LicenseLocked => {
+                "Your license has expired or is invalid. The server is in read-only mode."
+            }
             Self::AuthPasswordLoginDisabled => "Password login is disabled",
             Self::AuthRegistrationDisabled => "User registration is disabled",
             Self::AuthEmailVerificationRequired => {
@@ -345,6 +352,7 @@ impl ErrorCode {
             | Self::AuthNotAuthenticated
             | Self::AuthDaemonKeyNotCreated
             | Self::AuthDemoMode
+            | Self::LicenseLocked
             | Self::AuthPasswordLoginDisabled
             | Self::AuthRegistrationDisabled
             | Self::AuthEmailVerificationRequired

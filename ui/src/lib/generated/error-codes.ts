@@ -29,6 +29,7 @@ export const ERROR_CODES = {
 	auth_password_login_disabled: 'Password login is disabled',
 	auth_registration_disabled: 'User registration is disabled',
 	auth_email_verification_required: 'Please verify your email to access this feature',
+	license_locked: 'Your license has expired or is invalid. The server is in read-only mode.',
 	entity_not_found: "{entity} with ID '{id}' not found",
 	entity_already_exists: "{entity} '{name}' already exists",
 	entity_in_use: "Cannot delete {entity} '{name}' because it's used by {used_by}",
@@ -76,7 +77,7 @@ export const ERROR_CODES = {
 
 export type ErrorCode = keyof typeof ERROR_CODES;
 
-export type ErrorParams = {
+export interface ErrorParams {
 	validation_required: { field: string | number };
 	validation_empty: { field: string | number };
 	validation_invalid_email: Record<string, never>;
@@ -103,6 +104,7 @@ export type ErrorParams = {
 	auth_password_login_disabled: Record<string, never>;
 	auth_registration_disabled: Record<string, never>;
 	auth_email_verification_required: Record<string, never>;
+	license_locked: Record<string, never>;
 	entity_not_found: { entity: string | number; id: string | number };
 	entity_already_exists: { entity: string | number; name: string | number };
 	entity_in_use: { entity: string | number; name: string | number; used_by: string | number };
@@ -141,4 +143,4 @@ export type ErrorParams = {
 	external_service_error: { service: string | number; reason: string | number };
 	database_error: Record<string, never>;
 	database_duplicate_entry: { field: string | number };
-};
+}
