@@ -7,6 +7,7 @@
 	import type { Topology, TopologyNode } from '../../types/base';
 	import { resolveElementNode } from '../../resolvers';
 	import type { DependencyType } from '$lib/features/dependencies/types/base';
+	import { generateDependencyName } from '$lib/features/dependencies/utils';
 	import { getTopologyStateInfo } from '../../state';
 	import { computeCommonTags } from '$lib/shared/utils/tags';
 	import TagPickerInline from '$lib/features/tags/components/TagPickerInline.svelte';
@@ -141,9 +142,13 @@
 		}
 	}
 
+	function getNodeNames(): string[] {
+		return nodes.map((n) => (n.data as TopologyNode)?.header ?? '').filter(Boolean);
+	}
+
 	function startGroupCreation() {
 		isCreatingGroup = true;
-		groupName = '';
+		groupName = generateDependencyName(groupType, getNodeNames());
 		initBindingSelections();
 	}
 

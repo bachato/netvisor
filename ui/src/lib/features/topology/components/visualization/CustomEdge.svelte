@@ -74,7 +74,10 @@
 	});
 
 	let hideEdge = $derived(
-		edgeData ? $topologyOptions.local.hide_edge_types.includes(edgeData.edge_type) : false
+		edgeData
+			? $topologyOptions.local.hide_edge_types.includes(edgeData.edge_type) &&
+					!(edgeData as Record<string, unknown>).is_preview
+			: false
 	);
 
 	let isDashed = $derived(isBundle ? bundleIsOverlay : edgeData ? isDashedEdge(edgeData) : false);

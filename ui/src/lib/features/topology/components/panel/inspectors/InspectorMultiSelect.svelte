@@ -17,6 +17,7 @@
 	import type { TopologyNode } from '../../../types/base';
 	import { resolveElementNode, getNodeSelectionIds } from '../../../resolvers';
 	import type { DependencyType, EdgeStyle } from '$lib/features/dependencies/types/base';
+	import { generateDependencyName } from '$lib/features/dependencies/utils';
 	import { getTopologyEditState } from '../../../state';
 	import { computeCommonTags } from '$lib/shared/utils/tags';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
@@ -294,7 +295,12 @@
 	}
 
 	// Dependency creation state — always visible, no expand/collapse
+	function getNodeNames(): string[] {
+		return nodes.map((n) => (n.data as TopologyNode)?.header ?? '').filter(Boolean);
+	}
+
 	let groupType: DependencyType = $state('RequestPath');
+	let lastAutoName = $state('');
 	let groupName = $state('');
 	let groupColor: Color = $state(
 		AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)]
@@ -545,6 +551,15 @@
 		}
 		previewEdges.set(preview);
 	}
+
+	// Auto-generate dependency name when type or selection changes
+	$effect(() => {
+		const newName = generateDependencyName(groupType, getNodeNames());
+		if (groupName === '' || groupName === lastAutoName) {
+			groupName = newName;
+		}
+		lastAutoName = newName;
+	});
 
 	// Start preview edges on mount and update when dependencies change
 	$effect(() => {
