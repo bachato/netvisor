@@ -715,17 +715,11 @@ function buildElkGraph(
 		}
 	}
 
-	if (useLayeredChildren) {
-		// Root options set via ternary below
-	}
+	// Workloads: sort containers by app-relevant workload count (descending)
 	const isWorkloads = view === 'Workloads';
-
-	// Workloads: sort containers by application-relevant workload count (descending).
-	// Uses the org's use case to determine which service categories are infra vs app-relevant.
 	if (isWorkloads && input.topology) {
 		const irrelevantCategories = getIrrelevantServiceCategories(getOrgUseCase());
 
-		// Build host_id → app-relevant service count from topology services
 		const appRelevantCountByHost = new Map<string, number>();
 		for (const svc of input.topology.services ?? []) {
 			const cat = getServiceDefinitionCategory(svc.service_definition);
@@ -737,7 +731,6 @@ function buildElkGraph(
 			}
 		}
 
-		// Map container ID → host_id via element nodes
 		const containerToHost = new Map<string, string>();
 		for (const node of input.nodes) {
 			if (node.node_type === 'Element') {
@@ -750,15 +743,26 @@ function buildElkGraph(
 			}
 		}
 
+		const containerNames = new Map<string, string>();
+		for (const node of input.nodes) {
+			if (node.node_type === 'Container' && node.header) {
+				containerNames.set(node.id, node.header);
+			}
+		}
+
 		rootContainers.sort((a, b) => {
 			const hostA = containerToHost.get(a.id);
 			const hostB = containerToHost.get(b.id);
 			const countA = hostA ? (appRelevantCountByHost.get(hostA) ?? 0) : 0;
 			const countB = hostB ? (appRelevantCountByHost.get(hostB) ?? 0) : 0;
-			return countA - countB;
+			if (countB !== countA) return countB - countA;
+			return (containerNames.get(a.id) ?? '').localeCompare(containerNames.get(b.id) ?? '');
 		});
 	}
 
+	if (useLayeredChildren) {
+		// Root options set via ternary below
+	}
 	const rootOptions = useLayeredChildren
 		? {
 				'elk.algorithm': 'layered',
@@ -774,7 +778,13 @@ function buildElkGraph(
 				'elk.hierarchyHandling': 'SEPARATE_CHILDREN',
 				'elk.padding': '[top=25,left=25,bottom=25,right=25]'
 			}
-		: ROOT_LAYOUT_OPTIONS;
+		: isWorkloads
+			? {
+					...ROOT_LAYOUT_OPTIONS,
+					'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
+					'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES'
+				}
+			: ROOT_LAYOUT_OPTIONS;
 
 	const graph: ElkNode = {
 		id: 'root',
