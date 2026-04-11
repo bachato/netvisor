@@ -970,48 +970,16 @@ import { useQueryClient } from '@tanstack/svelte-query';
 						if (deferCollapse) {
 							layoutGraph.syncCollapseState(collapsed);
 							visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
+						}
 
-							// Cache expanded sizes from the all-expanded ELK pass
-							for (const [id, size] of elementNodeSizes) {
-								if (layoutGraph.containers.has(id)) {
-									const entry = containerSizeCache.get(id) ?? {};
-									entry.expanded = { ...size };
-									containerSizeCache.set(id, entry);
-								}
-							}
-
-							// Second measurement: render collapsed containers with
-							// width: undefined to measure natural collapsed DOM size.
-							// Uses buildFlowNodes(false) so containers aren't constrained
-							// by metadata width. Still in isMeasuring window — no flash.
-							const collapsedMeasureNodes = sortFlowNodes(buildFlowNodes(false));
-							nodes.set(collapsedMeasureNodes);
-							await tick();
-							await new Promise((r) =>
-								requestAnimationFrame(() => requestAnimationFrame(r))
-							);
-							if (isStale()) {
-								isMeasuring = false;
-								return;
-							}
-							if (containerElement) {
-								const nodeEls =
-									containerElement.querySelectorAll('.svelte-flow__node');
-								for (const el of nodeEls) {
-									const id = (el as HTMLElement).dataset.id;
-									if (id && layoutGraph.containers.has(id)) {
-										const htmlEl = el as HTMLElement;
-										const w = htmlEl.offsetWidth || 250;
-										const h = htmlEl.offsetHeight || 100;
-										const container = layoutGraph.containers.get(id);
-										if (container?.collapsed) {
-											container.measuredCollapsedSize = { width: w, height: h };
-											const entry = containerSizeCache.get(id) ?? {};
-											entry.collapsed = { x: w, y: h };
-											containerSizeCache.set(id, entry);
-										}
-									}
-								}
+						// Cache expanded container sizes from ELK result
+						// (not DOM — containers use absolute positioning so
+						// offsetWidth doesn't include children)
+						for (const [id, size] of elkResult.containerSizes) {
+							if (layoutGraph?.containers.has(id) && !collapsed.has(id)) {
+								const entry = containerSizeCache.get(id) ?? {};
+								entry.expanded = { x: size.width, y: size.height };
+								containerSizeCache.set(id, entry);
 							}
 						}
 
@@ -1388,6 +1356,47 @@ import { useQueryClient } from '@tanstack/svelte-query';
 						return;
 					}
 					isMeasuring = false;
+				}
+
+				// Cache collapsed container sizes after render. Unconstrain
+				// width to read natural content size, then restore. Synchronous
+				// — no paint between write-read-restore.
+				if (containerElement && layoutGraph) {
+					const saved = new Map<HTMLElement, { w: string; h: string }>();
+					const nodeEls = containerElement.querySelectorAll('.svelte-flow__node');
+					for (const el of nodeEls) {
+						const htmlEl = el as HTMLElement;
+						const id = htmlEl.dataset.id;
+						if (id && layoutGraph.containers.has(id) && collapsed.has(id)) {
+							const existing = containerSizeCache.get(id);
+							if (!existing?.collapsed) {
+								saved.set(htmlEl, { w: htmlEl.style.width, h: htmlEl.style.height });
+								htmlEl.style.width = 'auto';
+								htmlEl.style.height = 'auto';
+								const inner = htmlEl.querySelector(':scope > .relative') as HTMLElement;
+								if (inner) {
+									saved.set(inner, { w: inner.style.width, h: inner.style.height });
+									inner.style.width = 'auto';
+									inner.style.height = 'auto';
+								}
+							}
+						}
+					}
+					if (saved.size > 0) {
+						for (const el of nodeEls) {
+							const htmlEl = el as HTMLElement;
+							const id = htmlEl.dataset.id;
+							if (id && saved.has(htmlEl)) {
+								const entry = containerSizeCache.get(id) ?? {};
+								entry.collapsed = { x: htmlEl.offsetWidth || 250, y: htmlEl.offsetHeight || 100 };
+								containerSizeCache.set(id, entry);
+							}
+						}
+						for (const [el, { w, h }] of saved) {
+							el.style.width = w;
+							el.style.height = h;
+						}
+					}
 				}
 
 				const isFirstRender = lastRenderedTopoKey === '';
