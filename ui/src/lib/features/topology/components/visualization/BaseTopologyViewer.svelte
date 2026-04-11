@@ -226,7 +226,7 @@
 	let collapseLevelInferred = false;
 	let lastSeenTopologyId = '';
 	let isMeasuring = false;
-	let animateLayout = $state(false);
+	let animateLayout = false;
 	let prevCollapsedForAnim = new Set<string>();
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
