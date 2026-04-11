@@ -22,8 +22,7 @@ import { UNTAGGED_SENTINEL } from './interactions';
 import { getDefaultHiddenEdgeTypes } from './layout/edge-classification';
 import type { components } from '$lib/api/schema';
 import viewsJson from '$lib/data/views.json';
-import serviceCategoriesJson from '$lib/data/service-categories.json';
-import type { ServiceCategoryMetadata } from '$lib/shared/stores/metadata';
+import { getIrrelevantServiceCategories } from '$lib/shared/stores/metadata';
 import { topology_infrastructureServices } from '$lib/paraglide/messages';
 
 export type TopologyView = components['schemas']['TopologyView'];
@@ -49,7 +48,7 @@ type ServiceCategory = components['schemas']['ServiceCategory'];
 type TopologyLocalOptions = components['schemas']['TopologyLocalOptions'];
 
 /** Get the org's use case from the query cache, defaulting to 'other' */
-function getOrgUseCase(): string {
+export function getOrgUseCase(): string {
 	const org = queryClient.getQueryData<Organization>(queryKeys.organizations.current());
 	return org?.use_case ?? 'other';
 }
@@ -59,14 +58,7 @@ function getOrgUseCase(): string {
  * the "Infrastructure Services" ByServiceCategory element rule).
  */
 function getIrrelevantCategories(useCase: string): ServiceCategory[] {
-	const categories: ServiceCategory[] = [];
-	for (const cat of serviceCategoriesJson) {
-		const meta = cat.metadata as ServiceCategoryMetadata | null;
-		if (meta && !meta.application_relevant_use_cases.includes(useCase)) {
-			categories.push(cat.id as ServiceCategory);
-		}
-	}
-	return categories;
+	return [...getIrrelevantServiceCategories(useCase)] as ServiceCategory[];
 }
 
 /**

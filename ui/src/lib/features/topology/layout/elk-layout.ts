@@ -1,29 +1,13 @@
 import type { ElkNode, ElkExtendedEdge } from 'elkjs';
 import type { TopologyNode } from '../types/base';
 import { isDisabledEdge, affectsLayout } from './edge-classification';
-import { containerTypes } from '$lib/shared/stores/metadata';
+import {
+	containerTypes,
+	getIrrelevantServiceCategories,
+	getServiceDefinitionCategory
+} from '$lib/shared/stores/metadata';
 import type { LayoutInput, LayoutResult } from './engine';
-import serviceDefinitionsJson from '$lib/data/service-definitions.json';
-import serviceCategoriesJson from '$lib/data/service-categories.json';
-
-/** Map service definition name → category */
-const svcDefToCategory = new Map<string, string>(
-	serviceDefinitionsJson.map((d) => [d.id, d.category])
-);
-
-interface ServiceCategoryMetadata {
-	application_relevant_use_cases: string[];
-}
-
-/** Set of categories that are app-relevant for at least one use case */
-const appRelevantCategories = new Set<string>(
-	serviceCategoriesJson
-		.filter((c) => {
-			const meta = c.metadata as ServiceCategoryMetadata | null;
-			return meta && meta.application_relevant_use_cases.length > 0;
-		})
-		.map((c) => c.id)
-);
+import { getOrgUseCase } from '../queries';
 
 /** @deprecated Use LayoutInput from engine.ts */
 export type ElkLayoutInput = LayoutInput;
@@ -736,13 +720,15 @@ function buildElkGraph(
 	const isWorkloads = view === 'Workloads';
 
 	// Workloads: sort containers by application-relevant workload count (descending).
-	// Infra services (NetworkCore, RemoteAccess, OpenPorts, etc.) don't count.
+	// Uses the org's use case to determine which service categories are infra vs app-relevant.
 	if (isWorkloads && input.topology) {
+		const irrelevantCategories = getIrrelevantServiceCategories(getOrgUseCase());
+
 		// Build host_id → app-relevant service count from topology services
 		const appRelevantCountByHost = new Map<string, number>();
 		for (const svc of input.topology.services ?? []) {
-			const cat = svcDefToCategory.get(svc.service_definition);
-			if (cat && appRelevantCategories.has(cat)) {
+			const cat = getServiceDefinitionCategory(svc.service_definition);
+			if (cat && !irrelevantCategories.has(cat)) {
 				appRelevantCountByHost.set(
 					svc.host_id,
 					(appRelevantCountByHost.get(svc.host_id) ?? 0) + 1
