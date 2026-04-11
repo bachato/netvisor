@@ -1004,6 +1004,19 @@
 					// Cache measured sizes for this view so return visits skip measurement
 					viewSizeCache.set(viewCacheKey, new Map(elementNodeSizes));
 
+					// Save positions BEFORE auto-collapse can trigger re-entry.
+					// Uses layout graph positions (accurate from ELK result).
+					if (layoutGraph) {
+						const posMap = new Map<string, { x: number; y: number }>();
+						for (const [id, c] of layoutGraph.containers) {
+							posMap.set(id, { ...c.position });
+						}
+						for (const [id, e] of layoutGraph.elements) {
+							posMap.set(id, { ...e.position });
+						}
+						lastRenderedPositions = posMap;
+					}
+
 					// Auto-collapse containers whose type has collapsed_by_default metadata.
 					// Runs after layout so expanded sizes are cached for correct expand later.
 					// Only collapse containers we haven't seen before (so user can expand them).
@@ -1456,9 +1469,11 @@
 				lastRenderedTopoKey = topoKey;
 				lastRenderedView = currentView;
 
-				// Save positions for FLIP animation on next collapse change
+				// Save positions for FLIP animation on next collapse change.
+				// Use allNodes directly — getNodes() may return stale SvelteFlow
+				// state since $derived node lookup hasn't re-executed yet.
 				lastRenderedPositions = new Map(
-					getNodes().map((n) => [n.id, { ...n.position }])
+					allNodes.map((n) => [n.id, { ...n.position }])
 				);
 
 				// Auto-fit viewport after layout completes:
