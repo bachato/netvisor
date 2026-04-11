@@ -18,6 +18,7 @@
 	import { createForm } from '@tanstack/svelte-form';
 	import { required, max } from '$lib/shared/components/forms/validators';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
+	import { useConfigQuery } from '$lib/shared/stores/config-query';
 	import {
 		common_back,
 		common_close,
@@ -26,6 +27,7 @@
 		common_id,
 		common_loading,
 		common_name,
+		common_plan,
 		common_populate,
 		common_populating,
 		common_reset,
@@ -40,6 +42,7 @@
 		settings_org_deleteSuccess,
 		settings_org_deleteTypeName,
 		settings_org_info,
+		settings_org_licenseExpiry,
 		settings_org_nameLabel,
 		settings_org_namePlaceholder,
 		settings_org_populateConfirm,
@@ -82,6 +85,8 @@
 	let populating = $derived(populateDemoDataMutation.isPending);
 	let deleting = $derived(deleteOrganizationMutation.isPending);
 	let showDeleteConfirm = $state(false);
+
+	const configQuery = useConfigQuery();
 
 	let org = $derived(organizationQuery.data);
 	let isOwner = $derived(currentUser?.permissions === 'Owner');
@@ -187,6 +192,14 @@
 							{formatTimestamp(org.created_at)}
 						</InfoRow>
 						<InfoRow label={common_id()} mono={true}>{org.id}</InfoRow>
+						{#if org.plan}
+							<InfoRow label={common_plan()}>{org.plan.type}</InfoRow>
+						{/if}
+						{#if configQuery.data?.license_expiry}
+							<InfoRow label={settings_org_licenseExpiry()}
+								>{configQuery.data.license_expiry}</InfoRow
+							>
+						{/if}
 					</InfoCard>
 
 					<!-- Actions -->

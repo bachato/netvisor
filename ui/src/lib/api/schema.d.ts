@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-11T20:05:19.873592Z",
-             *       "id": "b90366ab-fae5-498b-8507-5a9960788b26",
+             *       "created_at": "2026-04-11T23:13:47.521981Z",
+             *       "id": "acd03e19-3233-4579-99fc-4012d346a7d3",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-11T20:05:19.873592Z"
+             *       "updated_at": "2026-04-11T23:13:47.521981Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-11T20:05:19.858192Z",
-             *               "id": "cd8f6cbf-2481-45ec-8d9d-33a89e1b6d3b",
+             *               "created_at": "2026-04-11T23:13:47.509857Z",
+             *               "id": "3ad1e47c-52a1-4dc2-89ce-adf7591cb25d",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-11T20:05:19.858192Z"
+             *               "updated_at": "2026-04-11T23:13:47.509857Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "BACnet",
+             *           "service_definition": "CUPS",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3486,6 +3486,7 @@ export interface components {
                 has_email_opt_in: boolean;
                 has_email_service: boolean;
                 has_integrated_daemon: boolean;
+                license_expiry?: string | null;
                 license_status?: string | null;
                 needs_cookie_consent: boolean;
                 oidc_providers: components["schemas"]["OidcProviderMetadata"][];
@@ -3530,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-11T20:05:19.869237Z",
-             *           "id": "cd1d62f6-d270-4427-99c7-bebb0b453c71",
+             *           "created_at": "2026-04-11T23:13:47.518302Z",
+             *           "id": "975061a9-72ca-499c-b3b8-816275df0812",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-11T20:05:19.869237Z"
+             *           "updated_at": "2026-04-11T23:13:47.518302Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3546,7 +3547,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "BACnet",
+             *       "service_definition": "CUPS",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3897,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-11T20:05:19.858399Z",
-         *       "id": "5a2dcf61-643a-41b2-abde-d9cb0e7d22bc",
+         *       "created_at": "2026-04-11T23:13:47.510093Z",
+         *       "id": "01539c8c-8125-4dd5-8af3-ad7bb39bc73b",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-11T20:05:19.858399Z"
+         *       "updated_at": "2026-04-11T23:13:47.510093Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4089,7 +4090,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "BACnet",
+         *           "service_definition": "CUPS",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4948,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-11T20:05:19.857884Z",
-         *               "id": "e3eb93b0-cdfa-4a92-8ecf-5d46568a0e4b",
+         *               "created_at": "2026-04-11T23:13:47.509481Z",
+         *               "id": "74140305-8087-4f0d-8af8-5f1d7d4b06aa",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-11T20:05:19.857884Z"
+         *               "updated_at": "2026-04-11T23:13:47.509481Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4964,7 +4965,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "BACnet",
+         *           "service_definition": "CUPS",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5952,6 +5953,7 @@ export interface components {
             has_email_opt_in: boolean;
             has_email_service: boolean;
             has_integrated_daemon: boolean;
+            license_expiry?: string | null;
             license_status?: string | null;
             needs_cookie_consent: boolean;
             oidc_providers: components["schemas"]["OidcProviderMetadata"][];
@@ -6092,14 +6094,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-11T20:05:19.858327Z",
-         *           "id": "b15e0fde-b256-4fff-a138-9207500e7582",
+         *           "created_at": "2026-04-11T23:13:47.510020Z",
+         *           "id": "630f1118-a3b9-489d-bb30-347e8ae61f93",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-11T20:05:19.858327Z"
+         *           "updated_at": "2026-04-11T23:13:47.510020Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6108,7 +6110,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "BACnet",
+         *       "service_definition": "CUPS",
          *       "source": {
          *         "type": "Manual"
          *       },

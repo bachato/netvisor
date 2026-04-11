@@ -23,6 +23,9 @@ Thumbs.db
 .env
 oidc.toml
 
+# Private keys
+*private*.pem
+
 # Manual testing
 TEST_PLAN.json
 TEST_RESULTS.json

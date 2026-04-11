@@ -48,4 +48,13 @@ impl LicenseStatus {
             LicenseStatus::Invalid(_) => Some("invalid"),
         }
     }
+
+    /// Expiry date as ISO date string (e.g. "2027-04-11"), if available.
+    pub fn expiry_date(&self) -> Option<String> {
+        let claims = match self {
+            LicenseStatus::Valid(c) | LicenseStatus::Expired(c) => c,
+            _ => return None,
+        };
+        chrono::DateTime::from_timestamp(claims.exp, 0).map(|d| d.format("%Y-%m-%d").to_string())
+    }
 }

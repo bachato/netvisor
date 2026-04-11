@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-11T20:05:19.873592Z",
-              "id": "ec9241d8-e9a3-44fa-b605-0879f0da00ea",
+              "created_at": "2026-04-11T23:13:47.521979Z",
+              "id": "3de477e6-086e-4b77-ad19-2d61a189f9f2",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-11T20:05:19.873592Z"
+              "updated_at": "2026-04-11T23:13:47.521979Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-11T20:05:19.858129Z",
-                      "id": "1686b5c8-5055-45e0-a8c3-43ff8b1b0ec6",
+                      "created_at": "2026-04-11T23:13:47.508986Z",
+                      "id": "d045c3e7-0175-4852-8df0-5144b550e0af",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-11T20:05:19.858129Z"
+                      "updated_at": "2026-04-11T23:13:47.508986Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "BACnet",
+                  "service_definition": "CUPS",
                   "source": {
                     "type": "Manual"
                   },
@@ -11819,6 +11819,12 @@
               "has_integrated_daemon": {
                 "type": "boolean"
               },
+              "license_expiry": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "license_status": {
                 "type": [
                   "string",
@@ -11997,14 +12003,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-11T20:05:19.869225Z",
-                  "id": "f0f90957-57bc-41fb-b625-8cb8d86c52e1",
+                  "created_at": "2026-04-11T23:13:47.518286Z",
+                  "id": "6def49a5-5ef6-41a8-add7-c7cf1979c3f7",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-11T20:05:19.869225Z"
+                  "updated_at": "2026-04-11T23:13:47.518286Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12013,7 +12019,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "BACnet",
+              "service_definition": "CUPS",
               "source": {
                 "type": "Manual"
               },
@@ -13378,14 +13384,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-11T20:05:19.858319Z",
-          "id": "dc995a21-c1bc-42f4-89e2-b7d3416986bb",
+          "created_at": "2026-04-11T23:13:47.509190Z",
+          "id": "c6963964-d0ec-4fc7-b7ea-ce833781acb5",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-11T20:05:19.858319Z"
+          "updated_at": "2026-04-11T23:13:47.509190Z"
         }
       },
       "BindingBase": {
@@ -13915,7 +13921,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "BACnet",
+              "service_definition": "CUPS",
               "tags": [],
               "virtualization": null
             }
@@ -16436,14 +16442,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-11T20:05:19.857855Z",
-                  "id": "29e36bf5-8cca-4312-b313-16fcbd33a598",
+                  "created_at": "2026-04-11T23:13:47.508696Z",
+                  "id": "3da79cda-e68b-4e6d-8cfe-bc4dc85fd17d",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-11T20:05:19.857855Z"
+                  "updated_at": "2026-04-11T23:13:47.508696Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16452,7 +16458,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "BACnet",
+              "service_definition": "CUPS",
               "source": {
                 "type": "Manual"
               },
@@ -18633,14 +18639,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-11T20:05:19.848897Z",
-                        "id": "f4306529-609d-43e6-a7b6-e7bf3a9054ba",
+                        "created_at": "2026-04-11T23:13:47.502145Z",
+                        "id": "667eec9a-beed-44a4-b512-1f95d32bba8b",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-11T20:05:19.848897Z"
+                        "updated_at": "2026-04-11T23:13:47.502145Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18649,7 +18655,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "BACnet",
+                    "service_definition": "CUPS",
                     "source": {
                       "type": "Manual"
                     },
@@ -18726,14 +18732,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-11T20:05:19.868311Z",
-                    "id": "5bbdcb49-7db5-4ace-8dc3-8203f098713f",
+                    "created_at": "2026-04-11T23:13:47.517327Z",
+                    "id": "2ecfa497-9272-4f47-a03b-b74e35491b45",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-11T20:05:19.868311Z"
+                    "updated_at": "2026-04-11T23:13:47.517327Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18742,7 +18748,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "BACnet",
+                "service_definition": "CUPS",
                 "source": {
                   "type": "Manual"
                 },
@@ -19558,6 +19564,12 @@
           "has_integrated_daemon": {
             "type": "boolean"
           },
+          "license_expiry": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "license_status": {
             "type": [
               "string",
@@ -19966,14 +19978,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-11T20:05:19.858250Z",
-              "id": "e646ffbe-d2e9-45cc-ae83-a3150540e7ca",
+              "created_at": "2026-04-11T23:13:47.509115Z",
+              "id": "515619f4-435f-4d2e-94b9-847a41fda8de",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-11T20:05:19.858250Z"
+              "updated_at": "2026-04-11T23:13:47.509115Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19982,7 +19994,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "BACnet",
+          "service_definition": "CUPS",
           "source": {
             "type": "Manual"
           },

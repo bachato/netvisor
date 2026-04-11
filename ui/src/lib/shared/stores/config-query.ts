@@ -28,6 +28,7 @@ export interface PublicServerConfig {
 	needs_cookie_consent: boolean;
 	deployment_type: DeploymentType;
 	license_status: 'valid' | 'expired' | 'invalid' | null;
+	license_expiry: string | null;
 }
 
 export const isLicenseLocked = (cfg: PublicServerConfig) =>

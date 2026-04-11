@@ -173,6 +173,7 @@ pub struct PublicConfigResponse {
     pub needs_cookie_consent: bool,
     pub deployment_type: DeploymentType,
     pub license_status: Option<String>,
+    pub license_expiry: Option<String>,
 }
 
 impl Default for ServerConfig {
@@ -391,12 +392,9 @@ pub async fn get_public_config(State(state): State<Arc<AppState>>) -> impl IntoR
         .unwrap_or_default();
 
     let deployment_type = get_deployment_type(state.clone());
-    let license_status = state
-        .license_service
-        .current_status()
-        .await
-        .as_api_string()
-        .map(String::from);
+    let current_license = state.license_service.current_status().await;
+    let license_status = current_license.as_api_string().map(String::from);
+    let license_expiry = current_license.expiry_date();
 
     (
         [(CACHE_CONTROL, "no-store, no-cache, must-revalidate")],
@@ -419,6 +417,7 @@ pub async fn get_public_config(State(state): State<Arc<AppState>>) -> impl IntoR
                 || state.config.brevo_api_key.is_some(),
             deployment_type,
             license_status,
+            license_expiry,
         })),
     )
 }
