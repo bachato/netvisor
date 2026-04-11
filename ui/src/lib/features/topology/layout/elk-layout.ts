@@ -719,43 +719,47 @@ function buildElkGraph(
 	if (isWorkloads && input.topology) {
 		const irrelevantCategories = getIrrelevantServiceCategories(getOrgUseCase());
 
-		const appRelevantCountByHost = new Map<string, number>();
+		// Build set of app-relevant service IDs
+		const appRelevantServiceIds = new Set<string>();
 		for (const svc of input.topology.services ?? []) {
 			const cat = getServiceDefinitionCategory(svc.service_definition);
 			if (cat && !irrelevantCategories.has(cat)) {
-				appRelevantCountByHost.set(
-					svc.host_id,
-					(appRelevantCountByHost.get(svc.host_id) ?? 0) + 1
-				);
+				appRelevantServiceIds.add(svc.id);
 			}
 		}
 
-		const containerToHost = new Map<string, string>();
+		// Resolve any container to its root container via parentContainerMap
+		function resolveRootContainer(id: string): string {
+			let current = id;
+			while (parentContainerMap.has(current)) {
+				current = parentContainerMap.get(current)!;
+			}
+			return current;
+		}
+
+		// Count app-relevant elements per root container
+		const countByRootContainer = new Map<string, number>();
 		for (const node of input.nodes) {
 			if (node.node_type === 'Element') {
 				const elemNode = node as Record<string, unknown>;
 				const containerId = elemNode.container_id as string | undefined;
-				const hostId = elemNode.host_id as string | undefined;
-				if (containerId && hostId && !containerToHost.has(containerId)) {
-					containerToHost.set(containerId, hostId);
+				// VM hosts are always app-relevant; services check the set
+				const elementType = (elemNode as Record<string, unknown>).element_type as string | undefined;
+				const isRelevant = elementType === 'Host' || appRelevantServiceIds.has(node.id);
+				if (containerId && isRelevant) {
+					const rootId = resolveRootContainer(containerId);
+					countByRootContainer.set(rootId, (countByRootContainer.get(rootId) ?? 0) + 1);
 				}
 			}
 		}
 
-		const containerNames = new Map<string, string>();
-		for (const node of input.nodes) {
-			if (node.node_type === 'Container' && node.header) {
-				containerNames.set(node.id, node.header);
-			}
-		}
-
 		rootContainers.sort((a, b) => {
-			const hostA = containerToHost.get(a.id);
-			const hostB = containerToHost.get(b.id);
-			const countA = hostA ? (appRelevantCountByHost.get(hostA) ?? 0) : 0;
-			const countB = hostB ? (appRelevantCountByHost.get(hostB) ?? 0) : 0;
+			const countA = countByRootContainer.get(a.id) ?? 0;
+			const countB = countByRootContainer.get(b.id) ?? 0;
 			if (countB !== countA) return countB - countA;
-			return (containerNames.get(a.id) ?? '').localeCompare(containerNames.get(b.id) ?? '');
+			const nameA = input.nodes.find((n) => n.id === a.id)?.header ?? '';
+			const nameB = input.nodes.find((n) => n.id === b.id)?.header ?? '';
+			return nameA.localeCompare(nameB);
 		});
 	}
 
