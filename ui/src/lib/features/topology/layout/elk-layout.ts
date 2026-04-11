@@ -97,14 +97,12 @@ function buildElkGraph(
 			const p = meta.padding;
 			const padding = `[top=${p.top},left=${p.left},bottom=${p.bottom},right=${p.right}]`;
 
-			// Use DOM-measured size for collapsed containers when available,
-			// falling back to static metadata for the initial render
+			// DOM-measured size for collapsed containers. Metadata fallback
+			// is a safety net only — the measurement pipeline should always
+			// provide sizes via elementNodeSizes or the container size cache.
 			const measured = input.elementNodeSizes?.get(node.id);
 			const collapsedWidth = measured?.x ?? meta.collapsed_size.width;
 			const collapsedHeight = measured?.y ?? meta.collapsed_size.height;
-			// Use the actual collapsed width — no need to reserve expanded
-			// space since expanding triggers a full ELK re-layout via
-			// structureKey change (root collapsed IDs are part of the key).
 			const elkCollapsedWidth = collapsedWidth;
 
 			// Layered children: ELK optimizes child ordering for crossing minimization
