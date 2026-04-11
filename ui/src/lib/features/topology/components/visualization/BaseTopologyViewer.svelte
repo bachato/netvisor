@@ -767,19 +767,29 @@
 					const expandCachedSizes =
 						needsElkForExpand && !isNewStructure ? viewSizeCache.get(viewCacheKey) : undefined;
 					if (collapseOnlyCachedSizes) {
-						// Collapse-only re-layout: element sizes are cached, containers
-						// whose state changed were invalidated. Skip containers without
-						// a cached entry so buildElkGraph uses meta.collapsed_size defaults
-						// instead of a wrong 250x100 fallback.
+						// Collapse-only re-layout: use cached sizes if ALL visible nodes
+						// have entries. For pure collapses (nodes disappear) this is always
+						// true. For expands (new nodes appear), some will be missing —
+						// fall through to measurement pass for accurate sizes.
+						let cacheComplete = true;
 						for (const node of visibleNodes) {
 							const cached = collapseOnlyCachedSizes.get(node.id);
 							if (cached) {
 								elementNodeSizes.set(node.id, cached);
-							} else if (node.node_type === 'Element') {
-								elementNodeSizes.set(node.id, { x: 250, y: 100 });
+							} else if (node.node_type === 'Container') {
+								// Containers without cache: omit so ELK uses metadata defaults
+							} else {
+								cacheComplete = false;
+								break;
 							}
-							// Containers without cache: omit so ELK uses metadata defaults
 						}
+						if (!cacheComplete) {
+							// Missing element sizes — clear and fall through to measurement
+							elementNodeSizes.clear();
+						}
+					}
+					if (collapseOnlyCachedSizes && elementNodeSizes.size > 0) {
+						// Cache was complete — skip measurement
 					} else if (isViewTransition && cachedSizes) {
 						// Return visit to a previously-measured view: use cached sizes
 						// so the old layout stays visible (no measurement pass / container hide)
