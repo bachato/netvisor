@@ -225,7 +225,7 @@
 	let seenAutoCollapseIds = new Set<string>();
 	let collapseLevelInferred = false;
 	let lastSeenTopologyId = '';
-	let isMeasuring = false;
+	let isMeasuring = $state(false);
 	let animateLayout = $state(false);
 	let prevCollapsedForAnim = new Set<string>();
 	let animatingExpandIds = new Set<string>();
