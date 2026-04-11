@@ -228,6 +228,13 @@ import { useQueryClient } from '@tanstack/svelte-query';
 	let collapseLevelInferred = false;
 	let lastSeenTopologyId = '';
 	let isMeasuring = $state(false);
+	/** Persistent cache: nodeId → DOM-measured sizes for each collapse state.
+	 *  Populated during initial load measurement passes. Used for subsequent
+	 *  ELK runs to avoid DOM measurement (no flash). */
+	let containerSizeCache = new Map<
+		string,
+		{ collapsed?: { x: number; y: number }; expanded?: { x: number; y: number } }
+	>();
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
 	let prevView = get(activeView);
@@ -413,6 +420,7 @@ import { useQueryClient } from '@tanstack/svelte-query';
 				const topologyId = topology.id ?? '';
 				if (topologyId !== lastSeenTopologyId && lastSeenTopologyId !== '') {
 					seenAutoCollapseIds = new Set<string>();
+					containerSizeCache.clear();
 					collapseLevelInferred = false; // re-infer after auto-collapse on new topology
 
 					// Strip stale collapsed IDs and update store
@@ -750,17 +758,66 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							const cached = expandCachedSizes.get(node.id);
 							elementNodeSizes.set(node.id, cached ?? { x: 250, y: 100 });
 						}
-					} else {
-						// Read element sizes from SvelteFlow's computed state —
-						// no DOM rendering needed, no flash. Containers that
-						// changed collapse state are omitted so ELK uses metadata
-						// defaults. After ELK, one atomic nodes.set().
+					} else if (containerSizeCache.size > 0) {
+						// Use cached container sizes + SvelteFlow computed element
+						// sizes. No DOM measurement needed — no flash.
 						const liveNodes = getNodes();
 						for (const n of liveNodes) {
 							const w = n.computed?.width ?? n.width;
 							const h = n.computed?.height ?? n.height;
 							if (w && h) {
 								elementNodeSizes.set(n.id, { x: w, y: h });
+							}
+						}
+						// Override containers with cached sizes for their current state
+						for (const node of visibleNodes) {
+							if (node.node_type === 'Container') {
+								const cache = containerSizeCache.get(node.id);
+								const isCollapsed = collapsed.has(node.id);
+								const cached = isCollapsed ? cache?.collapsed : cache?.expanded;
+								if (cached) {
+									elementNodeSizes.set(node.id, cached);
+								}
+							}
+						}
+					} else {
+						// No cache yet (first load) — full hidden measurement pass
+						isMeasuring = true;
+						edges.set([]);
+						const measureNodes = sortFlowNodes(buildFlowNodes(false));
+						nodes.set(measureNodes);
+						await tick();
+						await new Promise((r) =>
+							requestAnimationFrame(() => requestAnimationFrame(r))
+						);
+						if (isStale()) {
+							isMeasuring = false;
+							return;
+						}
+						if (containerElement) {
+							const nodeEls =
+								containerElement.querySelectorAll('.svelte-flow__node');
+							for (const el of nodeEls) {
+								const id = (el as HTMLElement).dataset.id;
+								if (id) {
+									const htmlEl = el as HTMLElement;
+									elementNodeSizes.set(id, {
+										x: htmlEl.offsetWidth || 250,
+										y: htmlEl.offsetHeight || 100
+									});
+								}
+							}
+						}
+						// Populate cache from this measurement
+						for (const [id, size] of elementNodeSizes) {
+							if (layoutGraph?.containers.has(id)) {
+								const entry = containerSizeCache.get(id) ?? {};
+								if (collapsed.has(id)) {
+									entry.collapsed = { ...size };
+								} else {
+									entry.expanded = { ...size };
+								}
+								containerSizeCache.set(id, entry);
 							}
 						}
 					}
@@ -886,20 +943,49 @@ import { useQueryClient } from '@tanstack/svelte-query';
 						// so all containers have their real expandedSize set first.
 						if (deferCollapse) {
 							layoutGraph.syncCollapseState(collapsed);
-							// Set measuredCollapsedSize from DOM measurements for
-							// containers that are now collapsed. applyElkResult stored
-							// these as expandedSize (since the graph was expanded during
-							// ELK), but collapsed containers need measuredCollapsedSize
-							// to render at their actual DOM-measured collapsed size.
+							visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
+
+							// Cache expanded sizes from the all-expanded ELK pass
 							for (const [id, size] of elementNodeSizes) {
-								const container = layoutGraph.containers.get(id);
-								if (container?.collapsed) {
-									container.measuredCollapsedSize = { width: size.x, height: size.y };
+								if (layoutGraph.containers.has(id)) {
+									const entry = containerSizeCache.get(id) ?? {};
+									entry.expanded = { ...size };
+									containerSizeCache.set(id, entry);
 								}
 							}
-							// Recompute visible nodes now that collapse is applied —
-							// the earlier visibleNodes included all nodes (pre-collapse).
-							visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
+
+							// Second measurement: render collapsed containers to
+							// measure their actual collapsed DOM size. Still within
+							// the isMeasuring window (initial load) — no extra flash.
+							const collapsedMeasureNodes = sortFlowNodes(buildFlowNodes(true));
+							nodes.set(collapsedMeasureNodes);
+							await tick();
+							await new Promise((r) =>
+								requestAnimationFrame(() => requestAnimationFrame(r))
+							);
+							if (isStale()) {
+								isMeasuring = false;
+								return;
+							}
+							if (containerElement) {
+								const nodeEls =
+									containerElement.querySelectorAll('.svelte-flow__node');
+								for (const el of nodeEls) {
+									const id = (el as HTMLElement).dataset.id;
+									if (id && layoutGraph.containers.has(id)) {
+										const htmlEl = el as HTMLElement;
+										const w = htmlEl.offsetWidth || 250;
+										const h = htmlEl.offsetHeight || 100;
+										const container = layoutGraph.containers.get(id);
+										if (container?.collapsed) {
+											container.measuredCollapsedSize = { width: w, height: h };
+											const entry = containerSizeCache.get(id) ?? {};
+											entry.collapsed = { x: w, y: h };
+											containerSizeCache.set(id, entry);
+										}
+									}
+								}
+							}
 						}
 
 						// Log size mismatches between DOM-measured and ELK-computed
