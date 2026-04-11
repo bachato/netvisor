@@ -1425,6 +1425,16 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							el.style.height = h;
 						}
 						console.log(`[POST-RENDER-CACHE] ${newlyCached.length} collapsed sizes: ${newlyCached.join(', ')}`);
+
+							// Cache was just populated with new collapsed sizes.
+							// Re-run ELK with the now-complete cache for a compact
+							// layout. Uses the fast cache path (no flash).
+							if (!isStale()) {
+								sessionStructureKey = '';
+								await loadTopologyData();
+								return; // the recursive call handled rendering
+							}
+						}
 					}
 				}
 
