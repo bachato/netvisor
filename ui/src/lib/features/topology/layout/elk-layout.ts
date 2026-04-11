@@ -714,6 +714,51 @@ function buildElkGraph(
 		}
 	}
 
+	// Workloads: sort containers by app-relevant workload count (descending)
+	const isWorkloads = view === 'Workloads';
+	if (isWorkloads && input.topology) {
+		const irrelevantCategories = getIrrelevantServiceCategories(getOrgUseCase());
+
+		const appRelevantCountByHost = new Map<string, number>();
+		for (const svc of input.topology.services ?? []) {
+			const cat = getServiceDefinitionCategory(svc.service_definition);
+			if (cat && !irrelevantCategories.has(cat)) {
+				appRelevantCountByHost.set(
+					svc.host_id,
+					(appRelevantCountByHost.get(svc.host_id) ?? 0) + 1
+				);
+			}
+		}
+
+		const containerToHost = new Map<string, string>();
+		for (const node of input.nodes) {
+			if (node.node_type === 'Element') {
+				const elemNode = node as Record<string, unknown>;
+				const containerId = elemNode.container_id as string | undefined;
+				const hostId = elemNode.host_id as string | undefined;
+				if (containerId && hostId && !containerToHost.has(containerId)) {
+					containerToHost.set(containerId, hostId);
+				}
+			}
+		}
+
+		const containerNames = new Map<string, string>();
+		for (const node of input.nodes) {
+			if (node.node_type === 'Container' && node.header) {
+				containerNames.set(node.id, node.header);
+			}
+		}
+
+		rootContainers.sort((a, b) => {
+			const hostA = containerToHost.get(a.id);
+			const hostB = containerToHost.get(b.id);
+			const countA = hostA ? (appRelevantCountByHost.get(hostA) ?? 0) : 0;
+			const countB = hostB ? (appRelevantCountByHost.get(hostB) ?? 0) : 0;
+			if (countB !== countA) return countB - countA;
+			return (containerNames.get(a.id) ?? '').localeCompare(containerNames.get(b.id) ?? '');
+		});
+	}
+
 	if (useLayeredChildren) {
 		// Root options set via ternary below
 	}
@@ -732,7 +777,13 @@ function buildElkGraph(
 				'elk.hierarchyHandling': 'SEPARATE_CHILDREN',
 				'elk.padding': '[top=25,left=25,bottom=25,right=25]'
 			}
-		: ROOT_LAYOUT_OPTIONS;
+		: isWorkloads
+			? {
+					...ROOT_LAYOUT_OPTIONS,
+					'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
+					'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES'
+				}
+			: ROOT_LAYOUT_OPTIONS;
 
 	const graph: ElkNode = {
 		id: 'root',
@@ -1267,86 +1318,6 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 				node.y = Math.ceil(y / SNAP) * SNAP;
 				y = node.y + (node.height ?? 0) + GAP;
 			}
-		}
-	}
-
-	// Workloads: reposition root containers sorted by app-relevant workload count.
-	// ELK's layered algorithm ignores input order for unconnected nodes, so we
-	// reflow containers post-layout using ELK-computed sizes in sorted order.
-	if (input.topology?.options?.request?.view === 'Workloads' && result2.children) {
-		const irrelevantCategories = getIrrelevantServiceCategories(getOrgUseCase());
-
-		// Count app-relevant services per host
-		const appRelevantCountByHost = new Map<string, number>();
-		for (const svc of input.topology.services ?? []) {
-			const cat = getServiceDefinitionCategory(svc.service_definition);
-			if (cat && !irrelevantCategories.has(cat)) {
-				appRelevantCountByHost.set(
-					svc.host_id,
-					(appRelevantCountByHost.get(svc.host_id) ?? 0) + 1
-				);
-			}
-		}
-
-		// Map container ID → host_id via element nodes
-		const containerToHost = new Map<string, string>();
-		for (const node of input.nodes) {
-			if (node.node_type === 'Element') {
-				const elemNode = node as Record<string, unknown>;
-				const containerId = elemNode.container_id as string | undefined;
-				const hostId = elemNode.host_id as string | undefined;
-				if (containerId && hostId && !containerToHost.has(containerId)) {
-					containerToHost.set(containerId, hostId);
-				}
-			}
-		}
-
-		// Sort by app-relevant count descending, name as tiebreaker
-		const nodeNameMap = new Map<string, string>();
-		for (const n of input.nodes) {
-			if (n.node_type === 'Container' && n.header) {
-				nodeNameMap.set(n.id, n.header);
-			}
-		}
-
-		result2.children.sort((a, b) => {
-			const hostA = containerToHost.get(a.id);
-			const hostB = containerToHost.get(b.id);
-			const countA = hostA ? (appRelevantCountByHost.get(hostA) ?? 0) : 0;
-			const countB = hostB ? (appRelevantCountByHost.get(hostB) ?? 0) : 0;
-			if (countB !== countA) return countB - countA;
-			return (nodeNameMap.get(a.id) ?? '').localeCompare(nodeNameMap.get(b.id) ?? '');
-		});
-
-		// Flow layout: place containers left-to-right, wrapping rows
-		const PAD = 25;
-		const GAP = 75;
-		// Compute total area to derive a target width from aspect ratio
-		let totalArea = 0;
-		for (const child of result2.children) {
-			totalArea += (child.width ?? 0) * (child.height ?? 0);
-		}
-		const targetWidth = Math.max(
-			800,
-			Math.sqrt(totalArea * 1.6) // aspect ratio ~1.6
-		);
-
-		let x = PAD;
-		let y = PAD;
-		let rowHeight = 0;
-		for (const child of result2.children) {
-			const w = child.width ?? 0;
-			const h = child.height ?? 0;
-			// Wrap to next row if this container doesn't fit
-			if (x > PAD && x + w > targetWidth) {
-				x = PAD;
-				y += rowHeight + GAP;
-				rowHeight = 0;
-			}
-			child.x = x;
-			child.y = y;
-			x += w + GAP;
-			rowHeight = Math.max(rowHeight, h);
 		}
 	}
 
