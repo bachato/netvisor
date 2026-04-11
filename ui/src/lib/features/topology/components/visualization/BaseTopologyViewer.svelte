@@ -983,20 +983,20 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
 						}
 
-						// Cache expanded container sizes from ELK result
-						// (not DOM — containers use absolute positioning so
-						// offsetWidth doesn't include children)
-						const expandedCached: string[] = [];
+						// Cache container sizes from ELK result, categorized by
+						// whether ELK treated them as collapsed or expanded.
+						// Uses elkCollapsed (not collapsed store) — during deferred
+						// collapse, elkCollapsed is empty so all get expanded sizes.
 						for (const [id, size] of elkResult.containerSizes) {
-							if (layoutGraph?.containers.has(id) && !collapsed.has(id)) {
+							if (layoutGraph?.containers.has(id)) {
 								const entry = containerSizeCache.get(id) ?? {};
-								entry.expanded = { x: size.width, y: size.height };
+								if (elkCollapsed.has(id)) {
+									entry.collapsed = { x: size.width, y: size.height };
+								} else {
+									entry.expanded = { x: size.width, y: size.height };
+								}
 								containerSizeCache.set(id, entry);
-								expandedCached.push(`${id.substring(0, 8)}=${size.width}x${size.height}`);
 							}
-						}
-						if (expandedCached.length > 0) {
-							console.log(`[ELK-CACHE] ${expandedCached.length} expanded sizes: ${expandedCached.slice(0, 5).join(', ')}${expandedCached.length > 5 ? '...' : ''}`);
 						}
 
 						// Log size mismatches between DOM-measured and ELK-computed
@@ -1020,7 +1020,17 @@ import { useQueryClient } from '@tanstack/svelte-query';
 					}
 
 					// Cache measured sizes for this view so return visits skip measurement
-					viewSizeCache.set(viewCacheKey, new Map(elementNodeSizes));
+					// Merge into viewSizeCache (don't overwrite — preserves
+					// element sizes from previous measurements that may not
+					// be visible in this pass)
+					const existingViewCache = viewSizeCache.get(viewCacheKey);
+					if (existingViewCache) {
+						for (const [id, size] of elementNodeSizes) {
+							existingViewCache.set(id, size);
+						}
+					} else {
+						viewSizeCache.set(viewCacheKey, new Map(elementNodeSizes));
+					}
 
 					// Auto-collapse containers whose type has collapsed_by_default metadata.
 					// Runs after layout so expanded sizes are cached for correct expand later.
