@@ -986,12 +986,17 @@ import { useQueryClient } from '@tanstack/svelte-query';
 						// Cache expanded container sizes from ELK result
 						// (not DOM — containers use absolute positioning so
 						// offsetWidth doesn't include children)
+						const expandedCached: string[] = [];
 						for (const [id, size] of elkResult.containerSizes) {
 							if (layoutGraph?.containers.has(id) && !collapsed.has(id)) {
 								const entry = containerSizeCache.get(id) ?? {};
 								entry.expanded = { x: size.width, y: size.height };
 								containerSizeCache.set(id, entry);
+								expandedCached.push(`${id.substring(0, 8)}=${size.width}x${size.height}`);
 							}
+						}
+						if (expandedCached.length > 0) {
+							console.log(`[ELK-CACHE] ${expandedCached.length} expanded sizes: ${expandedCached.slice(0, 5).join(', ')}${expandedCached.length > 5 ? '...' : ''}`);
 						}
 
 						// Log size mismatches between DOM-measured and ELK-computed
@@ -1394,19 +1399,24 @@ import { useQueryClient } from '@tanstack/svelte-query';
 						}
 					}
 					if (saved.size > 0) {
+						const newlyCached: string[] = [];
 						for (const el of nodeEls) {
 							const htmlEl = el as HTMLElement;
 							const id = htmlEl.dataset.id;
 							if (id && saved.has(htmlEl)) {
+								const w = htmlEl.offsetWidth || 250;
+								const h = htmlEl.offsetHeight || 100;
 								const entry = containerSizeCache.get(id) ?? {};
-								entry.collapsed = { x: htmlEl.offsetWidth || 250, y: htmlEl.offsetHeight || 100 };
+								entry.collapsed = { x: w, y: h };
 								containerSizeCache.set(id, entry);
+								newlyCached.push(`${id.substring(0, 8)}=${w}x${h}`);
 							}
 						}
 						for (const [el, { w, h }] of saved) {
 							el.style.width = w;
 							el.style.height = h;
 						}
+						console.log(`[POST-RENDER-CACHE] ${newlyCached.length} collapsed sizes: ${newlyCached.join(', ')}`);
 					}
 				}
 
