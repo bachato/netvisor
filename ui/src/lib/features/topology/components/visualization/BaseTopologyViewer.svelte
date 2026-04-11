@@ -519,18 +519,17 @@
 					}
 				}
 
-				// Run ELK on structure/collapse changes, skip for edge-only re-renders
+				// Run ELK on structure/collapse changes, skip for edge-only re-renders.
+				// All collapsed IDs (not just root) trigger ELK re-layout with full
+				// DOM measurement so containers reposition for tight gap compaction.
 				const opts = get(topologyOptions);
 				const sizeKey = `${opts.request.hide_ports}`;
-				const rootCollapsedPreview = new Set(
-					[...collapsed].filter((id) => !layoutGraph || !layoutGraph.isSubcontainer(id))
-				);
 				const structureKey =
 					currentView +
 					':' +
 					topoKey +
 					':' +
-					Array.from(rootCollapsedPreview).sort().join(',') +
+					Array.from(collapsed).sort().join(',') +
 					':' +
 					sizeKey +
 					':' +
@@ -745,6 +744,14 @@
 				}
 				console.log(
 					`[LAYOUT-DEBUG] Layout decision: needsElk=${needsElk} isNewStructure=${isNewStructure} needsElkForExpand=${needsElkForExpand} deferCollapse=${deferCollapse} collapseChanged=${collapseChanged} collapsed=${collapsed.size}`
+				);
+
+				// Capture current node positions for FLIP animation (before
+				// measurement pass moves nodes to origin). Used to animate
+				// from old positions to new ELK positions after layout.
+				const preLayoutNodes = needsElk ? getNodes() : [];
+				const preLayoutPositions = new Map(
+					preLayoutNodes.map((n) => [n.id, { ...n.position }])
 				);
 
 				if (needsElk) {
@@ -1389,15 +1396,58 @@
 						pendingEdges = [];
 					}
 
-					// Reveal after positioned nodes + edges have painted
-					// Double rAF ensures the compositing pass completes before revealing
-					await tick();
-					await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-					if (isStale()) {
+					// FLIP animation: if collapse changed, reveal at OLD positions
+					// then animate to NEW positions. Otherwise just reveal.
+					const collapsedSetChanged =
+						prevCollapsedForAnim.size !== collapsed.size ||
+						[...collapsed].some((id) => !prevCollapsedForAnim.has(id)) ||
+						[...prevCollapsedForAnim].some((id) => !collapsed.has(id));
+
+					if (collapsedSetChanged && preLayoutPositions.size > 0) {
+						// FLIP: set nodes at old positions, reveal, then animate to new
+						const newPositionNodes = getNodes();
+						const flipNodes = newPositionNodes.map((n) => {
+							const oldPos = preLayoutPositions.get(n.id);
+							return oldPos ? { ...n, position: oldPos } : n;
+						});
+						nodes.set(flipNodes);
+						await tick();
+						isMeasuring = false; // reveal at old positions
+						prevCollapsedForAnim = new Set(collapsed);
+
+						// Identify expanding containers for two-phase child reveal
+						animatingExpandIds = new Set(
+							[...preLayoutPositions.keys()].filter(
+								(id) =>
+									!collapsed.has(id) &&
+									layoutGraph?.containers.has(id) &&
+									!allNodes.some(
+										(n) => n.id === id && n.parentId && preLayoutPositions.has(n.parentId)
+									)
+							)
+						);
+
+						await tick();
+						animateLayout = true;
+						nodes.set(allNodes); // animate to new ELK positions
+						edges.set(flowEdges);
+						setTimeout(() => {
+							animateLayout = false;
+							animatingExpandIds = new Set();
+						}, 350);
+					} else {
+						// Non-collapse structural change: reveal immediately
+						await tick();
+						await new Promise((r) =>
+							requestAnimationFrame(() => requestAnimationFrame(r))
+						);
+						if (isStale()) {
+							isMeasuring = false;
+							return;
+						}
+						prevCollapsedForAnim = new Set(collapsed);
 						isMeasuring = false;
-						return;
 					}
-					isMeasuring = false;
 				}
 
 				const isFirstRender = lastRenderedTopoKey === '';
