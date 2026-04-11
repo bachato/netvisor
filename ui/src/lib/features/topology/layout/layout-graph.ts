@@ -223,15 +223,9 @@ export class LayoutGraph {
 					// Store the ELK-assigned collapsed size (from DOM measurement)
 					const size = containerSizes.get(id);
 					if (size) container.measuredCollapsedSize = { ...size };
-					console.log(
-						`[LAYOUT-DEBUG] applyElkResult collapsed ${id.substring(0, 8)} measuredCollapsed=${JSON.stringify(size)} expandedSize=${JSON.stringify(container.expandedSize)}`
-					);
 				} else {
 					const size = containerSizes.get(id);
 					if (size) container.expandedSize = { ...size };
-					console.log(
-						`[LAYOUT-DEBUG] applyElkResult expanded ${id.substring(0, 8)} expandedSize=${JSON.stringify(size)}`
-					);
 				}
 			}
 			const element = this.elements.get(id);
@@ -252,9 +246,6 @@ export class LayoutGraph {
 			else expandedCount++;
 			if (c.expandedSize.width === 0) zeroExpandedCount++;
 		}
-		console.log(
-			`[LAYOUT-DEBUG] applyElkResult summary: ${expandedCount} expanded, ${collapsedCount} collapsed, ${zeroExpandedCount} with expandedSize=0`
-		);
 	}
 
 	/** Get node position (works for both containers and elements) */
@@ -290,9 +281,6 @@ export class LayoutGraph {
 			const container = this.containers.get(id);
 			if (container && container.collapsed) {
 				container.expandedSize = { ...size };
-				console.log(
-					`[LAYOUT-DEBUG] restoreExpandedSizes ${id.substring(0, 8)} restored=${JSON.stringify(size)}`
-				);
 			}
 		}
 	}

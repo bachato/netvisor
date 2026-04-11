@@ -81,9 +81,6 @@
 		const ct = (data as Record<string, unknown>)?.container_type as string | undefined;
 		const isSub = ct && containerTypes.getMetadata(ct).is_subcontainer;
 		if (isSub) {
-			console.log(
-				`[LAYOUT-DEBUG] ContainerNode ${id.substring(0, 8)} width=${width} height=${height} collapsed=${collapsedNodes.has(id)} isSub=${isSub}`
-			);
 		}
 	});
 

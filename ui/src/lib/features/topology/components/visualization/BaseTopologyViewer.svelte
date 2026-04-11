@@ -90,8 +90,7 @@
 	import { computeOptimalHandles } from '../../layout/elk-layout';
 	import { isDisabledEdge, isDashedEdge } from '../../layout/edge-classification';
 	import { onMount, tick, setContext, getContext } from 'svelte';
-	import { installLayoutDiagnostic } from '../../layout/layout-diagnostic';
-	import { useQueryClient } from '@tanstack/svelte-query';
+import { useQueryClient } from '@tanstack/svelte-query';
 	import { writable as svelteWritable } from 'svelte/store';
 	import { themeStore } from '$lib/shared/stores/theme.svelte';
 
@@ -171,12 +170,6 @@
 	}
 
 	onMount(() => {
-		installLayoutDiagnostic();
-		// Expose layout state for the diagnostic to access
-		(window as Record<string, unknown>).__scanopyLayoutState = {
-			getNodes,
-			getLayoutGraph: () => layoutGraph
-		};
 		const { fitView } = useSvelteFlow();
 
 		const observer = new IntersectionObserver(
@@ -355,9 +348,6 @@
 		const isStale = () => {
 			const stale = thisGeneration !== layoutGeneration;
 			if (stale)
-				console.log(
-					`[LAYOUT-DEBUG] Generation ${thisGeneration} stale (current: ${layoutGeneration}), bailing out`
-				);
 			return stale;
 		};
 		try {
@@ -378,9 +368,6 @@
 						if (!newContainerIds.has(id)) seenAutoCollapseIds.delete(id);
 					}
 				}
-				console.log(
-					`[LAYOUT-DEBUG] loadTopologyData gen=${thisGeneration} view=${currentView} viewChanged=${viewChanged} topologyChanged=${topologyChanged} nodes=${topology.nodes.length} edges=${topology.edges.length}`
-				);
 
 				// When view changed but topology data hasn't been rebuilt yet,
 				// skip processing to avoid rendering old nodes with the new view (flicker)
@@ -424,9 +411,6 @@
 					);
 					collapsedContainers.set(levelCollapsed);
 					collapsed = levelCollapsed;
-					console.log(
-						`[LAYOUT-DEBUG] View switch: applied level ${currentLevel} → ${levelCollapsed.size} collapsed`
-					);
 				}
 
 				// When topology identity changes, reset auto-collapse tracking
@@ -435,9 +419,6 @@
 				if (topologyId !== lastSeenTopologyId && lastSeenTopologyId !== '') {
 					seenAutoCollapseIds = new Set<string>();
 					collapseLevelInferred = false; // re-infer after auto-collapse on new topology
-					console.log(
-						`[LAYOUT-DEBUG] Topology changed: ${lastSeenTopologyId.substring(0, 8)} → ${topologyId.substring(0, 8)}, reset seenAutoCollapseIds`
-					);
 
 					// Strip stale collapsed IDs and update store
 					if (collapsed.size > 0) {
@@ -473,7 +454,6 @@
 						}
 
 						if (staleCount > 0) {
-							console.log(`[LAYOUT-DEBUG] Stripped ${staleCount} stale collapsed IDs`);
 						}
 					}
 				}
@@ -554,9 +534,6 @@
 				const prevExpandedSizes = layoutGraph?.getExpandedContainerSizes();
 				const prevChildPositions = layoutGraph?.getContainerChildPositions();
 
-				console.log(
-					`[LAYOUT-DEBUG] Structure: isNew=${isNewStructure} collapsed=${collapsed.size} prevExpandedSizes=${prevExpandedSizes?.size ?? 0} prevChildPositions=${prevChildPositions?.size ?? 0}`
-				);
 
 				// Build/rebuild the layout graph when topology or hidden services change
 				if (!layoutGraph || isNewStructure) {
@@ -755,9 +732,6 @@
 				if (isNewStructure) {
 					viewSizeCache.delete(`${currentView}:${topology.id}`);
 				}
-				console.log(
-					`[LAYOUT-DEBUG] Layout decision: needsElk=${needsElk} isNewStructure=${isNewStructure} needsElkForExpand=${needsElkForExpand} deferCollapse=${deferCollapse} collapseChanged=${collapseChanged} collapsed=${collapsed.size}`
-				);
 
 				// Use positions from last completed render for FLIP animation.
 				// getNodes() can't be used here because a prior measurement pass
@@ -788,7 +762,6 @@
 					} else {
 						// First visit to view or non-view structural change:
 						// full DOM measurement pass
-						console.log(`[LAYOUT-DEBUG] Starting DOM measurement pass`);
 						isMeasuring = true;
 						edges.set([]);
 						const measureNodes = sortFlowNodes(buildFlowNodes(false));
@@ -815,9 +788,6 @@
 									elementNodeSizes.set(id, { x: w, y: h });
 								}
 							}
-							console.log(
-								`[LAYOUT-DEBUG] DOM measurement complete: ${elementNodeSizes.size} nodes measured, ${zeroSizeCount} with zero size (fallback used)`
-							);
 							// Log container measurements separately for debugging subcontainer sizing
 							if (layoutGraph) {
 								const containerMeasurements = [...elementNodeSizes.entries()]
@@ -827,9 +797,6 @@
 											`${id.substring(0, 8)}=${s.x}x${s.y}${layoutGraph!.containers.get(id)?.isSubcontainer ? '(sub)' : ''}`
 									);
 								if (containerMeasurements.length > 0) {
-									console.log(
-										`[LAYOUT-DEBUG] Measured container sizes: ${containerMeasurements.join(', ')}`
-									);
 								}
 							}
 						}
@@ -910,9 +877,6 @@
 						// with collapse applied, so children of collapsed containers must
 						// be filtered out.
 						visibleNodes = layoutGraph.getVisibleNodes(layoutNodes);
-						console.log(
-							`[LAYOUT-DEBUG] Force layout applied: ${forceResult.nodePositions.size} positioned nodes (all-collapsed overview)`
-						);
 					} else {
 						// When there are no previous expanded sizes (first load with
 						// persisted collapse from localStorage), run ELK with everything
@@ -991,13 +955,7 @@
 								}
 							}
 							if (mismatches.length > 0) {
-								console.log(
-									`[LAYOUT-DEBUG] Size mismatches (DOM vs ELK): ${mismatches.join(', ')}`
-								);
 							}
-							console.log(
-								`[LAYOUT-DEBUG] ELK layout applied: deferCollapse=${deferCollapse} containers=${layoutGraph.containers.size} elements=${layoutGraph.elements.size}`
-							);
 						}
 					}
 
@@ -1043,18 +1001,7 @@
 							: allCandidates
 									.filter((n) => !collapsed.has(n.id) && !seenAutoCollapseIds.has(n.id))
 									.map((n) => n.id);
-						console.log(
-							`[LAYOUT-DEBUG] Auto-collapse: level=${currentLevel} inferred=${collapseLevelInferred} skipL4=${userExplicitlyExpandedAll}, ${allCandidates.length} candidates, ${allCandidates.filter((n) => collapsed.has(n.id)).length} already collapsed, ${allCandidates.filter((n) => seenAutoCollapseIds.has(n.id)).length} already seen, ${autoCollapseIds.length} will auto-collapse`
-						);
 						if (autoCollapseIds.length > 0) {
-							console.log(
-								`[LAYOUT-DEBUG] Auto-collapse: ${autoCollapseIds
-									.map((id) => {
-										const c = layoutGraph?.containers.get(id);
-										return `${id.substring(0, 8)}(${c?.containerType ?? '?'} expanded=${JSON.stringify(c?.expandedSize)})`;
-									})
-									.join(', ')}`
-							);
 							for (const id of autoCollapseIds) seenAutoCollapseIds.add(id);
 							// eslint-disable-next-line svelte/prefer-svelte-reactivity -- temporary value for store update
 							const next = new Set(collapsed);
@@ -1412,10 +1359,11 @@
 						[...prevCollapsedForAnim].some((id) => !collapsed.has(id));
 
 					if (collapsedSetChanged && preLayoutPositions.size > 0) {
-						// FLIP animation: reveal at old positions, then animate to new.
-						// Critical: the transition class must be PAINTED before positions
-						// change, otherwise the browser batches both into one frame and
-						// there's nothing to animate from.
+						// FLIP debug: log what we're working with
+						const matchCount = allNodes.filter((n) => preLayoutPositions.has(n.id)).length;
+						const sampleOld = [...preLayoutPositions.entries()].slice(0, 3).map(([id, p]) => `${id.substring(0, 8)}:(${p.x},${p.y})`);
+						const sampleNew = allNodes.slice(0, 3).map((n) => `${n.id.substring(0, 8)}:(${n.position.x},${n.position.y})`);
+						console.log(`[FLIP] matched=${matchCount}/${allNodes.length} preLayout=${preLayoutPositions.size} oldSample=[${sampleOld}] newSample=[${sampleNew}]`);
 
 						// 1. Set nodes at OLD positions (still hidden)
 						const flipNodes = allNodes.map((n) => {
@@ -1425,13 +1373,16 @@
 						nodes.set(flipNodes);
 						edges.set(flowEdges);
 						await tick();
+						if (isStale()) { isMeasuring = false; return; }
 
 						// 2. Reveal WITH transition class — same frame
 						isMeasuring = false;
 						animateLayout = true;
 						prevCollapsedForAnim = new Set(collapsed);
-						await tick(); // DOM: visible + old positions + .animate-layout
-						await new Promise((r) => requestAnimationFrame(r)); // browser paints
+						await tick();
+						if (isStale()) return;
+						await new Promise((r) => requestAnimationFrame(r));
+						if (isStale()) return;
 
 						// 3. Change positions — transition fires (old → new)
 						nodes.set(allNodes);
@@ -1440,6 +1391,7 @@
 						}, 350);
 					} else {
 						// Non-collapse structural change: reveal with final layout
+						console.log(`[FLIP] skipped: collapsedSetChanged=${collapsedSetChanged} preLayoutSize=${preLayoutPositions.size} prevCollapsedForAnim=${prevCollapsedForAnim.size} collapsed=${collapsed.size}`);
 						edges.set([]);
 						nodes.set(allNodes);
 						pendingEdges = flowEdges;
@@ -1698,9 +1650,6 @@
 
 	function handleStepCollapse() {
 		stepCollapse(topology.nodes, containerTypes, getInfrastructureRuleId());
-		console.log(
-			`[COLLAPSE-LEVEL] after stepCollapse: get(collapseLevel)=${get(collapseLevel)}, $collapseLevel=${$collapseLevel}`
-		);
 		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
 	}
 
@@ -1709,9 +1658,6 @@
 			topology.nodes,
 			containerTypes,
 			getInfrastructureRuleId()
-		);
-		console.log(
-			`[COLLAPSE-LEVEL] after stepExpand: get(collapseLevel)=${get(collapseLevel)}, $collapseLevel=${$collapseLevel}`
 		);
 		// Mark auto-collapse containers as "seen" so they don't re-collapse
 		for (const id of autoCollapseIds) seenAutoCollapseIds.add(id);
