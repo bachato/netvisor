@@ -221,6 +221,7 @@
 	// Track ELK layout — only skip within same session when structure unchanged
 	let layoutGraph: LayoutGraph | null = null;
 	let sessionStructureKey = '';
+	let sessionBaseKey = '';
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
 	let seenAutoCollapseIds = new Set<string>();
 	let collapseLevelInferred = false;
@@ -519,23 +520,17 @@
 					}
 				}
 
-				// Run ELK on structure/collapse changes, skip for edge-only re-renders
+				// Run ELK on structure/collapse changes, skip for edge-only re-renders.
+				// All collapsed IDs (not just root) are in the key so subcontainer
+				// collapse also triggers ELK re-layout for tighter gap compaction.
 				const opts = get(topologyOptions);
 				const sizeKey = `${opts.request.hide_ports}`;
-				const rootCollapsedPreview = new Set(
-					[...collapsed].filter((id) => !layoutGraph || !layoutGraph.isSubcontainer(id))
-				);
+				const baseKey =
+					currentView + ':' + topoKey + ':' + sizeKey + ':' + hiddenEdgeTypes.join(',');
 				const structureKey =
-					currentView +
-					':' +
-					topoKey +
-					':' +
-					Array.from(rootCollapsedPreview).sort().join(',') +
-					':' +
-					sizeKey +
-					':' +
-					hiddenEdgeTypes.join(',');
+					baseKey + ':' + Array.from(collapsed).sort().join(',');
 				const isNewStructure = sessionStructureKey !== structureKey;
+				const isNewBaseStructure = sessionBaseKey !== baseKey;
 
 				// Capture expanded sizes and child positions from the current graph
 				// BEFORE rebuilding — the rebuild resets all sizes to zero.
@@ -738,10 +733,21 @@
 				const isViewTransition = isNewStructure && viewChanged && topologyChanged;
 				const needsElk = isNewStructure || needsElkForExpand;
 
-				// Clear cached sizes for this view when structure changes (e.g., level
-				// 1→2 step). Sizes from all-collapsed mode are stale for expanded mode.
-				if (isNewStructure) {
+				// Invalidate cached sizes for containers whose collapse state changed.
+				// Element sizes don't change on collapse, so they stay cached.
+				// Full cache clear only when topology data/view changes.
+				if (isNewBaseStructure) {
 					viewSizeCache.delete(`${currentView}:${topology.id}`);
+				} else if (isNewStructure) {
+					const viewCacheMap = viewSizeCache.get(`${currentView}:${topology.id}`);
+					if (viewCacheMap) {
+						for (const c of layoutGraph?.containers.values() ?? []) {
+							const shouldBeCollapsed = collapsed.has(c.id);
+							if (c.collapsed !== shouldBeCollapsed) {
+								viewCacheMap.delete(c.id);
+							}
+						}
+					}
 				}
 				console.log(
 					`[LAYOUT-DEBUG] Layout decision: needsElk=${needsElk} isNewStructure=${isNewStructure} needsElkForExpand=${needsElkForExpand} deferCollapse=${deferCollapse} collapseChanged=${collapseChanged} collapsed=${collapsed.size}`
@@ -751,10 +757,23 @@
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 					const elementNodeSizes = new Map<string, { x: number; y: number }>();
 					const viewCacheKey = `${currentView}:${topology.id}`;
+					// Use cached sizes when only collapse changed (element sizes are
+					// still valid; container entries were already invalidated above).
+					const collapseOnlyCachedSizes =
+						isNewStructure && !isNewBaseStructure
+							? viewSizeCache.get(viewCacheKey)
+							: undefined;
 					const cachedSizes = isViewTransition ? viewSizeCache.get(viewCacheKey) : undefined;
 					const expandCachedSizes =
 						needsElkForExpand && !isNewStructure ? viewSizeCache.get(viewCacheKey) : undefined;
-					if (isViewTransition && cachedSizes) {
+					if (collapseOnlyCachedSizes) {
+						// Collapse-only re-layout: element sizes are cached, containers
+						// whose state changed were invalidated and fall to metadata defaults
+						for (const node of visibleNodes) {
+							const cached = collapseOnlyCachedSizes.get(node.id);
+							elementNodeSizes.set(node.id, cached ?? { x: 250, y: 100 });
+						}
+					} else if (isViewTransition && cachedSizes) {
 						// Return visit to a previously-measured view: use cached sizes
 						// so the old layout stays visible (no measurement pass / container hide)
 						for (const node of visibleNodes) {
@@ -882,6 +901,7 @@
 						}
 
 						sessionStructureKey = structureKey;
+						sessionBaseKey = baseKey;
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						layoutGraph.syncCollapseState(collapsed);
 						layoutGraph.applyForceResult(
@@ -920,6 +940,7 @@
 							return;
 						}
 						sessionStructureKey = structureKey;
+						sessionBaseKey = baseKey;
 
 						// Rebuild graph and apply ELK result
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
