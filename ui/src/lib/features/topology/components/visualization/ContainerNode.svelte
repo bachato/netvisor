@@ -339,9 +339,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="relative"
-	style="{nodeStyle} opacity: {nodeOpacity}; transition: opacity 0.2s ease-in-out;{isSubcontainer
-		? ' cursor: pointer;'
-		: ''}"
+	style="{nodeStyle} opacity: {nodeOpacity};{isSubcontainer ? ' cursor: pointer;' : ''}"
 	onpointerdown={isSubcontainer
 		? (e) => {
 				pointerDownPos = { x: e.clientX, y: e.clientY };

@@ -150,9 +150,17 @@ export class LayoutContainer {
 
 		const meta = containerTypes.getMetadata(this.containerType);
 		const newHeight = maxColumnBottom + meta.padding.bottom;
-		const newWidth = maxColumnRight + meta.padding.right;
 		const oldHeight = this.expandedSize.height;
-		this.expandedSize = { width: newWidth, height: newHeight };
+		if (changedChildId) {
+			// Stable reflow (child collapsed/expanded): recompute width since
+			// the widest child may have changed size
+			const newWidth = maxColumnRight + meta.padding.right;
+			this.expandedSize = { width: newWidth, height: newHeight };
+		} else {
+			// Full reflow (container itself expanding): preserve ELK-computed
+			// width, only update height from vertical restacking
+			this.expandedSize = { width: this.expandedSize.width, height: newHeight };
+		}
 		return newHeight - oldHeight;
 	}
 }

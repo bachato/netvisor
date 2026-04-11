@@ -1858,6 +1858,11 @@
 		transition: none !important;
 	}
 
+	/* Base opacity transition for selection fade (was inline in ContainerNode) */
+	:global(.svelte-flow__node > .relative) {
+		transition: opacity 0.2s ease-in-out;
+	}
+
 	/* Animate node position and size during collapse/expand */
 	:global(.animate-layout .svelte-flow__node) {
 		transition:
