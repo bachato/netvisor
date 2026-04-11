@@ -1863,18 +1863,12 @@
 		transition: opacity 0.2s ease-in-out;
 	}
 
-	/* Animate node position and size during collapse/expand */
+	/* Animate node repositioning during collapse/expand.
+	   Only transform (position) is animated — NOT width/height, because
+	   SvelteFlow's extent:'parent' constrains children to the parent's
+	   current DOM size, so animating container dimensions causes children
+	   to be clamped to the still-transitioning (small) size. */
 	:global(.animate-layout .svelte-flow__node) {
-		transition:
-			transform 0.3s ease-in-out,
-			width 0.3s ease-in-out,
-			height 0.3s ease-in-out;
-	}
-
-	:global(.animate-layout .svelte-flow__node > .relative) {
-		transition:
-			width 0.3s ease-in-out,
-			height 0.3s ease-in-out,
-			opacity 0.2s ease-in-out;
+		transition: transform 0.3s ease-in-out;
 	}
 </style>
