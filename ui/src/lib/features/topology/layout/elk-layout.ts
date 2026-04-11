@@ -714,16 +714,15 @@ function buildElkGraph(
 	}
 	const isWorkloads = view === 'Workloads';
 
-	// Workloads: sort containers by children count (descending) and assign
-	// explicit positions so the layered algorithm preserves our ordering.
-	// Backend pre-sorts by workload count; we reinforce with elk.position
-	// and forceNodeModelOrder to prevent ELK from rearranging.
+	// Workloads: assign descending priority so box packing places
+	// highest-workload containers first (top-left).
+	// Backend sends containers sorted by descending workload count,
+	// so first container gets highest priority.
 	if (isWorkloads) {
-		rootContainers.sort((a, b) => (b.children?.length ?? 0) - (a.children?.length ?? 0));
 		for (let i = 0; i < rootContainers.length; i++) {
 			const container = rootContainers[i];
 			if (!container.layoutOptions) container.layoutOptions = {};
-			container.layoutOptions['org.eclipse.elk.position'] = String(i);
+			container.layoutOptions['elk.priority'] = String(rootContainers.length - i);
 		}
 	}
 
@@ -744,9 +743,12 @@ function buildElkGraph(
 			}
 		: isWorkloads
 			? {
-					...ROOT_LAYOUT_OPTIONS,
-					'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
-					'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES'
+					'elk.algorithm': 'box',
+					'elk.box.packingMode': 'SIMPLE',
+					'elk.aspectRatio': '1.6',
+					'elk.spacing.nodeNode': '75',
+					'elk.spacing.componentComponent': '75',
+					'elk.padding': '[top=25,left=25,bottom=25,right=25]'
 				}
 			: ROOT_LAYOUT_OPTIONS;
 
