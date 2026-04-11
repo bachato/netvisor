@@ -102,13 +102,10 @@ function buildElkGraph(
 			const measured = input.elementNodeSizes?.get(node.id);
 			const collapsedWidth = measured?.x ?? meta.collapsed_size.width;
 			const collapsedHeight = measured?.y ?? meta.collapsed_size.height;
-			// Use the larger of expanded and collapsed width so ELK reserves
-			// enough space for both states — expanded content and collapsed
-			// display (which can be wider due to subgroup summary tags).
-			const expandedWidth = input.expandedContainerSizes?.get(node.id)?.width;
-			const elkCollapsedWidth = expandedWidth
-				? Math.max(expandedWidth, collapsedWidth)
-				: collapsedWidth;
+			// Use the actual collapsed width — no need to reserve expanded
+			// space since expanding triggers a full ELK re-layout via
+			// structureKey change (root collapsed IDs are part of the key).
+			const elkCollapsedWidth = collapsedWidth;
 
 			// Layered children: ELK optimizes child ordering for crossing minimization
 			// Box children: grid packing by size (default for most views)
@@ -745,7 +742,9 @@ function buildElkGraph(
 				const elemNode = node as Record<string, unknown>;
 				const containerId = elemNode.container_id as string | undefined;
 				// VM hosts are always app-relevant; services check the set
-				const elementType = (elemNode as Record<string, unknown>).element_type as string | undefined;
+				const elementType = (elemNode as Record<string, unknown>).element_type as
+					| string
+					| undefined;
 				const isRelevant = elementType === 'Host' || appRelevantServiceIds.has(node.id);
 				if (containerId && isRelevant) {
 					const rootId = resolveRootContainer(containerId);

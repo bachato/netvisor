@@ -226,6 +226,8 @@
 	let collapseLevelInferred = false;
 	let lastSeenTopologyId = '';
 	let isMeasuring = false;
+	let animateLayout = $state(false);
+	let prevCollapsedForAnim = new Set<string>();
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
 	let prevView = get(activeView);
@@ -644,21 +646,9 @@
 
 						if (useGraph && layoutGraph) {
 							const graphPos = layoutGraph.getPosition(node.id);
-							const expandedSize = !isElement ? layoutGraph.getExpandedSize(node.id) : undefined;
 							position = graphPos ?? { x: node.position.x, y: node.position.y };
-							// Sub-containers keep expanded width when collapsed to prevent overlap on expand
-							// Root containers use collapsed size from metadata
-							const isSubContainer =
-								!isElement && node.node_type === 'Container' && !!node.parent_container_id;
-							if (isSubContainer) {
-								console.log(
-									`[LAYOUT-DEBUG] buildFlowNodes sub ${node.id.substring(0, 8)} collapsed=${isNodeCollapsed} expandedSize=${JSON.stringify(expandedSize)} containerSize=${JSON.stringify(containerSize)} w=${width} h=${height}`
-								);
-							}
 							width = isNodeCollapsed
-								? isSubContainer
-									? (expandedSize?.width ?? containerSize?.width ?? undefined)
-									: (containerSize?.width ?? undefined)
+								? (containerSize?.width ?? undefined)
 								: isElement
 									? 250
 									: (containerSize?.width ?? undefined);
@@ -1329,6 +1319,21 @@
 				// Add aggregated collapse edges
 				flowEdges.push(...extraFlowEdges);
 
+				// Enable CSS transitions for collapse/expand size & position changes
+				{
+					const collapsedSetChanged =
+						prevCollapsedForAnim.size !== collapsed.size ||
+						[...collapsed].some((id) => !prevCollapsedForAnim.has(id)) ||
+						[...prevCollapsedForAnim].some((id) => !collapsed.has(id));
+					if (collapsedSetChanged && !deferCollapse && !isMeasuring) {
+						animateLayout = true;
+						setTimeout(() => {
+							animateLayout = false;
+						}, 350);
+					}
+					prevCollapsedForAnim = new Set(collapsed);
+				}
+
 				if (!isMeasuring) {
 					// Cached-size path (no measurement pass): set nodes and edges atomically
 					// in one synchronous batch — old layout swaps to new in a single frame
@@ -1643,6 +1648,7 @@
 	class="h-full w-full overflow-hidden !p-0"
 	class:card={!isEmbed}
 	class:card-static={!isEmbed}
+	class:animate-layout={animateLayout}
 	style:visibility={isMeasuring ? 'hidden' : 'visible'}
 	bind:this={containerElement}
 >
@@ -1850,5 +1856,20 @@
 	:global(.hide-for-export .svelte-flow__node > .relative) {
 		opacity: 1 !important;
 		transition: none !important;
+	}
+
+	/* Animate node position and size during collapse/expand */
+	:global(.animate-layout .svelte-flow__node) {
+		transition:
+			transform 0.3s ease-in-out,
+			width 0.3s ease-in-out,
+			height 0.3s ease-in-out;
+	}
+
+	:global(.animate-layout .svelte-flow__node > .relative) {
+		transition:
+			width 0.3s ease-in-out,
+			height 0.3s ease-in-out,
+			opacity 0.2s ease-in-out;
 	}
 </style>
