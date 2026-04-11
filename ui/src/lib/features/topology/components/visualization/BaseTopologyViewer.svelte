@@ -280,15 +280,26 @@
 		(o.local.hide_edge_types ?? []).join(',')
 	);
 
+	// Trigger loadTopologyData on topology or store changes.
+	// Manual subscriptions avoid $effect tracking stores that
+	// loadTopologyData writes to (collapsedContainers → auto-collapse loop).
+	let loadInProgress = false;
+	function triggerLoad() {
+		if (!topology || loadInProgress) return;
+		loadInProgress = true;
+		void loadTopologyData().finally(() => { loadInProgress = false; });
+	}
+
+	let storesInitialized = false;
+	collapsedContainers.subscribe(() => { if (storesInitialized) triggerLoad(); });
+	expandedBundles.subscribe(() => { if (storesInitialized) triggerLoad(); });
+	expandedPortNodeIds.subscribe(() => { if (storesInitialized) triggerLoad(); });
+	bundleEdgesStore.subscribe(() => { if (storesInitialized) triggerLoad(); });
+	hideEdgeTypesStore.subscribe(() => { if (storesInitialized) triggerLoad(); });
+	storesInitialized = true;
+
 	$effect(() => {
-		if (topology && (topology.edges || topology.nodes)) {
-			void $collapsedContainers;
-			void $expandedBundles;
-			void $expandedPortNodeIds;
-			void $bundleEdgesStore;
-			void $hideEdgeTypesStore;
-			void loadTopologyData();
-		}
+		if (topology) triggerLoad();
 	});
 
 	// Update edges when selection or search/tag filter changes — stores are the single source of truth
