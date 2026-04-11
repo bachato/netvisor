@@ -223,6 +223,7 @@ import { useQueryClient } from '@tanstack/svelte-query';
 	// Track ELK layout — only skip within same session when structure unchanged
 	let layoutGraph: LayoutGraph | null = null;
 	let sessionStructureKey = '';
+	let sessionBaseKey = '';
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal cache, not rendered
 	let seenAutoCollapseIds = new Set<string>();
 	let collapseLevelInferred = false;
@@ -519,19 +520,14 @@ import { useQueryClient } from '@tanstack/svelte-query';
 				// All collapsed IDs (not just root) trigger ELK re-layout with full
 				// All collapsed IDs in structureKey so any collapse change triggers
 				// ELK re-layout with proper DOM measurement and gap compaction.
-				const opts = get(topologyOptions);
-				const sizeKey = `${opts.request.hide_ports}`;
+				// Base key: topology data + view + edge visibility (affects ELK routing).
+				// Structure key adds collapse state. Port changes handled separately.
+				const baseKey =
+					currentView + ':' + topoKey + ':' + hiddenEdgeTypes.join(',');
 				const structureKey =
-					currentView +
-					':' +
-					topoKey +
-					':' +
-					Array.from(collapsed).sort().join(',') +
-					':' +
-					sizeKey +
-					':' +
-					hiddenEdgeTypes.join(',');
+					baseKey + ':' + Array.from(collapsed).sort().join(',');
 				const isNewStructure = sessionStructureKey !== structureKey;
+				const isNewBaseStructure = sessionBaseKey !== baseKey;
 
 				// Capture expanded sizes and child positions from the current graph
 				// BEFORE rebuilding — the rebuild resets all sizes to zero.
@@ -731,9 +727,10 @@ import { useQueryClient } from '@tanstack/svelte-query';
 				const isViewTransition = isNewStructure && viewChanged && topologyChanged;
 				const needsElk = isNewStructure || needsElkForExpand;
 
-				// Clear cached sizes for this view when structure changes (e.g., level
-				// 1→2 step). Sizes from all-collapsed mode are stale for expanded mode.
-				if (isNewStructure) {
+				// Only clear view size cache when topology data or view changes,
+				// not on collapse-only changes. Element sizes don't change on
+				// collapse, so they stay valid and fill in newly-visible elements.
+				if (isNewBaseStructure) {
 					viewSizeCache.delete(`${currentView}:${topology.id}`);
 				}
 
@@ -791,7 +788,22 @@ import { useQueryClient } from '@tanstack/svelte-query';
 								}
 							}
 						}
-						console.log(`[CACHE] elemHits=${elemHits} elemMisses=${elemMisses} containerHits=${cacheHits} containerMisses=${cacheMisses} cacheSize=${containerSizeCache.size}`);
+						// Fill missing elements from viewSizeCache (persists across
+						// collapse changes — element sizes don't change on collapse)
+						const viewCache = viewSizeCache.get(viewCacheKey);
+						if (viewCache && elemMisses > 0) {
+							for (const node of visibleNodes) {
+								if (!elementNodeSizes.has(node.id)) {
+									const cached = viewCache.get(node.id);
+									if (cached) {
+										elementNodeSizes.set(node.id, cached);
+										elemMisses--;
+										elemHits++;
+									}
+								}
+							}
+						}
+						console.log(`[CACHE] elemHits=${elemHits} elemMisses=${elemMisses} containerHits=${cacheHits} containerMisses=${cacheMisses} cacheSize=${containerSizeCache.size} viewCache=${viewCache?.size ?? 0}`);
 					} else {
 						// No cache yet (first load) — full hidden measurement pass
 						isMeasuring = true;
@@ -898,6 +910,7 @@ import { useQueryClient } from '@tanstack/svelte-query';
 						}
 
 						sessionStructureKey = structureKey;
+						sessionBaseKey = baseKey;
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
 						layoutGraph.syncCollapseState(collapsed);
 						layoutGraph.applyForceResult(
@@ -933,6 +946,7 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							return;
 						}
 						sessionStructureKey = structureKey;
+						sessionBaseKey = baseKey;
 
 						// Rebuild graph and apply ELK result
 						layoutGraph = LayoutGraph.fromTopology(layoutNodes);
