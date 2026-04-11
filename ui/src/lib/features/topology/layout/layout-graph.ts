@@ -132,35 +132,18 @@ export class LayoutContainer {
 			}
 		}
 
-		// Recompute container size from all columns
+		// Recompute container height from all columns
 		let maxColumnBottom = 0;
-		let maxColumnRight = 0;
 		for (const [, colNodes] of columns) {
 			const last = colNodes[colNodes.length - 1];
 			const bottom = last.child.position.y + last.height;
 			if (bottom > maxColumnBottom) maxColumnBottom = bottom;
-
-			for (const entry of colNodes) {
-				const w =
-					entry.child instanceof LayoutContainer ? entry.child.size.width : entry.child.width;
-				const right = entry.child.position.x + w;
-				if (right > maxColumnRight) maxColumnRight = right;
-			}
 		}
 
-		const meta = containerTypes.getMetadata(this.containerType);
-		const newHeight = maxColumnBottom + meta.padding.bottom;
+		const bottomPad = containerTypes.getMetadata(this.containerType).padding.bottom;
+		const newHeight = maxColumnBottom + bottomPad;
 		const oldHeight = this.expandedSize.height;
-		if (changedChildId) {
-			// Stable reflow (child collapsed/expanded): recompute width since
-			// the widest child may have changed size
-			const newWidth = maxColumnRight + meta.padding.right;
-			this.expandedSize = { width: newWidth, height: newHeight };
-		} else {
-			// Full reflow (container itself expanding): preserve ELK-computed
-			// width, only update height from vertical restacking
-			this.expandedSize = { width: this.expandedSize.width, height: newHeight };
-		}
+		this.expandedSize = { width: this.expandedSize.width, height: newHeight };
 		return newHeight - oldHeight;
 	}
 }
