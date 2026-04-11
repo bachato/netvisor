@@ -1319,7 +1319,9 @@
 				// Add aggregated collapse edges
 				flowEdges.push(...extraFlowEdges);
 
-				// Enable CSS transitions for collapse/expand size & position changes
+				// Enable CSS transitions for collapse/expand size & position changes.
+				// Temporarily remove extent:'parent' during animation so SvelteFlow
+				// doesn't clamp children to the mid-transition container size.
 				{
 					const collapsedSetChanged =
 						prevCollapsedForAnim.size !== collapsed.size ||
@@ -1327,8 +1329,21 @@
 						[...prevCollapsedForAnim].some((id) => !collapsed.has(id));
 					if (collapsedSetChanged && !deferCollapse && !isMeasuring) {
 						animateLayout = true;
+						for (const n of allNodes) {
+							if (n.extent === 'parent') {
+								(n as Record<string, unknown>).extent = undefined;
+							}
+						}
 						setTimeout(() => {
 							animateLayout = false;
+							// Restore extent:'parent' after animation completes
+							const currentNodes = getNodes();
+							nodes.set(
+								currentNodes.map((n) => ({
+									...n,
+									extent: n.parentId ? ('parent' as const) : undefined
+								}))
+							);
 						}, 350);
 					}
 					prevCollapsedForAnim = new Set(collapsed);
@@ -1863,7 +1878,9 @@
 		transition: opacity 0.2s ease-in-out;
 	}
 
-	/* Animate node position and size during collapse/expand */
+	/* Animate node position and size during collapse/expand.
+	   extent:'parent' is temporarily removed during animation to prevent
+	   SvelteFlow from clamping children to mid-transition container size. */
 	:global(.animate-layout .svelte-flow__node) {
 		transition:
 			transform 0.3s ease-in-out,
