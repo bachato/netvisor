@@ -238,6 +238,8 @@
 	let animateLayout = $state(false);
 	let prevCollapsedForAnim = new Set<string>();
 	let animatingExpandIds = new Set<string>();
+	/** Positions from the last completed render — immune to measurement pass pollution */
+	let lastRenderedPositions = new Map<string, { x: number; y: number }>();
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
 	let prevView = get(activeView);
@@ -768,13 +770,10 @@
 					`[LAYOUT-DEBUG] Layout decision: needsElk=${needsElk} isNewStructure=${isNewStructure} needsElkForExpand=${needsElkForExpand} deferCollapse=${deferCollapse} collapseChanged=${collapseChanged} collapsed=${collapsed.size}`
 				);
 
-				// Capture current node positions for FLIP animation (before
-				// measurement pass moves nodes to origin). Used to animate
-				// from old positions to new ELK positions after layout.
-				const preLayoutNodes = needsElk ? getNodes() : [];
-				const preLayoutPositions = new Map(
-					preLayoutNodes.map((n) => [n.id, { ...n.position }])
-				);
+				// Use positions from last completed render for FLIP animation.
+				// getNodes() can't be used here because a prior measurement pass
+				// (or auto-collapse re-trigger) may have left nodes at origin.
+				const preLayoutPositions = lastRenderedPositions;
 
 				if (needsElk) {
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
@@ -1467,6 +1466,11 @@
 				const isFirstRender = lastRenderedTopoKey === '';
 				lastRenderedTopoKey = topoKey;
 				lastRenderedView = currentView;
+
+				// Save positions for FLIP animation on next collapse change
+				lastRenderedPositions = new Map(
+					getNodes().map((n) => [n.id, { ...n.position }])
+				);
 
 				// Auto-fit viewport after layout completes:
 				// - on perspective switch (viewChanged && topologyChanged)
