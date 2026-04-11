@@ -1455,6 +1455,7 @@ import { useQueryClient } from '@tanstack/svelte-query';
 					requestAnimationFrame(() => fitView({ padding: getFitViewPadding() }));
 				}
 			}
+	}
 
 	function createFlowEdge(
 		edge: TopologyEdge,
