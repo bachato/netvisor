@@ -231,8 +231,6 @@ import { useQueryClient } from '@tanstack/svelte-query';
 	let animateLayout = $state(false);
 	let prevCollapsedForAnim = new Set<string>();
 	let animatingExpandIds = new Set<string>();
-	/** Positions from the last completed render — immune to measurement pass pollution */
-	let lastRenderedPositions = new Map<string, { x: number; y: number }>();
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
 	let prevView = get(activeView);
@@ -517,12 +515,15 @@ import { useQueryClient } from '@tanstack/svelte-query';
 				// DOM measurement so containers reposition for tight gap compaction.
 				const opts = get(topologyOptions);
 				const sizeKey = `${opts.request.hide_ports}`;
+				const rootCollapsedPreview = new Set(
+					[...collapsed].filter((id) => !layoutGraph || !layoutGraph.isSubcontainer(id))
+				);
 				const structureKey =
 					currentView +
 					':' +
 					topoKey +
 					':' +
-					Array.from(collapsed).sort().join(',') +
+					Array.from(rootCollapsedPreview).sort().join(',') +
 					':' +
 					sizeKey +
 					':' +
@@ -732,11 +733,6 @@ import { useQueryClient } from '@tanstack/svelte-query';
 				if (isNewStructure) {
 					viewSizeCache.delete(`${currentView}:${topology.id}`);
 				}
-
-				// Use positions from last completed render for FLIP animation.
-				// getNodes() can't be used here because a prior measurement pass
-				// (or auto-collapse re-trigger) may have left nodes at origin.
-				const preLayoutPositions = lastRenderedPositions;
 
 				if (needsElk) {
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
@@ -961,19 +957,6 @@ import { useQueryClient } from '@tanstack/svelte-query';
 
 					// Cache measured sizes for this view so return visits skip measurement
 					viewSizeCache.set(viewCacheKey, new Map(elementNodeSizes));
-
-					// Save positions BEFORE auto-collapse can trigger re-entry.
-					// Uses layout graph positions (accurate from ELK result).
-					if (layoutGraph) {
-						const posMap = new Map<string, { x: number; y: number }>();
-						for (const [id, c] of layoutGraph.containers) {
-							posMap.set(id, { ...c.position });
-						}
-						for (const [id, e] of layoutGraph.elements) {
-							posMap.set(id, { ...e.position });
-						}
-						lastRenderedPositions = posMap;
-					}
 
 					// Auto-collapse containers whose type has collapsed_by_default metadata.
 					// Runs after layout so expanded sizes are cached for correct expand later.
@@ -1329,7 +1312,7 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							});
 						}
 
-						// Phase 2: after animation, show full node set with children
+						// Phase 2: after animation, show full node set then compact
 						const fullNodes = [...allNodes];
 						const fullEdges = [...flowEdges];
 						setTimeout(() => {
@@ -1337,6 +1320,11 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							animatingExpandIds = new Set();
 							nodes.set(fullNodes);
 							edges.set(fullEdges);
+							// Phase 3: trigger ELK re-run for gap compaction.
+							// Invalidate structureKey so next loadTopologyData sees
+							// isNewStructure=true and runs measurement + ELK.
+							sessionStructureKey = '';
+							void loadTopologyData();
 						}, 350);
 					}
 					if (!isMeasuring) {
@@ -1350,83 +1338,35 @@ import { useQueryClient } from '@tanstack/svelte-query';
 					nodes.set(animPhaseNodes);
 					edges.set(flowEdges);
 				} else {
-					// Measurement path: container is hidden during measurement.
-					// For collapse changes, use FLIP: reveal at old positions first,
-					// then animate to new ELK positions.
-					const collapsedSetChanged =
-						prevCollapsedForAnim.size !== collapsed.size ||
-						[...collapsed].some((id) => !prevCollapsedForAnim.has(id)) ||
-						[...prevCollapsedForAnim].some((id) => !collapsed.has(id));
-
-					if (collapsedSetChanged && preLayoutPositions.size > 0) {
-						// FLIP debug: log what we're working with
-						const matchCount = allNodes.filter((n) => preLayoutPositions.has(n.id)).length;
-						const sampleOld = [...preLayoutPositions.entries()].slice(0, 3).map(([id, p]) => `${id.substring(0, 8)}:(${p.x},${p.y})`);
-						const sampleNew = allNodes.slice(0, 3).map((n) => `${n.id.substring(0, 8)}:(${n.position.x},${n.position.y})`);
-						console.log(`[FLIP] matched=${matchCount}/${allNodes.length} preLayout=${preLayoutPositions.size} oldSample=[${sampleOld}] newSample=[${sampleNew}]`);
-
-						// 1. Set nodes at OLD positions (still hidden)
-						const flipNodes = allNodes.map((n) => {
-							const oldPos = preLayoutPositions.get(n.id);
-							return oldPos ? { ...n, position: oldPos } : n;
-						});
-						nodes.set(flipNodes);
-						edges.set(flowEdges);
-						await tick();
-						if (isStale()) { isMeasuring = false; return; }
-
-						// 2. Reveal WITH transition class — same frame
+					// Measurement path: container is hidden, set positioned nodes + edges,
+					// then reveal after paint completes
+					edges.set([]);
+					nodes.set(allNodes);
+					pendingEdges = flowEdges;
+					await tick();
+					if (isStale()) {
 						isMeasuring = false;
-						animateLayout = true;
-						prevCollapsedForAnim = new Set(collapsed);
-						await tick();
-						if (isStale()) return;
-						await new Promise((r) => requestAnimationFrame(r));
-						if (isStale()) return;
-
-						// 3. Change positions — transition fires (old → new)
-						nodes.set(allNodes);
-						setTimeout(() => {
-							animateLayout = false;
-						}, 350);
-					} else {
-						// Non-collapse structural change: reveal with final layout
-						console.log(`[FLIP] skipped: collapsedSetChanged=${collapsedSetChanged} preLayoutSize=${preLayoutPositions.size} prevCollapsedForAnim=${prevCollapsedForAnim.size} collapsed=${collapsed.size}`);
-						edges.set([]);
-						nodes.set(allNodes);
-						pendingEdges = flowEdges;
-						await tick();
-						if (isStale()) {
-							isMeasuring = false;
-							return;
-						}
-						if (pendingEdges.length > 0) {
-							edges.set(pendingEdges);
-							pendingEdges = [];
-						}
-						await tick();
-						await new Promise((r) =>
-							requestAnimationFrame(() => requestAnimationFrame(r))
-						);
-						if (isStale()) {
-							isMeasuring = false;
-							return;
-						}
-						prevCollapsedForAnim = new Set(collapsed);
-						isMeasuring = false;
+						return;
 					}
+					if (pendingEdges.length > 0) {
+						edges.set(pendingEdges);
+						pendingEdges = [];
+					}
+					await tick();
+					await new Promise((r) =>
+						requestAnimationFrame(() => requestAnimationFrame(r))
+					);
+					if (isStale()) {
+						isMeasuring = false;
+						return;
+					}
+					prevCollapsedForAnim = new Set(collapsed);
+					isMeasuring = false;
 				}
 
 				const isFirstRender = lastRenderedTopoKey === '';
 				lastRenderedTopoKey = topoKey;
 				lastRenderedView = currentView;
-
-				// Save positions for FLIP animation on next collapse change.
-				// Use allNodes directly — getNodes() may return stale SvelteFlow
-				// state since $derived node lookup hasn't re-executed yet.
-				lastRenderedPositions = new Map(
-					allNodes.map((n) => [n.id, { ...n.position }])
-				);
 
 				// Auto-fit viewport after layout completes:
 				// - on perspective switch (viewChanged && topologyChanged)
