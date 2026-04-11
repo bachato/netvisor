@@ -410,6 +410,33 @@ export const serviceCategories = createTypeMetadataHelpers<
 	ServiceCategoryMetadata
 >('service_categories');
 
+type ServiceCategory = components['schemas']['ServiceCategory'];
+
+/**
+ * Get service categories that are NOT application-relevant for the given use case.
+ * Used by the infra service grouping rule and workloads container sorting.
+ */
+export function getIrrelevantServiceCategories(useCase: string): Set<string> {
+	const categories = new Set<string>();
+	for (const cat of serviceCategoriesJson) {
+		const meta = cat.metadata as ServiceCategoryMetadata | null;
+		if (meta && !meta.application_relevant_use_cases.includes(useCase)) {
+			categories.add(cat.id);
+		}
+	}
+	return categories;
+}
+
+/** Map service definition name → category */
+const svcDefToCategoryMap = new Map<string, string>(
+	serviceDefinitionsJson.map((d) => [d.id, d.category])
+);
+
+/** Get the service category for a service definition name */
+export function getServiceDefinitionCategory(serviceDefinition: string): string | undefined {
+	return svcDefToCategoryMap.get(serviceDefinition);
+}
+
 /**
  * Generic metadata item structure for static fixtures.
  * Looser than TypeMetadata to allow JSON imports without strict color types.

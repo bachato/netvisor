@@ -193,38 +193,6 @@ impl ViewBuilder for WorkloadsBuilder {
             nodes.push(node);
         }
 
-        // --- Phase 3.5: Sort host containers by workload count (descending) ---
-        // Count elements per container
-        let mut element_counts: HashMap<Uuid, usize> = HashMap::new();
-        for node in &nodes {
-            if let NodeType::Element { container_id, .. } = &node.node_type {
-                *element_counts.entry(*container_id).or_default() += 1;
-            }
-        }
-        // Stable sort: descending by count, then alphabetical by name for ties
-        let mut containers: Vec<Node> = Vec::new();
-        let mut elements: Vec<Node> = Vec::new();
-        for node in nodes {
-            if matches!(
-                node.node_type,
-                NodeType::Container {
-                    container_type: ContainerType::Host,
-                    ..
-                }
-            ) {
-                containers.push(node);
-            } else {
-                elements.push(node);
-            }
-        }
-        containers.sort_by(|a, b| {
-            let count_a = element_counts.get(&a.id).copied().unwrap_or(0);
-            let count_b = element_counts.get(&b.id).copied().unwrap_or(0);
-            count_b.cmp(&count_a).then_with(|| a.header.cmp(&b.header))
-        });
-        let mut nodes = containers;
-        nodes.append(&mut elements);
-
         // --- Phase 4: Apply element rules (ByVirtualizer + ByTag) ---
 
         let virtualizer_titles = Self::build_virtualizer_titles(ctx);
@@ -999,74 +967,4 @@ mod tests {
         assert_eq!(elements.len(), 4);
     }
 
-    #[test]
-    fn test_containers_sorted_by_workload_count_descending() {
-        // Host A: 1 service, Host B: 3 services, Host C: 2 services
-        let host_a = make_host("host-a");
-        let host_b = make_host("host-b");
-        let host_c = make_host("host-c");
-
-        let svc_a1 = make_regular_service("svc-a1", host_a.id);
-
-        let svc_b1 = make_regular_service("svc-b1", host_b.id);
-        let svc_b2 = make_regular_service("svc-b2", host_b.id);
-        let svc_b3 = make_regular_service("svc-b3", host_b.id);
-
-        let svc_c1 = make_regular_service("svc-c1", host_c.id);
-        let svc_c2 = make_regular_service("svc-c2", host_c.id);
-
-        let (nodes, _edges) = build(
-            &[host_a, host_b, host_c],
-            &[svc_a1, svc_b1, svc_b2, svc_b3, svc_c1, svc_c2],
-        );
-
-        let containers: Vec<&Node> = nodes
-            .iter()
-            .filter(|n| {
-                matches!(
-                    n.node_type,
-                    NodeType::Container {
-                        container_type: ContainerType::Host,
-                        ..
-                    }
-                )
-            })
-            .collect();
-        assert_eq!(containers.len(), 3);
-
-        // Sorted by workload count descending: host-b (3), host-c (2), host-a (1)
-        assert_eq!(containers[0].header.as_deref(), Some("host-b"));
-        assert_eq!(containers[1].header.as_deref(), Some("host-c"));
-        assert_eq!(containers[2].header.as_deref(), Some("host-a"));
-    }
-
-    #[test]
-    fn test_containers_sorted_alphabetically_on_tie() {
-        // Both hosts have 1 service — should sort alphabetically
-        let host_z = make_host("zulu");
-        let host_a = make_host("alpha");
-
-        let svc_z = make_regular_service("svc-z", host_z.id);
-        let svc_a = make_regular_service("svc-a", host_a.id);
-
-        let (nodes, _edges) = build(&[host_z, host_a], &[svc_z, svc_a]);
-
-        let containers: Vec<&Node> = nodes
-            .iter()
-            .filter(|n| {
-                matches!(
-                    n.node_type,
-                    NodeType::Container {
-                        container_type: ContainerType::Host,
-                        ..
-                    }
-                )
-            })
-            .collect();
-        assert_eq!(containers.len(), 2);
-
-        // Same count → alphabetical
-        assert_eq!(containers[0].header.as_deref(), Some("alpha"));
-        assert_eq!(containers[1].header.as_deref(), Some("zulu"));
-    }
 }
