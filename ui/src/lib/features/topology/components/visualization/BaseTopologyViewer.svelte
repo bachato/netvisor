@@ -768,10 +768,17 @@
 						needsElkForExpand && !isNewStructure ? viewSizeCache.get(viewCacheKey) : undefined;
 					if (collapseOnlyCachedSizes) {
 						// Collapse-only re-layout: element sizes are cached, containers
-						// whose state changed were invalidated and fall to metadata defaults
+						// whose state changed were invalidated. Skip containers without
+						// a cached entry so buildElkGraph uses meta.collapsed_size defaults
+						// instead of a wrong 250x100 fallback.
 						for (const node of visibleNodes) {
 							const cached = collapseOnlyCachedSizes.get(node.id);
-							elementNodeSizes.set(node.id, cached ?? { x: 250, y: 100 });
+							if (cached) {
+								elementNodeSizes.set(node.id, cached);
+							} else if (node.node_type === 'Element') {
+								elementNodeSizes.set(node.id, { x: 250, y: 100 });
+							}
+							// Containers without cache: omit so ELK uses metadata defaults
 						}
 					} else if (isViewTransition && cachedSizes) {
 						// Return visit to a previously-measured view: use cached sizes
