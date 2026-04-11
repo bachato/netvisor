@@ -751,31 +751,43 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							elementNodeSizes.set(node.id, cached ?? { x: 250, y: 100 });
 						}
 					} else {
-						// Check if all visible nodes are already in the DOM — if so,
-						// read sizes in-place without hiding the container (no flash).
-						const canMeasureInPlace =
-							containerElement &&
-							visibleNodes.every((n) =>
-								containerElement.querySelector(`[data-id="${n.id}"]`)
-							);
+						// Render nodes with new collapse state at current positions,
+						// wait for DOM to update, then measure unconstrained sizes.
+						// No isMeasuring/hide — container stays visible throughout.
+						const preElkNodes = sortFlowNodes(buildFlowNodes(true));
+						nodes.set(preElkNodes);
+						edges.set([]);
+						await tick();
+						await new Promise((r) =>
+							requestAnimationFrame(() => requestAnimationFrame(r))
+						);
+						if (isStale()) return;
 
-						if (canMeasureInPlace) {
-							// Unconstrained in-place measurement: temporarily remove
-							// width/height from containers so offsetWidth reflects
-							// natural content width, not the layout-constrained width.
-							// All synchronous — no paint between write-read-restore.
+						// Unconstrained measurement: temporarily remove width/height
+						// from containers so offsetWidth reflects natural content
+						// width, then restore. All synchronous — no paint.
+						if (containerElement) {
 							const saved = new Map<HTMLElement, { w: string; h: string }>();
-							const nodeEls = containerElement.querySelectorAll('.svelte-flow__node');
+							const nodeEls =
+								containerElement.querySelectorAll('.svelte-flow__node');
 							for (const el of nodeEls) {
 								const htmlEl = el as HTMLElement;
 								const id = htmlEl.dataset.id;
 								if (id && layoutGraph?.containers.has(id)) {
-									saved.set(htmlEl, { w: htmlEl.style.width, h: htmlEl.style.height });
+									saved.set(htmlEl, {
+										w: htmlEl.style.width,
+										h: htmlEl.style.height
+									});
 									htmlEl.style.width = 'auto';
 									htmlEl.style.height = 'auto';
-									const inner = htmlEl.querySelector(':scope > .relative') as HTMLElement;
+									const inner = htmlEl.querySelector(
+										':scope > .relative'
+									) as HTMLElement;
 									if (inner) {
-										saved.set(inner, { w: inner.style.width, h: inner.style.height });
+										saved.set(inner, {
+											w: inner.style.width,
+											h: inner.style.height
+										});
 										inner.style.width = 'auto';
 										inner.style.height = 'auto';
 									}
@@ -794,36 +806,6 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							for (const [el, { w, h }] of saved) {
 								el.style.width = w;
 								el.style.height = h;
-							}
-						} else {
-							// Full measurement pass: hide container, place nodes at origin,
-							// measure DOM, then reveal after ELK completes
-							isMeasuring = true;
-							edges.set([]);
-							const measureNodes = sortFlowNodes(buildFlowNodes(false));
-							nodes.set(measureNodes);
-
-							await tick();
-							await new Promise((r) =>
-								requestAnimationFrame(() => requestAnimationFrame(r))
-							);
-							if (isStale()) {
-								isMeasuring = false;
-								return;
-							}
-
-							if (containerElement) {
-								const nodeEls = containerElement.querySelectorAll('.svelte-flow__node');
-								for (const el of nodeEls) {
-									const id = (el as HTMLElement).dataset.id;
-									if (id) {
-										const htmlEl = el as HTMLElement;
-										elementNodeSizes.set(id, {
-											x: htmlEl.offsetWidth || 250,
-											y: htmlEl.offsetHeight || 100
-										});
-									}
-								}
 							}
 						}
 					}
