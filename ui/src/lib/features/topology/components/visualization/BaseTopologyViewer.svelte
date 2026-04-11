@@ -762,14 +762,21 @@ import { useQueryClient } from '@tanstack/svelte-query';
 						// Use cached container sizes + SvelteFlow computed element
 						// sizes. No DOM measurement needed — no flash.
 						const liveNodes = getNodes();
+						let elemHits = 0;
+						let elemMisses = 0;
 						for (const n of liveNodes) {
 							const w = n.computed?.width ?? n.width;
 							const h = n.computed?.height ?? n.height;
 							if (w && h) {
 								elementNodeSizes.set(n.id, { x: w, y: h });
+								elemHits++;
+							} else {
+								elemMisses++;
 							}
 						}
 						// Override containers with cached sizes for their current state
+						let cacheHits = 0;
+						let cacheMisses = 0;
 						for (const node of visibleNodes) {
 							if (node.node_type === 'Container') {
 								const cache = containerSizeCache.get(node.id);
@@ -777,9 +784,14 @@ import { useQueryClient } from '@tanstack/svelte-query';
 								const cached = isCollapsed ? cache?.collapsed : cache?.expanded;
 								if (cached) {
 									elementNodeSizes.set(node.id, cached);
+									cacheHits++;
+								} else {
+									cacheMisses++;
+									console.log(`[CACHE-MISS] ${node.id.substring(0, 8)} collapsed=${isCollapsed} cache=${JSON.stringify(cache)}`);
 								}
 							}
 						}
+						console.log(`[CACHE] elemHits=${elemHits} elemMisses=${elemMisses} containerHits=${cacheHits} containerMisses=${cacheMisses} cacheSize=${containerSizeCache.size}`);
 					} else {
 						// No cache yet (first load) — full hidden measurement pass
 						isMeasuring = true;
@@ -954,10 +966,11 @@ import { useQueryClient } from '@tanstack/svelte-query';
 								}
 							}
 
-							// Second measurement: render collapsed containers to
-							// measure their actual collapsed DOM size. Still within
-							// the isMeasuring window (initial load) — no extra flash.
-							const collapsedMeasureNodes = sortFlowNodes(buildFlowNodes(true));
+							// Second measurement: render collapsed containers with
+							// width: undefined to measure natural collapsed DOM size.
+							// Uses buildFlowNodes(false) so containers aren't constrained
+							// by metadata width. Still in isMeasuring window — no flash.
+							const collapsedMeasureNodes = sortFlowNodes(buildFlowNodes(false));
 							nodes.set(collapsedMeasureNodes);
 							await tick();
 							await new Promise((r) =>
