@@ -714,51 +714,54 @@ function buildElkGraph(
 		}
 	}
 
-	// Workloads: sort containers by app-relevant workload count (descending)
+	// Workloads: sort containers by app-relevant workload count (descending).
+	// Uses topology.services and topology.hosts (always full data, independent
+	// of collapse level) instead of input.nodes (which only has visible nodes).
 	const isWorkloads = view === 'Workloads';
 	if (isWorkloads && input.topology) {
 		const irrelevantCategories = getIrrelevantServiceCategories(getOrgUseCase());
 
-		// Build set of app-relevant service IDs
-		const appRelevantServiceIds = new Set<string>();
+		// Count app-relevant services per host_id
+		const countByHostId = new Map<string, number>();
 		for (const svc of input.topology.services ?? []) {
 			const cat = getServiceDefinitionCategory(svc.service_definition);
 			if (cat && !irrelevantCategories.has(cat)) {
-				appRelevantServiceIds.add(svc.id);
+				countByHostId.set(svc.host_id, (countByHostId.get(svc.host_id) ?? 0) + 1);
 			}
 		}
 
-		// Resolve any container to its root container via parentContainerMap
-		function resolveRootContainer(id: string): string {
-			let current = id;
-			while (parentContainerMap.has(current)) {
-				current = parentContainerMap.get(current)!;
-			}
-			return current;
+		// Count VM hosts as workloads on their hypervisor host.
+		// VM hosts have virtualization: { type, details: { service_id } }.
+		// The service_id points to the virtualizer service on the hypervisor.
+		const serviceHostMap = new Map<string, string>();
+		for (const svc of input.topology.services ?? []) {
+			serviceHostMap.set(svc.id, svc.host_id);
 		}
-
-		// Count app-relevant elements per root container
-		const countByRootContainer = new Map<string, number>();
-		for (const node of input.nodes) {
-			if (node.node_type === 'Element') {
-				const elemNode = node as Record<string, unknown>;
-				const containerId = elemNode.container_id as string | undefined;
-				// VM hosts are always app-relevant; services check the set
-				const elementType = (elemNode as Record<string, unknown>).element_type as string | undefined;
-				const isRelevant = elementType === 'Host' || appRelevantServiceIds.has(node.id);
-				if (containerId && isRelevant) {
-					const rootId = resolveRootContainer(containerId);
-					countByRootContainer.set(rootId, (countByRootContainer.get(rootId) ?? 0) + 1);
+		for (const host of input.topology.hosts ?? []) {
+			if (host.virtualization) {
+				const serviceId = host.virtualization.details?.service_id;
+				if (serviceId) {
+					const hypervisorHostId = serviceHostMap.get(serviceId);
+					if (hypervisorHostId) {
+						countByHostId.set(hypervisorHostId, (countByHostId.get(hypervisorHostId) ?? 0) + 1);
+					}
 				}
 			}
 		}
 
+		// Map host name → count, then sort containers by header (= host name)
+		const countByHostName = new Map<string, number>();
+		for (const host of input.topology.hosts ?? []) {
+			const count = countByHostId.get(host.id) ?? 0;
+			countByHostName.set(host.name, count);
+		}
+
 		rootContainers.sort((a, b) => {
-			const countA = countByRootContainer.get(a.id) ?? 0;
-			const countB = countByRootContainer.get(b.id) ?? 0;
-			if (countB !== countA) return countB - countA;
 			const nameA = input.nodes.find((n) => n.id === a.id)?.header ?? '';
 			const nameB = input.nodes.find((n) => n.id === b.id)?.header ?? '';
+			const countA = countByHostName.get(nameA) ?? 0;
+			const countB = countByHostName.get(nameB) ?? 0;
+			if (countB !== countA) return countB - countA;
 			return nameA.localeCompare(nameB);
 		});
 	}
