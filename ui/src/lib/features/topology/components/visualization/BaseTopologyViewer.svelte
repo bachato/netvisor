@@ -228,6 +228,7 @@
 	let isMeasuring = false;
 	let animateLayout = false;
 	let prevCollapsedForAnim = new Set<string>();
+	let animatingExpandIds = new Set<string>();
 	let layoutGeneration = 0;
 	let prevExpandedPortIds = new Set<string>();
 	let prevView = get(activeView);
@@ -1319,9 +1320,11 @@
 				// Add aggregated collapse edges
 				flowEdges.push(...extraFlowEdges);
 
-				// Enable CSS transitions for collapse/expand size & position changes.
-				// Temporarily remove extent:'parent' during animation so SvelteFlow
-				// doesn't clamp children to the mid-transition container size.
+				// Two-phase animation for collapse/expand:
+				// Phase 1: animate container sizes + sibling positions (children of
+				//          expanding containers hidden to avoid extent:'parent' clamping)
+				// Phase 2: after animation completes, show children at correct positions
+				let animPhaseNodes = allNodes;
 				{
 					const collapsedSetChanged =
 						prevCollapsedForAnim.size !== collapsed.size ||
@@ -1329,21 +1332,34 @@
 						[...prevCollapsedForAnim].some((id) => !collapsed.has(id));
 					if (collapsedSetChanged && !deferCollapse && !isMeasuring) {
 						animateLayout = true;
-						for (const n of allNodes) {
-							if (n.extent === 'parent') {
-								(n as Record<string, unknown>).extent = undefined;
+
+						// Identify containers that are expanding (were collapsed, now aren't)
+						animatingExpandIds = new Set(
+							[...prevCollapsedForAnim].filter((id) => !collapsed.has(id))
+						);
+
+						// Phase 1: filter out children of expanding containers
+						if (animatingExpandIds.size > 0) {
+							const expandDescendants = new Set(animatingExpandIds);
+							for (const n of allNodes) {
+								if (n.parentId && expandDescendants.has(n.parentId)) {
+									expandDescendants.add(n.id);
+								}
 							}
+							animPhaseNodes = allNodes.filter((n) => {
+								if (animatingExpandIds.has(n.id)) return true;
+								return !expandDescendants.has(n.id);
+							});
 						}
+
+						// Phase 2: after animation, show full node set with children
+						const fullNodes = [...allNodes];
+						const fullEdges = [...flowEdges];
 						setTimeout(() => {
 							animateLayout = false;
-							// Restore extent:'parent' after animation completes
-							const currentNodes = getNodes();
-							nodes.set(
-								currentNodes.map((n) => ({
-									...n,
-									extent: n.parentId ? ('parent' as const) : undefined
-								}))
-							);
+							animatingExpandIds = new Set();
+							nodes.set(fullNodes);
+							edges.set(fullEdges);
 						}, 350);
 					}
 					prevCollapsedForAnim = new Set(collapsed);
@@ -1352,7 +1368,7 @@
 				if (!isMeasuring) {
 					// Cached-size path (no measurement pass): set nodes and edges atomically
 					// in one synchronous batch — old layout swaps to new in a single frame
-					nodes.set(allNodes);
+					nodes.set(animPhaseNodes);
 					edges.set(flowEdges);
 				} else {
 					// Measurement path: container is hidden, set positioned nodes + edges,
