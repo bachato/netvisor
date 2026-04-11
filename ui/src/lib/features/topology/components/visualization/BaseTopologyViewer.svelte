@@ -815,7 +815,16 @@ import { useQueryClient } from '@tanstack/svelte-query';
 							}
 						}
 						console.log(`[CACHE] elemHits=${elemHits} elemMisses=${elemMisses} containerHits=${cacheHits} containerMisses=${cacheMisses} cacheSize=${containerSizeCache.size} viewCache=${viewCache?.size ?? 0}`);
-					} else {
+
+						// If any containers are missing from cache, the cached
+						// sizes are incomplete — clear and fall through to full
+						// measurement for accurate results.
+						if (cacheMisses > 0) {
+							elementNodeSizes.clear();
+						}
+					}
+
+					if (elementNodeSizes.size === 0) {
 						// No cache yet (first load) — full hidden measurement pass
 						isMeasuring = true;
 						edges.set([]);
