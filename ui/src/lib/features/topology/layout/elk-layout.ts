@@ -1430,15 +1430,14 @@ export async function computeElkLayout(input: ElkLayoutInput): Promise<ElkLayout
 	);
 	const result2 = await elk.layout(graph2);
 
-	// DEBUG: Log ELK output positions for children of root containers
+	// DEBUG: Log ELK output — root positions AND children within roots
 	if (result2.children) {
+		console.log(`[ELK-ROOTS] ${result2.children.length} root containers:`);
 		for (const root of result2.children) {
-			if (root.children && root.children.length > 0) {
-				console.log(`[ELK-DEBUG] Root ${root.id.substring(0, 8)} algo=${root.layoutOptions?.['elk.algorithm'] ?? 'inherited'} size=${root.width}x${root.height} children:`);
-				for (const child of root.children) {
-					console.log(`  ${child.id.substring(0, 8)}: pos=(${child.x},${child.y}) size=${child.width}x${child.height} hasChildren=${!!(child.children && child.children.length > 0)} childCount=${child.children?.length ?? 'none'}`);
-				}
-			}
+			const childInfo = root.children && root.children.length > 0
+				? root.children.map(c => `${c.id.substring(0, 8)}@(${c.x},${c.y})`).join(', ')
+				: 'no children';
+			console.log(`  ${root.id.substring(0, 8)}: pos=(${root.x},${root.y}) size=${root.width}x${root.height} children=[${childInfo}]`);
 		}
 	}
 
