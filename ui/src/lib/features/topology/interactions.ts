@@ -91,7 +91,9 @@ export function toggleExpandedPorts(nodeId: string): void {
 }
 
 export function collapseAllBundles(): void {
-	expandedBundles.set(new Set());
+	if (get(expandedBundles).size > 0) {
+		expandedBundles.set(new Set());
+	}
 }
 
 /** Clear all edge hover state — prevents stale hover from drag interactions */
