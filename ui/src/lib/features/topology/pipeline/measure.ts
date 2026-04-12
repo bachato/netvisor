@@ -63,23 +63,28 @@ export async function resolveNodeSizes(
 			}
 		}
 
-		// Override containers with cached sizes for their current state
+		// Override COLLAPSED containers with cached sizes. Expanded
+		// containers are omitted — ELK computes their size from children.
+		// Including a stale expanded size would set elk.nodeSize.minimum
+		// too large, preventing the container from shrinking.
 		let cacheHits = 0;
 		let cacheMisses = 0;
 		for (const node of visibleNodes) {
 			if (node.node_type === 'Container') {
-				const cache = state.containerSizeCache.get(node.id);
 				const isCollapsed = collapsed.has(node.id);
-				const cached = isCollapsed ? cache?.collapsed : cache?.expanded;
-				if (cached) {
-					elementNodeSizes.set(node.id, cached);
-					cacheHits++;
-				} else {
-					cacheMisses++;
-					console.log(
-						`[CACHE-MISS] ${node.id.substring(0, 8)} collapsed=${isCollapsed} cache=${JSON.stringify(cache)}`
-					);
+				if (isCollapsed) {
+					const cached = state.containerSizeCache.get(node.id)?.collapsed;
+					if (cached) {
+						elementNodeSizes.set(node.id, cached);
+						cacheHits++;
+					} else {
+						cacheMisses++;
+						console.log(
+							`[CACHE-MISS] ${node.id.substring(0, 8)} collapsed=true cache=${JSON.stringify(state.containerSizeCache.get(node.id))}`
+						);
+					}
 				}
+				// Expanded containers: no entry needed, ELK computes from children
 			}
 		}
 
