@@ -82,11 +82,8 @@
 				onclick={toggleExpanded}
 				class="text-secondary hover:text-primary flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
 			>
-				<span>Getting Started</span>
-				<div class="flex items-center gap-1.5">
-					<span class="text-tertiary text-[10px] font-medium"
-						>{completedCount}/{CHECKLIST_STEPS.length}</span
-					>
+				<span class="whitespace-nowrap">Getting Started</span>
+				<div class="flex items-center gap-2">
 					<div class="flex gap-0.5">
 						{#each CHECKLIST_STEPS as step (step.id)}
 							<span
