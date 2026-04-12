@@ -246,6 +246,35 @@ export class LayoutGraph {
 		return this.containers.get(nodeId)?.position ?? this.elements.get(nodeId)?.position;
 	}
 
+	/** Get absolute position by accumulating parent offsets (ELK stores positions relative to parent) */
+	getAbsolutePosition(nodeId: string): { x: number; y: number } | undefined {
+		const container = this.containers.get(nodeId);
+		if (container) {
+			let x = container.position.x;
+			let y = container.position.y;
+			let parent = container.parent;
+			while (parent) {
+				x += parent.position.x;
+				y += parent.position.y;
+				parent = parent.parent;
+			}
+			return { x, y };
+		}
+		const element = this.elements.get(nodeId);
+		if (element) {
+			let x = element.position.x;
+			let y = element.position.y;
+			let parent = element.container;
+			while (parent) {
+				x += parent.position.x;
+				y += parent.position.y;
+				parent = parent.parent;
+			}
+			return { x, y };
+		}
+		return undefined;
+	}
+
 	/** Get container size (respects collapsed state) */
 	getContainerSize(containerId: string): { width: number; height: number } | undefined {
 		return this.containers.get(containerId)?.size;
