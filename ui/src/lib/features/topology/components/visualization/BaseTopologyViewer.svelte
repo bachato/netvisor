@@ -86,6 +86,7 @@
 		onNodeDragStop = null,
 		onReconnect = null,
 		onOpenShortcuts = null,
+		onOpenSearch = null,
 		editMode = false,
 		onToggleEditMode = null,
 		sidebarCollapsed = false
@@ -99,6 +100,7 @@
 		onNodeDragStop?: ((node: Node) => void) | null;
 		onReconnect?: ((edge: Edge, newConnection: Connection) => void) | null;
 		onOpenShortcuts?: (() => void) | null;
+		onOpenSearch?: (() => void) | null;
 		editMode?: boolean;
 		onToggleEditMode?: (() => void) | null;
 		sidebarCollapsed?: boolean;
@@ -125,7 +127,7 @@
 	let viewportMoved = false;
 	let viewportMoveTimer: ReturnType<typeof setTimeout> | null = null;
 
-	const { fitView, getNodes, zoomIn, zoomOut } = useSvelteFlow();
+	const { fitView, getNodes } = useSvelteFlow();
 	const queryClient = useQueryClient();
 	let containerElement: HTMLDivElement;
 
@@ -725,11 +727,10 @@
 				{editMode}
 				{onToggleEditMode}
 				{onOpenShortcuts}
+				{onOpenSearch}
 				{sidebarCollapsed}
 				onStepExpand={handleStepExpand}
 				onStepCollapse={handleStepCollapse}
-				onZoomIn={() => zoomIn()}
-				onZoomOut={() => zoomOut()}
 				onFitView={() => triggerFitView()}
 				{expandDisabled}
 				{collapseDisabled}

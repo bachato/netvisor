@@ -306,7 +306,7 @@ fn default_element_rules() -> Vec<IdentifiedRule<ElementRule>> {
             categories: ServiceCategory::iter()
                 .filter(|c| c.application_relevant_use_cases().is_empty())
                 .collect(),
-            title: Some("Infrastructure & Devices".into()),
+            title: Some("Infrastructure".into()),
             is_infra_rule: true,
         }),
         IdentifiedRule::new(ElementRule::ByTag {

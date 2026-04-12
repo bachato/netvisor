@@ -146,7 +146,9 @@ export async function resolveNodeSizes(
 
 		const allNodeEls = containerElement?.querySelectorAll('.svelte-flow__node').length ?? -1;
 		const flowEl = containerElement?.querySelector('.svelte-flow') ? 'yes' : 'no';
-		console.log(`[MEASURE] DOM read complete: ${elementNodeSizes.size} nodes measured (DOM nodes: ${allNodeEls}, svelte-flow: ${flowEl})`);
+		console.log(
+			`[MEASURE] DOM read complete: ${elementNodeSizes.size} nodes measured (DOM nodes: ${allNodeEls}, svelte-flow: ${flowEl})`
+		);
 
 		// Populate container size cache from this measurement.
 		// During deferred collapse, everything was measured EXPANDED

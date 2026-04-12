@@ -23,7 +23,7 @@ import { getDefaultHiddenEdgeTypes } from './layout/edge-classification';
 import type { components } from '$lib/api/schema';
 import viewsJson from '$lib/data/views.json';
 import { getIrrelevantServiceCategories } from '$lib/shared/stores/metadata';
-import { topology_infrastructureServices } from '$lib/paraglide/messages';
+import { common_infrastructure } from '$lib/paraglide/messages';
 
 export type TopologyView = components['schemas']['TopologyView'];
 
@@ -135,7 +135,7 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 				const rule = makeGraphRule({
 					ByServiceCategory: {
 						categories: getIrrelevantCategories(getOrgUseCase()),
-						title: topology_infrastructureServices()
+						title: common_infrastructure()
 					}
 				});
 				elementRules.push(rule);
@@ -717,7 +717,7 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 							ByServiceCategory: {
 								...rule.ByServiceCategory,
 								categories: irrelevant,
-								title: topology_infrastructureServices()
+								title: common_infrastructure()
 							}
 						}
 					};

@@ -23,7 +23,7 @@
 		active?: boolean;
 		collapsed?: boolean;
 		disabled?: boolean;
-		grouped?: 'top' | 'bottom';
+		grouped?: 'top' | 'middle' | 'bottom';
 	} = $props();
 
 	let hovered = $state(false);
@@ -31,19 +31,25 @@
 	let showLabel = $derived(hasLabel && (!collapsed || hovered));
 
 	let roundingClass = $derived(
-		grouped === 'top' ? 'rounded-t' : grouped === 'bottom' ? 'rounded-b' : 'rounded'
+		grouped === 'top'
+			? 'rounded-t'
+			: grouped === 'bottom'
+				? 'rounded-b'
+				: grouped === 'middle'
+					? ''
+					: 'rounded'
 	);
 </script>
 
 <button
-	class="flex items-center overflow-hidden text-xs font-medium transition-all duration-300 ease-in-out {roundingClass}
+	class="flex items-center justify-center overflow-hidden text-xs font-medium transition-all duration-300 ease-in-out {roundingClass}
 		{disabled
 		? '!cursor-not-allowed !border !border-gray-200 !bg-gray-100 !text-gray-400 !opacity-40 !shadow-none dark:!border-gray-700 dark:!bg-gray-800 dark:!text-gray-600'
 		: active
 			? '!border !border-blue-400 !bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!border-blue-500 dark:!bg-blue-900/40 dark:!text-blue-300 dark:hover:!bg-blue-800/50'
 			: '!border !border-gray-300 !bg-gray-50 !text-gray-700 hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600'}
 	{grouped ? '' : '!shadow-lg'}"
-	style="padding: 6px; gap: 6px;"
+	style="padding: 6px; gap: 6px; min-width: 60px;"
 	onclick={disabled ? undefined : onclick}
 	aria-disabled={disabled || undefined}
 	{title}

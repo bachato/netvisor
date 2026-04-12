@@ -113,8 +113,12 @@ export async function executeLayout(
 			if (isCol) elkCollapsedLog.push(entry);
 			else elkExpanded.push(entry);
 		}
-		console.log(`[ELK] ${elkExpanded.length} expanded: ${elkExpanded.slice(0, 8).join(', ')}${elkExpanded.length > 8 ? '...' : ''}`);
-		console.log(`[ELK] ${elkCollapsedLog.length} collapsed: ${elkCollapsedLog.slice(0, 8).join(', ')}${elkCollapsedLog.length > 8 ? '...' : ''}`);
+		console.log(
+			`[ELK] ${elkExpanded.length} expanded: ${elkExpanded.slice(0, 8).join(', ')}${elkExpanded.length > 8 ? '...' : ''}`
+		);
+		console.log(
+			`[ELK] ${elkCollapsedLog.length} collapsed: ${elkCollapsedLog.slice(0, 8).join(', ')}${elkCollapsedLog.length > 8 ? '...' : ''}`
+		);
 
 		// Cache container sizes from ELK result
 		for (const [id, size] of elkResult.containerSizes) {

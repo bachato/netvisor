@@ -1,6 +1,15 @@
 <script lang="ts">
-	import { Panel } from '@xyflow/svelte';
-	import { Keyboard, Expand, Shrink, Pencil, ZoomIn, ZoomOut, Maximize } from 'lucide-svelte';
+	import { Panel, useSvelteFlow } from '@xyflow/svelte';
+	import {
+		Keyboard,
+		Expand,
+		Shrink,
+		Pencil,
+		ZoomIn,
+		ZoomOut,
+		Maximize,
+		Search
+	} from 'lucide-svelte';
 	import {
 		topology_shortcutsTitle,
 		topology_editModeTooltip,
@@ -8,6 +17,7 @@
 		topology_zoomIn,
 		topology_zoomOut,
 		topology_shortcutFitView,
+		topology_shortcutSearch,
 		common_edit,
 		common_shortcuts
 	} from '$lib/paraglide/messages';
@@ -17,11 +27,10 @@
 		editMode = false,
 		onToggleEditMode = null,
 		onOpenShortcuts = null,
+		onOpenSearch = null,
 		sidebarCollapsed = false,
 		onStepExpand,
 		onStepCollapse,
-		onZoomIn,
-		onZoomOut,
 		onFitView,
 		expandDisabled,
 		collapseDisabled,
@@ -32,11 +41,10 @@
 		editMode?: boolean;
 		onToggleEditMode?: (() => void) | null;
 		onOpenShortcuts?: (() => void) | null;
+		onOpenSearch?: (() => void) | null;
 		sidebarCollapsed?: boolean;
 		onStepExpand: () => void;
 		onStepCollapse: () => void;
-		onZoomIn: () => void;
-		onZoomOut: () => void;
 		onFitView: () => void;
 		expandDisabled: boolean;
 		collapseDisabled: boolean;
@@ -44,6 +52,8 @@
 		collapseLevelTooltipExpand: string;
 		collapseLevelTooltipCollapse: string;
 	} = $props();
+
+	const { zoomIn, zoomOut } = useSvelteFlow();
 </script>
 
 <Panel position="top-right" class="!m-[10px] !flex !flex-col !items-end !gap-2 !p-0">
@@ -110,21 +120,45 @@
 		</TopologySidebarButton>
 	{/if}
 
-	<!-- Zoom group -->
+	{#if onOpenSearch}
+		<TopologySidebarButton
+			onclick={onOpenSearch}
+			title={topology_shortcutSearch()}
+			shortcut="/"
+			collapsed={sidebarCollapsed}
+		>
+			{#snippet icon()}
+				<Search class="h-4 w-4" />
+			{/snippet}
+		</TopologySidebarButton>
+	{/if}
+
+	<!-- Fit view + Zoom group -->
 	<div class="flex flex-col overflow-hidden rounded !shadow-lg">
 		<TopologySidebarButton
-			onclick={onZoomIn}
+			onclick={onFitView}
+			title={topology_shortcutFitView()}
+			shortcut="F"
+			collapsed={sidebarCollapsed}
+			grouped="top"
+		>
+			{#snippet icon()}
+				<Maximize class="h-4 w-4" />
+			{/snippet}
+		</TopologySidebarButton>
+		<TopologySidebarButton
+			onclick={() => zoomIn()}
 			title={topology_zoomIn()}
 			reserveShortcutWidth={true}
 			collapsed={sidebarCollapsed}
-			grouped="top"
+			grouped="middle"
 		>
 			{#snippet icon()}
 				<ZoomIn class="h-4 w-4" />
 			{/snippet}
 		</TopologySidebarButton>
 		<TopologySidebarButton
-			onclick={onZoomOut}
+			onclick={() => zoomOut()}
 			title={topology_zoomOut()}
 			reserveShortcutWidth={true}
 			collapsed={sidebarCollapsed}
@@ -135,15 +169,4 @@
 			{/snippet}
 		</TopologySidebarButton>
 	</div>
-
-	<TopologySidebarButton
-		onclick={onFitView}
-		title={topology_shortcutFitView()}
-		shortcut="F"
-		collapsed={sidebarCollapsed}
-	>
-		{#snippet icon()}
-			<Maximize class="h-4 w-4" />
-		{/snippet}
-	</TopologySidebarButton>
 </Panel>

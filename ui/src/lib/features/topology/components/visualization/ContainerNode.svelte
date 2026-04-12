@@ -289,8 +289,7 @@
 					logoComponent: groupLogoComponent,
 					headerText: sHeader,
 					labels: isInfra ? [] : labels,
-					childCount: summary.childCount,
-					hideCount: isInfra
+					childCount: summary.childCount
 				};
 			});
 		}
@@ -410,7 +409,6 @@
 				{groupLabels}
 				{childCount}
 				{elementLabel}
-				hideCount={isInfraRule}
 				onToggleCollapse={handleChevronClick}
 			/>
 		{:else}

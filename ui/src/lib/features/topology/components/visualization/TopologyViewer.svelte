@@ -231,6 +231,7 @@
 			onNodeDragStop={handleNodeDragStop}
 			onReconnect={handleReconnect}
 			onOpenShortcuts={() => (shortcutsHelpOpen = true)}
+			onOpenSearch={() => searchOpen.set(true)}
 		/>
 		<SearchOverlay />
 		<ShortcutsHelpOverlay bind:isOpen={shortcutsHelpOpen} />
