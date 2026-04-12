@@ -144,8 +144,8 @@ export function buildFlowEdges(params: BuildFlowEdgesParams): BuildFlowEdgesResu
 
 			// Fall back to position-based computation if no original handles found
 			if (!handles && layoutGraph) {
-				const srcPos = layoutGraph.getPosition(agg.source);
-				const tgtPos = layoutGraph.getPosition(agg.target);
+				const srcPos = layoutGraph.getAbsolutePosition(agg.source);
+				const tgtPos = layoutGraph.getAbsolutePosition(agg.target);
 				const srcSize = layoutGraph.getContainerSize(agg.source);
 				const tgtSize = layoutGraph.getContainerSize(agg.target);
 				if (srcPos && tgtPos && srcSize && tgtSize) {
@@ -156,7 +156,7 @@ export function buildFlowEdges(params: BuildFlowEdgesParams): BuildFlowEdgesResu
 				}
 			}
 
-			extraFlowEdges.push({
+			const aggFlowEdge: Edge = {
 				id: agg.id,
 				source: agg.source,
 				target: agg.target,
@@ -166,13 +166,34 @@ export function buildFlowEdges(params: BuildFlowEdgesParams): BuildFlowEdgesResu
 				label: agg.count > 1 ? topology_connectionsCount({ count: agg.count }) : undefined,
 				data: {
 					...agg.originalEdges[0],
+					source: agg.source,
+					target: agg.target,
 					isAggregated: true,
 					aggregatedCount: agg.count,
 					edgeIndex: 1000 + index
 				},
 				animated: false,
 				interactionWidth: 50
-			});
+			};
+
+			// Compute display state (same pattern as createFlowEdge)
+			const curNode = get(selectionStores.selectedNode);
+			const curEdge = get(selectionStores.selectedEdge);
+			const searchHidden = get(searchHiddenNodeIds);
+			const tagHidden = get(tagHiddenNodeIds);
+			const { shouldAnimate, shouldShowFull, isEndpointSearchHidden, isEndpointTagHidden } =
+				getEdgeDisplayState(aggFlowEdge, curNode, curEdge, searchHidden, tagHidden);
+			aggFlowEdge.data = {
+				...aggFlowEdge.data,
+				shouldShowFull,
+				shouldAnimate,
+				isSelected: curEdge?.id === aggFlowEdge.id,
+				hasActiveSelection: !!(curNode || curEdge),
+				isEndpointSearchHidden,
+				isEndpointTagHidden
+			};
+
+			extraFlowEdges.push(aggFlowEdge);
 		}
 	} else {
 		baseEdges = elevatedEdges;
