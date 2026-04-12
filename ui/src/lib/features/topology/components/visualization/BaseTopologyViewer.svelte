@@ -486,6 +486,12 @@
 				// invalidate baseKey — base structure hasn't changed, and
 				// clearing it would delete viewSizeCache (element sizes).
 				layoutState.sessionStructureKey = '';
+				// Preserve fitView intent across the recursive call — the
+				// re-run won't see viewChanged/topologyChanged since we
+				// update the tracking keys here.
+				if (prep.viewChanged || prep.topologyChanged) {
+					layoutState.fitViewPending = true;
+				}
 				layoutState.lastRenderedTopoKey = prep.topoKey;
 				layoutState.lastRenderedView = prep.currentView;
 				await loadTopologyData();
@@ -497,9 +503,12 @@
 		layoutState.lastRenderedTopoKey = prep.topoKey;
 		layoutState.lastRenderedView = prep.currentView;
 
-		if ((prep.viewChanged && prep.topologyChanged) || isFirstRender || layoutState.fitViewPending) {
+		if (prep.viewChanged || prep.topologyChanged || isFirstRender || layoutState.fitViewPending) {
 			layoutState.fitViewPending = false;
-			requestAnimationFrame(() => fitView({ padding: getFitViewPadding() }));
+			// Double rAF: first lets SvelteFlow process node positions, second triggers fitView
+			requestAnimationFrame(() =>
+				requestAnimationFrame(() => fitView({ padding: getFitViewPadding() }))
+			);
 		}
 	}
 
