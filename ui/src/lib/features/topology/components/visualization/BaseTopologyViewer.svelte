@@ -442,12 +442,10 @@
 			);
 			if (newEntries > 0 && !isStale()) {
 				console.log(`[POST-RENDER] ${newEntries} new collapsed sizes cached, re-running ELK`);
-				// Re-run ELK with complete cache. Invalidate BOTH keys so
-				// isNewStructure=true triggers ELK, and set sessionBaseKey=''
-				// so viewSizeCache isn't prematurely preserved. But the graph
-				// and prevExpandedSizes from THIS call are still valid.
+				// Invalidate structureKey to force ELK re-run. Do NOT
+				// invalidate baseKey — base structure hasn't changed, and
+				// clearing it would delete viewSizeCache (element sizes).
 				layoutState.sessionStructureKey = '';
-				layoutState.sessionBaseKey = '';
 				layoutState.lastRenderedTopoKey = prep.topoKey;
 				layoutState.lastRenderedView = prep.currentView;
 				await loadTopologyData();
