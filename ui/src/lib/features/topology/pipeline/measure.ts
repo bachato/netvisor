@@ -7,6 +7,8 @@ export interface MeasureCallbacks {
 	setNodes: (n: Node[]) => void;
 	setEdges: (e: Edge[]) => void;
 	buildMeasureNodes: () => Node[];
+	/** Wait for SvelteFlow to render nodes in the DOM (resolves when nodesInitialized) */
+	waitForNodesRendered: () => Promise<void>;
 }
 
 /**
@@ -112,8 +114,8 @@ export async function resolveNodeSizes(
 		callbacks.setMeasuring(true);
 		callbacks.setEdges([]);
 		callbacks.setNodes(callbacks.buildMeasureNodes());
-		await tick();
-		await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+		// Wait for SvelteFlow to render nodes in the DOM
+		await callbacks.waitForNodesRendered();
 		if (isStale()) {
 			callbacks.setMeasuring(false);
 			return null;

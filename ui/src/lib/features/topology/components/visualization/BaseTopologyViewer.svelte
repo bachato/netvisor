@@ -326,7 +326,28 @@
 					},
 					setNodes: (n) => nodes.set(n),
 					setEdges: (e) => edges.set(e),
-					buildMeasureNodes: () => makeNodes(false)
+					buildMeasureNodes: () => makeNodes(false),
+					waitForNodesRendered: async () => {
+						// Wait until SvelteFlow has rendered nodes in the DOM.
+						// nodesInitialized becomes true after adoptUserNodes processes.
+						await tick();
+						if (nodesInitialized.current) return;
+						// Not ready yet — wait for it via $effect
+						await new Promise<void>((resolve) => {
+							const unsub = $effect.root(() => {
+								$effect(() => {
+									if (nodesInitialized.current) {
+										resolve();
+										unsub();
+									}
+								});
+							});
+						});
+						// One more rAF to ensure DOM is painted
+						await new Promise((r) =>
+							requestAnimationFrame(() => requestAnimationFrame(r))
+						);
+					}
 				}
 			);
 			if (!elementNodeSizes) {
