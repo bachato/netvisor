@@ -608,15 +608,6 @@ function buildElkGraph(
 	const rootsWithCrossChildEdges = new Set<string>();
 	const seenInnerEdges = new Map<string, Set<string>>();
 
-	// DEBUG: cross-child edge detection diagnostics (temporary)
-	if (useLayeredChildren) {
-		const layoutEdgeCount = input.edges.filter((e) => affectsLayout(e)).length;
-		console.log(
-			`[CROSS-CHILD] collapsed=${collapsed.size}, containerIds=${containerIds.size}, fullParentMap=${fullParentMap.size}, layoutEdges=${layoutEdgeCount}`
-		);
-	}
-	let debugCount = 0;
-
 	for (const edge of input.edges) {
 		if (!affectsLayout(edge)) continue;
 
@@ -624,14 +615,6 @@ function buildElkGraph(
 		const tgtImm = resolveEndpoint(edge.target);
 		const srcRoot = resolveEndpointRoot(edge.source);
 		const tgtRoot = resolveEndpointRoot(edge.target);
-
-		// DEBUG: log first 5 layout-affecting edges for L2 (temporary)
-		if (useLayeredChildren && debugCount < 5) {
-			console.log(
-				`[CROSS-CHILD] edge ${edge.edge_type} ${edge.source.substring(0, 8)}→${edge.target.substring(0, 8)}: srcImm=${srcImm?.substring(0, 8) ?? 'null'}, tgtImm=${tgtImm?.substring(0, 8) ?? 'null'}, srcRoot=${srcRoot?.substring(0, 8) ?? 'null'}, tgtRoot=${tgtRoot?.substring(0, 8) ?? 'null'}`
-			);
-			debugCount++;
-		}
 
 		if (!srcImm || !tgtImm) continue;
 		if (srcImm === tgtImm) continue;
@@ -658,11 +641,6 @@ function buildElkGraph(
 				});
 			}
 		}
-	}
-
-	// DEBUG: log cross-child detection result (temporary)
-	if (useLayeredChildren) {
-		console.log(`[CROSS-CHILD] rootsWithCrossChildEdges=${rootsWithCrossChildEdges.size}`);
 	}
 
 	// Switch root containers with cross-child edges from box to layered
