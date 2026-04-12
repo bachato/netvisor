@@ -61,35 +61,41 @@
 			{/snippet}
 		</TopologySidebarButton>
 	{/if}
-	<TopologySidebarButton
-		onclick={onStepExpand}
-		title={collapseLevelTooltipExpand}
-		shortcut="]"
-		label=""
-		disabled={expandDisabled}
-		collapsed={sidebarCollapsed}
-	>
-		{#snippet icon()}
-			<Expand class="h-4 w-4" />
-		{/snippet}
-	</TopologySidebarButton>
-	<span
-		class="flex h-5 w-5 items-center justify-center rounded text-xs font-semibold text-gray-500 dark:text-gray-400"
-	>
-		{collapseLevel}
-	</span>
-	<TopologySidebarButton
-		onclick={onStepCollapse}
-		title={collapseLevelTooltipCollapse}
-		shortcut="["
-		label=""
-		disabled={collapseDisabled}
-		collapsed={sidebarCollapsed}
-	>
-		{#snippet icon()}
-			<Shrink class="h-4 w-4" />
-		{/snippet}
-	</TopologySidebarButton>
+
+	<!-- Collapse/Expand group -->
+	<div class="flex flex-col overflow-hidden rounded !shadow-lg">
+		<TopologySidebarButton
+			onclick={onStepExpand}
+			title={collapseLevelTooltipExpand}
+			shortcut="]"
+			disabled={expandDisabled}
+			collapsed={sidebarCollapsed}
+			grouped="top"
+		>
+			{#snippet icon()}
+				<Expand class="h-4 w-4" />
+			{/snippet}
+		</TopologySidebarButton>
+		<div
+			class="flex items-center justify-center border-x border-gray-300 bg-gray-50 text-xs font-semibold text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400"
+			style="padding: 2px 6px;"
+		>
+			{collapseLevel}
+		</div>
+		<TopologySidebarButton
+			onclick={onStepCollapse}
+			title={collapseLevelTooltipCollapse}
+			shortcut="["
+			disabled={collapseDisabled}
+			collapsed={sidebarCollapsed}
+			grouped="bottom"
+		>
+			{#snippet icon()}
+				<Shrink class="h-4 w-4" />
+			{/snippet}
+		</TopologySidebarButton>
+	</div>
+
 	{#if onOpenShortcuts}
 		<TopologySidebarButton
 			onclick={onOpenShortcuts}
@@ -103,31 +109,37 @@
 			{/snippet}
 		</TopologySidebarButton>
 	{/if}
-	<TopologySidebarButton
-		onclick={onZoomIn}
-		title={topology_zoomIn()}
-		label=""
-		collapsed={sidebarCollapsed}
-	>
-		{#snippet icon()}
-			<ZoomIn class="h-4 w-4" />
-		{/snippet}
-	</TopologySidebarButton>
-	<TopologySidebarButton
-		onclick={onZoomOut}
-		title={topology_zoomOut()}
-		label=""
-		collapsed={sidebarCollapsed}
-	>
-		{#snippet icon()}
-			<ZoomOut class="h-4 w-4" />
-		{/snippet}
-	</TopologySidebarButton>
+
+	<!-- Zoom group -->
+	<div class="flex flex-col overflow-hidden rounded !shadow-lg">
+		<TopologySidebarButton
+			onclick={onZoomIn}
+			title={topology_zoomIn()}
+			reserveShortcutWidth={true}
+			collapsed={sidebarCollapsed}
+			grouped="top"
+		>
+			{#snippet icon()}
+				<ZoomIn class="h-4 w-4" />
+			{/snippet}
+		</TopologySidebarButton>
+		<TopologySidebarButton
+			onclick={onZoomOut}
+			title={topology_zoomOut()}
+			reserveShortcutWidth={true}
+			collapsed={sidebarCollapsed}
+			grouped="bottom"
+		>
+			{#snippet icon()}
+				<ZoomOut class="h-4 w-4" />
+			{/snippet}
+		</TopologySidebarButton>
+	</div>
+
 	<TopologySidebarButton
 		onclick={onFitView}
 		title={topology_shortcutFitView()}
 		shortcut="F"
-		label=""
 		collapsed={sidebarCollapsed}
 	>
 		{#snippet icon()}

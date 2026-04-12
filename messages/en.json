@@ -1179,7 +1179,7 @@
 	"topology_hidePortsHelp": "Don't show open ports next to services",
 	"topology_hideResizeHandles": "Hide Resize Handles",
 	"topology_hideResizeHandlesHelp": "Hide node resize handles",
-	"topology_infraRuleNote": "Infrastructure services are excluded from workload counts.",
+	"topology_infraRuleNote": "Infrastructure services are excluded from workload count in the Workload view.",
 	"topology_infrastructureServices": "Infrastructure & Devices",
 	"topology_l2EmptyDescription": "This view shows the physical network topology based on neighbor discovery between hosts. It will populate once hosts with discovered neighbors appear in this network.",
 	"topology_l2EmptyTitle": "No Physical Connections",
