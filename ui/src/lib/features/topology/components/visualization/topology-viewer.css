@@ -63,3 +63,18 @@
 .svelte-flow__node > .relative {
 	transition: opacity 0.2s ease-in-out;
 }
+
+/* Animate position + size during collapse/expand */
+.collapse-transition .svelte-flow__node {
+	transition:
+		transform 0.3s ease-in-out,
+		width 0.3s ease-in-out,
+		height 0.3s ease-in-out;
+}
+
+.collapse-transition .svelte-flow__node > .relative {
+	transition:
+		width 0.3s ease-in-out,
+		height 0.3s ease-in-out,
+		opacity 0.2s ease-in-out;
+}

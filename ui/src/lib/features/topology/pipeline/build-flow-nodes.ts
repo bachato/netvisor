@@ -12,6 +12,7 @@ export interface BuildFlowNodesParams {
 	useGraph: boolean;
 	liveNodes: Node[];
 	infraRuleId: string | null;
+	editMode: boolean;
 }
 
 export function buildFlowNodes(params: BuildFlowNodesParams): Node[] {
@@ -23,7 +24,8 @@ export function buildFlowNodes(params: BuildFlowNodesParams): Node[] {
 		isNewStructure,
 		useGraph,
 		liveNodes,
-		infraRuleId
+		infraRuleId,
+		editMode
 	} = params;
 
 	const currentPositions = new Map(liveNodes.map((n) => [n.id, n.position]));
@@ -99,7 +101,10 @@ export function buildFlowNodes(params: BuildFlowNodesParams): Node[] {
 					: node.node_type == 'Container' && node.parent_container_id
 						? (node.parent_container_id as string)
 						: undefined,
-			extent: node.node_type == 'Element' || node.parent_container_id ? 'parent' : undefined,
+			extent:
+				editMode && (node.node_type == 'Element' || node.parent_container_id)
+					? 'parent'
+					: undefined,
 			data: isNodeCollapsed
 				? (() => {
 						const totalCount = layoutGraph?.getChildCount(node.id) ?? 0;

@@ -121,7 +121,7 @@
 	let containerMeta = $derived(containerTypes.getMetadata(containerType));
 	let titleStyle = $derived(containerMeta.title_style);
 	let isSubcontainer = $derived(containerMeta.is_subcontainer);
-	let isCollapsible = $derived(containerMeta.is_collapsible);
+	let isCollapsible = $derived(containerMeta.is_collapsible && !$editModeEnabled);
 	let hasBorder = $derived(containerMeta.has_border);
 	let fillIcon = $derived(containerMeta.fill_icon ?? false);
 
@@ -304,6 +304,7 @@
 	let pointerDownPos: { x: number; y: number } | null = null;
 
 	function handleChevronClick(event: MouseEvent | KeyboardEvent) {
+		if ($editModeEnabled) return;
 		event.stopPropagation();
 		toggleCollapse(id, topology?.nodes);
 	}

@@ -188,6 +188,7 @@
 	// Pipeline state
 	const layoutState = createInitialState();
 	let isMeasuring = $state(false);
+	let animatingCollapse = $state(false);
 
 	// --- Reactive triggers ---
 
@@ -314,7 +315,8 @@
 					layoutGraph: layoutState.layoutGraph,
 					isNewStructure: prep.isNewStructure,
 					liveNodes: getNodes(),
-					infraRuleId: getInfrastructureRuleId()
+					infraRuleId: getInfrastructureRuleId(),
+					editMode: editMode ?? false
 				})
 			);
 
@@ -409,10 +411,20 @@
 		aggregatedEdgeOriginals.set(originalsMap);
 
 		// Render
-		const elemCount = allNodes.filter((n) => n.type === 'Element').length;
-		const contCount = allNodes.filter((n) => n.type === 'Container').length;
-		console.log(`[RENDER] ${allNodes.length} nodes (${elemCount} elements, ${contCount} containers), collapsed=${collapsed.size}`);
-		if (!isMeasuring) {
+		const shouldAnimate =
+			needsElk &&
+			!isMeasuring &&
+			layoutState.lastRenderedTopoKey !== '' &&
+			!prep.viewChanged;
+
+		if (shouldAnimate) {
+			animatingCollapse = true;
+			nodes.set(allNodes);
+			edges.set(flowEdges);
+			setTimeout(() => {
+				animatingCollapse = false;
+			}, 350);
+		} else if (!isMeasuring) {
 			nodes.set(allNodes);
 			edges.set(flowEdges);
 		} else {
@@ -594,11 +606,13 @@
 	);
 
 	function handleStepCollapse() {
+		if (editMode) return;
 		stepCollapse(topology.nodes, containerTypes, getInfrastructureRuleId());
 		setTimeout(() => fitView({ padding: getFitViewPadding(), duration: 300 }), 100);
 	}
 
 	function handleStepExpand() {
+		if (editMode) return;
 		const { autoCollapseIds } = stepExpand(
 			topology.nodes,
 			containerTypes,
@@ -636,6 +650,7 @@
 	class="h-full w-full overflow-hidden !p-0"
 	class:card={!isEmbed}
 	class:card-static={!isEmbed}
+	class:collapse-transition={animatingCollapse}
 	style:visibility={isMeasuring ? 'hidden' : 'visible'}
 	bind:this={containerElement}
 >
