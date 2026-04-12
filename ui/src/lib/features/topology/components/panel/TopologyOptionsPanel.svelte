@@ -8,12 +8,27 @@
 		OPTIONS_PANEL_WIDTH_PX
 	} from '../../queries';
 	import { get } from 'svelte/store';
-	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, Filter, Group, Eye } from 'lucide-svelte';
 	import OptionsContent from './options/OptionsContent.svelte';
 	import InspectorNode from './inspectors/InspectorNode.svelte';
 	import InspectorEdge from './inspectors/InspectorEdge.svelte';
 	import InspectorMultiSelect from './inspectors/InspectorMultiSelect.svelte';
-	import { topology_collapsePanel, topology_expandPanel } from '$lib/paraglide/messages';
+	import {
+		topology_collapsePanel,
+		topology_expandPanel,
+		common_filters,
+		topology_groupBy,
+		common_visual
+	} from '$lib/paraglide/messages';
+
+	type OptionsTab = 'filter' | 'group' | 'visual';
+	let activeTab = $state<OptionsTab>('filter');
+
+	const tabs: { id: OptionsTab; label: string; icon: typeof Filter }[] = [
+		{ id: 'filter', label: common_filters(), icon: Filter },
+		{ id: 'group', label: topology_groupBy(), icon: Group },
+		{ id: 'visual', label: common_visual(), icon: Eye }
+	];
 
 	let {
 		isReadOnly = false,
@@ -43,6 +58,8 @@
 			previewEdges.set([]);
 		}
 	});
+
+	let showingOptions = $derived(!$selectedNode && !$selectedEdge && multiSelectedNodes.length < 2);
 </script>
 
 <!-- Floating Panel -->
@@ -54,8 +71,8 @@
 >
 	<div class="card card-static p-0 shadow-lg">
 		{#if $optionsPanelExpanded}
-			<!-- Header with collapse button -->
-			<div class="flex items-center justify-start border-b border-gray-700">
+			<!-- Header with collapse button and tabs -->
+			<div class="flex items-center border-b border-gray-700">
 				<button
 					class="btn-icon flex-shrink-0 rounded-xl p-3"
 					onclick={() => optionsPanelExpanded.set(false)}
@@ -63,6 +80,22 @@
 				>
 					<ChevronLeft class="text-secondary h-5 w-5" />
 				</button>
+				{#if showingOptions}
+					<div class="flex flex-1 gap-1">
+						{#each tabs as tab (tab.id)}
+							<button
+								class="text-secondary hover:text-primary flex items-center gap-1.5 border-b-2 px-2.5 pb-2 pt-2.5 text-xs font-medium transition-colors {activeTab ===
+								tab.id
+									? 'border-blue-500 !text-blue-400'
+									: 'border-transparent'}"
+								onclick={() => (activeTab = tab.id)}
+							>
+								<tab.icon class="h-3.5 w-3.5" />
+								{tab.label}
+							</button>
+						{/each}
+					</div>
+				{/if}
 			</div>
 
 			<!-- Content area -->
@@ -82,7 +115,7 @@
 						<InspectorEdge edge={$selectedEdge} />
 					{/key}
 				{:else}
-					<OptionsContent />
+					<OptionsContent {activeTab} />
 				{/if}
 			</div>
 		{:else}

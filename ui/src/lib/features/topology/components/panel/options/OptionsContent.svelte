@@ -13,7 +13,6 @@
 	import { activeView } from '../../../queries';
 	import { type Color, COLOR_MAP } from '$lib/shared/utils/styling';
 	import viewsJson from '$lib/data/views.json';
-	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import TagFilterGroup from './TagFilterGroup.svelte';
 	import OptionToggle from './OptionToggle.svelte';
 	import CategoryFilterGroup from './CategoryFilterGroup.svelte';
@@ -29,7 +28,6 @@
 		topology_bundleEdgesHelp,
 		topology_dontFadeEdges,
 		topology_dontFadeEdgesHelp,
-		topology_groupBy,
 		topology_hidePorts,
 		topology_hidePortsHelp,
 		topology_showMinimap,
@@ -38,9 +36,10 @@
 		common_byTag,
 		common_byType,
 		common_edges,
-		common_filters,
 		topology_filtersHelp
 	} from '$lib/paraglide/messages';
+
+	let { activeTab }: { activeTab: 'filter' | 'group' | 'visual' } = $props();
 
 	// Get topology for entity_tags
 	const topologiesQuery = useTopologiesQuery();
@@ -281,13 +280,6 @@
 		}))
 	);
 
-	// Track expanded sections
-	let expandedSections = $state<Record<string, boolean>>(
-		Object.fromEntries(
-			[common_visual(), topology_groupBy(), common_filters()].map((name) => [name, true])
-		)
-	);
-
 	// Create form values initialized from topologyOptions
 	let values = $state<Record<string, boolean | string | string[]>>({});
 
@@ -320,204 +312,132 @@
 			return opts;
 		});
 	}
-
-	function toggleSection(sectionName: string) {
-		expandedSections[sectionName] = !expandedSections[sectionName];
-	}
 </script>
 
-<div class="space-y-4">
-	<!-- Filters Section -->
-	<div class="card card-static px-0 py-2">
-		<button
-			type="button"
-			class="text-secondary hover:text-primary flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
-			onclick={() => toggleSection(common_filters())}
-		>
-			{#if expandedSections[common_filters()]}
-				<ChevronDown class="h-4 w-4" />
-			{:else}
-				<ChevronRight class="h-4 w-4" />
-			{/if}
-			{common_filters()}
-		</button>
+{#if activeTab === 'filter'}
+	<!-- Filters -->
+	<div class="space-y-3">
+		<p class="text-tertiary text-xs">{topology_filtersHelp()}</p>
 
-		{#if expandedSections[common_filters()]}
-			<div class="space-y-2 px-3 pb-3">
-				<p class="text-tertiary text-xs">{topology_filtersHelp()}</p>
-
-				{#if showHostFilter}
-					<!-- Hosts -->
-					<div
-						class="space-y-1.5 rounded-lg p-2.5"
-						style="background: var(--color-bg-surface-hover)"
-					>
-						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-							{common_hosts()}
-						</div>
-						<TagFilterGroup
-							label={common_byTag()}
-							tags={hostTags}
-							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
-							onToggle={toggleHostTag}
-							entityType="host"
-							hasUntagged={hasUntaggedHosts}
-						/>
-					</div>
-				{/if}
-
-				{#if showServiceFilter}
-					<!-- Services -->
-					<div
-						class="space-y-1.5 rounded-lg p-2.5"
-						style="background: var(--color-bg-surface-hover)"
-					>
-						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-							{common_services()}
-						</div>
-						<TagFilterGroup
-							label={common_byTag()}
-							tags={serviceTags}
-							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
-							onToggle={toggleServiceTag}
-							entityType="service"
-							hasUntagged={hasUntaggedServices}
-						/>
-						{#if hasCategoryFilter}
-							<div
-								class="border-l-2 pl-2"
-								style="border-left-color: {viewMeta?.color
-									? COLOR_MAP[viewMeta.color as Color]?.rgb
-									: 'transparent'}"
-							>
-								<CategoryFilterGroup
-									categories={allServiceCategoriesWithColors}
-									hiddenCategories={(
-										($topologyOptions.request.hide_service_categories ?? {}) as Record<
-											string,
-											string[]
-										>
-									)[$activeView] ?? []}
-									onToggle={toggleServiceCategory}
-									disabled={!editState.isEditable}
-									label={common_byCategory()}
-								/>
-							</div>
-						{/if}
-					</div>
-				{/if}
-
-				{#if showSubnetFilter}
-					<!-- Subnets -->
-					<div
-						class="space-y-1.5 rounded-lg p-2.5"
-						style="background: var(--color-bg-surface-hover)"
-					>
-						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-							{common_subnets()}
-						</div>
-						<TagFilterGroup
-							label={common_byTag()}
-							tags={subnetTags}
-							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
-							onToggle={toggleSubnetTag}
-							entityType="subnet"
-							hasUntagged={hasUntaggedSubnets}
-						/>
-					</div>
-				{/if}
-
-				<!-- Edges -->
-				<div class="space-y-1.5 rounded-lg p-2.5" style="background: var(--color-bg-surface-hover)">
-					<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-						{common_edges()}
-					</div>
-					<FilterGroup
-						items={edgeTypesWithColors}
-						selectedValues={$topologyOptions.local.hide_edge_types ?? []}
-						mode="exclude"
-						onToggle={toggleEdgeType}
-						onHoverStart={handleEdgeTypeHoverStart}
-						onHoverEnd={handleEdgeTypeHoverEnd}
-						label={common_byType()}
-					/>
+		{#if showHostFilter}
+			<div class="space-y-1.5">
+				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+					{common_hosts()}
 				</div>
+				<TagFilterGroup
+					label={common_byTag()}
+					tags={hostTags}
+					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
+					onToggle={toggleHostTag}
+					entityType="host"
+					hasUntagged={hasUntaggedHosts}
+				/>
 			</div>
 		{/if}
-	</div>
 
-	<!-- Group By Section -->
-	<div class="card card-static px-0 py-2">
-		<button
-			type="button"
-			class="text-secondary hover:text-primary flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
-			onclick={() => toggleSection(topology_groupBy())}
-		>
-			{#if expandedSections[topology_groupBy()]}
-				<ChevronDown class="h-4 w-4" />
-			{:else}
-				<ChevronRight class="h-4 w-4" />
-			{/if}
-			{topology_groupBy()}
-		</button>
-
-		{#if expandedSections[topology_groupBy()]}
-			<div class="px-3 pb-3">
-				<GroupingRuleEditor />
+		{#if showServiceFilter}
+			<div class="space-y-1.5">
+				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+					{common_services()}
+				</div>
+				<TagFilterGroup
+					label={common_byTag()}
+					tags={serviceTags}
+					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
+					onToggle={toggleServiceTag}
+					entityType="service"
+					hasUntagged={hasUntaggedServices}
+				/>
+				{#if hasCategoryFilter}
+					<div
+						class="border-l-2 pl-2"
+						style="border-left-color: {viewMeta?.color
+							? COLOR_MAP[viewMeta.color as Color]?.rgb
+							: 'transparent'}"
+					>
+						<CategoryFilterGroup
+							categories={allServiceCategoriesWithColors}
+							hiddenCategories={(
+								($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>
+							)[$activeView] ?? []}
+							onToggle={toggleServiceCategory}
+							disabled={!editState.isEditable}
+							label={common_byCategory()}
+						/>
+					</div>
+				{/if}
 			</div>
 		{/if}
-	</div>
 
-	{#each sections as section (section.name)}
-		<div class="card card-static px-0 py-2">
-			<button
-				type="button"
-				class="text-secondary hover:text-primary flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
-				onclick={() => toggleSection(section.name)}
-			>
-				{#if expandedSections[section.name]}
-					<ChevronDown class="h-4 w-4" />
-				{:else}
-					<ChevronRight class="h-4 w-4" />
-				{/if}
-				{section.name}
-			</button>
-
-			{#if expandedSections[section.name]}
-				<div class="space-y-3 px-3 pb-3">
-					{#each section.fields as def (def.id)}
-						{#if def.type === 'boolean'}
-							<OptionToggle
-								label={def.label()}
-								helpText={def.helpText()}
-								path={def.path}
-								optionKey={def.key}
-								disabled={def.path === 'request' && !editState.isEditable}
-								disabledReason={def.path === 'request' && !editState.isEditable
-									? getOptionDisabledTooltip(editState.disabledReason)
-									: ''}
-							/>
-						{:else if def.type === 'string'}
-							<div>
-								<label for={def.id} class="text-secondary mb-1 block text-sm font-medium">
-									{def.label()}
-								</label>
-								<input
-									type="text"
-									id={def.id}
-									class="input-field w-full"
-									placeholder={def.placeholder?.() ?? ''}
-									value={values[def.id] ?? ''}
-									oninput={(e) => updateValue(def, e.currentTarget.value)}
-								/>
-								{#if def.helpText}
-									<p class="text-tertiary mt-1 text-xs">{def.helpText()}</p>
-								{/if}
-							</div>
-						{/if}
-					{/each}
+		{#if showSubnetFilter}
+			<div class="space-y-1.5">
+				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+					{common_subnets()}
 				</div>
-			{/if}
+				<TagFilterGroup
+					label={common_byTag()}
+					tags={subnetTags}
+					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
+					onToggle={toggleSubnetTag}
+					entityType="subnet"
+					hasUntagged={hasUntaggedSubnets}
+				/>
+			</div>
+		{/if}
+
+		<div class="space-y-1.5">
+			<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+				{common_edges()}
+			</div>
+			<FilterGroup
+				items={edgeTypesWithColors}
+				selectedValues={$topologyOptions.local.hide_edge_types ?? []}
+				mode="exclude"
+				onToggle={toggleEdgeType}
+				onHoverStart={handleEdgeTypeHoverStart}
+				onHoverEnd={handleEdgeTypeHoverEnd}
+				label={common_byType()}
+			/>
 		</div>
-	{/each}
-</div>
+	</div>
+{:else if activeTab === 'group'}
+	<!-- Group By -->
+	<GroupingRuleEditor />
+{:else if activeTab === 'visual'}
+	<!-- Visual Options -->
+	<div class="space-y-3">
+		{#each sections as section (section.name)}
+			{#each section.fields as def (def.id)}
+				{#if def.type === 'boolean'}
+					<OptionToggle
+						label={def.label()}
+						helpText={def.helpText()}
+						path={def.path}
+						optionKey={def.key}
+						disabled={def.path === 'request' && !editState.isEditable}
+						disabledReason={def.path === 'request' && !editState.isEditable
+							? getOptionDisabledTooltip(editState.disabledReason)
+							: ''}
+					/>
+				{:else if def.type === 'string'}
+					<div>
+						<label for={def.id} class="text-secondary mb-1 block text-sm font-medium">
+							{def.label()}
+						</label>
+						<input
+							type="text"
+							id={def.id}
+							class="input-field w-full"
+							placeholder={def.placeholder?.() ?? ''}
+							value={values[def.id] ?? ''}
+							oninput={(e) => updateValue(def, e.currentTarget.value)}
+						/>
+						{#if def.helpText}
+							<p class="text-tertiary mt-1 text-xs">{def.helpText()}</p>
+						{/if}
+					</div>
+				{/if}
+			{/each}
+		{/each}
+	</div>
+{/if}
