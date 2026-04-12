@@ -209,7 +209,9 @@
 			if (e.key === 'Enter' || e.key === ' ') onToggleCollapse(e);
 		}}
 	>
-		<span data-fixed><ChevronRight class="text-secondary h-3.5 w-3.5 flex-shrink-0" /></span>
+		{#if isCollapsible}
+			<span data-fixed><ChevronRight class="text-secondary h-3.5 w-3.5 flex-shrink-0" /></span>
+		{/if}
 		{#if iconComponent}
 			{@const IconComp = iconComponent}
 			<span data-fixed

@@ -639,8 +639,8 @@
 		}
 	}
 
-	let expandDisabled = $derived($collapseLevel === 4);
-	let collapseDisabled = $derived($collapseLevel === 1);
+	let expandDisabled = $derived($collapseLevel === 4 || !!editMode);
+	let collapseDisabled = $derived($collapseLevel === 1 || !!editMode);
 	let collapseLevelLabel = $derived(`${$collapseLevel}/4 ${getCollapseLevelName($collapseLevel)}`);
 	let collapseLevelTooltipCollapse = $derived(
 		`${topology_collapseLevelDown()} (${$collapseLevel}/4: ${getCollapseLevelName($collapseLevel)})`
