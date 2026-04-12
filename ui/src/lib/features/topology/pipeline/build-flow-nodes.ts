@@ -1,0 +1,140 @@
+import type { Node } from '@xyflow/svelte';
+import type { LayoutGraph } from '../layout/layout-graph';
+import type { Topology, TopologyNode } from '../types/base';
+import { resolveElementNode } from '../resolvers';
+
+export interface BuildFlowNodesParams {
+	visibleNodes: TopologyNode[];
+	collapsed: Set<string>;
+	layoutGraph: LayoutGraph | null;
+	topology: Topology;
+	isNewStructure: boolean;
+	useGraph: boolean;
+	liveNodes: Node[];
+	infraRuleId: string | null;
+}
+
+export function buildFlowNodes(params: BuildFlowNodesParams): Node[] {
+	const {
+		visibleNodes,
+		collapsed,
+		layoutGraph,
+		topology,
+		isNewStructure,
+		useGraph,
+		liveNodes,
+		infraRuleId
+	} = params;
+
+	const currentPositions = new Map(liveNodes.map((n) => [n.id, n.position]));
+	const currentSizes = new Map(
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @xyflow Node has runtime .computed not in type defs
+		(liveNodes as Record<string, any>[]).map((n) => [
+			n.id,
+			{
+				width: n.computed?.width ?? n.width,
+				height: n.computed?.height ?? n.height
+			}
+		])
+	);
+
+	return visibleNodes.map((node) => {
+		const isNodeCollapsed = collapsed.has(node.id);
+		let position: { x: number; y: number };
+		let width: number | undefined;
+		let height: number | undefined;
+
+		const isElement = node.node_type === 'Element';
+
+		// Container size from layout graph (collapsed = metadata size, expanded = ELK size)
+		const containerSize =
+			!isElement && layoutGraph ? layoutGraph.getContainerSize(node.id) : undefined;
+
+		if (useGraph && layoutGraph) {
+			const graphPos = layoutGraph.getPosition(node.id);
+			position = graphPos ?? { x: node.position.x, y: node.position.y };
+			width = isNodeCollapsed
+				? (containerSize?.width ?? undefined)
+				: isElement
+					? 250
+					: (containerSize?.width ?? undefined);
+			height = isNodeCollapsed
+				? (containerSize?.height ?? undefined)
+				: isElement
+					? undefined
+					: (containerSize?.height ?? undefined);
+		} else if (!isNewStructure) {
+			const curPos = currentPositions.get(node.id);
+			const curSize = currentSizes.get(node.id);
+			position = curPos ?? { x: node.position.x, y: node.position.y };
+			width = isNodeCollapsed
+				? (containerSize?.width ?? undefined)
+				: isElement
+					? 250
+					: (curSize?.width ?? undefined);
+			height = isNodeCollapsed
+				? (containerSize?.height ?? undefined)
+				: isElement
+					? undefined
+					: (curSize?.height ?? undefined);
+		} else {
+			// Measurement pass: place at origin, let content determine size
+			position = { x: 0, y: 0 };
+			width = isElement ? 250 : undefined;
+			height = undefined;
+		}
+
+		return {
+			id: node.id,
+			type: node.node_type,
+			position,
+			...(width !== undefined && { width }),
+			...(height !== undefined && { height }),
+			expandParent: true,
+			deletable: false,
+			selectable: node.node_type !== 'Container',
+			parentId:
+				node.node_type == 'Element'
+					? (node.container_id ?? resolveElementNode(node.id, node, topology).subnetId)
+					: node.node_type == 'Container' && node.parent_container_id
+						? (node.parent_container_id as string)
+						: undefined,
+			extent: node.node_type == 'Element' || node.parent_container_id ? 'parent' : undefined,
+			data: isNodeCollapsed
+				? (() => {
+						const totalCount = layoutGraph?.getChildCount(node.id) ?? 0;
+						const summaries = layoutGraph?.getSubgroupSummaries(node.id) ?? [];
+						// Exclude infrastructure services subgroup from workload count
+						let excludedCount = 0;
+						if (infraRuleId) {
+							for (const s of summaries) {
+								const groupNode = topology.nodes.find((n) => n.id === s.groupId);
+								if (
+									groupNode &&
+									(groupNode as Record<string, unknown>).element_rule_id === infraRuleId
+								) {
+									excludedCount += s.childCount;
+								}
+							}
+						}
+						return {
+							...node,
+							isCollapsed: true,
+							childCount: totalCount - excludedCount,
+							subgroupSummaries: summaries
+						};
+					})()
+				: node
+		};
+	});
+}
+
+/** Sort parents before children (SvelteFlow requirement). */
+export function sortFlowNodes(flowNodes: Node[]): Node[] {
+	const depthOf = (n: Node) => {
+		if (!n.parentId) return 0;
+		if (n.type === 'Container') return 1;
+		return 2;
+	};
+	return flowNodes.sort((a, b) => depthOf(a) - depthOf(b));
+}
