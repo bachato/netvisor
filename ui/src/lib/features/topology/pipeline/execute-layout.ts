@@ -103,6 +103,19 @@ export async function executeLayout(
 			visibleNodes = state.layoutGraph.getVisibleNodes(layoutNodes);
 		}
 
+		// Log ELK input vs output for containers
+		const elkSamples: string[] = [];
+		for (const [id, size] of elkResult.containerSizes) {
+			const input = elementNodeSizes.get(id);
+			const isCol = elkCollapsed.has(id);
+			if (elkSamples.length < 5) {
+				elkSamples.push(`${id.substring(0, 8)}: in=${input ? `${input.x}x${input.y}` : 'none'} out=${size.width}x${size.height} ${isCol ? '(c)' : '(e)'}`);
+			}
+		}
+		if (elkSamples.length > 0) {
+			console.log(`[ELK] container sizes: ${elkSamples.join(', ')}`);
+		}
+
 		// Cache container sizes from ELK result
 		for (const [id, size] of elkResult.containerSizes) {
 			if (state.layoutGraph?.containers.has(id)) {
