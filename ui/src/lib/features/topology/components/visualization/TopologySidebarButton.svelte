@@ -50,7 +50,7 @@
 			? '!border !border-blue-400 !bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!border-blue-500 dark:!bg-blue-900/40 dark:!text-blue-300 dark:hover:!bg-blue-800/50'
 			: '!border !border-gray-300 !bg-gray-50 !text-gray-700 hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600'}
 	{grouped ? '' : '!shadow-lg'}"
-	style="height: 32px; padding: 0 6px; gap: 6px; width: {showLabel ? 'auto' : hasShortcut ? '58px' : '32px'};"
+	style="height: 32px; padding: 0 6px; width: {showLabel ? 'auto' : hasShortcut ? '58px' : '32px'};"
 	onclick={disabled ? undefined : onclick}
 	aria-disabled={disabled || undefined}
 	{title}
@@ -61,17 +61,12 @@
 		{@render icon()}
 	</span>
 	{#if shortcut}
-		<KbdKey key={shortcut} size="sm" class="shrink-0 !shadow-none" />
+		<KbdKey key={shortcut} size="sm" class="ml-1.5 shrink-0 !shadow-none" />
 	{:else if reserveShortcutWidth}
-		<span class="inline-flex h-5 min-w-5 shrink-0"></span>
+		<span class="ml-1.5 inline-flex h-5 min-w-5 shrink-0"></span>
 	{/if}
-	{#if hasLabel}
-		<span
-			class="overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out"
-			style="max-width: {showLabel ? '150px' : '0px'}; opacity: {showLabel
-				? 1
-				: 0}; margin-right: {showLabel ? '2px' : '0px'};"
-		>
+	{#if showLabel}
+		<span class="ml-1.5 mr-0.5 whitespace-nowrap">
 			{label}
 		</span>
 	{/if}

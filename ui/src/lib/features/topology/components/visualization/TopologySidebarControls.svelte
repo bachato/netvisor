@@ -18,7 +18,10 @@
 		topology_zoomOut,
 		topology_shortcutFitView,
 		topology_shortcutSearch,
+		common_collapse,
 		common_edit,
+		common_expand,
+		common_search,
 		common_shortcuts
 	} from '$lib/paraglide/messages';
 	import TopologySidebarButton from './TopologySidebarButton.svelte';
@@ -77,6 +80,7 @@
 		<TopologySidebarButton
 			onclick={onStepExpand}
 			title={collapseLevelTooltipExpand}
+			label={common_expand()}
 			shortcut="]"
 			disabled={expandDisabled}
 			collapsed={sidebarCollapsed}
@@ -95,6 +99,7 @@
 		<TopologySidebarButton
 			onclick={onStepCollapse}
 			title={collapseLevelTooltipCollapse}
+			label={common_collapse()}
 			shortcut="["
 			disabled={collapseDisabled}
 			collapsed={sidebarCollapsed}
@@ -124,6 +129,7 @@
 		<TopologySidebarButton
 			onclick={onOpenSearch}
 			title={topology_shortcutSearch()}
+			label={common_search()}
 			shortcut="/"
 			collapsed={sidebarCollapsed}
 		>
@@ -138,6 +144,7 @@
 		<TopologySidebarButton
 			onclick={onFitView}
 			title={topology_shortcutFitView()}
+			label={topology_shortcutFitView()}
 			shortcut="F"
 			collapsed={sidebarCollapsed}
 			grouped="top"
@@ -149,6 +156,7 @@
 		<TopologySidebarButton
 			onclick={() => zoomIn()}
 			title={topology_zoomIn()}
+			label={topology_zoomIn()}
 			reserveShortcutWidth={true}
 			collapsed={sidebarCollapsed}
 			grouped="middle"
@@ -160,6 +168,7 @@
 		<TopologySidebarButton
 			onclick={() => zoomOut()}
 			title={topology_zoomOut()}
+			label={topology_zoomOut()}
 			reserveShortcutWidth={true}
 			collapsed={sidebarCollapsed}
 			grouped="bottom"
