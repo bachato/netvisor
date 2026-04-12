@@ -17,8 +17,8 @@
 		topology_collapsePanel,
 		topology_expandPanel,
 		common_filters,
-		topology_groupBy,
-		common_visual
+		common_groupsLabel,
+		common_display
 	} from '$lib/paraglide/messages';
 
 	type OptionsTab = 'filter' | 'group' | 'visual';
@@ -26,8 +26,8 @@
 
 	const tabs: { id: OptionsTab; label: string; icon: typeof Filter }[] = [
 		{ id: 'filter', label: common_filters(), icon: Filter },
-		{ id: 'group', label: topology_groupBy(), icon: Group },
-		{ id: 'visual', label: common_visual(), icon: Eye }
+		{ id: 'group', label: common_groupsLabel(), icon: Group },
+		{ id: 'visual', label: common_display(), icon: Eye }
 	];
 
 	let {
@@ -72,7 +72,7 @@
 	<div class="card card-static p-0 shadow-lg">
 		{#if $optionsPanelExpanded}
 			<!-- Header with collapse button and tabs -->
-			<div class="flex items-center border-b border-gray-700">
+			<div class="flex items-end">
 				<button
 					class="btn-icon flex-shrink-0 rounded-xl p-3"
 					onclick={() => optionsPanelExpanded.set(false)}
@@ -81,13 +81,13 @@
 					<ChevronLeft class="text-secondary h-5 w-5" />
 				</button>
 				{#if showingOptions}
-					<div class="flex flex-1 gap-1">
+					<div class="flex flex-1">
 						{#each tabs as tab (tab.id)}
 							<button
-								class="text-secondary hover:text-primary flex items-center gap-1.5 border-b-2 px-2.5 pb-2 pt-2.5 text-xs font-medium transition-colors {activeTab ===
+								class="flex flex-1 items-center justify-center gap-1.5 border-b-2 pb-2 pt-2.5 text-xs font-medium transition-colors {activeTab ===
 								tab.id
-									? 'border-blue-500 !text-blue-400'
-									: 'border-transparent'}"
+									? 'border-blue-500 text-blue-400'
+									: 'text-secondary hover:text-primary border-gray-700'}"
 								onclick={() => (activeTab = tab.id)}
 							>
 								<tab.icon class="h-3.5 w-3.5" />
@@ -95,6 +95,8 @@
 							</button>
 						{/each}
 					</div>
+				{:else}
+					<div class="flex-1 border-b-2 border-gray-700"></div>
 				{/if}
 			</div>
 
