@@ -455,16 +455,7 @@
 		} else if (!isMeasuring) {
 			nodes.set(allNodes);
 			edges.set(flowEdges);
-			// DEBUG: log collapsed subcontainer final positions
-			const collapsedSubs = allNodes.filter(
-				(n) => n.type === 'Container' && collapsed.has(n.id) && n.parentId
-			);
-			if (collapsedSubs.length > 0) {
-				console.log(`[SVELTEFLOW-SET] ${collapsedSubs.length} collapsed subs:`);
-				for (const n of collapsedSubs) {
-					console.log(`  ${n.id.substring(0, 8)}: pos=(${n.position.x},${n.position.y}) w=${n.width} h=${n.height} parent=${n.parentId?.substring(0, 8)}`);
-				}
-			}
+			console.log(`[SVELTEFLOW-SET] isMeasuring=false, ${allNodes.length} nodes set`);
 		} else {
 			edges.set([]);
 			nodes.set(allNodes);

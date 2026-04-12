@@ -86,9 +86,10 @@ export function buildFlowNodes(params: BuildFlowNodesParams): Node[] {
 			height = undefined;
 		}
 
-		// DEBUG: log collapsed subcontainer positions
-		if (node.node_type === 'Container' && isNodeCollapsed && node.parent_container_id) {
-			console.log(`[BUILD-NODE] ${node.id.substring(0, 8)}: pos=(${position.x},${position.y}) size=${width}x${height} useGraph=${useGraph} parent=${(node.parent_container_id as string).substring(0, 8)}`);
+		// DEBUG: log all container positions
+		if (node.node_type === 'Container') {
+			const parentInfo = node.parent_container_id ? `parent=${(node.parent_container_id as string).substring(0, 8)}` : 'ROOT';
+			console.log(`[BUILD-NODE] ${node.id.substring(0, 8)}: pos=(${position.x},${position.y}) size=${width}x${height} collapsed=${isNodeCollapsed} ${parentInfo}`);
 		}
 
 		return {
