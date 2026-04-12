@@ -42,9 +42,6 @@ export function prepareTopologyData(
 	const topologyChanged = topoKey !== state.lastRenderedTopoKey;
 
 	if (topologyChanged) {
-		console.log(
-			`[PREPARE] topology changed: ${state.lastRenderedTopoKey.substring(0, 8)} → ${topoKey.substring(0, 8)}`
-		);
 		state.viewSizeCache.clear();
 		state.containerSizeCache.clear();
 		// Remove seenAutoCollapseIds entries that don't exist in the new topology
@@ -58,9 +55,6 @@ export function prepareTopologyData(
 
 	// Skip if view changed but topology data hasn't been rebuilt yet
 	if (viewChanged && !topologyChanged) {
-		console.log(
-			`[PREPARE] view changed without topology change: ${state.lastRenderedView} → ${currentView}, skipping`
-		);
 		return null;
 	}
 
@@ -100,9 +94,6 @@ export function prepareTopologyData(
 	// When topology identity changes, reset tracking and strip stale collapsed IDs
 	const topologyId = topology.id ?? '';
 	if (topologyId !== state.lastSeenTopologyId && state.lastSeenTopologyId !== '') {
-		console.log(
-			`[PREPARE] topology ID changed: ${state.lastSeenTopologyId.substring(0, 8)} → ${topologyId.substring(0, 8)}, clearing caches`
-		);
 		state.seenAutoCollapseIds = new Set<string>();
 		state.containerSizeCache.clear();
 		state.collapseLevelInferred = false;
@@ -220,17 +211,9 @@ export function prepareTopologyData(
 				prevExpandedSizes?.has(id) || !!state.containerSizeCache.get(id)?.expanded;
 			if (hasChildren && !hasExpandedSize) {
 				deferCollapse = true;
-				console.log(
-					`[PREPARE] deferCollapse=true: ${id.substring(0, 8)} has children, no expanded size (prevExpanded=${prevExpandedSizes?.has(id)}, cache=${!!state.containerSizeCache.get(id)?.expanded})`
-				);
 				break;
 			}
 		}
-	}
-	if (!deferCollapse && isNewStructure && collapsed.size > 0) {
-		console.log(
-			`[PREPARE] deferCollapse=false: all ${collapsed.size} collapsed containers have expanded sizes`
-		);
 	}
 
 	// Sync collapse state from store -> graph

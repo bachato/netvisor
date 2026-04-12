@@ -100,31 +100,8 @@ export async function executeLayout(
 		// When collapse was deferred, apply it AFTER ELK result
 		if (deferCollapse) {
 			state.layoutGraph.syncCollapseState(collapsed);
-			// DEBUG: log subcontainer positions after deferred collapse
-			for (const c of state.layoutGraph.containers.values()) {
-				if (c.isSubcontainer) {
-					console.log(`[DEFER-COLLAPSE] ${c.id.substring(0, 8)}: pos=(${c.position.x},${c.position.y}) size=${c.size.width}x${c.size.height} collapsed=${c.collapsed} parent=${c.parent?.id.substring(0, 8) ?? 'none'}`);
-				}
-			}
 			visibleNodes = state.layoutGraph.getVisibleNodes(layoutNodes);
 		}
-
-		// Log ELK input vs output for all containers
-		const elkExpanded: string[] = [];
-		const elkCollapsedLog: string[] = [];
-		for (const [id, size] of elkResult.containerSizes) {
-			const input = elementNodeSizes.get(id);
-			const isCol = elkCollapsed.has(id);
-			const entry = `${id.substring(0, 8)}: in=${input ? `${input.x}x${input.y}` : 'none'} out=${size.width}x${size.height}`;
-			if (isCol) elkCollapsedLog.push(entry);
-			else elkExpanded.push(entry);
-		}
-		console.log(
-			`[ELK] ${elkExpanded.length} expanded: ${elkExpanded.slice(0, 8).join(', ')}${elkExpanded.length > 8 ? '...' : ''}`
-		);
-		console.log(
-			`[ELK] ${elkCollapsedLog.length} collapsed: ${elkCollapsedLog.slice(0, 8).join(', ')}${elkCollapsedLog.length > 8 ? '...' : ''}`
-		);
 
 		// Cache container sizes from ELK result
 		for (const [id, size] of elkResult.containerSizes) {

@@ -1,4 +1,3 @@
-import { tick } from 'svelte';
 import type { Node, Edge } from '@xyflow/svelte';
 import type { LayoutState, PrepareResult, XY } from './types';
 
@@ -50,8 +49,6 @@ export async function resolveNodeSizes(
 		// Read element sizes from SvelteFlow computed state.
 		// Skip containers — handled below via collapsed size cache.
 		const liveNodes = getNodes();
-		let elemHits = 0;
-		let elemMisses = 0;
 		for (const n of liveNodes) {
 			if (state.layoutGraph?.containers.has(n.id)) continue;
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @xyflow Node has runtime .computed not in type defs
@@ -60,9 +57,6 @@ export async function resolveNodeSizes(
 			const h = (n as any).computed?.height ?? n.height;
 			if (w && h) {
 				elementNodeSizes.set(n.id, { x: w, y: h });
-				elemHits++;
-			} else {
-				elemMisses++;
 			}
 		}
 
@@ -70,19 +64,14 @@ export async function resolveNodeSizes(
 		// ELK uses it as the fixed size. For expanded containers, ELK uses
 		// it as elk.nodeSize.minimum (= smallest the container can be).
 		// ELK computes the actual expanded size from children (>= minimum).
-		let cacheHits = 0;
 		let cacheMisses = 0;
 		for (const node of visibleNodes) {
 			if (node.node_type === 'Container') {
 				const cached = state.containerSizeCache.get(node.id)?.collapsed;
 				if (cached) {
 					elementNodeSizes.set(node.id, cached);
-					cacheHits++;
 				} else if (collapsed.has(node.id)) {
 					cacheMisses++;
-					console.log(
-						`[CACHE-MISS] ${node.id.substring(0, 8)} collapsed=true cache=${JSON.stringify(state.containerSizeCache.get(node.id))}`
-					);
 				}
 				// Expanded containers without cached collapsed size: omit,
 				// ELK uses metadata for minimum
@@ -99,17 +88,10 @@ export async function resolveNodeSizes(
 					const cached = viewCache.get(node.id);
 					if (cached) {
 						elementNodeSizes.set(node.id, cached);
-						elemHits++;
-					} else {
-						elemMisses++;
 					}
 				}
 			}
 		}
-
-		console.log(
-			`[CACHE] elemHits=${elemHits} elemMisses=${elemMisses} containerHits=${cacheHits} containerMisses=${cacheMisses} cacheSize=${state.containerSizeCache.size} viewCache=${viewCache?.size ?? 0}`
-		);
 
 		// If any containers are missing from cache, fall through to full measurement
 		if (cacheMisses > 0) {
@@ -119,7 +101,6 @@ export async function resolveNodeSizes(
 
 	// Full DOM measurement pass if no cache
 	if (elementNodeSizes.size === 0) {
-		console.log(`[MEASURE] starting full measurement pass, deferCollapse=${prep.deferCollapse}`);
 		callbacks.setMeasuring(true);
 		callbacks.setEdges([]);
 		callbacks.setNodes(callbacks.buildMeasureNodes());
@@ -143,12 +124,6 @@ export async function resolveNodeSizes(
 				}
 			}
 		}
-
-		const allNodeEls = containerElement?.querySelectorAll('.svelte-flow__node').length ?? -1;
-		const flowEl = containerElement?.querySelector('.svelte-flow') ? 'yes' : 'no';
-		console.log(
-			`[MEASURE] DOM read complete: ${elementNodeSizes.size} nodes measured (DOM nodes: ${allNodeEls}, svelte-flow: ${flowEl})`
-		);
 
 		// Populate container size cache from this measurement.
 		// During deferred collapse, everything was measured EXPANDED

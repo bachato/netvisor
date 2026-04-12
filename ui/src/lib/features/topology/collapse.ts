@@ -329,38 +329,6 @@ export function buildElementToContainer(nodes: TopologyNode[]): Map<string, stri
 }
 
 /**
- * Count children per container.
- */
-export function buildContainerChildCounts(nodes: TopologyNode[]): Map<string, number> {
-	const counts = new Map<string, number>();
-	// Count direct element children per container
-	for (const node of nodes) {
-		if (node.node_type === 'Element') {
-			const parentId =
-				(node as Record<string, unknown>).container_id ??
-				(node as Record<string, unknown>).subnet_id;
-			if (typeof parentId === 'string') {
-				counts.set(parentId, (counts.get(parentId) ?? 0) + 1);
-			}
-		}
-	}
-	// Propagate subgroup counts up to parent containers so a collapsed parent
-	// shows the total count of all nested hosts, not just direct children
-	for (const node of nodes) {
-		if (node.node_type === 'Container') {
-			const parentId = (node as Record<string, unknown>).parent_container_id as string | undefined;
-			if (parentId) {
-				const subgroupCount = counts.get(node.id) ?? 0;
-				if (subgroupCount > 0) {
-					counts.set(parentId, (counts.get(parentId) ?? 0) + subgroupCount);
-				}
-			}
-		}
-	}
-	return counts;
-}
-
-/**
  * Resolve a node ID to its nearest collapsed ancestor.
  * Walks up the parent chain (element → container → parent_container → …)
  * and returns the outermost collapsed container, or null if none.

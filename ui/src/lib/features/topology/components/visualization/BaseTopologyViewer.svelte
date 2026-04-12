@@ -294,7 +294,6 @@
 			await tick();
 			if (!containerElement) return;
 		}
-		console.log(`[FLOW] loadTopologyData called, cacheSize=${layoutState.containerSizeCache.size}`);
 		const thisGeneration = ++layoutState.layoutGeneration;
 		const isStale = (): boolean => thisGeneration !== layoutState.layoutGeneration;
 
@@ -452,7 +451,6 @@
 		} else if (!isMeasuring) {
 			nodes.set(allNodes);
 			edges.set(flowEdges);
-			console.log(`[SVELTEFLOW-SET] isMeasuring=false, ${allNodes.length} nodes set`);
 		} else {
 			edges.set([]);
 			nodes.set(allNodes);
@@ -476,9 +474,6 @@
 		}
 
 		// Post-render: cache collapsed sizes, re-run if needed
-		console.log(
-			`[FLOW] reached post-render. containerElement=${!!containerElement} layoutGraph=${!!layoutState.layoutGraph} collapsed=${collapsed.size}`
-		);
 		if (containerElement && layoutState.layoutGraph) {
 			const newEntries = cacheCollapsedSizes(
 				containerElement,
@@ -487,7 +482,6 @@
 				layoutState.containerSizeCache
 			);
 			if (newEntries > 0 && !isStale()) {
-				console.log(`[POST-RENDER] ${newEntries} new collapsed sizes cached, re-running ELK`);
 				// Invalidate structureKey to force ELK re-run. Do NOT
 				// invalidate baseKey — base structure hasn't changed, and
 				// clearing it would delete viewSizeCache (element sizes).

@@ -157,7 +157,7 @@ impl TypeMetadataProvider for TopologyView {
             Self::L2Physical => "L2 Physical",
             Self::L3Logical => "L3 Logical",
             Self::Workloads => "Workloads",
-            Self::Application => "Application",
+            Self::Application => "Applications",
         }
     }
 

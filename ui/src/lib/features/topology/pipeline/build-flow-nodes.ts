@@ -15,6 +15,43 @@ export interface BuildFlowNodesParams {
 	editMode: boolean;
 }
 
+/** Count elements recursively within a container from raw topology nodes. */
+function countChildElements(containerId: string, nodes: TopologyNode[]): number {
+	let count = 0;
+	for (const n of nodes) {
+		if (n.node_type === 'Element' && (n as Record<string, unknown>).container_id === containerId) {
+			count++;
+		}
+		if (
+			n.node_type === 'Container' &&
+			(n as Record<string, unknown>).parent_container_id === containerId
+		) {
+			count += countChildElements(n.id, nodes);
+		}
+	}
+	return count;
+}
+
+/** Build subgroup summaries from raw topology nodes (fallback when layoutGraph is unavailable). */
+function fallbackSubgroupSummaries(
+	containerId: string,
+	nodes: TopologyNode[]
+): { groupId: string; childCount: number }[] {
+	const summaries: { groupId: string; childCount: number }[] = [];
+	for (const n of nodes) {
+		if (
+			n.node_type === 'Container' &&
+			(n as Record<string, unknown>).parent_container_id === containerId
+		) {
+			summaries.push({
+				groupId: n.id,
+				childCount: countChildElements(n.id, nodes)
+			});
+		}
+	}
+	return summaries;
+}
+
 export function buildFlowNodes(params: BuildFlowNodesParams): Node[] {
 	const {
 		visibleNodes,
@@ -86,12 +123,6 @@ export function buildFlowNodes(params: BuildFlowNodesParams): Node[] {
 			height = undefined;
 		}
 
-		// DEBUG: log all container positions
-		if (node.node_type === 'Container') {
-			const parentInfo = node.parent_container_id ? `parent=${(node.parent_container_id as string).substring(0, 8)}` : 'ROOT';
-			console.log(`[BUILD-NODE] ${node.id.substring(0, 8)}: pos=(${position.x},${position.y}) size=${width}x${height} collapsed=${isNodeCollapsed} ${parentInfo}`);
-		}
-
 		return {
 			id: node.id,
 			type: node.node_type,
@@ -113,8 +144,11 @@ export function buildFlowNodes(params: BuildFlowNodesParams): Node[] {
 					: undefined,
 			data: isNodeCollapsed
 				? (() => {
-						const totalCount = layoutGraph?.getChildCount(node.id) ?? 0;
-						const summaries = layoutGraph?.getSubgroupSummaries(node.id) ?? [];
+						const totalCount =
+							layoutGraph?.getChildCount(node.id) ?? countChildElements(node.id, topology.nodes);
+						const summaries =
+							layoutGraph?.getSubgroupSummaries(node.id) ??
+							fallbackSubgroupSummaries(node.id, topology.nodes);
 						// Exclude infrastructure services subgroup from workload count
 						let excludedCount = 0;
 						if (infraRuleId) {

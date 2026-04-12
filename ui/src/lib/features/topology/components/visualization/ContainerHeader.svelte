@@ -254,7 +254,7 @@
 {:else if variant === 'collapsed-root'}
 	<!-- Collapsed root container: summary with subcontainer info -->
 	<div
-		class="rounded-xl border border-dashed border-gray-400 text-center text-sm font-semibold shadow-lg dark:border-gray-500"
+		class="rounded-xl text-center text-sm font-semibold shadow-lg"
 		style="background: var(--color-topology-node-bg); position: relative; overflow: visible; transition: box-shadow 0.15s ease-in-out; border-top: 2px solid {colorHelper.rgb}; {tagHoverRingStyle}"
 	>
 		<div class="flex min-w-fit flex-col items-center gap-2 whitespace-nowrap px-6 py-4">
@@ -296,8 +296,7 @@
 									label: elementLabel
 								})})
 							{/if}
-						</span
-						>
+						</span>
 					{/if}
 				</div>
 			{/each}
