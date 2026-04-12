@@ -88,7 +88,7 @@
 		</TopologySidebarButton>
 		<div
 			class="flex items-center justify-center border-x border-gray-300 bg-gray-50 text-xs font-semibold text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400"
-			style="padding: 2px 6px;"
+			style="padding: 2px 0; width: 58px;"
 		>
 			{collapseLevel}
 		</div>
