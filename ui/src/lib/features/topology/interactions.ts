@@ -55,7 +55,7 @@ export const hoveredServiceCategory = writable<HoveredServiceCategory | null>(nu
 
 // Edge type hover state for highlighting edges of a specific type
 export interface HoveredEdgeType {
-	edgeType: string;
+	edgeTypes: string[];
 	color: string;
 }
 export const hoveredEdgeType = writable<HoveredEdgeType | null>(null);

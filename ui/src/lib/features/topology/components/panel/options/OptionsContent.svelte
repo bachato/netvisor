@@ -24,6 +24,7 @@
 		common_services,
 		common_subnets,
 		common_visual,
+		common_dependenciesLabel,
 		topology_bundleEdges,
 		topology_bundleEdgesHelp,
 		topology_dontFadeEdges,
@@ -163,6 +164,24 @@
 	function toggleEdgeType(edgeType: string) {
 		updateTopologyOptions((opts) => {
 			const hidden = opts.local.hide_edge_types ?? [];
+
+			if (edgeType === DEPENDENCIES_GROUP) {
+				// Toggle all dependency edge types together
+				const allHidden = dependencyEdgeTypeIds.every((id) =>
+					hidden.includes(id as (typeof hidden)[number])
+				);
+				const newHidden = allHidden
+					? hidden.filter((e) => !dependencyEdgeTypeIds.includes(e))
+					: [
+							...hidden.filter((e) => !dependencyEdgeTypeIds.includes(e)),
+							...(dependencyEdgeTypeIds as (typeof hidden)[number][])
+						];
+				return {
+					...opts,
+					local: { ...opts.local, hide_edge_types: newHidden }
+				};
+			}
+
 			const idx = hidden.indexOf(edgeType as (typeof hidden)[number]);
 			const newHidden =
 				idx === -1
@@ -179,7 +198,8 @@
 	}
 
 	function handleEdgeTypeHoverStart(value: string, color: Color) {
-		hoveredEdgeType.set({ edgeType: value, color: color as string });
+		const types = value === DEPENDENCIES_GROUP ? dependencyEdgeTypeIds : [value];
+		hoveredEdgeType.set({ edgeTypes: types, color: color as string });
 	}
 
 	function handleEdgeTypeHoverEnd() {
@@ -201,21 +221,65 @@
 			.sort((a, b) => a.label.localeCompare(b.label));
 	});
 
+	// Sentinel value for the unified dependency toggle
+	const DEPENDENCIES_GROUP = 'Dependencies';
+
+	// Determine which edge types are dependency edges from metadata
+	let dependencyEdgeTypeIds = $derived.by(() => {
+		if (!topology?.edges) return [] as string[];
+		const seen = new Set<string>();
+		const depTypes: string[] = [];
+		for (const edge of topology.edges) {
+			const et = edge.edge_type;
+			if (et && !seen.has(et) && !isDisabledEdge(edge)) {
+				seen.add(et);
+				const meta = edgeTypes.getMetadata(et);
+				if (meta?.is_dependency_edge) depTypes.push(et);
+			}
+		}
+		return depTypes;
+	});
+
 	// Build edge types with colors from edges present in the topology
-	// Filter out edge types where all edges are disabled in this view
+	// Dependency edges are collapsed into a single "Dependencies" toggle
 	let edgeTypesWithColors = $derived.by(() => {
 		if (!topology?.edges) return [];
 		const seen: Record<string, boolean> = {};
 		const result: { value: string; label: string; color: Color }[] = [];
+		let addedDepGroup = false;
 		for (const edge of topology.edges) {
 			const edgeType = edge.edge_type;
 			if (edgeType && !seen[edgeType] && !isDisabledEdge(edge)) {
 				seen[edgeType] = true;
-				const colorHelper = edgeTypes.getColorHelper(edgeType);
-				result.push({ value: edgeType, label: edgeType, color: colorHelper.color });
+				const meta = edgeTypes.getMetadata(edgeType);
+				if (meta?.is_dependency_edge) {
+					if (!addedDepGroup) {
+						addedDepGroup = true;
+						const colorHelper = edgeTypes.getColorHelper(edgeType);
+						result.push({
+							value: DEPENDENCIES_GROUP,
+							label: common_dependenciesLabel(),
+							color: colorHelper.color
+						});
+					}
+				} else {
+					const colorHelper = edgeTypes.getColorHelper(edgeType);
+					result.push({ value: edgeType, label: edgeType, color: colorHelper.color });
+				}
 			}
 		}
 		return result.sort((a, b) => a.label.localeCompare(b.label));
+	});
+
+	// Map hide_edge_types to filter-group selected values, replacing individual
+	// dependency type IDs with the unified DEPENDENCIES_GROUP sentinel
+	let edgeFilterSelectedValues = $derived.by(() => {
+		const hidden = $topologyOptions.local.hide_edge_types ?? [];
+		const nonDep = hidden.filter((e) => !dependencyEdgeTypeIds.includes(e));
+		const allDepHidden =
+			dependencyEdgeTypeIds.length > 0 &&
+			dependencyEdgeTypeIds.every((id) => hidden.includes(id as (typeof hidden)[number]));
+		return allDepHidden ? [...nonDep, DEPENDENCIES_GROUP] : nonDep;
 	});
 
 	interface TopologyFieldDef {
@@ -391,7 +455,7 @@
 			</div>
 			<FilterGroup
 				items={edgeTypesWithColors}
-				selectedValues={$topologyOptions.local.hide_edge_types ?? []}
+				selectedValues={edgeFilterSelectedValues}
 				mode="exclude"
 				onToggle={toggleEdgeType}
 				onHoverStart={handleEdgeTypeHoverStart}

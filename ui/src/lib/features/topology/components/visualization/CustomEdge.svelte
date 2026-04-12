@@ -112,7 +112,9 @@
 
 	// Edge type hover highlight
 	let isEdgeTypeHovered = $derived(
-		$hoveredEdgeType !== null && edgeData?.edge_type === $hoveredEdgeType.edgeType
+		$hoveredEdgeType !== null &&
+			edgeData?.edge_type != null &&
+			$hoveredEdgeType.edgeTypes.includes(edgeData.edge_type)
 	);
 	let isAnotherEdgeTypeHovered = $derived($hoveredEdgeType !== null && !isEdgeTypeHovered);
 
