@@ -118,11 +118,6 @@
 
 	// Aggregated edge support
 	let isAggregated = $derived(!!(edgeData as Record<string, unknown> | undefined)?.isAggregated);
-	$effect(() => {
-		if (isAggregated) {
-			console.log('[CUSTOM-EDGE] aggregated render', id, { hideEdge, sourceX, sourceY, targetX, targetY, edgeData: !!edgeData });
-		}
-	});
 	let aggregatedCount = $derived(
 		((edgeData as Record<string, unknown> | undefined)?.aggregatedCount as number) ?? 1
 	);

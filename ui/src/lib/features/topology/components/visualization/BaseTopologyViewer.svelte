@@ -366,13 +366,6 @@
 		const needsLayout = needsElk || portsChanged || prep.collapseChanged;
 		const allNodes = makeNodes(needsLayout);
 
-		console.log('[FLOW-DEBUG] buildFlowEdges inputs:', {
-			elevatedEdges: prep.elevatedEdges.length,
-			collapsedSize: collapsed.size,
-			aggregatedEdges: prep.aggregatedEdges.length,
-			elementToContainer: prep.elementToContainer.size,
-			hiddenEdgeTypes: prep.hiddenEdgeTypes
-		});
 		const { flowEdges, originalsMap } = buildFlowEdges({
 			elevatedEdges: prep.elevatedEdges,
 			collapsed,
@@ -388,10 +381,6 @@
 			selectionStores
 		});
 		aggregatedEdgeOriginals.set(originalsMap);
-		const _aggDebug = flowEdges.filter((e: Edge) => (e.data as Record<string, unknown>)?.isAggregated);
-		if (_aggDebug.length > 0) {
-			console.log('[FLOW] aggregated edges:', _aggDebug.length, _aggDebug.map((e: Edge) => ({ id: e.id, src: e.source, tgt: e.target, srcHandle: e.sourceHandle, tgtHandle: e.targetHandle })));
-		}
 
 		// Render
 		if (!isMeasuring) {
@@ -467,13 +456,14 @@
 		} else {
 			collapseAllBundles();
 			selectNode(node, selectionStores);
+			ignoreNextSelectionChange = true;
 		}
 	}
 
 	function handleEdgeClick({ edge }: { edge: Edge; event: MouseEvent }) {
-		console.log('[EDGE-CLICK] fired', edge.id, edge.data?.isAggregated);
 		collapseAllBundles();
 		selectEdge(edge, selectionStores);
+		ignoreNextSelectionChange = true;
 	}
 
 	function handleMove() {
@@ -526,16 +516,12 @@
 	}
 
 	function handleSelectionChange({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) {
-		const curSel = { node: get(selectionStores.selectedNode)?.id, edge: get(selectionStores.selectedEdge)?.id };
-		console.log('[SEL-CHANGE] selNodes:', selNodes.length, 'viewportMoved:', viewportMoved, 'ignore:', ignoreNextSelectionChange, 'curSel:', curSel);
 		if (ignoreNextSelectionChange) {
 			ignoreNextSelectionChange = false;
 			return;
 		}
 		if (selNodes.length === 0 && !viewportMoved) {
-			console.log('[SEL-CHANGE] scheduling clearSelection');
 			tick().then(() => {
-				console.log('[SEL-CHANGE] clearSelection executing');
 				clearSelection(selectionStores);
 				clearEdgeHoverState();
 				syncEdgeDisplayState();
