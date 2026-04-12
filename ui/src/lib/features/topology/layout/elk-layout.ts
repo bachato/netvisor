@@ -439,9 +439,9 @@ function buildElkGraph(
 		if (!container.ports) container.ports = [];
 		if (!container.layoutOptions) container.layoutOptions = {};
 
-		const hasPositionalInfo =
-			(elementPositions && elementPositions.size > 0) ||
-			(subcontainerPositions && subcontainerPositions.size > 0);
+		const hasElementPositions = elementPositions && elementPositions.size > 0;
+		const hasSubPositions = useLayeredChildren && subcontainerPositions && subcontainerPositions.size > 0;
+		const hasPositionalInfo = hasElementPositions || hasSubPositions;
 		container.layoutOptions['elk.portConstraints'] = hasPositionalInfo ? 'FIXED_POS' : 'FIXED_SIDE';
 
 		// Port side depends on layout direction: DOWN→SOUTH/NORTH, RIGHT→EAST/WEST
