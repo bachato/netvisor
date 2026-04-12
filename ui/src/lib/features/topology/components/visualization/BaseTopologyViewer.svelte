@@ -286,6 +286,7 @@
 	// --- Main layout pipeline ---
 
 	async function loadTopologyData() {
+		console.log(`[FLOW] loadTopologyData called, cacheSize=${layoutState.containerSizeCache.size}`);
 		const thisGeneration = ++layoutState.layoutGeneration;
 		const isStale = (): boolean => thisGeneration !== layoutState.layoutGeneration;
 
@@ -408,6 +409,7 @@
 		}
 
 		// Post-render: cache collapsed sizes, re-run if needed
+		console.log(`[FLOW] reached post-render. containerElement=${!!containerElement} layoutGraph=${!!layoutState.layoutGraph} collapsed=${collapsed.size}`);
 		if (containerElement && layoutState.layoutGraph) {
 			const newEntries = cacheCollapsedSizes(
 				containerElement,
