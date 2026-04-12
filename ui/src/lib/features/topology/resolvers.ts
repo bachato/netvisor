@@ -114,25 +114,33 @@ function resolveContainer(
 ): ContainerRenderContext {
 	const containerType = 'container_type' in node ? (node.container_type as string) : 'Subnet';
 	const title = 'header' in node ? (node.header as string | null) : null;
+	return { tags: resolveContainerTags(nodeId, topology), title, containerType };
+}
 
-	if (containerType === 'Subnet') {
-		const subnet = topology.subnets.find((s) => s.id === nodeId);
-		return { tags: subnet?.tags ?? [], title, containerType };
+/**
+ * Resolve tags for any container entity, regardless of container type.
+ * First tries a direct ID match (e.g. Subnet container ID === subnet entity ID),
+ * then falls back to getContainerContents to find the owning entity through
+ * subcontainers (e.g. Host containers with ByVLAN element rules).
+ */
+function resolveContainerTags(nodeId: string, topology: Topology): string[] {
+	const entityTags = new Map<string, string[]>();
+	for (const h of topology.hosts) entityTags.set(h.id, h.tags);
+	for (const s of topology.subnets) entityTags.set(s.id, s.tags);
+	for (const s of topology.services) entityTags.set(s.id, s.tags);
+
+	// Direct match (e.g. Subnet container ID === subnet entity ID)
+	if (entityTags.has(nodeId)) return entityTags.get(nodeId)!;
+
+	// Indirect: find entities inside this container, return first match
+	const contents = getContainerContents(nodeId, topology.nodes);
+	for (const id of contents.hostIds) {
+		if (entityTags.has(id)) return entityTags.get(id)!;
 	}
-
-	if (containerType === 'Host') {
-		// Find any child element's host_id to look up the host entity
-		const childElement = topology.nodes.find(
-			(n) => n.node_type === 'Element' && (n as Record<string, unknown>).container_id === nodeId
-		);
-		const hostId = childElement
-			? ((childElement as Record<string, unknown>).host_id as string | undefined)
-			: undefined;
-		const host = hostId ? topology.hosts.find((h) => h.id === hostId) : undefined;
-		return { tags: host?.tags ?? [], title, containerType };
+	for (const id of contents.serviceIds) {
+		if (entityTags.has(id)) return entityTags.get(id)!;
 	}
-
-	return { tags: [], title, containerType };
+	return [];
 }
 
 // Selection context for multi-select operations
