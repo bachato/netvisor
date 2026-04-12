@@ -416,6 +416,7 @@
 				layoutState.containerSizeCache
 			);
 			if (newEntries > 0 && !isStale()) {
+				console.log(`[POST-RENDER] ${newEntries} new collapsed sizes cached, re-running ELK`);
 				layoutState.sessionStructureKey = '';
 				layoutState.lastRenderedTopoKey = prep.topoKey;
 				layoutState.lastRenderedView = prep.currentView;
