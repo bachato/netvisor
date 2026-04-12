@@ -214,9 +214,9 @@ export function prepareTopologyData(
 						(n.node_type === 'Container' &&
 							(n as Record<string, unknown>).parent_container_id === id)
 				);
-				if (hasChildren && !prevExpandedSizes.has(id)) {
+				if (hasChildren && !prevExpandedSizes.has(id) && !state.containerSizeCache.get(id)?.expanded) {
 					deferCollapse = true;
-					console.log(`[PREPARE] deferCollapse=true: container ${id.substring(0, 8)} has children but no prevExpandedSize`);
+					console.log(`[PREPARE] deferCollapse=true: container ${id.substring(0, 8)} has children but no prevExpandedSize or cached expanded`);
 					break;
 				}
 			}
