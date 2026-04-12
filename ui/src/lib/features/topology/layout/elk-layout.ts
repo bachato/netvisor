@@ -439,8 +439,10 @@ function buildElkGraph(
 		if (!container.ports) container.ports = [];
 		if (!container.layoutOptions) container.layoutOptions = {};
 
-		const useFixedPos = elementPositions && elementPositions.size > 0;
-		container.layoutOptions['elk.portConstraints'] = useFixedPos ? 'FIXED_POS' : 'FIXED_SIDE';
+		const hasPositionalInfo =
+			(elementPositions && elementPositions.size > 0) ||
+			(subcontainerPositions && subcontainerPositions.size > 0);
+		container.layoutOptions['elk.portConstraints'] = hasPositionalInfo ? 'FIXED_POS' : 'FIXED_SIDE';
 
 		// Port side depends on layout direction: DOWN→SOUTH/NORTH, RIGHT→EAST/WEST
 		const srcSide = useLayeredChildren ? 'EAST' : 'SOUTH';
@@ -448,11 +450,29 @@ function buildElkGraph(
 		for (const [elemId] of sortedElements) {
 			const portId = `port-${elemId}-${srcSide}`;
 			const pos = elementPositions?.get(elemId);
-			if (useFixedPos && pos) {
+			// Fall back to subcontainer center when element is inside a collapsed container
+			const immContainer = elementToImmediateContainer.get(elemId);
+			const subPos = immContainer ? subcontainerPositions?.get(immContainer) : undefined;
+			const subNode = immContainer ? containers.get(immContainer) : undefined;
+			if (hasPositionalInfo && pos) {
 				// Pass 2: place port at the element's actual position within the container
 				const portPos = useLayeredChildren
 					? { x: pos.containerW * 0.9, y: pos.x + pos.w / 2 } // RIGHT: port on east side, y = element center
 					: { x: pos.x + pos.w / 2, y: pos.containerW * 0.7 }; // DOWN: port on south side, x = element center
+				container.ports.push({
+					id: portId,
+					x: portPos.x,
+					y: portPos.y,
+					width: 1,
+					height: 1,
+					layoutOptions: { 'elk.port.side': srcSide }
+				});
+			} else if (hasPositionalInfo && subPos && subNode && useLayeredChildren) {
+				// Collapsed subcontainer: use subcontainer center Y within root as port position
+				const portPos = {
+					x: (container.width ?? container.children?.[0]?.width ?? 200) * 0.9,
+					y: subPos.y + (subNode.height ?? 34) / 2
+				};
 				container.ports.push({
 					id: portId,
 					x: portPos.x,
@@ -491,11 +511,17 @@ function buildElkGraph(
 			if (!tgtContainer) continue;
 
 			// Sort target elements by their position within the container
-			if (elementPositions && elementPositions.size > 0) {
+			if (hasPositionalInfo) {
 				elemIds.sort((a, b) => {
-					const posA = elementPositions.get(a);
-					const posB = elementPositions.get(b);
-					return (posA?.x ?? 0) - (posB?.x ?? 0);
+					const posA = elementPositions?.get(a);
+					const posB = elementPositions?.get(b);
+					if (posA && posB) return (posA.x ?? 0) - (posB.x ?? 0);
+					// Fall back to subcontainer Y position
+					const immA = elementToImmediateContainer.get(a);
+					const immB = elementToImmediateContainer.get(b);
+					const subA = immA ? subcontainerPositions?.get(immA) : undefined;
+					const subB = immB ? subcontainerPositions?.get(immB) : undefined;
+					return (subA?.y ?? 0) - (subB?.y ?? 0);
 				});
 			}
 
@@ -504,7 +530,7 @@ function buildElkGraph(
 
 			// Use FIXED_POS in pass 2 so port Y-positions match element positions,
 			// giving ELK crossing minimization real positional signals
-			const useFixedPosTgt = elementPositions && elementPositions.size > 0 && useLayeredChildren;
+			const useFixedPosTgt = hasPositionalInfo && useLayeredChildren;
 			if (useLayeredChildren) {
 				// Layered layout handled below via portConstraints
 			}
@@ -517,10 +543,13 @@ function buildElkGraph(
 				if (!tgtContainer.ports.some((p: { id: string }) => p.id === tgtPortId)) {
 					if (useFixedPosTgt) {
 						// Compute absolute Y within the root container
-						const elemPos = elementPositions!.get(elemId);
+						const elemPos = elementPositions?.get(elemId);
 						const immContainer = elementToImmediateContainer.get(elemId);
 						const subPos = immContainer ? subcontainerPositions?.get(immContainer) : undefined;
-						const absY = (subPos?.y ?? 0) + (elemPos?.y ?? 0) + (elemPos?.h ?? 0) / 2;
+						const subNode = immContainer ? containers.get(immContainer) : undefined;
+						const absY = elemPos
+							? (subPos?.y ?? 0) + elemPos.y + elemPos.h / 2
+							: (subPos?.y ?? 0) + (subNode?.height ?? 34) / 2;
 						tgtContainer.ports.push({
 							id: tgtPortId,
 							x: 0,
@@ -679,10 +708,10 @@ function buildElkGraph(
 
 	// L2: sort root containers so hosts match their target port order inside the switch.
 	// With forceNodeModelOrder, ELK preserves this order for crossing-free layout.
-	if (useLayeredChildren && elementPositions && elementPositions.size > 0) {
+	if (useLayeredChildren && ((elementPositions && elementPositions.size > 0) || (subcontainerPositions && subcontainerPositions.size > 0))) {
 		// Map each root container to its target element's Y position inside the switch.
-		// elementPositions has positions relative to immediate parent container.
-		// For box layout with vertical stacking, x = vertical position within container.
+		// Uses element positions when available, falls back to subcontainer center
+		// when elements are inside collapsed subcontainers.
 		const rootTargetY = new Map<string, number>();
 		for (const edge of input.edges) {
 			if (!affectsLayout(edge)) continue;
@@ -692,19 +721,31 @@ function buildElkGraph(
 
 			// Compute absolute Y of target element within its root container.
 			// subPos = subcontainer position within root, elemPos = element within subcontainer.
-			const tgtElemPos = elementPositions.get(edge.target);
-			if (tgtElemPos && !rootTargetY.has(srcRoot)) {
-				const tgtImm = elementToImmediateContainer.get(edge.target);
-				const subPos = tgtImm ? subcontainerPositions?.get(tgtImm) : undefined;
-				const absY = (subPos?.y ?? 0) + tgtElemPos.y + tgtElemPos.h / 2;
-				rootTargetY.set(srcRoot, absY);
+			const tgtElemPos = elementPositions?.get(edge.target);
+			const tgtImm = elementToImmediateContainer.get(edge.target);
+			const tgtSubPos = tgtImm ? subcontainerPositions?.get(tgtImm) : undefined;
+			if (!rootTargetY.has(srcRoot)) {
+				if (tgtElemPos) {
+					const absY = (tgtSubPos?.y ?? 0) + tgtElemPos.y + tgtElemPos.h / 2;
+					rootTargetY.set(srcRoot, absY);
+				} else if (tgtSubPos) {
+					const subNode = tgtImm ? containers.get(tgtImm) : undefined;
+					const absY = tgtSubPos.y + (subNode?.height ?? 34) / 2;
+					rootTargetY.set(srcRoot, absY);
+				}
 			}
-			const srcElemPos = elementPositions.get(edge.source);
-			if (srcElemPos && !rootTargetY.has(tgtRoot)) {
-				const srcImm = elementToImmediateContainer.get(edge.source);
-				const subPos = srcImm ? subcontainerPositions?.get(srcImm) : undefined;
-				const absY = (subPos?.y ?? 0) + srcElemPos.y + srcElemPos.h / 2;
-				rootTargetY.set(tgtRoot, absY);
+			const srcElemPos = elementPositions?.get(edge.source);
+			const srcImm = elementToImmediateContainer.get(edge.source);
+			const srcSubPos = srcImm ? subcontainerPositions?.get(srcImm) : undefined;
+			if (!rootTargetY.has(tgtRoot)) {
+				if (srcElemPos) {
+					const absY = (srcSubPos?.y ?? 0) + srcElemPos.y + srcElemPos.h / 2;
+					rootTargetY.set(tgtRoot, absY);
+				} else if (srcSubPos) {
+					const subNode = srcImm ? containers.get(srcImm) : undefined;
+					const absY = srcSubPos.y + (subNode?.height ?? 34) / 2;
+					rootTargetY.set(tgtRoot, absY);
+				}
 			}
 		}
 
@@ -798,12 +839,14 @@ function buildElkGraph(
 				'elk.direction': 'RIGHT',
 				'elk.edgeRouting': 'POLYLINE',
 				'elk.spacing.nodeNode': '50',
+				'elk.spacing.componentComponent': '75',
 				'elk.layered.spacing.nodeNodeBetweenLayers': '75',
 				'elk.layered.spacing.edgeNodeBetweenLayers': '25',
 				'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
 				'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
 				'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
 				'elk.layered.nodePlacement.strategy': 'SIMPLE',
+				'elk.layered.compaction.connectedComponents': 'true',
 				'elk.hierarchyHandling': 'SEPARATE_CHILDREN',
 				'elk.padding': '[top=25,left=25,bottom=25,right=25]'
 			}
