@@ -6,7 +6,7 @@ export type ElementRule = components['schemas']['GraphRule_ElementRule']['rule']
 export type ContainerGraphRule = components['schemas']['GraphRule_ContainerRule'];
 export type ElementGraphRule = components['schemas']['GraphRule_ElementRule'];
 
-export type ContainerRuleType = 'BySubnet' | 'MergeDockerBridges' | 'ByApplicationGroup';
+export type ContainerRuleType = 'BySubnet' | 'MergeDockerBridges' | 'ByApplication';
 
 export function getContainerRuleDiscriminant(rule: ContainerRule): ContainerRuleType {
 	if (typeof rule === 'string') return rule;

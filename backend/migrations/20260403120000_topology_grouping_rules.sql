@@ -43,7 +43,7 @@ SET options = jsonb_set(
                 ),
                 'Application', jsonb_build_array(
                     jsonb_build_object('id', gen_random_uuid(), 'rule',
-                        jsonb_build_object('ByApplicationGroup', jsonb_build_object('tag_ids', '[]'::jsonb))
+                        jsonb_build_object('ByApplication', jsonb_build_object('tag_ids', '[]'::jsonb))
                     )
                 )
             )

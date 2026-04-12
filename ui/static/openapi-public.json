@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-12T17:17:55.495613Z",
-              "id": "3a2307f5-8733-4aa0-aadd-584e1e0576b8",
+              "created_at": "2026-04-12T19:50:09.037466Z",
+              "id": "c27d4676-f30f-425c-9037-c9c33b0ceb23",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-12T17:17:55.495613Z"
+              "updated_at": "2026-04-12T19:50:09.037466Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-12T17:17:55.483153Z",
-                      "id": "2aada845-b0e7-4472-9a8a-b160a5f0645d",
+                      "created_at": "2026-04-12T19:50:09.020303Z",
+                      "id": "155bfaff-bbc9-477e-a568-7bcbd4fd1cb8",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-12T17:17:55.483153Z"
+                      "updated_at": "2026-04-12T19:50:09.020303Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "LinkStack",
+                  "service_definition": "Paperless-NGX",
                   "source": {
                     "type": "Manual"
                   },
@@ -12003,14 +12003,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-12T17:17:55.491887Z",
-                  "id": "1eb4ef6c-2a3a-4f2f-b4ab-f915f6736f05",
+                  "created_at": "2026-04-12T19:50:09.032663Z",
+                  "id": "8d83284f-7a69-4efa-bbec-14dc7f76c0e4",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-12T17:17:55.491887Z"
+                  "updated_at": "2026-04-12T19:50:09.032663Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12019,7 +12019,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "LinkStack",
+              "service_definition": "Paperless-NGX",
               "source": {
                 "type": "Manual"
               },
@@ -12263,7 +12263,7 @@
               "created_at": "2026-01-15T10:30:00Z",
               "description": "Production environment resources",
               "id": "550e8400-e29b-41d4-a716-44665544000a",
-              "is_application_group": false,
+              "is_application": false,
               "name": "production",
               "organization_id": "550e8400-e29b-41d4-a716-446655440001",
               "updated_at": "2026-01-15T10:30:00Z"
@@ -13384,14 +13384,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-12T17:17:55.483368Z",
-          "id": "b537ea53-9cc2-44a4-aa62-573040e8f48d",
+          "created_at": "2026-04-12T19:50:09.020680Z",
+          "id": "0aa8a8a6-b928-44b0-93f4-d13a33de2a0b",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-12T17:17:55.483368Z"
+          "updated_at": "2026-04-12T19:50:09.020680Z"
         }
       },
       "BindingBase": {
@@ -13682,7 +13682,7 @@
         "enum": [
           "Subnet",
           "ServiceCategory",
-          "ApplicationGroup",
+          "Application",
           "Root",
           "Host",
           "NestedTag",
@@ -13921,7 +13921,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "LinkStack",
+              "service_definition": "Paperless-NGX",
               "tags": [],
               "virtualization": null
             }
@@ -16442,14 +16442,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-12T17:17:55.482849Z",
-                  "id": "b7699e44-e037-494e-9211-0037866c23d3",
+                  "created_at": "2026-04-12T19:50:09.019808Z",
+                  "id": "1a1f6ff8-ee53-4ff6-8076-016c9e2cb618",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-12T17:17:55.482849Z"
+                  "updated_at": "2026-04-12T19:50:09.019808Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16458,7 +16458,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "LinkStack",
+              "service_definition": "Paperless-NGX",
               "source": {
                 "type": "Manual"
               },
@@ -16660,10 +16660,10 @@
               {
                 "type": "object",
                 "required": [
-                  "ByApplicationGroup"
+                  "ByApplication"
                 ],
                 "properties": {
-                  "ByApplicationGroup": {
+                  "ByApplication": {
                     "type": "object",
                     "properties": {
                       "tag_ids": {
@@ -18639,14 +18639,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-12T17:17:55.475856Z",
-                        "id": "b767ee26-ab0d-4168-821c-180e96562fbb",
+                        "created_at": "2026-04-12T19:50:09.008719Z",
+                        "id": "fe2eb5fd-e418-4e2b-acb5-85a5c1af8b1c",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-12T17:17:55.475856Z"
+                        "updated_at": "2026-04-12T19:50:09.008719Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18655,7 +18655,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "LinkStack",
+                    "service_definition": "Paperless-NGX",
                     "source": {
                       "type": "Manual"
                     },
@@ -18732,14 +18732,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-12T17:17:55.490890Z",
-                    "id": "8a4bfa32-f446-406e-a6da-ef2b6ea6b98e",
+                    "created_at": "2026-04-12T19:50:09.031345Z",
+                    "id": "4fd39ee2-4c8f-46ae-912d-c409d4b8e903",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-12T17:17:55.490890Z"
+                    "updated_at": "2026-04-12T19:50:09.031345Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18748,7 +18748,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "LinkStack",
+                "service_definition": "Paperless-NGX",
                 "source": {
                   "type": "Manual"
                 },
@@ -18891,7 +18891,7 @@
                 "created_at": "2026-01-15T10:30:00Z",
                 "description": "Production environment resources",
                 "id": "550e8400-e29b-41d4-a716-44665544000a",
-                "is_application_group": false,
+                "is_application": false,
                 "name": "production",
                 "organization_id": "550e8400-e29b-41d4-a716-446655440001",
                 "updated_at": "2026-01-15T10:30:00Z"
@@ -19978,14 +19978,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-12T17:17:55.483292Z",
-              "id": "768836cd-86d3-4b77-8ce5-144ece49ec27",
+              "created_at": "2026-04-12T19:50:09.020556Z",
+              "id": "241b3bca-dd39-488a-8173-66a61ae1fc57",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-12T17:17:55.483292Z"
+              "updated_at": "2026-04-12T19:50:09.020556Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19994,7 +19994,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "LinkStack",
+          "service_definition": "Paperless-NGX",
           "source": {
             "type": "Manual"
           },
@@ -20571,7 +20571,7 @@
           "created_at": "2026-01-15T10:30:00Z",
           "description": "Production environment resources",
           "id": "550e8400-e29b-41d4-a716-44665544000a",
-          "is_application_group": false,
+          "is_application": false,
           "name": "production",
           "organization_id": "550e8400-e29b-41d4-a716-446655440001",
           "updated_at": "2026-01-15T10:30:00Z"
@@ -20594,7 +20594,7 @@
               "null"
             ]
           },
-          "is_application_group": {
+          "is_application": {
             "type": "boolean"
           },
           "name": {

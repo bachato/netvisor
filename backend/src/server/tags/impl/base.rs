@@ -25,7 +25,7 @@ pub struct TagBase {
     pub color: Color,
     pub organization_id: Uuid,
     #[serde(default)]
-    pub is_application_group: bool,
+    pub is_application: bool,
 }
 
 impl Default for TagBase {
@@ -35,7 +35,7 @@ impl Default for TagBase {
             description: None,
             color: Color::Yellow,
             organization_id: Uuid::nil(),
-            is_application_group: false,
+            is_application: false,
         }
     }
 }
@@ -62,8 +62,8 @@ pub struct Tag {
 impl ChangeTriggersTopologyStaleness<Tag> for Tag {
     fn triggers_staleness(&self, other: Option<Tag>) -> bool {
         match other {
-            Some(prev) => self.base.is_application_group != prev.base.is_application_group,
-            None => self.base.is_application_group,
+            Some(prev) => self.base.is_application != prev.base.is_application,
+            None => self.base.is_application,
         }
     }
 }

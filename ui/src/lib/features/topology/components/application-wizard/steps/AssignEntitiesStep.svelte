@@ -21,10 +21,10 @@
 	} from '$lib/paraglide/messages';
 
 	let {
-		appGroupTags,
+		appTags,
 		networkId
 	}: {
-		appGroupTags: TagType[];
+		appTags: TagType[];
 		networkId: string;
 	} = $props();
 
@@ -45,11 +45,11 @@
 		)
 	);
 
-	// Track which app-group tag IDs exist for filtering
-	let appGroupTagIds = $derived(new Set(appGroupTags.map((t) => t.id)));
+	// Track which app tag IDs exist for filtering
+	let appTagIds = $derived(new Set(appTags.map((t) => t.id)));
 
-	function hasAppGroupTag(entity: { tags: string[] }): boolean {
-		return entity.tags.some((tagId) => appGroupTagIds.has(tagId));
+	function hasAppTag(entity: { tags: string[] }): boolean {
+		return entity.tags.some((tagId) => appTagIds.has(tagId));
 	}
 
 	// Selection state
@@ -67,11 +67,11 @@
 	}
 
 	function getEntityTags(entity: { tags: string[] }): TagType[] {
-		if (hasAppGroupTag(entity)) {
-			// Already has an app-group tag — only show that tag (for removal), no add options
-			return appGroupTags.filter((t) => entity.tags.includes(t.id));
+		if (hasAppTag(entity)) {
+			// Already has an app tag — only show that tag (for removal), no add options
+			return appTags.filter((t) => entity.tags.includes(t.id));
 		}
-		return appGroupTags;
+		return appTags;
 	}
 
 	function getHostContext(host: Host): HostDisplayContext {
@@ -171,7 +171,7 @@
 				{appWizard_selectedCount({ count: String(selectedHosts.length) })}
 			</span>
 			<span class="text-tertiary whitespace-nowrap text-sm">{appWizard_bulkAssign()}</span>
-			{#each appGroupTags as tag (tag.id)}
+			{#each appTags as tag (tag.id)}
 				<button
 					type="button"
 					class="cursor-pointer"

@@ -273,7 +273,7 @@ fn generate_topologies(networks: &[Network], tags: &[Tag], now: DateTime<Utc>) -
 // ============================================================================
 
 fn generate_tags(organization_id: Uuid, now: DateTime<Utc>) -> Vec<Tag> {
-    // (name, description, color, is_application_group)
+    // (name, description, color, is_application)
     let tag_definitions: [(&str, &str, Color, bool); 13] = [
         (
             "Production",
@@ -327,7 +327,7 @@ fn generate_tags(organization_id: Uuid, now: DateTime<Utc>) -> Vec<Tag> {
 
     tag_definitions
         .iter()
-        .map(|(name, description, color, is_app_group)| Tag {
+        .map(|(name, description, color, is_app)| Tag {
             id: Uuid::new_v4(),
             created_at: now,
             updated_at: now,
@@ -336,7 +336,7 @@ fn generate_tags(organization_id: Uuid, now: DateTime<Utc>) -> Vec<Tag> {
                 description: Some(description.to_string()),
                 color: *color,
                 organization_id,
-                is_application_group: *is_app_group,
+                is_application: *is_app,
             },
         })
         .collect()

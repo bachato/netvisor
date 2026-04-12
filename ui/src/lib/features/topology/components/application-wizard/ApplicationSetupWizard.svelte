@@ -11,11 +11,11 @@
 	} from '$lib/paraglide/messages';
 
 	let {
-		appGroupTags,
+		appTags,
 		networkId,
 		onComplete
 	}: {
-		appGroupTags: Tag[];
+		appTags: Tag[];
 		networkId: string;
 		onComplete: () => void;
 	} = $props();
@@ -40,10 +40,10 @@
 		<div class="flex min-h-0 flex-1 flex-col p-6">
 			{#if activeTab === 'define'}
 				<div class="overflow-y-auto">
-					<DefineGroupsStep {appGroupTags} />
+					<DefineGroupsStep {appTags} />
 				</div>
 			{:else if activeTab === 'assign'}
-				<AssignEntitiesStep {appGroupTags} {networkId} />
+				<AssignEntitiesStep {appTags} {networkId} />
 			{/if}
 		</div>
 
@@ -61,7 +61,7 @@
 						<button
 							type="button"
 							class="btn-primary"
-							disabled={appGroupTags.length === 0}
+							disabled={appTags.length === 0}
 							onclick={() => (activeTab = 'assign')}
 						>
 							{common_next()}

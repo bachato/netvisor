@@ -170,8 +170,8 @@
 						<Tag
 							label={tag?.name}
 							color={tag?.color}
-							icon={tag?.is_application_group ? concepts.getIconComponent('Application') : null}
-							isShiny={tag?.is_application_group ?? false}
+							icon={tag?.is_application ? concepts.getIconComponent('Application') : null}
+							isShiny={tag?.is_application ?? false}
 							pill={true}
 							removable={!disabled}
 							onRemove={() => removeTag(tagId)}

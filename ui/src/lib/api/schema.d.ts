@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-12T17:17:55.495612Z",
-             *       "id": "8c7940d5-5996-470a-9373-b592af57fb89",
+             *       "created_at": "2026-04-12T19:50:09.037464Z",
+             *       "id": "6adbd277-3eba-46a6-b562-b29f0d885735",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-12T17:17:55.495612Z"
+             *       "updated_at": "2026-04-12T19:50:09.037464Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-12T17:17:55.483150Z",
-             *               "id": "29177356-6c64-43a5-86d7-5b0d4b8a4470",
+             *               "created_at": "2026-04-12T19:50:09.020296Z",
+             *               "id": "79cdaa87-c574-49da-b00c-31f39a961664",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-12T17:17:55.483150Z"
+             *               "updated_at": "2026-04-12T19:50:09.020296Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "LinkStack",
+             *           "service_definition": "Paperless-NGX",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3531,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-12T17:17:55.491886Z",
-             *           "id": "678417df-977c-477b-ac7a-24b1a01be691",
+             *           "created_at": "2026-04-12T19:50:09.032692Z",
+             *           "id": "0e628b00-8d0a-4b6c-a8b9-f7637088445a",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-12T17:17:55.491886Z"
+             *           "updated_at": "2026-04-12T19:50:09.032692Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3547,7 +3547,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "LinkStack",
+             *       "service_definition": "Paperless-NGX",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3633,7 +3633,7 @@ export interface components {
              *       "created_at": "2026-01-15T10:30:00Z",
              *       "description": "Production environment resources",
              *       "id": "550e8400-e29b-41d4-a716-44665544000a",
-             *       "is_application_group": false,
+             *       "is_application": false,
              *       "name": "production",
              *       "organization_id": "550e8400-e29b-41d4-a716-446655440001",
              *       "updated_at": "2026-01-15T10:30:00Z"
@@ -3898,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-12T17:17:55.483362Z",
-         *       "id": "31fe31d5-00d9-4738-b872-9ed23a29e2c3",
+         *       "created_at": "2026-04-12T19:50:09.020676Z",
+         *       "id": "be8dc4ed-d267-46eb-9a19-cee1c92367ca",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-12T17:17:55.483362Z"
+         *       "updated_at": "2026-04-12T19:50:09.020676Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4025,7 +4025,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Amber" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Fuchsia" | "Violet" | "Sky" | "Gray" | "Lime" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "ServiceCategory" | "ApplicationGroup" | "Root" | "Host" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack" | "TrunkPort" | "VLAN" | "PortOpStatus";
+        ContainerType: "Subnet" | "ServiceCategory" | "Application" | "Root" | "Host" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack" | "TrunkPort" | "VLAN" | "PortOpStatus";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -4090,7 +4090,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "LinkStack",
+         *           "service_definition": "Paperless-NGX",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4949,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-12T17:17:55.482844Z",
-         *               "id": "7579a093-e33c-453d-a9d9-eb29f285f17c",
+         *               "created_at": "2026-04-12T19:50:09.019800Z",
+         *               "id": "268d036e-85ab-4454-9b15-aee1d297ae40",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-12T17:17:55.482844Z"
+         *               "updated_at": "2026-04-12T19:50:09.019800Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4965,7 +4965,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "LinkStack",
+         *           "service_definition": "Paperless-NGX",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5090,7 +5090,7 @@ export interface components {
              *     Container titles are data-driven (subnet CIDR, host names), not user-configurable.
              */
             rule: "BySubnet" | "MergeDockerBridges" | {
-                ByApplicationGroup: {
+                ByApplication: {
                     tag_ids?: string[];
                 };
             } | "ByHost";
@@ -6094,14 +6094,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-12T17:17:55.483288Z",
-         *           "id": "f4bb94cc-b0f9-4197-838c-813c1c407631",
+         *           "created_at": "2026-04-12T19:50:09.020550Z",
+         *           "id": "6bd382da-62e8-4a1c-b431-8aef7809a9b9",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-12T17:17:55.483288Z"
+         *           "updated_at": "2026-04-12T19:50:09.020550Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6110,7 +6110,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "LinkStack",
+         *       "service_definition": "Paperless-NGX",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6299,7 +6299,7 @@ export interface components {
          *       "created_at": "2026-01-15T10:30:00Z",
          *       "description": "Production environment resources",
          *       "id": "550e8400-e29b-41d4-a716-44665544000a",
-         *       "is_application_group": false,
+         *       "is_application": false,
          *       "name": "production",
          *       "organization_id": "550e8400-e29b-41d4-a716-446655440001",
          *       "updated_at": "2026-01-15T10:30:00Z"
@@ -6316,7 +6316,7 @@ export interface components {
         TagBase: {
             color: components["schemas"]["Color"];
             description?: string | null;
-            is_application_group?: boolean;
+            is_application?: boolean;
             name: string;
             /** Format: uuid */
             organization_id: string;

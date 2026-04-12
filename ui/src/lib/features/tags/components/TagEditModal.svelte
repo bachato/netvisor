@@ -27,8 +27,8 @@
 		common_name,
 		common_saving,
 		common_update,
-		tags_applicationGroup,
-		tags_applicationGroupHelp,
+		common_application,
+		tags_applicationHelp,
 		tags_createTag,
 		tags_descriptionPlaceholder,
 		tags_tagNamePlaceholder
@@ -210,13 +210,13 @@
 					</form.Field>
 
 					<!-- Application Group -->
-					<form.Field name="is_application_group">
+					<form.Field name="is_application">
 						{#snippet children(field)}
 							<Checkbox
-								label={tags_applicationGroup()}
-								helpText={tags_applicationGroupHelp()}
+								label={common_application()}
+								helpText={tags_applicationHelp()}
 								{field}
-								id="is_application_group"
+								id="is_application"
 							/>
 						{/snippet}
 					</form.Field>

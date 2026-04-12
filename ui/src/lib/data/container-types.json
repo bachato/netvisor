@@ -52,9 +52,9 @@
     }
   },
   {
-    "id": "ApplicationGroup",
-    "name": "Application group",
-    "description": "Services grouped by application group tag",
+    "id": "Application",
+    "name": "Application",
+    "description": "Services grouped by application tag",
     "category": null,
     "icon": "workflow",
     "color": "Purple",

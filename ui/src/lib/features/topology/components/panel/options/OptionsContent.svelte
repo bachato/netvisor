@@ -35,9 +35,10 @@
 		topology_showMinimapHelp,
 		common_byCategory,
 		common_byTag,
-		common_byType,
 		common_edges,
-		topology_filtersHelp
+		topology_filtersHelp,
+		topology_groupsHelp,
+		topology_displayHelp
 	} from '$lib/paraglide/messages';
 
 	let { activeTab }: { activeTab: 'filter' | 'group' | 'visual' } = $props();
@@ -393,13 +394,26 @@
 	<div class="space-y-3">
 		<p class="text-tertiary text-xs">{topology_filtersHelp()}</p>
 
+		<div class="space-y-1.5">
+			<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+				{common_edges()}
+			</div>
+			<FilterGroup
+				items={edgeTypesWithColors}
+				selectedValues={edgeFilterSelectedValues}
+				mode="exclude"
+				onToggle={toggleEdgeType}
+				onHoverStart={handleEdgeTypeHoverStart}
+				onHoverEnd={handleEdgeTypeHoverEnd}
+			/>
+		</div>
+
 		{#if showHostFilter}
 			<div class="space-y-1.5">
 				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
 					{common_hosts()}
 				</div>
 				<TagFilterGroup
-					label={common_byTag()}
 					tags={hostTags}
 					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
 					onToggle={toggleHostTag}
@@ -449,7 +463,6 @@
 					{common_subnets()}
 				</div>
 				<TagFilterGroup
-					label={common_byTag()}
 					tags={subnetTags}
 					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
 					onToggle={toggleSubnetTag}
@@ -458,28 +471,17 @@
 				/>
 			</div>
 		{/if}
-
-		<div class="space-y-1.5">
-			<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-				{common_edges()}
-			</div>
-			<FilterGroup
-				items={edgeTypesWithColors}
-				selectedValues={edgeFilterSelectedValues}
-				mode="exclude"
-				onToggle={toggleEdgeType}
-				onHoverStart={handleEdgeTypeHoverStart}
-				onHoverEnd={handleEdgeTypeHoverEnd}
-				label={common_byType()}
-			/>
-		</div>
 	</div>
 {:else if activeTab === 'group'}
 	<!-- Group By -->
-	<GroupingRuleEditor />
+	<div class="space-y-3">
+		<p class="text-tertiary text-xs">{topology_groupsHelp()}</p>
+		<GroupingRuleEditor />
+	</div>
 {:else if activeTab === 'visual'}
 	<!-- Visual Options -->
 	<div class="space-y-3">
+		<p class="text-tertiary text-xs">{topology_displayHelp()}</p>
 		{#each sections as section (section.name)}
 			{#each section.fields as def (def.id)}
 				{#if def.type === 'boolean'}

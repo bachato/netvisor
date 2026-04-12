@@ -57,7 +57,7 @@
 		dependencies_serviceBindingsInfoBody,
 		topology_multiSelectPreviewEdge,
 		topology_focusSelection,
-		tags_applicationGroup,
+		common_application,
 		tags_crossGroupSelectionHint,
 		tags_inheritedFromHost,
 		tags_inheritedOverrideHint,
@@ -151,42 +151,40 @@
 		return [...topoTags, ...cachedTags.filter((t) => !topoIds.has(t.id))];
 	});
 
-	let appGroupTagIds = $derived(
-		topoEntityTags.filter((t) => t.is_application_group).map((t) => t.id)
-	);
+	let appTagIds = $derived(topoEntityTags.filter((t) => t.is_application).map((t) => t.id));
 
-	let appGroupTagSet = $derived(new Set(appGroupTagIds));
+	let appTagSet = $derived(new Set(appTagIds));
 
 	// Filtered tag lists for pickers
-	let nonAppGroupTags = $derived(topoEntityTags.filter((t) => !t.is_application_group));
-	let appGroupTags = $derived(topoEntityTags.filter((t) => t.is_application_group));
+	let nonAppTags = $derived(topoEntityTags.filter((t) => !t.is_application));
+	let appTags = $derived(topoEntityTags.filter((t) => t.is_application));
 
-	// Common app-group tags across selected entities (for app-group picker selectedTagIds)
-	let commonAppGroupTags = $derived(commonTags.filter((id) => appGroupTagSet.has(id)));
-	let hasAppGroupTag = $derived(commonAppGroupTags.length > 0);
+	// Common app tags across selected entities (for app picker selectedTagIds)
+	let commonAppTags = $derived(commonTags.filter((id) => appTagSet.has(id)));
+	let hasAppTag = $derived(commonAppTags.length > 0);
 
 	// App-group available tags: if already tagged, only show current tag (for removal)
-	let appGroupAvailableTags = $derived(
-		hasAppGroupTag ? appGroupTags.filter((t) => commonAppGroupTags.includes(t.id)) : appGroupTags
+	let appAvailableTags = $derived(
+		hasAppTag ? appTags.filter((t) => commonAppTags.includes(t.id)) : appTags
 	);
 
-	// Analyze each selected service's app-group status
-	type AppGroupInfo = { tagId: string; inherited: boolean } | null;
+	// Analyze each selected service's app status
+	type AppInfo = { tagId: string; inherited: boolean } | null;
 
-	let serviceAppGroupInfos = $derived.by((): AppGroupInfo[] => {
+	let serviceAppInfos = $derived.by((): AppInfo[] => {
 		if (!topology) return [];
 		return selectedServices.map((service) => {
-			// Check for direct app-group tag on the service
+			// Check for direct app tag on the service
 			for (const tagId of service.tags) {
-				if (appGroupTagSet.has(tagId)) {
+				if (appTagSet.has(tagId)) {
 					return { tagId, inherited: false };
 				}
 			}
-			// Check for inherited app-group tag from host
+			// Check for inherited app tag from host
 			const host = topology!.hosts.find((h) => h.id === service.host_id);
 			if (host) {
 				for (const tagId of host.tags) {
-					if (appGroupTagSet.has(tagId)) {
+					if (appTagSet.has(tagId)) {
 						return { tagId, inherited: true };
 					}
 				}
@@ -195,9 +193,9 @@
 		});
 	});
 
-	// Overall app-group selection state
-	let appGroupState = $derived.by(() => {
-		const infos = serviceAppGroupInfos;
+	// Overall app selection state
+	let appState = $derived.by(() => {
+		const infos = serviceAppInfos;
 		if (infos.length === 0) return { type: 'ungrouped' as const };
 
 		const uniqueTagIds = new Set(infos.map((i) => i?.tagId ?? '__ungrouped__'));
@@ -217,10 +215,10 @@
 		};
 	});
 
-	// Get the tag object for the current app-group
-	let currentAppGroupTag = $derived.by(() => {
-		if (appGroupState.type !== 'single') return null;
-		return topoEntityTags.find((t) => t.id === appGroupState.tagId) ?? null;
+	// Get the tag object for the current app
+	let currentAppTag = $derived.by(() => {
+		if (appState.type !== 'single') return null;
+		return topoEntityTags.find((t) => t.id === appState.tagId) ?? null;
 	});
 
 	// Tag handlers — mutation onSuccess handles cache updates optimistically
@@ -240,18 +238,17 @@
 		});
 	}
 
-	// Track recently added non-app-group tags for "create grouping rule" action
+	// Track recently added non-app tags for "create grouping rule" action
 	let recentlyAddedTagIds = $state<string[]>([]);
 
 	async function handleAddTagWithTracking(tagId: string) {
 		await handleAddTag(tagId);
-		// Only track non-app-group tags for grouping rule creation
-		// (is_application_group field will be on tag objects after feat/topo-app-group-backend merge)
+		// Only track non-app tags for grouping rule creation
 		recentlyAddedTagIds = [...recentlyAddedTagIds, tagId];
 	}
 
 	// App-group tag handler (no grouping rule tracking)
-	async function handleAddAppGroupTag(tagId: string) {
+	async function handleAddAppTag(tagId: string) {
 		await handleAddTag(tagId);
 	}
 
@@ -603,10 +600,10 @@
 			<div class="card card-static space-y-2 p-2">
 				<div class="flex items-center gap-1.5">
 					<TagPickerInline
-						selectedTagIds={commonTags.filter((id) => !appGroupTagSet.has(id))}
+						selectedTagIds={commonTags.filter((id) => !appTagSet.has(id))}
 						onAdd={handleAddTagWithTracking}
 						onRemove={handleRemoveTag}
-						availableTags={nonAppGroupTags}
+						availableTags={nonAppTags}
 					/>
 				</div>
 				{#if recentlyAddedTagIds.length > 0 && !existingRuleCoversRecentTags}
@@ -625,19 +622,19 @@
 			</div>
 		</div>
 
-		{#if inspectorConfig.show_application_group_picker}
+		{#if inspectorConfig.show_application_picker}
 			<!-- App-group tag picker — with cross-group and inheritance awareness -->
 			<div class="space-y-2">
-				<span class="text-secondary block text-sm font-medium">{tags_applicationGroup()}</span>
+				<span class="text-secondary block text-sm font-medium">{common_application()}</span>
 				<div class="card card-static space-y-2 p-2">
-					{#if appGroupState.type === 'cross-group'}
+					{#if appState.type === 'cross-group'}
 						<p class="text-tertiary text-xs">{tags_crossGroupSelectionHint()}</p>
 					{:else}
-						{#if appGroupState.type === 'single' && appGroupState.allInherited && currentAppGroupTag}
+						{#if appState.type === 'single' && appState.allInherited && currentAppTag}
 							<div class="flex flex-wrap items-center gap-1">
 								<Tag
-									label={currentAppGroupTag.name}
-									color={currentAppGroupTag.color}
+									label={currentAppTag.name}
+									color={currentAppTag.color}
 									icon={concepts.getIconComponent('Application')}
 									isShiny={true}
 								/>
@@ -646,10 +643,10 @@
 							<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
 						{/if}
 						<TagPickerInline
-							selectedTagIds={commonAppGroupTags}
-							onAdd={handleAddAppGroupTag}
+							selectedTagIds={commonAppTags}
+							onAdd={handleAddAppTag}
 							onRemove={handleRemoveTag}
-							availableTags={appGroupAvailableTags}
+							availableTags={appAvailableTags}
 							allowCreate={false}
 						/>
 					{/if}

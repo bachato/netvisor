@@ -115,20 +115,20 @@
 	let hasEmail = $derived(configQuery.data?.has_email_service ?? false);
 
 	// Application wizard gate
-	let appGroupTags = $derived((tagsQuery.data ?? []).filter((t) => t.is_application_group));
+	let appTags = $derived((tagsQuery.data ?? []).filter((t) => t.is_application));
 	let wizardOpen = $state(false);
 
 	let currentInspectorConfig = $derived(getInspectorConfig($activeView));
 
-	// Auto-open wizard when entering a view with app-group picker and no app-group tags
+	// Auto-open wizard when entering a view with app picker and no app tags
 	// Wait for tags query to load before deciding — otherwise empty pre-load state triggers wizard
 	let tagsLoaded = $derived(!tagsQuery.isLoading && !tagsQuery.isPending);
 	$effect(() => {
 		if (
 			isActive &&
 			tagsLoaded &&
-			currentInspectorConfig.show_application_group_picker &&
-			appGroupTags.length === 0 &&
+			currentInspectorConfig.show_application_picker &&
+			appTags.length === 0 &&
 			!wizardOpen
 		) {
 			wizardOpen = true;
@@ -136,7 +136,7 @@
 	});
 
 	let showAppWizard = $derived(
-		isActive && currentInspectorConfig.show_application_group_picker && wizardOpen
+		isActive && currentInspectorConfig.show_application_picker && wizardOpen
 	);
 
 	// Selected topology (derived from ID + query data)
@@ -500,7 +500,7 @@
 
 	function handleWizardComplete() {
 		wizardOpen = false;
-		const tagIds = appGroupTags.map((t) => t.id);
+		const tagIds = appTags.map((t) => t.id);
 		updateTopologyOptions((current) => {
 			const allRules = (current.request.container_rules ?? {}) as Record<string, unknown[]>;
 			const appRules = (allRules['Application'] ?? []) as { rule: unknown }[];
@@ -514,9 +514,9 @@
 							...appRules.filter(
 								(r) =>
 									typeof r.rule === 'string' ||
-									!('ByApplicationGroup' in (r.rule as Record<string, unknown>))
+									!('ByApplication' in (r.rule as Record<string, unknown>))
 							),
-							makeGraphRule({ ByApplicationGroup: { tag_ids: tagIds } })
+							makeGraphRule({ ByApplication: { tag_ids: tagIds } })
 						]
 					}
 				}
@@ -788,7 +788,7 @@
 					/>
 					{#if showAppWizard}
 						<ApplicationSetupWizard
-							{appGroupTags}
+							{appTags}
 							networkId={currentTopology.network_id}
 							onComplete={handleWizardComplete}
 						/>

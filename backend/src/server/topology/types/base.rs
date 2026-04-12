@@ -279,7 +279,7 @@ fn default_container_rules() -> HashMap<TopologyView, Vec<IdentifiedRule<Contain
     let all_rules: Vec<IdentifiedRule<ContainerRule>> = vec![
         IdentifiedRule::new(BySubnet),
         IdentifiedRule::new(MergeDockerBridges),
-        IdentifiedRule::new(ByApplicationGroup { tag_ids: vec![] }),
+        IdentifiedRule::new(ByApplication { tag_ids: vec![] }),
         IdentifiedRule::new(ByHost),
     ];
 

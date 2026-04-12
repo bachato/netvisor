@@ -224,8 +224,8 @@
 
 	function handleContainerAdd(optionId: string) {
 		let rule: ContainerRule;
-		if (optionId === 'ByApplicationGroup') {
-			rule = { ByApplicationGroup: { tag_ids: [] } };
+		if (optionId === 'ByApplication') {
+			rule = { ByApplication: { tag_ids: [] } };
 		} else {
 			rule = optionId as 'BySubnet' | 'MergeDockerBridges';
 		}
