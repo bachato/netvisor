@@ -27,7 +27,7 @@
 	let servicesOnInterface = $derived(
 		(elementContext?.services ?? []).filter((s) =>
 			s.bindings.some(
-				(b) => b.ip_address_id === elementContext?.interfaceId || b.ip_address_id === null
+				(b) => b.ip_address_id === elementContext?.ipAddressId || b.ip_address_id === null
 			)
 		)
 	);
