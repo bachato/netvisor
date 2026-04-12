@@ -47,10 +47,13 @@ export async function resolveNodeSizes(
 		}
 	} else if (state.containerSizeCache.size > 0) {
 		// Use cached container sizes + SvelteFlow computed element sizes
+		// Read element sizes from SvelteFlow computed state.
+		// Skip containers — handled below via collapsed size cache.
 		const liveNodes = getNodes();
 		let elemHits = 0;
 		let elemMisses = 0;
 		for (const n of liveNodes) {
+			if (state.layoutGraph?.containers.has(n.id)) continue;
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @xyflow Node has runtime .computed not in type defs
 			const w = (n as any).computed?.width ?? n.width;
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @xyflow Node has runtime .computed not in type defs
@@ -63,28 +66,26 @@ export async function resolveNodeSizes(
 			}
 		}
 
-		// Override COLLAPSED containers with cached sizes. Expanded
-		// containers are omitted — ELK computes their size from children.
-		// Including a stale expanded size would set elk.nodeSize.minimum
-		// too large, preventing the container from shrinking.
+		// Put COLLAPSED size for ALL containers. For collapsed containers,
+		// ELK uses it as the fixed size. For expanded containers, ELK uses
+		// it as elk.nodeSize.minimum (= smallest the container can be).
+		// ELK computes the actual expanded size from children (>= minimum).
 		let cacheHits = 0;
 		let cacheMisses = 0;
 		for (const node of visibleNodes) {
 			if (node.node_type === 'Container') {
-				const isCollapsed = collapsed.has(node.id);
-				if (isCollapsed) {
-					const cached = state.containerSizeCache.get(node.id)?.collapsed;
-					if (cached) {
-						elementNodeSizes.set(node.id, cached);
-						cacheHits++;
-					} else {
-						cacheMisses++;
-						console.log(
-							`[CACHE-MISS] ${node.id.substring(0, 8)} collapsed=true cache=${JSON.stringify(state.containerSizeCache.get(node.id))}`
-						);
-					}
+				const cached = state.containerSizeCache.get(node.id)?.collapsed;
+				if (cached) {
+					elementNodeSizes.set(node.id, cached);
+					cacheHits++;
+				} else if (collapsed.has(node.id)) {
+					cacheMisses++;
+					console.log(
+						`[CACHE-MISS] ${node.id.substring(0, 8)} collapsed=true cache=${JSON.stringify(state.containerSizeCache.get(node.id))}`
+					);
 				}
-				// Expanded containers: no entry needed, ELK computes from children
+				// Expanded containers without cached collapsed size: omit,
+				// ELK uses metadata for minimum
 			}
 		}
 
