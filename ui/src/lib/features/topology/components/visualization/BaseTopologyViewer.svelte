@@ -497,7 +497,6 @@
 	// --- Event handlers ---
 
 	let ignoreNextSelectionChange = false;
-	let selectionGeneration = 0;
 
 	function handleNodeClick({ node, event }: { node: Node; event: MouseEvent | TouchEvent }) {
 		const isModifierClick = event instanceof MouseEvent && (event.ctrlKey || event.metaKey);
@@ -505,7 +504,6 @@
 			handleModifierNodeClick(node, selectionStores);
 			ignoreNextSelectionChange = true;
 		} else {
-			selectionGeneration++;
 			collapseAllBundles();
 			selectNode(node, selectionStores);
 			ignoreNextSelectionChange = true;
@@ -513,8 +511,6 @@
 	}
 
 	function handleEdgeClick({ edge }: { edge: Edge; event: MouseEvent }) {
-		console.log('[EDGE-CLICK] fired', edge.id, 'gen:', selectionGeneration, '->', selectionGeneration + 1);
-		selectionGeneration++;
 		collapseAllBundles();
 		selectEdge(edge, selectionStores);
 		ignoreNextSelectionChange = true;
@@ -570,18 +566,14 @@
 	}
 
 	function handleSelectionChange({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) {
-		console.log('[SEL-CHANGE] selNodes:', selNodes.length, 'gen:', selectionGeneration, 'ignore:', ignoreNextSelectionChange, 'viewportMoved:', viewportMoved);
 		if (ignoreNextSelectionChange) {
 			ignoreNextSelectionChange = false;
 			return;
 		}
 		if (selNodes.length === 0 && !viewportMoved) {
-			const genAtSchedule = selectionGeneration;
-			console.log('[SEL-CHANGE] scheduling clear, genAtSchedule:', genAtSchedule);
 			tick().then(() => {
-				console.log('[SEL-CHANGE] tick: gen now:', selectionGeneration, 'was:', genAtSchedule, selectionGeneration !== genAtSchedule ? 'SKIPPING' : 'CLEARING');
-				// Skip if a click handler fired between scheduling and execution
-				if (selectionGeneration !== genAtSchedule) return;
+				// Skip if a click handler has set an active selection
+				if (get(selectionStores.selectedNode) || get(selectionStores.selectedEdge)) return;
 				clearSelection(selectionStores);
 				clearEdgeHoverState();
 				syncEdgeDisplayState();
