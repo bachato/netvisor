@@ -419,10 +419,18 @@
 
 		if (shouldAnimate) {
 			animatingCollapse = true;
-			nodes.set(allNodes);
+			// Hide newly visible nodes during animation — show after
+			// container finishes transitioning to its new size.
+			const previousNodeIds = new Set(get(nodes).map((n) => n.id));
+			const phase1Nodes = allNodes.filter((n) => previousNodeIds.has(n.id));
+			nodes.set(phase1Nodes);
 			edges.set(flowEdges);
+			const fullNodes = [...allNodes];
+			const fullEdges = [...flowEdges];
 			setTimeout(() => {
 				animatingCollapse = false;
+				nodes.set(fullNodes);
+				edges.set(fullEdges);
 			}, 350);
 		} else if (!isMeasuring) {
 			nodes.set(allNodes);
