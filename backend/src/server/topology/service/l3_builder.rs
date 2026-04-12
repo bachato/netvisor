@@ -166,7 +166,7 @@ mod tests {
                 description: None,
                 color: Color::Orange,
                 organization_id: Uuid::new_v4(),
-                is_application_group: false,
+                is_application: false,
             },
         };
 

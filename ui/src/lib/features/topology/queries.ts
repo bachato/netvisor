@@ -117,8 +117,8 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 		containerRules[p] = _containerRuleTypes
 			.filter((r) => (r.metadata as { views?: string[] })?.views?.includes(p))
 			.map((r) => {
-				if (r.id === 'ByApplicationGroup') {
-					return makeGraphRule({ ByApplicationGroup: { tag_ids: [] } } as ContainerRule);
+				if (r.id === 'ByApplication') {
+					return makeGraphRule({ ByApplication: { tag_ids: [] } } as ContainerRule);
 				}
 				return makeGraphRule(r.id as ContainerRule);
 			});

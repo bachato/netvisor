@@ -14,7 +14,7 @@
 		entityType,
 		hasUntagged = false
 	}: {
-		label: string;
+		label?: string;
 		tags: TagType[];
 		hiddenTagIds: string[];
 		onToggle: (tagId: string) => void;
@@ -29,13 +29,13 @@
 			result.push({ value: UNTAGGED_SENTINEL, label: 'Untagged', color: 'Gray' });
 		}
 		for (const tag of tags) {
-			const isAppGroup = tag.is_application_group ?? false;
+			const isApp = tag.is_application ?? false;
 			result.push({
 				value: tag.id,
 				label: tag.name,
 				color: tag.color as FilterItem['color'],
-				icon: isAppGroup ? concepts.getIconComponent('Application') : undefined,
-				isShiny: isAppGroup
+				icon: isApp ? concepts.getIconComponent('Application') : undefined,
+				isShiny: isApp
 			});
 		}
 		return result;

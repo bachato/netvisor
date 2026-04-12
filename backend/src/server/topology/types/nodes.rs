@@ -78,7 +78,7 @@ pub enum ContainerType {
     #[default]
     Subnet,
     ServiceCategory,
-    ApplicationGroup,
+    Application,
     /// Generic root container for perspectives without structural container rules.
     Root,
 
@@ -107,7 +107,7 @@ impl EntityMetadataProvider for ContainerType {
         match self {
             ContainerType::Subnet => Color::Blue,
             ContainerType::ServiceCategory => EntityDiscriminants::Service.color(),
-            ContainerType::ApplicationGroup => Concept::Application.color(),
+            ContainerType::Application => Concept::Application.color(),
             ContainerType::Root => Color::Gray,
             ContainerType::Host => EntityDiscriminants::Host.color(),
             ContainerType::NestedTag => Color::Orange,
@@ -125,7 +125,7 @@ impl EntityMetadataProvider for ContainerType {
         match self {
             ContainerType::Subnet => Icon::Network,
             ContainerType::ServiceCategory => EntityDiscriminants::Service.icon(),
-            ContainerType::ApplicationGroup => Concept::Application.icon(),
+            ContainerType::Application => Concept::Application.icon(),
             ContainerType::Root => Icon::Layers,
             ContainerType::Host => Concept::L2.icon(),
             ContainerType::NestedTag => Icon::Tag,
@@ -145,7 +145,7 @@ impl TypeMetadataProvider for ContainerType {
         match self {
             ContainerType::Subnet => "Subnet",
             ContainerType::ServiceCategory => "Service category",
-            ContainerType::ApplicationGroup => "Application group",
+            ContainerType::Application => "Application",
             ContainerType::Root => "Root",
             ContainerType::Host => "Host",
             ContainerType::NestedTag => "Tag container",
@@ -163,7 +163,7 @@ impl TypeMetadataProvider for ContainerType {
         match self {
             ContainerType::Subnet => "Network subnet container",
             ContainerType::ServiceCategory => "Services grouped by category",
-            ContainerType::ApplicationGroup => "Services grouped by application group tag",
+            ContainerType::Application => "Services grouped by application tag",
             ContainerType::Root => "Root container",
             ContainerType::Host => "Physical network device",
             ContainerType::NestedTag => "Elements grouped by tag",
@@ -181,7 +181,7 @@ impl TypeMetadataProvider for ContainerType {
         let title_style = match self {
             ContainerType::Subnet
             | ContainerType::ServiceCategory
-            | ContainerType::ApplicationGroup
+            | ContainerType::Application
             | ContainerType::Root
             | ContainerType::Host => TitleStyle::External,
             ContainerType::NestedTag
@@ -207,7 +207,7 @@ impl TypeMetadataProvider for ContainerType {
         let (padding_top, padding_side) = match self {
             ContainerType::Subnet
             | ContainerType::ServiceCategory
-            | ContainerType::ApplicationGroup
+            | ContainerType::Application
             | ContainerType::Root
             | ContainerType::Host => (25, 25),
             ContainerType::NestedTag
@@ -222,7 +222,7 @@ impl TypeMetadataProvider for ContainerType {
         let (collapsed_width, collapsed_height) = match self {
             ContainerType::Subnet
             | ContainerType::ServiceCategory
-            | ContainerType::ApplicationGroup
+            | ContainerType::Application
             | ContainerType::Root
             | ContainerType::Host => (200, 80),
             _ => (250, 40),

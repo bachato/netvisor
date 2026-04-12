@@ -44,7 +44,7 @@ impl<T: GraphRule> IdentifiedRule<T> {
 pub enum ContainerRule {
     BySubnet,
     MergeDockerBridges,
-    ByApplicationGroup {
+    ByApplication {
         #[serde(default)]
         tag_ids: Vec<Uuid>,
     },
@@ -56,7 +56,7 @@ impl GraphRule for ContainerRule {
         match self {
             ContainerRule::BySubnet => &[TopologyView::L3Logical],
             ContainerRule::MergeDockerBridges => &[TopologyView::L3Logical],
-            ContainerRule::ByApplicationGroup { .. } => &[TopologyView::Application],
+            ContainerRule::ByApplication { .. } => &[TopologyView::Application],
             ContainerRule::ByHost => &[TopologyView::L2Physical, TopologyView::Workloads],
         }
     }
@@ -81,7 +81,7 @@ impl EntityMetadataProvider for ContainerRule {
         match self {
             ContainerRule::BySubnet => Color::Blue,
             ContainerRule::MergeDockerBridges => Color::Teal,
-            ContainerRule::ByApplicationGroup { .. } => Concept::Application.color(),
+            ContainerRule::ByApplication { .. } => Concept::Application.color(),
             ContainerRule::ByHost => Concept::L2.color(),
         }
     }
@@ -90,7 +90,7 @@ impl EntityMetadataProvider for ContainerRule {
         match self {
             ContainerRule::BySubnet => Icon::Network,
             ContainerRule::MergeDockerBridges => Icon::Boxes,
-            ContainerRule::ByApplicationGroup { .. } => Concept::Application.icon(),
+            ContainerRule::ByApplication { .. } => Concept::Application.icon(),
             ContainerRule::ByHost => Concept::L2.icon(),
         }
     }
@@ -101,7 +101,7 @@ impl TypeMetadataProvider for ContainerRule {
         match self {
             ContainerRule::BySubnet => "Subnet",
             ContainerRule::MergeDockerBridges => "Docker bridges",
-            ContainerRule::ByApplicationGroup { .. } => "Application Group",
+            ContainerRule::ByApplication { .. } => "Application",
             ContainerRule::ByHost => "Host",
         }
     }
@@ -110,7 +110,7 @@ impl TypeMetadataProvider for ContainerRule {
         match self {
             ContainerRule::BySubnet => "Group nodes by network subnet",
             ContainerRule::MergeDockerBridges => "Merge Docker bridge subnets under their host",
-            ContainerRule::ByApplicationGroup { .. } => "Group services by application group tag",
+            ContainerRule::ByApplication { .. } => "Group services by application tag",
             ContainerRule::ByHost => "Group elements by host",
         }
     }
@@ -288,10 +288,10 @@ impl GroupingConfig {
             .any(|r| matches!(r.rule, ContainerRule::MergeDockerBridges))
     }
 
-    pub fn has_application_group_rule(&self) -> bool {
+    pub fn has_application_rule(&self) -> bool {
         self.container_rules
             .iter()
-            .any(|r| matches!(r.rule, ContainerRule::ByApplicationGroup { .. }))
+            .any(|r| matches!(r.rule, ContainerRule::ByApplication { .. }))
     }
 }
 

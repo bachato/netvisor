@@ -52,7 +52,7 @@ impl EventSubscriber for TopologyService {
             (EntityDiscriminants::Port, None),
             (EntityDiscriminants::Binding, None),
             (EntityDiscriminants::Interface, None), // LLDP neighbor changes trigger edge rebuild
-            (EntityDiscriminants::Tag, None),       // App-group tag changes trigger staleness
+            (EntityDiscriminants::Tag, None),       // App tag changes trigger staleness
             (
                 EntityDiscriminants::Topology,
                 Some(vec![EntityOperation::Created, EntityOperation::Updated]),
@@ -71,7 +71,7 @@ impl EventSubscriber for TopologyService {
         // Group events by network_id -> topology changes
         let mut topology_updates: HashMap<Uuid, TopologyChanges> = HashMap::new();
 
-        // Track org-level staleness triggers (e.g., tag is_application_group changes)
+        // Track org-level staleness triggers (e.g., tag is_application changes)
         let mut stale_org_ids: HashSet<Uuid> = HashSet::new();
 
         for event in events {

@@ -8,7 +8,7 @@
 	import { useTagsQuery, type EntityDiscriminants } from '$lib/features/tags/queries';
 	import { concepts } from '$lib/shared/stores/metadata';
 	import {
-		tags_applicationGroup,
+		common_application,
 		tags_inheritedFromHost,
 		tags_inheritedOverrideHint,
 		common_overrides,
@@ -50,89 +50,79 @@
 		return [...topoTags, ...cachedTags.filter((t) => !topoIds.has(t.id))];
 	});
 
-	// App-group tags
-	let appGroupTags = $derived(entityTags.filter((t) => t.is_application_group));
-	let appGroupTagIds = $derived(new Set(appGroupTags.map((t) => t.id)));
+	// App tags
+	let appTags = $derived(entityTags.filter((t) => t.is_application));
+	let appTagIds = $derived(new Set(appTags.map((t) => t.id)));
 
-	// Selected app-group tags: direct first, then inherited from host
-	let selectedAppGroupTagIds = $derived.by(() => {
-		const direct = selectedTagIds.filter((id) => appGroupTagIds.has(id));
+	// Selected app tags: direct first, then inherited from host
+	let selectedAppTagIds = $derived.by(() => {
+		const direct = selectedTagIds.filter((id) => appTagIds.has(id));
 		if (direct.length > 0) return direct;
 		if (elementContext?.host) {
-			return elementContext.host.tags.filter((id) => appGroupTagIds.has(id));
+			return elementContext.host.tags.filter((id) => appTagIds.has(id));
 		}
 		return [];
 	});
-	let hasAppGroupTag = $derived(selectedAppGroupTagIds.length > 0);
+	let hasAppTag = $derived(selectedAppTagIds.length > 0);
 
 	// Inherited vs direct vs override
-	let isAppGroupInherited = $derived(
-		hasAppGroupTag && !selectedTagIds.some((id) => appGroupTagIds.has(id))
-	);
+	let isAppInherited = $derived(hasAppTag && !selectedTagIds.some((id) => appTagIds.has(id)));
 
-	let hostAppGroupTagId = $derived.by(() => {
+	let hostAppTagId = $derived.by(() => {
 		if (!elementContext?.host) return null;
-		return elementContext.host.tags.find((id) => appGroupTagIds.has(id)) ?? null;
+		return elementContext.host.tags.find((id) => appTagIds.has(id)) ?? null;
 	});
 
-	let isAppGroupOverride = $derived(
-		!isAppGroupInherited &&
-			hostAppGroupTagId !== null &&
-			!selectedAppGroupTagIds.includes(hostAppGroupTagId)
+	let isAppOverride = $derived(
+		!isAppInherited && hostAppTagId !== null && !selectedAppTagIds.includes(hostAppTagId)
 	);
 
-	let hostAppGroupTag = $derived(
-		hostAppGroupTagId ? appGroupTags.find((t) => t.id === hostAppGroupTagId) : null
+	let hostAppTag = $derived(hostAppTagId ? appTags.find((t) => t.id === hostAppTagId) : null);
+
+	let currentAppTag = $derived(
+		hasAppTag ? (appTags.find((t) => selectedAppTagIds.includes(t.id)) ?? null) : null
 	);
 
-	let currentAppGroupTag = $derived(
-		hasAppGroupTag
-			? (appGroupTags.find((t) => selectedAppGroupTagIds.includes(t.id)) ?? null)
-			: null
-	);
-
-	let appGroupAvailableTags = $derived(
-		hasAppGroupTag
-			? appGroupTags.filter((t) => selectedAppGroupTagIds.includes(t.id))
-			: appGroupTags
+	let appAvailableTags = $derived(
+		hasAppTag ? appTags.filter((t) => selectedAppTagIds.includes(t.id)) : appTags
 	);
 </script>
 
 {#if entityId}
 	<div class="space-y-2">
-		<span class="text-secondary block text-sm font-medium">{tags_applicationGroup()}</span>
+		<span class="text-secondary block text-sm font-medium">{common_application()}</span>
 		<div class="card card-static space-y-2 p-2">
-			{#if hasAppGroupTag && currentAppGroupTag}
+			{#if hasAppTag && currentAppTag}
 				<div class="flex flex-wrap items-center gap-1">
 					<Tag
-						label={currentAppGroupTag.name}
-						color={currentAppGroupTag.color}
+						label={currentAppTag.name}
+						color={currentAppTag.color}
 						icon={concepts.getIconComponent('Application')}
 						isShiny={true}
 					/>
-					{#if isAppGroupInherited}
+					{#if isAppInherited}
 						<span class="text-tertiary text-xs">{tags_inheritedFromHost()}</span>
-					{:else if isAppGroupOverride && hostAppGroupTag}
+					{:else if isAppOverride && hostAppTag}
 						<span class="text-tertiary text-xs">{common_overrides()}</span>
 						<Tag
-							label={hostAppGroupTag.name}
-							color={hostAppGroupTag.color}
+							label={hostAppTag.name}
+							color={hostAppTag.color}
 							icon={concepts.getIconComponent('Application')}
 							isShiny={true}
 						/>
 						<span class="text-tertiary text-xs">{tags_fromHost()}</span>
 					{/if}
 				</div>
-				{#if isAppGroupInherited}
+				{#if isAppInherited}
 					<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
 				{/if}
 			{/if}
 			<TagPickerInline
-				selectedTagIds={isAppGroupInherited ? [] : selectedAppGroupTagIds}
+				selectedTagIds={isAppInherited ? [] : selectedAppTagIds}
 				{entityId}
 				{entityType}
 				disabled={!editState.isEditable}
-				availableTags={isAppGroupInherited ? appGroupTags : appGroupAvailableTags}
+				availableTags={isAppInherited ? appTags : appAvailableTags}
 				allowCreate={false}
 			/>
 		</div>

@@ -28,9 +28,9 @@
 	} from '$lib/paraglide/messages';
 
 	let {
-		appGroupTags
+		appTags
 	}: {
-		appGroupTags: TagType[];
+		appTags: TagType[];
 	} = $props();
 
 	const organizationQuery = useOrganizationQuery();
@@ -44,7 +44,7 @@
 	let isMsp = $derived(useCase === 'msp');
 
 	let suggestions = $derived(getSuggestions(useCase));
-	let existingNames = $derived(new Set(appGroupTags.map((t) => t.name.toLowerCase())));
+	let existingNames = $derived(new Set(appTags.map((t) => t.name.toLowerCase())));
 	let availableSuggestions = $derived(
 		suggestions.filter((s) => !existingNames.has(s.toLowerCase()))
 	);
@@ -56,16 +56,16 @@
 	}
 
 	let allTags = $derived(tagsQuery.data ?? []);
-	let nonAppGroupTags = $derived(allTags.filter((t) => !t.is_application_group));
+	let nonAppTags = $derived(allTags.filter((t) => !t.is_application));
 
 	let isCreating = $state(false);
 	let isConverting = $state(false);
 
-	async function convertToAppGroup(tag: TagType) {
+	async function convertToApp(tag: TagType) {
 		if (isConverting) return;
 		isConverting = true;
 		try {
-			await updateTagMutation.mutateAsync({ ...tag, is_application_group: true });
+			await updateTagMutation.mutateAsync({ ...tag, is_application: true });
 		} finally {
 			isConverting = false;
 		}
@@ -75,7 +75,7 @@
 		return AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)];
 	}
 
-	async function createAppGroupTag(name: string, color?: Color) {
+	async function createAppTag(name: string, color?: Color) {
 		if (!organization || isCreating) return;
 		const trimmed = name.trim();
 		if (!trimmed || existingNames.has(trimmed.toLowerCase())) return;
@@ -85,7 +85,7 @@
 			const tag = createDefaultTag(organization.id);
 			tag.name = trimmed;
 			tag.color = color ?? getRandomColor();
-			(tag as TagType & { is_application_group: boolean }).is_application_group = true;
+			(tag as TagType & { is_application: boolean }).is_application = true;
 			await createTagMutation.mutateAsync(tag);
 		} finally {
 			isCreating = false;
@@ -94,7 +94,7 @@
 
 	const queryClient = useQueryClient();
 
-	async function deleteAppGroupTag(tagId: string) {
+	async function deleteAppTag(tagId: string) {
 		await deleteTagMutation.mutateAsync(tagId);
 		// Invalidate host/service caches so deleted tag IDs are cleaned up
 		queryClient.invalidateQueries({ queryKey: queryKeys.hosts.lists() });
@@ -104,7 +104,7 @@
 
 <div class="space-y-6">
 	<p class="text-secondary text-sm">
-		{nonAppGroupTags.length > 0
+		{nonAppTags.length > 0
 			? appWizard_defineGroupsDescription_convert()
 			: appWizard_defineGroupsDescription_create()}
 	</p>
@@ -126,7 +126,7 @@
 					<button
 						type="button"
 						class="cursor-pointer"
-						onclick={() => createAppGroupTag(suggestion, suggestionColor)}
+						onclick={() => createAppTag(suggestion, suggestionColor)}
 						disabled={isCreating}
 					>
 						<Tag
@@ -143,17 +143,17 @@
 	{/if}
 
 	<!-- Convert existing tags -->
-	{#if nonAppGroupTags.length > 0}
+	{#if nonAppTags.length > 0}
 		<div>
 			<h3 class="text-secondary mb-2 text-xs font-medium uppercase tracking-wide">
 				{appWizard_convertExisting()}
 			</h3>
 			<div class="flex flex-wrap gap-2">
-				{#each nonAppGroupTags as tag (tag.id)}
+				{#each nonAppTags as tag (tag.id)}
 					<button
 						type="button"
 						class="cursor-pointer"
-						onclick={() => convertToAppGroup(tag)}
+						onclick={() => convertToApp(tag)}
 						disabled={isConverting}
 					>
 						<Tag label={tag.name} color={tag.color} pill={true} />
@@ -169,16 +169,16 @@
 			{appWizard_createYourOwn()}
 		</h3>
 		<TagPickerInline
-			selectedTagIds={appGroupTags.map((t) => t.id)}
+			selectedTagIds={appTags.map((t) => t.id)}
 			onAdd={() => {}}
-			onRemove={(tagId) => deleteAppGroupTag(tagId)}
-			createAsApplicationGroup={true}
+			onRemove={(tagId) => deleteAppTag(tagId)}
+			createAsApplication={true}
 		/>
 	</div>
 
 	<!-- Footnote / empty state -->
 	<p class="text-tertiary text-center text-sm italic">
-		{#if appGroupTags.length === 0}
+		{#if appTags.length === 0}
 			{appWizard_noGroupsYet()}
 			{' '}
 		{/if}

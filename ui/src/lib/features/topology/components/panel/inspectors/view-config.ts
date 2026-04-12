@@ -22,7 +22,7 @@ import SectionPortBindings from './sections/SectionPortBindings.svelte';
 import SectionSubnetDetail from './sections/SectionSubnetDetail.svelte';
 import SectionElementSummary from './sections/SectionElementSummary.svelte';
 import SectionDependencySummary from './sections/SectionDependencySummary.svelte';
-import SectionApplicationGroup from './sections/SectionApplicationGroup.svelte';
+import SectionApplication from './sections/SectionApplication.svelte';
 import SectionVirtualization from './sections/SectionVirtualization.svelte';
 
 export type InspectorSection =
@@ -38,14 +38,14 @@ export type InspectorSection =
 	| 'SubnetDetail'
 	| 'ElementSummary'
 	| 'DependencySummary'
-	| 'ApplicationGroup';
+	| 'Application';
 
 export interface ViewInspectorConfig {
 	element_sections: InspectorSection[];
 	container_sections: InspectorSection[];
 	bulk_tag_entity: string;
 	dependency_creation: string | null;
-	show_application_group_picker: boolean;
+	show_application_picker: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,7 +62,7 @@ const SECTION_COMPONENTS: Record<InspectorSection, Component<any>> = {
 	SubnetDetail: SectionSubnetDetail,
 	ElementSummary: SectionElementSummary,
 	DependencySummary: SectionDependencySummary,
-	ApplicationGroup: SectionApplicationGroup
+	Application: SectionApplication
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,6 +85,6 @@ export function getInspectorConfig(viewId: string): ViewInspectorConfig {
 		container_sections: ['Identity'],
 		bulk_tag_entity: 'Host',
 		dependency_creation: null,
-		show_application_group_picker: false
+		show_application_picker: false
 	};
 }

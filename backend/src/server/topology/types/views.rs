@@ -113,7 +113,7 @@ pub enum InspectorSection {
     SubnetDetail,
     ElementSummary,
     DependencySummary,
-    ApplicationGroup,
+    Application,
 }
 
 /// View-specific inspector panel configuration.
@@ -124,7 +124,7 @@ pub struct ViewInspectorConfig {
     pub container_sections: Vec<InspectorSection>,
     pub bulk_tag_entity: EntityDiscriminants,
     pub dependency_creation: Option<DependencyMemberType>,
-    pub show_application_group_picker: bool,
+    pub show_application_picker: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -321,13 +321,13 @@ impl TopologyView {
                 ],
                 bulk_tag_entity,
                 dependency_creation: Some(DependencyMemberType::Bindings),
-                show_application_group_picker: false,
+                show_application_picker: false,
             },
             Self::Application => ViewInspectorConfig {
                 element_sections: vec![
                     InspectorSection::Identity,
                     InspectorSection::Dependencies,
-                    InspectorSection::ApplicationGroup,
+                    InspectorSection::Application,
                 ],
                 container_sections: vec![
                     InspectorSection::Identity,
@@ -336,7 +336,7 @@ impl TopologyView {
                 ],
                 bulk_tag_entity,
                 dependency_creation: Some(DependencyMemberType::Services),
-                show_application_group_picker: true,
+                show_application_picker: true,
             },
             Self::Workloads => ViewInspectorConfig {
                 element_sections: vec![
@@ -352,7 +352,7 @@ impl TopologyView {
                 ],
                 bulk_tag_entity,
                 dependency_creation: Some(DependencyMemberType::Services),
-                show_application_group_picker: false,
+                show_application_picker: false,
             },
             Self::L2Physical => ViewInspectorConfig {
                 element_sections: vec![InspectorSection::Identity, InspectorSection::IfEntryData],
@@ -362,7 +362,7 @@ impl TopologyView {
                 ],
                 bulk_tag_entity,
                 dependency_creation: None,
-                show_application_group_picker: false,
+                show_application_picker: false,
             },
         }
     }

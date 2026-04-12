@@ -13,7 +13,7 @@
 		common_edit,
 		common_no,
 		common_yes,
-		tags_applicationGroup
+		common_application
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -61,8 +61,8 @@
 				]
 			},
 			{
-				label: tags_applicationGroup(),
-				value: tag.is_application_group ? common_yes() : common_no()
+				label: common_application(),
+				value: tag.is_application ? common_yes() : common_no()
 			}
 		],
 		actions: [

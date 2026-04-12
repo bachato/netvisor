@@ -36,22 +36,22 @@ fn container_id_for_tag(tag_id: &Uuid) -> Uuid {
 pub struct ApplicationBuilder;
 
 impl ApplicationBuilder {
-    /// Find the application group tag for a service: direct tag first, then inherit from host.
-    fn find_app_group_tag<'a>(
+    /// Find the application tag for a service: direct tag first, then inherit from host.
+    fn find_app_tag<'a>(
         service: &crate::server::services::r#impl::base::Service,
         hosts: &[crate::server::hosts::r#impl::base::Host],
-        app_group_tags: &'a HashMap<Uuid, &'a Tag>,
+        app_tags: &'a HashMap<Uuid, &'a Tag>,
     ) -> Option<&'a Tag> {
         // Check service's own tags first
         for tag_id in &service.base.tags {
-            if let Some(tag) = app_group_tags.get(tag_id) {
+            if let Some(tag) = app_tags.get(tag_id) {
                 return Some(tag);
             }
         }
         // Inherit from host
         if let Some(host) = hosts.iter().find(|h| h.id == service.base.host_id) {
             for tag_id in &host.base.tags {
-                if let Some(tag) = app_group_tags.get(tag_id) {
+                if let Some(tag) = app_tags.get(tag_id) {
                     return Some(tag);
                 }
             }
@@ -65,11 +65,11 @@ impl ViewBuilder for ApplicationBuilder {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
 
-        // Build app-group tag lookup from entity_tags
-        let app_group_tags: HashMap<Uuid, &Tag> = ctx
+        // Build app tag lookup from entity_tags
+        let app_tags: HashMap<Uuid, &Tag> = ctx
             .entity_tags
             .iter()
-            .filter(|t| t.base.is_application_group)
+            .filter(|t| t.base.is_application)
             .map(|t| (t.id, t))
             .collect();
 
@@ -83,8 +83,8 @@ impl ViewBuilder for ApplicationBuilder {
         // service_id → node exists (for edge creation)
         let mut service_node_ids: HashMap<Uuid, bool> = HashMap::new();
 
-        if grouping.has_application_group_rule() && !app_group_tags.is_empty() {
-            // Group by application group tag with host inheritance
+        if grouping.has_application_rule() && !app_tags.is_empty() {
+            // Group by application tag with host inheritance
             let mut services_by_tag: HashMap<
                 Uuid,
                 Vec<&crate::server::services::r#impl::base::Service>,
@@ -93,7 +93,7 @@ impl ViewBuilder for ApplicationBuilder {
                 Vec::new();
 
             for service in &eligible_services {
-                match Self::find_app_group_tag(service, ctx.hosts, &app_group_tags) {
+                match Self::find_app_tag(service, ctx.hosts, &app_tags) {
                     Some(tag) => {
                         services_by_tag.entry(tag.id).or_default().push(service);
                     }
@@ -103,15 +103,15 @@ impl ViewBuilder for ApplicationBuilder {
                 }
             }
 
-            // Create containers for each app-group tag
+            // Create containers for each app tag
             for (tag_id, services) in &services_by_tag {
                 let container_id = container_id_for_tag(tag_id);
-                let tag = app_group_tags[tag_id];
+                let tag = app_tags[tag_id];
 
                 nodes.push(Node {
                     id: container_id,
                     node_type: NodeType::Container {
-                        container_type: ContainerType::ApplicationGroup,
+                        container_type: ContainerType::Application,
                         parent_container_id: None,
                         layer_hint: None,
                         icon: Some(Concept::Application.icon().to_string()),
@@ -143,7 +143,7 @@ impl ViewBuilder for ApplicationBuilder {
                 nodes.push(Node {
                     id: UNGROUPED_CONTAINER_ID,
                     node_type: NodeType::Container {
-                        container_type: ContainerType::ApplicationGroup,
+                        container_type: ContainerType::Application,
                         parent_container_id: None,
                         layer_hint: None,
                         icon: Some(Concept::Application.icon().to_string()),
@@ -170,7 +170,7 @@ impl ViewBuilder for ApplicationBuilder {
                 }
             }
         } else {
-            // Fallback: group by service category (no app-group tags exist)
+            // Fallback: group by service category (no app tags exist)
             use crate::server::services::r#impl::categories::ServiceCategory;
 
             let mut services_by_category: HashMap<
@@ -756,9 +756,9 @@ mod tests {
     }
 
     #[test]
-    fn test_element_rules_across_app_groups() {
-        // 2 hosts with different app-group tags → 2 ApplicationGroup containers
-        // Both services have a shared non-app-group tag "monitoring"
+    fn test_element_rules_across_apps() {
+        // 2 hosts with different app tags → 2 Application containers
+        // Both services have a shared non-app tag "monitoring"
         // ByTag element rule should create subcontainers in BOTH containers
         let monitoring_tag_id = Uuid::new_v4();
         let app_tag_a_id = Uuid::new_v4();
@@ -803,7 +803,7 @@ mod tests {
                 description: None,
                 color: Color::Blue,
                 organization_id: Uuid::new_v4(),
-                is_application_group: true,
+                is_application: true,
             },
         };
         let app_tag_b = Tag {
@@ -815,7 +815,7 @@ mod tests {
                 description: None,
                 color: Color::Green,
                 organization_id: Uuid::new_v4(),
-                is_application_group: true,
+                is_application: true,
             },
         };
 
@@ -827,7 +827,7 @@ mod tests {
         options.request.view = TopologyView::Application;
         options.request.container_rules.insert(
             TopologyView::Application,
-            vec![IdentifiedRule::new(ContainerRule::ByApplicationGroup {
+            vec![IdentifiedRule::new(ContainerRule::ByApplication {
                 tag_ids: vec![],
             })],
         );
@@ -902,15 +902,15 @@ mod tests {
 
     #[test]
     fn test_element_rules_with_host_inherited_tags() {
-        // Scenario from tester: 2 hosts with different app-group tags,
-        // both hosts also have a shared non-app-group tag used in ByTag rule.
+        // Scenario from tester: 2 hosts with different app tags,
+        // both hosts also have a shared non-app tag used in ByTag rule.
         // Tags are on the HOST, not on the services — tests host tag inheritance.
         // Also includes default ByServiceCategory rule (matches DNS/ReverseProxy).
         let monitoring_tag_id = Uuid::new_v4();
         let app_tag_a_id = Uuid::new_v4();
         let app_tag_b_id = Uuid::new_v4();
 
-        // Both hosts have the monitoring tag AND their app-group tag
+        // Both hosts have the monitoring tag AND their app tag
         let host_a = Host {
             id: Uuid::new_v4(),
             created_at: Utc::now(),
@@ -948,7 +948,7 @@ mod tests {
                 description: None,
                 color: Color::Blue,
                 organization_id: Uuid::new_v4(),
-                is_application_group: true,
+                is_application: true,
             },
         };
         let app_tag_b = Tag {
@@ -960,7 +960,7 @@ mod tests {
                 description: None,
                 color: Color::Green,
                 organization_id: Uuid::new_v4(),
-                is_application_group: true,
+                is_application: true,
             },
         };
 
@@ -972,7 +972,7 @@ mod tests {
         options.request.view = TopologyView::Application;
         options.request.container_rules.insert(
             TopologyView::Application,
-            vec![IdentifiedRule::new(ContainerRule::ByApplicationGroup {
+            vec![IdentifiedRule::new(ContainerRule::ByApplication {
                 tag_ids: vec![],
             })],
         );

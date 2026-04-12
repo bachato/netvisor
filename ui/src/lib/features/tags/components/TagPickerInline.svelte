@@ -36,8 +36,8 @@
 		onRemove,
 		// Optional pre-resolved tags (e.g. from topology snapshot on share pages)
 		availableTags: availableTagsProp,
-		// When true, tags created inline will have is_application_group set
-		createAsApplicationGroup = false,
+		// When true, tags created inline will have is_application set
+		createAsApplication = false,
 		// When false, hides the inline tag creation option
 		allowCreate = true
 	}: {
@@ -48,7 +48,7 @@
 		onAdd?: (tagId: string) => void;
 		onRemove?: (tagId: string) => void;
 		availableTags?: import('$lib/features/tags/types/base').Tag[];
-		createAsApplicationGroup?: boolean;
+		createAsApplication?: boolean;
 		allowCreate?: boolean;
 	} = $props();
 
@@ -192,8 +192,8 @@
 			const newTag = createDefaultTag(organization.id);
 			newTag.name = name;
 			newTag.color = getRandomColor();
-			if (createAsApplicationGroup) {
-				(newTag as typeof newTag & { is_application_group: boolean }).is_application_group = true;
+			if (createAsApplication) {
+				(newTag as typeof newTag & { is_application: boolean }).is_application = true;
 			}
 
 			const result = await createTagMutation.mutateAsync(newTag);
@@ -271,8 +271,8 @@
 		<Tag
 			label={tag?.name}
 			color={tag?.color}
-			icon={tag?.is_application_group ? concepts.getIconComponent('Application') : null}
-			isShiny={tag?.is_application_group ?? false}
+			icon={tag?.is_application ? concepts.getIconComponent('Application') : null}
+			isShiny={tag?.is_application ?? false}
 			pill={!disabled}
 			removable={!disabled && !!(onRemove || isEntityMode)}
 			onRemove={() => handleRemoveTag(tagId)}

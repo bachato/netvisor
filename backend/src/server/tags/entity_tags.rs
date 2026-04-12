@@ -393,8 +393,8 @@ impl EntityTagService {
         let tag = self.validate_tag_full(tag_id, organization_id).await?;
 
         // Check application group constraint
-        if tag.base.is_application_group {
-            self.validate_single_app_group_tag(entity_id, &entity_type, Some(tag_id))
+        if tag.base.is_application {
+            self.validate_single_app_tag(entity_id, &entity_type, Some(tag_id))
                 .await?;
         }
 
@@ -437,16 +437,16 @@ impl EntityTagService {
         }
 
         // Validate all tags and check application group constraint
-        let mut app_group_count = 0;
+        let mut app_count = 0;
         for tag_id in &tag_ids {
             let tag = self.validate_tag_full(*tag_id, organization_id).await?;
-            if tag.base.is_application_group {
-                app_group_count += 1;
+            if tag.base.is_application {
+                app_count += 1;
             }
         }
-        if app_group_count > 1 {
+        if app_count > 1 {
             return Err(anyhow!(
-                "Only one application group tag allowed per {}. Services inherit their host's application group unless overridden with their own.",
+                "Only one application tag allowed per {}. Services inherit their host's application unless overridden with their own.",
                 entity_type
             ));
         }
@@ -556,9 +556,9 @@ impl EntityTagService {
         }
     }
 
-    /// Validate that an entity doesn't already have a different application group tag.
+    /// Validate that an entity doesn't already have a different application tag.
     /// `exclude_tag_id` is the tag being added (don't count it against the limit).
-    async fn validate_single_app_group_tag(
+    async fn validate_single_app_tag(
         &self,
         entity_id: Uuid,
         entity_type: &EntityDiscriminants,
@@ -572,10 +572,10 @@ impl EntityTagService {
                 continue;
             }
             if let Ok(Some(existing_tag)) = self.tag_service.get_by_id(existing_id).await
-                && existing_tag.base.is_application_group
+                && existing_tag.base.is_application
             {
                 return Err(anyhow!(
-                    "Only one application group tag allowed per {}. Services inherit their host's application group unless overridden with their own.",
+                    "Only one application tag allowed per {}. Services inherit their host's application unless overridden with their own.",
                     entity_type
                 ));
             }
