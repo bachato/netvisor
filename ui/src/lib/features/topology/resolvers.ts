@@ -313,7 +313,7 @@ export function resolveElementNode(
 			iface: undefined,
 			services: [],
 			hostId: undefined,
-			interfaceId: undefined,
+			ipAddressId: undefined,
 			subnetId: '',
 			isInfra: false
 		};
