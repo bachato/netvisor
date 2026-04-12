@@ -40,34 +40,49 @@
 					? ''
 					: 'rounded'
 	);
+
+	/* Fixed padding to center icon+kbd:
+	   58px button − 2px borders = 56px inner
+	   icon(16) + gap(6) + kbd(20) = 42px → padding = (56−42)/2 = 7px
+	   32px button − 2px borders = 30px inner
+	   icon(16) → padding = (30−16)/2 = 7px */
+	let hPad = 7;
 </script>
 
-<button
-	class="flex items-center justify-center overflow-hidden text-xs font-medium transition-all duration-300 ease-in-out {roundingClass}
-		{disabled
-		? '!cursor-not-allowed !border !border-gray-200 !bg-gray-100 !text-gray-400 !opacity-40 !shadow-none dark:!border-gray-700 dark:!bg-gray-800 dark:!text-gray-600'
-		: active
-			? '!border !border-blue-400 !bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!border-blue-500 dark:!bg-blue-900/40 dark:!text-blue-300 dark:hover:!bg-blue-800/50'
-			: '!border !border-gray-300 !bg-gray-50 !text-gray-700 hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600'}
-	{grouped ? '' : '!shadow-lg'}"
-	style="height: 32px; padding: 0 6px; width: {showLabel ? 'auto' : hasShortcut ? '58px' : '32px'};"
-	onclick={disabled ? undefined : onclick}
-	aria-disabled={disabled || undefined}
-	{title}
-	onpointerenter={() => (hovered = true)}
-	onpointerleave={() => (hovered = false)}
->
-	<span class="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden">
-		{@render icon()}
-	</span>
-	{#if shortcut}
-		<KbdKey key={shortcut} size="sm" class="ml-1.5 shrink-0 !shadow-none" />
-	{:else if reserveShortcutWidth}
-		<span class="ml-1.5 inline-flex h-5 min-w-5 shrink-0"></span>
-	{/if}
-	{#if showLabel}
-		<span class="ml-1.5 mr-0.5 whitespace-nowrap">
+<div class="relative" style="width: {hasShortcut ? '58px' : '32px'};">
+	<button
+		class="flex w-full items-center overflow-hidden text-xs font-medium {roundingClass}
+			{disabled
+			? '!cursor-not-allowed !border !border-gray-200 !bg-gray-100 !text-gray-400 !opacity-40 !shadow-none dark:!border-gray-700 dark:!bg-gray-800 dark:!text-gray-600'
+			: active
+				? '!border !border-blue-400 !bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!border-blue-500 dark:!bg-blue-900/40 dark:!text-blue-300 dark:hover:!bg-blue-800/50'
+				: '!border !border-gray-300 !bg-gray-50 !text-gray-700 hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600'}
+		{grouped ? '' : '!shadow-lg'}"
+		style="height: 32px; padding: 0 {hPad}px;"
+		onclick={disabled ? undefined : onclick}
+		aria-disabled={disabled || undefined}
+		{title}
+		onpointerenter={() => (hovered = true)}
+		onpointerleave={() => (hovered = false)}
+	>
+		<span class="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden">
+			{@render icon()}
+		</span>
+		{#if shortcut}
+			<KbdKey key={shortcut} size="sm" class="ml-1.5 shrink-0 !shadow-none" />
+		{:else if reserveShortcutWidth}
+			<span class="ml-1.5 inline-flex h-5 min-w-5 shrink-0"></span>
+		{/if}
+	</button>
+	{#if hasLabel}
+		<span
+			class="pointer-events-none absolute top-0 flex h-[32px] items-center whitespace-nowrap text-xs font-medium transition-all duration-300 ease-in-out
+				{disabled ? 'text-gray-400 dark:text-gray-600' : active ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-100'}"
+			style="right: 100%; overflow: hidden; max-width: {showLabel
+				? '150px'
+				: '0px'}; opacity: {showLabel ? 1 : 0}; padding-right: {showLabel ? '6px' : '0px'};"
+		>
 			{label}
 		</span>
 	{/if}
-</button>
+</div>
