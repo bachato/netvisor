@@ -64,10 +64,17 @@
 	transition: opacity 0.2s ease-in-out;
 }
 
-/* Animate position during collapse/expand. Only transform is
-   animated — not width/height, because SvelteFlow's ResizeObserver
-   reports intermediate sizes during CSS transitions, corrupting
-   subsequent layout calculations. */
+/* Animate position + size during collapse/expand */
 .collapse-transition .svelte-flow__node {
-	transition: transform 0.3s ease-in-out;
+	transition:
+		transform 0.3s ease-in-out,
+		width 0.3s ease-in-out,
+		height 0.3s ease-in-out;
+}
+
+.collapse-transition .svelte-flow__node > .relative {
+	transition:
+		width 0.3s ease-in-out,
+		height 0.3s ease-in-out,
+		opacity 0.2s ease-in-out;
 }
