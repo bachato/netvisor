@@ -53,11 +53,11 @@ impl HasId for TopologyView {
 // ---------------------------------------------------------------------------
 
 /// Defines the entity hierarchy for a topology view:
-/// parent (owns elements) → element (rendered as nodes) → inline (shown inside nodes)
+/// container (grouping box) → element (rendered as nodes) → inline (shown inside nodes)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct ViewElementConfig {
-    /// Entity that owns elements (e.g. Host owns Interfaces in L3)
-    pub parent_entity: Option<EntityDiscriminants>,
+    /// Entity rendered as the container/grouping box (e.g. Subnet in L3, Host in L2/Workloads)
+    pub container_entity: Option<EntityDiscriminants>,
     /// Entity rendered as element nodes
     pub element_entity: EntityDiscriminants,
     /// Entities shown inside element nodes (e.g. Services displayed as cards)
@@ -200,22 +200,22 @@ impl TopologyView {
     pub fn element_config(&self) -> ViewElementConfig {
         match self {
             Self::L3Logical => ViewElementConfig {
-                parent_entity: Some(EntityDiscriminants::Host),
+                container_entity: Some(EntityDiscriminants::Subnet),
                 element_entity: EntityDiscriminants::IPAddress,
                 inline_entities: vec![EntityDiscriminants::Service],
             },
             Self::L2Physical => ViewElementConfig {
-                parent_entity: Some(EntityDiscriminants::Host),
+                container_entity: Some(EntityDiscriminants::Host),
                 element_entity: EntityDiscriminants::Interface,
                 inline_entities: vec![],
             },
             Self::Workloads => ViewElementConfig {
-                parent_entity: None,
-                element_entity: EntityDiscriminants::Host,
-                inline_entities: vec![EntityDiscriminants::Service],
+                container_entity: Some(EntityDiscriminants::Host),
+                element_entity: EntityDiscriminants::Service,
+                inline_entities: vec![],
             },
             Self::Application => ViewElementConfig {
-                parent_entity: None,
+                container_entity: None,
                 element_entity: EntityDiscriminants::Service,
                 inline_entities: vec![],
             },
@@ -303,7 +303,7 @@ impl TopologyView {
     pub fn inspector_config(&self) -> ViewInspectorConfig {
         let element_config = self.element_config();
         let bulk_tag_entity = element_config
-            .parent_entity
+            .container_entity
             .unwrap_or(element_config.element_entity);
 
         match self {

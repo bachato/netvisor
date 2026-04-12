@@ -73,7 +73,11 @@
 	{#if hasLabel}
 		<span
 			class="pointer-events-none absolute top-0 flex h-[32px] items-center whitespace-nowrap text-xs font-medium transition-all duration-300 ease-in-out
-				{disabled ? 'text-gray-400 dark:text-gray-600' : active ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-100'}"
+				{disabled
+				? 'text-gray-400 dark:text-gray-600'
+				: active
+					? 'text-blue-700 dark:text-blue-300'
+					: 'text-gray-700 dark:text-gray-100'}"
 			style="right: 100%; overflow: hidden; max-width: {showLabel
 				? '150px'
 				: '0px'}; opacity: {showLabel ? 1 : 0}; padding-right: {showLabel ? '6px' : '0px'};"

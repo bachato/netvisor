@@ -231,6 +231,7 @@ export function getContainerContents(
 // Entity→Node index — canonical resolver for mapping entity IDs to topology node IDs
 export interface EntityNodeIndex {
 	hostIdToNodes: Map<string, string[]>;
+	hostIdToContainerIds: Map<string, Set<string>>;
 	ipAddressIdToNodes: Map<string, string[]>;
 	serviceIdToNodes: Map<string, string[]>;
 	ifEntryIdToNodes: Map<string, string[]>;
@@ -244,6 +245,7 @@ export interface EntityNodeIndex {
  */
 export function buildEntityNodeIndex(nodes: TopologyNode[]): EntityNodeIndex {
 	const hostIdToNodes = new Map<string, string[]>();
+	const hostIdToContainerIds = new Map<string, Set<string>>();
 	const ipAddressIdToNodes = new Map<string, string[]>();
 	const serviceIdToNodes = new Map<string, string[]>();
 	const ifEntryIdToNodes = new Map<string, string[]>();
@@ -264,6 +266,15 @@ export function buildEntityNodeIndex(nodes: TopologyNode[]): EntityNodeIndex {
 			const existing = hostIdToNodes.get(hostId);
 			if (existing) existing.push(nd.id);
 			else hostIdToNodes.set(hostId, [nd.id]);
+
+			// Map host → container(s) for views where Host is the container
+			const containerId =
+				'container_id' in nd ? (nd.container_id as string | undefined) : undefined;
+			if (containerId) {
+				const containerSet = hostIdToContainerIds.get(hostId);
+				if (containerSet) containerSet.add(containerId);
+				else hostIdToContainerIds.set(hostId, new Set([containerId]));
+			}
 		}
 
 		if (nd.element_type === 'Interface') {
@@ -289,6 +300,7 @@ export function buildEntityNodeIndex(nodes: TopologyNode[]): EntityNodeIndex {
 
 	return {
 		hostIdToNodes,
+		hostIdToContainerIds,
 		ipAddressIdToNodes,
 		serviceIdToNodes,
 		ifEntryIdToNodes,

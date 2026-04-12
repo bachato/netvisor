@@ -141,19 +141,19 @@ export function updateTagFilter(
 	const meta = view
 		? (views.getMetadata(view) as {
 				element_config?: {
-					parent_entity: string | null;
+					container_entity: string | null;
 					element_entity: string;
 					inline_entities: string[];
 				};
 			} | null)
 		: null;
 	const config = meta?.element_config;
-	const parentEntity = config?.parent_entity ?? null;
+	const containerEntity = config?.container_entity ?? null;
 	const elementEntity = config?.element_entity ?? 'Interface';
 	const inlineEntities = config?.inline_entities ?? [];
 
 	// Determine filter roles from element config
-	const hostIsParent = parentEntity === 'Host';
+	const hostIsContainer = containerEntity === 'Host';
 	const hostIsElement = elementEntity === 'Host';
 	const serviceIsElement = elementEntity === 'Service';
 	const serviceIsInline = inlineEntities.includes('Service');
@@ -172,14 +172,61 @@ export function updateTagFilter(
 	const hiddenServiceIds = new Set<string>();
 	const index = buildEntityNodeIndex(topology.nodes);
 
-	// Host filtering: hide element nodes when parent or element is Host
-	if (hostIsParent || hostIsElement) {
+	// Host filtering: behavior depends on whether Host is container vs element
+	if (hostIsContainer || hostIsElement) {
+		const hiddenHostIds = new Set<string>();
 		for (const host of topology.hosts) {
 			const isUntagged = host.tags.length === 0;
 			const hostHasHiddenTag = host.tags.some((t) => hiddenHostTagIds.includes(t));
 			if (hostHasHiddenTag || (isUntagged && hideUntaggedHosts)) {
-				const nodeIds = index.hostIdToNodes.get(host.id);
-				nodeIds?.forEach((id) => hiddenNodeIds.add(id));
+				hiddenHostIds.add(host.id);
+				if (hostIsElement) {
+					// Host IS the element node (e.g. Workloads VMs) — hide element directly
+					const nodeIds = index.hostIdToNodes.get(host.id);
+					nodeIds?.forEach((id) => hiddenNodeIds.add(id));
+				}
+			}
+		}
+
+		// When Host is the container (L2, Workloads): hide container nodes + descendants
+		if (hostIsContainer && hiddenHostIds.size > 0) {
+			const hiddenContainerIds = new Set<string>();
+			for (const [hostId, containerIds] of index.hostIdToContainerIds) {
+				if (hiddenHostIds.has(hostId)) {
+					containerIds.forEach((cid) => {
+						hiddenNodeIds.add(cid);
+						hiddenContainerIds.add(cid);
+					});
+				}
+			}
+			// Recursively find subcontainers inside hidden containers
+			if (hiddenContainerIds.size > 0) {
+				let changed = true;
+				while (changed) {
+					changed = false;
+					for (const node of topology.nodes) {
+						if (node.node_type !== 'Container' || hiddenContainerIds.has(node.id)) continue;
+						const parentId = (node as Record<string, unknown>).parent_container_id as
+							| string
+							| undefined;
+						if (parentId && hiddenContainerIds.has(parentId)) {
+							hiddenContainerIds.add(node.id);
+							hiddenNodeIds.add(node.id);
+							changed = true;
+						}
+					}
+				}
+				// Hide all element nodes inside hidden containers
+				for (const node of topology.nodes) {
+					if (node.node_type === 'Element') {
+						const containerId = (node as Record<string, unknown>).container_id as
+							| string
+							| undefined;
+						if (containerId && hiddenContainerIds.has(containerId)) {
+							hiddenNodeIds.add(node.id);
+						}
+					}
+				}
 			}
 		}
 	}

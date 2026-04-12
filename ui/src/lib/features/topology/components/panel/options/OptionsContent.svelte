@@ -72,21 +72,25 @@
 	let viewMetaObj = $derived(
 		views.getMetadata($activeView) as {
 			element_config?: {
-				parent_entity: string | null;
+				container_entity: string | null;
 				element_entity: string;
 				inline_entities: string[];
 			};
 		} | null
 	);
 	let elementConfig = $derived(viewMetaObj?.element_config);
-	let showHostFilter = $derived(
-		elementConfig?.parent_entity === 'Host' || elementConfig?.element_entity === 'Host'
+	let filterableEntities = $derived(
+		new Set(
+			[
+				elementConfig?.container_entity,
+				elementConfig?.element_entity,
+				...(elementConfig?.inline_entities ?? [])
+			].filter(Boolean)
+		)
 	);
-	let showServiceFilter = $derived(
-		elementConfig?.element_entity === 'Service' ||
-			(elementConfig?.inline_entities?.includes('Service') ?? false)
-	);
-	let showSubnetFilter = $derived(!!elementConfig?.parent_entity);
+	let showHostFilter = $derived(filterableEntities.has('Host'));
+	let showServiceFilter = $derived(filterableEntities.has('Service'));
+	let showSubnetFilter = $derived(filterableEntities.has('Subnet'));
 	let hasCategoryFilter = $derived(showServiceFilter);
 
 	// Toggle functions for tag filter
