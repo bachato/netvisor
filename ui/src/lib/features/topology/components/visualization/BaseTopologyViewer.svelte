@@ -427,13 +427,30 @@
 			const fullNodes = [...allNodes];
 			const fullEdges = [...flowEdges];
 			setTimeout(() => {
-				// Phase 2: show new nodes. Keep transitions active so
-				// containers animate resizing to fit new children.
-				nodes.set(fullNodes);
-				edges.set(fullEdges);
-				setTimeout(() => {
-					animatingCollapse = false;
-				}, 350);
+				// Phase 2: disable transitions, show all nodes.
+				// New nodes get opacity 0 initially, then fade in.
+				animatingCollapse = false;
+				const newNodeIds = new Set(
+					fullNodes.filter((n) => !previousNodeIds.has(n.id)).map((n) => n.id)
+				);
+				if (newNodeIds.size > 0) {
+					// Set new nodes with opacity 0 via style
+					const fadingNodes = fullNodes.map((n) =>
+						newNodeIds.has(n.id)
+							? { ...n, style: 'opacity: 0; transition: opacity 0.3s ease-in-out;' }
+							: n
+					);
+					nodes.set(fadingNodes);
+					edges.set(fullEdges);
+					// Next frame: set opacity back to trigger fade
+					requestAnimationFrame(() => {
+						nodes.set(fullNodes);
+						edges.set(fullEdges);
+					});
+				} else {
+					nodes.set(fullNodes);
+					edges.set(fullEdges);
+				}
 			}, 350);
 		} else if (!isMeasuring) {
 			nodes.set(allNodes);
