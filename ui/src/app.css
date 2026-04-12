@@ -203,7 +203,7 @@
 
 	/* Sidebar component */
 	.sidebar {
-		@apply fixed left-0 top-0 z-10 flex h-screen w-64 flex-col;
+		@apply fixed left-0 top-0 z-10 flex h-screen w-48 flex-col;
 		border-right: 1px solid var(--color-border);
 		background-color: var(--color-bg-sidebar);
 	}

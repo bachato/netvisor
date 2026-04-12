@@ -219,7 +219,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if topology}
-	<div class="relative h-[calc(100vh-150px)] w-full">
+	<div class="relative h-[calc(100vh-120px)] w-full">
 		<BaseTopologyViewer
 			bind:this={baseViewer}
 			{topology}

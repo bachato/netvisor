@@ -192,7 +192,7 @@
 		<main
 			class="flex-1 overflow-auto transition-all duration-300"
 			class:ml-16={sidebarCollapsed}
-			class:ml-64={!sidebarCollapsed}
+			class:ml-48={!sidebarCollapsed}
 		>
 			{#if currentUserQuery.data && !currentUserQuery.data.email_verified}
 				<EmailVerificationBanner email={currentUserQuery.data.email} />
@@ -203,7 +203,7 @@
 			{#if configQuery.data?.license_status === 'expired' || configQuery.data?.license_status === 'invalid'}
 				<LicenseLockedBanner status={configQuery.data.license_status} />
 			{/if}
-			<div class="p-8 [&_.sticky]:sticky [&_.sticky]:top-0">
+			<div class="p-4 [&_.sticky]:sticky [&_.sticky]:top-0">
 				<!-- Programmatically render all tabs based on sidebar config -->
 				{#each allTabs as tab (tab.id)}
 					{#if tab.subTabIds && tab.subTabDefs}
