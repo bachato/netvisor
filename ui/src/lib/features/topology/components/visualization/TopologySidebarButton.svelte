@@ -29,6 +29,7 @@
 	let hovered = $state(false);
 	let hasLabel = $derived(label.length > 0);
 	let showLabel = $derived(hasLabel && (!collapsed || hovered));
+	let hasShortcut = $derived(!!(shortcut || reserveShortcutWidth));
 
 	let roundingClass = $derived(
 		grouped === 'top'
@@ -49,14 +50,14 @@
 			? '!border !border-blue-400 !bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!border-blue-500 dark:!bg-blue-900/40 dark:!text-blue-300 dark:hover:!bg-blue-800/50'
 			: '!border !border-gray-300 !bg-gray-50 !text-gray-700 hover:!bg-gray-100 dark:!border-gray-600 dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-600'}
 	{grouped ? '' : '!shadow-lg'}"
-	style="padding: 6px; gap: 6px; min-width: 60px;"
+	style="height: 32px; padding: 0 6px; gap: 6px; width: {showLabel ? 'auto' : hasShortcut ? '58px' : '32px'};"
 	onclick={disabled ? undefined : onclick}
 	aria-disabled={disabled || undefined}
 	{title}
 	onpointerenter={() => (hovered = true)}
 	onpointerleave={() => (hovered = false)}
 >
-	<span class="flex h-4 w-4 shrink-0 items-center justify-center">
+	<span class="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden">
 		{@render icon()}
 	</span>
 	{#if shortcut}
