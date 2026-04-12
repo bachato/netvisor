@@ -100,6 +100,12 @@ export async function executeLayout(
 		// When collapse was deferred, apply it AFTER ELK result
 		if (deferCollapse) {
 			state.layoutGraph.syncCollapseState(collapsed);
+			// DEBUG: log subcontainer positions after deferred collapse
+			for (const c of state.layoutGraph.containers.values()) {
+				if (c.isSubcontainer) {
+					console.log(`[DEFER-COLLAPSE] ${c.id.substring(0, 8)}: pos=(${c.position.x},${c.position.y}) size=${c.size.width}x${c.size.height} collapsed=${c.collapsed} parent=${c.parent?.id.substring(0, 8) ?? 'none'}`);
+				}
+			}
 			visibleNodes = state.layoutGraph.getVisibleNodes(layoutNodes);
 		}
 
