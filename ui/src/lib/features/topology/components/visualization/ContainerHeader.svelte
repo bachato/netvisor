@@ -12,6 +12,7 @@
 		labels: Array<{ label: string; color: Color }>;
 		childCount: number;
 		hideCount?: boolean;
+		countOnly?: boolean;
 	};
 
 	let {
@@ -29,7 +30,8 @@
 		variant,
 		subgroupSummaries = [],
 		tagHoverRingStyle = '',
-		hideCount = false
+		hideCount = false,
+		countOnly = false
 	}: {
 		isCollapsed: boolean;
 		isCollapsible: boolean;
@@ -46,6 +48,7 @@
 		subgroupSummaries?: SubgroupRow[];
 		tagHoverRingStyle?: string;
 		hideCount?: boolean;
+		countOnly?: boolean;
 	} = $props();
 
 	let subgroupTotal = $derived(subgroupSummaries.reduce((sum, s) => sum + s.childCount, 0));
@@ -238,7 +241,11 @@
 		{/if}
 		{#if !hideCount}
 			<span data-fixed class="text-tertiary ml-auto whitespace-nowrap text-xs">
-				({topology_elementCount({ count: childCount, label: elementLabel })})
+				{#if countOnly}
+					({childCount})
+				{:else}
+					({topology_elementCount({ count: childCount, label: elementLabel })})
+				{/if}
 			</span>
 		{/if}
 	</div>
@@ -278,11 +285,16 @@
 						<Tag label="+{summary.labels.length - 2} tags" color="Gray" />
 					{/if}
 					{#if !summary.hideCount}
-						<span class="text-tertiary text-xs"
-							>({topology_elementCount({
-								count: summary.childCount,
-								label: elementLabel
-							})})</span
+						<span class="text-tertiary text-xs">
+							{#if summary.countOnly}
+								({summary.childCount})
+							{:else}
+								({topology_elementCount({
+									count: summary.childCount,
+									label: elementLabel
+								})})
+							{/if}
+						</span
 						>
 					{/if}
 				</div>

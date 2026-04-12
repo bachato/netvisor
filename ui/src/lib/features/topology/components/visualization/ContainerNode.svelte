@@ -289,7 +289,8 @@
 					logoComponent: groupLogoComponent,
 					headerText: sHeader,
 					labels: isInfra ? [] : labels,
-					childCount: summary.childCount
+					childCount: summary.childCount,
+					countOnly: isInfra
 				};
 			});
 		}
@@ -409,6 +410,7 @@
 				{groupLabels}
 				{childCount}
 				{elementLabel}
+				countOnly={isInfraRule}
 				onToggleCollapse={handleChevronClick}
 			/>
 		{:else}
