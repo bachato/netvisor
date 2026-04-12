@@ -567,7 +567,7 @@
 	{#if !hasDaemon(onboarding)}
 		<PreDaemonEmptyState title="Install a daemon to start mapping your network topology." />
 	{:else}
-		<div class="space-y-6">
+		<div class="space-y-3">
 			<!-- Header -->
 			<div
 				class="card card-static flex items-center justify-evenly gap-2 px-2 py-2"
