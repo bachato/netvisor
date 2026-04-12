@@ -189,6 +189,21 @@ function buildElkGraph(
 		}
 	}
 
+	// Build a full parent map from ALL topology nodes (not just visible) so we can
+	// resolve edge endpoints that reference elements hidden inside collapsed containers.
+	const fullParentMap = new Map<string, string>();
+	if (input.topology) {
+		for (const n of input.topology.nodes) {
+			if (n.node_type === 'Element') {
+				const pid = (n as Record<string, unknown>).container_id as string | undefined;
+				if (pid) fullParentMap.set(n.id, pid);
+			} else if (n.node_type === 'Container') {
+				const pid = (n as Record<string, unknown>).parent_container_id as string | undefined;
+				if (pid) fullParentMap.set(n.id, pid);
+			}
+		}
+	}
+
 	// Add element nodes as children of their containers (skip collapsed)
 	// For L2 Physical: sort by oper_status (Up first) and assign layer IDs
 	// to spread ports across multiple columns within each container
@@ -257,16 +272,28 @@ function buildElkGraph(
 		}
 	}
 
-	// Helper: resolve an edge endpoint to its root container
+	// Helper: resolve an edge endpoint to its root container.
+	// Handles hidden elements inside collapsed containers via fullParentMap.
 	const resolveRoot = (id: string): string | undefined => {
 		const fromElem = elementToRootContainer.get(id);
 		if (fromElem) return fromElem;
-		if (!containerIds.has(id)) return undefined;
-		let rootId = id;
-		while (parentContainerMap.has(rootId)) {
-			rootId = parentContainerMap.get(rootId)!;
+		if (containerIds.has(id)) {
+			let rootId = id;
+			while (parentContainerMap.has(rootId)) {
+				rootId = parentContainerMap.get(rootId)!;
+			}
+			return rootId;
 		}
-		return rootId;
+		// Hidden element: resolve via collapsed ancestor, then walk to root
+		const ancestor = resolveCollapsedAncestor(id, collapsed, fullParentMap);
+		if (ancestor && containerIds.has(ancestor)) {
+			let rootId = ancestor;
+			while (parentContainerMap.has(rootId)) {
+				rootId = parentContainerMap.get(rootId)!;
+			}
+			return rootId;
+		}
+		return undefined;
 	};
 
 	// L2: determine edge direction per subcontainer for horizontal priority
@@ -563,22 +590,6 @@ function buildElkGraph(
 	// Detect cross-child edges within the same root container (e.g., element → ByVirtualizer
 	// subcontainer, or Docker element → ByStack subcontainer). These edges need inner ELK edges
 	// so the root container can use layered algorithm to position connected children adjacently.
-	//
-	// Build a parent map from ALL topology nodes so we can resolve edge endpoints
-	// that reference elements hidden inside collapsed containers.
-	const fullParentMap = new Map<string, string>();
-	if (input.topology) {
-		for (const n of input.topology.nodes) {
-			if (n.node_type === 'Element') {
-				const pid = (n as Record<string, unknown>).container_id as string | undefined;
-				if (pid) fullParentMap.set(n.id, pid);
-			} else if (n.node_type === 'Container') {
-				const pid = (n as Record<string, unknown>).parent_container_id as string | undefined;
-				if (pid) fullParentMap.set(n.id, pid);
-			}
-		}
-	}
-
 	const resolveEndpoint = (id: string): string | undefined => {
 		// Known visible element → its immediate container
 		const imm = elementToImmediateContainer.get(id);
@@ -591,14 +602,8 @@ function buildElkGraph(
 		return undefined;
 	};
 
-	const resolveEndpointRoot = (id: string): string | undefined => {
-		const root = resolveRoot(id);
-		if (root) return root;
-		// Resolve hidden element via collapsed ancestor, then find root
-		const ancestor = resolveCollapsedAncestor(id, collapsed, fullParentMap);
-		if (ancestor) return resolveRoot(ancestor);
-		return undefined;
-	};
+	// resolveRoot now handles hidden elements, so resolveEndpointRoot is just an alias
+	const resolveEndpointRoot = resolveRoot;
 
 	const rootsWithCrossChildEdges = new Set<string>();
 	const seenInnerEdges = new Map<string, Set<string>>();
