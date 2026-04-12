@@ -424,27 +424,16 @@
 			nodes.set(phase1Nodes);
 			edges.set(flowEdges);
 
-			// DEBUG: watch for ResizeObserver feedback during transition
-			if (containerElement) {
-				const debugObs = new ResizeObserver((entries) => {
-					for (const e of entries) {
-						const id = (e.target as HTMLElement).dataset.id;
-						if (id) {
-							console.log(`[RESIZE-OBS] ${id.substring(0, 8)} ${Math.round(e.contentRect.width)}x${Math.round(e.contentRect.height)}`);
-						}
-					}
-				});
-				const nodeEls = containerElement.querySelectorAll('.svelte-flow__node');
-				for (const el of nodeEls) debugObs.observe(el);
-				setTimeout(() => debugObs.disconnect(), 400);
-			}
-
 			const fullNodes = [...allNodes];
 			const fullEdges = [...flowEdges];
 			setTimeout(() => {
-				animatingCollapse = false;
+				// Phase 2: show new nodes. Keep transitions active so
+				// containers animate resizing to fit new children.
 				nodes.set(fullNodes);
 				edges.set(fullEdges);
+				setTimeout(() => {
+					animatingCollapse = false;
+				}, 350);
 			}, 350);
 		} else if (!isMeasuring) {
 			nodes.set(allNodes);
