@@ -8,6 +8,7 @@ import {
 } from '$lib/shared/stores/metadata';
 import type { LayoutInput, LayoutResult } from './engine';
 import { getOrgUseCase } from '../queries';
+import { resolveCollapsedAncestor } from '../collapse';
 
 /** @deprecated Use LayoutInput from engine.ts */
 export type ElkLayoutInput = LayoutInput;
@@ -562,20 +563,53 @@ function buildElkGraph(
 	// Detect cross-child edges within the same root container (e.g., element → ByVirtualizer
 	// subcontainer, or Docker element → ByStack subcontainer). These edges need inner ELK edges
 	// so the root container can use layered algorithm to position connected children adjacently.
+	//
+	// Build a parent map from ALL topology nodes so we can resolve edge endpoints
+	// that reference elements hidden inside collapsed containers.
+	const fullParentMap = new Map<string, string>();
+	if (input.topology) {
+		for (const n of input.topology.nodes) {
+			if (n.node_type === 'Element') {
+				const pid = (n as Record<string, unknown>).container_id as string | undefined;
+				if (pid) fullParentMap.set(n.id, pid);
+			} else if (n.node_type === 'Container') {
+				const pid = (n as Record<string, unknown>).parent_container_id as string | undefined;
+				if (pid) fullParentMap.set(n.id, pid);
+			}
+		}
+	}
+
+	const resolveEndpoint = (id: string): string | undefined => {
+		// Known visible element → its immediate container
+		const imm = elementToImmediateContainer.get(id);
+		if (imm) return imm;
+		// Known container → itself
+		if (containerIds.has(id)) return id;
+		// Hidden element → resolve to nearest collapsed container ancestor
+		const ancestor = resolveCollapsedAncestor(id, collapsed, fullParentMap);
+		if (ancestor && containerIds.has(ancestor)) return ancestor;
+		return undefined;
+	};
+
+	const resolveEndpointRoot = (id: string): string | undefined => {
+		const root = resolveRoot(id);
+		if (root) return root;
+		// Resolve hidden element via collapsed ancestor, then find root
+		const ancestor = resolveCollapsedAncestor(id, collapsed, fullParentMap);
+		if (ancestor) return resolveRoot(ancestor);
+		return undefined;
+	};
+
 	const rootsWithCrossChildEdges = new Set<string>();
 	const seenInnerEdges = new Map<string, Set<string>>();
 
 	for (const edge of input.edges) {
 		if (!affectsLayout(edge)) continue;
 
-		const srcImm =
-			elementToImmediateContainer.get(edge.source) ??
-			(containerIds.has(edge.source) ? edge.source : undefined);
-		const tgtImm =
-			elementToImmediateContainer.get(edge.target) ??
-			(containerIds.has(edge.target) ? edge.target : undefined);
-		const srcRoot = resolveRoot(edge.source);
-		const tgtRoot = resolveRoot(edge.target);
+		const srcImm = resolveEndpoint(edge.source);
+		const tgtImm = resolveEndpoint(edge.target);
+		const srcRoot = resolveEndpointRoot(edge.source);
+		const tgtRoot = resolveEndpointRoot(edge.target);
 
 		if (!srcImm || !tgtImm) continue;
 		if (srcImm === tgtImm) continue;

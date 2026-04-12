@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Node } from '@xyflow/svelte';
-	import { useSvelteFlow } from '@xyflow/svelte';
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { getContainerContents } from '$lib/features/topology/resolvers';
 	import {
@@ -19,11 +18,9 @@
 		topology: Topology;
 	} = $props();
 
-	const { getNodes } = useSvelteFlow();
-
 	// Find all element nodes in this container (including subcontainers)
 	let descendantNodeIds = $derived.by(() => {
-		return getContainerContents(node.id, getNodes()).elementNodeIds;
+		return getContainerContents(node.id, topology.nodes).elementNodeIds;
 	});
 
 	// Find dependencies that cross this container boundary

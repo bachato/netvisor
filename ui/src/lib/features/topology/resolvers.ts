@@ -1,4 +1,3 @@
-import type { Node } from '@xyflow/svelte';
 import type { components } from '$lib/api/schema';
 import type { Topology, TopologyNode } from './types/base';
 
@@ -172,12 +171,15 @@ export interface ContainerContents {
 }
 
 /**
- * Walk the flow node tree and return all entities inside a container,
+ * Walk topology nodes and return all entities inside a container,
  * including entities in nested subcontainers. Works generically across
  * views — uses container_id/subnet_id for elements and
  * parent_container_id for subcontainers.
  */
-export function getContainerContents(containerId: string, allNodes: Node[]): ContainerContents {
+export function getContainerContents(
+	containerId: string,
+	topologyNodes: TopologyNode[]
+): ContainerContents {
 	const hostIds = new Set<string>();
 	const serviceIds = new Set<string>();
 	const ipAddressIds = new Set<string>();
@@ -185,8 +187,7 @@ export function getContainerContents(containerId: string, allNodes: Node[]): Con
 	const subcontainerIds = new Set<string>();
 
 	// Collect subcontainer IDs (direct children of this container)
-	for (const n of allNodes) {
-		const nd = n.data as TopologyNode;
+	for (const nd of topologyNodes) {
 		if (nd.node_type === 'Container') {
 			const parentContainerId = (nd as Record<string, unknown>).parent_container_id as
 				| string
@@ -199,8 +200,7 @@ export function getContainerContents(containerId: string, allNodes: Node[]): Con
 
 	// Collect element nodes whose parent is this container or a subcontainer
 	const containerSet = new Set([containerId, ...subcontainerIds]);
-	for (const n of allNodes) {
-		const nd = n.data as TopologyNode;
+	for (const nd of topologyNodes) {
 		if (nd.node_type !== 'Element') continue;
 
 		const parentId =

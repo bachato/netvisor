@@ -333,39 +333,24 @@ function getVirtualizedContainerNodes(
  * Uses topology data to find elements hidden by collapsed containers.
  */
 function addContainerHighlights(connected: Set<string>, allNodes: Node[], topology?: Topology) {
-	// First pass: use visible nodes (allNodes) for containers and their visible contents
-	for (const node of allNodes) {
-		const nd = node.data as TopologyNode;
+	const topoNodes = topology?.nodes ?? allNodes.map((n) => n.data as TopologyNode);
+
+	for (const nd of topoNodes) {
 		if (nd.node_type !== 'Container') continue;
 
-		const contents = getContainerContents(nd.id, allNodes);
+		const contents = getContainerContents(nd.id, topoNodes);
 
 		if (connected.has(nd.id)) {
 			// Container is connected — include its elements and subcontainers
 			for (const id of contents.elementNodeIds) connected.add(id);
 			for (const id of contents.subcontainerIds) connected.add(id);
 		} else {
-			// Check if this container has any connected elements inside it (visible)
+			// Check if this container has any connected elements inside it
 			for (const elementId of contents.elementNodeIds) {
 				if (connected.has(elementId)) {
 					connected.add(nd.id);
 					break;
 				}
-			}
-		}
-	}
-
-	// Second pass: check topology data for elements hidden by collapsed containers.
-	// Edge endpoints reference element IDs that may be hidden — map them to their
-	// parent container so collapsed containers highlight correctly.
-	if (topology) {
-		for (const topoNode of topology.nodes) {
-			if (topoNode.node_type !== 'Element') continue;
-			if (!connected.has(topoNode.id)) continue;
-			// This element is connected — ensure its container highlights
-			const containerId = (topoNode as Record<string, unknown>).container_id as string | undefined;
-			if (containerId && !connected.has(containerId)) {
-				connected.add(containerId);
 			}
 		}
 	}
@@ -410,10 +395,10 @@ export function updateConnectedNodes(
 			}
 		}
 		// Expand connected containers to include their element contents
-		for (const node of allNodes) {
-			const nd = node.data as TopologyNode;
+		const topoNodes = topology?.nodes ?? allNodes.map((n) => n.data as TopologyNode);
+		for (const nd of topoNodes) {
 			if (nd.node_type !== 'Container' || !connected.has(nd.id)) continue;
-			const contents = getContainerContents(nd.id, allNodes);
+			const contents = getContainerContents(nd.id, topoNodes);
 			for (const id of contents.elementNodeIds) connected.add(id);
 			for (const id of contents.subcontainerIds) connected.add(id);
 		}
@@ -427,7 +412,8 @@ export function updateConnectedNodes(
 		const nodeData = selectedNode.data as TopologyNode;
 
 		if (nodeData.node_type == 'Container') {
-			const contents = getContainerContents(nodeData.id, allNodes);
+			const topoNodes2 = topology?.nodes ?? allNodes.map((n) => n.data as TopologyNode);
+			const contents = getContainerContents(nodeData.id, topoNodes2);
 			for (const id of contents.elementNodeIds) connected.add(id);
 			for (const id of contents.subcontainerIds) connected.add(id);
 		}

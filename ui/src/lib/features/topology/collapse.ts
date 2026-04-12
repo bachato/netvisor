@@ -333,7 +333,7 @@ export function buildElementToContainer(nodes: TopologyNode[]): Map<string, stri
  * Walks up the parent chain (element → container → parent_container → …)
  * and returns the outermost collapsed container, or null if none.
  */
-function resolveCollapsedAncestor(
+export function resolveCollapsedAncestor(
 	nodeId: string,
 	collapsed: Set<string>,
 	parentMap: Map<string, string>

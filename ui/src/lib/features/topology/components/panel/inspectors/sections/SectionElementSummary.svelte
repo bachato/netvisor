@@ -1,13 +1,11 @@
 <script lang="ts">
 	import type { Node } from '@xyflow/svelte';
-	import { useSvelteFlow } from '@xyflow/svelte';
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { getContainerContents } from '$lib/features/topology/resolvers';
 	import { views } from '$lib/shared/stores/metadata';
 	import { activeView } from '$lib/features/topology/queries';
 	import { inspector_elementSummary, common_services, common_hosts } from '$lib/paraglide/messages';
 
-	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
 	let {
 		node,
 		topology
@@ -15,9 +13,6 @@
 		node: Node;
 		topology: Topology;
 	} = $props();
-	/* eslint-enable @typescript-eslint/no-unused-vars */
-
-	const { getNodes } = useSvelteFlow();
 
 	let elementLabel = $derived(
 		(views.getMetadata($activeView) as { element_label?: string } | undefined)?.element_label ??
@@ -26,7 +21,7 @@
 
 	// Count child elements and unique hosts inside this container (including subcontainers)
 	let summary = $derived.by(() => {
-		const contents = getContainerContents(node.id, getNodes());
+		const contents = getContainerContents(node.id, topology.nodes);
 		return {
 			elementCount: contents.elementNodeIds.size,
 			hostCount: contents.hostIds.size,
