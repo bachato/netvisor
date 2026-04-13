@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { Edit, Check, Eye, EyeOff } from 'lucide-svelte';
 	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
 	import { SimpleOptionDisplay } from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
@@ -110,6 +111,20 @@
 
 	// Show/hide disabled (non-applicable) element rules
 	let hideDisabledElementRules = $state(false);
+
+	// Close any expanded element rule editor when the view changes
+	$effect(() => {
+		void currentView;
+		untrack(() => {
+			if (editingElementId) {
+				if (pendingElementRules) {
+					updateElementRules(pendingElementRules);
+					pendingElementRules = null;
+				}
+				editingElementId = null;
+			}
+		});
+	});
 
 	// Metadata lookups
 	const containerRuleMeta = Object.fromEntries(typedContainerRuleTypes.map((m) => [m.id, m]));
