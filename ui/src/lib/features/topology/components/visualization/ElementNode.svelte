@@ -385,7 +385,7 @@
 		if (isExportingValue) return false;
 
 		// Tag filter: fade if this node is hidden
-		if (nodeRenderData && hiddenNodes.has(nodeRenderData.ip_address_id)) {
+		if (hiddenNodes.has(id)) {
 			return true;
 		}
 
@@ -395,7 +395,7 @@
 		}
 
 		// Search filter: fade if this node is hidden by search
-		if (nodeRenderData && searchHiddenNodes.has(nodeRenderData.ip_address_id)) {
+		if (searchHiddenNodes.has(id)) {
 			return true;
 		}
 
