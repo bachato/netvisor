@@ -8,7 +8,7 @@ use super::{
 };
 use crate::server::{
     dependencies::r#impl::{base::DependencyMembers, types::DependencyType},
-    services::r#impl::virtualization::ServiceVirtualization,
+    services::r#impl::{categories::ServiceCategory, virtualization::ServiceVirtualization},
     shared::{
         concepts::Concept, entities::EntityDiscriminants, types::metadata::EntityMetadataProvider,
     },
@@ -75,11 +75,12 @@ impl ViewBuilder for ApplicationBuilder {
             .map(|t| (t.id, t))
             .collect();
 
-        // Collect services with at least one binding
+        // Collect services with at least one binding, excluding OpenPorts
         let eligible_services: Vec<&crate::server::services::r#impl::base::Service> = ctx
             .services
             .iter()
             .filter(|s| !s.base.bindings.is_empty())
+            .filter(|s| s.base.service_definition.category() != ServiceCategory::OpenPorts)
             .collect();
 
         // service_id → node exists (for edge creation)
@@ -173,8 +174,6 @@ impl ViewBuilder for ApplicationBuilder {
             }
         } else {
             // Fallback: group by service category (no app tags exist)
-            use crate::server::services::r#impl::categories::ServiceCategory;
-
             let mut services_by_category: HashMap<
                 ServiceCategory,
                 Vec<&crate::server::services::r#impl::base::Service>,

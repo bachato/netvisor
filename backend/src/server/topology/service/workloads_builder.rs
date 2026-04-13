@@ -9,7 +9,7 @@ use super::{
 use crate::server::{
     dependencies::r#impl::{base::DependencyMembers, types::DependencyType},
     interfaces::r#impl::base::Neighbor,
-    services::r#impl::definitions::ServiceDefinitionExt,
+    services::r#impl::{categories::ServiceCategory, definitions::ServiceDefinitionExt},
     shared::entities::EntityDiscriminants,
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType, EdgeViewConfig},
@@ -186,6 +186,11 @@ impl ViewBuilder for WorkloadsBuilder {
                 continue;
             }
 
+            // Skip OpenPorts services — irrelevant noise in Workloads view
+            if service.base.service_definition.category() == ServiceCategory::OpenPorts {
+                continue;
+            }
+
             // Skip services on VM hosts (VMs don't have containers)
             let Some(host) = host_lookup.get(&service.base.host_id) else {
                 continue;
@@ -273,6 +278,91 @@ impl ViewBuilder for WorkloadsBuilder {
             Some(&virtualizer_titles),
         );
 
+        // --- Phase 5: Remove host containers with no workload elements ---
+        // After element rules may have created subcontainers and reassigned elements,
+        // find host containers that ended up with zero elements (directly or via subcontainers).
+
+        let container_parents: HashMap<Uuid, Option<Uuid>> = nodes
+            .iter()
+            .filter_map(|n| {
+                if let NodeType::Container {
+                    parent_container_id,
+                    ..
+                } = &n.node_type
+                {
+                    Some((n.id, *parent_container_id))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        let host_container_ids: HashSet<Uuid> = nodes
+            .iter()
+            .filter_map(|n| {
+                if let NodeType::Container {
+                    container_type: ContainerType::Host,
+                    ..
+                } = &n.node_type
+                {
+                    Some(n.id)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Walk each element up to its root host container
+        let mut occupied_hosts: HashSet<Uuid> = HashSet::new();
+        for node in &nodes {
+            if let NodeType::Element { container_id, .. } = &node.node_type {
+                let mut current = *container_id;
+                while !host_container_ids.contains(&current) {
+                    if let Some(parent) = container_parents.get(&current).and_then(|p| *p) {
+                        current = parent;
+                    } else {
+                        break;
+                    }
+                }
+                if host_container_ids.contains(&current) {
+                    occupied_hosts.insert(current);
+                }
+            }
+        }
+
+        // Collect IDs to remove: unoccupied host containers + their orphaned subcontainers
+        let ids_to_remove: HashSet<Uuid> = nodes
+            .iter()
+            .filter_map(|n| {
+                if let NodeType::Container {
+                    container_type,
+                    parent_container_id,
+                    ..
+                } = &n.node_type
+                {
+                    // Unoccupied host containers
+                    if *container_type == ContainerType::Host && !occupied_hosts.contains(&n.id) {
+                        return Some(n.id);
+                    }
+                    // Subcontainers whose root host is being removed
+                    if parent_container_id.is_some() {
+                        let mut current = n.id;
+                        while let Some(parent) = container_parents.get(&current).and_then(|p| *p) {
+                            current = parent;
+                        }
+                        if host_container_ids.contains(&current)
+                            && !occupied_hosts.contains(&current)
+                        {
+                            return Some(n.id);
+                        }
+                    }
+                }
+                None
+            })
+            .collect();
+
+        nodes.retain(|n| !ids_to_remove.contains(&n.id));
+
         // Physical link edges between host containers (LLDP/CDP discovered connections)
         // Build inline using host container IDs as source/target, since
         // create_physical_link_edges uses IP address IDs which don't exist in this view.
@@ -292,6 +382,13 @@ impl ViewBuilder for WorkloadsBuilder {
 
             // Skip self-loops (same host)
             if source_entry.base.host_id == target_entry.base.host_id {
+                continue;
+            }
+
+            // Skip edges referencing removed host containers
+            if ids_to_remove.contains(&Self::container_id_for_host(source_entry.base.host_id))
+                || ids_to_remove.contains(&Self::container_id_for_host(target_entry.base.host_id))
+            {
                 continue;
             }
 
@@ -589,6 +686,37 @@ mod tests {
                     service_id: docker_service_id,
                     compose_project: None,
                 })),
+                ..Default::default()
+            },
+        }
+    }
+
+    #[derive(PartialEq, Eq, Hash, Clone)]
+    struct OpenPortsDef;
+    impl ServiceDefinition for OpenPortsDef {
+        fn name(&self) -> &'static str {
+            "Open Ports"
+        }
+        fn description(&self) -> &'static str {
+            "Open Ports"
+        }
+        fn category(&self) -> ServiceCategory {
+            ServiceCategory::OpenPorts
+        }
+        fn discovery_pattern(&self) -> Pattern<'_> {
+            Pattern::None
+        }
+    }
+
+    fn make_open_ports_service(name: &str, host_id: Uuid) -> Service {
+        Service {
+            id: Uuid::new_v4(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            base: ServiceBase {
+                host_id,
+                service_definition: Box::new(OpenPortsDef),
+                name: name.to_string(),
                 ..Default::default()
             },
         }
@@ -977,5 +1105,65 @@ mod tests {
             .filter(|n| matches!(n.node_type, NodeType::Element { .. }))
             .collect();
         assert_eq!(elements.len(), 4);
+    }
+
+    #[test]
+    fn test_open_ports_excluded() {
+        let host = make_host("server-01");
+        let svc = make_regular_service("nginx", host.id);
+        let open_ports = make_open_ports_service("Open Ports: 80, 443", host.id);
+
+        let (nodes, _edges) = build(&[host], &[svc, open_ports]);
+
+        // Only the regular service appears as an element
+        let elements: Vec<&Node> = nodes
+            .iter()
+            .filter(|n| matches!(n.node_type, NodeType::Element { .. }))
+            .collect();
+        assert_eq!(elements.len(), 1);
+        assert_eq!(elements[0].header.as_deref(), Some("nginx"));
+    }
+
+    #[test]
+    fn test_host_with_only_open_ports_removed() {
+        let host = make_host("router-01");
+        let open_ports = make_open_ports_service("Open Ports: 22", host.id);
+
+        let (nodes, _edges) = build(&[host], &[open_ports]);
+
+        // Host container is removed because it has no elements
+        assert!(nodes.is_empty());
+    }
+
+    #[test]
+    fn test_empty_host_removed() {
+        let host = make_host("empty-host");
+        let (nodes, _edges) = build(&[host], &[]);
+
+        // No services → no elements → host container removed
+        assert!(nodes.is_empty());
+    }
+
+    #[test]
+    fn test_mixed_empty_and_populated_hosts() {
+        let host1 = make_host("populated");
+        let host2 = make_host("empty");
+        let svc = make_regular_service("nginx", host1.id);
+
+        let (nodes, _edges) = build(&[host1, host2], &[svc]);
+
+        // Only the populated host's container remains
+        let containers: Vec<&Node> = nodes
+            .iter()
+            .filter(|n| matches!(n.node_type, NodeType::Container { .. }))
+            .collect();
+        assert_eq!(containers.len(), 1);
+        assert_eq!(containers[0].header.as_deref(), Some("populated"));
+
+        let elements: Vec<&Node> = nodes
+            .iter()
+            .filter(|n| matches!(n.node_type, NodeType::Element { .. }))
+            .collect();
+        assert_eq!(elements.len(), 1);
     }
 }

@@ -65,7 +65,10 @@ const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
  */
 function buildElkGraph(
 	input: ElkLayoutInput,
-	elementPositions?: Map<string, { x: number; y: number; w: number; h: number; containerW: number; containerH: number }>,
+	elementPositions?: Map<
+		string,
+		{ x: number; y: number; w: number; h: number; containerW: number; containerH: number }
+	>,
 	subcontainerPositions?: Map<string, { x: number; y: number }>
 ): {
 	graph: ElkNode;
@@ -569,6 +572,31 @@ function buildElkGraph(
 				}
 				targetPortIds.set(elemId, tgtPortId);
 			}
+		}
+
+		// Handle edges targeting containers directly (after edge elevation).
+		// When will_target_container elevates an edge target to a container,
+		// e.target becomes a container ID. Create a port on it so ELK gets
+		// a port-to-port edge with proper positional constraint.
+		for (const e of containerEdges) {
+			if (!containerIds.has(e.target)) continue;
+			if (targetPortIds.has(e.target)) continue;
+
+			const tgtContainer = containers.get(e.tgtRoot);
+			if (!tgtContainer) continue;
+			if (!tgtContainer.ports) tgtContainer.ports = [];
+			if (!tgtContainer.layoutOptions) tgtContainer.layoutOptions = {};
+			tgtContainer.layoutOptions['elk.portConstraints'] =
+				tgtContainer.layoutOptions['elk.portConstraints'] ?? 'FIXED_SIDE';
+
+			const tgtPortId = `port-container-${e.target}-${tgtSide}`;
+			if (!tgtContainer.ports.some((p: { id: string }) => p.id === tgtPortId)) {
+				tgtContainer.ports.push({
+					id: tgtPortId,
+					layoutOptions: { 'elk.port.side': tgtSide }
+				});
+			}
+			targetPortIds.set(e.target, tgtPortId);
 		}
 
 		// Create edges from source ports to target ports
