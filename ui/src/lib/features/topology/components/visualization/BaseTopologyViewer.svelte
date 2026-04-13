@@ -335,28 +335,17 @@
 					setEdges: (e) => edges.set(e),
 					buildMeasureNodes: () => makeNodes(false),
 					waitForNodesRendered: async () => {
-						// Wait until SvelteFlow has rendered nodes in the DOM.
-						// nodesInitialized becomes true after adoptUserNodes processes.
+						// Wait for SvelteFlow to render node DOM elements.
+						// We only need DOM presence for measurement, not full initialization.
 						await tick();
-						if (nodesInitialized.current) return;
-						// Not ready yet — wait for it via $effect, with timeout
-						await new Promise<void>((resolve) => {
-							const timeout = setTimeout(() => {
-								console.warn('[LAYOUT] nodesInitialized timeout — proceeding with DOM measurement');
-								resolve();
-							}, 500);
-							const unsub = $effect.root(() => {
-								$effect(() => {
-									if (nodesInitialized.current) {
-										clearTimeout(timeout);
-										resolve();
-										unsub();
-									}
-								});
-							});
-						});
-						// One more rAF to ensure DOM is painted
-						await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+						// Poll for DOM nodes with a short timeout — nodesInitialized
+						// can hang indefinitely for large topologies.
+						const start = performance.now();
+						while (performance.now() - start < 2000) {
+							const nodeEls = containerElement?.querySelectorAll('.svelte-flow__node');
+							if (nodeEls && nodeEls.length > 0) break;
+							await new Promise((r) => requestAnimationFrame(r));
+						}
 					}
 				}
 			);
