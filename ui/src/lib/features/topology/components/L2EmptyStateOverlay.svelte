@@ -41,7 +41,7 @@
 						{topology_l2EmptySnmpHint()}
 					</p>
 					<button
-						class="btn btn-sm btn-secondary"
+						class="btn btn-sm btn-primary"
 						onclick={() => openModal('credential-editor')}
 					>
 						{home_nudges_snmpAction()}

@@ -1210,7 +1210,7 @@
 	"topology_hidePortsHelp": "Don't show open ports next to services",
 	"topology_infraRuleNote": "Service categories in this group are automatically collapsed and excluded from workload counts to keep the focus on your {useCase} workloads and applications.",
 	"topology_l2EmptyDescription": "This view shows the physical network topology based on neighbor discovery between hosts. It will populate once hosts with discovered neighbors appear in this network.",
-	"topology_l2EmptySnmpHint": "Adding SNMP credentials enables neighbor discovery between devices.",
+	"topology_l2EmptySnmpHint": "If your devices support LLDP or CDP, adding SNMP credentials will populate this view.",
 	"topology_l2EmptyTitle": "No Physical Connections",
 	"topology_lastRebuild": "Last Rebuild: {timestamp}",
 	"topology_levelContainersExpanded": "Containers expanded",
