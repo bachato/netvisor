@@ -1,10 +1,12 @@
 <script lang="ts">
 	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
+	import { openModal } from '$lib/shared/stores/modal-registry';
 	import { Cable } from 'lucide-svelte';
 	import {
 		topology_l2EmptyTitle,
 		topology_l2EmptyDescription,
-		topology_l2EmptySnmpHint
+		topology_l2EmptySnmpHint,
+		home_nudges_snmpAction
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -34,9 +36,17 @@
 				{topology_l2EmptyDescription()}
 			</p>
 			{#if !hasSnmpCredential}
-				<p class="text-secondary/70 text-xs">
-					{topology_l2EmptySnmpHint()}
-				</p>
+				<div class="border-primary/10 w-full border-t pt-3">
+					<p class="text-secondary/70 mb-2 text-xs">
+						{topology_l2EmptySnmpHint()}
+					</p>
+					<button
+						class="btn btn-sm btn-secondary"
+						onclick={() => openModal('credential-editor')}
+					>
+						{home_nudges_snmpAction()}
+					</button>
+				</div>
 			{/if}
 		</div>
 	</GenericModal>
