@@ -51,6 +51,7 @@
 	const typedContainerRuleTypes = _containerRuleTypes as RuleTypeMetadata[];
 	const typedElementRuleTypes = _elementRuleTypes as RuleTypeMetadata[];
 	import {
+		topology_containerGroupingHelp,
 		topology_containerGroupingPerspective,
 		topology_elementGrouping,
 		topology_addContainerRule,
@@ -194,6 +195,9 @@
 			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
 			.join(' ');
 	});
+	let elementGroupingLabelPlural = $derived(
+		((viewMeta?.metadata as Record<string, unknown>)?.element_label as string) ?? 'elements'
+	);
 
 	let filteredContainerRuleTypes = $derived(
 		typedContainerRuleTypes.filter((m) => {
@@ -204,6 +208,7 @@
 
 	let filteredElementRuleTypes = $derived(
 		typedElementRuleTypes.filter((m) => {
+			if (m.metadata?.is_user_editable === false) return false;
 			const applicableViews = m.metadata?.views;
 			return !applicableViews || applicableViews.includes(currentView);
 		})
@@ -457,6 +462,7 @@
 >
 	<ListManager
 		label={topology_containerGroupingPerspective({ perspective: viewMeta?.name ?? '' })}
+		helpText={topology_containerGroupingHelp()}
 		placeholder={topology_addContainerRule()}
 		items={containerRules}
 		options={containerAddOptions}
@@ -464,6 +470,7 @@
 		itemDisplayComponent={containerRuleDisplayComponent}
 		allowReorder={true}
 		allowDuplicates={false}
+		allowAddFromOptions={containerAddOptions.length > 0}
 		allowItemEdit={() => false}
 		allowItemRemove={isContainerRuleEditable}
 		allowItemReorder={isContainerRuleEditable}
@@ -487,7 +494,7 @@
 <!-- Element grouping section -->
 <ListManager
 	label={topology_elementGrouping({ label: elementGroupingLabel })}
-	helpText={topology_elementGroupingHelp()}
+	helpText={topology_elementGroupingHelp({ label: elementGroupingLabelPlural })}
 	placeholder={topology_addElementRule()}
 	items={visibleElementRules}
 	options={elementAddOptions}
