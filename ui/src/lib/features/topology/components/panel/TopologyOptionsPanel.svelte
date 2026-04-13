@@ -101,7 +101,7 @@
 			</div>
 
 			<!-- Content area -->
-			<div class="overflow-y-auto p-3" style="max-height: calc(100vh - 250px);">
+			<div class="overflow-y-auto p-3" style="max-height: calc(100vh - 350px);">
 				{#if multiSelectedNodes.length >= 2}
 					<InspectorMultiSelect
 						{isReadOnly}

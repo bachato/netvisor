@@ -1172,7 +1172,6 @@
 	"topology_exportSvgDesc": "Vector image for documentation and embedding",
 	"topology_exportTheme": "Export Theme",
 	"topology_filtersApplyToView": "Filters apply to {viewName} view",
-	"topology_filtersHelp": "Click items to toggle visibility. Selected items will be hidden from the visualization.",
 	"topology_flowNotFound": "Flow element not found",
 	"topology_focusNode": "Focus node",
 	"topology_focusSelection": "Focus selection",

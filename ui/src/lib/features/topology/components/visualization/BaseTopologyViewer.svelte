@@ -28,7 +28,6 @@
 		selectedNode as selectedNodeStore,
 		topologyOptions,
 		optionsPanelExpanded,
-		OPTIONS_PANEL_WIDTH_PX,
 		OPTIONS_PANEL_FITVIEW_PADDING_PX,
 		aggregatedEdgeOriginals,
 		getInfrastructureRuleId
@@ -748,7 +747,6 @@
 		{#if (showMinimap !== undefined ? showMinimap : $topologyOptions.local.show_minimap) && !$isExporting}
 			<MiniMap
 				position="bottom-left"
-				style={$optionsPanelExpanded ? `left: ${OPTIONS_PANEL_WIDTH_PX + 32}px` : ''}
 				bgColor={themeStore.resolvedTheme === 'dark' ? '#1f2937' : '#ffffff'}
 				nodeColor={themeStore.resolvedTheme === 'dark' ? '#6b7280' : '#9ca3af'}
 				maskColor={themeStore.resolvedTheme === 'dark'
