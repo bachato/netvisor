@@ -105,26 +105,14 @@
 	// Active rules: pending edits if editing, otherwise committed
 	let elementRules = $derived(pendingElementRules ?? committedElementRules);
 
-	// Editing state tracked by rule UUID
+	// Editing state tracked by rule UUID + the view it was opened on.
+	// When the view changes, isElementEditing returns false and the
+	// next edit toggle flushes stale pending state.
 	let editingElementId = $state<string | null>(null);
+	let editingView = $state<string | null>(null);
 
 	// Show/hide disabled (non-applicable) element rules
 	let hideDisabledElementRules = $state(false);
-
-	// Close any expanded element rule editor when the view changes
-	let previousView = $state(currentView);
-	$effect.pre(() => {
-		if (currentView !== previousView) {
-			previousView = currentView;
-			if (editingElementId) {
-				if (pendingElementRules) {
-					updateSharedElementRules(pendingElementRules);
-					pendingElementRules = null;
-				}
-				editingElementId = null;
-			}
-		}
-	});
 
 	// Metadata lookups
 	const containerRuleMeta = Object.fromEntries(typedContainerRuleTypes.map((m) => [m.id, m]));
@@ -400,9 +388,20 @@
 	}
 
 	function handleElementEdit(_item: ElementGraphRule, index: number) {
+		// If there's a stale editor from a different view, flush and reset first
+		if (editingElementId && editingView !== currentView) {
+			if (pendingElementRules) {
+				updateElementRules(pendingElementRules);
+				pendingElementRules = null;
+			}
+			editingElementId = null;
+			editingView = null;
+		}
+
 		const ruleId = elementRules[index]?.id;
 		const wasEditing = editingElementId === ruleId;
 		editingElementId = wasEditing ? null : ruleId;
+		editingView = wasEditing ? null : currentView;
 
 		if (wasEditing) {
 			// Closing editor: flush pending edits to store and rebuild
@@ -420,7 +419,7 @@
 	}
 
 	function isElementEditing(item: ElementGraphRule): boolean {
-		return item.id === editingElementId;
+		return item.id === editingElementId && editingView === currentView;
 	}
 
 	function getElementEditIcon(item: ElementGraphRule) {
