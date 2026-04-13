@@ -2,7 +2,13 @@ import { writable, get } from 'svelte/store';
 import type { Edge } from '@xyflow/svelte';
 import type { Node } from '@xyflow/svelte';
 import type { QueryClient } from '@tanstack/svelte-query';
-import { edgeTypes, views, serviceDefinitions, subnetTypes } from '$lib/shared/stores/metadata';
+import {
+	edgeTypes,
+	entities,
+	views,
+	serviceDefinitions,
+	subnetTypes
+} from '$lib/shared/stores/metadata';
 import type { TopologyEdge, TopologyNode, Topology } from './types/base';
 import {
 	isDisabledEdge,
@@ -193,9 +199,13 @@ export function updateTagFilter(
 	const elementEntities = config?.element_entities ?? ['Interface'];
 	const inlineEntities = config?.inline_entities ?? [];
 
-	// Determine filter roles from element config
+	// Determine filter roles from element config and parent_entity relationships
 	const hostIsContainer = containerEntity === 'Host';
 	const hostIsElement = elementEntities.includes('Host');
+	const hostIsParent = elementEntities.some(
+		(e) => entities.getMetadata(e)?.parent_entity === 'Host'
+	);
+	const hostIsRelevant = hostIsContainer || hostIsElement || hostIsParent;
 	const serviceIsElement = elementEntities.includes('Service');
 	const serviceIsInline = inlineEntities.includes('Service');
 	const serviceIsVisible = serviceIsElement || serviceIsInline;
@@ -213,8 +223,8 @@ export function updateTagFilter(
 	const hiddenServiceIds = new Set<string>();
 	const index = buildEntityNodeIndex(topology.nodes);
 
-	// Host filtering: behavior depends on whether Host is container vs element
-	if (hostIsContainer || hostIsElement) {
+	// Host filtering: runs when Host is container, element, or parent of an element entity
+	if (hostIsRelevant) {
 		const hiddenHostIds = new Set<string>();
 		for (const host of topology.hosts) {
 			const isUntagged = host.tags.length === 0;
