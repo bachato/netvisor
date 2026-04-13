@@ -22,7 +22,6 @@
 	import { downloadCsv } from '$lib/shared/utils/csvExport';
 	import { modalState, resolveModalDeepLink } from '$lib/shared/stores/modal-registry';
 	import {
-		common_application,
 		common_color,
 		common_confirmDeleteName,
 		common_create,

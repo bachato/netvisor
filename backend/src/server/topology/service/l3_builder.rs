@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use super::{
-    context::TopologyContext, edge_builder::EdgeBuilder, subnet_graph_builder::SubnetGraphBuilder,
+    context::TopologyContext, edge_builder::EdgeBuilder, graph_builder::GraphBuilder,
     view::ViewBuilder,
 };
 use crate::server::shared::types::metadata::EntityMetadataProvider;
@@ -26,13 +26,13 @@ impl ViewBuilder for L3Builder {
         all_edges.extend(EdgeBuilder::create_physical_link_edges(ctx));
 
         // Create nodes (positions zeroed — frontend computes layout via elkjs)
-        let mut subnet_builder = SubnetGraphBuilder::new();
+        let mut graph_builder = GraphBuilder::new();
         let (subnet_ids, child_nodes) =
-            subnet_builder.create_subnet_child_nodes(ctx, &mut all_edges, grouping);
+            graph_builder.create_subnet_child_nodes(ctx, &mut all_edges, grouping);
 
-        let mut subnet_nodes = subnet_builder.create_subnet_nodes(ctx, &subnet_ids);
+        let mut subnet_nodes = graph_builder.create_subnet_nodes(ctx, &subnet_ids);
 
-        // Set icon and color on container nodes from subnet metadata
+        // Set layer_hint, icon, and color on container nodes from subnet metadata
         let subnet_map: HashMap<Uuid, &crate::server::subnets::r#impl::types::SubnetType> = ctx
             .subnets
             .iter()
@@ -40,12 +40,14 @@ impl ViewBuilder for L3Builder {
             .collect();
         for node in &mut subnet_nodes {
             if let NodeType::Container {
+                ref mut layer_hint,
                 ref mut icon,
                 ref mut color,
                 ..
             } = node.node_type
                 && let Some(subnet_type) = subnet_map.get(&node.id)
             {
+                *layer_hint = Some(subnet_type.vertical_order() as i32);
                 *icon = Some(subnet_type.icon().to_string());
                 *color = Some(subnet_type.color().to_string());
             }

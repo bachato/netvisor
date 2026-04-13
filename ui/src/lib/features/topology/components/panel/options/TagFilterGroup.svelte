@@ -41,7 +41,7 @@
 		return result;
 	});
 
-	function handleHoverStart(value: string, color: string) {
+	function handleHoverStart(value: string, color: Color) {
 		hoveredTag.set({ tagId: value, color: color as string, entityType });
 	}
 

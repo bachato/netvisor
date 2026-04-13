@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-13T21:28:05.168999Z",
-             *       "id": "4ba68d04-0209-4157-b8a6-7ab2dba8bd05",
+             *       "created_at": "2026-04-13T18:32:19.131437Z",
+             *       "id": "8845d951-1b7a-42f1-9635-bc0362c30878",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-13T21:28:05.168999Z"
+             *       "updated_at": "2026-04-13T18:32:19.131437Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-13T21:28:05.144929Z",
-             *               "id": "c8d56e58-435f-4da4-ab05-568853aacc27",
+             *               "created_at": "2026-04-13T18:32:19.115013Z",
+             *               "id": "b5878b7a-6859-473d-8ece-bf33509a10b9",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-13T21:28:05.144929Z"
+             *               "updated_at": "2026-04-13T18:32:19.115013Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "OpenVPN",
+             *           "service_definition": "HP Printer",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3531,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-13T21:28:05.159366Z",
-             *           "id": "9edf7b3f-26c1-499a-8d0c-79ca3a0e186b",
+             *           "created_at": "2026-04-13T18:32:19.126898Z",
+             *           "id": "ece4425d-83e0-489f-8651-8707cfa98cab",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-13T21:28:05.159366Z"
+             *           "updated_at": "2026-04-13T18:32:19.126898Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3547,7 +3547,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "OpenVPN",
+             *       "service_definition": "HP Printer",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3898,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-13T21:28:05.145150Z",
-         *       "id": "4ac1278d-a6da-46b0-ba6d-b559b30cd2e3",
+         *       "created_at": "2026-04-13T18:32:19.115369Z",
+         *       "id": "122c45bc-791b-4322-b2d1-868de454ed51",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-13T21:28:05.145150Z"
+         *       "updated_at": "2026-04-13T18:32:19.115369Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4090,7 +4090,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "OpenVPN",
+         *           "service_definition": "HP Printer",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4949,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-13T21:28:05.144624Z",
-         *               "id": "56165652-beb4-4177-8cb8-a33aec042912",
+         *               "created_at": "2026-04-13T18:32:19.114539Z",
+         *               "id": "a9dd434c-9495-4909-a5cb-a722062b978f",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-13T21:28:05.144624Z"
+         *               "updated_at": "2026-04-13T18:32:19.114539Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4965,7 +4965,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "OpenVPN",
+         *           "service_definition": "HP Printer",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5447,11 +5447,21 @@ export interface components {
             subnet_count: number;
         };
         Node: components["schemas"]["NodeType"] & {
+            /**
+             * Format: uuid
+             * @description ID of the element rule that created this container (for NestedTag/NestedServiceCategory)
+             */
+            element_rule_id?: string | null;
             header?: string | null;
             /** Format: uuid */
             id: string;
             position: components["schemas"]["Ixy"];
             size: components["schemas"]["Uxy"];
+            /**
+             * @description When true, this container accepts edges with `will_target_container`, causing
+             *     them to visually attach here instead of at elements inside.
+             */
+            will_accept_edges?: boolean;
         };
         NodeType: {
             /**
@@ -5464,26 +5474,21 @@ export interface components {
             container_type?: components["schemas"]["ContainerType"];
             /**
              * Format: uuid
-             * @description ID of the element rule that created this container (for subcontainers like NestedTag, Hypervisor, etc.)
-             */
-            element_rule_id?: string | null;
-            /**
-             * Format: uuid
              * @description The entity this container represents (e.g. host ID for Host containers,
              *     subnet ID for Subnet containers). Used for ownership mapping on the frontend.
              */
             entity_id?: string | null;
             /** @description Display icon name (set by graph builder from the source entity, e.g. subnet type) */
             icon?: string | null;
+            /**
+             * Format: int32
+             * @description Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)
+             */
+            layer_hint?: number | null;
             /** @enum {string} */
             node_type: "Container";
             /** Format: uuid */
             parent_container_id?: string | null;
-            /**
-             * @description When true, this container accepts edges with `will_target_container`, causing
-             *     them to visually attach here instead of at elements inside.
-             */
-            will_accept_edges?: boolean;
         } | (components["schemas"]["ElementEntityType"] & {
             /** Format: uuid */
             container_id?: string;
@@ -5515,7 +5520,7 @@ export interface components {
             snmp_version?: string | null;
         };
         /** @enum {string} */
-        OnboardingOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstDependencyCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "FirstApplicationTagCreated" | "FirstCredentialCreated" | "InviteSent" | "InviteAccepted" | "ProfileCompleted" | "ReferralSourceCompleted";
+        OnboardingOperation: "OrgCreated" | "OnboardingModalCompleted" | "PlanSelected" | "FirstDaemonRegistered" | "FirstTopologyRebuild" | "FirstDiscoveryCompleted" | "FirstHostDiscovered" | "SecondNetworkCreated" | "FirstTagCreated" | "FirstDependencyCreated" | "FirstUserApiKeyCreated" | "FirstSnmpCredentialCreated" | "FirstCredentialCreated" | "InviteSent" | "InviteAccepted" | "ProfileCompleted" | "ReferralSourceCompleted";
         /** @description Response from onboarding state endpoint */
         OnboardingStateResponse: {
             network?: null | components["schemas"]["OnboardingNetworkState"];
@@ -6095,14 +6100,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-13T21:28:05.145074Z",
-         *           "id": "75975799-9e5b-41f0-a780-0f257d00f216",
+         *           "created_at": "2026-04-13T18:32:19.115253Z",
+         *           "id": "7ad6a5b8-02b5-4370-9a91-92e065d92d5a",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-13T21:28:05.145074Z"
+         *           "updated_at": "2026-04-13T18:32:19.115253Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6111,7 +6116,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "OpenVPN",
+         *       "service_definition": "HP Printer",
          *       "source": {
          *         "type": "Manual"
          *       },

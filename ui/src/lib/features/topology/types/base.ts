@@ -22,10 +22,8 @@ export interface PortStatus {
 	macAddress: string | null;
 }
 
-type ElementEntityTypeDiscriminant = components['schemas']['ElementEntityType']['element_type'];
-
 export interface ElementRenderData {
-	elementType: ElementEntityTypeDiscriminant;
+	elementType: string;
 	headerText: string | null;
 	subtitleText?: string | null;
 	footerText: string | null;

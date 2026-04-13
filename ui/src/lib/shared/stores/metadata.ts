@@ -193,7 +193,6 @@ export interface ContainerTypeMetadata {
 	is_collapsible: boolean;
 	collapsed_by_default: boolean;
 	has_border: boolean;
-	fill_icon: boolean;
 	padding: { top: number; left: number; bottom: number; right: number };
 	collapsed_size: { width: number; height: number };
 }

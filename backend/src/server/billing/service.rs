@@ -506,6 +506,9 @@ impl BillingService {
     ) -> Result<String, Error> {
         let mut organization = self.get_organization(organization_id).await?;
 
+        self.enforce_plan_restrictions(&organization_id, &plan)
+            .await?;
+
         organization.base.plan = Some(plan);
         organization.base.plan_status = Some("active".to_string());
 
@@ -1111,6 +1114,9 @@ impl BillingService {
             .as_ref()
             .map(|p| p.name().to_string());
 
+        // Enforce non-destructive plan restrictions (discovery conversion).
+        self.enforce_plan_restrictions(&org_id, &plan).await?;
+
         organization.base.plan = Some(plan);
 
         // Free plan has no trial — always active, but preserve trial_end_date
@@ -1477,6 +1483,8 @@ impl BillingService {
         let organization_service = Arc::clone(&self.organization_service);
         let user_service = Arc::clone(&self.user_service);
         let invite_service = Arc::clone(&self.invite_service);
+        let network_service = Arc::clone(&self.network_service);
+        let discovery_service = Arc::clone(&self.discovery_service);
         let email_service = self.email_service.clone();
         let event_bus = Arc::clone(&self.event_bus);
         let stripe = self.stripe.clone();
@@ -1494,6 +1502,8 @@ impl BillingService {
                 organization_service,
                 user_service,
                 invite_service,
+                network_service,
+                discovery_service,
                 email_service,
                 event_bus,
                 stripe,
@@ -1526,6 +1536,8 @@ impl BillingService {
         organization_service: Arc<OrganizationService>,
         user_service: Arc<UserService>,
         invite_service: Arc<InviteService>,
+        network_service: Arc<NetworkService>,
+        discovery_service: Arc<DiscoveryService>,
         email_service: Option<Arc<EmailService>>,
         event_bus: Arc<EventBus>,
         stripe: stripe::Client,
@@ -1557,6 +1569,32 @@ impl BillingService {
                     "Org has another active subscription — reverted to previous plan"
                 );
                 return Ok(());
+            }
+        }
+
+        // Enforce non-destructive plan restrictions (discovery conversion)
+        let features = free_plan.features();
+        if !features.scheduled_discovery {
+            use crate::server::discovery::r#impl::types::RunType;
+            let org_filter = StorableFilter::<Network>::new_from_org_id(&org_id);
+            let networks = network_service.get_all(org_filter).await?;
+            let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
+
+            let discovery_filter = StorableFilter::<
+                crate::server::discovery::r#impl::base::Discovery,
+            >::new_from_network_ids(&network_ids);
+            let discoveries = discovery_service.get_all(discovery_filter).await?;
+            for mut discovery in discoveries {
+                if let RunType::Scheduled { last_run, .. } = discovery.base.run_type {
+                    discovery.base.run_type = RunType::AdHoc { last_run };
+                    discovery_service
+                        .update(&mut discovery, AuthenticatedEntity::System)
+                        .await?;
+                    tracing::info!(
+                        discovery_id = %discovery.id,
+                        "Converted scheduled discovery to ad-hoc (plan lacks scheduled_discovery)"
+                    );
+                }
             }
         }
 
@@ -2062,6 +2100,46 @@ impl BillingService {
                 json!({ "org_id": organization.id.to_string() }),
             ))
             .await?;
+
+        Ok(())
+    }
+
+    /// Enforce non-destructive plan restrictions for an organization.
+    ///
+    /// Entity caps (networks, hosts) are enforced at creation time — existing
+    /// data is preserved on downgrade so customers can re-upgrade without loss.
+    /// This function only handles behavioral changes:
+    /// - Converts scheduled discoveries to ad-hoc if plan doesn't support scheduled_discovery
+    async fn enforce_plan_restrictions(
+        &self,
+        organization_id: &Uuid,
+        plan: &BillingPlan,
+    ) -> Result<(), Error> {
+        use crate::server::discovery::r#impl::types::RunType;
+        let features = plan.features();
+
+        if !features.scheduled_discovery {
+            let org_filter = StorableFilter::<Network>::new_from_org_id(organization_id);
+            let networks = self.network_service.get_all(org_filter).await?;
+            let network_ids: Vec<Uuid> = networks.iter().map(|n| n.id).collect();
+
+            let discovery_filter = StorableFilter::<
+                crate::server::discovery::r#impl::base::Discovery,
+            >::new_from_network_ids(&network_ids);
+            let discoveries = self.discovery_service.get_all(discovery_filter).await?;
+            for mut discovery in discoveries {
+                if let RunType::Scheduled { last_run, .. } = discovery.base.run_type {
+                    discovery.base.run_type = RunType::AdHoc { last_run };
+                    self.discovery_service
+                        .update(&mut discovery, AuthenticatedEntity::System)
+                        .await?;
+                    tracing::info!(
+                        discovery_id = %discovery.id,
+                        "Converted scheduled discovery to ad-hoc (plan lacks scheduled_discovery)"
+                    );
+                }
+            }
+        }
 
         Ok(())
     }

@@ -18,17 +18,20 @@
 </script>
 
 <div
-	class="flex items-center gap-2"
+	class="flex flex-col"
 	class:opacity-40={disabled}
 	use:tooltip
-	data-tooltip={description && disabledTooltip
-		? `${description}.\n${disabledTooltip}`
-		: description ?? disabledTooltip ?? null}
+	data-tooltip={disabled ? disabledTooltip : null}
 >
-	<span class="text-sm" class:text-primary={!disabled} class:text-tertiary={disabled}
-		>{label}</span
-	>
-	{#if locked}
-		<Lock class="text-tertiary h-3 w-3" />
+	<div class="flex items-center gap-2">
+		<span class="text-sm" class:text-primary={!disabled} class:text-tertiary={disabled}
+			>{label}</span
+		>
+		{#if locked}
+			<Lock class="text-tertiary h-3 w-3" />
+		{/if}
+	</div>
+	{#if description}
+		<span class="text-tertiary text-xs">{description}</span>
 	{/if}
 </div>

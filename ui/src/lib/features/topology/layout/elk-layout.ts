@@ -65,7 +65,7 @@ const ROOT_LAYOUT_OPTIONS: Record<string, string> = {
  */
 function buildElkGraph(
 	input: ElkLayoutInput,
-	elementPositions?: Map<string, { x: number; y: number; w: number; h: number; containerW: number; containerH: number }>,
+	elementPositions?: Map<string, { x: number; w: number; containerW: number }>,
 	subcontainerPositions?: Map<string, { x: number; y: number }>
 ): {
 	graph: ElkNode;
@@ -214,8 +214,8 @@ function buildElkGraph(
 	>();
 	for (const node of input.nodes) {
 		if (node.node_type === 'Element') {
-			const parentId = node.container_id ?? '';
-			if (!parentId || collapsed.has(parentId)) continue;
+			const parentId = node.container_id;
+			if (collapsed.has(parentId)) continue;
 			if (!containers.has(parentId)) continue;
 			const size = input.elementNodeSizes?.get(node.id) ?? node.size;
 			if (!elementsPerContainer.has(parentId)) elementsPerContainer.set(parentId, []);
@@ -1276,8 +1276,8 @@ function repackDisconnectedContainers(
 
 	const elementToRoot = new Map<string, string>();
 	for (const node of input.nodes) {
-		if (node.node_type === 'Element' && node.container_id) {
-			let rootId: string = node.container_id;
+		if (node.node_type === 'Element') {
+			let rootId = node.container_id;
 			while (parentContainerMap.has(rootId)) rootId = parentContainerMap.get(rootId)!;
 			elementToRoot.set(node.id, rootId);
 		}

@@ -107,15 +107,16 @@ impl ViewBuilder for WorkloadsBuilder {
                     container_type: ContainerType::Host,
                     parent_container_id: None,
                     entity_id: Some(host.id),
+                    layer_hint: None,
                     icon: None,
                     color: None,
                     associated_service_definition: None,
-                    element_rule_id: None,
-                    will_accept_edges: false,
                 },
                 position: Default::default(),
                 size: Default::default(),
                 header: Some(host.base.name.clone()),
+                element_rule_id: None,
+                will_accept_edges: false,
             });
         }
 

@@ -2,14 +2,12 @@ import type { components } from '$lib/api/schema';
 import type { Topology, TopologyNode } from './types/base';
 
 type ElementEntityType = components['schemas']['ElementEntityType'];
-type ElementEntityTypeDiscriminant = ElementEntityType['element_type'];
 
 // Resolver return types
 export interface ElementRenderContext {
-	elementType: ElementEntityTypeDiscriminant;
+	elementType: ElementEntityType;
 	host: Topology['hosts'][number] | undefined;
-	ipAddress: Topology['ip_addresses'][number] | undefined;
-	snmpInterface: Topology['interfaces'][number] | undefined;
+	iface: Topology['interfaces'][number] | undefined;
 	services: Topology['services'][number][];
 	hostId: string | undefined;
 	ipAddressId: string | undefined;
@@ -25,7 +23,7 @@ export interface ContainerRenderContext {
 
 // Exhaustive resolver maps — TypeScript errors if a variant is missing
 const elementResolvers: Record<
-	ElementEntityTypeDiscriminant,
+	ElementEntityType,
 	(nodeId: string, node: TopologyNode, topology: Topology) => ElementRenderContext
 > = {
 	IPAddress: (_nodeId, node, topology) => {
@@ -36,7 +34,7 @@ const elementResolvers: Record<
 		const isInfra = 'is_infra' in node ? (node.is_infra as boolean) : false;
 
 		const host = topology.hosts.find((h) => h.id === hostId);
-		const ipAddress = ipAddressId ? topology.ip_addresses.find((i) => i.id === ipAddressId) : undefined;
+		const iface = ipAddressId ? topology.ip_addresses.find((i) => i.id === ipAddressId) : undefined;
 		const services = topology.services.filter(
 			(s) =>
 				s.host_id === hostId &&
@@ -46,8 +44,7 @@ const elementResolvers: Record<
 		return {
 			elementType: 'IPAddress',
 			host,
-			ipAddress,
-			snmpInterface: undefined,
+			iface,
 			services,
 			hostId,
 			ipAddressId: ipAddressId,
@@ -62,10 +59,9 @@ const elementResolvers: Record<
 		const services = service ? [service] : [];
 
 		return {
-			elementType: 'Service' as ElementEntityTypeDiscriminant,
+			elementType: 'Service' as ElementEntityType,
 			host,
-			ipAddress: undefined,
-			snmpInterface: undefined,
+			iface: undefined,
 			services,
 			hostId,
 			ipAddressId: undefined,
@@ -79,10 +75,9 @@ const elementResolvers: Record<
 		const services = topology.services.filter((s) => s.host_id === hostId);
 
 		return {
-			elementType: 'Host' as ElementEntityTypeDiscriminant,
+			elementType: 'Host' as ElementEntityType,
 			host,
-			ipAddress: undefined,
-			snmpInterface: undefined,
+			iface: undefined,
 			services,
 			hostId,
 			ipAddressId: undefined,
@@ -94,12 +89,11 @@ const elementResolvers: Record<
 		const hostId = 'host_id' in node ? (node.host_id as string) : undefined;
 		const interfaceId = 'interface_id' in node ? (node.interface_id as string) : undefined;
 		const host = topology.hosts.find((h) => h.id === hostId);
-		const snmpInterface = interfaceId ? topology.interfaces.find((e) => e.id === interfaceId) : undefined;
+		const iface = interfaceId ? topology.interfaces.find((e) => e.id === interfaceId) : undefined;
 		return {
-			elementType: 'Interface' as ElementEntityTypeDiscriminant,
+			elementType: 'Interface' as ElementEntityType,
 			host,
-			ipAddress: undefined,
-			snmpInterface,
+			iface,
 			services: [],
 			hostId,
 			ipAddressId: interfaceId,
@@ -120,26 +114,22 @@ function resolveContainer(
 ): ContainerRenderContext {
 	const containerType = 'container_type' in node ? (node.container_type as string) : 'Subnet';
 	const title = 'header' in node ? (node.header as string | null) : null;
-	return { tags: resolveContainerTags(nodeId, node, topology), title, containerType };
+	return { tags: resolveContainerTags(nodeId, topology), title, containerType };
 }
 
 /**
  * Resolve tags for any container entity, regardless of container type.
- * Uses entity_id (the entity this container represents) for direct lookup,
- * falling back to node ID match (for Subnet containers where ID === entity ID)
- * and then to getContainerContents for legacy/indirect resolution.
+ * First tries a direct ID match (e.g. Subnet container ID === subnet entity ID),
+ * then falls back to getContainerContents to find the owning entity through
+ * subcontainers (e.g. Host containers with ByVLAN element rules).
  */
-function resolveContainerTags(nodeId: string, node: TopologyNode, topology: Topology): string[] {
+function resolveContainerTags(nodeId: string, topology: Topology): string[] {
 	const entityTags = new Map<string, string[]>();
 	for (const h of topology.hosts) entityTags.set(h.id, h.tags);
 	for (const s of topology.subnets) entityTags.set(s.id, s.tags);
 	for (const s of topology.services) entityTags.set(s.id, s.tags);
 
-	// Use entity_id for direct entity lookup (set by builders on all containers)
-	const entityId = 'entity_id' in node ? (node.entity_id as string | undefined) : undefined;
-	if (entityId && entityTags.has(entityId)) return entityTags.get(entityId)!;
-
-	// Fallback: direct ID match (e.g. Subnet container ID === subnet entity ID)
+	// Direct match (e.g. Subnet container ID === subnet entity ID)
 	if (entityTags.has(nodeId)) return entityTags.get(nodeId)!;
 
 	// Indirect: find entities inside this container, return first match
@@ -249,7 +239,7 @@ export function getContainerContents(
 			if (ifaceId) ipAddressIds.add(ifaceId);
 		} else if (nd.element_type === 'Host') {
 			// Host elements: no additional IDs needed beyond hostId (already added above)
-		} else if (nd.element_type === 'Interface') {
+		} else if (nd.element_type === 'Port') {
 			// Port elements: no additional IDs needed beyond hostId
 		}
 	}
@@ -315,7 +305,7 @@ export function buildEntityNodeIndex(nodes: TopologyNode[]): EntityNodeIndex {
 			const existing = serviceIdToNodes.get(nd.id);
 			if (existing) existing.push(nd.id);
 			else serviceIdToNodes.set(nd.id, [nd.id]);
-		} else if (nd.element_type === 'Interface') {
+		} else if (nd.element_type === 'Port') {
 			const ifEntryId = 'interface_id' in nd ? (nd.interface_id as string | undefined) : undefined;
 			if (ifEntryId) {
 				const existing = ifEntryIdToNodes.get(ifEntryId);
@@ -347,10 +337,9 @@ export function resolveElementNode(
 	if (!elementType || !(elementType in elementResolvers)) {
 		console.warn(`[resolveElementNode] Unknown element_type: ${elementType} for node ${nodeId}`);
 		return {
-			elementType: elementType ?? ('Unknown' as ElementEntityTypeDiscriminant),
+			elementType: elementType ?? ('Unknown' as ElementEntityType),
 			host: undefined,
-			ipAddress: undefined,
-			snmpInterface: undefined,
+			iface: undefined,
 			services: [],
 			hostId: undefined,
 			ipAddressId: undefined,

@@ -111,8 +111,7 @@
 	let resolved = $derived(topology ? resolveElementNode(id, data as TopologyNode, topology) : null);
 	let host = $derived(resolved?.host);
 	let servicesForHost = $derived(resolved?.services ?? []);
-	let ipAddress = $derived(resolved?.ipAddress ?? null);
-	let snmpInterface = $derived(resolved?.snmpInterface ?? null);
+	let iface = $derived(resolved?.iface ?? null);
 
 	let effectiveWidth = $derived(width ? width : 0);
 
@@ -124,7 +123,7 @@
 
 	// Reactively subscribe to the container subnet store
 	let isContainerSubnetValue = $derived(
-		ipAddress ? topology?.subnets.find((s) => s.id == ipAddress.subnet_id)?.cidr == '0.0.0.0/0' : false
+		iface ? topology?.subnets.find((s) => s.id == iface.subnet_id)?.cidr == '0.0.0.0/0' : false
 	);
 
 	function getPortById(portId: string): Port | null {
@@ -260,7 +259,7 @@
 			// All services bound to this interface (after tag filtering)
 			const allServicesOnIPAddress = visibleServicesForHost
 				? visibleServicesForHost.filter((s) =>
-						s.bindings.some((b) => b.ip_address_id == null || (ipAddress && b.ip_address_id == ipAddress.id))
+						s.bindings.some((b) => b.interface_id == null || (iface && b.interface_id == iface.id))
 					)
 				: [];
 
@@ -290,8 +289,8 @@
 			let headerText: string | null = (data as TopologyNode).header ?? null;
 			let showServices = servicesOnIPAddress.length != 0 || hiddenOpenPorts.length != 0;
 
-			if (ipAddress && !isContainerSubnetValue) {
-				subtitleText = (ipAddress.name ? ipAddress.name + ': ' : '') + ipAddress.ip_address;
+			if (iface && !isContainerSubnetValue) {
+				subtitleText = (iface.name ? iface.name + ': ' : '') + iface.ip_address;
 			}
 
 			if (!showServices) {
@@ -319,15 +318,14 @@
 
 	// Group services into bare vs containerized for dotted-border rendering
 	// (only relevant for Host elements where services include both types)
-	type ServiceList = ElementRenderData['services'];
 	type ServiceGroup = {
-		runtimeService: ServiceList[number] | null;
-		containers: ServiceList;
+		runtimeService: (typeof nodeRenderData)['services'][number] | null;
+		containers: (typeof nodeRenderData)['services'];
 		runtimeId: string;
 	};
 	let serviceGroups = $derived.by(
 		(): {
-			bare: ServiceList;
+			bare: (typeof nodeRenderData)['services'];
 			containerized: ServiceGroup[];
 		} => {
 			const services = nodeRenderData?.services ?? [];
@@ -387,7 +385,7 @@
 		if (isExportingValue) return false;
 
 		// Tag filter: fade if this node is hidden
-		if (hiddenNodes.has(id)) {
+		if (nodeRenderData && hiddenNodes.has(nodeRenderData.ip_address_id)) {
 			return true;
 		}
 
@@ -397,7 +395,7 @@
 		}
 
 		// Search filter: fade if this node is hidden by search
-		if (searchHiddenNodes.has(id)) {
+		if (nodeRenderData && searchHiddenNodes.has(nodeRenderData.ip_address_id)) {
 			return true;
 		}
 
@@ -561,7 +559,7 @@
 								{service.name}
 							</span>
 						</div>
-						{#if !$topologyOptions.request.hide_ports && nodeRenderData.elementType !== 'Service' && service.bindings.filter((b) => b.type == 'Port').length > 0}
+						{#if !$topologyOptions.request.hide_ports && nodeRenderData.elementType !== 'Service' && nodeRenderData.elementType !== 'Host' && service.bindings.filter((b) => b.type == 'Port').length > 0}
 							<span class="text-tertiary mt-1 text-center text-xs"
 								>{service.bindings
 									.map((b) => {
@@ -629,7 +627,7 @@
 											{service.name}
 										</span>
 									</div>
-									{#if !$topologyOptions.request.hide_ports && nodeRenderData.elementType !== 'Service' && service.bindings.filter((b) => b.type == 'Port').length > 0}
+									{#if !$topologyOptions.request.hide_ports && nodeRenderData.elementType !== 'Service' && nodeRenderData.elementType !== 'Host' && service.bindings.filter((b) => b.type == 'Port').length > 0}
 										<span class="text-tertiary mt-1 text-center text-xs"
 											>{service.bindings
 												.map((b) => {

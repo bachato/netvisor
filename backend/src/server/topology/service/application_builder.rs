@@ -116,15 +116,16 @@ impl ViewBuilder for ApplicationBuilder {
                         container_type: ContainerType::Application,
                         parent_container_id: None,
                         entity_id: Some(*tag_id),
+                        layer_hint: None,
                         icon: Some(Concept::Application.icon().to_string()),
                         color: Some(tag.base.color.to_string()),
                         associated_service_definition: None,
-                        element_rule_id: None,
-                        will_accept_edges: false,
                     },
                     position: Default::default(),
                     size: Default::default(),
                     header: Some(tag.base.name.clone()),
+                    element_rule_id: None,
+                    will_accept_edges: false,
                 });
 
                 for service in services {
@@ -148,15 +149,16 @@ impl ViewBuilder for ApplicationBuilder {
                         container_type: ContainerType::Application,
                         parent_container_id: None,
                         entity_id: None,
+                        layer_hint: None,
                         icon: Some(Concept::Application.icon().to_string()),
                         color: Some(Concept::Application.color().to_string()),
                         associated_service_definition: None,
-                        element_rule_id: None,
-                        will_accept_edges: false,
                     },
                     position: Default::default(),
                     size: Default::default(),
                     header: Some("Ungrouped".to_string()),
+                    element_rule_id: None,
+                    will_accept_edges: false,
                 });
 
                 for service in &ungrouped_services {
@@ -199,15 +201,16 @@ impl ViewBuilder for ApplicationBuilder {
                         container_type: ContainerType::ServiceCategory,
                         parent_container_id: None,
                         entity_id: None,
+                        layer_hint: None,
                         icon: Some(category.icon().to_string()),
                         color: Some(category.color().to_string()),
                         associated_service_definition: None,
-                        element_rule_id: None,
-                        will_accept_edges: false,
                     },
                     position: Default::default(),
                     size: Default::default(),
                     header: Some(format!("{}", category)),
+                    element_rule_id: None,
+                    will_accept_edges: false,
                 });
 
                 for service in services {

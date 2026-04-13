@@ -355,9 +355,7 @@
 								{@const isLastGroup = groupIndex === groupedOptions.length - 1}
 								{@const isDisabled = displayComponent.getDisabled?.(option, context) ?? false}
 								{@const isClickableDisabled = isDisabled && onDisabledClick != null}
-								{@const disabledReason = isDisabled
-									? (displayComponent.getDisabledReason?.(option, context) ?? null)
-									: null}
+								{@const disabledReason = isDisabled ? (displayComponent.getDisabledReason?.(option, context) ?? null) : null}
 								<button
 									title={disabledReason}
 									type="button"

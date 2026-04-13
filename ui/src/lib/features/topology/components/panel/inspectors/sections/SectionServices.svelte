@@ -33,7 +33,7 @@
 	);
 
 	let serviceContext = $derived({
-		ipAddressId: elementContext?.ipAddressId ?? null,
+		interfaceId: elementContext?.interfaceId ?? null,
 		ports: topology.ports,
 		showEntityTagPicker: true,
 		tagPickerDisabled: !editState.isEditable,

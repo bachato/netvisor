@@ -87,7 +87,7 @@
 								class="flex flex-1 items-center justify-center gap-1.5 border-b-2 pb-2 pt-2.5 text-xs font-medium transition-colors {activeTab ===
 								tab.id
 									? 'border-blue-500 text-blue-400'
-									: 'text-secondary hover:text-primary border-gray-300 dark:border-gray-700'}"
+									: 'text-secondary hover:text-primary border-gray-700'}"
 								onclick={() => (activeTab = tab.id)}
 							>
 								<tab.icon class="h-3.5 w-3.5" />
@@ -96,7 +96,7 @@
 						{/each}
 					</div>
 				{:else}
-					<div class="flex-1 border-b-2" style="border-color: var(--color-border)"></div>
+					<div class="flex-1 border-b-2 border-gray-700"></div>
 				{/if}
 			</div>
 

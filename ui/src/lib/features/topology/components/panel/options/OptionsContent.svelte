@@ -402,7 +402,7 @@
 			: 'transparent'}"
 	>
 		<p class="text-tertiary text-xs">
-			{topology_filtersApplyToView({ viewName: viewMeta?.name ?? $activeView })}
+			{topology_filtersApplyToView({ viewName: viewMeta?.label ?? $activeView })}
 		</p>
 
 		<div class="space-y-1.5">

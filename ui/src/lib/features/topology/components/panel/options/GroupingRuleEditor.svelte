@@ -110,7 +110,9 @@
 	// collapses. The next edit toggle flushes stale pending state.
 	let editingElementId = $state<string | null>(null);
 	let editingView = $state<string | null>(null);
-	let activeEditingId = $derived(editingView === currentView ? editingElementId : null);
+	let activeEditingId = $derived(
+		editingView === currentView ? editingElementId : null
+	);
 
 	// Show/hide disabled (non-applicable) element rules
 	let hideDisabledElementRules = $state(false);
@@ -609,21 +611,19 @@
 				{#if item.id === getInfrastructureRuleId()}
 					<p class="text-tertiary text-xs">{topology_infraRuleNote({ useCase: useCaseLabel })}</p>
 				{/if}
-				<!-- Title input (hidden for infrastructure rule — title is system-managed) -->
-				{#if item.id !== getInfrastructureRuleId()}
-					<input
-						type="text"
-						class="input-field w-full py-1 text-sm"
-						placeholder={topology_groupRuleTitlePlaceholder()}
-						value={getElementRuleTitle(item.rule) ?? ''}
-						oninput={(e) =>
-							handleElementTitleChange(
-								realIndex,
-								(e.currentTarget as HTMLInputElement).value || null
-							)}
-						disabled={!editState.isEditable}
-					/>
-				{/if}
+				<!-- Title input -->
+				<input
+					type="text"
+					class="input-field w-full py-1 text-sm"
+					placeholder={topology_groupRuleTitlePlaceholder()}
+					value={getElementRuleTitle(item.rule) ?? ''}
+					oninput={(e) =>
+						handleElementTitleChange(
+							realIndex,
+							(e.currentTarget as HTMLInputElement).value || null
+						)}
+					disabled={!editState.isEditable}
+				/>
 
 				<!-- Selection pills -->
 				{#if 'ByServiceCategory' in rule}

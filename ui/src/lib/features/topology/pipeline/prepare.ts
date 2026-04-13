@@ -183,9 +183,7 @@ export function prepareTopologyData(
 	}
 
 	// Compute structure and base keys
-	// Edge visibility intentionally excluded — layout-affecting edges are always
-	// fed to ELK regardless of visibility, so toggling shouldn't trigger rebuild.
-	const baseKey = currentView + ':' + topoKey;
+	const baseKey = currentView + ':' + topoKey + ':' + hiddenEdgeTypes.join(',');
 	const structureKey = baseKey + ':' + Array.from(collapsed).sort().join(',');
 	const isNewStructure = state.sessionStructureKey !== structureKey;
 	const isNewBaseStructure = state.sessionBaseKey !== baseKey;

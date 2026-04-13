@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-13T21:28:05.169001Z",
-              "id": "7b225eb5-b65e-4a08-a31b-9fd1ba50a7a6",
+              "created_at": "2026-04-13T18:32:19.131433Z",
+              "id": "c7c62690-d2a9-4111-bf03-d7f10439b3e6",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T21:28:05.169001Z"
+              "updated_at": "2026-04-13T18:32:19.131433Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-13T21:28:05.144919Z",
-                      "id": "6624b07c-0dc9-4195-8c09-3418dc05b79d",
+                      "created_at": "2026-04-13T18:32:19.115030Z",
+                      "id": "986876f9-d1c6-4265-ad7b-817e6fd5de30",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-13T21:28:05.144919Z"
+                      "updated_at": "2026-04-13T18:32:19.115030Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "OpenVPN",
+                  "service_definition": "HP Printer",
                   "source": {
                     "type": "Manual"
                   },
@@ -12003,14 +12003,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T21:28:05.159355Z",
-                  "id": "8e6869f7-a3c0-49de-9d93-f96aa2f2cf02",
+                  "created_at": "2026-04-13T18:32:19.126880Z",
+                  "id": "820550ad-5ef5-406e-af23-81df0eb93537",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T21:28:05.159355Z"
+                  "updated_at": "2026-04-13T18:32:19.126880Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12019,7 +12019,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "HP Printer",
               "source": {
                 "type": "Manual"
               },
@@ -13384,14 +13384,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-13T21:28:05.145141Z",
-          "id": "2b353916-1447-4edc-aa27-7a4723115e74",
+          "created_at": "2026-04-13T18:32:19.115392Z",
+          "id": "fcb9d492-f0d5-4141-8224-f2776bf9cdb8",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-13T21:28:05.145141Z"
+          "updated_at": "2026-04-13T18:32:19.115392Z"
         }
       },
       "BindingBase": {
@@ -13921,7 +13921,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "HP Printer",
               "tags": [],
               "virtualization": null
             }
@@ -16442,14 +16442,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T21:28:05.144628Z",
-                  "id": "0783f1c9-2085-4c4b-ad1d-682d4b4f4b80",
+                  "created_at": "2026-04-13T18:32:19.114553Z",
+                  "id": "55e1d326-71f8-429e-b78e-01b7e807794b",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T21:28:05.144628Z"
+                  "updated_at": "2026-04-13T18:32:19.114553Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16458,7 +16458,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "HP Printer",
               "source": {
                 "type": "Manual"
               },
@@ -17813,6 +17813,14 @@
               "size"
             ],
             "properties": {
+              "element_rule_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid",
+                "description": "ID of the element rule that created this container (for NestedTag/NestedServiceCategory)"
+              },
               "header": {
                 "type": [
                   "string",
@@ -17828,6 +17836,10 @@
               },
               "size": {
                 "$ref": "#/components/schemas/Uxy"
+              },
+              "will_accept_edges": {
+                "type": "boolean",
+                "description": "When true, this container accepts edges with `will_target_container`, causing\nthem to visually attach here instead of at elements inside."
               }
             }
           }
@@ -17858,14 +17870,6 @@
               "container_type": {
                 "$ref": "#/components/schemas/ContainerType"
               },
-              "element_rule_id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "format": "uuid",
-                "description": "ID of the element rule that created this container (for subcontainers like NestedTag, Hypervisor, etc.)"
-              },
               "entity_id": {
                 "type": [
                   "string",
@@ -17881,6 +17885,14 @@
                 ],
                 "description": "Display icon name (set by graph builder from the source entity, e.g. subnet type)"
               },
+              "layer_hint": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "int32",
+                "description": "Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)"
+              },
               "node_type": {
                 "type": "string",
                 "enum": [
@@ -17893,10 +17905,6 @@
                   "null"
                 ],
                 "format": "uuid"
-              },
-              "will_accept_edges": {
-                "type": "boolean",
-                "description": "When true, this container accepts edges with `will_target_container`, causing\nthem to visually attach here instead of at elements inside."
               }
             }
           },
@@ -18014,7 +18022,6 @@
           "FirstDependencyCreated",
           "FirstUserApiKeyCreated",
           "FirstSnmpCredentialCreated",
-          "FirstApplicationTagCreated",
           "FirstCredentialCreated",
           "InviteSent",
           "InviteAccepted",
@@ -18646,14 +18653,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-13T21:28:05.134426Z",
-                        "id": "9ce39252-0aa9-4993-81dc-a311e8a71295",
+                        "created_at": "2026-04-13T18:32:19.103727Z",
+                        "id": "e6bddc5c-d618-439c-8351-6b6ae53d26d3",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-13T21:28:05.134426Z"
+                        "updated_at": "2026-04-13T18:32:19.103727Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18662,7 +18669,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "OpenVPN",
+                    "service_definition": "HP Printer",
                     "source": {
                       "type": "Manual"
                     },
@@ -18739,14 +18746,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-13T21:28:05.158247Z",
-                    "id": "a9e06e84-9814-42c1-9ddb-dfbec0f6938a",
+                    "created_at": "2026-04-13T18:32:19.125596Z",
+                    "id": "e6c8d000-ab61-4ea1-8832-392c522ef067",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-13T21:28:05.158247Z"
+                    "updated_at": "2026-04-13T18:32:19.125596Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18755,7 +18762,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "OpenVPN",
+                "service_definition": "HP Printer",
                 "source": {
                   "type": "Manual"
                 },
@@ -19985,14 +19992,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-13T21:28:05.145065Z",
-              "id": "aaeda3b0-9d48-441a-9f05-bb078de5ab2e",
+              "created_at": "2026-04-13T18:32:19.115273Z",
+              "id": "baf918cc-d0cc-46e6-bfed-1989506cd572",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T21:28:05.145065Z"
+              "updated_at": "2026-04-13T18:32:19.115273Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20001,7 +20008,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "OpenVPN",
+          "service_definition": "HP Printer",
           "source": {
             "type": "Manual"
           },

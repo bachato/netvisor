@@ -9,7 +9,7 @@ fn get_default_plans() -> Vec<BillingPlan> {
         BillingPlan::Starter(PlanConfig {
             base_cents: 1499,
             rate: BillingRate::Month,
-            trial_days: 14,
+            trial_days: 0,
             seat_cents: None,
             network_cents: None,
             host_cents: None,

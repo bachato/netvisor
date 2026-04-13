@@ -51,7 +51,7 @@
 	});
 
 	// For Interface elements: show the interface
-	let thisIPAddress = $derived(elementContext?.ipAddress ?? null);
+	let thisIPAddress = $derived(elementContext?.iface ?? null);
 	let interfaceDisplayContext = $derived({ subnets: topology.subnets });
 
 	// For Service elements: show the service

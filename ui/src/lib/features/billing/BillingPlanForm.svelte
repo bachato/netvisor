@@ -9,11 +9,7 @@
 	import { untrack } from 'svelte';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { Check, X, ChevronDown, ChevronUp, Loader2, Minus, Plus } from 'lucide-svelte';
-	import {
-		billing_showFeatures,
-		billing_hideFeatures,
-		billing_noCreditCardRequired
-	} from '$lib/paraglide/messages';
+	import { billing_showFeatures, billing_hideFeatures } from '$lib/paraglide/messages';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import ToggleGroup from './ToggleGroup.svelte';
 	import type { BillingPlan } from './types';
@@ -484,11 +480,6 @@
 										{trial ? `Start ${plan.trial_days}-day free trial` : 'Get Started'}
 									{/if}
 								</button>
-								{#if trial}
-									<p class="text-tertiary mt-2 text-center text-xs">
-										{billing_noCreditCardRequired()}
-									</p>
-								{/if}
 							{:else if hosting === 'SelfHosted'}
 								{#if commercial && onPlanInquiry}
 									<button

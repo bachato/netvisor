@@ -169,7 +169,7 @@
 >
 	<div class="flex min-h-0 flex-1 flex-col">
 		<BillingPlanForm
-			plans={dismissible ? plansData : plansData.filter((p) => p.type !== 'Free')}
+			plans={plansData}
 			{billingPlanHelpers}
 			{featureHelpers}
 			onPlanSelect={handlePlanSelect}
