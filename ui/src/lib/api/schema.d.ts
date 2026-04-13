@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-12T19:50:09.037464Z",
-             *       "id": "6adbd277-3eba-46a6-b562-b29f0d885735",
+             *       "created_at": "2026-04-13T16:30:51.911471Z",
+             *       "id": "7a0592da-ddcb-44f4-8bab-8771035fcdab",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-12T19:50:09.037464Z"
+             *       "updated_at": "2026-04-13T16:30:51.911471Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-12T19:50:09.020296Z",
-             *               "id": "79cdaa87-c574-49da-b00c-31f39a961664",
+             *               "created_at": "2026-04-13T16:30:51.894408Z",
+             *               "id": "91dcf23b-98dc-4636-a018-f5ce3bce7c08",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-12T19:50:09.020296Z"
+             *               "updated_at": "2026-04-13T16:30:51.894408Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Paperless-NGX",
+             *           "service_definition": "Komga",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3531,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-12T19:50:09.032692Z",
-             *           "id": "0e628b00-8d0a-4b6c-a8b9-f7637088445a",
+             *           "created_at": "2026-04-13T16:30:51.906774Z",
+             *           "id": "09cb2658-98b6-4a48-92b3-52e063ac82aa",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-12T19:50:09.032692Z"
+             *           "updated_at": "2026-04-13T16:30:51.906774Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3547,7 +3547,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Paperless-NGX",
+             *       "service_definition": "Komga",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3898,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-12T19:50:09.020676Z",
-         *       "id": "be8dc4ed-d267-46eb-9a19-cee1c92367ca",
+         *       "created_at": "2026-04-13T16:30:51.894771Z",
+         *       "id": "38497ad5-e9f2-4546-b002-51667b0ea0d5",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-12T19:50:09.020676Z"
+         *       "updated_at": "2026-04-13T16:30:51.894771Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4090,7 +4090,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Paperless-NGX",
+         *           "service_definition": "Komga",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4949,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-12T19:50:09.019800Z",
-         *               "id": "268d036e-85ab-4454-9b15-aee1d297ae40",
+         *               "created_at": "2026-04-13T16:30:51.893917Z",
+         *               "id": "41cebb93-cecf-4572-b79a-54f68b08a125",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-12T19:50:09.019800Z"
+         *               "updated_at": "2026-04-13T16:30:51.893917Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4965,7 +4965,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Paperless-NGX",
+         *           "service_definition": "Komga",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -6094,14 +6094,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-12T19:50:09.020550Z",
-         *           "id": "6bd382da-62e8-4a1c-b431-8aef7809a9b9",
+         *           "created_at": "2026-04-13T16:30:51.894651Z",
+         *           "id": "2f2d0c41-f881-4546-9cc9-fcfc5cc915f1",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-12T19:50:09.020550Z"
+         *           "updated_at": "2026-04-13T16:30:51.894651Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6110,7 +6110,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Paperless-NGX",
+         *       "service_definition": "Komga",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6325,7 +6325,7 @@ export interface components {
          * @description Fields that tags can be ordered/grouped by.
          * @enum {string}
          */
-        TagOrderField: "created_at" | "name" | "color" | "updated_at";
+        TagOrderField: "created_at" | "name" | "color" | "updated_at" | "is_application";
         /** @description Request to test reachability of a daemon URL. */
         TestReachabilityRequest: {
             /** @description If true, also perform an HTTP GET to {url}/health after the TCP check */

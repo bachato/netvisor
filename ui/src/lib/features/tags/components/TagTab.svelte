@@ -134,6 +134,12 @@
 		{
 			name: { label: common_name(), type: 'string', searchable: true },
 			color: { label: common_color(), type: 'string', filterable: true },
+			is_application: {
+				label: common_application(),
+				type: 'boolean',
+				filterable: true,
+				groupable: true
+			},
 			created_at: { label: common_created(), type: 'date' },
 			updated_at: { label: common_updated(), type: 'date' }
 		},

@@ -5,7 +5,7 @@
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import { TagIcon } from 'lucide-svelte';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
-	import { permissions } from '$lib/shared/stores/metadata';
+	import { permissions, concepts } from '$lib/shared/stores/metadata';
 	import {
 		common_color,
 		common_delete,
@@ -41,10 +41,13 @@
 		(currentUser && permissions.getMetadata(currentUser.permissions).manage_org_entities) || false
 	);
 
+	let appIcon = $derived(tag.is_application ? concepts.getIconComponent('Application') : null);
+	let appColor = $derived(tag.is_application ? concepts.getColorHelper('Application')?.icon : null);
+
 	let cardData = $derived({
 		title: tag.name,
-		iconColor: colorHelper.icon,
-		Icon: TagIcon,
+		iconColor: appColor ?? colorHelper.icon,
+		Icon: appIcon ?? TagIcon,
 		fields: [
 			{
 				label: common_description(),

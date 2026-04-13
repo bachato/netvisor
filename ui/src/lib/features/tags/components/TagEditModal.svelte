@@ -184,18 +184,30 @@
 						{/snippet}
 					</form.Field>
 
+					<!-- Application Group -->
+					<form.Field name="is_application">
+						{#snippet children(field)}
+							<Checkbox
+								label={common_application()}
+								helpText={tags_applicationHelp()}
+								{field}
+								id="is_application"
+							/>
+						{/snippet}
+					</form.Field>
+
 					<!-- Color Selector -->
 					<form.Field name="color">
 						{#snippet children(field)}
-							<div class="space-y-3">
+							<div class="space-y-2">
 								<div class="text-secondary block text-sm font-medium">{common_color()}</div>
-								<div class="grid grid-cols-7 gap-2">
+								<div class="grid grid-cols-9 gap-1.5">
 									{#each AVAILABLE_COLORS as color (color)}
 										{@const ch = createColorHelper(color)}
 										<button
 											type="button"
 											onclick={() => field.handleChange(color)}
-											class="group relative aspect-square w-full rounded-lg border-2 transition-all hover:scale-110"
+											class="group relative aspect-square max-h-7 w-full max-w-7 rounded-md border-2 transition-all hover:scale-110"
 											class:border-gray-500={field.state.value !== color}
 											class:border-white={field.state.value === color}
 											class:ring-2={field.state.value === color}
@@ -206,18 +218,6 @@
 									{/each}
 								</div>
 							</div>
-						{/snippet}
-					</form.Field>
-
-					<!-- Application Group -->
-					<form.Field name="is_application">
-						{#snippet children(field)}
-							<Checkbox
-								label={common_application()}
-								helpText={tags_applicationHelp()}
-								{field}
-								id="is_application"
-							/>
 						{/snippet}
 					</form.Field>
 				</div>

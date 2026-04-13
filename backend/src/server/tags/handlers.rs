@@ -39,6 +39,7 @@ pub enum TagOrderField {
     Name,
     Color,
     UpdatedAt,
+    IsApplication,
 }
 
 impl OrderField for TagOrderField {
@@ -48,6 +49,7 @@ impl OrderField for TagOrderField {
             Self::Name => "tags.name",
             Self::Color => "tags.color",
             Self::UpdatedAt => "tags.updated_at",
+            Self::IsApplication => "tags.is_application",
         }
     }
 }

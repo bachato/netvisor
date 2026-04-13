@@ -36,6 +36,7 @@
 		common_byCategory,
 		common_byTag,
 		common_edges,
+		topology_filtersApplyToView,
 		topology_filtersHelp,
 		topology_groupsHelp,
 		topology_displayHelp
@@ -408,67 +409,76 @@
 			/>
 		</div>
 
-		{#if showHostFilter}
-			<div class="space-y-1.5">
-				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-					{common_hosts()}
-				</div>
-				<TagFilterGroup
-					tags={hostTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
-					onToggle={toggleHostTag}
-					entityType="host"
-					hasUntagged={hasUntaggedHosts}
-				/>
-			</div>
-		{/if}
+		{#if showHostFilter || showServiceFilter || showSubnetFilter}
+			<div
+				class="space-y-3 border-l-2 pl-2"
+				style="border-left-color: {viewMeta?.color
+					? COLOR_MAP[viewMeta.color as Color]?.rgb
+					: 'transparent'}"
+			>
+				<p class="text-tertiary text-xs">
+					{topology_filtersApplyToView({ viewName: viewMeta?.label ?? $activeView })}
+				</p>
 
-		{#if showServiceFilter}
-			<div class="space-y-1.5">
-				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-					{common_services()}
-				</div>
-				<TagFilterGroup
-					label={common_byTag()}
-					tags={serviceTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
-					onToggle={toggleServiceTag}
-					entityType="service"
-					hasUntagged={hasUntaggedServices}
-				/>
-				{#if hasCategoryFilter}
-					<div
-						class="border-l-2 pl-2"
-						style="border-left-color: {viewMeta?.color
-							? COLOR_MAP[viewMeta.color as Color]?.rgb
-							: 'transparent'}"
-					>
-						<CategoryFilterGroup
-							categories={allServiceCategoriesWithColors}
-							hiddenCategories={(
-								($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>
-							)[$activeView] ?? []}
-							onToggle={toggleServiceCategory}
-							disabled={!editState.isEditable}
-							label={common_byCategory()}
+				{#if showHostFilter}
+					<div class="space-y-1.5">
+						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+							{common_hosts()}
+						</div>
+						<TagFilterGroup
+							tags={hostTags}
+							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
+							onToggle={toggleHostTag}
+							entityType="host"
+							hasUntagged={hasUntaggedHosts}
 						/>
 					</div>
 				{/if}
-			</div>
-		{/if}
 
-		{#if showSubnetFilter}
-			<div class="space-y-1.5">
-				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-					{common_subnets()}
-				</div>
-				<TagFilterGroup
-					tags={subnetTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
-					onToggle={toggleSubnetTag}
-					entityType="subnet"
-					hasUntagged={hasUntaggedSubnets}
-				/>
+				{#if showServiceFilter}
+					<div class="space-y-1.5">
+						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+							{common_services()}
+						</div>
+						<TagFilterGroup
+							label={common_byTag()}
+							tags={serviceTags}
+							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
+							onToggle={toggleServiceTag}
+							entityType="service"
+							hasUntagged={hasUntaggedServices}
+						/>
+						{#if hasCategoryFilter}
+							<CategoryFilterGroup
+								categories={allServiceCategoriesWithColors}
+								hiddenCategories={(
+									($topologyOptions.request.hide_service_categories ?? {}) as Record<
+										string,
+										string[]
+									>
+								)[$activeView] ?? []}
+								onToggle={toggleServiceCategory}
+								disabled={!editState.isEditable}
+								label={common_byCategory()}
+							/>
+						{/if}
+					</div>
+				{/if}
+
+				{#if showSubnetFilter}
+					<div class="space-y-1.5">
+						<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
+							{common_subnets()}
+						</div>
+						<TagFilterGroup
+							tags={subnetTags}
+							hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
+							onToggle={toggleSubnetTag}
+							entityType="subnet"
+							hasUntagged={hasUntaggedSubnets}
+						/>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>

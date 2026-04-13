@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-12T19:50:09.037466Z",
-              "id": "c27d4676-f30f-425c-9037-c9c33b0ceb23",
+              "created_at": "2026-04-13T16:30:51.911473Z",
+              "id": "d3f3165f-fc89-43b6-9bb9-1807708bc8af",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-12T19:50:09.037466Z"
+              "updated_at": "2026-04-13T16:30:51.911473Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-12T19:50:09.020303Z",
-                      "id": "155bfaff-bbc9-477e-a568-7bcbd4fd1cb8",
+                      "created_at": "2026-04-13T16:30:51.894396Z",
+                      "id": "ff6f4c93-5513-4de1-aee3-07b48c70be2f",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-12T19:50:09.020303Z"
+                      "updated_at": "2026-04-13T16:30:51.894396Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Paperless-NGX",
+                  "service_definition": "Komga",
                   "source": {
                     "type": "Manual"
                   },
@@ -12003,14 +12003,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-12T19:50:09.032663Z",
-                  "id": "8d83284f-7a69-4efa-bbec-14dc7f76c0e4",
+                  "created_at": "2026-04-13T16:30:51.906791Z",
+                  "id": "e65c2a8b-0b18-4c4d-b4ee-84c2723682bf",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-12T19:50:09.032663Z"
+                  "updated_at": "2026-04-13T16:30:51.906791Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12019,7 +12019,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Paperless-NGX",
+              "service_definition": "Komga",
               "source": {
                 "type": "Manual"
               },
@@ -13384,14 +13384,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-12T19:50:09.020680Z",
-          "id": "0aa8a8a6-b928-44b0-93f4-d13a33de2a0b",
+          "created_at": "2026-04-13T16:30:51.894755Z",
+          "id": "8ccfaff8-86d0-401d-9d19-fe87a2a36121",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-12T19:50:09.020680Z"
+          "updated_at": "2026-04-13T16:30:51.894755Z"
         }
       },
       "BindingBase": {
@@ -13921,7 +13921,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Paperless-NGX",
+              "service_definition": "Komga",
               "tags": [],
               "virtualization": null
             }
@@ -16442,14 +16442,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-12T19:50:09.019808Z",
-                  "id": "1a1f6ff8-ee53-4ff6-8076-016c9e2cb618",
+                  "created_at": "2026-04-13T16:30:51.893910Z",
+                  "id": "e88251d2-301b-46e8-a45f-42121a37bc71",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-12T19:50:09.019808Z"
+                  "updated_at": "2026-04-13T16:30:51.893910Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16458,7 +16458,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Paperless-NGX",
+              "service_definition": "Komga",
               "source": {
                 "type": "Manual"
               },
@@ -18639,14 +18639,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-12T19:50:09.008719Z",
-                        "id": "fe2eb5fd-e418-4e2b-acb5-85a5c1af8b1c",
+                        "created_at": "2026-04-13T16:30:51.883372Z",
+                        "id": "b959c853-6d0c-4fc5-9b0a-1ac06734ec79",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-12T19:50:09.008719Z"
+                        "updated_at": "2026-04-13T16:30:51.883372Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18655,7 +18655,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Paperless-NGX",
+                    "service_definition": "Komga",
                     "source": {
                       "type": "Manual"
                     },
@@ -18732,14 +18732,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-12T19:50:09.031345Z",
-                    "id": "4fd39ee2-4c8f-46ae-912d-c409d4b8e903",
+                    "created_at": "2026-04-13T16:30:51.905495Z",
+                    "id": "41829620-627e-42cc-b9ba-db91ef953da8",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-12T19:50:09.031345Z"
+                    "updated_at": "2026-04-13T16:30:51.905495Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18748,7 +18748,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Paperless-NGX",
+                "service_definition": "Komga",
                 "source": {
                   "type": "Manual"
                 },
@@ -19978,14 +19978,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-12T19:50:09.020556Z",
-              "id": "241b3bca-dd39-488a-8173-66a61ae1fc57",
+              "created_at": "2026-04-13T16:30:51.894637Z",
+              "id": "d5f7fdf5-d651-4936-ab12-505aa96f2f21",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-12T19:50:09.020556Z"
+              "updated_at": "2026-04-13T16:30:51.894637Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19994,7 +19994,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Paperless-NGX",
+          "service_definition": "Komga",
           "source": {
             "type": "Manual"
           },
@@ -20613,7 +20613,8 @@
           "created_at",
           "name",
           "color",
-          "updated_at"
+          "updated_at",
+          "is_application"
         ]
       },
       "TestReachabilityRequest": {
