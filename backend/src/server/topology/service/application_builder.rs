@@ -9,7 +9,9 @@ use super::{
 use crate::server::{
     dependencies::r#impl::{base::DependencyMembers, types::DependencyType},
     services::r#impl::virtualization::ServiceVirtualization,
-    shared::{concepts::Concept, types::metadata::EntityMetadataProvider},
+    shared::{
+        concepts::Concept, entities::EntityDiscriminants, types::metadata::EntityMetadataProvider,
+    },
     tags::r#impl::base::Tag,
     topology::types::{
         edges::{Edge, EdgeHandle, EdgeType, EdgeViewConfig},
@@ -113,6 +115,7 @@ impl ViewBuilder for ApplicationBuilder {
                     node_type: NodeType::Container {
                         container_type: ContainerType::Application,
                         parent_container_id: None,
+                        entity_id: Some(*tag_id),
                         layer_hint: None,
                         icon: Some(Concept::Application.icon().to_string()),
                         color: Some(tag.base.color.to_string()),
@@ -145,6 +148,7 @@ impl ViewBuilder for ApplicationBuilder {
                     node_type: NodeType::Container {
                         container_type: ContainerType::Application,
                         parent_container_id: None,
+                        entity_id: None,
                         layer_hint: None,
                         icon: Some(Concept::Application.icon().to_string()),
                         color: Some(Concept::Application.color().to_string()),
@@ -196,6 +200,7 @@ impl ViewBuilder for ApplicationBuilder {
                     node_type: NodeType::Container {
                         container_type: ContainerType::ServiceCategory,
                         parent_container_id: None,
+                        entity_id: None,
                         layer_hint: None,
                         icon: Some(category.icon().to_string()),
                         color: Some(category.color().to_string()),
@@ -239,6 +244,7 @@ impl ViewBuilder for ApplicationBuilder {
             Some(ElementMatchData {
                 categories,
                 tag_ids,
+                element_entity: EntityDiscriminants::Service,
                 virtualizer_service_id: None,
                 compose_project,
                 native_vlan_id: None,

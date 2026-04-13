@@ -168,7 +168,7 @@
 		return null;
 	});
 
-	// Service logo: from associated_service_definition (for Virtualizer/Stack subcontainers)
+	// Service logo: from associated_service_definition (for Hypervisor/ContainerRuntime/Stack subcontainers)
 	let serviceDefId = $derived(
 		(data as Record<string, unknown>)?.associated_service_definition as string | undefined
 	);

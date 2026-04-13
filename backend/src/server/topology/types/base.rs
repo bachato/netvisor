@@ -311,7 +311,8 @@ fn default_element_rules() -> Vec<IdentifiedRule<ElementRule>> {
             tag_ids: vec![],
             title: None,
         }),
-        IdentifiedRule::new(ElementRule::ByVirtualizer),
+        IdentifiedRule::new(ElementRule::ByHypervisor),
+        IdentifiedRule::new(ElementRule::ByContainerRuntime),
         IdentifiedRule::new(ElementRule::ByStack),
     ]
 }

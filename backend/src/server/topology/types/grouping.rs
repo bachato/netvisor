@@ -156,7 +156,8 @@ pub enum ElementRule {
         tag_ids: Vec<Uuid>,
         title: Option<String>,
     },
-    ByVirtualizer,
+    ByHypervisor,
+    ByContainerRuntime,
     ByStack,
     /// Groups trunk ports (ports with tagged VLANs) into a "Trunk Ports" subcontainer.
     /// Higher priority than ByVLAN — prevents trunk ports from being grouped by VLAN.
@@ -169,7 +170,10 @@ pub enum ElementRule {
 
 impl GraphRule for ElementRule {
     fn will_accept_edges(&self) -> bool {
-        matches!(self, ElementRule::ByStack | ElementRule::ByVirtualizer)
+        matches!(
+            self,
+            ElementRule::ByStack | ElementRule::ByHypervisor | ElementRule::ByContainerRuntime
+        )
     }
 
     fn editability(&self) -> RuleEditability {
@@ -177,7 +181,9 @@ impl GraphRule for ElementRule {
             ElementRule::ByTrunkPort | ElementRule::ByVLAN | ElementRule::ByPortOpStatus => {
                 RuleEditability::System
             }
-            ElementRule::ByVirtualizer | ElementRule::ByStack => RuleEditability::Singleton,
+            ElementRule::ByHypervisor | ElementRule::ByContainerRuntime | ElementRule::ByStack => {
+                RuleEditability::Singleton
+            }
             ElementRule::ByServiceCategory { .. } | ElementRule::ByTag { .. } => {
                 RuleEditability::Multi
             }
@@ -195,7 +201,8 @@ impl GraphRule for ElementRule {
                 TopologyView::Workloads,
                 TopologyView::Application,
             ],
-            ElementRule::ByVirtualizer => &[TopologyView::Workloads],
+            ElementRule::ByHypervisor => &[TopologyView::Workloads],
+            ElementRule::ByContainerRuntime => &[TopologyView::Workloads],
             ElementRule::ByStack => &[TopologyView::L3Logical, TopologyView::Application],
             ElementRule::ByTrunkPort => &[TopologyView::L2Physical],
             ElementRule::ByVLAN => &[TopologyView::L2Physical],
@@ -215,7 +222,8 @@ impl EntityMetadataProvider for ElementRule {
         match self {
             ElementRule::ByServiceCategory { .. } => Color::Purple,
             ElementRule::ByTag { .. } => Color::Orange,
-            ElementRule::ByVirtualizer => Concept::Workloads.color(),
+            ElementRule::ByHypervisor => Concept::Virtualization.color(),
+            ElementRule::ByContainerRuntime => Concept::Containerization.color(),
             ElementRule::ByStack => Concept::Containerization.color(),
             ElementRule::ByTrunkPort => Color::Amber,
             ElementRule::ByVLAN => Color::Teal,
@@ -227,7 +235,8 @@ impl EntityMetadataProvider for ElementRule {
         match self {
             ElementRule::ByServiceCategory { .. } => Icon::Layers,
             ElementRule::ByTag { .. } => Icon::Tag,
-            ElementRule::ByVirtualizer => Concept::Workloads.icon(),
+            ElementRule::ByHypervisor => Concept::Virtualization.icon(),
+            ElementRule::ByContainerRuntime => Concept::Containerization.icon(),
             ElementRule::ByStack => Concept::Containerization.icon(),
             ElementRule::ByTrunkPort => Icon::Network,
             ElementRule::ByVLAN => Icon::Network,
@@ -241,7 +250,8 @@ impl TypeMetadataProvider for ElementRule {
         match self {
             ElementRule::ByServiceCategory { .. } => "Service category",
             ElementRule::ByTag { .. } => "Tag",
-            ElementRule::ByVirtualizer => "Virtualizer",
+            ElementRule::ByHypervisor => "Hypervisor",
+            ElementRule::ByContainerRuntime => "Container Runtime",
             ElementRule::ByStack => "Docker Stack",
             ElementRule::ByTrunkPort => "Trunk Ports",
             ElementRule::ByVLAN => "VLAN",
@@ -253,7 +263,8 @@ impl TypeMetadataProvider for ElementRule {
         match self {
             ElementRule::ByServiceCategory { .. } => "Group elements by service category",
             ElementRule::ByTag { .. } => "Group elements by tag",
-            ElementRule::ByVirtualizer => "Group hosts by their virtualizer",
+            ElementRule::ByHypervisor => "Group VMs by hypervisor",
+            ElementRule::ByContainerRuntime => "Group containers by runtime",
             ElementRule::ByStack => "Group by Docker Compose project",
             ElementRule::ByTrunkPort => "Group trunk ports (ports carrying multiple VLANs)",
             ElementRule::ByVLAN => "Group access ports by native VLAN ID",

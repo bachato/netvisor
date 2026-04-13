@@ -142,20 +142,20 @@ export function updateTagFilter(
 		? (views.getMetadata(view) as {
 				element_config?: {
 					container_entity: string | null;
-					element_entity: string;
+					element_entities: string[];
 					inline_entities: string[];
 				};
 			} | null)
 		: null;
 	const config = meta?.element_config;
 	const containerEntity = config?.container_entity ?? null;
-	const elementEntity = config?.element_entity ?? 'Interface';
+	const elementEntities = config?.element_entities ?? ['Interface'];
 	const inlineEntities = config?.inline_entities ?? [];
 
 	// Determine filter roles from element config
 	const hostIsContainer = containerEntity === 'Host';
-	const hostIsElement = elementEntity === 'Host';
-	const serviceIsElement = elementEntity === 'Service';
+	const hostIsElement = elementEntities.includes('Host');
+	const serviceIsElement = elementEntities.includes('Service');
 	const serviceIsInline = inlineEntities.includes('Service');
 	const serviceIsVisible = serviceIsElement || serviceIsInline;
 
@@ -180,11 +180,9 @@ export function updateTagFilter(
 			const hostHasHiddenTag = host.tags.some((t) => hiddenHostTagIds.includes(t));
 			if (hostHasHiddenTag || (isUntagged && hideUntaggedHosts)) {
 				hiddenHostIds.add(host.id);
-				if (hostIsElement) {
-					// Host IS the element node (e.g. Workloads VMs) — hide element directly
-					const nodeIds = index.hostIdToNodes.get(host.id);
-					nodeIds?.forEach((id) => hiddenNodeIds.add(id));
-				}
+				// Hide element nodes that represent this host entity (VMs in Workloads)
+				const nodeIds = index.hostIdToNodes.get(host.id);
+				nodeIds?.forEach((id) => hiddenNodeIds.add(id));
 			}
 		}
 

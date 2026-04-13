@@ -142,12 +142,19 @@
 			// category toggles don't trigger nodeRenderData recomputation.
 			if (elementType === 'Service') {
 				const service = resolved.services[0];
+				// Hide hostname in views where Host is the container — it's redundant
+				const viewConfig = (
+					views.getMetadata($activeView) as {
+						element_config?: { container_entity?: string };
+					} | null
+				)?.element_config;
+				const showHostname = viewConfig?.container_entity !== 'Host';
 				return {
 					elementType,
 					footerText: null,
 					services: service ? [service] : [],
 					hiddenOpenPorts: [],
-					headerText: host?.name ?? null,
+					headerText: showHostname ? (host?.name ?? null) : null,
 					bodyText: service ? null : 'Unknown Service',
 					showServices: !!service,
 					isVirtualized: false,
@@ -309,6 +316,63 @@
 		})();
 	});
 
+	// Group services into bare vs containerized for dotted-border rendering
+	// (only relevant for Host elements where services include both types)
+	type ServiceGroup = {
+		runtimeService: (typeof nodeRenderData)['services'][number] | null;
+		containers: (typeof nodeRenderData)['services'];
+		runtimeId: string;
+	};
+	let serviceGroups = $derived.by(
+		(): {
+			bare: (typeof nodeRenderData)['services'];
+			containerized: ServiceGroup[];
+		} => {
+			const services = nodeRenderData?.services ?? [];
+			if (nodeRenderData?.elementType !== 'Host' || services.length === 0) {
+				return { bare: services, containerized: [] };
+			}
+
+			// Group containerized services by their runtime service ID
+			const byRuntime = new Map<string, (typeof services)[number][]>();
+			const bareServices: typeof services = [];
+			const runtimeServiceIds = new Set<string>();
+
+			for (const svc of services) {
+				const virt = svc.virtualization as
+					| { type: string; details?: { service_id?: string } }
+					| null
+					| undefined;
+				if (virt?.details?.service_id) {
+					const rtId = virt.details.service_id;
+					runtimeServiceIds.add(rtId);
+					const group = byRuntime.get(rtId);
+					if (group) group.push(svc);
+					else byRuntime.set(rtId, [svc]);
+				}
+			}
+
+			// Separate runtime services from bare services
+			for (const svc of services) {
+				if (runtimeServiceIds.has(svc.id)) continue; // runtime — handled in group
+				const virt = svc.virtualization as
+					| { type: string; details?: { service_id?: string } }
+					| null
+					| undefined;
+				if (virt?.details?.service_id) continue; // container — handled in group
+				bareServices.push(svc);
+			}
+
+			const groups: ServiceGroup[] = [];
+			for (const [rtId, containers] of byRuntime) {
+				const runtimeSvc = services.find((s) => s.id === rtId) ?? null;
+				groups.push({ runtimeService: runtimeSvc, containers, runtimeId: rtId });
+			}
+
+			return { bare: bareServices, containerized: groups };
+		}
+	);
+
 	let isNewNode = $derived(nodeRenderData ? highlightedNewNodes.has(id) : false);
 
 	let isNodeSelected = $derived(
@@ -350,15 +414,20 @@
 	const containerizationColorHelper = concepts.getColorHelper('Containerization');
 	const discoveryColorHelper = entities.getColorHelper('Discovery');
 
-	// Check if this host should be highlighted by tag hover
-	// Skip when the hovered entity type matches the container entity (container handles it)
+	// Check if this host should be highlighted by tag hover.
+	// Skip when the hovered entity type matches the container entity (container handles it),
+	// UNLESS Host is also an element entity (e.g. Workloads VMs) — then highlight Host-type elements.
 	let tagHoverRingStyle = $derived.by(() => {
 		if (!currentHoveredTag || currentHoveredTag.entityType !== 'host' || !host) return '';
-		const containerEntity = (
-			views.getMetadata($activeView) as { element_config?: { container_entity?: string } } | null
-		)?.element_config?.container_entity;
-		if (containerEntity && currentHoveredTag.entityType === containerEntity.toLowerCase())
-			return '';
+		const viewMeta = views.getMetadata($activeView) as {
+			element_config?: { container_entity?: string; element_entities?: string[] };
+		} | null;
+		const containerEntity = viewMeta?.element_config?.container_entity;
+		const elementEntities = viewMeta?.element_config?.element_entities ?? [];
+		if (containerEntity && currentHoveredTag.entityType === containerEntity.toLowerCase()) {
+			// If Host is also an element entity, only highlight Host-type elements (VMs)
+			if (!elementEntities.includes('Host') || nodeRenderData?.elementType !== 'Host') return '';
+		}
 		const { tagId, color } = currentHoveredTag;
 		const isUntagged = host.tags.length === 0;
 		const hasTag = tagId === UNTAGGED_SENTINEL ? isUntagged : host.tags.includes(tagId);
@@ -446,79 +515,98 @@
 		<!-- Body section -->
 		<div class="flex flex-1 flex-col items-center justify-center px-3 py-2">
 			{#if nodeRenderData.showServices}
+				{#snippet serviceCard(service: (typeof nodeRenderData.services)[number])}
+					{@const isServiceTagHidden =
+						nodeRenderData.elementType !== 'Service' && hiddenServices.has(service.id)}
+					{@const ServiceIcon = serviceDefinitions.getIconComponent(service.service_definition)}
+					{@const serviceTagHighlight = (() => {
+						if (!currentHoveredTag || currentHoveredTag.entityType !== 'service') return '';
+						const { tagId, color } = currentHoveredTag;
+						const isUntagged = service.tags.length === 0;
+						const hasTag = tagId === UNTAGGED_SENTINEL ? isUntagged : service.tags.includes(tagId);
+						if (!hasTag) return '';
+						const colorHelper = createColorHelper(color as Parameters<typeof createColorHelper>[0]);
+						return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
+					})()}
+					{@const serviceCategoryHighlight = (() => {
+						if (!currentHoveredCategory) return '';
+						const serviceCategory = serviceDefinitions.getCategory(service.service_definition);
+						if (serviceCategory !== currentHoveredCategory.category) return '';
+						const colorHelper = createColorHelper(
+							currentHoveredCategory.color as Parameters<typeof createColorHelper>[0]
+						);
+						return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
+					})()}
+					<div
+						class="flex flex-col items-center justify-center py-2"
+						style="min-width: 0; max-width: 100%; width: 100%;{isServiceTagHidden
+							? ' opacity: 0.3;'
+							: ''}"
+					>
+						<div
+							class="flex items-center justify-center gap-1"
+							style="line-height: 1.3; width: 100%; min-width: 0; max-width: 100%;"
+							title={service.name}
+						>
+							<ServiceIcon class="h-5 w-5 flex-shrink-0 {hostColorHelper.icon}" />
+							<span
+								class="text-m text-secondary truncate {serviceTagHighlight ||
+								serviceCategoryHighlight
+									? 'animate-text-pulse-highlight'
+									: ''}"
+								style="transition: color 0.15s; {serviceTagHighlight || serviceCategoryHighlight}"
+							>
+								{service.name}
+							</span>
+						</div>
+						{#if !$topologyOptions.request.hide_ports && nodeRenderData.elementType !== 'Service' && nodeRenderData.elementType !== 'Host' && service.bindings.filter((b) => b.type == 'Port').length > 0}
+							<span class="text-tertiary mt-1 text-center text-xs"
+								>{service.bindings
+									.map((b) => {
+										if (
+											(b.ip_address_id == nodeRenderData.ip_address_id ||
+												b.ip_address_id == null) &&
+											b.type == 'Port' &&
+											b.port_id
+										) {
+											const port = getPortById(b.port_id);
+											if (port) {
+												return formatPort(port);
+											}
+										}
+									})
+									.filter((p) => {
+										return p !== undefined;
+									})
+									.join(', ')}</span
+							>
+						{/if}
+					</div>
+				{/snippet}
 				<!-- Show services list -->
 				<div class="flex w-full flex-col items-center" style="min-width: 0; max-width: 100%;">
-					{#each nodeRenderData.services as service (service.id)}
-						{@const isServiceTagHidden =
-							nodeRenderData.elementType !== 'Service' && hiddenServices.has(service.id)}
-						{@const ServiceIcon = serviceDefinitions.getIconComponent(service.service_definition)}
-						{@const serviceTagHighlight = (() => {
-							if (!currentHoveredTag || currentHoveredTag.entityType !== 'service') return '';
-							const { tagId, color } = currentHoveredTag;
-							const isUntagged = service.tags.length === 0;
-							const hasTag =
-								tagId === UNTAGGED_SENTINEL ? isUntagged : service.tags.includes(tagId);
-							if (!hasTag) return '';
-							const colorHelper = createColorHelper(
-								color as Parameters<typeof createColorHelper>[0]
-							);
-							return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
-						})()}
-						{@const serviceCategoryHighlight = (() => {
-							if (!currentHoveredCategory) return '';
-							const serviceCategory = serviceDefinitions.getCategory(service.service_definition);
-							if (serviceCategory !== currentHoveredCategory.category) return '';
-							const colorHelper = createColorHelper(
-								currentHoveredCategory.color as Parameters<typeof createColorHelper>[0]
-							);
-							return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
-						})()}
-						<div
-							class="flex flex-col items-center justify-center py-2"
-							style="min-width: 0; max-width: 100%; width: 100%;{isServiceTagHidden
-								? ' opacity: 0.3;'
-								: ''}"
-						>
+					{#if serviceGroups.containerized.length > 0}
+						<!-- Grouped rendering: bare services + containerized groups with dotted border -->
+						{#each serviceGroups.bare as service (service.id)}
+							{@render serviceCard(service)}
+						{/each}
+						{#each serviceGroups.containerized as group (group.runtimeId)}
 							<div
-								class="flex items-center justify-center gap-1"
-								style="line-height: 1.3; width: 100%; min-width: 0; max-width: 100%;"
-								title={service.name}
+								class="mb-1 mt-1 w-full rounded-md border border-dashed border-gray-300 px-1 py-0.5 dark:border-gray-600"
 							>
-								<ServiceIcon class="h-5 w-5 flex-shrink-0 {hostColorHelper.icon}" />
-								<span
-									class="text-m text-secondary truncate {serviceTagHighlight ||
-									serviceCategoryHighlight
-										? 'animate-text-pulse-highlight'
-										: ''}"
-									style="transition: color 0.15s; {serviceTagHighlight || serviceCategoryHighlight}"
-								>
-									{service.name}
-								</span>
+								{#if group.runtimeService}
+									{@render serviceCard(group.runtimeService)}
+								{/if}
+								{#each group.containers as service (service.id)}
+									{@render serviceCard(service)}
+								{/each}
 							</div>
-							{#if !$topologyOptions.request.hide_ports && nodeRenderData.elementType !== 'Service' && nodeRenderData.elementType !== 'Host' && service.bindings.filter((b) => b.type == 'Port').length > 0}
-								<span class="text-tertiary mt-1 text-center text-xs"
-									>{service.bindings
-										.map((b) => {
-											if (
-												(b.ip_address_id == nodeRenderData.ip_address_id ||
-													b.ip_address_id == null) &&
-												b.type == 'Port' &&
-												b.port_id
-											) {
-												const port = getPortById(b.port_id);
-												if (port) {
-													return formatPort(port);
-												}
-											}
-										})
-										.filter((p) => {
-											return p !== undefined;
-										})
-										.join(', ')}</span
-								>
-							{/if}
-						</div>
-					{/each}
+						{/each}
+					{:else}
+						{#each nodeRenderData.services as service (service.id)}
+							{@render serviceCard(service)}
+						{/each}
+					{/if}
 					{#if nodeRenderData.hiddenOpenPorts.length > 0 && nodeRenderData.elementType !== 'Host'}
 						{#if expandedOpenPorts}
 							{#each nodeRenderData.hiddenOpenPorts as service (service.id)}

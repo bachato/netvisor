@@ -4,6 +4,7 @@ use uuid::Uuid;
 use crate::server::{
     interfaces::r#impl::base::IfOperStatus,
     services::r#impl::categories::ServiceCategory,
+    shared::entities::EntityDiscriminants,
     topology::types::{
         grouping::{ElementRule, GraphRule, IdentifiedRule},
         nodes::{ContainerType, Node, NodeType},
@@ -15,7 +16,9 @@ use crate::server::{
 pub struct ElementMatchData {
     pub categories: HashSet<ServiceCategory>,
     pub tag_ids: HashSet<Uuid>,
-    /// The service ID of the virtualizer managing this element (for ByVirtualizer grouping).
+    /// The entity type of this element (Host, Service, etc.) for rule filtering.
+    pub element_entity: EntityDiscriminants,
+    /// The service ID of the virtualizer managing this element (for ByHypervisor/ByContainerRuntime grouping).
     pub virtualizer_service_id: Option<Uuid>,
     /// The Docker Compose project name (for ByStack grouping).
     pub compose_project: Option<String>,
@@ -49,7 +52,7 @@ pub fn apply_element_rules(
 }
 
 /// Apply element rules with optional virtualizer title mapping.
-/// `virtualizer_titles` maps virtualizer host IDs to display names (for ByVirtualizer subcontainers).
+/// `virtualizer_titles` maps virtualizer service IDs to display names (for ByHypervisor/ByContainerRuntime subcontainers).
 pub fn apply_element_rules_with_titles(
     nodes: &mut Vec<Node>,
     element_rules: &[IdentifiedRule<ElementRule>],
@@ -86,14 +89,30 @@ pub fn apply_element_rules_with_titles(
 
     for IdentifiedRule { id: rule_id, rule } in element_rules {
         match rule {
-            ElementRule::ByVirtualizer => {
-                // ByVirtualizer groups elements by their managing virtualizer service.
-                // Each unique virtualizer service gets a Virtualizer subcontainer.
+            ElementRule::ByHypervisor | ElementRule::ByContainerRuntime => {
+                // ByHypervisor groups VM (Host) elements by their hypervisor service.
+                // ByContainerRuntime groups container (Service) elements by their runtime.
+                // Each unique virtualizer service gets its own subcontainer.
                 // Elements with no virtualizer stay ungrouped in their parent container.
+                let (container_type, target_entity) = if matches!(rule, ElementRule::ByHypervisor) {
+                    (ContainerType::Hypervisor, EntityDiscriminants::Host)
+                } else {
+                    (
+                        ContainerType::ContainerRuntime,
+                        EntityDiscriminants::Service,
+                    )
+                };
+
                 for (parent_id, element_ids) in &elements_by_container {
+                    // Only consider elements matching the target entity type
                     let unclaimed: Vec<Uuid> = element_ids
                         .iter()
                         .filter(|id| !claimed.contains(id))
+                        .filter(|id| {
+                            match_data
+                                .get(id)
+                                .is_some_and(|d| d.element_entity == target_entity)
+                        })
                         .copied()
                         .collect();
                     if unclaimed.is_empty() {
@@ -108,8 +127,6 @@ pub fn apply_element_rules_with_titles(
                     }
 
                     for (virt_host_id, ids) in by_virtualizer {
-                        // Only create Virtualizer subcontainers for hosts that have a virtualizer.
-                        // Hosts without a virtualizer (None) stay ungrouped in their parent.
                         let Some(vid) = virt_host_id else {
                             continue;
                         };
@@ -120,8 +137,9 @@ pub fn apply_element_rules_with_titles(
                         new_containers.push(Node {
                             id: group_id,
                             node_type: NodeType::Container {
-                                container_type: ContainerType::Virtualizer,
+                                container_type,
                                 parent_container_id: Some(*parent_id),
+                                entity_id: None,
                                 layer_hint: None,
                                 icon: None,
                                 color: None,
@@ -180,6 +198,7 @@ pub fn apply_element_rules_with_titles(
                             node_type: NodeType::Container {
                                 container_type: ContainerType::Stack,
                                 parent_container_id: Some(*parent_id),
+                                entity_id: None,
                                 layer_hint: None,
                                 icon: None,
                                 color: None,
@@ -228,6 +247,7 @@ pub fn apply_element_rules_with_titles(
                         node_type: NodeType::Container {
                             container_type: ContainerType::NestedServiceCategory,
                             parent_container_id: Some(*parent_id),
+                            entity_id: None,
                             layer_hint: None,
                             icon: None,
                             color: None,
@@ -268,6 +288,7 @@ pub fn apply_element_rules_with_titles(
                         node_type: NodeType::Container {
                             container_type: ContainerType::TrunkPort,
                             parent_container_id: Some(*parent_id),
+                            entity_id: None,
                             layer_hint: None,
                             icon: None,
                             color: None,
@@ -326,6 +347,7 @@ pub fn apply_element_rules_with_titles(
                             node_type: NodeType::Container {
                                 container_type: ContainerType::VLAN,
                                 parent_container_id: Some(*parent_id),
+                                entity_id: None,
                                 layer_hint: None,
                                 icon: None,
                                 color: None,
@@ -385,6 +407,7 @@ pub fn apply_element_rules_with_titles(
                             node_type: NodeType::Container {
                                 container_type: ContainerType::PortOpStatus,
                                 parent_container_id: Some(*parent_id),
+                                entity_id: None,
                                 layer_hint: None,
                                 icon: None,
                                 color: Some(color.to_string()),
@@ -431,6 +454,7 @@ pub fn apply_element_rules_with_titles(
                         node_type: NodeType::Container {
                             container_type: ContainerType::NestedTag,
                             parent_container_id: Some(*parent_id),
+                            entity_id: None,
                             layer_hint: None,
                             icon: None,
                             color: None,
@@ -485,6 +509,7 @@ mod tests {
         ElementMatchData {
             categories: HashSet::new(),
             tag_ids: HashSet::new(),
+            element_entity: EntityDiscriminants::Service,
             virtualizer_service_id: None,
             compose_project: compose_project.map(String::from),
             native_vlan_id: None,

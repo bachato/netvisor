@@ -8,6 +8,7 @@ use super::{
 };
 use crate::server::{
     interfaces::r#impl::base::Neighbor,
+    shared::entities::EntityDiscriminants,
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType, EdgeViewConfig},
         grouping::GroupingConfig,
@@ -129,6 +130,7 @@ impl ViewBuilder for L2Builder {
                 node_type: NodeType::Container {
                     container_type: ContainerType::Host,
                     parent_container_id: None,
+                    entity_id: Some(host_id),
                     layer_hint: None,
                     icon: None,
                     color: None,
@@ -179,6 +181,7 @@ impl ViewBuilder for L2Builder {
                 Some(ElementMatchData {
                     categories: HashSet::new(),
                     tag_ids,
+                    element_entity: EntityDiscriminants::Interface,
                     virtualizer_service_id: None,
                     compose_project: None,
                     native_vlan_id,

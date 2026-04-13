@@ -75,7 +75,7 @@
 		views.getMetadata($activeView) as {
 			element_config?: {
 				container_entity: string | null;
-				element_entity: string;
+				element_entities: string[];
 				inline_entities: string[];
 			};
 		} | null
@@ -85,13 +85,17 @@
 		const config = elementConfig;
 		if (!config) return new Set<string>();
 		const set = new Set(
-			[config.container_entity, config.element_entity, ...config.inline_entities].filter(Boolean)
+			[config.container_entity, ...config.element_entities, ...config.inline_entities].filter(
+				Boolean
+			)
 		);
 		// Expand element's parent entity when the view has containers and the parent isn't already the container
 		if (config.container_entity) {
-			const parentEntity = entities.getMetadata(config.element_entity)?.parent_entity;
-			if (parentEntity && parentEntity !== config.container_entity) {
-				set.add(parentEntity);
+			for (const elementEntity of config.element_entities) {
+				const parentEntity = entities.getMetadata(elementEntity)?.parent_entity;
+				if (parentEntity && parentEntity !== config.container_entity) {
+					set.add(parentEntity);
+				}
 			}
 		}
 		return set;

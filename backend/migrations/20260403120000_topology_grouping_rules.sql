@@ -77,9 +77,13 @@ SET options = jsonb_set(
                         )
                     )
                 )
-                -- ByVirtualizer
+                -- ByHypervisor
                 || jsonb_build_array(
-                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByVirtualizer')
+                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByHypervisor')
+                )
+                -- ByContainerRuntime
+                || jsonb_build_array(
+                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByContainerRuntime')
                 )
                 -- ByStack
                 || jsonb_build_array(

@@ -587,7 +587,7 @@ function buildElkGraph(
 		}
 	}
 
-	// Detect cross-child edges within the same root container (e.g., element → ByVirtualizer
+	// Detect cross-child edges within the same root container (e.g., element → ByHypervisor
 	// subcontainer, or Docker element → ByStack subcontainer). These edges need inner ELK edges
 	// so the root container can use layered algorithm to position connected children adjacently.
 	const resolveEndpoint = (id: string): string | undefined => {

@@ -182,12 +182,12 @@
     }
   },
   {
-    "id": "Virtualizer",
-    "name": "Virtualizer",
-    "description": "Hosts grouped by virtualizer",
+    "id": "Hypervisor",
+    "name": "Hypervisor",
+    "description": "VMs grouped by hypervisor",
     "category": null,
-    "icon": "boxes",
-    "color": "Amber",
+    "icon": "monitor-cog",
+    "color": "Orange",
     "metadata": {
       "collapsed_by_default": false,
       "collapsed_size": {
@@ -208,12 +208,12 @@
     }
   },
   {
-    "id": "BareMetal",
-    "name": "Bare metal",
-    "description": "Hosts with no virtualization",
+    "id": "ContainerRuntime",
+    "name": "Container runtime",
+    "description": "Containers grouped by runtime",
     "category": null,
-    "icon": "server",
-    "color": "Amber",
+    "icon": "container",
+    "color": "Fuchsia",
     "metadata": {
       "collapsed_by_default": false,
       "collapsed_size": {

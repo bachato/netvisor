@@ -10,6 +10,7 @@ use crate::server::{
     dependencies::r#impl::{base::DependencyMembers, types::DependencyType},
     interfaces::r#impl::base::Neighbor,
     services::r#impl::definitions::ServiceDefinitionExt,
+    shared::entities::EntityDiscriminants,
     topology::types::{
         edges::{DiscoveryProtocol, Edge, EdgeHandle, EdgeType, EdgeViewConfig},
         grouping::GroupingConfig,
@@ -105,6 +106,7 @@ impl ViewBuilder for WorkloadsBuilder {
                 node_type: NodeType::Container {
                     container_type: ContainerType::Host,
                     parent_container_id: None,
+                    entity_id: Some(host.id),
                     layer_hint: None,
                     icon: None,
                     color: None,
@@ -144,12 +146,22 @@ impl ViewBuilder for WorkloadsBuilder {
             }
         }
 
-        // 3b: Container elements — placed in their host's container
+        // 3b: Container elements — placed in their host's container.
+        // Skip container services on VM hosts: those services are already visible
+        // as inline cards inside the VM element node.
         for (virt_svc_id, container_svc_ids) in &virt_to_container_svcs {
             let Some(virt_svc) = service_lookup.get(virt_svc_id) else {
                 continue;
             };
             let host_id = virt_svc.base.host_id;
+
+            // If the virtualizer runs on a VM, skip its containers
+            if let Some(host) = host_lookup.get(&host_id)
+                && host.base.virtualization.is_some()
+            {
+                continue;
+            }
+
             let container_id = Self::container_id_for_host(host_id);
 
             for &svc_id in container_svc_ids {
@@ -194,7 +206,7 @@ impl ViewBuilder for WorkloadsBuilder {
             nodes.push(node);
         }
 
-        // --- Phase 4: Apply element rules (ByVirtualizer + ByTag) ---
+        // --- Phase 4: Apply element rules (ByHypervisor + ByContainerRuntime + ByTag) ---
 
         let virtualizer_titles = Self::build_virtualizer_titles(ctx);
 
@@ -218,6 +230,7 @@ impl ViewBuilder for WorkloadsBuilder {
                         Some(ElementMatchData {
                             categories: HashSet::new(),
                             tag_ids,
+                            element_entity: EntityDiscriminants::Host,
                             virtualizer_service_id,
                             compose_project: None,
                             native_vlan_id: None,
@@ -245,6 +258,7 @@ impl ViewBuilder for WorkloadsBuilder {
                         Some(ElementMatchData {
                             categories,
                             tag_ids,
+                            element_entity: EntityDiscriminants::Service,
                             virtualizer_service_id,
                             compose_project: None,
                             native_vlan_id: None,
@@ -612,7 +626,10 @@ mod tests {
     fn workloads_grouping() -> GroupingConfig {
         GroupingConfig {
             container_rules: vec![],
-            element_rules: vec![IdentifiedRule::new(ElementRule::ByVirtualizer)],
+            element_rules: vec![
+                IdentifiedRule::new(ElementRule::ByHypervisor),
+                IdentifiedRule::new(ElementRule::ByContainerRuntime),
+            ],
         }
     }
 
@@ -744,20 +761,20 @@ mod tests {
         assert_eq!(host_containers.len(), 1);
         assert_eq!(host_containers[0].header.as_deref(), Some("pve-01"));
 
-        // 1 Virtualizer subcontainer (Proxmox VE)
-        let virt_containers: Vec<&Node> = nodes
+        // 1 Hypervisor subcontainer (Proxmox VE)
+        let hyp_containers: Vec<&Node> = nodes
             .iter()
             .filter(|n| {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::Virtualizer,
+                        container_type: ContainerType::Hypervisor,
                         ..
                     }
                 )
             })
             .collect();
-        assert_eq!(virt_containers.len(), 1);
+        assert_eq!(hyp_containers.len(), 1);
 
         // 2 VM elements (Host{} type)
         let elements: Vec<&Node> = nodes
@@ -775,8 +792,8 @@ mod tests {
             ));
         }
 
-        // VM elements should be inside the Virtualizer subcontainer
-        let virt_id = virt_containers[0].id;
+        // VM elements should be inside the Hypervisor subcontainer
+        let virt_id = hyp_containers[0].id;
         for elem in &elements {
             if let NodeType::Element { container_id, .. } = &elem.node_type {
                 assert_eq!(*container_id, virt_id);
@@ -810,20 +827,20 @@ mod tests {
             .collect();
         assert_eq!(host_containers.len(), 1);
 
-        // 1 Virtualizer subcontainer (Docker)
-        let virt_containers: Vec<&Node> = nodes
+        // 1 ContainerRuntime subcontainer (Docker)
+        let rt_containers: Vec<&Node> = nodes
             .iter()
             .filter(|n| {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::Virtualizer,
+                        container_type: ContainerType::ContainerRuntime,
                         ..
                     }
                 )
             })
             .collect();
-        assert_eq!(virt_containers.len(), 1);
+        assert_eq!(rt_containers.len(), 1);
 
         // 2 Service elements (containers)
         let elements: Vec<&Node> = nodes
@@ -832,8 +849,8 @@ mod tests {
             .collect();
         assert_eq!(elements.len(), 2);
 
-        // Elements inside Virtualizer
-        let virt_id = virt_containers[0].id;
+        // Elements inside ContainerRuntime
+        let virt_id = rt_containers[0].id;
         for elem in &elements {
             if let NodeType::Element { container_id, .. } = &elem.node_type {
                 assert_eq!(*container_id, virt_id);
@@ -926,20 +943,34 @@ mod tests {
             .collect();
         assert_eq!(host_containers.len(), 2);
 
-        // 2 Virtualizer subcontainers (Proxmox on hypervisor, Docker on bare)
-        let virt_containers: Vec<&Node> = nodes
+        // 1 Hypervisor subcontainer (Proxmox on hypervisor) + 1 ContainerRuntime (Docker on bare)
+        let hyp_containers: Vec<&Node> = nodes
             .iter()
             .filter(|n| {
                 matches!(
                     n.node_type,
                     NodeType::Container {
-                        container_type: ContainerType::Virtualizer,
+                        container_type: ContainerType::Hypervisor,
                         ..
                     }
                 )
             })
             .collect();
-        assert_eq!(virt_containers.len(), 2);
+        assert_eq!(hyp_containers.len(), 1);
+
+        let rt_containers: Vec<&Node> = nodes
+            .iter()
+            .filter(|n| {
+                matches!(
+                    n.node_type,
+                    NodeType::Container {
+                        container_type: ContainerType::ContainerRuntime,
+                        ..
+                    }
+                )
+            })
+            .collect();
+        assert_eq!(rt_containers.len(), 1);
 
         // Elements: 2 VMs + 1 container + 1 samba = 4
         let elements: Vec<&Node> = nodes

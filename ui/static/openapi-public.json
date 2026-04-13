@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-13T16:30:51.911473Z",
-              "id": "d3f3165f-fc89-43b6-9bb9-1807708bc8af",
+              "created_at": "2026-04-13T18:32:19.131433Z",
+              "id": "c7c62690-d2a9-4111-bf03-d7f10439b3e6",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T16:30:51.911473Z"
+              "updated_at": "2026-04-13T18:32:19.131433Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-13T16:30:51.894396Z",
-                      "id": "ff6f4c93-5513-4de1-aee3-07b48c70be2f",
+                      "created_at": "2026-04-13T18:32:19.115030Z",
+                      "id": "986876f9-d1c6-4265-ad7b-817e6fd5de30",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-13T16:30:51.894396Z"
+                      "updated_at": "2026-04-13T18:32:19.115030Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Komga",
+                  "service_definition": "HP Printer",
                   "source": {
                     "type": "Manual"
                   },
@@ -12003,14 +12003,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T16:30:51.906791Z",
-                  "id": "e65c2a8b-0b18-4c4d-b4ee-84c2723682bf",
+                  "created_at": "2026-04-13T18:32:19.126880Z",
+                  "id": "820550ad-5ef5-406e-af23-81df0eb93537",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T16:30:51.906791Z"
+                  "updated_at": "2026-04-13T18:32:19.126880Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12019,7 +12019,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Komga",
+              "service_definition": "HP Printer",
               "source": {
                 "type": "Manual"
               },
@@ -13384,14 +13384,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-13T16:30:51.894755Z",
-          "id": "8ccfaff8-86d0-401d-9d19-fe87a2a36121",
+          "created_at": "2026-04-13T18:32:19.115392Z",
+          "id": "fcb9d492-f0d5-4141-8224-f2776bf9cdb8",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-13T16:30:51.894755Z"
+          "updated_at": "2026-04-13T18:32:19.115392Z"
         }
       },
       "BindingBase": {
@@ -13687,8 +13687,8 @@
           "Host",
           "NestedTag",
           "NestedServiceCategory",
-          "Virtualizer",
-          "BareMetal",
+          "Hypervisor",
+          "ContainerRuntime",
           "Stack",
           "TrunkPort",
           "VLAN",
@@ -13921,7 +13921,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Komga",
+              "service_definition": "HP Printer",
               "tags": [],
               "virtualization": null
             }
@@ -16442,14 +16442,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T16:30:51.893910Z",
-                  "id": "e88251d2-301b-46e8-a45f-42121a37bc71",
+                  "created_at": "2026-04-13T18:32:19.114553Z",
+                  "id": "55e1d326-71f8-429e-b78e-01b7e807794b",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T16:30:51.893910Z"
+                  "updated_at": "2026-04-13T18:32:19.114553Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16458,7 +16458,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Komga",
+              "service_definition": "HP Printer",
               "source": {
                 "type": "Manual"
               },
@@ -16767,7 +16767,13 @@
               {
                 "type": "string",
                 "enum": [
-                  "ByVirtualizer"
+                  "ByHypervisor"
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "ByContainerRuntime"
                 ]
               },
               {
@@ -17852,7 +17858,7 @@
                   "string",
                   "null"
                 ],
-                "description": "Service definition ID for logo rendering (e.g. \"Docker\", \"Proxmox VE\").\nUsed by Virtualizer and Stack subcontainers to show the virtualizing service's logo."
+                "description": "Service definition ID for logo rendering (e.g. \"Docker\", \"Proxmox VE\").\nUsed by Hypervisor and Stack subcontainers to show the service's logo."
               },
               "color": {
                 "type": [
@@ -17863,6 +17869,14 @@
               },
               "container_type": {
                 "$ref": "#/components/schemas/ContainerType"
+              },
+              "entity_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid",
+                "description": "The entity this container represents (e.g. host ID for Host containers,\nsubnet ID for Subnet containers). Used for ownership mapping on the frontend."
               },
               "icon": {
                 "type": [
@@ -18639,14 +18653,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-13T16:30:51.883372Z",
-                        "id": "b959c853-6d0c-4fc5-9b0a-1ac06734ec79",
+                        "created_at": "2026-04-13T18:32:19.103727Z",
+                        "id": "e6bddc5c-d618-439c-8351-6b6ae53d26d3",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-13T16:30:51.883372Z"
+                        "updated_at": "2026-04-13T18:32:19.103727Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18655,7 +18669,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Komga",
+                    "service_definition": "HP Printer",
                     "source": {
                       "type": "Manual"
                     },
@@ -18732,14 +18746,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-13T16:30:51.905495Z",
-                    "id": "41829620-627e-42cc-b9ba-db91ef953da8",
+                    "created_at": "2026-04-13T18:32:19.125596Z",
+                    "id": "e6c8d000-ab61-4ea1-8832-392c522ef067",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-13T16:30:51.905495Z"
+                    "updated_at": "2026-04-13T18:32:19.125596Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18748,7 +18762,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Komga",
+                "service_definition": "HP Printer",
                 "source": {
                   "type": "Manual"
                 },
@@ -19978,14 +19992,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-13T16:30:51.894637Z",
-              "id": "d5f7fdf5-d651-4936-ab12-505aa96f2f21",
+              "created_at": "2026-04-13T18:32:19.115273Z",
+              "id": "baf918cc-d0cc-46e6-bfed-1989506cd572",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T16:30:51.894637Z"
+              "updated_at": "2026-04-13T18:32:19.115273Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -19994,7 +20008,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Komga",
+          "service_definition": "HP Printer",
           "source": {
             "type": "Manual"
           },

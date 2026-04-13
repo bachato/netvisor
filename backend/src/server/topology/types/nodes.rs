@@ -88,8 +88,8 @@ pub enum ContainerType {
     // Subcontainers (nested inside a top-level container)
     NestedTag,
     NestedServiceCategory,
-    Virtualizer,
-    BareMetal,
+    Hypervisor,
+    ContainerRuntime,
     Stack,
     TrunkPort,
     VLAN,
@@ -112,8 +112,8 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::Host => EntityDiscriminants::Host.color(),
             ContainerType::NestedTag => Color::Orange,
             ContainerType::NestedServiceCategory => Color::Purple,
-            ContainerType::Virtualizer => Concept::Workloads.color(),
-            ContainerType::BareMetal => EntityDiscriminants::Host.color(),
+            ContainerType::Hypervisor => Concept::Virtualization.color(),
+            ContainerType::ContainerRuntime => Concept::Containerization.color(),
             ContainerType::Stack => Concept::Containerization.color(),
             ContainerType::TrunkPort => Color::Amber,
             ContainerType::VLAN => Color::Teal,
@@ -130,8 +130,8 @@ impl EntityMetadataProvider for ContainerType {
             ContainerType::Host => Concept::L2.icon(),
             ContainerType::NestedTag => Icon::Tag,
             ContainerType::NestedServiceCategory => Icon::Layers,
-            ContainerType::Virtualizer => Concept::Workloads.icon(),
-            ContainerType::BareMetal => Icon::Server,
+            ContainerType::Hypervisor => Concept::Virtualization.icon(),
+            ContainerType::ContainerRuntime => Concept::Containerization.icon(),
             ContainerType::Stack => Concept::Containerization.icon(),
             ContainerType::TrunkPort => Icon::Network,
             ContainerType::VLAN => Icon::Network,
@@ -150,8 +150,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Host => "Host",
             ContainerType::NestedTag => "Tag container",
             ContainerType::NestedServiceCategory => "Service category container",
-            ContainerType::Virtualizer => "Virtualizer",
-            ContainerType::BareMetal => "Bare metal",
+            ContainerType::Hypervisor => "Hypervisor",
+            ContainerType::ContainerRuntime => "Container runtime",
             ContainerType::Stack => "Docker stack",
             ContainerType::TrunkPort => "Trunk ports",
             ContainerType::VLAN => "VLAN",
@@ -168,8 +168,8 @@ impl TypeMetadataProvider for ContainerType {
             ContainerType::Host => "Physical network device",
             ContainerType::NestedTag => "Elements grouped by tag",
             ContainerType::NestedServiceCategory => "Elements grouped by service category",
-            ContainerType::Virtualizer => "Hosts grouped by virtualizer",
-            ContainerType::BareMetal => "Hosts with no virtualization",
+            ContainerType::Hypervisor => "VMs grouped by hypervisor",
+            ContainerType::ContainerRuntime => "Containers grouped by runtime",
             ContainerType::Stack => "Elements grouped by Docker Compose project",
             ContainerType::TrunkPort => "Trunk ports carrying multiple VLANs",
             ContainerType::VLAN => "Access ports grouped by native VLAN",
@@ -186,8 +186,8 @@ impl TypeMetadataProvider for ContainerType {
             | ContainerType::Host => TitleStyle::External,
             ContainerType::NestedTag
             | ContainerType::NestedServiceCategory
-            | ContainerType::Virtualizer
-            | ContainerType::BareMetal
+            | ContainerType::Hypervisor
+            | ContainerType::ContainerRuntime
             | ContainerType::Stack
             | ContainerType::TrunkPort
             | ContainerType::VLAN
@@ -197,8 +197,8 @@ impl TypeMetadataProvider for ContainerType {
             self,
             ContainerType::NestedTag
                 | ContainerType::NestedServiceCategory
-                | ContainerType::Virtualizer
-                | ContainerType::BareMetal
+                | ContainerType::Hypervisor
+                | ContainerType::ContainerRuntime
                 | ContainerType::Stack
                 | ContainerType::TrunkPort
                 | ContainerType::VLAN
@@ -212,8 +212,8 @@ impl TypeMetadataProvider for ContainerType {
             | ContainerType::Host => (25, 25),
             ContainerType::NestedTag
             | ContainerType::NestedServiceCategory
-            | ContainerType::Virtualizer
-            | ContainerType::BareMetal
+            | ContainerType::Hypervisor
+            | ContainerType::ContainerRuntime
             | ContainerType::Stack
             | ContainerType::TrunkPort
             | ContainerType::VLAN
@@ -297,6 +297,10 @@ pub enum NodeType {
         container_type: ContainerType,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         parent_container_id: Option<Uuid>,
+        /// The entity this container represents (e.g. host ID for Host containers,
+        /// subnet ID for Subnet containers). Used for ownership mapping on the frontend.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        entity_id: Option<Uuid>,
         /// Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)
         #[serde(default, skip_serializing_if = "Option::is_none")]
         layer_hint: Option<i32>,
@@ -307,7 +311,7 @@ pub enum NodeType {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         color: Option<String>,
         /// Service definition ID for logo rendering (e.g. "Docker", "Proxmox VE").
-        /// Used by Virtualizer and Stack subcontainers to show the virtualizing service's logo.
+        /// Used by Hypervisor and Stack subcontainers to show the service's logo.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         associated_service_definition: Option<String>,
     },
@@ -340,6 +344,7 @@ mod tests {
         let node_type = NodeType::Container {
             container_type: ContainerType::Subnet,
             parent_container_id: None,
+            entity_id: None,
             layer_hint: Some(2),
             icon: None,
             color: None,
@@ -361,6 +366,7 @@ mod tests {
         let node_type = NodeType::Container {
             container_type: ContainerType::NestedServiceCategory,
             parent_container_id: Some(parent_id),
+            entity_id: None,
             layer_hint: None,
             icon: None,
             color: None,
@@ -379,6 +385,7 @@ mod tests {
         let node_type = NodeType::Container {
             container_type: ContainerType::Subnet,
             parent_container_id: None,
+            entity_id: None,
             layer_hint: None,
             icon: None,
             color: None,
@@ -460,6 +467,7 @@ mod tests {
         let tag = NodeType::Container {
             container_type: ContainerType::NestedTag,
             parent_container_id: Some(Uuid::new_v4()),
+            entity_id: None,
             layer_hint: None,
             icon: None,
             color: None,
@@ -471,6 +479,7 @@ mod tests {
         let svc = NodeType::Container {
             container_type: ContainerType::NestedServiceCategory,
             parent_container_id: Some(Uuid::new_v4()),
+            entity_id: None,
             layer_hint: None,
             icon: None,
             color: None,
@@ -485,6 +494,7 @@ mod tests {
         let node_type = NodeType::Container {
             container_type: ContainerType::ServiceCategory,
             parent_container_id: None,
+            entity_id: None,
             layer_hint: None,
             icon: Some("Zap".to_string()),
             color: Some("Purple".to_string()),
@@ -555,6 +565,7 @@ mod tests {
         let node_type = NodeType::Container {
             container_type: ContainerType::Host,
             parent_container_id: None,
+            entity_id: None,
             layer_hint: None,
             icon: None,
             color: None,
@@ -585,33 +596,35 @@ mod tests {
     }
 
     #[test]
-    fn test_virtualizer_container_round_trip() {
+    fn test_hypervisor_container_round_trip() {
         let node_type = NodeType::Container {
-            container_type: ContainerType::Virtualizer,
+            container_type: ContainerType::Hypervisor,
             parent_container_id: None,
+            entity_id: None,
             layer_hint: None,
             icon: None,
             color: None,
             associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
-        assert_eq!(json["container_type"], "Virtualizer");
+        assert_eq!(json["container_type"], "Hypervisor");
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
     }
 
     #[test]
-    fn test_bare_metal_container_round_trip() {
+    fn test_container_runtime_container_round_trip() {
         let node_type = NodeType::Container {
-            container_type: ContainerType::BareMetal,
+            container_type: ContainerType::ContainerRuntime,
             parent_container_id: None,
+            entity_id: None,
             layer_hint: None,
             icon: None,
             color: None,
             associated_service_definition: None,
         };
         let json = serde_json::to_value(&node_type).unwrap();
-        assert_eq!(json["container_type"], "BareMetal");
+        assert_eq!(json["container_type"], "ContainerRuntime");
         let deserialized: NodeType = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, node_type);
     }
@@ -622,6 +635,7 @@ mod tests {
         let node_type = NodeType::Container {
             container_type: ContainerType::Stack,
             parent_container_id: Some(parent_id),
+            entity_id: None,
             layer_hint: None,
             icon: None,
             color: None,

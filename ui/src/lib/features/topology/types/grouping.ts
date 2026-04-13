@@ -13,7 +13,12 @@ export function getContainerRuleDiscriminant(rule: ContainerRule): ContainerRule
 	return Object.keys(rule)[0] as ContainerRuleType;
 }
 
-export type ElementRuleType = 'ByServiceCategory' | 'ByTag' | 'ByVirtualizer' | 'ByStack';
+export type ElementRuleType =
+	| 'ByServiceCategory'
+	| 'ByTag'
+	| 'ByHypervisor'
+	| 'ByContainerRuntime'
+	| 'ByStack';
 
 export function getElementRuleType(rule: ElementRule): ElementRuleType {
 	if (typeof rule === 'string') return rule;

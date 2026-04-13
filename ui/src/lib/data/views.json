@@ -1,0 +1,305 @@
+[
+  {
+    "id": "L2Physical",
+    "name": "L2 Physical",
+    "description": "Interfaces and physical links between hosts",
+    "category": null,
+    "icon": "cable",
+    "color": "Green",
+    "metadata": {
+      "edge_view_configs": {
+        "HostVirtualization": {
+          "type": "disabled"
+        },
+        "HubAndSpoke": {
+          "type": "disabled"
+        },
+        "PhysicalLink": {
+          "affects_layout": true,
+          "default_visibility": "visible",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "solid",
+          "type": "active",
+          "will_target_container": false
+        },
+        "RequestPath": {
+          "type": "disabled"
+        },
+        "SameHost": {
+          "affects_layout": false,
+          "default_visibility": "hidden",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": false
+        },
+        "ServiceVirtualization": {
+          "type": "disabled"
+        }
+      },
+      "element_config": {
+        "container_entity": "Host",
+        "element_entities": [
+          "Interface"
+        ],
+        "inline_entities": []
+      },
+      "element_label": "interfaces",
+      "element_label_singular": "interface",
+      "inspector_config": {
+        "bulk_tag_entity": "Host",
+        "container_sections": [
+          "Identity",
+          "ElementSummary"
+        ],
+        "dependency_creation": null,
+        "element_sections": [
+          "Identity",
+          "IfEntryData"
+        ],
+        "show_application_picker": false
+      }
+    }
+  },
+  {
+    "id": "L3Logical",
+    "name": "L3 Logical",
+    "description": "IP addresses and connectivity across subnets",
+    "category": null,
+    "icon": "globe",
+    "color": "Blue",
+    "metadata": {
+      "edge_view_configs": {
+        "HostVirtualization": {
+          "affects_layout": false,
+          "default_visibility": "hidden",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": true
+        },
+        "HubAndSpoke": {
+          "affects_layout": false,
+          "default_visibility": "visible",
+          "highlight_behavior": "when_visible",
+          "show_directionality": true,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": false
+        },
+        "PhysicalLink": {
+          "affects_layout": false,
+          "default_visibility": "hidden",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": false
+        },
+        "RequestPath": {
+          "affects_layout": false,
+          "default_visibility": "visible",
+          "highlight_behavior": "when_visible",
+          "show_directionality": true,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": false
+        },
+        "SameHost": {
+          "affects_layout": true,
+          "default_visibility": "visible",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "solid",
+          "type": "active",
+          "will_target_container": false
+        },
+        "ServiceVirtualization": {
+          "affects_layout": true,
+          "default_visibility": "visible",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "solid",
+          "type": "active",
+          "will_target_container": true
+        }
+      },
+      "element_config": {
+        "container_entity": "Subnet",
+        "element_entities": [
+          "IPAddress"
+        ],
+        "inline_entities": [
+          "Service"
+        ]
+      },
+      "element_label": "host IP addresses",
+      "element_label_singular": "host IP address",
+      "inspector_config": {
+        "bulk_tag_entity": "Subnet",
+        "container_sections": [
+          "SubnetDetail",
+          "ElementSummary"
+        ],
+        "dependency_creation": "Bindings",
+        "element_sections": [
+          "Identity",
+          "HostDetail",
+          "IfEntryData",
+          "Services",
+          "OtherInterfaces"
+        ],
+        "show_application_picker": false
+      }
+    }
+  },
+  {
+    "id": "Workloads",
+    "name": "Workloads",
+    "description": "Services, VMs, and containers per host",
+    "category": null,
+    "icon": "boxes",
+    "color": "Amber",
+    "metadata": {
+      "edge_view_configs": {
+        "HostVirtualization": {
+          "type": "disabled"
+        },
+        "HubAndSpoke": {
+          "affects_layout": false,
+          "default_visibility": "hidden",
+          "highlight_behavior": "when_visible",
+          "show_directionality": true,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": false
+        },
+        "PhysicalLink": {
+          "affects_layout": false,
+          "default_visibility": "hidden",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": false
+        },
+        "RequestPath": {
+          "affects_layout": false,
+          "default_visibility": "hidden",
+          "highlight_behavior": "when_visible",
+          "show_directionality": true,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": false
+        },
+        "SameHost": {
+          "type": "disabled"
+        },
+        "ServiceVirtualization": {
+          "type": "disabled"
+        }
+      },
+      "element_config": {
+        "container_entity": "Host",
+        "element_entities": [
+          "Service",
+          "Host"
+        ],
+        "inline_entities": []
+      },
+      "element_label": "workloads",
+      "element_label_singular": "workload",
+      "inspector_config": {
+        "bulk_tag_entity": "Host",
+        "container_sections": [
+          "Identity",
+          "ElementSummary"
+        ],
+        "dependency_creation": "Services",
+        "element_sections": [
+          "Identity",
+          "HostDetail",
+          "Virtualization",
+          "Services",
+          "OtherInterfaces"
+        ],
+        "show_application_picker": false
+      }
+    }
+  },
+  {
+    "id": "Application",
+    "name": "Applications",
+    "description": "Services per application",
+    "category": null,
+    "icon": "workflow",
+    "color": "Purple",
+    "metadata": {
+      "edge_view_configs": {
+        "HostVirtualization": {
+          "type": "disabled"
+        },
+        "HubAndSpoke": {
+          "affects_layout": true,
+          "default_visibility": "visible",
+          "highlight_behavior": "when_visible",
+          "show_directionality": true,
+          "stroke": "solid",
+          "type": "active",
+          "will_target_container": false
+        },
+        "PhysicalLink": {
+          "type": "disabled"
+        },
+        "RequestPath": {
+          "affects_layout": true,
+          "default_visibility": "visible",
+          "highlight_behavior": "when_visible",
+          "show_directionality": true,
+          "stroke": "solid",
+          "type": "active",
+          "will_target_container": false
+        },
+        "SameHost": {
+          "type": "disabled"
+        },
+        "ServiceVirtualization": {
+          "affects_layout": true,
+          "default_visibility": "hidden",
+          "highlight_behavior": "always",
+          "show_directionality": false,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": true
+        }
+      },
+      "element_config": {
+        "container_entity": null,
+        "element_entities": [
+          "Service"
+        ],
+        "inline_entities": []
+      },
+      "element_label": "services",
+      "element_label_singular": "service",
+      "inspector_config": {
+        "bulk_tag_entity": "Service",
+        "container_sections": [
+          "Identity",
+          "ElementSummary",
+          "DependencySummary"
+        ],
+        "dependency_creation": "Services",
+        "element_sections": [
+          "Identity",
+          "Dependencies",
+          "Application"
+        ],
+        "show_application_picker": true
+      }
+    }
+  }
+]

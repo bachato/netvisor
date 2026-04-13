@@ -6,6 +6,7 @@ use crate::server::{
     hosts::r#impl::base::Host,
     ip_addresses::r#impl::base::IPAddress,
     services::r#impl::virtualization::ServiceVirtualization,
+    shared::entities::EntityDiscriminants,
     subnets::r#impl::types::SubnetType,
     topology::{
         service::{
@@ -343,6 +344,7 @@ impl GraphBuilder {
             Some(ElementMatchData {
                 categories,
                 tag_ids,
+                element_entity: EntityDiscriminants::IPAddress,
                 virtualizer_service_id: None,
                 compose_project,
                 native_vlan_id: None,
@@ -415,6 +417,7 @@ impl GraphBuilder {
                     node_type: NodeType::Container {
                         container_type: ContainerType::Subnet,
                         parent_container_id: None,
+                        entity_id: Some(*subnet_id),
                         layer_hint: None,
                         icon: None,
                         color: None,

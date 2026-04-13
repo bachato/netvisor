@@ -274,6 +274,13 @@ export function buildEntityNodeIndex(nodes: TopologyNode[]): EntityNodeIndex {
 	for (const nd of nodes) {
 		if (nd.node_type === 'Container') {
 			allContainerNodeIds.add(nd.id);
+			// Map entity_id → container node for ownership tracking
+			const entityId = 'entity_id' in nd ? (nd.entity_id as string | undefined) : undefined;
+			if (entityId) {
+				const containerSet = hostIdToContainerIds.get(entityId);
+				if (containerSet) containerSet.add(nd.id);
+				else hostIdToContainerIds.set(entityId, new Set([nd.id]));
+			}
 			continue;
 		}
 		if (nd.node_type !== 'Element') continue;
@@ -285,15 +292,6 @@ export function buildEntityNodeIndex(nodes: TopologyNode[]): EntityNodeIndex {
 			const existing = hostIdToNodes.get(hostId);
 			if (existing) existing.push(nd.id);
 			else hostIdToNodes.set(hostId, [nd.id]);
-
-			// Map host → container(s) for views where Host is the container
-			const containerId =
-				'container_id' in nd ? (nd.container_id as string | undefined) : undefined;
-			if (containerId) {
-				const containerSet = hostIdToContainerIds.get(hostId);
-				if (containerSet) containerSet.add(containerId);
-				else hostIdToContainerIds.set(hostId, new Set([containerId]));
-			}
 		}
 
 		if (nd.element_type === 'Interface') {

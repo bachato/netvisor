@@ -1,0 +1,127 @@
+[
+  {
+    "id": "ByServiceCategory",
+    "name": "Service category",
+    "description": "Group elements by service category",
+    "category": null,
+    "icon": "layers",
+    "color": "Purple",
+    "metadata": {
+      "editability": "Multi",
+      "views": [
+        "Application",
+        "Workloads"
+      ],
+      "will_accept_edges": false
+    }
+  },
+  {
+    "id": "ByTag",
+    "name": "Tag",
+    "description": "Group elements by tag",
+    "category": null,
+    "icon": "tag",
+    "color": "Orange",
+    "metadata": {
+      "editability": "Multi",
+      "views": [
+        "L3Logical",
+        "L2Physical",
+        "Workloads",
+        "Application"
+      ],
+      "will_accept_edges": false
+    }
+  },
+  {
+    "id": "ByHypervisor",
+    "name": "Hypervisor",
+    "description": "Group VMs by hypervisor",
+    "category": null,
+    "icon": "monitor-cog",
+    "color": "Orange",
+    "metadata": {
+      "editability": "Singleton",
+      "views": [
+        "Workloads"
+      ],
+      "will_accept_edges": true
+    }
+  },
+  {
+    "id": "ByContainerRuntime",
+    "name": "Container Runtime",
+    "description": "Group containers by runtime",
+    "category": null,
+    "icon": "container",
+    "color": "Fuchsia",
+    "metadata": {
+      "editability": "Singleton",
+      "views": [
+        "Workloads"
+      ],
+      "will_accept_edges": true
+    }
+  },
+  {
+    "id": "ByStack",
+    "name": "Docker Stack",
+    "description": "Group by Docker Compose project",
+    "category": null,
+    "icon": "container",
+    "color": "Fuchsia",
+    "metadata": {
+      "editability": "Singleton",
+      "views": [
+        "L3Logical",
+        "Application"
+      ],
+      "will_accept_edges": true
+    }
+  },
+  {
+    "id": "ByTrunkPort",
+    "name": "Trunk Ports",
+    "description": "Group trunk ports (ports carrying multiple VLANs)",
+    "category": null,
+    "icon": "network",
+    "color": "Amber",
+    "metadata": {
+      "editability": "System",
+      "views": [
+        "L2Physical"
+      ],
+      "will_accept_edges": false
+    }
+  },
+  {
+    "id": "ByVLAN",
+    "name": "VLAN",
+    "description": "Group access ports by native VLAN ID",
+    "category": null,
+    "icon": "network",
+    "color": "Teal",
+    "metadata": {
+      "editability": "System",
+      "views": [
+        "L2Physical"
+      ],
+      "will_accept_edges": false
+    }
+  },
+  {
+    "id": "ByPortOpStatus",
+    "name": "Port Status",
+    "description": "Group ports by operational status",
+    "category": null,
+    "icon": "circle",
+    "color": "Gray",
+    "metadata": {
+      "editability": "System",
+      "views": [
+        "L2Physical"
+      ],
+      "will_accept_edges": false
+    }
+  }
+]

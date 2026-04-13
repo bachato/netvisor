@@ -58,8 +58,8 @@ impl HasId for TopologyView {
 pub struct ViewElementConfig {
     /// Entity rendered as the container/grouping box (e.g. Subnet in L3, Host in L2/Workloads)
     pub container_entity: Option<EntityDiscriminants>,
-    /// Entity rendered as element nodes
-    pub element_entity: EntityDiscriminants,
+    /// Entities rendered as element nodes (e.g. Service + Host in Workloads)
+    pub element_entities: Vec<EntityDiscriminants>,
     /// Entities shown inside element nodes (e.g. Services displayed as cards)
     pub inline_entities: Vec<EntityDiscriminants>,
 }
@@ -201,22 +201,22 @@ impl TopologyView {
         match self {
             Self::L3Logical => ViewElementConfig {
                 container_entity: Some(EntityDiscriminants::Subnet),
-                element_entity: EntityDiscriminants::IPAddress,
+                element_entities: vec![EntityDiscriminants::IPAddress],
                 inline_entities: vec![EntityDiscriminants::Service],
             },
             Self::L2Physical => ViewElementConfig {
                 container_entity: Some(EntityDiscriminants::Host),
-                element_entity: EntityDiscriminants::Interface,
+                element_entities: vec![EntityDiscriminants::Interface],
                 inline_entities: vec![],
             },
             Self::Workloads => ViewElementConfig {
                 container_entity: Some(EntityDiscriminants::Host),
-                element_entity: EntityDiscriminants::Service,
+                element_entities: vec![EntityDiscriminants::Service, EntityDiscriminants::Host],
                 inline_entities: vec![],
             },
             Self::Application => ViewElementConfig {
                 container_entity: None,
-                element_entity: EntityDiscriminants::Service,
+                element_entities: vec![EntityDiscriminants::Service],
                 inline_entities: vec![],
             },
         }
@@ -304,7 +304,7 @@ impl TopologyView {
         let element_config = self.element_config();
         let bulk_tag_entity = element_config
             .container_entity
-            .unwrap_or(element_config.element_entity);
+            .unwrap_or(element_config.element_entities[0]);
 
         match self {
             Self::L3Logical => ViewInspectorConfig {

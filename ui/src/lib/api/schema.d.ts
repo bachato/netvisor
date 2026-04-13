@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-13T16:30:51.911471Z",
-             *       "id": "7a0592da-ddcb-44f4-8bab-8771035fcdab",
+             *       "created_at": "2026-04-13T18:32:19.131437Z",
+             *       "id": "8845d951-1b7a-42f1-9635-bc0362c30878",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-13T16:30:51.911471Z"
+             *       "updated_at": "2026-04-13T18:32:19.131437Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-13T16:30:51.894408Z",
-             *               "id": "91dcf23b-98dc-4636-a018-f5ce3bce7c08",
+             *               "created_at": "2026-04-13T18:32:19.115013Z",
+             *               "id": "b5878b7a-6859-473d-8ece-bf33509a10b9",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-13T16:30:51.894408Z"
+             *               "updated_at": "2026-04-13T18:32:19.115013Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Komga",
+             *           "service_definition": "HP Printer",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3531,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-13T16:30:51.906774Z",
-             *           "id": "09cb2658-98b6-4a48-92b3-52e063ac82aa",
+             *           "created_at": "2026-04-13T18:32:19.126898Z",
+             *           "id": "ece4425d-83e0-489f-8651-8707cfa98cab",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-13T16:30:51.906774Z"
+             *           "updated_at": "2026-04-13T18:32:19.126898Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3547,7 +3547,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Komga",
+             *       "service_definition": "HP Printer",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3898,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-13T16:30:51.894771Z",
-         *       "id": "38497ad5-e9f2-4546-b002-51667b0ea0d5",
+         *       "created_at": "2026-04-13T18:32:19.115369Z",
+         *       "id": "122c45bc-791b-4322-b2d1-868de454ed51",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-13T16:30:51.894771Z"
+         *       "updated_at": "2026-04-13T18:32:19.115369Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4025,7 +4025,7 @@ export interface components {
         /** @enum {string} */
         Color: "Pink" | "Rose" | "Red" | "Amber" | "Orange" | "Green" | "Emerald" | "Teal" | "Cyan" | "Blue" | "Indigo" | "Purple" | "Fuchsia" | "Violet" | "Sky" | "Gray" | "Lime" | "Yellow";
         /** @enum {string} */
-        ContainerType: "Subnet" | "ServiceCategory" | "Application" | "Root" | "Host" | "NestedTag" | "NestedServiceCategory" | "Virtualizer" | "BareMetal" | "Stack" | "TrunkPort" | "VLAN" | "PortOpStatus";
+        ContainerType: "Subnet" | "ServiceCategory" | "Application" | "Root" | "Host" | "NestedTag" | "NestedServiceCategory" | "Hypervisor" | "ContainerRuntime" | "Stack" | "TrunkPort" | "VLAN" | "PortOpStatus";
         /**
          * @description Input for creating a binding with a service.
          *     `service_id` and `network_id` are assigned by the server after the service is created.
@@ -4090,7 +4090,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Komga",
+         *           "service_definition": "HP Printer",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4949,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-13T16:30:51.893917Z",
-         *               "id": "41cebb93-cecf-4572-b79a-54f68b08a125",
+         *               "created_at": "2026-04-13T18:32:19.114539Z",
+         *               "id": "a9dd434c-9495-4909-a5cb-a722062b978f",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-13T16:30:51.893917Z"
+         *               "updated_at": "2026-04-13T18:32:19.114539Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4965,7 +4965,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Komga",
+         *           "service_definition": "HP Printer",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5115,7 +5115,7 @@ export interface components {
                     tag_ids: string[];
                     title?: string | null;
                 };
-            } | "ByVirtualizer" | "ByStack" | "ByTrunkPort" | "ByVLAN" | "ByPortOpStatus";
+            } | "ByHypervisor" | "ByContainerRuntime" | "ByStack" | "ByTrunkPort" | "ByVLAN" | "ByPortOpStatus";
         };
         /**
          * @description SNMP ifAdminStatus values per IF-MIB RFC 2863
@@ -5466,12 +5466,18 @@ export interface components {
         NodeType: {
             /**
              * @description Service definition ID for logo rendering (e.g. "Docker", "Proxmox VE").
-             *     Used by Virtualizer and Stack subcontainers to show the virtualizing service's logo.
+             *     Used by Hypervisor and Stack subcontainers to show the service's logo.
              */
             associated_service_definition?: string | null;
             /** @description Display color name (set by graph builder from the source entity, e.g. subnet type) */
             color?: string | null;
             container_type?: components["schemas"]["ContainerType"];
+            /**
+             * Format: uuid
+             * @description The entity this container represents (e.g. host ID for Host containers,
+             *     subnet ID for Subnet containers). Used for ownership mapping on the frontend.
+             */
+            entity_id?: string | null;
             /** @description Display icon name (set by graph builder from the source entity, e.g. subnet type) */
             icon?: string | null;
             /**
@@ -6094,14 +6100,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-13T16:30:51.894651Z",
-         *           "id": "2f2d0c41-f881-4546-9cc9-fcfc5cc915f1",
+         *           "created_at": "2026-04-13T18:32:19.115253Z",
+         *           "id": "7ad6a5b8-02b5-4370-9a91-92e065d92d5a",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-13T16:30:51.894651Z"
+         *           "updated_at": "2026-04-13T18:32:19.115253Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6110,7 +6116,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Komga",
+         *       "service_definition": "HP Printer",
          *       "source": {
          *         "type": "Manual"
          *       },
