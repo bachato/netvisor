@@ -245,7 +245,7 @@ impl Default for TopologyLocalOptions {
     fn default() -> Self {
         Self {
             no_fade_edges: false,
-            hide_edge_types: vec![EdgeTypeDiscriminants::HostVirtualization],
+            hide_edge_types: vec![EdgeTypeDiscriminants::Hypervisor],
             tag_filter: TopologyTagFilter::default(),
             show_minimap: true,
             bundle_edges: true,

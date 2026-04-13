@@ -160,10 +160,14 @@ pub enum EdgeType {
     SameHost {
         host_id: Uuid,
     }, // Connecting IP address nodes that belong to the same host
-    HostVirtualization {
+    #[serde(alias = "HostVirtualization")]
+    #[strum_discriminants(serde(alias = "HostVirtualization"))]
+    Hypervisor {
         vm_service_id: Uuid,
     },
-    ServiceVirtualization {
+    #[serde(alias = "ServiceVirtualization")]
+    #[strum_discriminants(serde(alias = "ServiceVirtualization"))]
+    ContainerRuntime {
         host_id: Uuid,
         containerizing_service_id: Uuid,
     },
@@ -197,8 +201,8 @@ impl EntityMetadataProvider for EdgeType {
             EdgeType::RequestPath { .. } => EntityDiscriminants::Dependency.color(),
             EdgeType::HubAndSpoke { .. } => EntityDiscriminants::Dependency.color(),
             EdgeType::SameHost { .. } => EntityDiscriminants::Host.color(),
-            EdgeType::HostVirtualization { .. } => Concept::Virtualization.color(),
-            EdgeType::ServiceVirtualization { .. } => Concept::Containerization.color(),
+            EdgeType::Hypervisor { .. } => Concept::Virtualization.color(),
+            EdgeType::ContainerRuntime { .. } => Concept::Containerization.color(),
             EdgeType::PhysicalLink { .. } => EntityDiscriminants::Interface.color(),
         }
     }
@@ -208,8 +212,8 @@ impl EntityMetadataProvider for EdgeType {
             EdgeType::RequestPath { .. } => DependencyTypeDiscriminants::RequestPath.icon(),
             EdgeType::HubAndSpoke { .. } => DependencyTypeDiscriminants::HubAndSpoke.icon(),
             EdgeType::SameHost { .. } => EntityDiscriminants::Host.icon(),
-            EdgeType::HostVirtualization { .. } => Concept::Virtualization.icon(),
-            EdgeType::ServiceVirtualization { .. } => Concept::Containerization.icon(),
+            EdgeType::Hypervisor { .. } => Concept::Virtualization.icon(),
+            EdgeType::ContainerRuntime { .. } => Concept::Containerization.icon(),
             EdgeType::PhysicalLink { .. } => EntityDiscriminants::Interface.icon(),
         }
     }
@@ -218,11 +222,11 @@ impl EntityMetadataProvider for EdgeType {
 impl TypeMetadataProvider for EdgeType {
     fn name(&self) -> &'static str {
         match self {
-            EdgeType::RequestPath { .. } => EdgeStyle::SmoothStep.into(),
+            EdgeType::RequestPath { .. } => DependencyTypeDiscriminants::RequestPath.name(),
             EdgeType::HubAndSpoke { .. } => DependencyTypeDiscriminants::HubAndSpoke.name(),
             EdgeType::SameHost { .. } => "Same Host",
-            EdgeType::HostVirtualization { .. } => "Virtualized Host",
-            EdgeType::ServiceVirtualization { .. } => "Virtualized Service",
+            EdgeType::Hypervisor { .. } => "Hypervisor",
+            EdgeType::ContainerRuntime { .. } => "Container Runtime",
             EdgeType::PhysicalLink { .. } => "Physical Link",
         }
     }
@@ -232,8 +236,8 @@ impl TypeMetadataProvider for EdgeType {
             EdgeType::RequestPath { .. } => EdgeStyle::Bezier.into(),
             EdgeType::HubAndSpoke { .. } => EdgeStyle::Bezier.into(),
             EdgeType::SameHost { .. } => EdgeStyle::Bezier.into(),
-            EdgeType::HostVirtualization { .. } => EdgeStyle::Bezier.into(),
-            EdgeType::ServiceVirtualization { .. } => EdgeStyle::Bezier.into(),
+            EdgeType::Hypervisor { .. } => EdgeStyle::Bezier.into(),
+            EdgeType::ContainerRuntime { .. } => EdgeStyle::Bezier.into(),
             EdgeType::PhysicalLink { .. } => EdgeStyle::Bezier.into(),
         };
 
@@ -243,14 +247,14 @@ impl TypeMetadataProvider for EdgeType {
             EdgeType::RequestPath { .. } => true,
             EdgeType::HubAndSpoke { .. } => true,
             EdgeType::SameHost { .. } => false,
-            EdgeType::HostVirtualization { .. } => false,
-            EdgeType::ServiceVirtualization { .. } => false,
+            EdgeType::Hypervisor { .. } => false,
+            EdgeType::ContainerRuntime { .. } => false,
             EdgeType::PhysicalLink { .. } => false, // No markers - bidirectional link
         };
 
         let is_host_edge = matches!(
             self,
-            EdgeType::SameHost { .. } | EdgeType::ServiceVirtualization { .. }
+            EdgeType::SameHost { .. } | EdgeType::ContainerRuntime { .. }
         );
         let is_dependency_edge = matches!(
             self,

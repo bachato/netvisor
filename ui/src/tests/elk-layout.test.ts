@@ -253,7 +253,7 @@ describe('computeElkLayout', () => {
 		const edges: TopologyEdge[] = [
 			primaryEdge(elem1, elem3, 'SameHost'), // primary: ext -> gw
 			primaryEdge(elem3, elem4, 'SameHost'), // primary: gw -> lan
-			makeEdge(elem1, elem4, 'HostVirtualization') // overlay: should be ignored by layout
+			makeEdge(elem1, elem4, 'Hypervisor') // overlay: should be ignored by layout
 		];
 
 		const subnets = [
@@ -570,7 +570,7 @@ describe('computeElkLayout', () => {
 
 		// Only disabled edges — no layout-affecting edges to drive layout
 		const edges: TopologyEdge[] = [
-			makeEdge(elem1, elem2, 'HostVirtualization'),
+			makeEdge(elem1, elem2, 'Hypervisor'),
 			makeEdge(elem1, elem2, 'RequestPath')
 		];
 

@@ -367,7 +367,7 @@ impl ViewBuilder for ApplicationBuilder {
             }
         }
 
-        // Create ServiceVirtualization overlay edges
+        // Create ContainerRuntime overlay edges
         for service in ctx.services {
             if let Some(ServiceVirtualization::Docker(docker)) = &service.base.virtualization
                 && service_node_ids.contains_key(&service.id)
@@ -377,7 +377,7 @@ impl ViewBuilder for ApplicationBuilder {
                     id: Uuid::new_v4(),
                     source: docker.service_id,
                     target: service.id,
-                    edge_type: EdgeType::ServiceVirtualization {
+                    edge_type: EdgeType::ContainerRuntime {
                         containerizing_service_id: docker.service_id,
                         host_id: service.base.host_id,
                     },

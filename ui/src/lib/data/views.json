@@ -8,10 +8,13 @@
     "color": "Green",
     "metadata": {
       "edge_view_configs": {
-        "HostVirtualization": {
+        "ContainerRuntime": {
           "type": "disabled"
         },
         "HubAndSpoke": {
+          "type": "disabled"
+        },
+        "Hypervisor": {
           "type": "disabled"
         },
         "PhysicalLink": {
@@ -34,9 +37,6 @@
           "stroke": "dashed",
           "type": "active",
           "will_target_container": false
-        },
-        "ServiceVirtualization": {
-          "type": "disabled"
         }
       },
       "element_config": {
@@ -72,12 +72,12 @@
     "color": "Blue",
     "metadata": {
       "edge_view_configs": {
-        "HostVirtualization": {
-          "affects_layout": false,
-          "default_visibility": "hidden",
+        "ContainerRuntime": {
+          "affects_layout": true,
+          "default_visibility": "visible",
           "highlight_behavior": "when_visible",
           "show_directionality": false,
-          "stroke": "dashed",
+          "stroke": "solid",
           "type": "active",
           "will_target_container": true
         },
@@ -89,6 +89,15 @@
           "stroke": "dashed",
           "type": "active",
           "will_target_container": false
+        },
+        "Hypervisor": {
+          "affects_layout": false,
+          "default_visibility": "hidden",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": true
         },
         "PhysicalLink": {
           "affects_layout": false,
@@ -116,15 +125,6 @@
           "stroke": "solid",
           "type": "active",
           "will_target_container": false
-        },
-        "ServiceVirtualization": {
-          "affects_layout": true,
-          "default_visibility": "visible",
-          "highlight_behavior": "when_visible",
-          "show_directionality": false,
-          "stroke": "solid",
-          "type": "active",
-          "will_target_container": true
         }
       },
       "element_config": {
@@ -165,7 +165,7 @@
     "color": "Amber",
     "metadata": {
       "edge_view_configs": {
-        "HostVirtualization": {
+        "ContainerRuntime": {
           "type": "disabled"
         },
         "HubAndSpoke": {
@@ -176,6 +176,9 @@
           "stroke": "dashed",
           "type": "active",
           "will_target_container": false
+        },
+        "Hypervisor": {
+          "type": "disabled"
         },
         "PhysicalLink": {
           "affects_layout": false,
@@ -196,9 +199,6 @@
           "will_target_container": false
         },
         "SameHost": {
-          "type": "disabled"
-        },
-        "ServiceVirtualization": {
           "type": "disabled"
         }
       },
@@ -239,8 +239,14 @@
     "color": "Purple",
     "metadata": {
       "edge_view_configs": {
-        "HostVirtualization": {
-          "type": "disabled"
+        "ContainerRuntime": {
+          "affects_layout": true,
+          "default_visibility": "hidden",
+          "highlight_behavior": "always",
+          "show_directionality": false,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": true
         },
         "HubAndSpoke": {
           "affects_layout": true,
@@ -250,6 +256,9 @@
           "stroke": "solid",
           "type": "active",
           "will_target_container": false
+        },
+        "Hypervisor": {
+          "type": "disabled"
         },
         "PhysicalLink": {
           "type": "disabled"
@@ -265,15 +274,6 @@
         },
         "SameHost": {
           "type": "disabled"
-        },
-        "ServiceVirtualization": {
-          "affects_layout": true,
-          "default_visibility": "hidden",
-          "highlight_behavior": "always",
-          "show_directionality": false,
-          "stroke": "dashed",
-          "type": "active",
-          "will_target_container": true
         }
       },
       "element_config": {

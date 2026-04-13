@@ -138,7 +138,7 @@ impl EdgeBuilder {
                             id: Uuid::new_v4(),
                             source: origin_ip_address.id,
                             target: container_binding_ip_address_id,
-                            edge_type: EdgeType::ServiceVirtualization {
+                            edge_type: EdgeType::ContainerRuntime {
                                 containerizing_service_id: s.id,
                                 host_id: host.id,
                             },
@@ -214,7 +214,7 @@ impl EdgeBuilder {
                                     id: Uuid::new_v4(),
                                     source: *proxmox_service_ip_address_id,
                                     target: i.id,
-                                    edge_type: EdgeType::HostVirtualization {
+                                    edge_type: EdgeType::Hypervisor {
                                         vm_service_id: *proxmox_service_id,
                                     },
                                     label: None,
@@ -233,7 +233,7 @@ impl EdgeBuilder {
             .collect()
     }
 
-    /// Create host-level HostVirtualization edges (hypervisor host → VM host).
+    /// Create host-level Hypervisor edges (hypervisor host → VM host).
     /// Unlike `create_vm_host_edges` which uses interface IDs, this uses host IDs
     /// as source/target for views where elements are hosts (e.g. Infrastructure).
     pub fn create_vm_host_edges_by_host(ctx: &TopologyContext) -> Vec<Edge> {
@@ -246,7 +246,7 @@ impl EdgeBuilder {
                         id: Uuid::new_v4(),
                         source: proxmox_service.base.host_id,
                         target: h.id,
-                        edge_type: EdgeType::HostVirtualization {
+                        edge_type: EdgeType::Hypervisor {
                             vm_service_id: pv.service_id,
                         },
                         label: None,

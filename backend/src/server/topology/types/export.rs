@@ -20,8 +20,8 @@ fn mermaid_escape(s: &str) -> String {
 fn edge_type_name(edge_type: &EdgeType) -> &'static str {
     match edge_type {
         EdgeType::SameHost { .. } => "Same Host",
-        EdgeType::HostVirtualization { .. } => "Host Virtualization",
-        EdgeType::ServiceVirtualization { .. } => "Service Virtualization",
+        EdgeType::Hypervisor { .. } => "Hypervisor",
+        EdgeType::ContainerRuntime { .. } => "Container Runtime",
         EdgeType::RequestPath { .. } => "Request Path",
         EdgeType::HubAndSpoke { .. } => "Hub & Spoke",
         EdgeType::PhysicalLink { .. } => "Physical Link",
@@ -115,7 +115,7 @@ pub fn topology_to_mermaid(topology: &Topology) -> String {
         let arrow = match &edge.edge_type {
             EdgeType::RequestPath { .. } | EdgeType::HubAndSpoke { .. } => "-->",
             EdgeType::SameHost { .. } | EdgeType::PhysicalLink { .. } => "---",
-            EdgeType::HostVirtualization { .. } | EdgeType::ServiceVirtualization { .. } => "-.->",
+            EdgeType::Hypervisor { .. } | EdgeType::ContainerRuntime { .. } => "-.->",
         };
 
         let label_str = edge
