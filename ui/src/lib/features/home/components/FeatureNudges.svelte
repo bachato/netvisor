@@ -2,20 +2,42 @@
 	import type { components } from '$lib/api/schema';
 	import FeatureNudge from './FeatureNudge.svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
-	import { triggerUpgrade } from '$lib/features/billing/trigger-upgrade';
-	import { optionsPanelExpanded } from '$lib/features/topology/queries';
+	import { activeView } from '$lib/features/topology/queries';
 	import { entities, billingPlans } from '$lib/shared/stores/metadata';
-	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { IconComponent } from '$lib/shared/utils/types';
 	import { onMount } from 'svelte';
 	import {
-		common_viewPlans,
-		home_nudges_scheduledScansDescription,
-		home_nudges_scheduledScansTitle,
-		home_nudges_unclaimedPortsAction,
-		home_nudges_unclaimedPortsDescription,
-		home_nudges_unclaimedPortsTitle
+		home_nudges_apiKeysAction,
+		home_nudges_apiKeysDescription,
+		home_nudges_apiKeysTitle,
+		home_nudges_applicationTagsAction,
+		home_nudges_applicationTagsDescription,
+		home_nudges_applicationTagsTitle,
+		home_nudges_daemonAttentionAction,
+		home_nudges_daemonAttentionDescription,
+		home_nudges_daemonAttentionTitle,
+		home_nudges_dependenciesAction,
+		home_nudges_dependenciesDescription,
+		home_nudges_dependenciesTitle,
+		home_nudges_explorePerspectivesAction,
+		home_nudges_explorePerspectivesDescription,
+		home_nudges_explorePerspectivesTitle,
+		home_nudges_inviteTeamAction,
+		home_nudges_inviteTeamDescription,
+		home_nudges_inviteTeamTitle,
+		home_nudges_multiNetworkAction,
+		home_nudges_multiNetworkDescription,
+		home_nudges_multiNetworkTitle,
+		home_nudges_shareAction,
+		home_nudges_shareDescription,
+		home_nudges_shareTitle,
+		home_nudges_snmpAction,
+		home_nudges_snmpDescription,
+		home_nudges_snmpTitle,
+		home_nudges_tagsAction,
+		home_nudges_tagsDescription,
+		home_nudges_tagsTitle
 	} from '$lib/paraglide/messages';
 
 	type Organization = components['schemas']['Organization'];
@@ -32,11 +54,7 @@
 		onNavigate: (tab: string) => void;
 	} = $props();
 
-	const servicesQuery = useServicesCacheQuery();
 	const daemonsQuery = useDaemonsQuery();
-	let hasUnclaimedPorts = $derived(
-		(servicesQuery.data ?? []).some((s) => s.service_definition === 'Unclaimed Open Ports')
-	);
 	let hasUnreachableDaemons = $derived(
 		(daemonsQuery.data ?? []).some((d) => d.standby === true || d.is_unreachable === true)
 	);
@@ -71,26 +89,10 @@
 	let nudges = $derived.by((): Nudge[] => {
 		const all: Nudge[] = [
 			{
-				id: 'unclaimed-ports',
-				title: home_nudges_unclaimedPortsTitle(),
-				description: home_nudges_unclaimedPortsDescription(),
-				actionLabel: home_nudges_unclaimedPortsAction(),
-				action: () => {
-					window.open(
-						'https://scanopy.net/docs/using-scanopy/network-data/#unclaimed-open-ports',
-						'_blank'
-					);
-				},
-				visible: has('FirstDiscoveryCompleted') && hasUnclaimedPorts,
-				icon: entities.getIconComponent('Port'),
-				iconColor: entities.getColorHelper('Port').icon
-			},
-			{
 				id: 'daemon-attention',
-				title: 'Daemon needs attention',
-				description:
-					'One or more daemons are offline or unreachable. Scheduled scans targeting these daemons will be skipped until connectivity is restored.',
-				actionLabel: 'View Daemons',
+				title: home_nudges_daemonAttentionTitle(),
+				description: home_nudges_daemonAttentionDescription(),
+				actionLabel: home_nudges_daemonAttentionAction(),
 				action: () => {
 					onNavigate('daemons');
 				},
@@ -99,10 +101,60 @@
 				iconColor: entities.getColorHelper('Daemon').icon
 			},
 			{
+				id: 'explore-perspectives',
+				title: home_nudges_explorePerspectivesTitle(),
+				description: home_nudges_explorePerspectivesDescription(),
+				actionLabel: home_nudges_explorePerspectivesAction(),
+				action: () => {
+					onNavigate('topology');
+				},
+				visible: has('FirstTopologyRebuild'),
+				icon: entities.getIconComponent('Topology'),
+				iconColor: entities.getColorHelper('Topology').icon
+			},
+			{
+				id: 'application-tags',
+				title: home_nudges_applicationTagsTitle(),
+				description: home_nudges_applicationTagsDescription(),
+				actionLabel: home_nudges_applicationTagsAction(),
+				action: () => {
+					activeView.set('Application');
+					onNavigate('topology');
+				},
+				visible: has('FirstTopologyRebuild') && !has('FirstApplicationTagCreated'),
+				icon: entities.getIconComponent('Tag'),
+				iconColor: entities.getColorHelper('Tag').icon
+			},
+			{
+				id: 'dependencies',
+				title: home_nudges_dependenciesTitle(),
+				description: home_nudges_dependenciesDescription(),
+				actionLabel: home_nudges_dependenciesAction(),
+				action: () => {
+					onNavigate('topology');
+				},
+				visible: has('FirstTopologyRebuild') && !has('FirstDependencyCreated'),
+				icon: entities.getIconComponent('Dependency'),
+				iconColor: entities.getColorHelper('Dependency').icon
+			},
+			{
+				id: 'snmp',
+				title: home_nudges_snmpTitle(),
+				description: home_nudges_snmpDescription(),
+				actionLabel: home_nudges_snmpAction(),
+				action: () => {
+					onNavigate('credentials');
+					openModal('credential-editor');
+				},
+				visible: has('FirstDiscoveryCompleted') && !has('FirstSnmpCredentialCreated'),
+				icon: entities.getIconComponent('Credential'),
+				iconColor: entities.getColorHelper('Credential').icon
+			},
+			{
 				id: 'tags',
-				title: 'Organize with Tags',
-				description: 'Add tags to group and filter your hosts, services, and other entities.',
-				actionLabel: 'Go to Tags',
+				title: home_nudges_tagsTitle(),
+				description: home_nudges_tagsDescription(),
+				actionLabel: home_nudges_tagsAction(),
 				action: () => {
 					onNavigate('tags');
 					openModal('tag-editor');
@@ -112,76 +164,26 @@
 				iconColor: entities.getColorHelper('Tag').icon
 			},
 			{
-				id: 'topology-customize',
-				title: 'Customize Your Topology',
-				description:
-					'Use the options panel to filter nodes, hide edges, and organize your network view.',
-				actionLabel: 'Open Options',
+				id: 'invite-team',
+				title: home_nudges_inviteTeamTitle(),
+				description: home_nudges_inviteTeamDescription(),
+				actionLabel: home_nudges_inviteTeamAction(),
 				action: () => {
-					onNavigate('topology');
-					optionsPanelExpanded.set(true);
-				},
-				visible: has('FirstTopologyRebuild') && !has('FirstDependencyCreated'),
-				icon: entities.getIconComponent('Topology'),
-				iconColor: entities.getColorHelper('Topology').icon
-			},
-			{
-				id: 'dependencies',
-				title: 'Create a Dependency',
-				description:
-					'Define service dependencies on the topology to keep your network view organized.',
-				actionLabel: 'Create Dependency',
-				action: () => {
-					onNavigate('dependencies');
-					openModal('dependency-editor');
-				},
-				visible: has('FirstTopologyRebuild') && !has('FirstDependencyCreated'),
-				icon: entities.getIconComponent('Dependency'),
-				iconColor: entities.getColorHelper('Dependency').icon
-			},
-			{
-				id: 'snmp',
-				title: 'Enable SNMP Discovery',
-				description: 'Add SNMP credentials to discover detailed interface and device information.',
-				actionLabel: 'Add SNMP Credential',
-				action: () => {
-					onNavigate('credentials');
-					openModal('credential-editor');
-				},
-				visible: !has('FirstSnmpCredentialCreated'),
-				icon: entities.getIconComponent('Credential'),
-				iconColor: entities.getColorHelper('Credential').icon
-			},
-			{
-				id: 'scheduled-free',
-				title: home_nudges_scheduledScansTitle(),
-				description: home_nudges_scheduledScansDescription(),
-				actionLabel: common_viewPlans(),
-				action: () =>
-					triggerUpgrade({ feature: 'scheduled_discovery', source: 'feature_nudge_scheduled' }),
-				visible: !features.scheduled_discovery,
-				icon: entities.getIconComponent('Discovery'),
-				iconColor: entities.getColorHelper('Discovery').icon
-			},
-			{
-				id: 'api-keys',
-				title: 'Automate with the API',
-				description: 'Create an API key to integrate Scanopy with your tools and workflows.',
-				actionLabel: 'Create API Key',
-				action: () => {
-					onNavigate('api-keys');
-					openModal('user-api-key');
+					onNavigate('users');
+					openModal('invite-user');
 				},
 				visible:
-					features.api_access && has('FirstDiscoveryCompleted') && !has('FirstUserApiKeyCreated'),
-				icon: entities.getIconComponent('UserApiKey'),
-				iconColor: entities.getColorHelper('UserApiKey').icon
+					((organization.plan?.included_seats ?? 0) > 1 ||
+						(organization.plan?.seat_cents ?? 0) > 0) &&
+					!has('InviteSent'),
+				icon: entities.getIconComponent('User'),
+				iconColor: entities.getColorHelper('User').icon
 			},
 			{
 				id: 'multi-network',
-				title: 'Add Another Network',
-				description: 'Monitor multiple sites or environments by adding a second network.',
-				actionLabel: 'Add Network',
+				title: home_nudges_multiNetworkTitle(),
+				description: home_nudges_multiNetworkDescription(),
+				actionLabel: home_nudges_multiNetworkAction(),
 				action: () => {
 					onNavigate('networks');
 					openModal('network-editor');
@@ -195,10 +197,24 @@
 				iconColor: entities.getColorHelper('Network').icon
 			},
 			{
+				id: 'api-keys',
+				title: home_nudges_apiKeysTitle(),
+				description: home_nudges_apiKeysDescription(),
+				actionLabel: home_nudges_apiKeysAction(),
+				action: () => {
+					onNavigate('api-keys');
+					openModal('user-api-key');
+				},
+				visible:
+					features.api_access && has('FirstDiscoveryCompleted') && !has('FirstUserApiKeyCreated'),
+				icon: entities.getIconComponent('UserApiKey'),
+				iconColor: entities.getColorHelper('UserApiKey').icon
+			},
+			{
 				id: 'share',
-				title: 'Share Your Topology',
-				description: 'Create a live link or embed to share your network topology with others.',
-				actionLabel: 'Create Share',
+				title: home_nudges_shareTitle(),
+				description: home_nudges_shareDescription(),
+				actionLabel: home_nudges_shareAction(),
 				action: () => {
 					onNavigate('topology');
 					openModal('topology-share');
@@ -206,22 +222,6 @@
 				visible: features.share_views && has('FirstTopologyRebuild'),
 				icon: entities.getIconComponent('Share'),
 				iconColor: entities.getColorHelper('Share').icon
-			},
-			{
-				id: 'invite-team',
-				title: 'Invite Your Team',
-				description: 'Collaborate with your team by inviting members to your organization.',
-				actionLabel: 'Invite Members',
-				action: () => {
-					onNavigate('users');
-					openModal('invite-user');
-				},
-				visible:
-					((organization.plan?.included_seats ?? 0) > 1 ||
-						(organization.plan?.seat_cents ?? 0) > 0) &&
-					!has('InviteSent'),
-				icon: entities.getIconComponent('User'),
-				iconColor: entities.getColorHelper('User').icon
 			}
 		];
 

@@ -482,6 +482,7 @@ pub enum OnboardingOperation {
     FirstDependencyCreated,
     FirstUserApiKeyCreated,
     FirstSnmpCredentialCreated,
+    FirstApplicationTagCreated,
     FirstCredentialCreated,
     InviteSent,
     InviteAccepted,

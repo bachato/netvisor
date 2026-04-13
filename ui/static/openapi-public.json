@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-13T18:32:19.131433Z",
-              "id": "c7c62690-d2a9-4111-bf03-d7f10439b3e6",
+              "created_at": "2026-04-13T20:41:32.629898Z",
+              "id": "3ef6683c-5f1a-4aee-9238-36a0157ca797",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T18:32:19.131433Z"
+              "updated_at": "2026-04-13T20:41:32.629898Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-13T18:32:19.115030Z",
-                      "id": "986876f9-d1c6-4265-ad7b-817e6fd5de30",
+                      "created_at": "2026-04-13T20:41:32.609781Z",
+                      "id": "ca75164e-f7a0-40eb-b127-327d879d626d",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-13T18:32:19.115030Z"
+                      "updated_at": "2026-04-13T20:41:32.609781Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "HP Printer",
+                  "service_definition": "Prometheus",
                   "source": {
                     "type": "Manual"
                   },
@@ -12003,14 +12003,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T18:32:19.126880Z",
-                  "id": "820550ad-5ef5-406e-af23-81df0eb93537",
+                  "created_at": "2026-04-13T20:41:32.625152Z",
+                  "id": "6c74673f-2a1d-4a74-8595-7e96b71112cd",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T18:32:19.126880Z"
+                  "updated_at": "2026-04-13T20:41:32.625152Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12019,7 +12019,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "HP Printer",
+              "service_definition": "Prometheus",
               "source": {
                 "type": "Manual"
               },
@@ -13384,14 +13384,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-13T18:32:19.115392Z",
-          "id": "fcb9d492-f0d5-4141-8224-f2776bf9cdb8",
+          "created_at": "2026-04-13T20:41:32.610002Z",
+          "id": "857192b1-24ea-4f04-bbb6-7a26db013cf4",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-13T18:32:19.115392Z"
+          "updated_at": "2026-04-13T20:41:32.610002Z"
         }
       },
       "BindingBase": {
@@ -13921,7 +13921,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "HP Printer",
+              "service_definition": "Prometheus",
               "tags": [],
               "virtualization": null
             }
@@ -16442,14 +16442,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T18:32:19.114553Z",
-                  "id": "55e1d326-71f8-429e-b78e-01b7e807794b",
+                  "created_at": "2026-04-13T20:41:32.609474Z",
+                  "id": "e4cbbece-8f54-4553-9484-5ab0b980defe",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T18:32:19.114553Z"
+                  "updated_at": "2026-04-13T20:41:32.609474Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16458,7 +16458,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "HP Printer",
+              "service_definition": "Prometheus",
               "source": {
                 "type": "Manual"
               },
@@ -18022,6 +18022,7 @@
           "FirstDependencyCreated",
           "FirstUserApiKeyCreated",
           "FirstSnmpCredentialCreated",
+          "FirstApplicationTagCreated",
           "FirstCredentialCreated",
           "InviteSent",
           "InviteAccepted",
@@ -18653,14 +18654,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-13T18:32:19.103727Z",
-                        "id": "e6bddc5c-d618-439c-8351-6b6ae53d26d3",
+                        "created_at": "2026-04-13T20:41:32.599172Z",
+                        "id": "663807f6-bb74-4bde-aeab-c3a19dba4ba3",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-13T18:32:19.103727Z"
+                        "updated_at": "2026-04-13T20:41:32.599172Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18669,7 +18670,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "HP Printer",
+                    "service_definition": "Prometheus",
                     "source": {
                       "type": "Manual"
                     },
@@ -18746,14 +18747,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-13T18:32:19.125596Z",
-                    "id": "e6c8d000-ab61-4ea1-8832-392c522ef067",
+                    "created_at": "2026-04-13T20:41:32.623386Z",
+                    "id": "d9e54d2f-0ae2-4967-bb80-3499a57446fc",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-13T18:32:19.125596Z"
+                    "updated_at": "2026-04-13T20:41:32.623386Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18762,7 +18763,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "HP Printer",
+                "service_definition": "Prometheus",
                 "source": {
                   "type": "Manual"
                 },
@@ -19992,14 +19993,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-13T18:32:19.115273Z",
-              "id": "baf918cc-d0cc-46e6-bfed-1989506cd572",
+              "created_at": "2026-04-13T20:41:32.609919Z",
+              "id": "dd2c85ca-7d4d-45e2-bb30-a88c0d91c586",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T18:32:19.115273Z"
+              "updated_at": "2026-04-13T20:41:32.609919Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20008,7 +20009,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "HP Printer",
+          "service_definition": "Prometheus",
           "source": {
             "type": "Manual"
           },

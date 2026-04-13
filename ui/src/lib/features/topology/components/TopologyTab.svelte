@@ -794,7 +794,9 @@
 						/>
 					{/if}
 					{#if showL2EmptyState}
-						<L2EmptyStateOverlay />
+						<L2EmptyStateOverlay
+							hasSnmpCredential={onboarding.includes('FirstSnmpCredentialCreated')}
+						/>
 					{/if}
 				</div>
 			{:else}

@@ -233,30 +233,48 @@ pub async fn create_tag(
     )
     .await?;
 
-    // Emit FirstTagCreated telemetry event if this is the first tag
-    if response.data.is_some() {
+    // Emit onboarding milestones for first tag / first application tag
+    if let Some(ref created_tag) = response.data {
         let organization = state
             .services
             .organization_service
             .get_by_id(&organization_id)
             .await?;
 
-        if let Some(organization) = organization
-            && organization.not_onboarded(&OnboardingOperation::FirstTagCreated)
-        {
-            state
-                .services
-                .tag_service
-                .event_bus()
-                .publish_onboarding(OnboardingEvent {
-                    id: Uuid::new_v4(),
-                    organization_id,
-                    operation: OnboardingOperation::FirstTagCreated,
-                    timestamp: Utc::now(),
-                    metadata: serde_json::json!({}),
-                    authentication: entity,
-                })
-                .await?;
+        if let Some(ref organization) = organization {
+            if organization.not_onboarded(&OnboardingOperation::FirstTagCreated) {
+                state
+                    .services
+                    .tag_service
+                    .event_bus()
+                    .publish_onboarding(OnboardingEvent {
+                        id: Uuid::new_v4(),
+                        organization_id,
+                        operation: OnboardingOperation::FirstTagCreated,
+                        timestamp: Utc::now(),
+                        metadata: serde_json::json!({}),
+                        authentication: entity.clone(),
+                    })
+                    .await?;
+            }
+
+            if created_tag.base.is_application
+                && organization.not_onboarded(&OnboardingOperation::FirstApplicationTagCreated)
+            {
+                state
+                    .services
+                    .tag_service
+                    .event_bus()
+                    .publish_onboarding(OnboardingEvent {
+                        id: Uuid::new_v4(),
+                        organization_id,
+                        operation: OnboardingOperation::FirstApplicationTagCreated,
+                        timestamp: Utc::now(),
+                        metadata: serde_json::json!({}),
+                        authentication: entity,
+                    })
+                    .await?;
+            }
         }
     }
 
