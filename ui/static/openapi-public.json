@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-13T21:28:05.169001Z",
-              "id": "7b225eb5-b65e-4a08-a31b-9fd1ba50a7a6",
+              "created_at": "2026-04-13T23:36:42.912684Z",
+              "id": "38b4415b-20a7-4c88-92ef-d38a8b84364e",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T21:28:05.169001Z"
+              "updated_at": "2026-04-13T23:36:42.912684Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-13T21:28:05.144919Z",
-                      "id": "6624b07c-0dc9-4195-8c09-3418dc05b79d",
+                      "created_at": "2026-04-13T23:36:42.899036Z",
+                      "id": "b7867f6b-d904-4283-950c-54e30468b071",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-13T21:28:05.144919Z"
+                      "updated_at": "2026-04-13T23:36:42.899036Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -12003,14 +12003,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T21:28:05.159355Z",
-                  "id": "8e6869f7-a3c0-49de-9d93-f96aa2f2cf02",
+                  "created_at": "2026-04-13T23:36:42.908946Z",
+                  "id": "429f0418-f388-4746-9c51-9824efaaa7aa",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T21:28:05.159355Z"
+                  "updated_at": "2026-04-13T23:36:42.908946Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -13384,14 +13384,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-13T21:28:05.145141Z",
-          "id": "2b353916-1447-4edc-aa27-7a4723115e74",
+          "created_at": "2026-04-13T23:36:42.899248Z",
+          "id": "6107a820-fc26-4900-ae8b-f6ab3ffb1d10",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-13T21:28:05.145141Z"
+          "updated_at": "2026-04-13T23:36:42.899248Z"
         }
       },
       "BindingBase": {
@@ -15506,7 +15506,7 @@
               "edge_type": {
                 "type": "string",
                 "enum": [
-                  "HostVirtualization"
+                  "Hypervisor"
                 ]
               },
               "vm_service_id": {
@@ -15530,7 +15530,7 @@
               "edge_type": {
                 "type": "string",
                 "enum": [
-                  "ServiceVirtualization"
+                  "ContainerRuntime"
                 ]
               },
               "host_id": {
@@ -15632,8 +15632,8 @@
         "type": "string",
         "enum": [
           "SameHost",
-          "HostVirtualization",
-          "ServiceVirtualization",
+          "Hypervisor",
+          "ContainerRuntime",
           "RequestPath",
           "HubAndSpoke",
           "PhysicalLink"
@@ -16442,14 +16442,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T21:28:05.144628Z",
-                  "id": "0783f1c9-2085-4c4b-ad1d-682d4b4f4b80",
+                  "created_at": "2026-04-13T23:36:42.898714Z",
+                  "id": "16dbe8f8-c617-41e6-994a-708bc84a826e",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T21:28:05.144628Z"
+                  "updated_at": "2026-04-13T23:36:42.898714Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -18646,14 +18646,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-13T21:28:05.134426Z",
-                        "id": "9ce39252-0aa9-4993-81dc-a311e8a71295",
+                        "created_at": "2026-04-13T23:36:42.891583Z",
+                        "id": "12c34fad-ec53-4346-b452-2e6118c6d805",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-13T21:28:05.134426Z"
+                        "updated_at": "2026-04-13T23:36:42.891583Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18739,14 +18739,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-13T21:28:05.158247Z",
-                    "id": "a9e06e84-9814-42c1-9ddb-dfbec0f6938a",
+                    "created_at": "2026-04-13T23:36:42.908008Z",
+                    "id": "bb90af85-f80e-44ae-a481-ae4a0298401d",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-13T21:28:05.158247Z"
+                    "updated_at": "2026-04-13T23:36:42.908008Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -19985,14 +19985,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-13T21:28:05.145065Z",
-              "id": "aaeda3b0-9d48-441a-9f05-bb078de5ab2e",
+              "created_at": "2026-04-13T23:36:42.899174Z",
+              "id": "29cf1925-bf55-477f-87e9-aa0c1cfda5e1",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T21:28:05.145065Z"
+              "updated_at": "2026-04-13T23:36:42.899174Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",

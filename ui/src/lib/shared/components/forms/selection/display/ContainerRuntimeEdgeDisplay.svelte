@@ -2,14 +2,13 @@
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { Topology, TopologyEdge } from '$lib/features/topology/types/base';
 
-	export const ServiceVirtualizationEdgeDisplay: EntityDisplayComponent<
+	export const ContainerRuntimeEdgeDisplay: EntityDisplayComponent<
 		TopologyEdge,
 		EdgeDisplayContext
 	> = {
 		getId: (edge) => edge.id,
 		getLabel: (edge, context) => {
-			if (!context?.topology || !('containerizing_service_id' in edge))
-				return 'Service Virtualization';
+			if (!context?.topology || !('containerizing_service_id' in edge)) return 'Container Runtime';
 			// Find containerized services (services whose virtualization points to this containerizer)
 			const containerizingId = edge.containerizing_service_id;
 			const containerized = context.topology.services.filter(
@@ -18,7 +17,7 @@
 					s.virtualization.type === 'Docker' &&
 					s.virtualization.details.service_id === containerizingId
 			);
-			if (containerized.length === 0) return 'Service Virtualization';
+			if (containerized.length === 0) return 'Container Runtime';
 			if (containerized.length === 1) return containerized[0].name;
 			return `${containerized.length} containerized services`;
 		},
@@ -34,8 +33,8 @@
 			if (host) parts.push(host.name);
 			return parts.join(' · ');
 		},
-		getIcon: () => edgeTypes.getIconComponent('ServiceVirtualization'),
-		getIconColor: () => edgeTypes.getColorHelper('ServiceVirtualization').icon,
+		getIcon: () => edgeTypes.getIconComponent('ContainerRuntime'),
+		getIconColor: () => edgeTypes.getColorHelper('ContainerRuntime').icon,
 		getTags: (edge, context) => {
 			if (!context?.topology || !('containerizing_service_id' in edge)) return [];
 			const containerizer = context.topology.services.find(
@@ -44,7 +43,7 @@
 			if (!containerizer) return [];
 			const defName = serviceDefinitions.getName(containerizer.service_definition);
 			return defName
-				? [{ label: defName, color: edgeTypes.getColorHelper('ServiceVirtualization').color }]
+				? [{ label: defName, color: edgeTypes.getColorHelper('ContainerRuntime').color }]
 				: [];
 		}
 	};
@@ -66,4 +65,4 @@
 	let { item, context }: Props = $props();
 </script>
 
-<ListSelectItem {item} {context} displayComponent={ServiceVirtualizationEdgeDisplay} />
+<ListSelectItem {item} {context} displayComponent={ContainerRuntimeEdgeDisplay} />

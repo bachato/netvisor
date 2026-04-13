@@ -297,7 +297,7 @@ function isTagFilterEmpty(filter: {
 }
 
 /**
- * Helper function to get all virtualized container interface IDs for a ServiceVirtualization edge
+ * Helper function to get all virtualized container interface IDs for a ContainerRuntime edge
  * Returns the set of interface IDs for all containers on Docker bridge subnets
  * Uses topology data directly if provided, otherwise falls back to query cache
  */
@@ -479,7 +479,7 @@ export function updateConnectedNodes(
 			}
 
 			// For virtualization edges, also add virtualized container nodes
-			if (edge.edge_type === 'ServiceVirtualization') {
+			if (edge.edge_type === 'ContainerRuntime') {
 				if (edge.source === selectedNode.id || edge.target === selectedNode.id) {
 					const virtualizedNodes = getVirtualizedContainerNodes(edge.source, queryClient, topology);
 					virtualizedNodes.forEach((nodeId) => connected.add(nodeId));
@@ -534,8 +534,8 @@ export function updateConnectedNodes(
 					connected.add(eData.target as string);
 				}
 			}
-		} else if (edgeData.edge_type === 'ServiceVirtualization') {
-			// For ServiceVirtualization edges, add source, target, and all virtualized containers
+		} else if (edgeData.edge_type === 'ContainerRuntime') {
+			// For ContainerRuntime edges, add source, target, and all virtualized containers
 			connected.add(edgeData.source as string);
 			connected.add(edgeData.target as string);
 
@@ -546,8 +546,8 @@ export function updateConnectedNodes(
 				topology
 			);
 			virtualizedNodes.forEach((nodeId) => connected.add(nodeId));
-		} else if (edgeData.edge_type === 'HostVirtualization') {
-			// For HostVirtualization edges, add source and target
+		} else if (edgeData.edge_type === 'Hypervisor') {
+			// For Hypervisor edges, add source and target
 			connected.add(edgeData.source as string);
 			connected.add(edgeData.target as string);
 		} else {

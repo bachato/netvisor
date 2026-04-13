@@ -4,8 +4,8 @@
 	import { activeView, aggregatedEdgeOriginals } from '$lib/features/topology/queries';
 	import InspectorEdgeDependency from './edges/InspectorEdgeDependency.svelte';
 	import InspectorEdgeIPAddress from './edges/InspectorEdgeIPAddress.svelte';
-	import InspectorEdgeHostVirtualization from './edges/InspectorEdgeHostVirtualization.svelte';
-	import InspectorEdgeServiceVirtualization from './edges/InspectorEdgeServiceVirtualization.svelte';
+	import InspectorEdgeHypervisor from './edges/InspectorEdgeHypervisor.svelte';
+	import InspectorEdgeContainerRuntime from './edges/InspectorEdgeContainerRuntime.svelte';
 	import InspectorEdgePhysicalLink from './edges/InspectorEdgePhysicalLink.svelte';
 	import InspectorEdgeAggregated from './edges/InspectorEdgeAggregated.svelte';
 
@@ -34,10 +34,10 @@
 		/>
 	{:else if edgeData.edge_type === 'SameHost'}
 		<InspectorEdgeIPAddress {edge} hostId={edgeData.host_id} {view} />
-	{:else if edgeData.edge_type === 'HostVirtualization'}
-		<InspectorEdgeHostVirtualization {edge} vmServiceId={edgeData.vm_service_id} />
-	{:else if edgeData.edge_type === 'ServiceVirtualization'}
-		<InspectorEdgeServiceVirtualization
+	{:else if edgeData.edge_type === 'Hypervisor'}
+		<InspectorEdgeHypervisor {edge} vmServiceId={edgeData.vm_service_id} />
+	{:else if edgeData.edge_type === 'ContainerRuntime'}
+		<InspectorEdgeContainerRuntime
 			{edge}
 			containerizingServiceId={edgeData.containerizing_service_id}
 		/>

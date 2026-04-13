@@ -1,0 +1,98 @@
+[
+  {
+    "id": "SameHost",
+    "name": "Same Host",
+    "description": null,
+    "category": null,
+    "icon": "server",
+    "color": "Amber",
+    "metadata": {
+      "edge_style": "Bezier",
+      "has_end_marker": false,
+      "has_start_marker": false,
+      "is_dependency_edge": false,
+      "is_host_edge": true,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "Hypervisor",
+    "name": "Hypervisor",
+    "description": null,
+    "category": null,
+    "icon": "monitor-cog",
+    "color": "Orange",
+    "metadata": {
+      "edge_style": "Bezier",
+      "has_end_marker": false,
+      "has_start_marker": false,
+      "is_dependency_edge": false,
+      "is_host_edge": false,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "ContainerRuntime",
+    "name": "Container Runtime",
+    "description": null,
+    "category": null,
+    "icon": "container",
+    "color": "Fuchsia",
+    "metadata": {
+      "edge_style": "Bezier",
+      "has_end_marker": false,
+      "has_start_marker": false,
+      "is_dependency_edge": false,
+      "is_host_edge": true,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "RequestPath",
+    "name": "Request Path",
+    "description": null,
+    "category": null,
+    "icon": "route",
+    "color": "Rose",
+    "metadata": {
+      "edge_style": "Bezier",
+      "has_end_marker": true,
+      "has_start_marker": false,
+      "is_dependency_edge": true,
+      "is_host_edge": false,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "HubAndSpoke",
+    "name": "Hub and Spoke",
+    "description": null,
+    "category": null,
+    "icon": "sun",
+    "color": "Rose",
+    "metadata": {
+      "edge_style": "Bezier",
+      "has_end_marker": true,
+      "has_start_marker": false,
+      "is_dependency_edge": true,
+      "is_host_edge": false,
+      "is_physical_edge": false
+    }
+  },
+  {
+    "id": "PhysicalLink",
+    "name": "Physical Link",
+    "description": null,
+    "category": null,
+    "icon": "cable",
+    "color": "Teal",
+    "metadata": {
+      "edge_style": "Bezier",
+      "has_end_marker": false,
+      "has_start_marker": false,
+      "is_dependency_edge": false,
+      "is_host_edge": false,
+      "is_physical_edge": true
+    }
+  }
+]

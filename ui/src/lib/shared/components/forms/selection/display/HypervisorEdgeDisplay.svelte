@@ -2,13 +2,10 @@
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import type { Topology, TopologyEdge } from '$lib/features/topology/types/base';
 
-	export const HostVirtualizationEdgeDisplay: EntityDisplayComponent<
-		TopologyEdge,
-		EdgeDisplayContext
-	> = {
+	export const HypervisorEdgeDisplay: EntityDisplayComponent<TopologyEdge, EdgeDisplayContext> = {
 		getId: (edge) => edge.id,
 		getLabel: (edge, context) => {
-			if (!context?.topology || !('vm_service_id' in edge)) return 'Host Virtualization';
+			if (!context?.topology || !('vm_service_id' in edge)) return 'Hypervisor';
 			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
 			return vmService?.name ?? 'Unknown VM';
 		},
@@ -26,17 +23,17 @@
 		},
 		getIcon: (edge, context) => {
 			if (!context?.topology || !('vm_service_id' in edge))
-				return edgeTypes.getIconComponent('HostVirtualization');
+				return edgeTypes.getIconComponent('Hypervisor');
 			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
 			if (vmService) return serviceDefinitions.getIconComponent(vmService.service_definition);
-			return edgeTypes.getIconComponent('HostVirtualization');
+			return edgeTypes.getIconComponent('Hypervisor');
 		},
 		getIconColor: (edge, context) => {
 			if (!context?.topology || !('vm_service_id' in edge))
-				return edgeTypes.getColorHelper('HostVirtualization').icon;
+				return edgeTypes.getColorHelper('Hypervisor').icon;
 			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
 			if (vmService) return serviceDefinitions.getColorHelper(vmService.service_definition).icon;
-			return edgeTypes.getColorHelper('HostVirtualization').icon;
+			return edgeTypes.getColorHelper('Hypervisor').icon;
 		}
 	};
 
@@ -57,4 +54,4 @@
 	let { item, context }: Props = $props();
 </script>
 
-<ListSelectItem {item} {context} displayComponent={HostVirtualizationEdgeDisplay} />
+<ListSelectItem {item} {context} displayComponent={HypervisorEdgeDisplay} />

@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-13T21:28:05.168999Z",
-             *       "id": "4ba68d04-0209-4157-b8a6-7ab2dba8bd05",
+             *       "created_at": "2026-04-13T23:36:42.912729Z",
+             *       "id": "45b3ec0e-73b5-49cb-b5b6-4cf3f47138d3",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-13T21:28:05.168999Z"
+             *       "updated_at": "2026-04-13T23:36:42.912729Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-13T21:28:05.144929Z",
-             *               "id": "c8d56e58-435f-4da4-ab05-568853aacc27",
+             *               "created_at": "2026-04-13T23:36:42.899028Z",
+             *               "id": "023a47b8-9684-41e7-b939-1786793299c5",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-13T21:28:05.144929Z"
+             *               "updated_at": "2026-04-13T23:36:42.899028Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3531,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-13T21:28:05.159366Z",
-             *           "id": "9edf7b3f-26c1-499a-8d0c-79ca3a0e186b",
+             *           "created_at": "2026-04-13T23:36:42.908625Z",
+             *           "id": "c08685df-fe35-43f1-8f20-6dbebd7e22eb",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-13T21:28:05.159366Z"
+             *           "updated_at": "2026-04-13T23:36:42.908625Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3898,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-13T21:28:05.145150Z",
-         *       "id": "4ac1278d-a6da-46b0-ba6d-b559b30cd2e3",
+         *       "created_at": "2026-04-13T23:36:42.899234Z",
+         *       "id": "cffe6280-d573-454f-a8ef-af862754919c",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-13T21:28:05.145150Z"
+         *       "updated_at": "2026-04-13T23:36:42.899234Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4663,14 +4663,14 @@ export interface components {
             host_id: string;
         } | {
             /** @enum {string} */
-            edge_type: "HostVirtualization";
+            edge_type: "Hypervisor";
             /** Format: uuid */
             vm_service_id: string;
         } | {
             /** Format: uuid */
             containerizing_service_id: string;
             /** @enum {string} */
-            edge_type: "ServiceVirtualization";
+            edge_type: "ContainerRuntime";
             /** Format: uuid */
             host_id: string;
         } | {
@@ -4701,7 +4701,7 @@ export interface components {
             target_entity_id: string;
         };
         /** @enum {string} */
-        EdgeTypeDiscriminants: "SameHost" | "HostVirtualization" | "ServiceVirtualization" | "RequestPath" | "HubAndSpoke" | "PhysicalLink";
+        EdgeTypeDiscriminants: "SameHost" | "Hypervisor" | "ContainerRuntime" | "RequestPath" | "HubAndSpoke" | "PhysicalLink";
         /** @description Per-view configuration for an edge: disabled (not in this view) or active with properties */
         EdgeViewConfig: {
             /** @enum {string} */
@@ -4949,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-13T21:28:05.144624Z",
-         *               "id": "56165652-beb4-4177-8cb8-a33aec042912",
+         *               "created_at": "2026-04-13T23:36:42.898725Z",
+         *               "id": "ed83cda8-9210-47b4-95b0-b7b218449113",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-13T21:28:05.144624Z"
+         *               "updated_at": "2026-04-13T23:36:42.898725Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -6095,14 +6095,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-13T21:28:05.145074Z",
-         *           "id": "75975799-9e5b-41f0-a780-0f257d00f216",
+         *           "created_at": "2026-04-13T23:36:42.899160Z",
+         *           "id": "1681dbc0-c90b-40af-a0c6-08374cfeed4a",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-13T21:28:05.145074Z"
+         *           "updated_at": "2026-04-13T23:36:42.899160Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",

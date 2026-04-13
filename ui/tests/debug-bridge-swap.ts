@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 
 const SESSION_ID = '7RTvkKYWyLY2tI5FNUwg-w';
 const TOPO_OPTIONS =
-	'{"local":{"hide_edge_types":["HostVirtualization","RequestPath","HubAndSpoke","PhysicalLink"],"no_fade_edges":false,"hide_resize_handles":false,"bundle_edges":true,"tag_filter":{"hidden_host_tag_ids":[],"hidden_service_tag_ids":[],"hidden_subnet_tag_ids":[]},"show_minimap":true},"request":{"hide_ports":false,"hide_vm_title_on_docker_container":false,"hide_service_categories":["NetworkCore","OpenPorts"],"container_rules":["BySubnet","ByVirtualizingService"],"leaf_rules":[{"ByServiceCategory":{"categories":[],"title":"Infrastructure"}},{"ByTag":{"tag_ids":["6cce763c-0d6f-44f7-a8e7-ca1004c73b08"],"title":"aaa"}}]}}';
+	'{"local":{"hide_edge_types":["Hypervisor","RequestPath","HubAndSpoke","PhysicalLink"],"no_fade_edges":false,"hide_resize_handles":false,"bundle_edges":true,"tag_filter":{"hidden_host_tag_ids":[],"hidden_service_tag_ids":[],"hidden_subnet_tag_ids":[]},"show_minimap":true},"request":{"hide_ports":false,"hide_vm_title_on_docker_container":false,"hide_service_categories":["NetworkCore","OpenPorts"],"container_rules":["BySubnet","ByVirtualizingService"],"leaf_rules":[{"ByServiceCategory":{"categories":[],"title":"Infrastructure"}},{"ByTag":{"tag_ids":["6cce763c-0d6f-44f7-a8e7-ca1004c73b08"],"title":"aaa"}}]}}';
 
 async function main() {
 	const browser = await chromium.launch({ headless: true });

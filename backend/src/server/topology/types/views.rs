@@ -270,16 +270,16 @@ impl TopologyView {
         match self {
             Self::L3Logical => match edge_type {
                 SameHost => active(true, Visible, Solid, WhenVisible, false, false),
-                ServiceVirtualization => active(true, Visible, Solid, WhenVisible, true, false),
+                ContainerRuntime => active(true, Visible, Solid, WhenVisible, true, false),
                 RequestPath => active(false, Visible, Dashed, WhenVisible, false, true),
                 HubAndSpoke => active(false, Visible, Dashed, WhenVisible, false, true),
-                HostVirtualization => active(false, Hidden, Dashed, WhenVisible, true, false),
+                Hypervisor => active(false, Hidden, Dashed, WhenVisible, true, false),
                 PhysicalLink => active(false, Hidden, Dashed, WhenVisible, false, false),
             },
             Self::L2Physical => match edge_type {
                 PhysicalLink => active(true, Visible, Solid, WhenVisible, false, false),
                 SameHost => active(false, Hidden, Dashed, WhenVisible, false, false),
-                HostVirtualization | ServiceVirtualization | RequestPath | HubAndSpoke => {
+                Hypervisor | ContainerRuntime | RequestPath | HubAndSpoke => {
                     EdgeViewConfig::Disabled
                 }
             },
@@ -288,13 +288,13 @@ impl TopologyView {
                 RequestPath | HubAndSpoke => {
                     active(false, Hidden, Dashed, WhenVisible, false, true)
                 }
-                HostVirtualization | ServiceVirtualization | SameHost => EdgeViewConfig::Disabled,
+                Hypervisor | ContainerRuntime | SameHost => EdgeViewConfig::Disabled,
             },
             Self::Application => match edge_type {
                 RequestPath => active(true, Visible, Solid, WhenVisible, false, true),
                 HubAndSpoke => active(true, Visible, Solid, WhenVisible, false, true),
-                ServiceVirtualization => active(true, Hidden, Dashed, Always, true, false),
-                SameHost | HostVirtualization | PhysicalLink => EdgeViewConfig::Disabled,
+                ContainerRuntime => active(true, Hidden, Dashed, Always, true, false),
+                SameHost | Hypervisor | PhysicalLink => EdgeViewConfig::Disabled,
             },
         }
     }

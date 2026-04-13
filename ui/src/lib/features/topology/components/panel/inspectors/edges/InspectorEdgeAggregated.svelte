@@ -7,7 +7,7 @@
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { SameHostEdgeDisplay } from '$lib/shared/components/forms/selection/display/SameHostEdgeDisplay.svelte';
 	import { PhysicalLinkEdgeDisplay } from '$lib/shared/components/forms/selection/display/PhysicalLinkEdgeDisplay.svelte';
-	import { HostVirtualizationEdgeDisplay } from '$lib/shared/components/forms/selection/display/HostVirtualizationEdgeDisplay.svelte';
+	import { HypervisorEdgeDisplay } from '$lib/shared/components/forms/selection/display/HypervisorEdgeDisplay.svelte';
 	import { DependencyDisplay } from '$lib/shared/components/forms/selection/display/DependencyDisplay.svelte';
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
@@ -62,9 +62,9 @@
 		return result;
 	});
 
-	// Reactive ServiceVirtualization resolution
+	// Reactive ContainerRuntime resolution
 	let svcVirtData = $derived.by(() => {
-		const typeEdges = edgesByType.get('ServiceVirtualization');
+		const typeEdges = edgesByType.get('ContainerRuntime');
 		if (!typeEdges || !topology) return null;
 
 		// Group by containerizing_service_id
@@ -126,8 +126,8 @@
 				return SameHostEdgeDisplay;
 			case 'PhysicalLink':
 				return PhysicalLinkEdgeDisplay;
-			case 'HostVirtualization':
-				return HostVirtualizationEdgeDisplay;
+			case 'Hypervisor':
+				return HypervisorEdgeDisplay;
 			default:
 				return null;
 		}
@@ -137,8 +137,8 @@
 		return edgeType === 'HubAndSpoke' || edgeType === 'RequestPath';
 	}
 
-	function isServiceVirtualization(edgeType: string) {
-		return edgeType === 'ServiceVirtualization';
+	function isContainerRuntime(edgeType: string) {
+		return edgeType === 'ContainerRuntime';
 	}
 </script>
 
@@ -177,7 +177,7 @@
 						</div>
 					</div>
 				{/each}
-			{:else if isServiceVirtualization(edgeType) && svcVirtData}
+			{:else if isContainerRuntime(edgeType) && svcVirtData}
 				{#if svcVirtData.mode === 'single'}
 					{#if svcVirtData.containerizer}
 						<span class="text-secondary mb-1 block text-sm font-medium">Docker Service</span>
