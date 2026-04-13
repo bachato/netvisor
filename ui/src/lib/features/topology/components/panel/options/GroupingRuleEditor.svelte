@@ -110,9 +110,7 @@
 	// collapses. The next edit toggle flushes stale pending state.
 	let editingElementId = $state<string | null>(null);
 	let editingView = $state<string | null>(null);
-	let activeEditingId = $derived(
-		editingView === currentView ? editingElementId : null
-	);
+	let activeEditingId = $derived(editingView === currentView ? editingElementId : null);
 
 	// Show/hide disabled (non-applicable) element rules
 	let hideDisabledElementRules = $state(false);

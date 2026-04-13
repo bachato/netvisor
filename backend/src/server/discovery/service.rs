@@ -616,6 +616,25 @@ impl DiscoveryService {
                         }
                     };
 
+                    // Skip scheduled runs for Free plan orgs — preserves schedule
+                    // config so upgrading to a paid plan resumes runs automatically
+                    if let Ok(Some(network)) = service
+                        .network_service
+                        .get_by_id(&fresh.base.network_id)
+                        .await
+                        && let Ok(Some(org)) = service
+                            .organization_service
+                            .get_by_id(&network.base.organization_id)
+                            .await
+                        && org.base.plan.as_ref().is_some_and(|p| p.is_free())
+                    {
+                        tracing::debug!(
+                            discovery_id = %discovery_id,
+                            "Skipping scheduled discovery — org is on Free plan"
+                        );
+                        return;
+                    }
+
                     // Check if daemon is reachable before starting session
                     if let Some(daemon_service) = service.daemon_service.get() {
                         match daemon_service
