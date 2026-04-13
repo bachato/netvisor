@@ -1182,7 +1182,7 @@
 	"topology_hideOpenPorts": "Hide open ports",
 	"topology_hidePorts": "Hide Ports",
 	"topology_hidePortsHelp": "Don't show open ports next to services",
-	"topology_infraRuleNote": "Background infrastructure services (DNS, NTP, DHCP, etc.) are automatically collapsed to reduce clutter and excluded from workload counts. You can customize which service categories are treated as infrastructure.",
+	"topology_infraRuleNote": "Service categories in this group are automatically collapsed to reduce clutter and excluded from workload counts. By default, this includes categories that aren't directly relevant to {useCase} environments. You can customize which categories are included.",
 	"topology_l2EmptyDescription": "This view shows the physical network topology based on neighbor discovery between hosts. It will populate once hosts with discovered neighbors appear in this network.",
 	"topology_l2EmptyTitle": "No Physical Connections",
 	"topology_lastRebuild": "Last Rebuild: {timestamp}",

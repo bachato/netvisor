@@ -23,8 +23,10 @@
 		activeView,
 		sharedElementRules,
 		updateSharedElementRules,
-		getInfrastructureRuleId
+		getInfrastructureRuleId,
+		getOrgUseCase
 	} from '../../../queries';
+	import { getUseCases } from '$lib/features/auth/types/base';
 	import { getTopologyEditState } from '../../../state';
 	import {
 		useTopologiesQuery,
@@ -77,6 +79,12 @@
 	// Tags query
 	const tagsQuery = useTagsQuery();
 	let allTags = $derived(tagsQuery.data ?? []);
+
+	// Use case label for infra rule note
+	let useCaseLabel = $derived.by(() => {
+		const useCase = getOrgUseCase();
+		return getUseCases()[useCase as keyof ReturnType<typeof getUseCases>]?.label ?? useCase;
+	});
 
 	// Container rules for the active view (per-view HashMap)
 	let containerRules = $derived(
@@ -462,7 +470,6 @@
 >
 	<ListManager
 		label={topology_containerGroupingPerspective({ perspective: viewMeta?.name ?? '' })}
-		helpText={topology_containerGroupingHelp()}
 		placeholder={topology_addContainerRule()}
 		items={containerRules}
 		options={containerAddOptions}
@@ -479,6 +486,9 @@
 		onMoveUp={handleContainerMoveUp}
 		onMoveDown={handleContainerMoveDown}
 	>
+		{#snippet helpSnippet()}
+			<p class="text-tertiary text-xs">{topology_containerGroupingHelp()}</p>
+		{/snippet}
 		{#snippet itemSnippet({ item })}
 			<GroupingRuleItem
 				label={containerRuleMeta[getContainerRuleDiscriminant(item.rule)]?.name ??
@@ -494,7 +504,6 @@
 <!-- Element grouping section -->
 <ListManager
 	label={topology_elementGrouping({ label: elementGroupingLabel })}
-	helpText={topology_elementGroupingHelp({ label: elementGroupingLabelPlural })}
 	placeholder={topology_addElementRule()}
 	items={visibleElementRules}
 	options={elementAddOptions}
@@ -515,6 +524,9 @@
 	onMoveDown={handleElementMoveDown}
 	onEdit={handleVisibleElementEdit}
 >
+	{#snippet helpSnippet()}
+		<p class="text-tertiary text-xs">{topology_elementGroupingHelp({ label: elementGroupingLabelPlural })}</p>
+	{/snippet}
 	{#snippet headerSnippet()}
 		<button
 			type="button"
@@ -557,7 +569,7 @@
 				class="mt-2 w-full space-y-3 border-t border-gray-200 pt-2 dark:border-gray-700"
 			>
 				{#if item.id === getInfrastructureRuleId()}
-					<p class="text-tertiary text-xs">{topology_infraRuleNote()}</p>
+					<p class="text-tertiary text-xs">{topology_infraRuleNote({ useCase: useCaseLabel })}</p>
 				{/if}
 				<!-- Title input -->
 				<input
