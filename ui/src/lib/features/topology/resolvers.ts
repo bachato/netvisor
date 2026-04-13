@@ -114,22 +114,26 @@ function resolveContainer(
 ): ContainerRenderContext {
 	const containerType = 'container_type' in node ? (node.container_type as string) : 'Subnet';
 	const title = 'header' in node ? (node.header as string | null) : null;
-	return { tags: resolveContainerTags(nodeId, topology), title, containerType };
+	return { tags: resolveContainerTags(nodeId, node, topology), title, containerType };
 }
 
 /**
  * Resolve tags for any container entity, regardless of container type.
- * First tries a direct ID match (e.g. Subnet container ID === subnet entity ID),
- * then falls back to getContainerContents to find the owning entity through
- * subcontainers (e.g. Host containers with ByVLAN element rules).
+ * Uses entity_id (the entity this container represents) for direct lookup,
+ * falling back to node ID match (for Subnet containers where ID === entity ID)
+ * and then to getContainerContents for legacy/indirect resolution.
  */
-function resolveContainerTags(nodeId: string, topology: Topology): string[] {
+function resolveContainerTags(nodeId: string, node: TopologyNode, topology: Topology): string[] {
 	const entityTags = new Map<string, string[]>();
 	for (const h of topology.hosts) entityTags.set(h.id, h.tags);
 	for (const s of topology.subnets) entityTags.set(s.id, s.tags);
 	for (const s of topology.services) entityTags.set(s.id, s.tags);
 
-	// Direct match (e.g. Subnet container ID === subnet entity ID)
+	// Use entity_id for direct entity lookup (set by builders on all containers)
+	const entityId = 'entity_id' in node ? (node.entity_id as string | undefined) : undefined;
+	if (entityId && entityTags.has(entityId)) return entityTags.get(entityId)!;
+
+	// Fallback: direct ID match (e.g. Subnet container ID === subnet entity ID)
 	if (entityTags.has(nodeId)) return entityTags.get(nodeId)!;
 
 	// Indirect: find entities inside this container, return first match
