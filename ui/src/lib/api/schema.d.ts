@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-13T18:32:19.131437Z",
-             *       "id": "8845d951-1b7a-42f1-9635-bc0362c30878",
+             *       "created_at": "2026-04-13T21:11:39.792397Z",
+             *       "id": "f3f9fe5c-6a1e-4daf-a3a7-ab549709fd4d",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-13T18:32:19.131437Z"
+             *       "updated_at": "2026-04-13T21:11:39.792397Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-13T18:32:19.115013Z",
-             *               "id": "b5878b7a-6859-473d-8ece-bf33509a10b9",
+             *               "created_at": "2026-04-13T21:11:39.778529Z",
+             *               "id": "e17b93b3-ea18-4aec-a2ab-41e45f8471c2",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-13T18:32:19.115013Z"
+             *               "updated_at": "2026-04-13T21:11:39.778529Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "HP Printer",
+             *           "service_definition": "SIP Server",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3531,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-13T18:32:19.126898Z",
-             *           "id": "ece4425d-83e0-489f-8651-8707cfa98cab",
+             *           "created_at": "2026-04-13T21:11:39.788362Z",
+             *           "id": "1725cb3d-d678-476f-9213-d6e7a2f10df9",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-13T18:32:19.126898Z"
+             *           "updated_at": "2026-04-13T21:11:39.788362Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3547,7 +3547,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "HP Printer",
+             *       "service_definition": "SIP Server",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3898,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-13T18:32:19.115369Z",
-         *       "id": "122c45bc-791b-4322-b2d1-868de454ed51",
+         *       "created_at": "2026-04-13T21:11:39.778793Z",
+         *       "id": "2e59934d-567d-42bc-a3b1-e5c963f11956",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-13T18:32:19.115369Z"
+         *       "updated_at": "2026-04-13T21:11:39.778793Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4090,7 +4090,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "HP Printer",
+         *           "service_definition": "SIP Server",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4949,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-13T18:32:19.114539Z",
-         *               "id": "a9dd434c-9495-4909-a5cb-a722062b978f",
+         *               "created_at": "2026-04-13T21:11:39.778158Z",
+         *               "id": "e2512edf-9cd0-4f81-bf21-22695196edad",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-13T18:32:19.114539Z"
+         *               "updated_at": "2026-04-13T21:11:39.778158Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4965,7 +4965,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "HP Printer",
+         *           "service_definition": "SIP Server",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5447,21 +5447,11 @@ export interface components {
             subnet_count: number;
         };
         Node: components["schemas"]["NodeType"] & {
-            /**
-             * Format: uuid
-             * @description ID of the element rule that created this container (for NestedTag/NestedServiceCategory)
-             */
-            element_rule_id?: string | null;
             header?: string | null;
             /** Format: uuid */
             id: string;
             position: components["schemas"]["Ixy"];
             size: components["schemas"]["Uxy"];
-            /**
-             * @description When true, this container accepts edges with `will_target_container`, causing
-             *     them to visually attach here instead of at elements inside.
-             */
-            will_accept_edges?: boolean;
         };
         NodeType: {
             /**
@@ -5474,21 +5464,26 @@ export interface components {
             container_type?: components["schemas"]["ContainerType"];
             /**
              * Format: uuid
+             * @description ID of the element rule that created this container (for subcontainers like NestedTag, Hypervisor, etc.)
+             */
+            element_rule_id?: string | null;
+            /**
+             * Format: uuid
              * @description The entity this container represents (e.g. host ID for Host containers,
              *     subnet ID for Subnet containers). Used for ownership mapping on the frontend.
              */
             entity_id?: string | null;
             /** @description Display icon name (set by graph builder from the source entity, e.g. subnet type) */
             icon?: string | null;
-            /**
-             * Format: int32
-             * @description Sugiyama layer assignment for compound layout (from SubnetType::vertical_order)
-             */
-            layer_hint?: number | null;
             /** @enum {string} */
             node_type: "Container";
             /** Format: uuid */
             parent_container_id?: string | null;
+            /**
+             * @description When true, this container accepts edges with `will_target_container`, causing
+             *     them to visually attach here instead of at elements inside.
+             */
+            will_accept_edges?: boolean;
         } | (components["schemas"]["ElementEntityType"] & {
             /** Format: uuid */
             container_id?: string;
@@ -6100,14 +6095,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-13T18:32:19.115253Z",
-         *           "id": "7ad6a5b8-02b5-4370-9a91-92e065d92d5a",
+         *           "created_at": "2026-04-13T21:11:39.778708Z",
+         *           "id": "3e7eb29f-a972-4c35-a691-31d0057cf2ae",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-13T18:32:19.115253Z"
+         *           "updated_at": "2026-04-13T21:11:39.778708Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6116,7 +6111,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "HP Printer",
+         *       "service_definition": "SIP Server",
          *       "source": {
          *         "type": "Manual"
          *       },
