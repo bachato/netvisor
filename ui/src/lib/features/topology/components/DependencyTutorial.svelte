@@ -62,13 +62,11 @@
 	const nodeTypes = { Element: ElementNode };
 	const edgeTypes = { custom: CustomEdge };
 
-	// Xyflow state — Svelte 5 mode uses $state, not writable stores
-	let tutorialNodes = $state<Node[]>([...TUTORIAL_XYFLOW_NODES]);
-
-	// Subscribe to preview edges from InspectorMultiSelect
-	let tutorialEdges = $state<Edge[]>([]);
+	// Xyflow stores — must be writable stores (same as BaseTopologyViewer)
+	const tutorialNodes = writable<Node[]>([...TUTORIAL_XYFLOW_NODES]);
+	const tutorialEdges = writable<Edge[]>([]);
 	previewEdges.subscribe((value) => {
-		tutorialEdges = value;
+		tutorialEdges.set(value);
 	});
 
 	// Track clicked nodes
@@ -114,8 +112,8 @@
 			<div class="min-h-0 flex-1">
 				<SvelteFlowProvider>
 					<SvelteFlow
-						nodes={tutorialNodes}
-						edges={tutorialEdges}
+						nodes={$tutorialNodes}
+						edges={$tutorialEdges}
 						{nodeTypes}
 						{edgeTypes}
 						onnodeclick={handleNodeClick}
