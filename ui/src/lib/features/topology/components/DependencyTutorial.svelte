@@ -1,7 +1,6 @@
 <script lang="ts">
 	import {
 		SvelteFlow,
-		SvelteFlowProvider,
 		Background,
 		BackgroundVariant,
 		type NodeMouseHandler
@@ -110,33 +109,31 @@
 		<div class="flex min-h-0 flex-1 flex-col">
 			<!-- Mini SvelteFlow canvas with real ElementNode + edge rendering -->
 			<div class="min-h-0 flex-1">
-				<SvelteFlowProvider>
-					<SvelteFlow
-						nodes={$tutorialNodes}
-						edges={$tutorialEdges}
-						{nodeTypes}
-						{edgeTypes}
-						onnodeclick={handleNodeClick}
-						fitView={true}
-						fitViewOptions={{ padding: 0.3 }}
-						minZoom={0.5}
-						maxZoom={1.5}
-						nodesDraggable={false}
-						nodesConnectable={false}
-						elementsSelectable={true}
-						selectionOnDrag={false}
-						panOnDrag={true}
-						zoomOnScroll={false}
-						zoomOnDoubleClick={false}
-					>
-						<Background
-							variant={BackgroundVariant.Dots}
-							bgColor="var(--color-topology-bg)"
-							gap={50}
-							size={1}
-						/>
-					</SvelteFlow>
-				</SvelteFlowProvider>
+				<SvelteFlow
+					nodes={$tutorialNodes}
+					edges={$tutorialEdges}
+					{nodeTypes}
+					{edgeTypes}
+					onnodeclick={handleNodeClick}
+					fitView={true}
+					fitViewOptions={{ padding: 0.3 }}
+					minZoom={0.5}
+					maxZoom={1.5}
+					nodesDraggable={false}
+					nodesConnectable={false}
+					elementsSelectable={true}
+					selectionOnDrag={false}
+					panOnDrag={true}
+					zoomOnScroll={false}
+					zoomOnDoubleClick={false}
+				>
+					<Background
+						variant={BackgroundVariant.Dots}
+						bgColor="var(--color-topology-bg)"
+						gap={50}
+						size={1}
+					/>
+				</SvelteFlow>
 			</div>
 
 			<!-- Checklist below the canvas -->
