@@ -10,6 +10,8 @@
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { Check, X, ChevronDown, ChevronUp, Loader2, Minus, Plus } from 'lucide-svelte';
 	import {
+		billing_everythingInPlanPlus,
+		billing_keyFeatures,
 		billing_showFeatures,
 		billing_hideFeatures,
 		billing_noCreditCardRequired
@@ -375,8 +377,19 @@
 					{@const enterprise = isEnterprise(plan)}
 					{@const metadata = billingPlanHelpers.getMetadata(plan.type)}
 					{@const incrementalFeatures = metadata?.incremental_features ?? []}
-					{@const sortedIncrFeatures = sortFeaturesByCategory(incrementalFeatures)}
 					{@const prevTier = metadata?.previous_tier}
+					{@const prevTierVisible = prevTier
+						? filteredPlans.some((p) => p.type === prevTier)
+						: false}
+					{@const prevTierFeatures =
+						prevTier && !prevTierVisible
+							? (billingPlanHelpers.getMetadata(prevTier)?.incremental_features ?? [])
+							: []}
+					{@const displayFeatures = sortFeaturesByCategory(
+						prevTierFeatures.length > 0
+							? [...new Set([...prevTierFeatures, ...incrementalFeatures])]
+							: incrementalFeatures
+					)}
 
 					<div
 						class="plan-card card card-static flex flex-col {isRecommended
@@ -611,18 +624,16 @@
 
 						<!-- Incremental Features -->
 						<div class="flex-1 py-4">
-							{#if prevTier}
+							{#if prevTier && prevTierVisible}
 								<p class="text-secondary mb-2 text-xs font-medium">
-									Everything in <span class="text-primary"
-										>{billingPlanHelpers.getName(prevTier)}</span
-									>, plus:
+									{billing_everythingInPlanPlus({ planName: billingPlanHelpers.getName(prevTier) })}
 								</p>
-							{:else if plan.type !== 'Free' && incrementalFeatures.length > 0}
-								<p class="text-tertiary mb-2 text-xs">Key features:</p>
+							{:else if plan.type !== 'Free' && displayFeatures.length > 0}
+								<p class="text-tertiary mb-2 text-xs">{billing_keyFeatures()}</p>
 							{/if}
 
 							<!-- Mobile: collapsible feature list -->
-							{#if sortedIncrFeatures.length > 0}
+							{#if displayFeatures.length > 0}
 								<button
 									type="button"
 									class="text-tertiary mb-2 flex items-center gap-1 text-xs font-medium sm:hidden"
@@ -640,10 +651,10 @@
 							{/if}
 
 							<ul class="space-y-1.5 {expandedFeatures.has(plan.type) ? '' : 'hidden sm:block'}">
-								{#each sortedIncrFeatures as featureKey, i (featureKey)}
+								{#each displayFeatures as featureKey, i (featureKey)}
 									{@const category = featureHelpers.getCategory(featureKey)}
 									{@const prevCategory =
-										i > 0 ? featureHelpers.getCategory(sortedIncrFeatures[i - 1]) : null}
+										i > 0 ? featureHelpers.getCategory(displayFeatures[i - 1]) : null}
 									{#if category !== prevCategory}
 										<li
 											class="text-tertiary text-[10px] font-medium uppercase tracking-wider {i > 0
