@@ -598,7 +598,7 @@
 		<div class="space-y-3">
 			<!-- Header -->
 			<div
-				class="card card-static flex items-center justify-evenly gap-2 px-2 py-2"
+				class="card card-static flex items-center justify-evenly gap-2 px-2 py-2 {$showViewSwitcherHint ? 'overflow-visible' : ''}"
 				style="border-bottom: 2px solid {viewColorStyle.rgb}; transition: border-color 0.3s ease;"
 			>
 				{#if currentTopology}
