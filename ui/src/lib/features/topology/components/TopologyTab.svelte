@@ -444,9 +444,12 @@
 		tutorialTypeToggled = false;
 	}
 
-	// Auto-dismiss tutorial when user leaves the tab
+	// Auto-dismiss tutorial when user leaves the tab (but not on initial navigation)
+	let wasActive = $state(false);
 	$effect(() => {
-		if (!isActive && $showDependencyTutorial) {
+		if (isActive) {
+			wasActive = true;
+		} else if (wasActive && $showDependencyTutorial) {
 			dismissDependencyTutorial();
 		}
 	});
