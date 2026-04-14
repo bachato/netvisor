@@ -2,13 +2,33 @@
 	import { X } from 'lucide-svelte';
 	import { showViewSwitcherHint } from '../queries';
 	import { topology_viewSwitcherHint } from '$lib/paraglide/messages';
+	import { onMount } from 'svelte';
+
+	let anchor: HTMLDivElement;
+	let top = $state(0);
+	let left = $state(0);
+
+	function updatePosition() {
+		if (!anchor) return;
+		const rect = anchor.getBoundingClientRect();
+		top = rect.bottom + 8;
+		left = rect.left;
+	}
+
+	onMount(() => {
+		updatePosition();
+	});
 
 	function dismiss() {
 		showViewSwitcherHint.set(false);
 	}
 </script>
 
-<div class="absolute left-0 top-full z-20 mt-2 w-64">
+<!-- Invisible anchor to measure position -->
+<div bind:this={anchor} class="absolute inset-0 pointer-events-none"></div>
+
+<!-- Fixed-positioned callout that escapes overflow -->
+<div class="fixed z-50 w-64" style="top: {top}px; left: {left}px;">
 	<div class="card card-static relative p-3 shadow-lg">
 		<!-- Arrow pointing up -->
 		<div
