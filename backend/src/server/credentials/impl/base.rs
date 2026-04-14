@@ -24,9 +24,9 @@ pub struct CredentialBase {
     pub name: String,
     pub credential_type: CredentialType,
     /// Ephemeral bootstrap IPs for pre-discovery credential resolution.
-    /// Write-only — skipped in API GET responses.
+    /// Cleared automatically when the next scan dispatches.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(write_only, value_type = Option<Vec<String>>)]
+    #[schema(value_type = Option<Vec<String>>)]
     pub target_ips: Option<Vec<IpAddr>>,
     #[serde(default = "default_tags")]
     #[schema(required)]

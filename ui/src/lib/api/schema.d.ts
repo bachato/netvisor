@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-13T23:36:42.912729Z",
-             *       "id": "45b3ec0e-73b5-49cb-b5b6-4cf3f47138d3",
+             *       "created_at": "2026-04-14T15:54:43.561923Z",
+             *       "id": "61db2cd8-1c33-4af5-a65d-bcc77b01bb49",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-13T23:36:42.912729Z"
+             *       "updated_at": "2026-04-14T15:54:43.561923Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-13T23:36:42.899028Z",
-             *               "id": "023a47b8-9684-41e7-b939-1786793299c5",
+             *               "created_at": "2026-04-14T15:54:43.549077Z",
+             *               "id": "6b1328ac-2edc-4278-83bc-fdaaa33b8c79",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-13T23:36:42.899028Z"
+             *               "updated_at": "2026-04-14T15:54:43.549077Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "OpenVPN",
+             *           "service_definition": "Huntarr",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3531,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-13T23:36:42.908625Z",
-             *           "id": "c08685df-fe35-43f1-8f20-6dbebd7e22eb",
+             *           "created_at": "2026-04-14T15:54:43.558176Z",
+             *           "id": "8261ad14-d421-4d34-aa53-d0335ec56932",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-13T23:36:42.908625Z"
+             *           "updated_at": "2026-04-14T15:54:43.558176Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3547,7 +3547,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "OpenVPN",
+             *       "service_definition": "Huntarr",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3898,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-13T23:36:42.899234Z",
-         *       "id": "cffe6280-d573-454f-a8ef-af862754919c",
+         *       "created_at": "2026-04-14T15:54:43.549346Z",
+         *       "id": "fef4f8f0-93df-489e-ae0d-08d032e18dbc",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-13T23:36:42.899234Z"
+         *       "updated_at": "2026-04-14T15:54:43.549346Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4090,7 +4090,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "OpenVPN",
+         *           "service_definition": "Huntarr",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4178,7 +4178,7 @@ export interface components {
             tags: string[];
             /**
              * @description Ephemeral bootstrap IPs for pre-discovery credential resolution.
-             *     Write-only — skipped in API GET responses.
+             *     Cleared automatically when the next scan dispatches.
              */
             target_ips?: string[] | null;
         };
@@ -4655,7 +4655,7 @@ export interface components {
          */
         EdgeStroke: "solid" | "dashed";
         /** @enum {string} */
-        EdgeStyle: "Straight" | "SmoothStep" | "Step" | "Bezier" | "SimpleBezier";
+        EdgeStyle: "Straight" | "SmoothStep" | "Bezier";
         EdgeType: {
             /** @enum {string} */
             edge_type: "SameHost";
@@ -4949,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-13T23:36:42.898725Z",
-         *               "id": "ed83cda8-9210-47b4-95b0-b7b218449113",
+         *               "created_at": "2026-04-14T15:54:43.548448Z",
+         *               "id": "e1985bf0-aa01-463b-9350-202c46474686",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-13T23:36:42.898725Z"
+         *               "updated_at": "2026-04-14T15:54:43.548448Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4965,7 +4965,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "OpenVPN",
+         *           "service_definition": "Huntarr",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -6095,14 +6095,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-13T23:36:42.899160Z",
-         *           "id": "1681dbc0-c90b-40af-a0c6-08374cfeed4a",
+         *           "created_at": "2026-04-14T15:54:43.549261Z",
+         *           "id": "abebc71c-1d93-4ccf-9833-d33e0622ff3b",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-13T23:36:42.899160Z"
+         *           "updated_at": "2026-04-14T15:54:43.549261Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6111,7 +6111,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "OpenVPN",
+         *       "service_definition": "Huntarr",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6147,7 +6147,7 @@ export interface components {
             virtualization?: null | components["schemas"]["ServiceVirtualization"];
         };
         /** @enum {string} */
-        ServiceCategory: "NetworkCore" | "NetworkAccess" | "NetworkAppliance" | "RemoteAccess" | "Storage" | "Backup" | "Media" | "HomeAutomation" | "Virtualization" | "DNS" | "VPN" | "Monitoring" | "AdBlock" | "ReverseProxy" | "Workstation" | "Mobile" | "IoT" | "Printer" | "Database" | "Development" | "Dashboard" | "MessageQueue" | "IdentityAndAccess" | "Office" | "ProjectManagement" | "Messaging" | "Conferencing" | "Telephony" | "Email" | "Publishing" | "Unknown" | "Custom" | "Scanopy" | "OpenPorts";
+        ServiceCategory: "NetworkCore" | "NetworkAccess" | "NetworkAppliance" | "RemoteAccess" | "Storage" | "Backup" | "Media" | "HomeAutomation" | "Hypervisor" | "ContainerRuntime" | "Container" | "Orchestrator" | "DNS" | "VPN" | "Monitoring" | "AdBlock" | "ReverseProxy" | "Workstation" | "Mobile" | "IoT" | "Printer" | "Database" | "Development" | "Dashboard" | "MessageQueue" | "IdentityAndAccess" | "Office" | "ProjectManagement" | "Messaging" | "Conferencing" | "Telephony" | "Email" | "Publishing" | "Unknown" | "Custom" | "Scanopy" | "OpenPorts";
         /**
          * @description Input for creating or updating a service.
          *     Used in both CreateHostRequest and UpdateHostRequest.
