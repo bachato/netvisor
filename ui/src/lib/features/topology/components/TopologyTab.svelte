@@ -823,24 +823,25 @@
 							onDismiss={dismissDependencyTutorial}
 							dependencyTypeToggled={tutorialTypeToggled}
 						/>
-					{/if}
-					<TopologyViewer
-						bind:this={topologyViewer}
-						onToggleLock={handleToggleLock}
-						onRebuild={handleRefresh}
-						{isActive}
-					/>
-					{#if showAppWizard}
-						<ApplicationSetupWizard
-							{appTags}
-							networkId={currentTopology.network_id}
-							onComplete={handleWizardComplete}
+					{:else}
+						<TopologyViewer
+							bind:this={topologyViewer}
+							onToggleLock={handleToggleLock}
+							onRebuild={handleRefresh}
+							{isActive}
 						/>
-					{/if}
-					{#if showL2EmptyState}
-						<L2EmptyStateOverlay
-							hasSnmpCredential={onboarding.includes('FirstSnmpCredentialCreated')}
-						/>
+						{#if showAppWizard}
+							<ApplicationSetupWizard
+								{appTags}
+								networkId={currentTopology.network_id}
+								onComplete={handleWizardComplete}
+							/>
+						{/if}
+						{#if showL2EmptyState}
+							<L2EmptyStateOverlay
+								hasSnmpCredential={onboarding.includes('FirstSnmpCredentialCreated')}
+							/>
+						{/if}
 					{/if}
 				</div>
 			{:else}
