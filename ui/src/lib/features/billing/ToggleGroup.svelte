@@ -14,7 +14,7 @@
 	let { options, selected, onchange }: Props = $props();
 </script>
 
-<div class="card inline-flex gap-1 rounded-full p-0.5">
+<div class="card inline-flex gap-1 rounded-full p-1">
 	{#each options as option (option.value)}
 		<button
 			type="button"
