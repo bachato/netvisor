@@ -1265,7 +1265,7 @@
 	"topology_staleDataBody": "Entities have been updated, and the diagram layout may need to change to fit them.",
 	"topology_startFresh": "Start fresh",
 	"topology_tutorialDone": "Finish Tutorial",
-	"topology_tutorialExplainer": "Dependencies let you define how services relate to each other, as either request paths or hub-and-spoke patterns. They appear as edges on the topology.",
+	"topology_tutorialExplainer": "Dependencies map how traffic flows between your services, making it easy to trace issues and understand the impact of outages.",
 	"topology_tutorialSkip": "Skip tutorial",
 	"topology_tutorialStep1": "Click a service to select it",
 	"topology_tutorialStep2": "Hold {modifier} and click the remaining services",
