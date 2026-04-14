@@ -273,7 +273,7 @@ impl BillingService {
                         .recurring(CreatePriceRecurring {
                             interval: plan.config().rate.stripe_recurring_interval(),
                             interval_count: Some(1),
-                            trial_period_days: Some(plan.config().trial_days),
+                            trial_period_days: None,
                             meter: None,
                             usage_type: Some(CreatePriceRecurringUsageType::Licensed),
                         });
@@ -306,7 +306,7 @@ impl BillingService {
                             .recurring(CreatePriceRecurring {
                                 interval: plan.config().rate.stripe_recurring_interval(),
                                 interval_count: Some(1),
-                                trial_period_days: Some(plan.config().trial_days),
+                                trial_period_days: None,
                                 meter: None,
                                 usage_type: Some(CreatePriceRecurringUsageType::Licensed),
                             });
@@ -340,7 +340,7 @@ impl BillingService {
                             .recurring(CreatePriceRecurring {
                                 interval: plan.config().rate.stripe_recurring_interval(),
                                 interval_count: Some(1),
-                                trial_period_days: Some(plan.config().trial_days),
+                                trial_period_days: None,
                                 meter: None,
                                 usage_type: Some(CreatePriceRecurringUsageType::Licensed),
                             });
@@ -564,6 +564,15 @@ impl BillingService {
         plan: BillingPlan,
         authentication: AuthenticatedEntity,
     ) -> Result<String, Error> {
+        // Guard: prevent trial reuse — org can only trial once
+        let organization = self.get_organization(organization_id).await?;
+        if organization.base.trial_end_date.is_some() {
+            return Err(anyhow!(
+                "Organization {} has already used a trial",
+                organization_id
+            ));
+        }
+
         let auth_for_event = authentication.clone();
 
         let (_, customer_id) = self
@@ -1119,9 +1128,11 @@ impl BillingService {
             organization.base.plan_status = Some("active".to_string());
         } else {
             organization.base.plan_status = Some(sub.status.to_string());
-            organization.base.trial_end_date = sub
-                .trial_end
-                .and_then(|ts| chrono::DateTime::from_timestamp(ts, 0));
+            // Only set trial_end_date when the subscription has a trial — never clear it.
+            // Clearing it erases the record that a trial was used, allowing trial reuse.
+            if let Some(trial_end) = sub.trial_end {
+                organization.base.trial_end_date = chrono::DateTime::from_timestamp(trial_end, 0);
+            }
         }
 
         // Note: has_payment_method is NOT synced from sub.default_payment_method here.
