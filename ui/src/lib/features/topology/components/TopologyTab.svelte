@@ -60,6 +60,7 @@
 	import L2EmptyStateOverlay from './L2EmptyStateOverlay.svelte';
 	import ViewSwitcherHint from './ViewSwitcherHint.svelte';
 	import DependencyTutorial from './DependencyTutorial.svelte';
+	import { TUTORIAL_TOPOLOGY } from './dependency-tutorial-data';
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
@@ -435,11 +436,12 @@
 	}
 
 	// Tutorial / hint state
-	let dependencyTutorialRef: DependencyTutorial | undefined = $state();
+	let tutorialTypeToggled = $state(false);
 
 	function dismissDependencyTutorial() {
 		showDependencyTutorial.set(false);
 		selectedNodes.set([]);
+		tutorialTypeToggled = false;
 	}
 
 	// Auto-dismiss tutorial when user leaves the tab
@@ -791,9 +793,7 @@
 				<div class="relative" id="topology-view-area">
 					<TopologyOptionsPanel
 						topology={currentTopology}
-						tutorialTopology={$showDependencyTutorial
-							? dependencyTutorialRef?.tutorialTopology
-							: undefined}
+						tutorialTopology={$showDependencyTutorial ? TUTORIAL_TOPOLOGY : undefined}
 						{isReadOnly}
 						onClearSelection={$showDependencyTutorial
 							? dismissDependencyTutorial
@@ -812,13 +812,13 @@
 							handleRefresh();
 						}}
 						onDependencyTypeChange={$showDependencyTutorial
-							? () => dependencyTutorialRef?.handleDependencyTypeChange()
+							? () => (tutorialTypeToggled = true)
 							: undefined}
 					/>
 					{#if $showDependencyTutorial}
 						<DependencyTutorial
-							bind:this={dependencyTutorialRef}
 							onDismiss={dismissDependencyTutorial}
+							dependencyTypeToggled={tutorialTypeToggled}
 						/>
 					{/if}
 					<TopologyViewer
