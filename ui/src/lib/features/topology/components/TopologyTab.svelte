@@ -444,14 +444,16 @@
 		tutorialTypeToggled = false;
 	}
 
-	// Auto-dismiss tutorial when user leaves the tab (but not on initial navigation)
-	let wasActive = $state(false);
+	// Auto-dismiss tutorial when user leaves the tab
 	$effect(() => {
-		if (isActive) {
-			wasActive = true;
-		} else if (wasActive && $showDependencyTutorial) {
-			dismissDependencyTutorial();
-		}
+		// Only track isActive — don't re-run when showDependencyTutorial changes
+		const active = isActive;
+		return () => {
+			// Cleanup runs when isActive changes — if we became inactive, dismiss
+			if (active && get(showDependencyTutorial)) {
+				dismissDependencyTutorial();
+			}
+		};
 	});
 
 	async function handleDelete() {
