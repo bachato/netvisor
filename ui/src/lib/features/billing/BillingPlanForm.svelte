@@ -11,10 +11,9 @@
 	import { Check, X, ChevronDown, ChevronUp, Loader2, Minus, Plus } from 'lucide-svelte';
 	import {
 		billing_everythingInPlanPlus,
-		billing_keyFeatures,
 		billing_showFeatures,
 		billing_hideFeatures,
-		billing_noCreditCardRequired
+		billing_startTrialNoCreditCard
 	} from '$lib/paraglide/messages';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import ToggleGroup from './ToggleGroup.svelte';
@@ -230,11 +229,8 @@
 	function formatRate(plan: BillingPlan): string {
 		const metadata = billingPlanHelpers.getMetadata(plan.type);
 		if (metadata?.custom_price) return '';
-		return '/ month';
-	}
-
-	function showBilledYearly(plan: BillingPlan): boolean {
-		return plan.rate === 'Year' && !hasCustomPrice(plan);
+		if (plan.rate === 'Year') return '/mo, billed yearly';
+		return '/mo';
 	}
 
 	function formatSeatAddonPricing(plan: BillingPlan): string {
@@ -349,7 +345,7 @@
 
 <div class="flex min-h-0 flex-1 flex-col {className}">
 	<!-- Header with Toggles (fixed, does not scroll) -->
-	<div class="flex shrink-0 flex-wrap items-center justify-center px-4 py-2 lg:px-6">
+	<div class="flex shrink-0 flex-wrap items-center justify-center px-4 py-1 lg:px-6">
 		{#if showGithubStars}
 			<!-- <GithubStars /> -->
 		{/if}
@@ -453,11 +449,6 @@
 								</div>
 							{/if}
 							<div
-								class={`text-tertiary text-xs ${showBilledYearly(plan) ? 'opacity-100' : 'opacity-0'}`}
-							>
-								billed yearly
-							</div>
-							<div
 								class={`text-xs font-medium text-success ${(hasTrial(plan) || (isCurrentlyTrialing && plan.trial_days > 0)) && !hasCustomPrice(plan) ? 'opacity-100' : 'opacity-0'}`}
 							>
 								{isCurrentlyTrialing ? 'Your trial continues' : `${plan.trial_days}-day free trial`}
@@ -494,14 +485,9 @@
 									{:else if isCurrentlyTrialing}
 										Switch plan
 									{:else}
-										{trial ? `Start ${plan.trial_days}-day free trial` : 'Get Started'}
+										{trial ? billing_startTrialNoCreditCard() : 'Get Started'}
 									{/if}
 								</button>
-								{#if trial}
-									<p class="text-tertiary mt-2 text-center text-xs">
-										{billing_noCreditCardRequired()}
-									</p>
-								{/if}
 							{:else if hosting === 'SelfHosted'}
 								{#if commercial && onPlanInquiry}
 									<button
@@ -628,8 +614,6 @@
 								<p class="text-secondary mb-2 text-xs font-medium">
 									{billing_everythingInPlanPlus({ planName: billingPlanHelpers.getName(prevTier) })}
 								</p>
-							{:else if plan.type !== 'Free' && displayFeatures.length > 0}
-								<p class="text-tertiary mb-2 text-xs">{billing_keyFeatures()}</p>
 							{/if}
 
 							<!-- Mobile: collapsible feature list -->
@@ -651,19 +635,7 @@
 							{/if}
 
 							<ul class="space-y-1.5 {expandedFeatures.has(plan.type) ? '' : 'hidden sm:block'}">
-								{#each displayFeatures as featureKey, i (featureKey)}
-									{@const category = featureHelpers.getCategory(featureKey)}
-									{@const prevCategory =
-										i > 0 ? featureHelpers.getCategory(displayFeatures[i - 1]) : null}
-									{#if category !== prevCategory}
-										<li
-											class="text-tertiary text-[10px] font-medium uppercase tracking-wider {i > 0
-												? 'mt-2'
-												: ''}"
-										>
-											{category}
-										</li>
-									{/if}
+								{#each displayFeatures as featureKey (featureKey)}
 									{@const comingSoon = isComingSoon(featureKey)}
 									<li class="flex items-start gap-2 text-sm">
 										<Check

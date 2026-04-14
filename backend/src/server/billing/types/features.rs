@@ -21,13 +21,11 @@ pub enum Feature {
     CustomSso,
     ManagedDeployment,
     Whitelabeling,
-    CommunitySupport,
     EmailSupport,
     LiveChatSupport,
     PrioritySupport,
     Embeds,
-    NetworkDiscovery,
-    TopologyVisualization,
+    NetworkMapping,
     PngExport,
     SvgExport,
     MermaidExport,
@@ -35,10 +33,7 @@ pub enum Feature {
     PdfExport,
     HtmlExport,
     ScheduledDiscovery,
-    DaemonPoll,
-    ServiceDefinitions,
-    DockerDiscovery,
-    SnmpDiscovery,
+    DiscoveryIntegrations,
     CsvExport,
 }
 
@@ -56,11 +51,9 @@ impl HasId for Feature {
             Feature::LiveChatSupport => "live_chat_support",
             Feature::Embeds => "embeds",
             Feature::EmailSupport => "email_support",
-            Feature::CommunitySupport => "community_support",
             Feature::PrioritySupport => "priority_support",
             Feature::ApiAccess => "api_access",
-            Feature::NetworkDiscovery => "network_discovery",
-            Feature::TopologyVisualization => "topology_visualization",
+            Feature::NetworkMapping => "network_mapping",
             Feature::PngExport => "png_export",
             Feature::SvgExport => "svg_export",
             Feature::MermaidExport => "mermaid_export",
@@ -68,10 +61,7 @@ impl HasId for Feature {
             Feature::PdfExport => "pdf_export",
             Feature::HtmlExport => "html_export",
             Feature::ScheduledDiscovery => "scheduled_discovery",
-            Feature::DaemonPoll => "daemon_poll",
-            Feature::ServiceDefinitions => "service_definitions",
-            Feature::DockerDiscovery => "docker_integration",
-            Feature::SnmpDiscovery => "snmp_integration",
+            Feature::DiscoveryIntegrations => "discovery_integrations",
             Feature::CsvExport => "csv_export",
         }
     }
@@ -119,15 +109,11 @@ impl EntityMetadataProvider for Feature {
 impl TypeMetadataProvider for Feature {
     fn category(&self) -> &'static str {
         match self {
-            Feature::NetworkDiscovery
-            | Feature::DockerDiscovery
-            | Feature::SnmpDiscovery
-            | Feature::DaemonPoll
-            | Feature::ServiceDefinitions
+            Feature::NetworkMapping
+            | Feature::DiscoveryIntegrations
             | Feature::ScheduledDiscovery => "Discovery",
 
-            Feature::TopologyVisualization
-            | Feature::PngExport
+            Feature::PngExport
             | Feature::SvgExport
             | Feature::MermaidExport
             | Feature::ConfluenceExport
@@ -137,8 +123,7 @@ impl TypeMetadataProvider for Feature {
             | Feature::ShareViews
             | Feature::RemoveCreatedWith => "Visualization",
 
-            Feature::CommunitySupport
-            | Feature::EmailSupport
+            Feature::EmailSupport
             | Feature::LiveChatSupport
             | Feature::PrioritySupport
             | Feature::OnboardingCall => "Support",
@@ -166,10 +151,8 @@ impl TypeMetadataProvider for Feature {
             Feature::Embeds => "Embeddable Diagrams",
             Feature::ApiAccess => "API Access",
             Feature::EmailSupport => "Email Support",
-            Feature::CommunitySupport => "Community Support",
             Feature::PrioritySupport => "Priority Support",
-            Feature::NetworkDiscovery => "Network Discovery",
-            Feature::TopologyVisualization => "Topology Visualization",
+            Feature::NetworkMapping => "Automated Network Mapping",
             Feature::PngExport => "PNG Export",
             Feature::SvgExport => "SVG Export",
             Feature::MermaidExport => "Mermaid Export",
@@ -177,10 +160,7 @@ impl TypeMetadataProvider for Feature {
             Feature::PdfExport => "PDF Export",
             Feature::HtmlExport => "HTML Export",
             Feature::ScheduledDiscovery => "Scheduled Discovery",
-            Feature::DaemonPoll => "No Port Forwarding",
-            Feature::ServiceDefinitions => "200+ Service Definitions",
-            Feature::DockerDiscovery => "Docker Discovery",
-            Feature::SnmpDiscovery => "SNMP Discovery",
+            Feature::DiscoveryIntegrations => "Discovery Integrations",
             Feature::CsvExport => "CSV Export",
         }
     }
@@ -212,12 +192,8 @@ impl TypeMetadataProvider for Feature {
             Feature::EmailSupport => "Access to the Scanopy team via email support tickets",
             Feature::Whitelabeling => "We deploy Scanopy to a custom domain with your branding",
             Feature::LiveChatSupport => "Access to the Scanopy team via live chat",
-            Feature::CommunitySupport => "Community support via GitHub issues and discussions",
-            Feature::NetworkDiscovery => {
-                "Automatically discover hosts, services, and connections on your network"
-            }
-            Feature::TopologyVisualization => {
-                "Interactive network topology maps with automatic layout"
+            Feature::NetworkMapping => {
+                "Automatically discover hosts, services, and connections and map them as interactive topology diagrams"
             }
             Feature::PngExport => "Export network diagrams as high-resolution PNG images",
             Feature::SvgExport => "Export network diagrams as scalable SVG vector images",
@@ -232,15 +208,8 @@ impl TypeMetadataProvider for Feature {
                 "Export network diagrams as self-contained HTML pages for offline viewing"
             }
             Feature::ScheduledDiscovery => "Schedule automatic network discovery scans",
-            Feature::DaemonPoll => {
-                "Run network scans without opening inbound ports or configuring port forwarding"
-            }
-            Feature::ServiceDefinitions => {
-                "Auto-detect databases, containers, web servers, and more"
-            }
-            Feature::DockerDiscovery => "Automatic discovery of containerized services",
-            Feature::SnmpDiscovery => {
-                "Query network devices for hardware, port, and performance details via SNMP"
+            Feature::DiscoveryIntegrations => {
+                "Discover Docker containers and query network devices via SNMP"
             }
             Feature::CsvExport => {
                 "Download host, service, and network data as CSV for use in spreadsheets and other tools"

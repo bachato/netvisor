@@ -189,11 +189,9 @@ pub struct BillingPlanFeatures {
     pub live_chat_support: bool,
     pub embeds: bool,
     pub email_support: bool,
-    pub community_support: bool,
     pub priority_support: bool,
     // Core features
-    pub network_discovery: bool,
-    pub topology_visualization: bool,
+    pub network_mapping: bool,
     pub png_export: bool,
     pub svg_export: bool,
     pub mermaid_export: bool,
@@ -201,10 +199,7 @@ pub struct BillingPlanFeatures {
     pub pdf_export: bool,
     pub html_export: bool,
     pub scheduled_discovery: bool,
-    pub daemon_poll: bool,
-    pub service_definitions: bool,
-    pub docker_integration: bool,
-    pub snmp_integration: bool,
+    pub discovery_integrations: bool,
     pub csv_export: bool,
 }
 
@@ -445,10 +440,8 @@ impl BillingPlan {
                 live_chat_support: false,
                 embeds: true,
                 email_support: false,
-                community_support: true,
                 priority_support: false,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: true,
                 mermaid_export: true,
@@ -456,10 +449,7 @@ impl BillingPlan {
                 pdf_export: true,
                 html_export: true,
                 scheduled_discovery: true,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
             BillingPlan::Free { .. } => BillingPlanFeatures {
@@ -475,10 +465,8 @@ impl BillingPlan {
                 live_chat_support: false,
                 embeds: false,
                 email_support: false,
-                community_support: true,
                 priority_support: false,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: false,
                 mermaid_export: false,
@@ -486,10 +474,7 @@ impl BillingPlan {
                 pdf_export: false,
                 html_export: false,
                 scheduled_discovery: false,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
             BillingPlan::Starter { .. } => BillingPlanFeatures {
@@ -505,10 +490,8 @@ impl BillingPlan {
                 live_chat_support: false,
                 embeds: false,
                 email_support: true,
-                community_support: true,
                 priority_support: false,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: true,
                 mermaid_export: false,
@@ -516,10 +499,7 @@ impl BillingPlan {
                 pdf_export: false,
                 html_export: false,
                 scheduled_discovery: true,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
             BillingPlan::Pro { .. } => BillingPlanFeatures {
@@ -535,10 +515,8 @@ impl BillingPlan {
                 live_chat_support: false,
                 embeds: true,
                 email_support: true,
-                community_support: true,
                 priority_support: false,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: true,
                 mermaid_export: true,
@@ -546,10 +524,7 @@ impl BillingPlan {
                 pdf_export: true,
                 html_export: true,
                 scheduled_discovery: true,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
             BillingPlan::Team { .. } => BillingPlanFeatures {
@@ -565,10 +540,8 @@ impl BillingPlan {
                 live_chat_support: false,
                 embeds: true,
                 email_support: true,
-                community_support: true,
                 priority_support: true,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: true,
                 mermaid_export: true,
@@ -576,10 +549,7 @@ impl BillingPlan {
                 pdf_export: true,
                 html_export: true,
                 scheduled_discovery: true,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
             BillingPlan::Business { .. } => BillingPlanFeatures {
@@ -595,10 +565,8 @@ impl BillingPlan {
                 live_chat_support: false,
                 embeds: true,
                 email_support: true,
-                community_support: true,
                 priority_support: true,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: true,
                 mermaid_export: true,
@@ -606,10 +574,7 @@ impl BillingPlan {
                 pdf_export: true,
                 html_export: true,
                 scheduled_discovery: true,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
             BillingPlan::Enterprise { .. } => BillingPlanFeatures {
@@ -625,10 +590,8 @@ impl BillingPlan {
                 live_chat_support: true,
                 embeds: true,
                 email_support: true,
-                community_support: true,
                 priority_support: true,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: true,
                 mermaid_export: true,
@@ -636,10 +599,7 @@ impl BillingPlan {
                 pdf_export: true,
                 html_export: true,
                 scheduled_discovery: true,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
             BillingPlan::Demo { .. } => BillingPlanFeatures {
@@ -655,10 +615,8 @@ impl BillingPlan {
                 live_chat_support: true,
                 embeds: true,
                 email_support: true,
-                community_support: true,
                 priority_support: true,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: true,
                 mermaid_export: true,
@@ -666,10 +624,7 @@ impl BillingPlan {
                 pdf_export: true,
                 html_export: true,
                 scheduled_discovery: true,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
             BillingPlan::CommercialSelfHosted { .. } => BillingPlanFeatures {
@@ -685,10 +640,8 @@ impl BillingPlan {
                 live_chat_support: false,
                 embeds: true,
                 email_support: true,
-                community_support: true,
                 priority_support: true,
-                network_discovery: true,
-                topology_visualization: true,
+                network_mapping: true,
                 png_export: true,
                 svg_export: true,
                 mermaid_export: true,
@@ -696,10 +649,7 @@ impl BillingPlan {
                 pdf_export: true,
                 html_export: true,
                 scheduled_discovery: true,
-                daemon_poll: true,
-                service_definitions: true,
-                docker_integration: true,
-                snmp_integration: true,
+                discovery_integrations: true,
                 csv_export: true,
             },
         }
@@ -725,9 +675,7 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             embeds,
             email_support,
             priority_support,
-            community_support,
-            network_discovery,
-            topology_visualization,
+            network_mapping,
             png_export,
             svg_export,
             mermaid_export,
@@ -735,10 +683,7 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             pdf_export,
             html_export,
             scheduled_discovery,
-            daemon_poll,
-            service_definitions,
-            docker_integration,
-            snmp_integration,
+            discovery_integrations,
             csv_export,
         } = self;
 
@@ -774,10 +719,6 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             features.push(Feature::PrioritySupport)
         }
 
-        if community_support {
-            features.push(Feature::CommunitySupport)
-        }
-
         if email_support {
             features.push(Feature::EmailSupport)
         }
@@ -798,12 +739,8 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             features.push(Feature::RemoveCreatedWith)
         }
 
-        if network_discovery {
-            features.push(Feature::NetworkDiscovery)
-        }
-
-        if topology_visualization {
-            features.push(Feature::TopologyVisualization)
+        if network_mapping {
+            features.push(Feature::NetworkMapping)
         }
 
         if png_export {
@@ -834,20 +771,8 @@ impl Into<Vec<Feature>> for BillingPlanFeatures {
             features.push(Feature::ScheduledDiscovery)
         }
 
-        if daemon_poll {
-            features.push(Feature::DaemonPoll)
-        }
-
-        if service_definitions {
-            features.push(Feature::ServiceDefinitions)
-        }
-
-        if docker_integration {
-            features.push(Feature::DockerDiscovery)
-        }
-
-        if snmp_integration {
-            features.push(Feature::SnmpDiscovery)
+        if discovery_integrations {
+            features.push(Feature::DiscoveryIntegrations)
         }
 
         if csv_export {
@@ -915,13 +840,13 @@ impl TypeMetadataProvider for BillingPlan {
                 "Community plan for individuals self-hosting Scanopy - full control over configuration and integrations"
             }
             BillingPlan::Free { .. } => "For hobbyists exploring a small network",
-            BillingPlan::Starter { .. } => "For homelabbers who want automated documentation",
+            BillingPlan::Starter { .. } => "For homelabbers automating documentation",
             BillingPlan::Pro { .. } => "For IT pros managing multiple networks",
             BillingPlan::Team { .. } => {
                 "Collaborate on infrastructure documentation with your team"
             }
-            BillingPlan::Business { .. } => "For MSPs and IT teams managing client networks",
-            BillingPlan::Enterprise { .. } => "For organizations needing managed deployment",
+            BillingPlan::Business { .. } => "For MSPs managing client infrastructure",
+            BillingPlan::Enterprise { .. } => "For organizations needing custom deployment",
             BillingPlan::Demo { .. } => "Demo mode",
             BillingPlan::CommercialSelfHosted { .. } => {
                 "Commercial license for self-managed deployments — full control over configuration and integrations"
