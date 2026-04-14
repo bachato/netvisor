@@ -7,6 +7,7 @@
 		previewEdges,
 		OPTIONS_PANEL_WIDTH_PX
 	} from '../../queries';
+	import type { Topology } from '../../types/base';
 	import { get } from 'svelte/store';
 	import { ChevronLeft, ChevronRight, Filter, Group, Eye } from 'lucide-svelte';
 	import OptionsContent from './options/OptionsContent.svelte';
@@ -31,14 +32,23 @@
 	];
 
 	let {
+		topology,
+		tutorialTopology,
 		isReadOnly = false,
 		onClearSelection,
-		onGroupCreated
+		onGroupCreated,
+		onDependencyTypeChange
 	}: {
+		topology: Topology | undefined;
+		tutorialTopology?: Topology;
 		isReadOnly?: boolean;
 		onClearSelection?: () => void;
 		onGroupCreated?: (groupId: string) => void;
+		onDependencyTypeChange?: (type: string) => void;
 	} = $props();
+
+	let isTutorial = $derived(!!tutorialTopology);
+	let effectiveTopology = $derived(tutorialTopology ?? topology);
 
 	let multiSelectedNodes = $state(get(selectedNodes));
 	selectedNodes.subscribe((value) => {
@@ -73,14 +83,18 @@
 		{#if $optionsPanelExpanded}
 			<!-- Header with collapse button and tabs -->
 			<div class="flex items-end">
-				<button
-					class="btn-icon flex-shrink-0 rounded-xl p-3"
-					onclick={() => optionsPanelExpanded.set(false)}
-					aria-label={topology_collapsePanel()}
-				>
-					<ChevronLeft class="text-secondary h-5 w-5" />
-				</button>
-				{#if showingOptions}
+				{#if !isTutorial}
+					<button
+						class="btn-icon flex-shrink-0 rounded-xl p-3"
+						onclick={() => optionsPanelExpanded.set(false)}
+						aria-label={topology_collapsePanel()}
+					>
+						<ChevronLeft class="text-secondary h-5 w-5" />
+					</button>
+				{:else}
+					<div class="flex-shrink-0 p-3"></div>
+				{/if}
+				{#if showingOptions && !isTutorial}
 					<div class="flex flex-1">
 						{#each tabs as tab (tab.id)}
 							<button
@@ -104,23 +118,26 @@
 			<div class="overflow-y-auto p-3" style="max-height: calc(100vh - 350px);">
 				{#if multiSelectedNodes.length >= 2}
 					<InspectorMultiSelect
+						topology={effectiveTopology}
 						{isReadOnly}
+						{isTutorial}
 						onClearSelection={onClearSelection ?? (() => selectedNodes.set([]))}
 						{onGroupCreated}
+						{onDependencyTypeChange}
 					/>
-				{:else if $selectedNode}
+				{:else if $selectedNode && !isTutorial}
 					{#key $selectedNode.id}
 						<InspectorNode node={$selectedNode} />
 					{/key}
-				{:else if $selectedEdge}
+				{:else if $selectedEdge && !isTutorial}
 					{#key $selectedEdge.id}
 						<InspectorEdge edge={$selectedEdge} />
 					{/key}
-				{:else}
+				{:else if !isTutorial}
 					<OptionsContent {activeTab} />
 				{/if}
 			</div>
-		{:else}
+		{:else if !isTutorial}
 			<!-- Collapsed toggle button - just the chevron -->
 			<button
 				class="btn-icon rounded-2xl p-3"

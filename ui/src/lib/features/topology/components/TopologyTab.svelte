@@ -30,6 +30,8 @@
 		hydrateStoresFromTopology,
 		getTopologyParamsFromUrl,
 		pushTopologyParams,
+		showViewSwitcherHint,
+		showDependencyTutorial,
 		type TopologyView
 	} from '../queries';
 	import { makeGraphRule } from '../types/grouping';
@@ -56,6 +58,8 @@
 	import { useDependenciesQuery } from '$lib/features/dependencies/queries';
 	import ApplicationSetupWizard from './application-wizard/ApplicationSetupWizard.svelte';
 	import L2EmptyStateOverlay from './L2EmptyStateOverlay.svelte';
+	import ViewSwitcherHint from './ViewSwitcherHint.svelte';
+	import DependencyTutorial from './DependencyTutorial.svelte';
 	import { useUsersQuery } from '$lib/features/users/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
@@ -426,7 +430,24 @@
 		const view = value as TopologyView;
 		pushTopologyParams(get(selectedTopologyId), view);
 		activeView.set(view);
+		// Dismiss view switcher hint on first view change
+		showViewSwitcherHint.set(false);
 	}
+
+	// Tutorial / hint state
+	let dependencyTutorialRef: DependencyTutorial | undefined = $state();
+
+	function dismissDependencyTutorial() {
+		showDependencyTutorial.set(false);
+		selectedNodes.set([]);
+	}
+
+	// Auto-dismiss tutorial when user leaves the tab
+	$effect(() => {
+		if (!isActive && $showDependencyTutorial) {
+			dismissDependencyTutorial();
+		}
+	});
 
 	async function handleDelete() {
 		if (!currentTopology) return;
@@ -701,13 +722,18 @@
 
 						<div class="card-divider-v self-stretch"></div>
 
-						<RichSelect
-							label=""
-							selectedValue={$activeView}
-							displayComponent={SimpleOptionDisplay}
-							onSelect={handleViewChange}
-							options={viewOptions}
-						/>
+						<div class="relative">
+							<RichSelect
+								label=""
+								selectedValue={$activeView}
+								displayComponent={SimpleOptionDisplay}
+								onSelect={handleViewChange}
+								options={viewOptions}
+							/>
+							{#if $showViewSwitcherHint}
+								<ViewSwitcherHint />
+							{/if}
+						</div>
 					{/if}
 				{/if}
 
@@ -764,8 +790,14 @@
 			{:else if currentTopology}
 				<div class="relative" id="topology-view-area">
 					<TopologyOptionsPanel
+						topology={currentTopology}
+						tutorialTopology={$showDependencyTutorial
+							? dependencyTutorialRef?.tutorialTopology
+							: undefined}
 						{isReadOnly}
-						onClearSelection={clearMultiSelect}
+						onClearSelection={$showDependencyTutorial
+							? dismissDependencyTutorial
+							: clearMultiSelect}
 						onGroupCreated={() => {
 							clearMultiSelect();
 							updateTopologyOptions((opts) => ({
@@ -779,7 +811,16 @@
 							}));
 							handleRefresh();
 						}}
+						onDependencyTypeChange={$showDependencyTutorial
+							? () => dependencyTutorialRef?.handleDependencyTypeChange()
+							: undefined}
 					/>
+					{#if $showDependencyTutorial}
+						<DependencyTutorial
+							bind:this={dependencyTutorialRef}
+							onDismiss={dismissDependencyTutorial}
+						/>
+					{/if}
 					<TopologyViewer
 						bind:this={topologyViewer}
 						onToggleLock={handleToggleLock}

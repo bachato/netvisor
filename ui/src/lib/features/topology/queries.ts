@@ -562,6 +562,10 @@ export const previewEdges = writable<Edge[]>([]);
 export const autoRebuild = writable<boolean>(loadAutoRebuildFromStorage());
 export const activeView = writable<TopologyView>('L3Logical');
 
+// Tutorial / hint flags (set by nudges, consumed by topology components)
+export const showViewSwitcherHint = writable(false);
+export const showDependencyTutorial = writable(false);
+
 // ============================================================================
 // URL Param Sync
 // ============================================================================

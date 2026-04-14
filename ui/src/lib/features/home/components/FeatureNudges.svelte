@@ -2,7 +2,11 @@
 	import type { components } from '$lib/api/schema';
 	import FeatureNudge from './FeatureNudge.svelte';
 	import { openModal } from '$lib/shared/stores/modal-registry';
-	import { activeView } from '$lib/features/topology/queries';
+	import {
+		activeView,
+		showViewSwitcherHint,
+		showDependencyTutorial
+	} from '$lib/features/topology/queries';
 	import { entities, billingPlans } from '$lib/shared/stores/metadata';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import type { IconComponent } from '$lib/shared/utils/types';
@@ -106,6 +110,7 @@
 				description: home_nudges_explorePerspectivesDescription(),
 				actionLabel: home_nudges_explorePerspectivesAction(),
 				action: () => {
+					showViewSwitcherHint.set(true);
 					onNavigate('topology');
 				},
 				visible: has('FirstTopologyRebuild'),
@@ -132,6 +137,7 @@
 				actionLabel: home_nudges_dependenciesAction(),
 				action: () => {
 					activeView.set(has('FirstApplicationTagCreated') ? 'Application' : 'Workloads');
+					showDependencyTutorial.set(true);
 					onNavigate('topology');
 				},
 				visible: has('FirstTopologyRebuild') && !has('FirstDependencyCreated'),

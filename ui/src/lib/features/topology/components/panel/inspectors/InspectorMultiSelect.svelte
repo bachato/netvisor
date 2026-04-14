@@ -7,13 +7,12 @@
 		selectedNodes,
 		previewEdges,
 		autoRebuild,
-		selectedTopologyId,
-		useTopologiesQuery,
 		useRebuildTopologyMutation,
 		activeView,
 		topologyOptions,
 		updateSharedElementRules
 	} from '../../../queries';
+	import type { Topology } from '../../../types/base';
 	import type { TopologyNode } from '../../../types/base';
 	import { resolveElementNode, getNodeSelectionIds } from '../../../resolvers';
 	import type { DependencyType, EdgeStyle } from '$lib/features/dependencies/types/base';
@@ -61,25 +60,28 @@
 		tags_crossGroupSelectionHint,
 		tags_inheritedFromHost,
 		tags_inheritedOverrideHint,
-		inspector_createGroupingRuleFromTag
+		inspector_createGroupingRuleFromTag,
+		topology_tutorialDone
 	} from '$lib/paraglide/messages';
 
 	let {
+		topology,
 		isReadOnly = false,
+		isTutorial = false,
 		onClearSelection,
-		onGroupCreated
+		onGroupCreated,
+		onDependencyTypeChange
 	}: {
+		topology: Topology | undefined;
 		isReadOnly?: boolean;
+		isTutorial?: boolean;
 		onClearSelection: () => void;
 		onGroupCreated?: (groupId: string) => void;
+		onDependencyTypeChange?: (type: DependencyType) => void;
 	} = $props();
 
 	const { fitView } = useSvelteFlow();
 	const PREVIEW_STORAGE_KEY = 'scanopy_topology_group_preview';
-
-	const topologiesQuery = useTopologiesQuery();
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(topologiesData.find((t) => t.id === $selectedTopologyId));
 
 	const bulkAddTagMutation = useBulkAddTagMutation();
 	const bulkRemoveTagMutation = useBulkRemoveTagMutation();
@@ -132,8 +134,12 @@
 	// Common tags across selected entities
 	let commonTags = $derived(computeCommonTags(tagEntities));
 
-	// Unified edit state
-	let editState = $derived(getTopologyEditState(topology, get(autoRebuild), isReadOnly));
+	// Unified edit state — tutorial mode always allows edits
+	let editState = $derived(
+		isTutorial
+			? { canEdit: true, disabledReason: null }
+			: getTopologyEditState(topology, get(autoRebuild), isReadOnly)
+	);
 
 	let mutateDisabledReason = $derived.by(() => {
 		if (!editState.disabledReason) return '';
@@ -577,14 +583,16 @@
 			{appWizard_selectedCount({ count: nodes.length, label: elementLabel })}
 		</span>
 		<div class="flex items-center gap-1">
-			<button
-				class="btn-icon p-1"
-				onclick={() =>
-					fitView({ nodes: nodes.map((n) => ({ id: n.id })), padding: 0.5, duration: 300 })}
-				title={topology_focusSelection()}
-			>
-				<Crosshair class="h-4 w-4" />
-			</button>
+			{#if !isTutorial}
+				<button
+					class="btn-icon p-1"
+					onclick={() =>
+						fitView({ nodes: nodes.map((n) => ({ id: n.id })), padding: 0.5, duration: 300 })}
+					title={topology_focusSelection()}
+				>
+					<Crosshair class="h-4 w-4" />
+				</button>
+			{/if}
 			<button class="btn-icon p-1" onclick={onClearSelection} title={common_clearSelection()}>
 				<X class="h-4 w-4" />
 			</button>
@@ -592,66 +600,68 @@
 	</div>
 
 	{#if editState.isEditable}
-		<!-- Tags section -->
-		<div class="space-y-2">
-			<span class="text-secondary block text-sm font-medium"
-				>{tags_entityTags({ entity: tagEntityType })}</span
-			>
-			<div class="card card-static space-y-2 p-2">
-				<div class="flex items-center gap-1.5">
-					<TagPickerInline
-						selectedTagIds={commonTags.filter((id) => !appTagSet.has(id))}
-						onAdd={handleAddTagWithTracking}
-						onRemove={handleRemoveTag}
-						availableTags={nonAppTags}
-					/>
-				</div>
-				{#if recentlyAddedTagIds.length > 0 && !existingRuleCoversRecentTags}
-					<button
-						class="btn-secondary flex w-full items-center justify-center gap-1.5 text-xs"
-						onclick={() => createGroupingRuleFromTags(recentlyAddedTagIds)}
-					>
-						<span>{inspector_createGroupingRuleFromTag()}</span>
-						{#each recentlyAddedTags as tag (tag?.id)}
-							{#if tag}
-								<Tag label={tag.name} color={tag.color} />
-							{/if}
-						{/each}
-					</button>
-				{/if}
-			</div>
-		</div>
-
-		{#if inspectorConfig.show_application_picker}
-			<!-- App-group tag picker — with cross-group and inheritance awareness -->
+		{#if !isTutorial}
+			<!-- Tags section -->
 			<div class="space-y-2">
-				<span class="text-secondary block text-sm font-medium">{common_application()}</span>
+				<span class="text-secondary block text-sm font-medium"
+					>{tags_entityTags({ entity: tagEntityType })}</span
+				>
 				<div class="card card-static space-y-2 p-2">
-					{#if appState.type === 'cross-group'}
-						<p class="text-tertiary text-xs">{tags_crossGroupSelectionHint()}</p>
-					{:else}
-						{#if appState.type === 'single' && appState.allInherited && currentAppTag}
-							<div class="flex flex-wrap items-center gap-1">
-								<Tag
-									label={currentAppTag.name}
-									color={currentAppTag.color}
-									icon={concepts.getIconComponent('Application')}
-									isShiny={true}
-								/>
-								<span class="text-tertiary text-xs">{tags_inheritedFromHost()}</span>
-							</div>
-							<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
-						{/if}
+					<div class="flex items-center gap-1.5">
 						<TagPickerInline
-							selectedTagIds={commonAppTags}
-							onAdd={handleAddAppTag}
+							selectedTagIds={commonTags.filter((id) => !appTagSet.has(id))}
+							onAdd={handleAddTagWithTracking}
 							onRemove={handleRemoveTag}
-							availableTags={appAvailableTags}
-							allowCreate={false}
+							availableTags={nonAppTags}
 						/>
+					</div>
+					{#if recentlyAddedTagIds.length > 0 && !existingRuleCoversRecentTags}
+						<button
+							class="btn-secondary flex w-full items-center justify-center gap-1.5 text-xs"
+							onclick={() => createGroupingRuleFromTags(recentlyAddedTagIds)}
+						>
+							<span>{inspector_createGroupingRuleFromTag()}</span>
+							{#each recentlyAddedTags as tag (tag?.id)}
+								{#if tag}
+									<Tag label={tag.name} color={tag.color} />
+								{/if}
+							{/each}
+						</button>
 					{/if}
 				</div>
 			</div>
+
+			{#if inspectorConfig.show_application_picker}
+				<!-- App-group tag picker — with cross-group and inheritance awareness -->
+				<div class="space-y-2">
+					<span class="text-secondary block text-sm font-medium">{common_application()}</span>
+					<div class="card card-static space-y-2 p-2">
+						{#if appState.type === 'cross-group'}
+							<p class="text-tertiary text-xs">{tags_crossGroupSelectionHint()}</p>
+						{:else}
+							{#if appState.type === 'single' && appState.allInherited && currentAppTag}
+								<div class="flex flex-wrap items-center gap-1">
+									<Tag
+										label={currentAppTag.name}
+										color={currentAppTag.color}
+										icon={concepts.getIconComponent('Application')}
+										isShiny={true}
+									/>
+									<span class="text-tertiary text-xs">{tags_inheritedFromHost()}</span>
+								</div>
+								<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
+							{/if}
+							<TagPickerInline
+								selectedTagIds={commonAppTags}
+								onAdd={handleAddAppTag}
+								onRemove={handleRemoveTag}
+								availableTags={appAvailableTags}
+								allowCreate={false}
+							/>
+						{/if}
+					</div>
+				</div>
+			{/if}
 		{/if}
 
 		{#if inspectorConfig.dependency_creation}
@@ -671,7 +681,10 @@
 								icon: dependencyTypes.getIconComponent(type)
 							}))}
 							selected={groupType}
-							onchange={(v) => (groupType = v as DependencyType)}
+							onchange={(v) => {
+								groupType = v as DependencyType;
+								onDependencyTypeChange?.(groupType);
+							}}
 						/>
 						<span class="text-secondary text-xs">{dependencyTypes.getName(groupType)}</span>
 						<button
@@ -756,20 +769,26 @@
 					{/if}
 
 					<!-- Rebuild warning + Create button -->
-					<div class="space-y-2">
-						<p class="text-tertiary text-xs">
-							{topology_multiSelectCreateGroupRebuildWarning()}
-						</p>
-						<button
-							class="btn-primary w-full text-xs"
-							onclick={confirmGroupCreation}
-							disabled={!groupName.trim() ||
-								createDependencyMutation.isPending ||
-								(isServicesMode ? selectedServiceIds.length < 2 : false)}
-						>
-							{dependencies_createDependency()}
+					{#if isTutorial}
+						<button class="btn-primary w-full text-xs" onclick={onClearSelection}>
+							{topology_tutorialDone()}
 						</button>
-					</div>
+					{:else}
+						<div class="space-y-2">
+							<p class="text-tertiary text-xs">
+								{topology_multiSelectCreateGroupRebuildWarning()}
+							</p>
+							<button
+								class="btn-primary w-full text-xs"
+								onclick={confirmGroupCreation}
+								disabled={!groupName.trim() ||
+									createDependencyMutation.isPending ||
+									(isServicesMode ? selectedServiceIds.length < 2 : false)}
+							>
+								{dependencies_createDependency()}
+							</button>
+						</div>
+					{/if}
 				</div>
 			</div>
 		{/if}
