@@ -666,6 +666,7 @@
 	"discovery_scheduleDaysOfWeek": "Days of Week",
 	"discovery_scheduleEditAsCron": "Edit as cron",
 	"discovery_scheduleFreePlanWarning": "Scheduled discovery runs are paused on the Free plan. Upgrade to a paid plan to resume automatic scans. Your schedule will be preserved.",
+	"discovery_scheduleFreeDiscoveryPaused": "Discovery is paused",
 	"discovery_scheduleHelp": "Configure when this discovery should run automatically",
 	"discovery_schedulePausedFreePlan": "Paused — upgrade to resume scheduled runs",
 	"discovery_scheduleResetToDayPicker": "Reset to day picker",

@@ -23,6 +23,7 @@
 		discovery_scheduleCronInfo,
 		discovery_scheduleDaysOfWeek,
 		discovery_scheduleEditAsCron,
+		discovery_scheduleFreeDiscoveryPaused,
 		discovery_scheduleFreePlanWarning,
 		discovery_scheduleHelp,
 		discovery_scheduleResetToDayPicker,
@@ -155,7 +156,7 @@
 {#if formData.run_type.type === 'Scheduled'}
 	<div class="space-y-4">
 		{#if schedulePaused}
-			<InlineWarning body={discovery_scheduleFreePlanWarning()} />
+			<InlineWarning title={discovery_scheduleFreeDiscoveryPaused()} body={discovery_scheduleFreePlanWarning()} />
 		{/if}
 		<p class="text-tertiary text-sm">
 			{discovery_scheduleHelp()}

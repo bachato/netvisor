@@ -294,6 +294,92 @@ var TEST_PLANS = [
 }
 ,
 {
+  "branch": "refactor/edge-naming-audit",
+  "tests": [
+    {
+      "id": "edge-names-in-inspector-panel",
+      "category": "Edge Display",
+      "description": "Verify edge type names display correctly in the inspector panel when clicking edges",
+      "steps": [
+        "Open the L3 Logical topology view",
+        "Click on a SameHost edge (connecting IPs on the same host)",
+        "Verify the inspector panel shows correct edge details",
+        "Click on a ContainerRuntime edge (connecting Docker service to containers)",
+        "Verify the inspector panel shows Docker host, service, and containerized services",
+        "Click on a Hypervisor edge (connecting hypervisor to VM) if Proxmox data exists",
+        "Verify the inspector panel shows VM service and hypervisor host"
+      ],
+      "setup": "Ensure the topology has hosts with Docker containers and at least one Proxmox hypervisor with VMs.",
+      "expected": "All edge types display their correct inspector panels with proper labels. No 'SmoothStep' or 'Virtualized Service' text should appear anywhere.",
+      "flow": "setup",
+      "sequence": 1,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "edge-type-labels-in-metadata",
+      "category": "Edge Display",
+      "description": "Verify edge type metadata (names, icons, colors) display correctly throughout the UI",
+      "steps": [
+        "Open any topology view with visible edges",
+        "Hover over different edge types",
+        "Check that edge type names in tooltips/panels show 'Container Runtime' and 'Hypervisor' instead of 'Virtualized Service' and 'Virtualized Host'",
+        "Check the edge visibility toggles if available"
+      ],
+      "expected": "Edge type display names should be 'Same Host', 'Container Runtime', 'Hypervisor', 'Physical Link', 'Request Path', 'Hub and Spoke'. No references to old names.",
+      "flow": "setup",
+      "sequence": 2,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "aggregated-edges-display",
+      "category": "Edge Display",
+      "description": "Verify aggregated/bundled edges display correctly with new names",
+      "steps": [
+        "Open a topology view where edges are bundled",
+        "Click on a bundled edge group",
+        "Verify the aggregated edge inspector shows correct edge type groupings with new names"
+      ],
+      "expected": "Aggregated edge groups use 'Container Runtime' and 'Hypervisor' labels, not old names.",
+      "flow": "setup",
+      "sequence": 3,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "edge-highlighting-container-runtime",
+      "category": "Edge Interactions",
+      "description": "Verify ContainerRuntime edge highlighting includes all container nodes",
+      "steps": [
+        "Open the L3 Logical view with Docker containers visible",
+        "Click on a ContainerRuntime edge",
+        "Verify that the Docker host node, target container node, and all related container interface nodes are highlighted"
+      ],
+      "setup": "Ensure topology has a Docker host with multiple containers on Docker bridge subnets.",
+      "expected": "Selecting a ContainerRuntime edge highlights the source node, target node, and all virtualized container nodes on Docker bridge subnets.",
+      "flow": "setup",
+      "sequence": 4,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "backward-compat-stored-topology",
+      "category": "Backward Compatibility",
+      "description": "Verify topologies with old edge type names still load correctly",
+      "steps": [
+        "Load a topology that was saved before this change (with HostVirtualization/ServiceVirtualization edge types in stored data)",
+        "Verify the topology renders correctly",
+        "Verify edges display with the new names in the UI"
+      ],
+      "expected": "Old topology data with 'HostVirtualization' and 'ServiceVirtualization' edge types deserializes correctly and displays with new names.",
+      "status": null,
+      "feedback": null
+    }
+  ]
+}
+,
+{
   "branch": "feat/starter-trial",
   "tests": [
     {
@@ -402,6 +488,114 @@ var TEST_PLANS = [
       ],
       "setup": "Ensure an existing org is on the Free plan with some hosts and a discovery configured.",
       "expected": "Everything works as before. User can view data, run ad-hoc discoveries, and access all features within Free plan limits. No read-only restrictions.",
+      "status": null,
+      "feedback": null
+    }
+  ]
+}
+,
+{
+  "branch": "fix/workloads-empty-hosts-openports",
+  "tests": [
+    {
+      "id": "workloads-empty-host-hidden",
+      "category": "Workloads View",
+      "description": "Host containers with zero services/VMs should not appear",
+      "steps": [
+        "Navigate to the Topology page and select the Workloads view",
+        "Look for any host containers that have no service or VM elements inside them"
+      ],
+      "setup": "Ensure at least one host exists in the network that has no discovered services (or only has OpenPorts services).",
+      "expected": "Only host containers with at least one service or VM element are visible. Empty hosts do not appear.",
+      "flow": "setup",
+      "sequence": 1,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-populated-host-shown",
+      "category": "Workloads View",
+      "description": "Host containers with services still appear normally",
+      "steps": [
+        "Navigate to the Topology page and select the Workloads view",
+        "Verify that hosts with services (e.g., nginx, Docker containers, VMs) are visible with their elements"
+      ],
+      "expected": "All host containers with workload elements are displayed with their services, VMs, and subcontainers intact.",
+      "flow": "setup",
+      "sequence": 2,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-open-ports-excluded",
+      "category": "Workloads View",
+      "description": "OpenPorts services should not appear as elements",
+      "steps": [
+        "Navigate to the Topology page and select the Workloads view",
+        "Look for any 'Open Ports' service elements inside host containers"
+      ],
+      "setup": "Ensure at least one host has an OpenPorts service discovered alongside other regular services.",
+      "expected": "No OpenPorts elements appear. Regular services on the same host are still visible.",
+      "flow": "setup",
+      "sequence": 3,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "application-open-ports-excluded",
+      "category": "Application View",
+      "description": "OpenPorts services should not appear as elements",
+      "steps": [
+        "Navigate to the Topology page and select the Application view",
+        "Look for any 'Open Ports' service elements"
+      ],
+      "setup": "Ensure at least one OpenPorts service with bindings exists.",
+      "expected": "No OpenPorts elements appear in the Application view.",
+      "flow": "setup",
+      "sequence": 4,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "l3-open-ports-faded",
+      "category": "L3 View",
+      "description": "OpenPorts should still show as faded in L3 (existing behavior)",
+      "steps": [
+        "Navigate to the Topology page and select the L3 Logical view",
+        "Look for OpenPorts elements — they should appear with faded/dimmed styling"
+      ],
+      "expected": "OpenPorts elements are visible but faded in L3 view, matching previous behavior.",
+      "flow": "setup",
+      "sequence": 5,
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "l3-docker-bridge-positioning",
+      "category": "L3 View",
+      "description": "Docker Bridge containers should be positioned near their host's subnet",
+      "steps": [
+        "Navigate to the Topology page and select the L3 Logical view",
+        "Find a host running Docker with the MergeDockerBridges grouping rule enabled",
+        "Observe the Docker Bridge container's position relative to the subnet containing the host's IP"
+      ],
+      "setup": "Ensure a host with Docker and containerized services exists, and the MergeDockerBridges container rule is active in L3 grouping.",
+      "expected": "The Docker Bridge container is positioned adjacent to or near the subnet containing the Docker host, not far away in a disconnected position.",
+      "status": null,
+      "feedback": null
+    },
+    {
+      "id": "workloads-no-orphaned-edges",
+      "category": "Workloads View",
+      "description": "No orphaned edges after empty host removal",
+      "steps": [
+        "Navigate to the Topology page and select the Workloads view",
+        "Open browser DevTools console",
+        "Check for any SvelteFlow errors about missing nodes or orphaned edges"
+      ],
+      "expected": "No console errors related to missing nodes or edge references. All visible edges connect to existing containers/elements.",
+      "flow": "setup",
+      "sequence": 6,
       "status": null,
       "feedback": null
     }

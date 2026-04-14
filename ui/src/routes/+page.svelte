@@ -9,7 +9,8 @@
 	import { discoverySSEManager } from '$lib/features/discovery/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 
-	import { topologySSEManager } from '$lib/features/topology/queries';
+	import { topologySSEManager, selectedTopologyId, activeView, pushTopologyParams } from '$lib/features/topology/queries';
+	import { get } from 'svelte/store';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import BillingPlanModal from '$lib/features/billing/BillingPlanModal.svelte';
 	import DaemonPromptModal from '$lib/features/daemons/components/DaemonPromptModal.svelte';
@@ -78,9 +79,15 @@
 	// Update URL hash when activeTab changes
 	$effect(() => {
 		if (typeof window !== 'undefined' && activeTab) {
-			// Clear topology-specific URL params when leaving the topology tab
 			const url = new URL(window.location.href);
-			if (activeTab !== 'topology') {
+			if (activeTab === 'topology') {
+				// Set topology params when entering the topology tab
+				const topoId = get(selectedTopologyId);
+				const view = get(activeView);
+				if (topoId) url.searchParams.set('topologyId', topoId);
+				url.searchParams.set('view', view);
+			} else {
+				// Clear topology-specific URL params when leaving
 				url.searchParams.delete('topologyId');
 				url.searchParams.delete('view');
 			}

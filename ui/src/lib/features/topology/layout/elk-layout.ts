@@ -880,6 +880,18 @@ function buildElkGraph(
 		edges
 	};
 
+	// DEBUG: dump root container layout options
+	for (const c of rootContainers) {
+		const ports = (c.ports ?? []).length;
+		const children = (c.children ?? []).length;
+		const innerEdges = ((c as Record<string, unknown>).edges as unknown[] ?? []).length;
+		console.log(`[ELK-DEBUG] container ${c.id.substring(0, 8)}: ${children} children, ${ports} ports, ${innerEdges} inner edges, opts=${JSON.stringify(c.layoutOptions)}`);
+	}
+	console.log(`[ELK-DEBUG] ${edges.length} root edges`);
+	for (const e of edges) {
+		console.log(`[ELK-DEBUG]   ${e.sources[0]?.substring(0, 20)} → ${e.targets[0]?.substring(0, 20)}`);
+	}
+
 	return { graph, containerIds };
 }
 
