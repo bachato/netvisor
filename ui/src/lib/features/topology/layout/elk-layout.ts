@@ -1346,6 +1346,7 @@ function repackDisconnectedContainers(
 	const connectedIds = new Set<string>();
 	for (const edge of input.edges) {
 		if (!affectsLayout(edge)) continue;
+<<<<<<< Updated upstream
 		const srcRoot = resolveToRootContainer(
 			edge.source,
 			elementToRoot,
