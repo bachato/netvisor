@@ -729,18 +729,13 @@
 
 						<div class="card-divider-v self-stretch"></div>
 
-						<div class="relative">
-							<RichSelect
-								label=""
-								selectedValue={$activeView}
-								displayComponent={SimpleOptionDisplay}
-								onSelect={handleViewChange}
-								options={viewOptions}
-							/>
-							{#if $showViewSwitcherHint}
-								<ViewSwitcherHint />
-							{/if}
-						</div>
+						<RichSelect
+							label=""
+							selectedValue={$activeView}
+							displayComponent={SimpleOptionDisplay}
+							onSelect={handleViewChange}
+							options={viewOptions}
+						/>
 					{/if}
 				{/if}
 
@@ -790,6 +785,10 @@
 						body={topology_staleDataBody()}
 					/>
 				{/if}
+			{/if}
+
+			{#if $showViewSwitcherHint}
+				<ViewSwitcherHint />
 			{/if}
 
 			{#if isLoading}
