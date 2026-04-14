@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { X } from 'lucide-svelte';
 	import { showViewSwitcherHint } from '../queries';
 	import { topology_viewSwitcherHint } from '$lib/paraglide/messages';
 	import { onMount } from 'svelte';
@@ -23,13 +22,12 @@
 		setTimeout(() => {
 			if (!anchor) return;
 			const rect = anchor.getBoundingClientRect();
-			const hintWidth = 256; // w-64
+			const hintWidth = 256;
 			top = rect.bottom + 8;
 			left = rect.left + rect.width / 2 - hintWidth / 2;
 			ready = true;
 		}, 100);
 
-		// Dismiss on any click
 		function handleClick() {
 			dismiss();
 		}
@@ -61,28 +59,22 @@
 		class="fixed z-[9999] w-64"
 		style="top: {top}px; left: {left}px;"
 	>
-		<div class="hint-callout relative rounded-lg p-3 shadow-lg">
-			<!-- Arrow pointing up, centered -->
+		<div class="hint-callout relative rounded-lg px-4 py-3">
 			<div class="hint-arrow absolute -top-2 left-1/2 -translate-x-1/2"></div>
-			<div class="flex items-start gap-2">
-				<p class="text-primary flex-1 text-xs">
-					{topology_viewSwitcherHint()}
-				</p>
-				<button class="btn-icon flex-shrink-0 p-0.5" onclick={dismiss}>
-					<X class="h-3.5 w-3.5" />
-				</button>
-			</div>
+			<p class="text-primary text-xs">
+				{topology_viewSwitcherHint()}
+			</p>
 		</div>
 	</div>
 {/if}
 
 <style>
 	.hint-callout {
-		background: var(--color-bg-surface);
-		border: 1px solid rgba(59, 130, 246, 0.4);
+		background: var(--color-bg-elevated, #1e2030);
+		border: 1.5px solid rgb(244, 63, 94);
 		box-shadow:
-			0 0 12px rgba(59, 130, 246, 0.15),
-			0 4px 12px rgba(0, 0, 0, 0.3);
+			0 0 16px rgba(244, 63, 94, 0.25),
+			0 4px 12px rgba(0, 0, 0, 0.4);
 	}
 
 	.hint-arrow {
@@ -90,6 +82,6 @@
 		height: 0;
 		border-left: 8px solid transparent;
 		border-right: 8px solid transparent;
-		border-bottom: 8px solid rgba(59, 130, 246, 0.4);
+		border-bottom: 8px solid rgb(244, 63, 94);
 	}
 </style>
