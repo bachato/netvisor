@@ -2,7 +2,7 @@
 	import { X } from 'lucide-svelte';
 	import { showViewSwitcherHint } from '../queries';
 	import { topology_viewSwitcherHint } from '$lib/paraglide/messages';
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 
 	let { anchor }: { anchor: HTMLElement } = $props();
 
@@ -20,23 +20,19 @@
 		portalContainer.style.height = '0';
 		document.body.appendChild(portalContainer);
 
-		calculatePosition();
-
-		return () => {
-			portalContainer?.remove();
-		};
-	});
-
-	async function calculatePosition() {
-		await tick();
-		requestAnimationFrame(() => {
+		// Delay measurement to ensure anchor is laid out
+		setTimeout(() => {
 			if (!anchor) return;
 			const rect = anchor.getBoundingClientRect();
 			top = rect.bottom + 8;
 			left = rect.left;
 			ready = true;
-		});
-	}
+		}, 100);
+
+		return () => {
+			portalContainer?.remove();
+		};
+	});
 
 	function portal(node: HTMLElement) {
 		portalContainer?.appendChild(node);
