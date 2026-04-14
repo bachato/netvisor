@@ -1,9 +1,9 @@
 <script lang="ts">
 	import {
 		SvelteFlow,
+		SvelteFlowProvider,
 		Background,
-		BackgroundVariant,
-		type NodeMouseHandler
+		BackgroundVariant
 	} from '@xyflow/svelte';
 	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
@@ -71,7 +71,7 @@
 	// Track clicked nodes
 	let clickedNodeIds = $state(new Set<string>());
 
-	const handleNodeClick: NodeMouseHandler = (_event, node) => {
+	function handleNodeClick({ node }: { node: Node; event: MouseEvent | TouchEvent }) {
 		if (clickedNodeIds.has(node.id)) return;
 		const updated = new Set(clickedNodeIds);
 		updated.add(node.id);
@@ -81,7 +81,7 @@
 		if (xyNode) {
 			selectedNodes.set([...$selectedNodes, xyNode]);
 		}
-	};
+	}
 
 	let step1Done = $derived(clickedNodeIds.size >= 1);
 	let step2Done = $derived(clickedNodeIds.size >= 3);
@@ -109,31 +109,33 @@
 		<div class="flex min-h-0 flex-1 flex-col">
 			<!-- Mini SvelteFlow canvas with real ElementNode + edge rendering -->
 			<div class="min-h-0 flex-1">
-				<SvelteFlow
-					nodes={$tutorialNodes}
-					edges={$tutorialEdges}
-					{nodeTypes}
-					{edgeTypes}
-					onnodeclick={handleNodeClick}
-					fitView={true}
-					fitViewOptions={{ padding: 0.3 }}
-					minZoom={0.5}
-					maxZoom={1.5}
-					nodesDraggable={false}
-					nodesConnectable={false}
-					elementsSelectable={true}
-					selectionOnDrag={false}
-					panOnDrag={true}
-					zoomOnScroll={false}
-					zoomOnDoubleClick={false}
-				>
-					<Background
-						variant={BackgroundVariant.Dots}
-						bgColor="var(--color-topology-bg)"
-						gap={50}
-						size={1}
-					/>
-				</SvelteFlow>
+				<SvelteFlowProvider>
+					<SvelteFlow
+						nodes={$tutorialNodes}
+						edges={$tutorialEdges}
+						{nodeTypes}
+						{edgeTypes}
+						onnodeclick={handleNodeClick}
+						fitView={true}
+						fitViewOptions={{ padding: 0.3 }}
+						minZoom={0.5}
+						maxZoom={1.5}
+						nodesDraggable={false}
+						nodesConnectable={false}
+						elementsSelectable={true}
+						selectionOnDrag={false}
+						panOnDrag={true}
+						zoomOnScroll={false}
+						zoomOnDoubleClick={false}
+					>
+						<Background
+							variant={BackgroundVariant.Dots}
+							bgColor="var(--color-topology-bg)"
+							gap={50}
+							size={1}
+						/>
+					</SvelteFlow>
+				</SvelteFlowProvider>
 			</div>
 
 			<!-- Checklist below the canvas -->
