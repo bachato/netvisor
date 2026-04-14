@@ -818,30 +818,29 @@
 							? () => (tutorialTypeToggled = true)
 							: undefined}
 					/>
+					<TopologyViewer
+						bind:this={topologyViewer}
+						onToggleLock={handleToggleLock}
+						onRebuild={handleRefresh}
+						{isActive}
+					/>
 					{#if $showDependencyTutorial}
 						<DependencyTutorial
 							onDismiss={dismissDependencyTutorial}
 							dependencyTypeToggled={tutorialTypeToggled}
 						/>
-					{:else}
-						<TopologyViewer
-							bind:this={topologyViewer}
-							onToggleLock={handleToggleLock}
-							onRebuild={handleRefresh}
-							{isActive}
+					{/if}
+					{#if showAppWizard}
+						<ApplicationSetupWizard
+							{appTags}
+							networkId={currentTopology.network_id}
+							onComplete={handleWizardComplete}
 						/>
-						{#if showAppWizard}
-							<ApplicationSetupWizard
-								{appTags}
-								networkId={currentTopology.network_id}
-								onComplete={handleWizardComplete}
-							/>
-						{/if}
-						{#if showL2EmptyState}
-							<L2EmptyStateOverlay
-								hasSnmpCredential={onboarding.includes('FirstSnmpCredentialCreated')}
-							/>
-						{/if}
+					{/if}
+					{#if showL2EmptyState}
+						<L2EmptyStateOverlay
+							hasSnmpCredential={onboarding.includes('FirstSnmpCredentialCreated')}
+						/>
 					{/if}
 				</div>
 			{:else}

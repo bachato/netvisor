@@ -9,7 +9,8 @@
 	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import '../components/visualization/topology-viewer.css';
+	import './visualization/topology-viewer.css';
+	import GenericModal from '$lib/shared/components/layout/GenericModal.svelte';
 	import ChecklistItem from '$lib/shared/components/data/ChecklistItem.svelte';
 	import ElementNode from './visualization/ElementNode.svelte';
 	import { selectedNodes } from '../queries';
@@ -47,7 +48,7 @@
 	// Node types for the mini SvelteFlow
 	const nodeTypes = { Element: ElementNode };
 
-	// Xyflow nodes — use writable for SvelteFlow
+	// Xyflow nodes
 	const nodes = writable<Node[]>(TUTORIAL_XYFLOW_NODES);
 
 	// Track which nodes the user has clicked
@@ -59,7 +60,6 @@
 		updated.add(node.id);
 		clickedNodeIds = updated;
 
-		// Find the full xyflow node and inject into selectedNodes store
 		const xyNode = TUTORIAL_XYFLOW_NODES.find((n) => n.id === node.id);
 		if (xyNode) {
 			const current = [...$selectedNodes];
@@ -68,97 +68,118 @@
 		}
 	};
 
-	// Step completion tracking
+	// Step completion
 	let step1Done = $derived(clickedNodeIds.size >= 1);
 	let step2Done = $derived(clickedNodeIds.size >= 3);
 	let step3Done = $derived(dependencyTypeToggled);
 
-	// Get dependency type icons from metadata
 	const RequestPathIcon = dependencyTypes.getIconComponent('RequestPath');
 	const HubAndSpokeIcon = dependencyTypes.getIconComponent('HubAndSpoke');
 
-	// Selection progress dots
 	let selectionDots = $derived(TUTORIAL_SERVICES.map((n) => clickedNodeIds.has(n.id)));
 </script>
 
-<!-- Mini topology viewer with tutorial nodes -->
-<div class="relative flex h-full flex-col">
-	<!-- SvelteFlow canvas showing real ElementNode components -->
-	<div class="flex-1">
-		<SvelteFlowProvider>
-			<SvelteFlow
-				{nodes}
-				edges={writable([])}
-				{nodeTypes}
-				onnodeclick={handleNodeClick}
-				fitView={true}
-				minZoom={0.5}
-				maxZoom={1.5}
-				nodesDraggable={false}
-				nodesConnectable={false}
-				elementsSelectable={false}
-				panOnDrag={false}
-				zoomOnScroll={false}
-				zoomOnDoubleClick={false}
-				preventScrolling={false}
-			>
-				<Background
-					variant={BackgroundVariant.Dots}
-					bgColor="var(--color-topology-bg)"
-					gap={50}
-					size={1}
-				/>
-			</SvelteFlow>
-		</SvelteFlowProvider>
-	</div>
+<!-- Shroud over the topology viewer -->
+<div class="absolute inset-0 z-20 bg-black/60 backdrop-blur-sm"></div>
 
-	<!-- Tutorial checklist overlay at the bottom -->
-	<div
-		class="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-6 pb-6 pt-12"
+<!-- Modal anchored to topology view -->
+<div class="tutorial-anchor">
+	<GenericModal
+		title={topology_tutorialTitle()}
+		isOpen={true}
+		showCloseButton={false}
+		preventCloseOnClickOutside={true}
+		showBackdrop={false}
+		size="xl"
+		fixedHeight={true}
 	>
-		<div class="mx-auto max-w-md">
-			<h3 class="text-primary mb-3 text-base font-semibold">
-				{topology_tutorialTitle()}
-			</h3>
-
-			<!-- Selection progress dots -->
-			<div class="mb-3 flex items-center gap-0.5">
-				{#each selectionDots as filled}
-					<span
-						class="inline-block h-1.5 w-1.5 rounded-full {filled
-							? 'bg-green-400'
-							: 'bg-gray-300 dark:bg-gray-600'}"
-					></span>
-				{/each}
+		<div class="flex min-h-0 flex-1 flex-col">
+			<!-- Mini topology canvas with real ElementNode components -->
+			<div class="h-64">
+				<SvelteFlowProvider>
+					<SvelteFlow
+						{nodes}
+						edges={writable([])}
+						{nodeTypes}
+						onnodeclick={handleNodeClick}
+						fitView={true}
+						minZoom={0.5}
+						maxZoom={1.5}
+						nodesDraggable={false}
+						nodesConnectable={false}
+						elementsSelectable={false}
+						panOnDrag={false}
+						zoomOnScroll={false}
+						zoomOnDoubleClick={false}
+						preventScrolling={true}
+					>
+						<Background
+							variant={BackgroundVariant.Dots}
+							bgColor="var(--color-topology-bg)"
+							gap={50}
+							size={1}
+						/>
+					</SvelteFlow>
+				</SvelteFlowProvider>
 			</div>
 
-			<!-- Step checklist -->
-			<div class="space-y-0">
-				<ChecklistItem checked={step1Done} disabled={step1Done} label={topology_tutorialStep1()} />
-				<ChecklistItem
-					checked={step2Done}
-					disabled={step2Done}
-					label={topology_tutorialStep2({ modifier })}
-				/>
-				<ChecklistItem
-					checked={step3Done}
-					disabled={step3Done || !step2Done}
-					label={topology_tutorialStep3()}
-				>
-					{#snippet labelExtra()}
-						<svelte:component this={RequestPathIcon} class="h-3.5 w-3.5" />
-						<svelte:component this={HubAndSpokeIcon} class="h-3.5 w-3.5" />
-					{/snippet}
-				</ChecklistItem>
-				<ChecklistItem checked={false} disabled={!step3Done} label={topology_tutorialStep4()} />
-			</div>
+			<!-- Checklist below the canvas -->
+			<div class="border-primary/10 border-t p-6">
+				<!-- Selection progress dots -->
+				<div class="mb-3 flex items-center gap-0.5">
+					{#each selectionDots as filled}
+						<span
+							class="inline-block h-1.5 w-1.5 rounded-full {filled
+								? 'bg-green-400'
+								: 'bg-gray-300 dark:bg-gray-600'}"
+						></span>
+					{/each}
+				</div>
 
-			<!-- Skip button -->
-			<div class="mt-3 text-center">
-				<button class="text-secondary hover:text-primary text-xs underline" onclick={onDismiss}>
-					{topology_tutorialSkip()}
-				</button>
+				<div class="space-y-0">
+					<ChecklistItem
+						checked={step1Done}
+						disabled={step1Done}
+						label={topology_tutorialStep1()}
+					/>
+					<ChecklistItem
+						checked={step2Done}
+						disabled={step2Done}
+						label={topology_tutorialStep2({ modifier })}
+					/>
+					<ChecklistItem
+						checked={step3Done}
+						disabled={step3Done || !step2Done}
+						label={topology_tutorialStep3()}
+					>
+						{#snippet labelExtra()}
+							<svelte:component this={RequestPathIcon} class="h-3.5 w-3.5" />
+							<svelte:component this={HubAndSpokeIcon} class="h-3.5 w-3.5" />
+						{/snippet}
+					</ChecklistItem>
+					<ChecklistItem
+						checked={false}
+						disabled={!step3Done}
+						label={topology_tutorialStep4()}
+					/>
+				</div>
+
+				<div class="mt-3 text-center">
+					<button
+						class="text-secondary hover:text-primary text-xs underline"
+						onclick={onDismiss}
+					>
+						{topology_tutorialSkip()}
+					</button>
+				</div>
 			</div>
 		</div>
-	</div>
+	</GenericModal>
 </div>
+
+<style>
+	.tutorial-anchor :global(.modal-page) {
+		position: absolute;
+		z-index: 30;
+	}
+</style>

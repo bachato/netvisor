@@ -100,17 +100,23 @@ export const TUTORIAL_TOPOLOGY: Topology = {
 	subnets: []
 } as unknown as Topology;
 
-// Xyflow nodes positioned in a row for the mini topology viewer
+// Xyflow nodes positioned in a triangle for the mini topology viewer
+const POSITIONS = [
+	{ x: 150, y: 0 },
+	{ x: 0, y: 130 },
+	{ x: 300, y: 130 }
+];
+
 export const TUTORIAL_XYFLOW_NODES: Node[] = TUTORIAL_SERVICES.map((n, i) => ({
 	id: n.id,
-	position: { x: i * 200, y: 50 },
+	position: POSITIONS[i],
 	data: {
 		id: n.id,
 		node_type: 'Element',
 		element_type: 'Service',
 		host_id: n.hostId,
 		header: n.hostName,
-		position: { x: i * 200, y: 50 },
+		position: POSITIONS[i],
 		size: { x: 150, y: 60 }
 	},
 	type: 'Element'

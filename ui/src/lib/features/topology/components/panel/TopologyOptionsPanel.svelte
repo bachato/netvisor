@@ -74,7 +74,7 @@
 
 <!-- Floating Panel -->
 <div
-	class="topology-options absolute left-4 top-4 z-10 duration-300 {$optionsPanelExpanded
+	class="topology-options absolute left-4 top-4 duration-300 {isTutorial ? 'z-30' : 'z-10'} {$optionsPanelExpanded
 		? ''
 		: 'w-auto'}"
 	style={$optionsPanelExpanded ? `width: ${OPTIONS_PANEL_WIDTH_PX}px` : ''}
