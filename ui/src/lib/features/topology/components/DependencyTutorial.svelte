@@ -109,7 +109,7 @@
 	>
 		<div class="flex min-h-0 flex-1 flex-col">
 			<!-- Explainer -->
-			<div class="border-primary/10 flex-shrink-0 border-b px-6 py-3">
+			<div class="flex-shrink-0 px-6 py-3">
 				<p class="text-secondary text-sm">{topology_tutorialExplainer()}</p>
 			</div>
 			<!-- Mini SvelteFlow canvas with real ElementNode + edge rendering -->
@@ -144,7 +144,7 @@
 			</div>
 
 			<!-- Checklist below the canvas -->
-			<div class="border-primary/10 flex-shrink-0 border-t p-4">
+			<div class="flex-shrink-0 p-4">
 				<div class="mb-2 flex items-center gap-0.5">
 					{#each selectionDots as filled}
 						<span
@@ -204,5 +204,9 @@
 		right: 0;
 		top: 0;
 		bottom: 0;
+	}
+
+	.tutorial-anchor :global(.svelte-flow) {
+		border: none;
 	}
 </style>
