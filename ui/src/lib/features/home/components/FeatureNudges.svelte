@@ -131,6 +131,7 @@
 				description: home_nudges_dependenciesDescription(),
 				actionLabel: home_nudges_dependenciesAction(),
 				action: () => {
+					activeView.set(has('FirstApplicationTagCreated') ? 'Application' : 'Workloads');
 					onNavigate('topology');
 				},
 				visible: has('FirstTopologyRebuild') && !has('FirstDependencyCreated'),
