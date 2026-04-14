@@ -5,6 +5,7 @@
 		selectedEdge,
 		selectedNodes,
 		previewEdges,
+		topologyOptions,
 		OPTIONS_PANEL_WIDTH_PX
 	} from '../../queries';
 	import type { Topology } from '../../types/base';
@@ -116,7 +117,7 @@
 			</div>
 
 			<!-- Content area -->
-			<div class="overflow-y-auto p-3" style={isTutorial ? '' : 'max-height: calc(100vh - 350px);'}>
+			<div class="overflow-y-auto p-3" style="max-height: calc(100vh - {isTutorial || !$topologyOptions.local.show_minimap ? 180 : 350}px);">
 				{#if multiSelectedNodes.length >= 2}
 					<InspectorMultiSelect
 						topology={effectiveTopology}
