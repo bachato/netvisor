@@ -144,6 +144,11 @@ impl EntityBuffer {
                 existing.ports.extend(host.ports);
                 existing.services.extend(host.services);
                 existing.interfaces.extend(host.interfaces);
+                existing
+                    .host
+                    .base
+                    .credential_assignments
+                    .extend(host.host.base.credential_assignments);
             }
             Some(BufferedEntity::Created { .. }) | None => {
                 // No existing pending entry - insert new one

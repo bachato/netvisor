@@ -156,7 +156,10 @@
 {#if formData.run_type.type === 'Scheduled'}
 	<div class="space-y-4">
 		{#if schedulePaused}
-			<InlineWarning title={discovery_scheduleFreeDiscoveryPaused()} body={discovery_scheduleFreePlanWarning()} />
+			<InlineWarning
+				title={discovery_scheduleFreeDiscoveryPaused()}
+				body={discovery_scheduleFreePlanWarning()}
+			/>
 		{/if}
 		<p class="text-tertiary text-sm">
 			{discovery_scheduleHelp()}

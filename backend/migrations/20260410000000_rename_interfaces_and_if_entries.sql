@@ -86,7 +86,12 @@ UPDATE topologies SET nodes = (
 WHERE nodes IS NOT NULL AND nodes != '[]'::jsonb;
 
 -- ============================================================
--- 6. Table comments
+-- 6. Rename host_credentials column
+-- ============================================================
+ALTER TABLE host_credentials RENAME COLUMN interface_ids TO ip_address_ids;
+
+-- ============================================================
+-- 7. Table comments
 -- ============================================================
 COMMENT ON TABLE ip_addresses IS 'IP addresses assigned to hosts on subnets';
 COMMENT ON TABLE interfaces IS 'SNMP ifTable entries - physical/logical interfaces on network devices';

@@ -76,9 +76,9 @@
 
 <!-- Floating Panel -->
 <div
-	class="topology-options absolute left-4 top-4 duration-300 {isTutorial ? 'z-30' : 'z-10'} {$optionsPanelExpanded
-		? ''
-		: 'w-auto'}"
+	class="topology-options absolute left-4 top-4 duration-300 {isTutorial
+		? 'z-30'
+		: 'z-10'} {$optionsPanelExpanded ? '' : 'w-auto'}"
 	style={$optionsPanelExpanded ? `width: ${OPTIONS_PANEL_WIDTH_PX}px` : ''}
 >
 	<div class="card card-static p-0 shadow-lg">
@@ -115,7 +115,12 @@
 			</div>
 
 			<!-- Content area -->
-			<div class="overflow-y-auto p-3" style="max-height: calc(100vh - {isTutorial || !$topologyOptions.local.show_minimap ? 180 : 350}px);">
+			<div
+				class="overflow-y-auto p-3"
+				style="max-height: calc(100vh - {isTutorial || !$topologyOptions.local.show_minimap
+					? 180
+					: 350}px);"
+			>
 				{#if multiSelectedNodes.length >= 2}
 					<InspectorMultiSelect
 						topology={effectiveTopology}

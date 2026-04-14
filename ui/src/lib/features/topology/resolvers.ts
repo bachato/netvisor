@@ -36,7 +36,9 @@ const elementResolvers: Record<
 		const isInfra = 'is_infra' in node ? (node.is_infra as boolean) : false;
 
 		const host = topology.hosts.find((h) => h.id === hostId);
-		const ipAddress = ipAddressId ? topology.ip_addresses.find((i) => i.id === ipAddressId) : undefined;
+		const ipAddress = ipAddressId
+			? topology.ip_addresses.find((i) => i.id === ipAddressId)
+			: undefined;
 		const services = topology.services.filter(
 			(s) =>
 				s.host_id === hostId &&
@@ -94,7 +96,9 @@ const elementResolvers: Record<
 		const hostId = 'host_id' in node ? (node.host_id as string) : undefined;
 		const interfaceId = 'interface_id' in node ? (node.interface_id as string) : undefined;
 		const host = topology.hosts.find((h) => h.id === hostId);
-		const snmpInterface = interfaceId ? topology.interfaces.find((e) => e.id === interfaceId) : undefined;
+		const snmpInterface = interfaceId
+			? topology.interfaces.find((e) => e.id === interfaceId)
+			: undefined;
 		return {
 			elementType: 'Interface' as ElementEntityTypeDiscriminant,
 			host,

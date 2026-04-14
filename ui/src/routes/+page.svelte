@@ -9,7 +9,12 @@
 	import { discoverySSEManager } from '$lib/features/discovery/queries';
 	import { useCurrentUserQuery } from '$lib/features/auth/queries';
 
-	import { topologySSEManager, selectedTopologyId, activeView, pushTopologyParams } from '$lib/features/topology/queries';
+	import {
+		topologySSEManager,
+		selectedTopologyId,
+		activeView,
+		pushTopologyParams
+	} from '$lib/features/topology/queries';
 	import { get } from 'svelte/store';
 	import { useDaemonsQuery } from '$lib/features/daemons/queries';
 	import BillingPlanModal from '$lib/features/billing/BillingPlanModal.svelte';

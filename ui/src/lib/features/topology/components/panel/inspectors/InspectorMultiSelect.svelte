@@ -59,12 +59,8 @@
 		tags_inheritedOverrideHint,
 		inspector_createGroupingRuleFromTag,
 		topology_tutorialDone,
-
 		appWizard_applicationTags,
-
 		dependencies_serviceBindingsInfo
-
-
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -639,7 +635,8 @@
 			{#if inspectorConfig.show_application_picker}
 				<!-- App-group tag picker — with cross-group and inheritance awareness -->
 				<div class="space-y-2">
-					<span class="text-secondary block text-sm font-medium">{appWizard_applicationTags()}</span>
+					<span class="text-secondary block text-sm font-medium">{appWizard_applicationTags()}</span
+					>
 					<div class="card card-static space-y-2 p-2">
 						{#if appState.type === 'cross-group'}
 							<p class="text-tertiary text-xs">{tags_crossGroupSelectionHint()}</p>
@@ -731,9 +728,7 @@
 							<span class="text-secondary block text-sm font-medium"
 								>{dependencies_serviceBindings()}</span
 							>
-							<span class="text-tertiary block text-xs"
-								>{dependencies_serviceBindingsInfo()}</span
-							>
+							<span class="text-tertiary block text-xs">{dependencies_serviceBindingsInfo()}</span>
 							{#each ipAddressBindingChoices as choice (choice.ipAddressId)}
 								<div class="card card-static space-y-1 p-2">
 									<div class="text-primary truncate text-xs font-medium">

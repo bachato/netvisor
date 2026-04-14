@@ -48,10 +48,10 @@ pub enum ServiceCategory {
     Media,          // Plex, Jellyfin
     HomeAutomation, // Home Assistant
     #[serde(alias = "Virtualization")]
-    Hypervisor,       // Proxmox, ESXi, Hyper-V
+    Hypervisor, // Proxmox, ESXi, Hyper-V
     ContainerRuntime, // Docker, Podman
-    Container,        // Docker containers, LXC instances
-    Orchestrator,     // Kubernetes, Portainer, Rancher, Nomad
+    Container,      // Docker containers, LXC instances
+    Orchestrator,   // Kubernetes, Portainer, Rancher, Nomad
 
     // Network Services
     DNS, // All DNS services

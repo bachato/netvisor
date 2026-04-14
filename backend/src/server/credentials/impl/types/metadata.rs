@@ -42,7 +42,7 @@ pub enum ScopeModel {
 pub struct CredentialAssignment {
     pub credential_id: Uuid,
     /// Interface IDs to limit this credential to. None = all host ip_addresses.
-    #[serde(default)]
+    #[serde(default, alias = "interface_ids")]
     #[schema(required)]
     pub ip_address_ids: Option<Vec<Uuid>>,
 }

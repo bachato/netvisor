@@ -23,11 +23,9 @@
 	use:tooltip
 	data-tooltip={description && disabledTooltip
 		? `${description}.\n${disabledTooltip}`
-		: description ?? disabledTooltip ?? null}
+		: (description ?? disabledTooltip ?? null)}
 >
-	<span class="text-sm" class:text-primary={!disabled} class:text-tertiary={disabled}
-		>{label}</span
-	>
+	<span class="text-sm" class:text-primary={!disabled} class:text-tertiary={disabled}>{label}</span>
 	{#if locked}
 		<Lock class="text-tertiary h-3 w-3" />
 	{/if}

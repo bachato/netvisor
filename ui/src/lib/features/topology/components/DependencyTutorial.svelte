@@ -1,10 +1,5 @@
 <script lang="ts">
-	import {
-		SvelteFlow,
-		SvelteFlowProvider,
-		Background,
-		BackgroundVariant
-	} from '@xyflow/svelte';
+	import { SvelteFlow, SvelteFlowProvider, Background, BackgroundVariant } from '@xyflow/svelte';
 	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
 	import '@xyflow/svelte/dist/style.css';
@@ -176,18 +171,11 @@
 							<svelte:component this={HubAndSpokeIcon} class="h-3.5 w-3.5" />
 						{/snippet}
 					</ChecklistItem>
-					<ChecklistItem
-						checked={false}
-						disabled={!step3Done}
-						label={topology_tutorialStep4()}
-					/>
+					<ChecklistItem checked={false} disabled={!step3Done} label={topology_tutorialStep4()} />
 				</div>
 
 				<div class="mt-3 text-center">
-					<button
-						class="text-secondary hover:text-primary text-xs underline"
-						onclick={onDismiss}
-					>
+					<button class="text-secondary hover:text-primary text-xs underline" onclick={onDismiss}>
 						{topology_tutorialSkip()}
 					</button>
 				</div>

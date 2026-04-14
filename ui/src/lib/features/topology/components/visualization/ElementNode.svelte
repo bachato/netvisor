@@ -124,7 +124,9 @@
 
 	// Reactively subscribe to the container subnet store
 	let isContainerSubnetValue = $derived(
-		ipAddress ? topology?.subnets.find((s) => s.id == ipAddress.subnet_id)?.cidr == '0.0.0.0/0' : false
+		ipAddress
+			? topology?.subnets.find((s) => s.id == ipAddress.subnet_id)?.cidr == '0.0.0.0/0'
+			: false
 	);
 
 	function getPortById(portId: string): Port | null {
@@ -260,7 +262,9 @@
 			// All services bound to this interface (after tag filtering)
 			const allServicesOnIPAddress = visibleServicesForHost
 				? visibleServicesForHost.filter((s) =>
-						s.bindings.some((b) => b.ip_address_id == null || (ipAddress && b.ip_address_id == ipAddress.id))
+						s.bindings.some(
+							(b) => b.ip_address_id == null || (ipAddress && b.ip_address_id == ipAddress.id)
+						)
 					)
 				: [];
 
@@ -521,7 +525,9 @@
 					{@const isServiceTagHidden =
 						nodeRenderData.elementType !== 'Service' && hiddenServices.has(service.id)}
 					{@const ServiceIcon = serviceDefinitions.getIconComponent(service.service_definition)}
-					{@const serviceColorHelper = serviceDefinitions.getColorHelper(service.service_definition)}
+					{@const serviceColorHelper = serviceDefinitions.getColorHelper(
+						service.service_definition
+					)}
 					{@const serviceTagHighlight = (() => {
 						if (!currentHoveredTag || currentHoveredTag.entityType !== 'service') return '';
 						const { tagId, color } = currentHoveredTag;
