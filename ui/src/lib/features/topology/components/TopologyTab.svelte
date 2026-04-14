@@ -436,6 +436,7 @@
 	}
 
 	// Tutorial / hint state
+	let viewSwitcherEl: HTMLDivElement | undefined = $state();
 	let tutorialTypeToggled = $state(false);
 
 	function dismissDependencyTutorial() {
@@ -729,13 +730,15 @@
 
 						<div class="card-divider-v self-stretch"></div>
 
-						<RichSelect
-							label=""
-							selectedValue={$activeView}
-							displayComponent={SimpleOptionDisplay}
-							onSelect={handleViewChange}
-							options={viewOptions}
-						/>
+						<div bind:this={viewSwitcherEl}>
+							<RichSelect
+								label=""
+								selectedValue={$activeView}
+								displayComponent={SimpleOptionDisplay}
+								onSelect={handleViewChange}
+								options={viewOptions}
+							/>
+						</div>
 					{/if}
 				{/if}
 
@@ -787,8 +790,8 @@
 				{/if}
 			{/if}
 
-			{#if $showViewSwitcherHint}
-				<ViewSwitcherHint />
+			{#if $showViewSwitcherHint && viewSwitcherEl}
+				<ViewSwitcherHint anchor={viewSwitcherEl} />
 			{/if}
 
 			{#if isLoading}
