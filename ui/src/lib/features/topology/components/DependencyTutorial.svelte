@@ -6,7 +6,7 @@
 		BackgroundVariant,
 		type NodeMouseHandler
 	} from '@xyflow/svelte';
-	import { writable, derived, get } from 'svelte/store';
+	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
 	import '@xyflow/svelte/dist/style.css';
 	import './visualization/topology-viewer.css';
@@ -62,10 +62,14 @@
 	const nodeTypes = { Element: ElementNode };
 	const edgeTypes = { custom: CustomEdge };
 
-	// Xyflow stores
-	const nodes = writable<Node[]>(TUTORIAL_XYFLOW_NODES);
-	// Merge preview edges from InspectorMultiSelect into the mini flow
-	const edges = derived(previewEdges, ($preview) => $preview);
+	// Xyflow state — Svelte 5 mode uses $state, not writable stores
+	let tutorialNodes = $state<Node[]>([...TUTORIAL_XYFLOW_NODES]);
+
+	// Subscribe to preview edges from InspectorMultiSelect
+	let tutorialEdges = $state<Edge[]>([]);
+	previewEdges.subscribe((value) => {
+		tutorialEdges = value;
+	});
 
 	// Track clicked nodes
 	let clickedNodeIds = $state(new Set<string>());
@@ -110,8 +114,8 @@
 			<div class="min-h-0 flex-1">
 				<SvelteFlowProvider>
 					<SvelteFlow
-						{nodes}
-						{edges}
+						nodes={tutorialNodes}
+						edges={tutorialEdges}
 						{nodeTypes}
 						{edgeTypes}
 						onnodeclick={handleNodeClick}
