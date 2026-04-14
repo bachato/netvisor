@@ -34,6 +34,7 @@
 	} from 'lucide-svelte';
 	import CredentialWizardStep from '$lib/features/daemons/components/CreateDaemonModal/steps/CredentialWizardStep.svelte';
 	import type { PendingCredential } from '$lib/features/daemons/components/CreateDaemonModal/steps/CredentialWizardStep.svelte';
+	import type { Credential } from '$lib/features/credentials/types/base';
 	import {
 		useBulkCreateCredentialsMutation,
 		useUpdateCredentialMutation,
@@ -368,9 +369,7 @@
 						}
 						allCredentialIds.push(...existing.map((e) => e.credentialId));
 					}
-					if (allCredentialIds.length > 0) {
-						formData.pending_credential_ids = allCredentialIds;
-					}
+					formData.pending_credential_ids = allCredentialIds;
 					if (isEditing && discovery) {
 						await onUpdate(discovery.id, formData);
 					} else {
@@ -393,6 +392,18 @@
 		furthestReached = discovery ? Infinity : 0;
 		formData = getDefaultFormData();
 		pendingCredentials = [];
+		if (discovery?.pending_credential_ids?.length && allCredentialsQuery.data) {
+			const credMap = new Map(allCredentialsQuery.data.map((c) => [c.id, c]));
+			pendingCredentials = discovery.pending_credential_ids
+				.map((id) => credMap.get(id))
+				.filter((c): c is Credential => c != null)
+				.map((c) => ({
+					credential: c,
+					targetIps: c.target_ips?.length ? c.target_ips : [''],
+					fieldValues: {},
+					isExisting: true
+				}));
+		}
 
 		// Parse schedule fields from cron
 		let scheduleDaysOfWeek = '0';
