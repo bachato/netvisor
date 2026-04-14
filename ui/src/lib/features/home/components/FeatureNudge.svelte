@@ -42,6 +42,7 @@
 
 	function handleAction() {
 		trackEvent('nudge_action_clicked', { nudge_id: id });
+		dismiss();
 		onAction();
 	}
 </script>
