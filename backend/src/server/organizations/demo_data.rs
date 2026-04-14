@@ -4871,7 +4871,7 @@ fn generate_dependencies(
             },
             source: EntitySource::Manual,
             color: Color::Orange,
-            edge_style: EdgeStyle::Step,
+            edge_style: EdgeStyle::SmoothStep,
             tags: vec![],
         },
     });

@@ -271,6 +271,7 @@
 				return getStraightPath(basePathProperties);
 			case 'Smoothstep':
 			case 'SmoothStep':
+			case 'Step':
 				return getSmoothStepPath({
 					...basePathProperties,
 					borderRadius: 10,
@@ -279,12 +280,6 @@
 			case 'Bezier':
 			case 'SimpleBezier':
 				return getBezierPath(basePathProperties);
-			case 'Step':
-				return getSmoothStepPath({
-					...basePathProperties,
-					borderRadius: 10,
-					offset
-				});
 			default:
 				return getSmoothStepPath({
 					...basePathProperties,

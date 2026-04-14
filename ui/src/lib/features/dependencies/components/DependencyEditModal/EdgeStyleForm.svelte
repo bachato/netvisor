@@ -5,14 +5,12 @@
 	import {
 		common_bezier,
 		common_done,
-		common_step,
 		common_straight,
 		dependencies_edgeColor,
 		dependencies_edgeColorHelp,
 		dependencies_edgeStyleHelp,
 		dependencies_edgeStyleLabel,
 		dependencies_editEdgeStyle,
-		dependencies_simpleBezier,
 		dependencies_smoothStep
 	} from '$lib/paraglide/messages';
 
@@ -53,9 +51,7 @@
 	let edgeStyleOptions = $derived([
 		{ value: 'Straight' as const, label: common_straight() },
 		{ value: 'SmoothStep' as const, label: dependencies_smoothStep() },
-		{ value: 'Step' as const, label: common_step() },
-		{ value: 'Bezier' as const, label: common_bezier() },
-		{ value: 'SimpleBezier' as const, label: dependencies_simpleBezier() }
+		{ value: 'Bezier' as const, label: common_bezier() }
 	]);
 
 	// Ensure formData has default values if not set
