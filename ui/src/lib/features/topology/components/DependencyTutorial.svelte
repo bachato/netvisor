@@ -183,8 +183,11 @@
 <style>
 	.tutorial-anchor :global(.modal-page) {
 		position: absolute;
-		z-index: 30;
-		padding-left: var(--tutorial-offset);
+		z-index: 20;
+		left: var(--tutorial-offset);
+		right: 0;
+		top: 0;
+		bottom: 0;
 	}
 
 	.tutorial-canvas {
