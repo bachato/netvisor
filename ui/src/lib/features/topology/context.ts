@@ -1,50 +1,72 @@
 /**
  * Shared topology context resolver.
  *
- * Components rendered inside the topology viewer need access to the current
- * topology. In the **app** this comes from an authenticated TanStack Query
- * keyed by `selectedTopologyId`. In **share/embed** pages it comes from a
- * Svelte context store set by ReadOnlyTopologyViewer (no auth needed).
+ * Components need the current topology. In the **app** it comes from an
+ * authenticated TanStack Query keyed by `selectedTopologyId`. In **share/embed**
+ * pages it comes from a Svelte context store (no auth needed).
  *
- * `useTopology()` detects which mode we're in and returns a consistent
- * interface so every consumer doesn't have to wire this up manually.
+ * `useTopology()` detects the mode and returns the right pieces. Usage:
+ *
+ * ```svelte
+ * const topo = useTopology();
+ * let topology = $derived(topo.fromContext ? $topo.store : topo.query.data?.find(t => t.id === $selectedTopologyId));
+ * ```
+ *
+ * Or use the shorthand that works for most consumers:
+ *
+ * ```svelte
+ * const { topology: topo$, isReadonly } = useTopologyDerived();
+ * // topo$ is a Writable<Topology> in share context — use $topo$
+ * // In app context, topo$ is undefined — use query.data instead
+ * ```
  */
 
 import { getContext } from 'svelte';
-import { derived, get, type Readable, type Writable } from 'svelte/store';
+import type { Writable } from 'svelte/store';
 import { useTopologiesQuery, selectedTopologyId } from './queries';
 import type { Topology } from './types/base';
 
-export interface TopologyHandle {
-	/** Reactive store containing the current topology (may be undefined during loading). */
-	topology: Readable<Topology | undefined>;
-	/** Whether we're in a read-only context (share/embed). */
-	isReadonly: boolean;
+interface TopologyFromContext {
+	fromContext: true;
+	store: Writable<Topology>;
+	query: undefined;
+	isReadonly: true;
 }
 
+interface TopologyFromQuery {
+	fromContext: false;
+	store: undefined;
+	query: ReturnType<typeof useTopologiesQuery>;
+	isReadonly: false;
+}
+
+export type TopologyHandle = TopologyFromContext | TopologyFromQuery;
+
 /**
- * Returns the current topology and readonly flag.
+ * Returns the topology source and readonly flag.
  *
  * Must be called during component initialization (uses `getContext`).
- * - Share/embed: reads from the `'topology'` context store, no API call.
- * - App: enables `useTopologiesQuery` and resolves via `selectedTopologyId`.
+ *
+ * Consumers resolve the topology reactively using `$derived`:
+ * ```
+ * const topo = useTopology();
+ * let topology = $derived(
+ *   topo.fromContext
+ *     ? $topo.store
+ *     : topo.query.data?.find(t => t.id === $selectedTopologyId)
+ * );
+ * ```
  */
 export function useTopology(): TopologyHandle {
 	const ctx = getContext<Writable<Topology> | undefined>('topology');
 
 	if (ctx) {
-		return {
-			topology: derived(ctx, ($t) => $t),
-			isReadonly: true
-		};
+		return { fromContext: true, store: ctx, query: undefined, isReadonly: true };
 	}
 
 	const query = useTopologiesQuery();
-	return {
-		topology: derived([query, selectedTopologyId], ([$q, $id]) => {
-			const data = ($q as { data?: Topology[] }).data ?? [];
-			return data.find((t) => t.id === $id);
-		}),
-		isReadonly: false
-	};
+	return { fromContext: false, store: undefined, query, isReadonly: false };
 }
+
+// Re-export for convenience so consumers don't need a separate import
+export { selectedTopologyId } from './queries';

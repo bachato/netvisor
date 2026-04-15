@@ -18,7 +18,7 @@
 	const selectedNode = getContext<Writable<Node | null>>('selectedNode');
 	const selectedEdge = getContext<Writable<Edge | null>>('selectedEdge');
 
-	let expanded = $state(true);
+	let expanded = $state(false);
 
 	function setExpanded(value: boolean) {
 		expanded = value;

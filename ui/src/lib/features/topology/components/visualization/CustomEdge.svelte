@@ -9,7 +9,7 @@
 		EdgeReconnectAnchor
 	} from '@xyflow/svelte';
 	import { topologyOptions } from '../../queries';
-	import { useTopology } from '../../context';
+	import { useTopology, selectedTopologyId } from '../../context';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { createColorHelper, type Color } from '$lib/shared/utils/styling';
 	import type { TopologyEdge } from '../../types/base';
@@ -31,8 +31,10 @@
 		interactionWidth
 	}: EdgeProps = $props();
 
-	const { topology: topologyStore } = useTopology();
-	let topology = $derived($topologyStore);
+	const topo = useTopology();
+	let topology = $derived(
+		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+	);
 
 	const nodes = $derived(topology?.nodes ?? []);
 

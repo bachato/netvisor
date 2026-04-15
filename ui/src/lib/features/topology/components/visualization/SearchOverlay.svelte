@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { Search, X, ChevronUp, ChevronDown } from 'lucide-svelte';
 	import { useSvelteFlow } from '@xyflow/svelte';
-	import { get, type Writable } from 'svelte/store';
-	import { getContext } from 'svelte';
 	import {
 		searchMatchNodeIds,
 		searchActiveIndex,
@@ -10,8 +8,7 @@
 		updateSearchFilter,
 		clearSearch
 	} from '../../interactions';
-	import { useTopologiesQuery, selectedTopologyId } from '../../queries';
-	import type { Topology } from '../../types/base';
+	import { useTopology, selectedTopologyId } from '../../context';
 	import {
 		topology_searchPlaceholder,
 		topology_searchNoMatches,
@@ -20,15 +17,10 @@
 
 	const { fitView } = useSvelteFlow();
 
-	// In share/embed context, topology is provided via context (no auth needed).
-	// In the app, fall back to the authenticated query.
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-	const topologiesQuery = useTopologiesQuery(() => !topologyContext);
-	let topology = $derived.by(() => {
-		if (topologyContext) return get(topologyContext);
-		const data = topologiesQuery.data ?? [];
-		return data.find((t) => t.id === $selectedTopologyId);
-	});
+	const topo = useTopology();
+	let topology = $derived(
+		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+	);
 
 	let query = $state('');
 	let inputEl: HTMLInputElement | undefined = $state();

@@ -18,7 +18,7 @@
 		selectedNode as globalSelectedNode,
 		selectedEdge as globalSelectedEdge
 	} from '../../queries';
-	import { useTopology } from '../../context';
+	import { useTopology, selectedTopologyId } from '../../context';
 	import type { TopologyNode, Topology } from '../../types/base';
 	import { resolveContainerNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
@@ -83,8 +83,10 @@
 		}
 	});
 
-	const { topology: topologyStore } = useTopology();
-	let topology = $derived($topologyStore);
+	const topo = useTopology();
+	let topology = $derived(
+		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+	);
 	const updateNodeResizeMutation = useUpdateNodeResizeMutation();
 
 	// Try to get selection from context (for share/embed pages), fallback to global store

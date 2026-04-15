@@ -4,7 +4,7 @@
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import { IPAddressDisplay } from '$lib/shared/components/forms/selection/display/IPAddressDisplay.svelte';
 	import { autoRebuild } from '$lib/features/topology/queries';
-	import { useTopology } from '$lib/features/topology/context';
+	import { useTopology, selectedTopologyId } from '$lib/features/topology/context';
 	import { getTopologyEditState } from '$lib/features/topology/state';
 
 	import type { components } from '$lib/api/schema';
@@ -22,8 +22,11 @@
 	} = $props();
 	/* eslint-enable @typescript-eslint/no-unused-vars */
 
-	const { topology: topologyStore, isReadonly } = useTopology();
-	let topology = $derived($topologyStore);
+	const topo = useTopology();
+	let isReadonly = topo.isReadonly;
+	let topology = $derived(
+		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+	);
 
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 

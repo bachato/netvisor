@@ -8,7 +8,7 @@
 		topologyOptions,
 		activeView
 	} from '../../queries';
-	import { useTopology } from '../../context';
+	import { useTopology, selectedTopologyId } from '../../context';
 	import type { TopologyNode, ElementRenderData, Topology } from '../../types/base';
 	import { resolveElementNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
@@ -89,8 +89,10 @@
 		currentHoveredCategory = value;
 	});
 
-	const { topology: topologyStore } = useTopology();
-	let topology = $derived($topologyStore);
+	const topo = useTopology();
+	let topology = $derived(
+		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+	);
 
 	// Try to get selection from context (for share/embed pages), fallback to global store
 	const selectedNodeContext = getContext<Writable<Node | null> | undefined>('selectedNode');

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import type { TopologyEdge } from '$lib/features/topology/types/base';
-	import { useTopology } from '$lib/features/topology/context';
+	import { useTopology, selectedTopologyId } from '$lib/features/topology/context';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { topology_connectionsCount, common_dependenciesLabel } from '$lib/paraglide/messages';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
@@ -17,8 +17,10 @@
 
 	let { edges }: { edges: TopologyEdge[] } = $props();
 
-	const { topology: topologyStore } = useTopology();
-	let topology = $derived($topologyStore);
+	const topo = useTopology();
+	let topology = $derived(
+		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+	);
 
 	// Group edges by type
 	let edgesByType = $derived.by(() => {
