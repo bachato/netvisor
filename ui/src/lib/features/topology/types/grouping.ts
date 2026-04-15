@@ -1,4 +1,6 @@
 import type { components } from '$lib/api/schema';
+import containerRuleTypes from '$lib/data/container-rule-types.json';
+import elementRuleTypes from '$lib/data/element-rule-types.json';
 
 export type GraphRule<T> = { id: string; rule: T };
 export type ContainerRule = components['schemas']['IdentifiedRule_ContainerRule']['rule'];
@@ -6,22 +8,14 @@ export type ElementRule = components['schemas']['IdentifiedRule_ElementRule']['r
 export type ContainerGraphRule = components['schemas']['IdentifiedRule_ContainerRule'];
 export type ElementGraphRule = components['schemas']['IdentifiedRule_ElementRule'];
 
-export type ContainerRuleType = 'BySubnet' | 'MergeDockerBridges' | 'ByApplication' | 'ByHost';
+export type ContainerRuleType = (typeof containerRuleTypes)[number]['id'];
 
 export function getContainerRuleDiscriminant(rule: ContainerRule): ContainerRuleType {
 	if (typeof rule === 'string') return rule;
 	return Object.keys(rule)[0] as ContainerRuleType;
 }
 
-export type ElementRuleType =
-	| 'ByServiceCategory'
-	| 'ByTag'
-	| 'ByHypervisor'
-	| 'ByContainerRuntime'
-	| 'ByStack'
-	| 'ByTrunkPort'
-	| 'ByVLAN'
-	| 'ByPortOpStatus';
+export type ElementRuleType = (typeof elementRuleTypes)[number]['id'];
 
 export function getElementRuleType(rule: ElementRule): ElementRuleType {
 	if (typeof rule === 'string') return rule;
