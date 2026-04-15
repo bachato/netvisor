@@ -456,7 +456,12 @@ async fn get_share_topology(
             .map_err(|e| ApiError::internal_error(&e.to_string()))?;
 
         let entity_tags = service
-            .get_entity_tags(&hosts, &services, &subnets)
+            .get_entity_tags(
+                &hosts,
+                &services,
+                &subnets,
+                &topology.base.options.request.element_rules,
+            )
             .await
             .map_err(|e| ApiError::internal_error(&e.to_string()))?;
 

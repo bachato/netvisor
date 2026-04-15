@@ -35,7 +35,7 @@ use crate::server::{
         types::{
             base::{SetEntitiesParams, Topology, TopologyOptions},
             edges::{Edge, EdgeHandle},
-            grouping::GroupingConfig,
+            grouping::{ElementRule, GroupingConfig, IdentifiedRule},
             nodes::Node,
             views::TopologyView,
         },
@@ -100,8 +100,15 @@ impl CrudService<Topology> for TopologyService {
 
         let services = self.get_service_data(topology.base.network_id).await?;
 
-        // Fetch tag definitions for all tags used by entities
-        let entity_tags = self.get_entity_tags(&hosts, &services, &subnets).await?;
+        // Fetch tag definitions for all tags used by entities and element rules
+        let entity_tags = self
+            .get_entity_tags(
+                &hosts,
+                &services,
+                &subnets,
+                &topology.base.options.request.element_rules,
+            )
+            .await?;
 
         // Fetch VLANs for the network
         let vlans = self.get_vlans(topology.base.network_id).await?;
@@ -304,6 +311,7 @@ impl TopologyService {
         hosts: &[Host],
         services: &[Service],
         subnets: &[Subnet],
+        element_rules: &[IdentifiedRule<ElementRule>],
     ) -> Result<Vec<Tag>, Error> {
         // Collect all unique tag IDs from entities
         let mut tag_ids: Vec<Uuid> = Vec::new();
@@ -315,6 +323,18 @@ impl TopologyService {
         }
         for subnet in subnets {
             tag_ids.extend(&subnet.base.tags);
+        }
+
+        // Include tags referenced by ByTag element rules so their metadata
+        // is available in the response even if no entities currently have them
+        for rule in element_rules {
+            if let ElementRule::ByTag {
+                tag_ids: rule_tag_ids,
+                ..
+            } = &rule.rule
+            {
+                tag_ids.extend(rule_tag_ids);
+            }
         }
 
         // Deduplicate
@@ -352,7 +372,14 @@ impl TopologyService {
 
         let services = self.get_service_data(topology.base.network_id).await?;
 
-        let entity_tags = self.get_entity_tags(&hosts, &services, &subnets).await?;
+        let entity_tags = self
+            .get_entity_tags(
+                &hosts,
+                &services,
+                &subnets,
+                &topology.base.options.request.element_rules,
+            )
+            .await?;
 
         let vlans = self.get_vlans(topology.base.network_id).await?;
 

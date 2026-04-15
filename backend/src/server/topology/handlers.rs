@@ -240,7 +240,14 @@ async fn create_topology(
 
     let services = service.get_service_data(topology.base.network_id).await?;
 
-    let entity_tags = service.get_entity_tags(&hosts, &services, &subnets).await?;
+    let entity_tags = service
+        .get_entity_tags(
+            &hosts,
+            &services,
+            &subnets,
+            &topology.base.options.request.element_rules,
+        )
+        .await?;
     let vlans = service
         .get_vlans(topology.base.network_id)
         .await
@@ -349,7 +356,14 @@ async fn refresh(
 
     let services = service.get_service_data(request.network_id).await?;
 
-    let entity_tags = service.get_entity_tags(&hosts, &services, &subnets).await?;
+    let entity_tags = service
+        .get_entity_tags(
+            &hosts,
+            &services,
+            &subnets,
+            &topology.base.options.request.element_rules,
+        )
+        .await?;
     let vlans = service
         .get_vlans(request.network_id)
         .await
@@ -423,7 +437,14 @@ async fn rebuild(
 
     let services = service.get_service_data(request.network_id).await?;
 
-    let entity_tags = service.get_entity_tags(&hosts, &services, &subnets).await?;
+    let entity_tags = service
+        .get_entity_tags(
+            &hosts,
+            &services,
+            &subnets,
+            &topology.base.options.request.element_rules,
+        )
+        .await?;
     let vlans = service
         .get_vlans(request.network_id)
         .await

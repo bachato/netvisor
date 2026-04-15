@@ -309,13 +309,16 @@
 	);
 
 	let loadInProgress = false;
+	let pendingReload = false;
 	function triggerLoad() {
 		if (!topology || loadInProgress) {
+			if (topology && loadInProgress) pendingReload = true;
 			console.log('[ANIM] triggerLoad SKIPPED', { noTopology: !topology, loadInProgress });
 			return;
 		}
 		console.log('[ANIM] triggerLoad START');
 		loadInProgress = true;
+		pendingReload = false;
 		void loadTopologyData()
 			.catch((err) => {
 				isMeasuring = false;
@@ -323,6 +326,10 @@
 			})
 			.finally(() => {
 				loadInProgress = false;
+				if (pendingReload) {
+					pendingReload = false;
+					triggerLoad();
+				}
 			});
 	}
 
@@ -623,7 +630,11 @@
 				collapsed,
 				layoutState.containerSizeCache
 			);
-			console.log('[ANIM] post-render cache', { gen: thisGeneration, newEntries, isStale: isStale() });
+			console.log('[ANIM] post-render cache', {
+				gen: thisGeneration,
+				newEntries,
+				isStale: isStale()
+			});
 			if (newEntries > 0 && !isStale()) {
 				// Invalidate structureKey to force ELK re-run. Do NOT
 				// invalidate baseKey — base structure hasn't changed, and
