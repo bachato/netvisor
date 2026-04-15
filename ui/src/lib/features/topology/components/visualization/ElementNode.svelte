@@ -90,8 +90,9 @@
 	});
 
 	const topo = useTopology();
+	const topoStore = topo.fromContext ? topo.store : null;
 	let topology = $derived(
-		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+		topoStore ? $topoStore : topo.query.data?.find((t) => t.id === $selectedTopologyId)
 	);
 
 	// Try to get selection from context (for share/embed pages), fallback to global store

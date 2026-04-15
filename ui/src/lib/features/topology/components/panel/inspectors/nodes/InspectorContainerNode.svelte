@@ -10,9 +10,10 @@
 	let { node }: { node: Node } = $props();
 
 	const topo = useTopology();
+	const topoStore = topo.fromContext ? topo.store : null;
 	let isReadonly = topo.isReadonly;
 	let topology = $derived(
-		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+		topoStore ? $topoStore : topo.query.data?.find((t) => t.id === $selectedTopologyId)
 	);
 
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
