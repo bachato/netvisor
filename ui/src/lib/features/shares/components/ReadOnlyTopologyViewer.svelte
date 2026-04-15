@@ -172,7 +172,7 @@
 		position: absolute;
 		bottom: 10px;
 		/* left set via inline style based on minimap visibility */
-		right: 0;
+		right: 200px;
 		z-index: 5;
 		display: flex;
 		justify-content: center;
