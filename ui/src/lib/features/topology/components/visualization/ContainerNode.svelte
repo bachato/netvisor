@@ -13,13 +13,12 @@
 	import { serviceDefinitions, containerTypes, views } from '$lib/shared/stores/metadata';
 	import { activeView, getInfrastructureRuleId } from '../../queries';
 	import {
-		useTopologiesQuery,
 		useUpdateNodeResizeMutation,
-		selectedTopologyId,
 		topologyOptions,
 		selectedNode as globalSelectedNode,
 		selectedEdge as globalSelectedEdge
 	} from '../../queries';
+	import { useTopology } from '../../context';
 	import type { TopologyNode, Topology } from '../../types/base';
 	import { resolveContainerNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
@@ -84,14 +83,9 @@
 		}
 	});
 
-	// Try to get topology from context (for share/embed pages), fallback to TanStack query
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-	const topologiesQuery = useTopologiesQuery(() => !topologyContext);
+	const { topology: topologyStore } = useTopology();
+	let topology = $derived($topologyStore);
 	const updateNodeResizeMutation = useUpdateNodeResizeMutation();
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(
-		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
-	);
 
 	// Try to get selection from context (for share/embed pages), fallback to global store
 	const selectedNodeContext = getContext<Writable<Node | null> | undefined>('selectedNode');

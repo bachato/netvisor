@@ -3,32 +3,19 @@
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import { SubnetDisplay } from '$lib/shared/components/forms/selection/display/SubnetDisplay.svelte';
-	import {
-		useTopologiesQuery,
-		selectedTopologyId,
-		topologyOptions,
-		activeView,
-		autoRebuild
-	} from '$lib/features/topology/queries';
-	import type { Topology } from '$lib/features/topology/types/base';
+	import { topologyOptions, activeView, autoRebuild } from '$lib/features/topology/queries';
+	import { useTopology } from '$lib/features/topology/context';
 	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { Subnet } from '$lib/features/subnets/types/base';
-	import { getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
+
 	let { edge, containerizingServiceId }: { edge: Edge; containerizingServiceId: string } = $props();
 
-	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-	const topologiesQuery = useTopologiesQuery();
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(
-		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
-	);
+	const { topology: topologyStore, isReadonly } = useTopology();
+	let topology = $derived($topologyStore);
 
 	// Unified edit state
-	let isReadonly = $derived(!!topologyContext);
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	let containerizingService = $derived(

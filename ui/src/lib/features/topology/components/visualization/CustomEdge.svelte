@@ -8,12 +8,11 @@
 		getStraightPath,
 		EdgeReconnectAnchor
 	} from '@xyflow/svelte';
-	import { getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
-	import { selectedTopologyId, topologyOptions, useTopologiesQuery } from '../../queries';
+	import { topologyOptions } from '../../queries';
+	import { useTopology } from '../../context';
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { createColorHelper, type Color } from '$lib/shared/utils/styling';
-	import type { Topology, TopologyEdge } from '../../types/base';
+	import type { TopologyEdge } from '../../types/base';
 	import { isExporting, hoveredEdgeType, toggleBundleExpanded } from '../../interactions';
 	import { isDashedEdge } from '../../layout/edge-classification';
 
@@ -32,14 +31,8 @@
 		interactionWidth
 	}: EdgeProps = $props();
 
-	// Use context topology if available (for share views), otherwise fall back to query data
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-
-	// TanStack Query for topology data — disabled when topology context exists (share/embed views)
-	const topologiesQuery = useTopologiesQuery(() => !topologyContext);
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let globalTopology = $derived(topologiesData.find((t) => t.id === $selectedTopologyId));
-	let topology = $derived(topologyContext ? $topologyContext : globalTopology);
+	const { topology: topologyStore } = useTopology();
+	let topology = $derived($topologyStore);
 
 	const nodes = $derived(topology?.nodes ?? []);
 

@@ -23,17 +23,11 @@
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Dependency } from '$lib/features/dependencies/types/base';
-	import {
-		useTopologiesQuery,
-		autoRebuild,
-		selectedTopologyId
-	} from '$lib/features/topology/queries';
-	import type { Topology } from '$lib/features/topology/types/base';
+	import { autoRebuild } from '$lib/features/topology/queries';
+	import { useTopology } from '$lib/features/topology/context';
 	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { clearSelection } from '$lib/features/topology/selection';
 	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
-	import { getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 
 	import type { components } from '$lib/api/schema';
@@ -53,16 +47,9 @@
 	} = $props();
 	/* eslint-enable @typescript-eslint/no-unused-vars */
 
-	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-	const topologiesQuery = useTopologiesQuery();
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(
-		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
-	);
+	const { topology: topologyStore, isReadonly } = useTopology();
+	let topology = $derived($topologyStore);
 
-	// Unified edit state
-	let isReadonly = $derived(!!topologyContext);
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	// TanStack Query mutations for updating/deleting dependencies

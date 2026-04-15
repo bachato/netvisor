@@ -2,10 +2,7 @@
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import { InterfaceDisplay } from '$lib/shared/components/forms/selection/display/InterfaceDisplay.svelte';
-	import { useTopologiesQuery, selectedTopologyId } from '$lib/features/topology/queries';
-	import type { Topology } from '$lib/features/topology/types/base';
-	import { getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
+	import { useTopology } from '$lib/features/topology/context';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 
 	let {
@@ -18,13 +15,8 @@
 		protocol?: 'LLDP' | 'CDP';
 	} = $props();
 
-	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-	const topologiesQuery = useTopologiesQuery();
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(
-		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
-	);
+	const { topology: topologyStore } = useTopology();
+	let topology = $derived($topologyStore);
 
 	// Derive Interface and Host data
 	let sourceInterface = $derived(topology?.interfaces.find((e) => e.id === sourceEntityId));

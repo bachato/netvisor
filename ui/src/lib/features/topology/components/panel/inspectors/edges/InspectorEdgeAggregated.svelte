@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-	import type { TopologyEdge, Topology } from '$lib/features/topology/types/base';
-	import { useTopologiesQuery, selectedTopologyId } from '$lib/features/topology/queries';
+	import type { TopologyEdge } from '$lib/features/topology/types/base';
+	import { useTopology } from '$lib/features/topology/context';
 	import { edgeTypes, serviceDefinitions } from '$lib/shared/stores/metadata';
 	import { topology_connectionsCount, common_dependenciesLabel } from '$lib/paraglide/messages';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
@@ -12,19 +12,13 @@
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import Tag from '$lib/shared/components/data/Tag.svelte';
-	import { getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
 	import type { Dependency } from '$lib/features/dependencies/types/base';
 	import type { Service } from '$lib/features/services/types/base';
 
 	let { edges }: { edges: TopologyEdge[] } = $props();
 
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-	const topologiesQuery = useTopologiesQuery();
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(
-		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
-	);
+	const { topology: topologyStore } = useTopology();
+	let topology = $derived($topologyStore);
 
 	// Group edges by type
 	let edgesByType = $derived.by(() => {

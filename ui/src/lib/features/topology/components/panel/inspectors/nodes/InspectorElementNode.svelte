@@ -1,16 +1,10 @@
 <script lang="ts">
 	import type { Node } from '@xyflow/svelte';
-	import {
-		useTopologiesQuery,
-		selectedTopologyId,
-		autoRebuild,
-		activeView
-	} from '$lib/features/topology/queries';
-	import type { TopologyNode, Topology } from '$lib/features/topology/types/base';
+	import { autoRebuild, activeView } from '$lib/features/topology/queries';
+	import type { TopologyNode } from '$lib/features/topology/types/base';
 	import { resolveElementNode } from '$lib/features/topology/resolvers';
+	import { useTopology } from '$lib/features/topology/context';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '$lib/features/topology/state';
-	import { getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
 	import OptionToggle from '../../options/OptionToggle.svelte';
 	import OptionsCard from '../../options/OptionsCard.svelte';
 	import { getInspectorConfig, getSectionComponent } from '../view-config';
@@ -18,16 +12,9 @@
 
 	let { node }: { node: Node } = $props();
 
-	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-	const topologiesQuery = useTopologiesQuery();
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(
-		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
-	);
+	const { topology: topologyStore, isReadonly } = useTopology();
+	let topology = $derived($topologyStore);
 
-	// Unified edit state
-	let isReadonly = $derived(!!topologyContext);
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	let resolved = $derived(

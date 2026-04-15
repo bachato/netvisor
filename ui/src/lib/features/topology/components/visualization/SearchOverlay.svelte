@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Search, X, ChevronUp, ChevronDown } from 'lucide-svelte';
 	import { useSvelteFlow } from '@xyflow/svelte';
-	import { get } from 'svelte/store';
+	import { get, type Writable } from 'svelte/store';
+	import { getContext } from 'svelte';
 	import {
 		searchMatchNodeIds,
 		searchActiveIndex,
@@ -10,6 +11,7 @@
 		clearSearch
 	} from '../../interactions';
 	import { useTopologiesQuery, selectedTopologyId } from '../../queries';
+	import type { Topology } from '../../types/base';
 	import {
 		topology_searchPlaceholder,
 		topology_searchNoMatches,
@@ -17,9 +19,16 @@
 	} from '$lib/paraglide/messages';
 
 	const { fitView } = useSvelteFlow();
-	const topologiesQuery = useTopologiesQuery();
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(topologiesData.find((t) => t.id === $selectedTopologyId));
+
+	// In share/embed context, topology is provided via context (no auth needed).
+	// In the app, fall back to the authenticated query.
+	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
+	const topologiesQuery = useTopologiesQuery(() => !topologyContext);
+	let topology = $derived.by(() => {
+		if (topologyContext) return get(topologyContext);
+		const data = topologiesQuery.data ?? [];
+		return data.find((t) => t.id === $selectedTopologyId);
+	});
 
 	let query = $state('');
 	let inputEl: HTMLInputElement | undefined = $state();

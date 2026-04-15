@@ -5,11 +5,10 @@
 		selectedEdge as globalSelectedEdge,
 		selectedNode as globalSelectedNode,
 		selectedNodes as globalSelectedNodes,
-		selectedTopologyId,
 		topologyOptions,
-		activeView,
-		useTopologiesQuery
+		activeView
 	} from '../../queries';
+	import { useTopology } from '../../context';
 	import type { TopologyNode, ElementRenderData, Topology } from '../../types/base';
 	import { resolveElementNode } from '../../resolvers';
 	import { type Writable, get } from 'svelte/store';
@@ -90,13 +89,8 @@
 		currentHoveredCategory = value;
 	});
 
-	// Try to get topology from context (for share/embed pages), fallback to TanStack query
-	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
-	const topologiesQuery = useTopologiesQuery(() => !topologyContext);
-	let topologiesData = $derived(topologiesQuery.data ?? []);
-	let topology = $derived(
-		topologyContext ? $topologyContext : topologiesData.find((t) => t.id === $selectedTopologyId)
-	);
+	const { topology: topologyStore } = useTopology();
+	let topology = $derived($topologyStore);
 
 	// Try to get selection from context (for share/embed pages), fallback to global store
 	const selectedNodeContext = getContext<Writable<Node | null> | undefined>('selectedNode');

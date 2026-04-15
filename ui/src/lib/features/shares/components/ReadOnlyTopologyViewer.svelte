@@ -39,7 +39,7 @@
 	let baseViewer: BaseTopologyViewer | null = null;
 
 	$: showViewSwitcher = enabledViews.length > 1;
-	const minimapClearance = MINIMAP_WIDTH_PX + MINIMAP_OFFSET_PX + 16;
+	const minimapClearance = MINIMAP_WIDTH_PX + MINIMAP_OFFSET_PX;
 
 	// Build SegmentedControl options from enabled views
 	$: viewOptions = enabledViews.map((viewId) => ({
