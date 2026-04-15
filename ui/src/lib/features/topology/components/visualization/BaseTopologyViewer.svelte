@@ -360,6 +360,13 @@
 		// Capture the user-visible nodes before anything modifies them.
 		// Used to animate from current positions after a measurement pass.
 		const snapshotNodes = get(nodes);
+		console.log('[ANIM] snapshotNodes captured', {
+			count: snapshotNodes.length,
+			sample: snapshotNodes.slice(0, 3).map((n) => ({
+				id: n.id.substring(0, 8),
+				pos: n.position
+			}))
+		});
 
 		if (!topology || (!topology.edges && !topology.nodes)) return;
 
@@ -573,7 +580,33 @@
 			// should have been an animated collapse, restore pre-measurement
 			// positions while still hidden, then become visible and animate.
 			if (wantsAnimation) {
-				console.log('[ANIM] post-measurement animation trigger');
+				// Log positions to diagnose flicker
+				const sampleSnap = snapshotNodes.slice(0, 3).map((n) => ({
+					id: n.id.substring(0, 8),
+					pos: n.position,
+					w: n.width,
+					h: n.height
+				}));
+				const sampleAll = allNodes.slice(0, 3).map((n) => ({
+					id: n.id.substring(0, 8),
+					pos: n.position,
+					w: n.width,
+					h: n.height
+				}));
+				console.log('[ANIM] post-measurement animation trigger', {
+					snapshotCount: snapshotNodes.length,
+					allNodesCount: allNodes.length,
+					snapshotSample: sampleSnap,
+					allNodesSample: sampleAll
+				});
+				// Also check if SvelteFlow mutated the snapshot objects
+				const domNodes = get(nodes);
+				const domSample = domNodes.slice(0, 3).map((n) => ({
+					id: n.id.substring(0, 8),
+					pos: n.position
+				}));
+				console.log('[ANIM] current DOM nodes before restore', { domSample });
+
 				// Restore old positions while still hidden (isMeasuring still true)
 				nodes.set(snapshotNodes);
 				edges.set(flowEdges);
