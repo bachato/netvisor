@@ -5,7 +5,7 @@
 	import ShortcutsHelpOverlay from '$lib/features/topology/components/visualization/ShortcutsHelpOverlay.svelte';
 	import type { Topology } from '$lib/features/topology/types/base';
 	import { setContext } from 'svelte';
-	import { get, writable } from 'svelte/store';
+	import { writable } from 'svelte/store';
 	import ReadOnlyInspectorPanel from './ReadOnlyInspectorPanel.svelte';
 	import ExportButton from '$lib/features/topology/components/ExportButton.svelte';
 	import ExportModal from '$lib/features/topology/components/ExportModal.svelte';
@@ -13,8 +13,8 @@
 	import { Share2, LoaderCircle } from 'lucide-svelte';
 	import type { ExportFeatures } from '../types/base';
 	import { hydrateStoresFromTopology } from '$lib/features/topology/queries';
-	import { searchOpen, clearSearch } from '$lib/features/topology/interactions';
-	import { clearSelection } from '$lib/features/topology/selection';
+	import { searchOpen } from '$lib/features/topology/interactions';
+	import { createTopologyKeydownHandler } from '$lib/features/topology/keyboard';
 	import { views } from '$lib/shared/stores/metadata';
 
 	export let topology: Topology;
@@ -65,75 +65,17 @@
 		hydrateStoresFromTopology(topology, true);
 	}
 
-	// --- Keyboard shortcuts (same handler as TopologyViewer, minus edit-only shortcuts) ---
-
-	function isInputElement(target: EventTarget | null): boolean {
-		if (!target || !(target instanceof HTMLElement)) return false;
-		const tag = target.tagName.toLowerCase();
-		if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
-		if (target.isContentEditable) return true;
-		return false;
-	}
-
-	function handleKeydown(event: KeyboardEvent) {
-		if (shortcutsHelpOpen) return;
-
-		const isSearchOpen = get(searchOpen);
-
-		if (event.key === 'Escape') {
-			if (isSearchOpen) {
-				clearSearch();
-			} else {
-				clearSelection({
-					selectedNode: selectedNodeStore,
-					selectedEdge: selectedEdgeStore,
-					selectedNodes: selectedNodesStore
-				});
-			}
-			return;
+	// Keyboard shortcuts — same shared handler, no edit-only callbacks
+	const handleKeydown = createTopologyKeydownHandler({
+		getBaseViewer: () => baseViewer,
+		getShortcutsHelpOpen: () => shortcutsHelpOpen,
+		setShortcutsHelpOpen: (open) => (shortcutsHelpOpen = open),
+		selectionStores: {
+			selectedNode: selectedNodeStore,
+			selectedEdge: selectedEdgeStore,
+			selectedNodes: selectedNodesStore
 		}
-
-		if (isInputElement(event.target)) return;
-
-		if ((event.metaKey || event.ctrlKey) && event.key === 'f') {
-			event.preventDefault();
-			searchOpen.set(true);
-			return;
-		}
-
-		if (event.metaKey || event.ctrlKey || event.altKey) return;
-
-		switch (event.key) {
-			case '/':
-				event.preventDefault();
-				searchOpen.set(true);
-				break;
-			case 'f':
-			case 'F':
-				baseViewer?.triggerFitView();
-				break;
-			case 'z':
-			case 'Z': {
-				const multiSelected = get(selectedNodesStore);
-				const singleSelected = get(selectedNodeStore);
-				if (multiSelected.length >= 2) {
-					baseViewer?.fitViewToNodes(multiSelected.map((n) => n.id));
-				} else if (singleSelected) {
-					baseViewer?.fitViewToNodes([singleSelected.id]);
-				}
-				break;
-			}
-			case '?':
-				shortcutsHelpOpen = !shortcutsHelpOpen;
-				break;
-			case ']':
-				baseViewer?.triggerStepExpand();
-				break;
-			case '[':
-				baseViewer?.triggerStepCollapse();
-				break;
-		}
-	}
+	});
 </script>
 
 <svelte:window on:keydown={handleKeydown} />

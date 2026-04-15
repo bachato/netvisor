@@ -55,7 +55,7 @@
 		shares_topologyViews,
 		shares_enabledViews,
 		shares_enabledViewsHelp,
-		shares_atLeastOneView
+		shares_allViewsEnabled
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -114,10 +114,8 @@
 		iconColor: views.getColorHelper(v.id).icon
 	}));
 
-	// Enabled views state — null means all views
-	let enabledViewIds: string[] = $state(
-		share.enabled_views ? [...share.enabled_views] : viewsJson.map((v) => v.id)
-	);
+	// Enabled views state — null means all views (empty list in the UI)
+	let enabledViewIds: string[] = $state(share.enabled_views ? [...share.enabled_views] : []);
 
 	// Items currently in the list (preserves order)
 	let enabledViewItems = $derived(
@@ -156,11 +154,8 @@
 	}
 
 	function syncEnabledViews() {
-		// null if all views are included (in default order), otherwise the specific list
-		const allIds = viewsJson.map((v) => v.id);
-		const isAllInOrder =
-			enabledViewIds.length === allIds.length && enabledViewIds.every((id, i) => id === allIds[i]);
-		const value = isAllInOrder ? null : enabledViewIds;
+		// Empty list = null (all views enabled)
+		const value = enabledViewIds.length === 0 ? null : enabledViewIds;
 		onChange({ ...share, enabled_views: value });
 	}
 </script>
@@ -229,6 +224,7 @@
 			<ListManager
 				label={shares_enabledViews()}
 				helpText={shares_enabledViewsHelp()}
+				emptyMessage={shares_allViewsEnabled()}
 				items={enabledViewItems}
 				options={availableViewOptions}
 				optionDisplayComponent={SimpleOptionDisplay}
@@ -236,11 +232,11 @@
 				allowAddFromOptions={true}
 				allowCreateNew={false}
 				allowReorder={true}
+				itemClickAction={null}
 				onAdd={handleAddView}
 				onRemove={handleRemoveView}
 				onMoveUp={handleMoveViewUp}
 				onMoveDown={handleMoveViewDown}
-				error={enabledViewIds.length === 0 ? shares_atLeastOneView() : undefined}
 			/>
 		</div>
 	</CollapsibleCard>
