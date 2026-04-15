@@ -106,10 +106,10 @@ export async function resolveNodeSizes(
 			elementNodeSizesCount: elementNodeSizes.size,
 			liveNodesCount: liveNodes.length
 		});
-		// Collapsed containers without cached sizes: ELK falls back to
-		// metadata defaults (collapsed_size). Don't clear the cache and
-		// force a full DOM measurement — that sets isMeasuring which
-		// hides the viewport and prevents collapse animation.
+		// If any containers are missing from cache, fall through to full measurement
+		if (cacheMisses > 0) {
+			elementNodeSizes.clear();
+		}
 	}
 
 	// Full DOM measurement pass if no cache

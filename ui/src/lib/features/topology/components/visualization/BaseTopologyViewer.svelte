@@ -552,6 +552,14 @@
 			console.log('[ANIM] not animating (normal render)', { gen: thisGeneration });
 			nodes.set(allNodes);
 			edges.set(flowEdges);
+		} else if (wantsAnimation) {
+			// Measurement pass ran but we want to animate. The DOM still has
+			// the user's pre-collapse nodes (snapshotNodes) — don't overwrite
+			// them with allNodes. Just become visible and animate directly.
+			console.log('[ANIM] skipping measurement render, animating directly', { gen: thisGeneration });
+			isMeasuring = false;
+			const previousNodeIds = new Set(snapshotNodes.map((n) => n.id));
+			runAnimation(previousNodeIds);
 		} else {
 			console.log('[ANIM] measurement render', { gen: thisGeneration });
 			edges.set([]);
@@ -559,7 +567,6 @@
 			pendingEdges = flowEdges;
 			await tick();
 			if (isStale()) {
-				console.log('[ANIM] stale after measurement tick 1', { gen: thisGeneration });
 				isMeasuring = false;
 				return;
 			}
@@ -570,57 +577,10 @@
 			await tick();
 			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 			if (isStale()) {
-				console.log('[ANIM] stale after measurement tick 2', { gen: thisGeneration });
 				isMeasuring = false;
 				return;
 			}
-			console.log('[ANIM] measurement complete', { gen: thisGeneration, wantsAnimation });
-
-			// Measurement rendered final positions while hidden. If this
-			// should have been an animated collapse, restore pre-measurement
-			// positions while still hidden, then become visible and animate.
-			if (wantsAnimation) {
-				// Log positions to diagnose flicker
-				const sampleSnap = snapshotNodes.slice(0, 3).map((n) => ({
-					id: n.id.substring(0, 8),
-					pos: n.position,
-					w: n.width,
-					h: n.height
-				}));
-				const sampleAll = allNodes.slice(0, 3).map((n) => ({
-					id: n.id.substring(0, 8),
-					pos: n.position,
-					w: n.width,
-					h: n.height
-				}));
-				console.log('[ANIM] post-measurement animation trigger', {
-					snapshotCount: snapshotNodes.length,
-					allNodesCount: allNodes.length,
-					snapshotSample: sampleSnap,
-					allNodesSample: sampleAll
-				});
-				// Also check if SvelteFlow mutated the snapshot objects
-				const domNodes = get(nodes);
-				const domSample = domNodes.slice(0, 3).map((n) => ({
-					id: n.id.substring(0, 8),
-					pos: n.position
-				}));
-				console.log('[ANIM] current DOM nodes before restore', { domSample });
-
-				// Restore old positions while still hidden (isMeasuring still true)
-				nodes.set(snapshotNodes);
-				edges.set(flowEdges);
-				await tick();
-				// Now become visible — nodes are already at snapshot positions
-				isMeasuring = false;
-				await tick();
-				await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-				if (isStale()) return;
-				const previousNodeIds = new Set(snapshotNodes.map((n) => n.id));
-				runAnimation(previousNodeIds);
-			} else {
-				isMeasuring = false;
-			}
+			isMeasuring = false;
 		}
 
 		// Post-render: cache collapsed sizes, re-run if needed
