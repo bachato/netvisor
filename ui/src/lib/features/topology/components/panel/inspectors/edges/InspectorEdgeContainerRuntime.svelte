@@ -59,7 +59,7 @@
 							s.virtualization.type === 'Docker' &&
 							s.virtualization.details.service_id === containerizingServiceId
 					)
-				: topology.services.filter((s) => s.bindings.some((b) => b.interface_id == edge.target))
+				: topology.services.filter((s) => s.bindings.some((b) => b.ip_address_id == edge.target))
 			: []
 	);
 

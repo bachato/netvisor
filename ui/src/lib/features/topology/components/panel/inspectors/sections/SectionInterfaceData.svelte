@@ -14,7 +14,7 @@
 		elementContext?: ElementRenderContext;
 	} = $props();
 
-	// Find the Interface: for Port elements use interface_id, for others use interface_id
+	// Find the SNMP Interface: from node data or element context
 	let iface = $derived.by(() => {
 		const nodeData = node.data as TopologyNode;
 		const ifEntryId = 'interface_id' in nodeData ? (nodeData.interface_id as string) : undefined;
@@ -22,18 +22,18 @@
 			return topology.interfaces.find((e) => e.id === ifEntryId) ?? null;
 		}
 		if (!elementContext?.interfaceId) return null;
-		return topology.interfaces.find((e) => e.interface_id === elementContext?.interfaceId) ?? null;
+		return topology.interfaces.find((e) => e.id === elementContext.interfaceId) ?? null;
 	});
 
-	// Resolve linked entities from topology data
-	let linkedInterface = $derived.by(() => {
-		if (!iface?.interface_id) return null;
-		return topology.interfaces.find((i) => i.id === iface!.interface_id) ?? null;
+	// Resolve linked IPAddress from the SNMP interface's ip_address_id FK
+	let linkedIpAddress = $derived.by(() => {
+		if (!iface?.ip_address_id) return null;
+		return topology.ip_addresses.find((i) => i.id === iface!.ip_address_id) ?? null;
 	});
 
 	let linkedSubnet = $derived.by(() => {
-		if (!linkedInterface) return null;
-		return topology.subnets.find((s) => s.id === linkedInterface!.subnet_id) ?? null;
+		if (!linkedIpAddress) return null;
+		return topology.subnets.find((s) => s.id === linkedIpAddress!.subnet_id) ?? null;
 	});
 
 	let neighborHost = $derived.by(() => {
@@ -82,7 +82,7 @@
 {#if iface}
 	<InterfaceDetailsCard
 		{iface}
-		{linkedInterface}
+		{linkedIpAddress}
 		{linkedSubnet}
 		{neighborHost}
 		{neighborInterface}

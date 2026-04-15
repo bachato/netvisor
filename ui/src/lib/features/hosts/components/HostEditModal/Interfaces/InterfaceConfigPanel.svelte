@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { useQueryClient } from '@tanstack/svelte-query';
 	import { queryKeys } from '$lib/api/query-client';
-	import type { Interface } from '$lib/features/hosts/types/base';
+	import type { Interface, IPAddress } from '$lib/features/hosts/types/base';
 	import { getHostByIdFromCache } from '$lib/features/hosts/queries';
 	import { getSubnetByIdFromCache } from '$lib/features/subnets/queries';
 	import ConfigHeader from '$lib/shared/components/forms/config/ConfigHeader.svelte';
@@ -31,16 +31,16 @@
 
 	const queryClient = useQueryClient();
 
-	// Linked Interface + Subnet resolution
-	let linkedInterface = $derived.by(() => {
-		if (!iface.interface_id) return null;
-		const allInterfaces = queryClient.getQueryData<Interface[]>(queryKeys.interfaces.all) ?? [];
-		return allInterfaces.find((i) => i.id === iface.interface_id) ?? null;
+	// Linked IPAddress + Subnet resolution
+	let linkedIpAddress = $derived.by(() => {
+		if (!iface.ip_address_id) return null;
+		const allIpAddresses = queryClient.getQueryData<IPAddress[]>(queryKeys.ipAddresses.all) ?? [];
+		return allIpAddresses.find((i) => i.id === iface.ip_address_id) ?? null;
 	});
 
 	let linkedSubnet = $derived.by(() => {
-		if (!linkedInterface) return null;
-		return getSubnetByIdFromCache(queryClient, linkedInterface.subnet_id);
+		if (!linkedIpAddress) return null;
+		return getSubnetByIdFromCache(queryClient, linkedIpAddress.subnet_id);
 	});
 
 	// Neighbor resolution
@@ -75,7 +75,7 @@
 
 	<InterfaceDetailsCard
 		{iface}
-		{linkedInterface}
+		{linkedIpAddress}
 		{linkedSubnet}
 		{neighborHost}
 		{neighborInterface}
