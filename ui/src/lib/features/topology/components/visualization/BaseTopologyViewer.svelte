@@ -404,7 +404,11 @@
 
 		// Render
 		const shouldAnimate =
-			needsElk && !isMeasuring && layoutState.lastRenderedTopoKey !== '' && !prep.viewChanged;
+			(needsElk || layoutState.animationPending) &&
+			!isMeasuring &&
+			layoutState.lastRenderedTopoKey !== '' &&
+			!prep.viewChanged;
+		layoutState.animationPending = false;
 
 		if (shouldAnimate) {
 			animatingCollapse = true;
@@ -487,6 +491,9 @@
 				}
 				layoutState.lastRenderedTopoKey = prep.topoKey;
 				layoutState.lastRenderedView = prep.currentView;
+				if (!prep.viewChanged) {
+					layoutState.animationPending = true;
+				}
 				await loadTopologyData();
 				return;
 			}
