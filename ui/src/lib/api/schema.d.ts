@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-14T15:54:43.561923Z",
-             *       "id": "61db2cd8-1c33-4af5-a65d-bcc77b01bb49",
+             *       "created_at": "2026-04-14T23:58:13.690760Z",
+             *       "id": "ff687ced-7c65-4e94-87af-26ef5a0710a9",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-14T15:54:43.561923Z"
+             *       "updated_at": "2026-04-14T23:58:13.690760Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-14T15:54:43.549077Z",
-             *               "id": "6b1328ac-2edc-4278-83bc-fdaaa33b8c79",
+             *               "created_at": "2026-04-14T23:58:13.674681Z",
+             *               "id": "875d4262-30b6-4aab-b58b-88331a86cee3",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-14T15:54:43.549077Z"
+             *               "updated_at": "2026-04-14T23:58:13.674681Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Huntarr",
+             *           "service_definition": "Zabbix Agent",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3502,6 +3502,12 @@ export interface components {
         ApiResponse_PublicShareMetadata: {
             /** @description Public share metadata (returned without authentication) */
             data?: {
+                /**
+                 * @description Resolved list of available topology views for this share.
+                 *     Filtered by both share configuration and data availability.
+                 *     First element is the default view.
+                 */
+                enabled_views: components["schemas"]["TopologyView"][];
                 /** Format: uuid */
                 id: string;
                 name: string;
@@ -3531,14 +3537,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-14T15:54:43.558176Z",
-             *           "id": "8261ad14-d421-4d34-aa53-d0335ec56932",
+             *           "created_at": "2026-04-14T23:58:13.686554Z",
+             *           "id": "a1d85f91-ece1-4fdd-844b-c4fe57812670",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-14T15:54:43.558176Z"
+             *           "updated_at": "2026-04-14T23:58:13.686554Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3547,7 +3553,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Huntarr",
+             *       "service_definition": "Zabbix Agent",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3898,14 +3904,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-14T15:54:43.549346Z",
-         *       "id": "fef4f8f0-93df-489e-ae0d-08d032e18dbc",
+         *       "created_at": "2026-04-14T23:58:13.674891Z",
+         *       "id": "515c27de-26f7-488d-8d71-15b52f93201d",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-14T15:54:43.549346Z"
+         *       "updated_at": "2026-04-14T23:58:13.674891Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4090,7 +4096,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Huntarr",
+         *           "service_definition": "Zabbix Agent",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4949,14 +4955,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-14T15:54:43.548448Z",
-         *               "id": "e1985bf0-aa01-463b-9350-202c46474686",
+         *               "created_at": "2026-04-14T23:58:13.674395Z",
+         *               "id": "aa9ec6bc-d988-4266-9b1c-d472450f8798",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-14T15:54:43.548448Z"
+         *               "updated_at": "2026-04-14T23:58:13.674395Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4965,7 +4971,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Huntarr",
+         *           "service_definition": "Zabbix Agent",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5965,6 +5971,12 @@ export interface components {
         };
         /** @description Public share metadata (returned without authentication) */
         PublicShareMetadata: {
+            /**
+             * @description Resolved list of available topology views for this share.
+             *     Filtered by both share configuration and data availability.
+             *     First element is the default view.
+             */
+            enabled_views: components["schemas"]["TopologyView"][];
             /** Format: uuid */
             id: string;
             name: string;
@@ -6095,14 +6107,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-14T15:54:43.549261Z",
-         *           "id": "abebc71c-1d93-4ccf-9833-d33e0622ff3b",
+         *           "created_at": "2026-04-14T23:58:13.674821Z",
+         *           "id": "fe02dbc2-e2bb-46cf-bde9-88b625dd70f4",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-14T15:54:43.549261Z"
+         *           "updated_at": "2026-04-14T23:58:13.674821Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6111,7 +6123,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Huntarr",
+         *       "service_definition": "Zabbix Agent",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6225,6 +6237,12 @@ export interface components {
             allowed_domains: string[] | null;
             /** Format: uuid */
             created_by: string;
+            /**
+             * @description Which topology views are enabled for this share.
+             *     None = all views (subject to data availability). Some(list) = only these views in order.
+             *     First element is the default view shown on load.
+             */
+            enabled_views: components["schemas"]["TopologyView"][] | null;
             /** Format: date-time */
             expires_at: string | null;
             is_enabled: boolean;

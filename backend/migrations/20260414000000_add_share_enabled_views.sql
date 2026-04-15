@@ -1,0 +1,1 @@
+ALTER TABLE shares ADD COLUMN enabled_views JSONB DEFAULT NULL;

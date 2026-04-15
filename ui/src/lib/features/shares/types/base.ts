@@ -44,6 +44,7 @@ export function createEmptyShare(topology_id: string, network_id: string): Share
 		allowed_domains: null,
 		name: '',
 		is_enabled: true,
-		options: { ...defaultShareOptions }
+		options: { ...defaultShareOptions },
+		enabled_views: null
 	};
 }

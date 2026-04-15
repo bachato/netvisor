@@ -3,6 +3,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::base::{Share, ShareOptions};
+use crate::server::topology::types::views::TopologyView;
 
 #[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct CreateUpdateShareRequest {
@@ -17,15 +18,20 @@ pub struct PublicShareMetadata {
     pub name: String,
     pub requires_password: bool,
     pub options: ShareOptions,
+    /// Resolved list of available topology views for this share.
+    /// Filtered by both share configuration and data availability.
+    /// First element is the default view.
+    pub enabled_views: Vec<TopologyView>,
 }
 
-impl From<&Share> for PublicShareMetadata {
-    fn from(share: &Share) -> Self {
+impl PublicShareMetadata {
+    pub fn new(share: &Share, enabled_views: Vec<TopologyView>) -> Self {
         Self {
             id: share.id,
             name: share.base.name.clone(),
             requires_password: share.requires_password(),
             options: share.base.options.clone(),
+            enabled_views,
         }
     }
 }

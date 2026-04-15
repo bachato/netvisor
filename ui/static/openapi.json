@@ -13115,14 +13115,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-13T23:36:42.912729Z",
-              "id": "45b3ec0e-73b5-49cb-b5b6-4cf3f47138d3",
+              "created_at": "2026-04-14T23:58:13.690760Z",
+              "id": "ff687ced-7c65-4e94-87af-26ef5a0710a9",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T23:36:42.912729Z"
+              "updated_at": "2026-04-14T23:58:13.690760Z"
             }
           },
           "error": {
@@ -14021,14 +14021,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-13T23:36:42.899028Z",
-                      "id": "023a47b8-9684-41e7-b939-1786793299c5",
+                      "created_at": "2026-04-14T23:58:13.674681Z",
+                      "id": "875d4262-30b6-4aab-b58b-88331a86cee3",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-13T23:36:42.899028Z"
+                      "updated_at": "2026-04-14T23:58:13.674681Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -14037,7 +14037,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "OpenVPN",
+                  "service_definition": "Zabbix Agent",
                   "source": {
                     "type": "Manual"
                   },
@@ -14633,9 +14633,17 @@
               "id",
               "name",
               "requires_password",
-              "options"
+              "options",
+              "enabled_views"
             ],
             "properties": {
+              "enabled_views": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TopologyView"
+                },
+                "description": "Resolved list of available topology views for this share.\nFiltered by both share configuration and data availability.\nFirst element is the default view."
+              },
               "id": {
                 "type": "string",
                 "format": "uuid"
@@ -14752,14 +14760,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T23:36:42.908625Z",
-                  "id": "c08685df-fe35-43f1-8f20-6dbebd7e22eb",
+                  "created_at": "2026-04-14T23:58:13.686554Z",
+                  "id": "a1d85f91-ece1-4fdd-844b-c4fe57812670",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T23:36:42.908625Z"
+                  "updated_at": "2026-04-14T23:58:13.686554Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14768,7 +14776,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "Zabbix Agent",
               "source": {
                 "type": "Manual"
               },
@@ -16133,14 +16141,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-13T23:36:42.899234Z",
-          "id": "cffe6280-d573-454f-a8ef-af862754919c",
+          "created_at": "2026-04-14T23:58:13.674891Z",
+          "id": "515c27de-26f7-488d-8d71-15b52f93201d",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-13T23:36:42.899234Z"
+          "updated_at": "2026-04-14T23:58:13.674891Z"
         }
       },
       "BindingBase": {
@@ -16670,7 +16678,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "Zabbix Agent",
               "tags": [],
               "virtualization": null
             }
@@ -16868,10 +16876,9 @@
               "null"
             ],
             "items": {
-              "type": "string",
-              "writeOnly": true
+              "type": "string"
             },
-            "description": "Ephemeral bootstrap IPs for pre-discovery credential resolution.\nWrite-only — skipped in API GET responses."
+            "description": "Ephemeral bootstrap IPs for pre-discovery credential resolution.\nCleared automatically when the next scan dispatches."
           }
         }
       },
@@ -18219,9 +18226,7 @@
         "enum": [
           "Straight",
           "SmoothStep",
-          "Step",
-          "Bezier",
-          "SimpleBezier"
+          "Bezier"
         ]
       },
       "EdgeType": {
@@ -19191,14 +19196,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T23:36:42.898725Z",
-                  "id": "ed83cda8-9210-47b4-95b0-b7b218449113",
+                  "created_at": "2026-04-14T23:58:13.674395Z",
+                  "id": "aa9ec6bc-d988-4266-9b1c-d472450f8798",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T23:36:42.898725Z"
+                  "updated_at": "2026-04-14T23:58:13.674395Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -19207,7 +19212,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "Zabbix Agent",
               "source": {
                 "type": "Manual"
               },
@@ -21395,14 +21400,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-13T23:36:42.891578Z",
-                        "id": "cb4aa24e-b6e9-4bc8-bd80-31f89650106c",
+                        "created_at": "2026-04-14T23:58:13.665166Z",
+                        "id": "678db8e7-33f3-443c-94d2-9f2f84363b67",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-13T23:36:42.891578Z"
+                        "updated_at": "2026-04-14T23:58:13.665166Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -21411,7 +21416,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "OpenVPN",
+                    "service_definition": "Zabbix Agent",
                     "source": {
                       "type": "Manual"
                     },
@@ -21488,14 +21493,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-13T23:36:42.907662Z",
-                    "id": "407da23b-b01d-48b4-b726-b918fc83a427",
+                    "created_at": "2026-04-14T23:58:13.685441Z",
+                    "id": "4a30fa7f-e4a7-4f02-8617-7b167115f570",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-13T23:36:42.907662Z"
+                    "updated_at": "2026-04-14T23:58:13.685441Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -21504,7 +21509,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "OpenVPN",
+                "service_definition": "Zabbix Agent",
                 "source": {
                   "type": "Manual"
                 },
@@ -22364,9 +22369,17 @@
           "id",
           "name",
           "requires_password",
-          "options"
+          "options",
+          "enabled_views"
         ],
         "properties": {
+          "enabled_views": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopologyView"
+            },
+            "description": "Resolved list of available topology views for this share.\nFiltered by both share configuration and data availability.\nFirst element is the default view."
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -22734,14 +22747,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-13T23:36:42.899160Z",
-              "id": "1681dbc0-c90b-40af-a0c6-08374cfeed4a",
+              "created_at": "2026-04-14T23:58:13.674821Z",
+              "id": "fe02dbc2-e2bb-46cf-bde9-88b625dd70f4",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T23:36:42.899160Z"
+              "updated_at": "2026-04-14T23:58:13.674821Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -22750,7 +22763,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "OpenVPN",
+          "service_definition": "Zabbix Agent",
           "source": {
             "type": "Manual"
           },
@@ -22831,7 +22844,10 @@
           "Backup",
           "Media",
           "HomeAutomation",
-          "Virtualization",
+          "Hypervisor",
+          "ContainerRuntime",
+          "Container",
+          "Orchestrator",
           "DNS",
           "VPN",
           "Monitoring",
@@ -23063,7 +23079,8 @@
           "is_enabled",
           "expires_at",
           "allowed_domains",
-          "options"
+          "options",
+          "enabled_views"
         ],
         "properties": {
           "allowed_domains": {
@@ -23078,6 +23095,16 @@
           "created_by": {
             "type": "string",
             "format": "uuid"
+          },
+          "enabled_views": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TopologyView"
+            },
+            "description": "Which topology views are enabled for this share.\nNone = all views (subject to data availability). Some(list) = only these views in order.\nFirst element is the default view shown on load."
           },
           "expires_at": {
             "type": [

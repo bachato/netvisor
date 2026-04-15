@@ -97,6 +97,46 @@ impl Topology {
         self.base.nodes = nodes;
         self.base.edges = edges;
     }
+
+    /// Whether this topology has enough data to render the L2 Physical view
+    /// (requires physical link edges discovered via LLDP/CDP).
+    pub fn supports_l2_view(&self) -> bool {
+        self.base
+            .edges
+            .iter()
+            .any(|e| matches!(e.edge_type, super::edges::EdgeType::PhysicalLink { .. }))
+    }
+
+    /// Whether this topology has enough data to render the Application view
+    /// (requires at least one application group tag).
+    pub fn supports_application_view(&self) -> bool {
+        self.base.entity_tags.iter().any(|t| t.base.is_application)
+    }
+
+    /// Resolve the available views for a share, filtering by data availability.
+    /// If `configured` is None, all data-supported views are returned.
+    /// If `configured` is Some(list), returns the intersection preserving list order.
+    pub fn resolve_available_views(
+        &self,
+        configured: &Option<Vec<TopologyView>>,
+    ) -> Vec<TopologyView> {
+        let data_supported: Vec<TopologyView> = TopologyView::iter()
+            .filter(|v| match v {
+                TopologyView::L2Physical => self.supports_l2_view(),
+                TopologyView::Application => self.supports_application_view(),
+                _ => true,
+            })
+            .collect();
+
+        match configured {
+            None => data_supported,
+            Some(list) => list
+                .iter()
+                .filter(|v| data_supported.contains(v))
+                .cloned()
+                .collect(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize, Eq, PartialEq, Default, ToSchema)]

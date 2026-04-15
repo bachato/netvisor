@@ -190,7 +190,8 @@
 						show_inspect_panel: v.show_inspect_panel as boolean,
 						show_export_button: v.show_export_button as boolean,
 						show_minimap: v.show_minimap as boolean
-					}
+					},
+					enabled_views: share.enabled_views
 				} as Share;
 
 				const password = (v.password as string) || undefined;

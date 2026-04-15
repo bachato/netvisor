@@ -10,8 +10,15 @@
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
 	import CodeContainer from '$lib/shared/components/data/CodeContainer.svelte';
 	import CollapsibleCard from '$lib/shared/components/data/CollapsibleCard.svelte';
+	import ListManager from '$lib/shared/components/forms/selection/ListManager.svelte';
+	import {
+		SimpleOptionDisplay,
+		type SimpleOption
+	} from '$lib/shared/components/forms/selection/display/SimpleOptionDisplay';
 	import { generateShareUrl, generateEmbedCode } from '../queries';
 	import { Sun, Moon, Monitor } from 'lucide-svelte';
+	import { views } from '$lib/shared/stores/metadata';
+	import viewsJson from '$lib/data/views.json';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import {
 		common_enabled,
@@ -44,7 +51,11 @@
 		shares_showInspectPanel,
 		shares_showMinimap,
 		shares_showZoomControls,
-		shares_upgradeForEmbeds
+		shares_upgradeForEmbeds,
+		shares_topologyViews,
+		shares_enabledViews,
+		shares_enabledViewsHelp,
+		shares_atLeastOneView
 	} from '$lib/paraglide/messages';
 
 	interface Props {
@@ -93,6 +104,65 @@
 		| 'light'
 		| 'dark'
 		| undefined;
+
+	// All available views as SimpleOption items
+	const allViewOptions: SimpleOption[] = viewsJson.map((v) => ({
+		value: v.id,
+		label: v.name,
+		description: v.description,
+		icon: views.getIconComponent(v.id),
+		iconColor: views.getColorHelper(v.id).icon
+	}));
+
+	// Enabled views state — null means all views
+	let enabledViewIds: string[] = $state(
+		share.enabled_views ? [...share.enabled_views] : viewsJson.map((v) => v.id)
+	);
+
+	// Items currently in the list (preserves order)
+	let enabledViewItems = $derived(
+		enabledViewIds
+			.map((id) => allViewOptions.find((v) => v.value === id))
+			.filter((v): v is SimpleOption => v != null)
+	);
+
+	// Options not yet added (available for the dropdown)
+	let availableViewOptions = $derived(
+		allViewOptions.filter((v) => !enabledViewIds.includes(v.value))
+	);
+
+	function handleAddView(viewId: string) {
+		enabledViewIds = [...enabledViewIds, viewId];
+		syncEnabledViews();
+	}
+
+	function handleRemoveView(idx: number) {
+		enabledViewIds = enabledViewIds.filter((_, i) => i !== idx);
+		syncEnabledViews();
+	}
+
+	function handleMoveViewUp(from: number, to: number) {
+		const arr = [...enabledViewIds];
+		[arr[from], arr[to]] = [arr[to], arr[from]];
+		enabledViewIds = arr;
+		syncEnabledViews();
+	}
+
+	function handleMoveViewDown(from: number, to: number) {
+		const arr = [...enabledViewIds];
+		[arr[from], arr[to]] = [arr[to], arr[from]];
+		enabledViewIds = arr;
+		syncEnabledViews();
+	}
+
+	function syncEnabledViews() {
+		// null if all views are included (in default order), otherwise the specific list
+		const allIds = viewsJson.map((v) => v.id);
+		const isAllInOrder =
+			enabledViewIds.length === allIds.length && enabledViewIds.every((id, i) => id === allIds[i]);
+		const value = isAllInOrder ? null : enabledViewIds;
+		onChange({ ...share, enabled_views: value });
+	}
 </script>
 
 <div class="space-y-4 px-1">
@@ -152,6 +222,28 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- Topology Views — collapsible -->
+	<CollapsibleCard title={shares_topologyViews()} expanded={false}>
+		<div class="space-y-2">
+			<ListManager
+				label={shares_enabledViews()}
+				helpText={shares_enabledViewsHelp()}
+				items={enabledViewItems}
+				options={availableViewOptions}
+				optionDisplayComponent={SimpleOptionDisplay}
+				itemDisplayComponent={SimpleOptionDisplay}
+				allowAddFromOptions={true}
+				allowCreateNew={false}
+				allowReorder={true}
+				onAdd={handleAddView}
+				onRemove={handleRemoveView}
+				onMoveUp={handleMoveViewUp}
+				onMoveDown={handleMoveViewDown}
+				error={enabledViewIds.length === 0 ? shares_atLeastOneView() : undefined}
+			/>
+		</div>
+	</CollapsibleCard>
 
 	<!-- Access Control — collapsible -->
 	<CollapsibleCard title={shares_accessControl()} expanded={false}>

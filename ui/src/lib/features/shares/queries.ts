@@ -186,7 +186,7 @@ export async function verifySharePassword(
  */
 export async function getPublicShareTopology(
 	shareId: string,
-	options: { embed?: boolean; password?: string } = {}
+	options: { embed?: boolean; password?: string; view: string }
 ): Promise<{ success: boolean; data?: ShareWithTopology; error?: string }> {
 	try {
 		const url = options.embed
@@ -197,7 +197,7 @@ export async function getPublicShareTopology(
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ password: options.password })
+			body: JSON.stringify({ password: options.password, view: options.view })
 		});
 
 		const result = await response.json();

@@ -7,8 +7,11 @@
 	import ReadOnlyInspectorPanel from './ReadOnlyInspectorPanel.svelte';
 	import ExportButton from '$lib/features/topology/components/ExportButton.svelte';
 	import ExportModal from '$lib/features/topology/components/ExportModal.svelte';
-	import { Share2 } from 'lucide-svelte';
+	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
+	import { Share2, LoaderCircle } from 'lucide-svelte';
 	import type { ExportFeatures } from '../types/base';
+	import { hydrateStoresFromTopology } from '$lib/features/topology/queries';
+	import { views } from '$lib/shared/stores/metadata';
 
 	export let topology: Topology;
 	export let showControls: boolean = true;
@@ -18,8 +21,24 @@
 	export let shareName: string = '';
 	export let showMinimap: boolean = false;
 	export let exportFeatures: ExportFeatures | undefined = undefined;
+	export let enabledViews: string[] = [];
+	export let currentView: string = 'L3Logical';
+	export let onViewChange: (view: string) => void = () => {};
+	export let viewLoading: boolean = false;
 
 	let isExportModalOpen = false;
+
+	// Build SegmentedControl options from enabled views
+	$: viewOptions = enabledViews.map((viewId) => ({
+		value: viewId,
+		label: views.getName(viewId),
+		icon: views.getIconComponent(viewId),
+		tooltip: views.getDescription(viewId)
+	}));
+
+	// Hydrate the global activeView + topologyOptions stores so the rendering
+	// pipeline sees the correct view for this shared topology.
+	hydrateStoresFromTopology(topology, true);
 
 	// Create a context store for the topology so child components (inspectors) can access it
 	const topologyContext = writable<Topology>(topology);
@@ -34,22 +53,41 @@
 	setContext('selectedEdge', selectedEdgeStore);
 	setContext('selectedNodes', selectedNodesStore);
 
-	// Keep context in sync with prop
-	$: topologyContext.set(topology);
+	// Keep context in sync with prop and re-hydrate on topology change (view switch)
+	$: {
+		topologyContext.set(topology);
+		hydrateStoresFromTopology(topology, true);
+	}
 </script>
 
 <SvelteFlowProvider>
 	<div class="flex h-full w-full flex-col">
-		{#if shareName}
+		{#if shareName || enabledViews.length > 1}
 			<header
 				class="flex flex-shrink-0 items-center justify-between border-b px-4 py-3"
 				style="border-color: var(--color-border); background: var(--color-bg-elevated)"
 			>
 				<div class="flex items-center gap-3">
-					<Share2 class="text-info h-8 w-8" />
-					<h1 class="text-primary font-semibold">{shareName}</h1>
+					{#if shareName}
+						<Share2 class="text-info h-8 w-8" />
+						<h1 class="text-primary font-semibold">{shareName}</h1>
+					{/if}
 				</div>
 				<div class="flex items-center gap-4">
+					{#if enabledViews.length > 1}
+						<div class="flex items-center gap-2">
+							{#if viewLoading}
+								<LoaderCircle class="text-muted h-4 w-4 animate-spin" />
+							{/if}
+							<SegmentedControl
+								options={viewOptions}
+								selected={currentView}
+								onchange={onViewChange}
+								size="sm"
+								disabled={viewLoading}
+							/>
+						</div>
+					{/if}
 					{#if showExport}
 						<ExportButton onclick={() => (isExportModalOpen = true)} />
 					{/if}

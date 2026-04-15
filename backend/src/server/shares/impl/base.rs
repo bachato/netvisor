@@ -5,6 +5,7 @@ use crate::server::shared::{
     entity_metadata::EntityCategory,
     storage::traits::{Entity, SqlValue, Storable},
 };
+use crate::server::topology::types::views::TopologyView;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
@@ -70,6 +71,12 @@ pub struct ShareBase {
     #[schema(required)]
     pub allowed_domains: Option<Vec<String>>,
     pub options: ShareOptions,
+    /// Which topology views are enabled for this share.
+    /// None = all views (subject to data availability). Some(list) = only these views in order.
+    /// First element is the default view shown on load.
+    #[serde(default)]
+    #[schema(required)]
+    pub enabled_views: Option<Vec<TopologyView>>,
 }
 
 #[derive(
@@ -164,6 +171,7 @@ impl Storable for Share {
                 "password_hash",
                 "allowed_domains",
                 "options",
+                "enabled_views",
                 "created_at",
                 "updated_at",
             ],
@@ -178,6 +186,7 @@ impl Storable for Share {
                 SqlValue::OptionalString(self.base.password_hash.clone()),
                 SqlValue::OptionalStringArray(self.base.allowed_domains.clone()),
                 SqlValue::ShareOptions(self.base.options.clone()),
+                SqlValue::EnabledViews(self.base.enabled_views.clone()),
                 SqlValue::Timestamp(self.created_at),
                 SqlValue::Timestamp(self.updated_at),
             ],
@@ -187,6 +196,12 @@ impl Storable for Share {
     fn from_row(row: &PgRow) -> Result<Self, anyhow::Error> {
         let options_value: serde_json::Value = row.get("options");
         let options: ShareOptions = serde_json::from_value(options_value)?;
+
+        let enabled_views: Option<Vec<TopologyView>> = row
+            .try_get::<Option<serde_json::Value>, _>("enabled_views")
+            .ok()
+            .flatten()
+            .and_then(|v| serde_json::from_value(v).ok());
 
         Ok(Share {
             id: row.get("id"),
@@ -202,6 +217,7 @@ impl Storable for Share {
                 password_hash: row.get("password_hash"),
                 allowed_domains: row.get("allowed_domains"),
                 options,
+                enabled_views,
             },
         })
     }

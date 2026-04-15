@@ -237,6 +237,7 @@ pub enum SqlValue {
     OptionVecU16(Option<Vec<u16>>),
     OptionVecUuid(Option<Vec<Uuid>>),
     ShareOptions(crate::server::shares::r#impl::base::ShareOptions),
+    EnabledViews(Option<Vec<crate::server::topology::types::views::TopologyView>>),
     CredentialType(CredentialType),
     MacAddress(MacAddress),
     OptionalMacAddress(Option<MacAddress>),

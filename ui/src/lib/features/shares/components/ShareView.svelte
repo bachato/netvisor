@@ -22,8 +22,11 @@
 	let shareMetadata: PublicShareMetadata | null = $state(null);
 	let topologyData: ShareWithTopology | null = $state(null);
 	let loading = $state(true);
+	let viewLoading = $state(false);
 	let error: string | null = $state(null);
 	let passwordVerified = $state(false);
+	let enabledViews: string[] = $state([]);
+	let currentView: string = $state('L3Logical');
 
 	// Apply theme override from query parameter (already handled by app.html flash script,
 	// but we also lock it so the theme store doesn't override it during the session)
@@ -70,9 +73,14 @@
 		}
 
 		shareMetadata = metaResult.data;
+		enabledViews = shareMetadata.enabled_views;
+		currentView = enabledViews[0] ?? 'L3Logical';
 
 		if (!shareMetadata.requires_password) {
-			const topoResult = await getPublicShareTopology(shareId, { embed: isEmbed });
+			const topoResult = await getPublicShareTopology(shareId, {
+				embed: isEmbed,
+				view: currentView
+			});
 
 			if (!topoResult.success || !topoResult.data) {
 				error = topoResult.error || 'Failed to load topology';
@@ -86,7 +94,8 @@
 			if (storedPassword) {
 				const result = await getPublicShareTopology(shareId, {
 					embed: isEmbed,
-					password: storedPassword
+					password: storedPassword,
+					view: currentView
 				});
 				if (result.success && result.data) {
 					topologyData = result.data;
@@ -110,7 +119,11 @@
 		passwordVerified = true;
 
 		// Now try to load topology - errors will show in main view, not gate
-		const topoResult = await getPublicShareTopology(shareId, { embed: isEmbed, password });
+		const topoResult = await getPublicShareTopology(shareId, {
+			embed: isEmbed,
+			password,
+			view: currentView
+		});
 		if (topoResult.success && topoResult.data) {
 			topologyData = topoResult.data;
 		} else {
@@ -118,6 +131,29 @@
 		}
 
 		return true;
+	}
+
+	async function handleViewChange(view: string) {
+		if (!shareId || view === currentView) return;
+
+		viewLoading = true;
+		currentView = view;
+
+		const password = shareMetadata?.requires_password ? getStoredSharePassword(shareId) : undefined;
+
+		const topoResult = await getPublicShareTopology(shareId, {
+			embed: isEmbed,
+			password: password ?? undefined,
+			view
+		});
+
+		if (topoResult.success && topoResult.data) {
+			topologyData = topoResult.data;
+		} else {
+			error = topoResult.error || 'Failed to load topology';
+		}
+
+		viewLoading = false;
 	}
 
 	function getTitle(): string {
@@ -165,6 +201,10 @@
 				showMinimap={topologyData.share.options.show_minimap ?? true}
 				exportFeatures={topologyData.export_features}
 				{isEmbed}
+				{enabledViews}
+				{currentView}
+				onViewChange={handleViewChange}
+				{viewLoading}
 			/>
 		</div>
 	{/if}

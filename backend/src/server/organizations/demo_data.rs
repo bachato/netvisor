@@ -4640,6 +4640,7 @@ fn generate_shares(
                         show_export_button: false,
                         show_minimap: false,
                     },
+                    enabled_views: None,
                 },
             });
         }
@@ -4665,6 +4666,7 @@ fn generate_shares(
                         show_export_button: false,
                         show_minimap: false,
                     },
+                    enabled_views: None,
                 },
             });
         }
