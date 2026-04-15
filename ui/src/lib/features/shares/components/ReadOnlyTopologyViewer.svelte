@@ -12,7 +12,11 @@
 	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
 	import { Share2, LoaderCircle } from 'lucide-svelte';
 	import type { ExportFeatures } from '../types/base';
-	import { hydrateStoresFromTopology } from '$lib/features/topology/queries';
+	import {
+		hydrateStoresFromTopology,
+		MINIMAP_WIDTH_PX,
+		MINIMAP_OFFSET_PX
+	} from '$lib/features/topology/queries';
 	import { searchOpen } from '$lib/features/topology/interactions';
 	import { createTopologyKeydownHandler } from '$lib/features/topology/keyboard';
 	import { views } from '$lib/shared/stores/metadata';
@@ -35,6 +39,7 @@
 	let baseViewer: BaseTopologyViewer | null = null;
 
 	$: showViewSwitcher = enabledViews.length > 1;
+	const minimapClearance = MINIMAP_WIDTH_PX + MINIMAP_OFFSET_PX + 16;
 
 	// Build SegmentedControl options from enabled views
 	$: viewOptions = enabledViews.map((viewId) => ({
@@ -120,7 +125,7 @@
 			{/if}
 
 			{#if showViewSwitcher && !shareName}
-				<div class="view-switcher-overlay">
+				<div class="view-switcher-overlay" style:left="{showMinimap ? minimapClearance : 0}px">
 					{#if viewLoading}
 						<LoaderCircle class="text-muted h-4 w-4 animate-spin" />
 					{/if}
@@ -166,12 +171,17 @@
 	.view-switcher-overlay {
 		position: absolute;
 		bottom: 10px;
-		left: 50%;
-		transform: translateX(-50%);
+		/* left set via inline style based on minimap visibility */
+		right: 0;
 		z-index: 5;
 		display: flex;
+		justify-content: center;
 		align-items: center;
 		gap: 8px;
+		pointer-events: none;
+	}
+
+	.view-switcher-overlay > :global(*) {
 		pointer-events: auto;
 	}
 </style>
