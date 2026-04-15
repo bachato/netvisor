@@ -313,10 +313,8 @@
 	function triggerLoad() {
 		if (!topology || loadInProgress) {
 			if (topology && loadInProgress) pendingReload = true;
-			console.log('[ANIM] triggerLoad SKIPPED', { noTopology: !topology, loadInProgress });
 			return;
 		}
-		console.log('[ANIM] triggerLoad START');
 		loadInProgress = true;
 		pendingReload = false;
 		void loadTopologyData()
@@ -412,24 +410,9 @@
 		if (!topology || (!topology.edges && !topology.nodes)) return;
 
 		const prep = prepareTopologyData(topology, layoutState, getInfrastructureRuleId);
-		if (!prep) {
-			console.log('[ANIM] prepareTopologyData returned null, skipping');
-			return;
-		}
+		if (!prep) return;
 		const { needsElk, collapsed, visibleNodes: initialVisibleNodes } = prep;
 		let visibleNodes = initialVisibleNodes;
-		console.log('[ANIM] loadTopologyData entry', {
-			gen: thisGeneration,
-			needsElk,
-			isMeasuring,
-			deferCollapse: prep.deferCollapse,
-			isNewStructure: prep.isNewStructure,
-			viewChanged: prep.viewChanged,
-			topologyChanged: prep.topologyChanged,
-			lastRenderedTopoKey: layoutState.lastRenderedTopoKey.substring(0, 20),
-			sessionStructureKey: layoutState.sessionStructureKey.substring(0, 20),
-			collapsedCount: collapsed.size
-		});
 
 		// Helper: build positioned flow nodes (called multiple times with different useGraph)
 		const makeNodes = (useGraph: boolean) =>
@@ -550,17 +533,8 @@
 		// Render
 		const shouldAnimate =
 			needsElk && !isMeasuring && layoutState.lastRenderedTopoKey !== '' && !prep.viewChanged;
-		console.log('[ANIM] shouldAnimate decision', {
-			gen: thisGeneration,
-			shouldAnimate,
-			needsElk,
-			isMeasuring,
-			lastRenderedTopoKey: layoutState.lastRenderedTopoKey !== '',
-			viewChanged: prep.viewChanged
-		});
 
 		if (shouldAnimate) {
-			console.log('[ANIM] >>> ANIMATING <<<', { gen: thisGeneration });
 			animatingCollapse = true;
 			const previousNodeIds = new Set(get(nodes).map((n) => n.id));
 			const phase1Nodes = allNodes.filter((n) => previousNodeIds.has(n.id));
@@ -596,11 +570,9 @@
 				}
 			}, 350);
 		} else if (!isMeasuring) {
-			console.log('[ANIM] not animating (normal render)', { gen: thisGeneration });
 			nodes.set(allNodes);
 			edges.set(flowEdges);
 		} else {
-			console.log('[ANIM] measurement render', { gen: thisGeneration });
 			edges.set([]);
 			nodes.set(allNodes);
 			pendingEdges = flowEdges;
@@ -622,19 +594,19 @@
 			isMeasuring = false;
 		}
 
-		// Post-render: cache collapsed sizes, re-run if needed
-		if (containerElement && layoutState.layoutGraph) {
+		// Post-render: cache collapsed sizes, re-run if needed.
+		// Skip during animation — CSS transitions on width/height would
+		// corrupt the temporary width:auto measurement. Metadata defaults
+		// are used by ELK as fallback; the next layout pass caches correct
+		// sizes via the cacheMisses full-measurement path.
+		if (!shouldAnimate && containerElement && layoutState.layoutGraph) {
+			await tick();
 			const newEntries = cacheCollapsedSizes(
 				containerElement,
 				layoutState.layoutGraph,
 				collapsed,
 				layoutState.containerSizeCache
 			);
-			console.log('[ANIM] post-render cache', {
-				gen: thisGeneration,
-				newEntries,
-				isStale: isStale()
-			});
 			if (newEntries > 0 && !isStale()) {
 				// Invalidate structureKey to force ELK re-run. Do NOT
 				// invalidate baseKey — base structure hasn't changed, and
@@ -648,11 +620,6 @@
 				}
 				layoutState.lastRenderedTopoKey = prep.topoKey;
 				layoutState.lastRenderedView = prep.currentView;
-				console.log('[ANIM] >>> RECURSIVE CALL <<<', {
-					gen: thisGeneration,
-					sessionStructureKey: layoutState.sessionStructureKey,
-					lastRenderedTopoKey: layoutState.lastRenderedTopoKey.substring(0, 20)
-				});
 				await loadTopologyData();
 				return;
 			}
