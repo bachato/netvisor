@@ -567,22 +567,26 @@
 				isMeasuring = false;
 				return;
 			}
-			console.log('[ANIM] measurement complete, setting isMeasuring=false', { gen: thisGeneration });
-			isMeasuring = false;
+			console.log('[ANIM] measurement complete', { gen: thisGeneration, wantsAnimation });
 
 			// Measurement rendered final positions while hidden. If this
 			// should have been an animated collapse, restore pre-measurement
-			// positions and animate to the new ones.
+			// positions while still hidden, then become visible and animate.
 			if (wantsAnimation) {
 				console.log('[ANIM] post-measurement animation trigger');
-				// Restore old positions (visible now that isMeasuring is false)
+				// Restore old positions while still hidden (isMeasuring still true)
 				nodes.set(snapshotNodes);
 				edges.set(flowEdges);
+				await tick();
+				// Now become visible — nodes are already at snapshot positions
+				isMeasuring = false;
 				await tick();
 				await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 				if (isStale()) return;
 				const previousNodeIds = new Set(snapshotNodes.map((n) => n.id));
 				runAnimation(previousNodeIds);
+			} else {
+				isMeasuring = false;
 			}
 		}
 
