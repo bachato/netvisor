@@ -139,11 +139,11 @@
 	/**
 	 * Returns fitView padding that accounts for overlays (options panel, minimap).
 	 *
-	 * The minimap occupies the bottom-left corner. Rather than padding both
-	 * bottom and left (which wastes space), we check the topology's aspect
-	 * ratio and only pad the direction that conflicts:
-	 * - Tall/vertical topology → pad left (minimap column), not bottom
-	 * - Wide/horizontal topology → pad bottom (minimap row), not left
+	 * The minimap occupies a rectangle in the bottom-left corner. Rather than
+	 * reserving an entire row or column, we simulate fitView with uniform padding,
+	 * project each node into viewport coordinates, and check if any actually
+	 * overlap the minimap region. Only adds padding if real overlap is detected,
+	 * and picks the direction (left or bottom) that requires the smallest shift.
 	 */
 	function getFitViewPadding(): import('@xyflow/system').Padding {
 		const minimapVisible =
@@ -152,13 +152,17 @@
 
 		if (!hasPanel && !minimapVisible) return 0.2;
 
-		let minimapBottom: string | number = 0.2;
-		let minimapLeft: string | number = 0.2;
+		const BASE_PAD = 0.2;
+		let extraBottom: number | string = BASE_PAD;
+		let extraLeft: number | string = BASE_PAD;
 
-		if (minimapVisible) {
-			// Determine topology aspect ratio from current nodes
+		if (minimapVisible && containerElement) {
+			const cw = containerElement.clientWidth;
+			const ch = containerElement.clientHeight;
 			const allNodes = getNodes();
-			if (allNodes.length > 0) {
+
+			if (allNodes.length > 0 && cw > 0 && ch > 0) {
+				// 1. Compute topology bounding box
 				let minX = Infinity,
 					maxX = -Infinity,
 					minY = Infinity,
@@ -173,25 +177,66 @@
 					if (y < minY) minY = y;
 					if (y + h > maxY) maxY = y + h;
 				}
-				const topoWidth = maxX - minX;
-				const topoHeight = maxY - minY;
-				const isVertical = topoHeight > topoWidth;
+				const topoW = maxX - minX || 1;
+				const topoH = maxY - minY || 1;
 
-				if (isVertical) {
-					// Tall topology: minimap blocks left side, don't pad bottom
-					minimapLeft = `${MINIMAP_FITVIEW_LEFT_PX}px`;
-				} else {
-					// Wide topology: minimap blocks bottom, don't pad left
-					minimapBottom = `${MINIMAP_FITVIEW_BOTTOM_PX}px`;
+				// 2. Simulate fitView with uniform base padding
+				const availW = cw * (1 - 2 * BASE_PAD);
+				const availH = ch * (1 - 2 * BASE_PAD);
+				const zoom = Math.min(availW / topoW, availH / topoH);
+
+				// Center offset: maps topology coords → viewport coords
+				const cx = cw / 2 - (minX + topoW / 2) * zoom;
+				const cy = ch / 2 - (minY + topoH / 2) * zoom;
+
+				// 3. Minimap rectangle in viewport coords (with breathing room)
+				const GAP = 8;
+				const mmLeft = MINIMAP_OFFSET_PX - GAP;
+				const mmTop = ch - MINIMAP_OFFSET_PX - MINIMAP_HEIGHT_PX - GAP;
+				const mmRight = MINIMAP_OFFSET_PX + MINIMAP_WIDTH_PX + GAP;
+				const mmBottom = ch - MINIMAP_OFFSET_PX + GAP;
+
+				// 4. Check if any node overlaps the minimap region
+				let hasOverlap = false;
+				let maxNodeRight = 0; // rightmost edge of overlapping nodes (for left shift calc)
+				let maxNodeBottom = 0; // bottommost edge of overlapping nodes (for bottom shift calc)
+
+				for (const n of allNodes) {
+					const nw = n.measured?.width ?? n.width ?? 0;
+					const nh = n.measured?.height ?? n.height ?? 0;
+					const vx = n.position.x * zoom + cx;
+					const vy = n.position.y * zoom + cy;
+					const vr = vx + nw * zoom;
+					const vb = vy + nh * zoom;
+
+					// Rectangle intersection test
+					if (vx < mmRight && vr > mmLeft && vy < mmBottom && vb > mmTop) {
+						hasOverlap = true;
+						if (vr > maxNodeRight) maxNodeRight = vr;
+						if (vb > maxNodeBottom) maxNodeBottom = vb;
+					}
 				}
+
+				// 5. If overlap, compute minimum shift in each direction and pick the smaller
+				if (hasOverlap) {
+					const shiftRight = mmRight - mmLeft + GAP; // push content right past minimap
+					const shiftUp = mmBottom - mmTop + GAP; // push content up past minimap
+
+					if (shiftRight <= shiftUp) {
+						extraLeft = `${MINIMAP_WIDTH_PX + MINIMAP_OFFSET_PX + GAP * 2}px`;
+					} else {
+						extraBottom = `${MINIMAP_HEIGHT_PX + MINIMAP_OFFSET_PX + GAP * 2}px`;
+					}
+				}
+				// No overlap → extraLeft and extraBottom stay at BASE_PAD
 			}
 		}
 
 		return {
-			top: 0.2,
-			right: 0.2,
-			bottom: minimapBottom,
-			left: hasPanel ? `${OPTIONS_PANEL_FITVIEW_PADDING_PX}px` : minimapLeft
+			top: BASE_PAD,
+			right: BASE_PAD,
+			bottom: extraBottom,
+			left: hasPanel ? `${OPTIONS_PANEL_FITVIEW_PADDING_PX}px` : extraLeft
 		};
 	}
 
