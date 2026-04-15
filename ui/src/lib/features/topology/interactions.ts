@@ -744,7 +744,7 @@ export function updateSearchFilter(topology: Topology | undefined, query: string
 		}
 	}
 
-	// Search interfaces -> match element nodes via ipAddressIdToNodes
+	// Search IP addresses -> match element nodes via ipAddressIdToNodes
 	for (const ipAddr of topology.ip_addresses) {
 		const ipMatch = ipAddr.ip_address?.toLowerCase().includes(q) ?? false;
 		const nameMatch = ipAddr.name?.toLowerCase().includes(q) ?? false;

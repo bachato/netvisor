@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Interface } from '$lib/features/hosts/types/base';
+	import type { Interface, IPAddress } from '$lib/features/hosts/types/base';
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import type { Host } from '$lib/features/hosts/types/base';
 	import { getAdminStatusLabels, getOperStatusLabels } from '$lib/features/credentials/types/base';
@@ -34,7 +34,7 @@
 
 	interface Props {
 		iface: Interface;
-		linkedInterface?: Interface | null;
+		linkedIpAddress?: IPAddress | null;
 		linkedSubnet?: Subnet | null;
 		neighborHost?: Host | null;
 		neighborInterface?: Interface | null;
@@ -45,7 +45,7 @@
 
 	let {
 		iface,
-		linkedInterface = null,
+		linkedIpAddress = null,
 		linkedSubnet = null,
 		neighborHost = null,
 		neighborInterface = null,
@@ -100,11 +100,11 @@
 	<InfoRow label={hosts_interfaces_index({ index: iface.if_index })}>{iface.if_index}</InfoRow>
 
 	<InfoRow label={common_ipAddress()}>
-		{#if linkedInterface}
+		{#if linkedIpAddress}
 			<div class="flex flex-wrap items-center gap-1">
 				<EntityTag
-					entityRef={entityRef('IPAddress', linkedInterface.id, linkedInterface)}
-					label={linkedInterface.ip_address}
+					entityRef={entityRef('IPAddress', linkedIpAddress.id, linkedIpAddress)}
+					label={linkedIpAddress.ip_address}
 					icon={entities.getIconComponent('IPAddress')}
 					color={entities.getColorHelper('IPAddress').color}
 				/>
