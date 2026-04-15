@@ -4,13 +4,16 @@
 	import { ServiceDisplay } from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import { HostDisplay } from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
 	import { autoRebuild } from '$lib/features/topology/queries';
-	import { useTopology } from '$lib/features/topology/context';
+	import { useTopology, selectedTopologyId } from '$lib/features/topology/context';
 	import { getTopologyEditState } from '$lib/features/topology/state';
 
 	let { edge, vmServiceId }: { edge: Edge; vmServiceId: string } = $props();
 
-	const { topology: topologyStore, isReadonly } = useTopology();
-	let topology = $derived($topologyStore);
+	const topo = useTopology();
+	let isReadonly = topo.isReadonly;
+	let topology = $derived(
+		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+	);
 
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 

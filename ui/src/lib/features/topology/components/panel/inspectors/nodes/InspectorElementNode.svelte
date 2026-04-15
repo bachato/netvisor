@@ -3,7 +3,7 @@
 	import { autoRebuild, activeView } from '$lib/features/topology/queries';
 	import type { TopologyNode } from '$lib/features/topology/types/base';
 	import { resolveElementNode } from '$lib/features/topology/resolvers';
-	import { useTopology } from '$lib/features/topology/context';
+	import { useTopology, selectedTopologyId } from '$lib/features/topology/context';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '$lib/features/topology/state';
 	import OptionToggle from '../../options/OptionToggle.svelte';
 	import OptionsCard from '../../options/OptionsCard.svelte';
@@ -12,8 +12,11 @@
 
 	let { node }: { node: Node } = $props();
 
-	const { topology: topologyStore, isReadonly } = useTopology();
-	let topology = $derived($topologyStore);
+	const topo = useTopology();
+	let isReadonly = topo.isReadonly;
+	let topology = $derived(
+		topo.fromContext ? $topo.store : topo.query.data?.find((t) => t.id === $selectedTopologyId)
+	);
 
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
