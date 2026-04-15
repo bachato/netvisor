@@ -614,7 +614,7 @@
 			<button
 				onclick={toggleCollapse}
 				class="text-tertiary hover:text-secondary flex w-full items-center rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
-				style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+				style="height: 2rem; padding: 0.375rem 0.75rem;"
 				aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 			>
 				<Menu class="h-5 w-5 flex-shrink-0" />
@@ -645,8 +645,8 @@
 		{/if}
 
 		<!-- Main Navigation -->
-		<nav class="flex-1 overflow-y-auto px-2 py-4">
-			<ul class="space-y-4">
+		<nav class="flex-1 overflow-y-auto px-2 py-2">
+			<ul class="space-y-3">
 				{#each mainNavItems as configItem (configItem.id)}
 					{#if isSection(configItem)}
 						<!-- Section with items -->
@@ -675,11 +675,11 @@
 												class="{baseClasses} {isItemActive(item)
 													? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 													: inactiveButtonClass}"
-												style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+												style="height: 2rem; padding: 0.375rem 0.75rem;"
 												title={collapsed ? item.label : ''}
 											>
 												<span class="relative">
-													<item.icon class="h-5 w-5 flex-shrink-0" />
+													<item.icon class="h-4 w-4 flex-shrink-0" />
 													{#if item.id === 'discovery' && hasActiveSessions}
 														<span
 															class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full"
@@ -688,7 +688,7 @@
 													{/if}
 												</span>
 												{#if !collapsed}
-													<span class="ml-3 truncate">{item.label}</span>
+													<span class="ml-2.5 truncate">{item.label}</span>
 												{/if}
 											</button>
 											<!-- Render children if present -->
@@ -727,12 +727,12 @@
 								(configItem.id === 'settings' && showSettings)
 									? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 									: inactiveButtonClass}"
-								style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+								style="height: 2rem; padding: 0.375rem 0.75rem;"
 								title={collapsed ? configItem.label : ''}
 							>
-								<configItem.icon class="h-5 w-5 flex-shrink-0" />
+								<configItem.icon class="h-4 w-4 flex-shrink-0" />
 								{#if !collapsed}
-									<span class="ml-3 truncate">{configItem.label}</span>
+									<span class="ml-2.5 truncate">{configItem.label}</span>
 								{/if}
 							</button>
 						</li>
@@ -749,13 +749,13 @@
 				<li>
 					<button
 						class="{baseClasses} text-amber-400 hover:bg-amber-500/10"
-						style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+						style="height: 2rem; padding: 0.375rem 0.75rem;"
 						title={collapsed ? common_upgrade() : ''}
 						onclick={() => triggerUpgrade({ source: 'sidebar' })}
 					>
-						<ArrowUpCircle class="h-5 w-5 flex-shrink-0" />
+						<ArrowUpCircle class="h-4 w-4 flex-shrink-0" />
 						{#if !collapsed}
-							<span class="ml-3 truncate">{common_upgrade()}</span>
+							<span class="ml-2.5 truncate">{common_upgrade()}</span>
 						{/if}
 					</button>
 				</li>
@@ -769,7 +769,7 @@
 							(item.id === 'settings' && showSettings)
 								? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 								: inactiveButtonClass}"
-							style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+							style="height: 2rem; padding: 0.375rem 0.75rem;"
 							title={collapsed ? item.label : ''}
 						>
 							<span class="relative">
