@@ -94,6 +94,20 @@
 					<h1 class="text-primary font-semibold">{shareName}</h1>
 				</div>
 				<div class="flex items-center gap-4">
+					{#if showViewSwitcher}
+						<div class="flex items-center gap-2">
+							{#if viewLoading}
+								<LoaderCircle class="text-muted h-4 w-4 animate-spin" />
+							{/if}
+							<SegmentedControl
+								options={viewOptions}
+								selected={currentView}
+								onchange={onViewChange}
+								size="sm"
+								disabled={viewLoading}
+							/>
+						</div>
+					{/if}
 					{#if showExport}
 						<ExportButton onclick={() => (isExportModalOpen = true)} />
 					{/if}
@@ -105,7 +119,7 @@
 				<ReadOnlyInspectorPanel {showMinimap} />
 			{/if}
 
-			{#if showViewSwitcher}
+			{#if showViewSwitcher && !shareName}
 				<div class="view-switcher-overlay">
 					{#if viewLoading}
 						<LoaderCircle class="text-muted h-4 w-4 animate-spin" />
@@ -151,7 +165,7 @@
 <style>
 	.view-switcher-overlay {
 		position: absolute;
-		top: 10px;
+		bottom: 10px;
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 5;
