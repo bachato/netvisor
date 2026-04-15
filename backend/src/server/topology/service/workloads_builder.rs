@@ -435,6 +435,8 @@ impl ViewBuilder for WorkloadsBuilder {
 
         // Map service IDs to their element node IDs in this view.
         // Most services ARE the node (service.id == node.id).
+        // Virtualizer services (Proxmox, Docker) don't have element nodes — they're
+        // represented by the Hypervisor/ContainerRuntime subcontainers from element rules.
         // Services on VMs don't have their own nodes — they're inline on the
         // VM Host element, so map them to the VM's host_id (the element node ID).
         let element_node_ids: HashSet<Uuid> = nodes
@@ -443,6 +445,38 @@ impl ViewBuilder for WorkloadsBuilder {
             .map(|n| n.id)
             .collect();
 
+        // Build virtualizer_service_id → subcontainer_id mapping from
+        // elements that were reassigned to subcontainers by element rules.
+        let mut virtualizer_to_container: HashMap<Uuid, Uuid> = HashMap::new();
+        for node in &nodes {
+            if let NodeType::Element { container_id, .. } = &node.node_type {
+                // VM host element → Hypervisor subcontainer
+                if let Some(host) = host_lookup.get(&node.id)
+                    && let Some(virt_svc_id) = host
+                        .base
+                        .virtualization
+                        .as_ref()
+                        .and_then(|v| v.service_id())
+                {
+                    virtualizer_to_container
+                        .entry(virt_svc_id)
+                        .or_insert(*container_id);
+                }
+                // Container service element → ContainerRuntime subcontainer
+                if let Some(svc) = service_lookup.get(&node.id)
+                    && let Some(virt_svc_id) = svc
+                        .base
+                        .virtualization
+                        .as_ref()
+                        .and_then(|v| v.service_id())
+                {
+                    virtualizer_to_container
+                        .entry(virt_svc_id)
+                        .or_insert(*container_id);
+                }
+            }
+        }
+
         let service_to_node: HashMap<Uuid, Uuid> = ctx
             .services
             .iter()
@@ -450,6 +484,9 @@ impl ViewBuilder for WorkloadsBuilder {
                 if element_node_ids.contains(&s.id) {
                     // Service is its own element node
                     Some((s.id, s.id))
+                } else if let Some(&container_id) = virtualizer_to_container.get(&s.id) {
+                    // Virtualizer service → its subcontainer node
+                    Some((s.id, container_id))
                 } else if let Some(host) = host_lookup.get(&s.base.host_id)
                     && host.base.virtualization.is_some()
                     && element_node_ids.contains(&s.base.host_id)
