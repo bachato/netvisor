@@ -301,6 +301,10 @@
 		const thisGeneration = ++layoutState.layoutGeneration;
 		const isStale = (): boolean => thisGeneration !== layoutState.layoutGeneration;
 
+		// Capture the user-visible nodes before anything modifies them.
+		// Used to animate from current positions after a measurement pass.
+		const snapshotNodes = get(nodes);
+
 		if (!topology || (!topology.edges && !topology.nodes)) return;
 
 		const prep = prepareTopologyData(topology, layoutState, getInfrastructureRuleId);
@@ -422,9 +426,6 @@
 		});
 		aggregatedEdgeOriginals.set(originalsMap);
 
-		// Save pre-render nodes for animation after measurement
-		const preRenderNodes = get(nodes);
-
 		// Render
 		const wantsAnimation =
 			(needsElk || layoutState.animationPending) &&
@@ -482,7 +483,7 @@
 		};
 
 		if (shouldAnimate) {
-			const previousNodeIds = new Set(preRenderNodes.map((n) => n.id));
+			const previousNodeIds = new Set(snapshotNodes.map((n) => n.id));
 			runAnimation(previousNodeIds);
 		} else if (!isMeasuring) {
 			console.log('[ANIM] not animating (normal render)', { gen: thisGeneration });
@@ -519,12 +520,12 @@
 			if (wantsAnimation) {
 				console.log('[ANIM] post-measurement animation trigger');
 				// Restore old positions (visible now that isMeasuring is false)
-				nodes.set(preRenderNodes);
+				nodes.set(snapshotNodes);
 				edges.set(flowEdges);
 				await tick();
 				await new Promise((r) => requestAnimationFrame(r));
 				if (isStale()) return;
-				const previousNodeIds = new Set(preRenderNodes.map((n) => n.id));
+				const previousNodeIds = new Set(snapshotNodes.map((n) => n.id));
 				runAnimation(previousNodeIds);
 			}
 		}
