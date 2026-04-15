@@ -1,45 +1,53 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	export let label: string;
 	export let mono: boolean = false;
+
+	let rowEl: HTMLDivElement;
+	let labelEl: HTMLSpanElement;
+	let valueEl: HTMLSpanElement;
+	let wrapped = $state(false);
+
+	function checkWrap() {
+		if (labelEl && valueEl) {
+			wrapped = valueEl.offsetTop > labelEl.offsetTop;
+		}
+	}
+
+	onMount(() => {
+		checkWrap();
+		const observer = new ResizeObserver(checkWrap);
+		observer.observe(rowEl);
+		return () => observer.disconnect();
+	});
 </script>
 
-<div class="info-row">
-	<span class="info-label">{label}:</span>
-	<span class="info-value" class:font-mono={mono} class:text-xs={mono}>
+<div bind:this={rowEl} class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+	<span bind:this={labelEl} class="text-secondary flex-shrink-0 text-sm">{label}:</span>
+	<span
+		bind:this={valueEl}
+		class="min-w-0 text-sm"
+		class:font-mono={mono}
+		class:text-xs={mono}
+		class:wrapped-value={wrapped}
+		class:inline-value={!wrapped}
+	>
 		<slot />
 	</span>
 </div>
 
 <style>
-	.info-row {
-		container-type: inline-size;
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 2px 8px;
-	}
-
-	.info-label {
-		flex-shrink: 0;
-		font-size: 0.875rem;
-		color: var(--color-text-secondary);
-	}
-
-	.info-value {
-		flex: 1 1 auto;
-		min-width: 0;
+	.inline-value {
 		text-align: right;
-		font-size: 0.875rem;
 		color: var(--color-text-primary);
 	}
 
-	/* Narrow container: value wraps below label with indent marker */
-	@container (max-width: 260px) {
-		.info-value {
-			flex-basis: 100%;
-			text-align: left;
-			border-left: 2px solid var(--color-border);
-			padding-left: 8px;
-		}
+	.wrapped-value {
+		flex-basis: 100%;
+		text-align: left;
+		border-left: 2px solid var(--color-border);
+		padding-left: 8px;
+		color: var(--color-text-primary);
 	}
 </style>
