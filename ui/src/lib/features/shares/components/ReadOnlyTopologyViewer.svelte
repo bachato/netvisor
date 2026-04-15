@@ -34,6 +34,8 @@
 	let shortcutsHelpOpen = false;
 	let baseViewer: BaseTopologyViewer | null = null;
 
+	$: showViewSwitcher = enabledViews.length > 1;
+
 	// Build SegmentedControl options from enabled views
 	$: viewOptions = enabledViews.map((viewId) => ({
 		value: viewId,
@@ -82,32 +84,16 @@
 
 <SvelteFlowProvider>
 	<div class="flex h-full w-full flex-col">
-		{#if shareName || enabledViews.length > 1}
+		{#if shareName}
 			<header
 				class="flex flex-shrink-0 items-center justify-between border-b px-4 py-3"
 				style="border-color: var(--color-border); background: var(--color-bg-elevated)"
 			>
 				<div class="flex items-center gap-3">
-					{#if shareName}
-						<Share2 class="text-info h-8 w-8" />
-						<h1 class="text-primary font-semibold">{shareName}</h1>
-					{/if}
+					<Share2 class="text-info h-8 w-8" />
+					<h1 class="text-primary font-semibold">{shareName}</h1>
 				</div>
 				<div class="flex items-center gap-4">
-					{#if enabledViews.length > 1}
-						<div class="flex items-center gap-2">
-							{#if viewLoading}
-								<LoaderCircle class="text-muted h-4 w-4 animate-spin" />
-							{/if}
-							<SegmentedControl
-								options={viewOptions}
-								selected={currentView}
-								onchange={onViewChange}
-								size="sm"
-								disabled={viewLoading}
-							/>
-						</div>
-					{/if}
 					{#if showExport}
 						<ExportButton onclick={() => (isExportModalOpen = true)} />
 					{/if}
@@ -118,6 +104,22 @@
 			{#if showInspectPanel}
 				<ReadOnlyInspectorPanel {showMinimap} />
 			{/if}
+
+			{#if showViewSwitcher}
+				<div class="view-switcher-overlay">
+					{#if viewLoading}
+						<LoaderCircle class="text-muted h-4 w-4 animate-spin" />
+					{/if}
+					<SegmentedControl
+						options={viewOptions}
+						selected={currentView}
+						onchange={onViewChange}
+						size="sm"
+						disabled={viewLoading}
+					/>
+				</div>
+			{/if}
+
 			<BaseTopologyViewer
 				bind:this={baseViewer}
 				{topology}
@@ -126,6 +128,7 @@
 				{isEmbed}
 				showBranding={true}
 				{showMinimap}
+				sidebarCollapsed={true}
 				onOpenShortcuts={() => (shortcutsHelpOpen = true)}
 				onOpenSearch={() => searchOpen.set(true)}
 			/>
@@ -144,3 +147,16 @@
 		/>
 	{/if}
 </SvelteFlowProvider>
+
+<style>
+	.view-switcher-overlay {
+		position: absolute;
+		top: 10px;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 5;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+</style>

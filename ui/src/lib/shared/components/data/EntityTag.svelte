@@ -76,7 +76,7 @@
 
 {#if isStaticTags}
 	<span class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full">
-		<Tag {icon} {color} disabled={true} {label} {badge} pill={true} />
+		<Tag {icon} {color} {disabled} {label} {badge} pill={true} />
 	</span>
 {:else}
 	<div

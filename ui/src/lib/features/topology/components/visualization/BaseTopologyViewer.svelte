@@ -131,10 +131,19 @@
 	const queryClient = useQueryClient();
 	let containerElement: HTMLDivElement;
 
-	/** Returns fitView padding that accounts for the options panel overlay. */
+	/** Returns fitView padding that accounts for overlays (options panel, minimap). */
 	function getFitViewPadding(): import('@xyflow/system').Padding {
-		if (get(optionsPanelExpanded)) {
-			return { top: 0.2, right: 0.2, bottom: 0.2, left: `${OPTIONS_PANEL_FITVIEW_PADDING_PX}px` };
+		const minimapVisible =
+			showMinimap !== undefined ? showMinimap : get(topologyOptions).local.show_minimap;
+		const hasPanel = get(optionsPanelExpanded);
+
+		if (hasPanel || minimapVisible) {
+			return {
+				top: 0.2,
+				right: 0.2,
+				bottom: minimapVisible ? '200px' : 0.2,
+				left: hasPanel ? `${OPTIONS_PANEL_FITVIEW_PADDING_PX}px` : 0.2
+			};
 		}
 		return 0.2;
 	}
