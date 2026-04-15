@@ -14,6 +14,7 @@
 	import type { ExportFeatures } from '../types/base';
 	import {
 		hydrateStoresFromTopology,
+		optionsPanelExpanded,
 		MINIMAP_WIDTH_PX,
 		MINIMAP_OFFSET_PX
 	} from '$lib/features/topology/queries';
@@ -48,6 +49,10 @@
 		icon: views.getIconComponent(viewId),
 		tooltip: views.getDescription(viewId)
 	}));
+
+	// Collapse the inspector panel by default in share/embed context —
+	// prevents localStorage state from the app leaking into embeds.
+	optionsPanelExpanded.set(false);
 
 	// Hydrate the global activeView + topologyOptions stores so the rendering
 	// pipeline sees the correct view for this shared topology.
