@@ -356,23 +356,10 @@ export function resolveCollapsedAncestor(
 }
 
 /**
- * Compute aggregated edges for collapsed containers.
- *
- * - Resolves each edge endpoint to its nearest collapsed ancestor
- *   (works for elements, subcontainers, and containers at any nesting depth)
- * - Groups edges between the same pair of (resolved) nodes
- * - Returns aggregated edges with count
+ * Build a parent map covering both Element and Container nodes.
+ * Elements map to their container_id/subnet_id, containers map to parent_container_id.
  */
-export function computeCollapsedEdges(
-	edges: TopologyEdge[],
-	collapsed: Set<string>,
-	nodes: TopologyNode[],
-	hiddenEdgeTypes: string[]
-): AggregatedEdge[] {
-	if (collapsed.size === 0) return [];
-
-	// Build a parent map: nodeId → immediate parent container ID
-	// Elements map to their container_id/subnet_id, containers map to parent_container_id
+export function buildFullParentMap(nodes: TopologyNode[]): Map<string, string> {
 	const parentMap = new Map<string, string>();
 	for (const node of nodes) {
 		if (node.node_type === 'Element') {
@@ -389,6 +376,26 @@ export function computeCollapsedEdges(
 			}
 		}
 	}
+	return parentMap;
+}
+
+/**
+ * Compute aggregated edges for collapsed containers.
+ *
+ * - Resolves each edge endpoint to its nearest collapsed ancestor
+ *   (works for elements, subcontainers, and containers at any nesting depth)
+ * - Groups edges between the same pair of (resolved) nodes
+ * - Returns aggregated edges with count
+ */
+export function computeCollapsedEdges(
+	edges: TopologyEdge[],
+	collapsed: Set<string>,
+	nodes: TopologyNode[],
+	hiddenEdgeTypes: string[]
+): AggregatedEdge[] {
+	if (collapsed.size === 0) return [];
+
+	const parentMap = buildFullParentMap(nodes);
 
 	const hiddenSet = new Set(hiddenEdgeTypes);
 

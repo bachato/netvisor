@@ -1247,6 +1247,7 @@
 	"topology_optionsHint": "These settings apply to the entire topology",
 	"topology_removedWarning": "These entities no longer exist in the network and will be removed from this diagram if you rebuild.",
 	"topology_reviewConflicts": "Review Refresh Conflicts",
+	"topology_searchContainerMatches": "{count} found inside",
 	"topology_searchMatchCount": "{current} of {total}",
 	"topology_searchNoMatches": "No matches",
 	"topology_searchPlaceholder": "Search hosts, IPs, services, tags...",

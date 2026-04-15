@@ -4,7 +4,11 @@
 	import Tag from '$lib/shared/components/data/Tag.svelte';
 	import type { ColorStyle, Color } from '$lib/shared/utils/styling';
 	import type { IconComponent } from '$lib/shared/utils/types';
-	import { topology_elementCount, topology_ungroupedCount } from '$lib/paraglide/messages';
+	import {
+		topology_elementCount,
+		topology_ungroupedCount,
+		topology_searchContainerMatches
+	} from '$lib/paraglide/messages';
 
 	export type SubgroupRow = {
 		logoComponent: IconComponent | null;
@@ -31,7 +35,9 @@
 		subgroupSummaries = [],
 		tagHoverRingStyle = '',
 		hideCount = false,
-		countOnly = false
+		countOnly = false,
+		searchMatchCount = 0,
+		searchHighlightRingStyle = ''
 	}: {
 		isCollapsed: boolean;
 		isCollapsible: boolean;
@@ -49,6 +55,8 @@
 		tagHoverRingStyle?: string;
 		hideCount?: boolean;
 		countOnly?: boolean;
+		searchMatchCount?: number;
+		searchHighlightRingStyle?: string;
 	} = $props();
 
 	let subgroupTotal = $derived(subgroupSummaries.reduce((sum, s) => sum + s.childCount, 0));
@@ -204,7 +212,7 @@
 	<div
 		bind:this={inlineContainerEl}
 		class="nopan nodrag flex cursor-pointer items-center gap-1 overflow-hidden rounded-lg border border-dashed border-gray-300 px-3 py-2 dark:border-gray-600"
-		style="background: var(--color-topology-subgroup-bg);"
+		style="background: var(--color-topology-subgroup-bg); transition: box-shadow 0.15s ease-in-out; {searchHighlightRingStyle}"
 		role="button"
 		tabindex={-1}
 		onclick={onToggleCollapse}
@@ -241,8 +249,20 @@
 		{:else if hiddenLabelCount > 0}
 			<Tag label="+{hiddenLabelCount} tags" color="Gray" />
 		{/if}
+		{#if searchMatchCount > 0}
+			<span
+				data-fixed
+				class="ml-auto rounded-full bg-blue-500/20 px-1.5 py-0.5 text-xs text-blue-400"
+			>
+				{topology_searchContainerMatches({ count: String(searchMatchCount) })}
+			</span>
+		{/if}
 		{#if !hideCount}
-			<span data-fixed class="text-tertiary ml-auto whitespace-nowrap text-xs">
+			<span
+				data-fixed
+				class="text-tertiary whitespace-nowrap text-xs"
+				class:ml-auto={searchMatchCount === 0}
+			>
 				{#if countOnly}
 					({childCount})
 				{:else}
@@ -261,6 +281,11 @@
 			<span class="text-secondary text-base font-medium underline">
 				{topology_elementCount({ count: childCount, label: elementLabel })}
 			</span>
+			{#if searchMatchCount > 0}
+				<span class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+					{topology_searchContainerMatches({ count: String(searchMatchCount) })}
+				</span>
+			{/if}
 			{#if ungroupedCount > 0 && subgroupSummaries.length > 0}
 				<span class="text-tertiary text-xs">
 					{topology_ungroupedCount({ count: ungroupedCount, label: elementLabel })}

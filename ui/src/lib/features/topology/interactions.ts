@@ -23,6 +23,7 @@ import {
 	getIPAddressesForSubnetFromCache
 } from '../ip-addresses/queries';
 import { getSubnetByIdFromCache } from '../subnets/queries';
+import { buildFullParentMap, resolveCollapsedAncestor } from './collapse';
 
 // Shared stores for hover state across all component instances
 export const groupHoverState = writable<Map<string, boolean>>(new Map());
@@ -40,6 +41,10 @@ export const searchHiddenNodeIds = writable<Set<string>>(new Set());
 export const searchMatchNodeIds = writable<string[]>([]);
 export const searchActiveIndex = writable<number>(0);
 export const searchOpen = writable<boolean>(false);
+// Map: collapsed container ID → matched element IDs inside it
+export const searchMatchContainerMap = writable<Map<string, string[]>>(new Map());
+// Navigation-ready list: element IDs for visible matches, container IDs for collapsed matches
+export const searchNavigableNodeIds = writable<string[]>([]);
 
 // Special sentinel value for "Untagged" pseudo-tag
 export const UNTAGGED_SENTINEL = '__untagged__';
@@ -821,6 +826,50 @@ export function updateSearchFilter(topology: Topology | undefined, query: string
 }
 
 /**
+ * Recompute navigation list by resolving matches against collapse state.
+ * Replaces element IDs inside collapsed containers with their outermost collapsed ancestor.
+ */
+export function recomputeSearchNavigation(
+	matchNodeIds: string[],
+	collapsed: Set<string>,
+	nodes: TopologyNode[]
+) {
+	if (matchNodeIds.length === 0 || collapsed.size === 0) {
+		searchMatchContainerMap.set(new Map());
+		searchNavigableNodeIds.set(matchNodeIds);
+		return;
+	}
+
+	const parentMap = buildFullParentMap(nodes);
+	const containerMap = new Map<string, string[]>();
+	const navigable: string[] = [];
+	const seenContainers = new Set<string>();
+
+	for (const id of matchNodeIds) {
+		const ancestor = resolveCollapsedAncestor(id, collapsed, parentMap);
+		if (ancestor) {
+			if (!containerMap.has(ancestor)) containerMap.set(ancestor, []);
+			containerMap.get(ancestor)!.push(id);
+			if (!seenContainers.has(ancestor)) {
+				seenContainers.add(ancestor);
+				navigable.push(ancestor);
+			}
+		} else {
+			navigable.push(id);
+		}
+	}
+
+	searchMatchContainerMap.set(containerMap);
+	searchNavigableNodeIds.set(navigable);
+
+	// Clamp active index if navigable list shrank
+	const currentIndex = get(searchActiveIndex);
+	if (navigable.length > 0 && currentIndex >= navigable.length) {
+		searchActiveIndex.set(navigable.length - 1);
+	}
+}
+
+/**
  * Clear all search state.
  */
 export function clearSearch() {
@@ -828,4 +877,6 @@ export function clearSearch() {
 	searchMatchNodeIds.set([]);
 	searchActiveIndex.set(0);
 	searchOpen.set(false);
+	searchMatchContainerMap.set(new Map());
+	searchNavigableNodeIds.set([]);
 }

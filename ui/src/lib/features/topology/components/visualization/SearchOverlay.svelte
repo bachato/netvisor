@@ -6,9 +6,12 @@
 		searchMatchNodeIds,
 		searchActiveIndex,
 		searchOpen,
+		searchNavigableNodeIds,
 		updateSearchFilter,
+		recomputeSearchNavigation,
 		clearSearch
 	} from '../../interactions';
+	import { collapsedContainers } from '../../collapse';
 	import { useTopology, selectedTopologyId } from '../../context';
 	import {
 		topology_searchPlaceholder,
@@ -38,6 +41,16 @@
 		activeIndex = value;
 	});
 
+	let navigableIds = $state<string[]>(get(searchNavigableNodeIds));
+	searchNavigableNodeIds.subscribe((value) => {
+		navigableIds = value;
+	});
+
+	let collapsedNodes = $state(get(collapsedContainers));
+	collapsedContainers.subscribe((value) => {
+		collapsedNodes = value;
+	});
+
 	let isOpen = $state(get(searchOpen));
 	searchOpen.subscribe((value) => {
 		isOpen = value;
@@ -54,12 +67,17 @@
 		updateSearchFilter(topology, query);
 	});
 
+	// Recompute navigable IDs when matches or collapse state change
+	$effect(() => {
+		recomputeSearchNavigation(matchNodeIds, collapsedNodes, topology?.nodes ?? []);
+	});
+
 	function focusMatch(index: number) {
-		if (matchNodeIds.length === 0) return;
+		if (navigableIds.length === 0) return;
 		const wrappedIndex =
-			((index % matchNodeIds.length) + matchNodeIds.length) % matchNodeIds.length;
+			((index % navigableIds.length) + navigableIds.length) % navigableIds.length;
 		searchActiveIndex.set(wrappedIndex);
-		const nodeId = matchNodeIds[wrappedIndex];
+		const nodeId = navigableIds[wrappedIndex];
 		fitView({ nodes: [{ id: nodeId }], padding: 0.5, duration: 300 });
 	}
 
@@ -108,21 +126,21 @@
 
 			{#if query}
 				<span class="text-tertiary whitespace-nowrap text-xs">
-					{#if matchNodeIds.length === 0}
+					{#if navigableIds.length === 0}
 						{topology_searchNoMatches()}
 					{:else}
 						{topology_searchMatchCount({
 							current: String(activeIndex + 1),
-							total: String(matchNodeIds.length)
+							total: String(navigableIds.length)
 						})}
 					{/if}
 				</span>
 
 				<div class="flex items-center gap-0.5">
-					<button class="btn-icon p-0.5" onclick={prevMatch} disabled={matchNodeIds.length === 0}>
+					<button class="btn-icon p-0.5" onclick={prevMatch} disabled={navigableIds.length === 0}>
 						<ChevronUp class="h-4 w-4" />
 					</button>
-					<button class="btn-icon p-0.5" onclick={nextMatch} disabled={matchNodeIds.length === 0}>
+					<button class="btn-icon p-0.5" onclick={nextMatch} disabled={navigableIds.length === 0}>
 						<ChevronDown class="h-4 w-4" />
 					</button>
 				</div>
