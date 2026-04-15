@@ -106,10 +106,11 @@ export async function resolveNodeSizes(
 			elementNodeSizesCount: elementNodeSizes.size,
 			liveNodesCount: liveNodes.length
 		});
-		// If any containers are missing from cache, fall through to full measurement
-		if (cacheMisses > 0) {
-			elementNodeSizes.clear();
-		}
+		// Don't clear elementNodeSizes on cacheMisses — ELK falls back to
+		// metadata collapsed_size for containers not in elementNodeSizes.
+		// This avoids a full DOM measurement pass (isMeasuring=true) which
+		// blocks collapse animation. After the first render, cacheCollapsedSizes
+		// measures actual DOM sizes and triggers a re-render if needed.
 	}
 
 	// Full DOM measurement pass if no cache

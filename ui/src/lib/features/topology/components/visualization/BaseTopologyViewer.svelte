@@ -301,17 +301,6 @@
 		const thisGeneration = ++layoutState.layoutGeneration;
 		const isStale = (): boolean => thisGeneration !== layoutState.layoutGeneration;
 
-		// Capture the user-visible nodes before anything modifies them.
-		// Used to animate from current positions after a measurement pass.
-		const snapshotNodes = get(nodes);
-		console.log('[ANIM] snapshotNodes captured', {
-			count: snapshotNodes.length,
-			sample: snapshotNodes.slice(0, 3).map((n) => ({
-				id: n.id.substring(0, 8),
-				pos: n.position
-			}))
-		});
-
 		if (!topology || (!topology.edges && !topology.nodes)) return;
 
 		const prep = prepareTopologyData(topology, layoutState, getInfrastructureRuleId);
@@ -329,7 +318,6 @@
 			isNewStructure: prep.isNewStructure,
 			viewChanged: prep.viewChanged,
 			topologyChanged: prep.topologyChanged,
-			animationPending: layoutState.animationPending,
 			lastRenderedTopoKey: layoutState.lastRenderedTopoKey.substring(0, 20),
 			sessionStructureKey: layoutState.sessionStructureKey.substring(0, 20),
 			collapsedCount: collapsed.size
@@ -434,28 +422,22 @@
 		aggregatedEdgeOriginals.set(originalsMap);
 
 		// Render
-		const wantsAnimation =
-			(needsElk || layoutState.animationPending) &&
-			layoutState.lastRenderedTopoKey !== '' &&
-			!prep.viewChanged;
-		const shouldAnimate = wantsAnimation && !isMeasuring;
+		const shouldAnimate =
+			needsElk && !isMeasuring && layoutState.lastRenderedTopoKey !== '' && !prep.viewChanged;
 		console.log('[ANIM] shouldAnimate decision', {
 			gen: thisGeneration,
 			shouldAnimate,
-			wantsAnimation,
 			needsElk,
-			animationPending: layoutState.animationPending,
 			isMeasuring,
 			lastRenderedTopoKey: layoutState.lastRenderedTopoKey !== '',
 			viewChanged: prep.viewChanged
 		});
-		layoutState.animationPending = false;
 
-		// Animate: transition existing nodes to new positions, then fade in new nodes
-		const runAnimation = (fromNodeIds: Set<string>) => {
+		if (shouldAnimate) {
 			console.log('[ANIM] >>> ANIMATING <<<', { gen: thisGeneration });
 			animatingCollapse = true;
-			const phase1Nodes = allNodes.filter((n) => fromNodeIds.has(n.id));
+			const previousNodeIds = new Set(get(nodes).map((n) => n.id));
+			const phase1Nodes = allNodes.filter((n) => previousNodeIds.has(n.id));
 			nodes.set(phase1Nodes);
 			edges.set(flowEdges);
 
@@ -466,7 +448,7 @@
 				// New nodes get opacity 0 initially, then fade in.
 				animatingCollapse = false;
 				const newNodeIds = new Set(
-					fullNodes.filter((n) => !fromNodeIds.has(n.id)).map((n) => n.id)
+					fullNodes.filter((n) => !previousNodeIds.has(n.id)).map((n) => n.id)
 				);
 				if (newNodeIds.size > 0) {
 					// Set new nodes with opacity 0 via style
@@ -487,69 +469,10 @@
 					edges.set(fullEdges);
 				}
 			}, 350);
-		};
-
-		if (shouldAnimate) {
-			const previousNodeIds = new Set(snapshotNodes.map((n) => n.id));
-			runAnimation(previousNodeIds);
 		} else if (!isMeasuring) {
 			console.log('[ANIM] not animating (normal render)', { gen: thisGeneration });
 			nodes.set(allNodes);
 			edges.set(flowEdges);
-		} else if (wantsAnimation) {
-			// Measurement pass set nodes to (0,0) while hidden. Restore the
-			// user's pre-collapse positions, become visible, then animate.
-			console.log('[ANIM] post-measurement animate', { gen: thisGeneration });
-
-			// 1. Restore expanded positions while still hidden
-			nodes.set(snapshotNodes);
-			edges.set(flowEdges);
-			await tick();
-
-			// 2. Become visible — nodes are at expanded positions
-			isMeasuring = false;
-
-			// 3. Add transition class (no position change yet)
-			animatingCollapse = true;
-			await tick();
-			// Double rAF: ensure expanded positions + transition class are painted
-			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-			if (isStale()) {
-				animatingCollapse = false;
-				return;
-			}
-
-			// 4. Now set collapsed positions — CSS transition animates
-			console.log('[ANIM] >>> ANIMATING <<<', { gen: thisGeneration });
-			const previousNodeIds = new Set(snapshotNodes.map((n) => n.id));
-			const phase1Nodes = allNodes.filter((n) => previousNodeIds.has(n.id));
-			nodes.set(phase1Nodes);
-			edges.set(flowEdges);
-
-			const fullNodes = [...allNodes];
-			const fullEdges = [...flowEdges];
-			setTimeout(() => {
-				animatingCollapse = false;
-				const newNodeIds = new Set(
-					fullNodes.filter((n) => !previousNodeIds.has(n.id)).map((n) => n.id)
-				);
-				if (newNodeIds.size > 0) {
-					const fadingNodes = fullNodes.map((n) =>
-						newNodeIds.has(n.id)
-							? { ...n, style: 'opacity: 0; transition: opacity 0.3s ease-in-out;' }
-							: n
-					);
-					nodes.set(fadingNodes);
-					edges.set(fullEdges);
-					requestAnimationFrame(() => {
-						nodes.set(fullNodes);
-						edges.set(fullEdges);
-					});
-				} else {
-					nodes.set(fullNodes);
-					edges.set(fullEdges);
-				}
-			}, 350);
 		} else {
 			console.log('[ANIM] measurement render', { gen: thisGeneration });
 			edges.set([]);
@@ -595,12 +518,8 @@
 				}
 				layoutState.lastRenderedTopoKey = prep.topoKey;
 				layoutState.lastRenderedView = prep.currentView;
-				if (!prep.viewChanged) {
-					layoutState.animationPending = true;
-				}
 				console.log('[ANIM] >>> RECURSIVE CALL <<<', {
 					gen: thisGeneration,
-					animationPending: layoutState.animationPending,
 					sessionStructureKey: layoutState.sessionStructureKey,
 					lastRenderedTopoKey: layoutState.lastRenderedTopoKey.substring(0, 20)
 				});

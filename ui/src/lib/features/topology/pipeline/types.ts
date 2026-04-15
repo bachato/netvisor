@@ -27,7 +27,6 @@ export interface LayoutState {
 	lastRenderedView: string;
 	edgeHandles: Map<string, EdgeHandles>;
 	layoutGeneration: number;
-	animationPending: boolean;
 }
 
 /**
@@ -88,7 +87,6 @@ export function createInitialState(): LayoutState {
 		lastRenderedTopoKey: '',
 		lastRenderedView: '',
 		edgeHandles: new Map(),
-		layoutGeneration: 0,
-		animationPending: false
+		layoutGeneration: 0
 	};
 }
