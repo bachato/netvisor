@@ -1,8 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import type { Snippet } from 'svelte';
 
-	export let label: string;
-	export let mono: boolean = false;
+	let {
+		label,
+		mono = false,
+		children
+	}: {
+		label: string;
+		mono?: boolean;
+		children: Snippet;
+	} = $props();
 
 	let rowEl: HTMLDivElement;
 	let labelEl: HTMLSpanElement;
@@ -33,7 +41,7 @@
 		class:wrapped-value={wrapped}
 		class:inline-value={!wrapped}
 	>
-		<slot />
+		{@render children()}
 	</span>
 </div>
 
