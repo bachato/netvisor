@@ -34,6 +34,14 @@ export async function resolveNodeSizes(
 	const expandCachedSizes =
 		needsElkForExpand && !isNewStructure ? state.viewSizeCache.get(viewCacheKey) : undefined;
 
+	console.log('[ANIM:measure] resolveNodeSizes entry', {
+		isViewTransition,
+		needsElkForExpand,
+		isNewStructure,
+		containerSizeCacheSize: state.containerSizeCache.size,
+		deferCollapse: prep.deferCollapse
+	});
+
 	if (isViewTransition && cachedSizes) {
 		for (const node of visibleNodes) {
 			const cached = cachedSizes.get(node.id);
@@ -94,13 +102,20 @@ export async function resolveNodeSizes(
 		}
 
 		// If any containers are missing from cache, fall through to full measurement
+		console.log('[ANIM:measure] containerSizeCache path', {
+			cacheMisses,
+			elementNodeSizesCount: elementNodeSizes.size,
+			liveNodesCount: liveNodes.length
+		});
 		if (cacheMisses > 0) {
 			elementNodeSizes.clear();
 		}
 	}
 
 	// Full DOM measurement pass if no cache
+	console.log('[ANIM:measure] pre-measurement check', { elementNodeSizesCount: elementNodeSizes.size, willMeasure: elementNodeSizes.size === 0 });
 	if (elementNodeSizes.size === 0) {
+		console.log('[ANIM:measure] >>> FULL DOM MEASUREMENT <<<');
 		callbacks.setMeasuring(true);
 		callbacks.setEdges([]);
 		callbacks.setNodes(callbacks.buildMeasureNodes());
