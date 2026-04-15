@@ -29,6 +29,11 @@
 		topologyOptions,
 		optionsPanelExpanded,
 		OPTIONS_PANEL_FITVIEW_PADDING_PX,
+		MINIMAP_WIDTH_PX,
+		MINIMAP_HEIGHT_PX,
+		MINIMAP_OFFSET_PX,
+		MINIMAP_FITVIEW_BOTTOM_PX,
+		MINIMAP_FITVIEW_LEFT_PX,
 		aggregatedEdgeOriginals,
 		getInfrastructureRuleId
 	} from '../../queries';
@@ -141,8 +146,12 @@
 			return {
 				top: 0.2,
 				right: 0.2,
-				bottom: minimapVisible ? '200px' : 0.2,
-				left: hasPanel ? `${OPTIONS_PANEL_FITVIEW_PADDING_PX}px` : 0.2
+				bottom: minimapVisible ? `${MINIMAP_FITVIEW_BOTTOM_PX}px` : 0.2,
+				left: hasPanel
+					? `${OPTIONS_PANEL_FITVIEW_PADDING_PX}px`
+					: minimapVisible
+						? `${MINIMAP_FITVIEW_LEFT_PX}px`
+						: 0.2
 			};
 		}
 		return 0.2;
@@ -749,6 +758,8 @@
 		{#if (showMinimap !== undefined ? showMinimap : $topologyOptions.local.show_minimap) && !$isExporting}
 			<MiniMap
 				position="bottom-left"
+				width={MINIMAP_WIDTH_PX}
+				height={MINIMAP_HEIGHT_PX}
 				bgColor={themeStore.resolvedTheme === 'dark' ? '#1f2937' : '#ffffff'}
 				nodeColor={themeStore.resolvedTheme === 'dark' ? '#6b7280' : '#9ca3af'}
 				maskColor={themeStore.resolvedTheme === 'dark'

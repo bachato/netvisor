@@ -5,7 +5,7 @@
 	import { ChevronLeft, ChevronRight, Info } from 'lucide-svelte';
 	import InspectorNode from '$lib/features/topology/components/panel/inspectors/InspectorNode.svelte';
 	import InspectorEdge from '$lib/features/topology/components/panel/inspectors/InspectorEdge.svelte';
-	import { optionsPanelExpanded } from '$lib/features/topology/queries';
+	import { optionsPanelExpanded, MINIMAP_FITVIEW_BOTTOM_PX } from '$lib/features/topology/queries';
 
 	interface Props {
 		showMinimap?: boolean;
@@ -60,7 +60,7 @@
 			<!-- Content -->
 			<div
 				class="overflow-y-auto p-3"
-				style="max-height: calc(100vh - {showMinimap ? 350 : 180}px);"
+				style="max-height: calc(100vh - {showMinimap ? MINIMAP_FITVIEW_BOTTOM_PX + 20 : 180}px);"
 			>
 				{#if $selectedNode}
 					{#key $selectedNode.id}

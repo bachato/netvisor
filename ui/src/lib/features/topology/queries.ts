@@ -765,6 +765,15 @@ export const OPTIONS_PANEL_LEFT_OFFSET_PX = 16;
 export const OPTIONS_PANEL_FITVIEW_PADDING_PX =
 	OPTIONS_PANEL_WIDTH_PX + OPTIONS_PANEL_LEFT_OFFSET_PX + 16;
 
+/** Minimap dimensions. Used by MiniMap component and minimap-aware fitView. */
+export const MINIMAP_WIDTH_PX = 200;
+export const MINIMAP_HEIGHT_PX = 150;
+export const MINIMAP_OFFSET_PX = 5;
+
+/** Total bottom-left padding for fitView when minimap is visible. */
+export const MINIMAP_FITVIEW_BOTTOM_PX = MINIMAP_HEIGHT_PX + MINIMAP_OFFSET_PX + 16;
+export const MINIMAP_FITVIEW_LEFT_PX = MINIMAP_WIDTH_PX + MINIMAP_OFFSET_PX + 16;
+
 /** Lookup map from aggregated edge ID to its original edges. Populated by BaseTopologyViewer during collapse. */
 export const aggregatedEdgeOriginals = writable<Map<string, TopologyEdge[]>>(new Map());
 
