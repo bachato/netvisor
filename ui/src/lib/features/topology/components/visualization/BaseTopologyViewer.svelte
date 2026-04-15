@@ -523,7 +523,7 @@
 				nodes.set(snapshotNodes);
 				edges.set(flowEdges);
 				await tick();
-				await new Promise((r) => requestAnimationFrame(r));
+				await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 				if (isStale()) return;
 				const previousNodeIds = new Set(snapshotNodes.map((n) => n.id));
 				runAnimation(previousNodeIds);
