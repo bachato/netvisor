@@ -13,7 +13,7 @@
 	import { edgeTypes } from '$lib/shared/stores/metadata';
 	import { createColorHelper, type Color } from '$lib/shared/utils/styling';
 	import type { TopologyEdge } from '../../types/base';
-	import { isExporting, hoveredEdgeType, toggleBundleExpanded } from '../../interactions';
+	import { isExporting, hoveredEdgeType } from '../../interactions';
 	import { isDashedEdge } from '../../layout/edge-classification';
 
 	let {
@@ -44,7 +44,6 @@
 	// Bundle detection
 	const anyEdgeData = $derived(data as Record<string, unknown> | undefined);
 	let isBundle = $derived(!!anyEdgeData?.isBundle);
-	let bundleCount = $derived((anyEdgeData?.bundleCount as number) ?? 0);
 	let bundleId = $derived((anyEdgeData?.bundleId as string) ?? '');
 	let bundleStrokeWidth = $derived((anyEdgeData?.bundleStrokeWidth as number) ?? 2);
 	let bundleIsOverlay = $derived(!!anyEdgeData?.bundleIsOverlay);
@@ -368,29 +367,7 @@
 			class={useMultiColorDash ? 'dashed-overlay' : ''}
 		/>
 
-		{#if isBundle}
-			<!-- Bundle count badge -->
-			<EdgeLabel x={labelX} y={labelY} style="background: none; pointer-events: none;">
-				<div
-					class="nopan"
-					style="background: {edgeColorHelper.rgb}; color: white; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 10px; cursor: pointer; pointer-events: auto; opacity: {labelOpacity}; transition: opacity 0.2s ease-in-out; user-select: none;"
-					onclick={(e) => {
-						e.stopPropagation();
-						toggleBundleExpanded(bundleId);
-					}}
-					onkeydown={(e) => {
-						if (e.key === 'Enter' || e.key === ' ') {
-							e.preventDefault();
-							toggleBundleExpanded(bundleId);
-						}
-					}}
-					role="button"
-					tabindex="0"
-				>
-					&times;{bundleCount}
-				</div>
-			</EdgeLabel>
-		{:else if label}
+		{#if !isBundle && label}
 			<EdgeLabel
 				x={labelX + labelOffsetX}
 				y={labelY + labelOffsetY}

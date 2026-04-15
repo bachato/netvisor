@@ -10,7 +10,6 @@ import { edgeTypes } from '$lib/shared/stores/metadata';
 import { getEdgeDisplayState, searchHiddenNodeIds, tagHiddenNodeIds } from '../interactions';
 import { isDisabledEdge, isDashedEdge } from '../layout/edge-classification';
 import { bundleEdges } from '../layout/edge-bundling';
-import { topology_connectionsCount } from '$lib/paraglide/messages';
 
 export interface CreateFlowEdgeParams {
 	edge: TopologyEdge;
@@ -163,7 +162,7 @@ export function buildFlowEdges(params: BuildFlowEdgesParams): BuildFlowEdgesResu
 				sourceHandle: (handles?.sourceHandle ?? 'Bottom').toString(),
 				targetHandle: (handles?.targetHandle ?? 'Top').toString(),
 				type: 'custom',
-				label: agg.count > 1 ? topology_connectionsCount({ count: agg.count }) : undefined,
+				label: undefined,
 				data: {
 					...agg.originalEdges[0],
 					source: agg.source,
