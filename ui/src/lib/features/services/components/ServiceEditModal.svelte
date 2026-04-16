@@ -9,6 +9,7 @@
 	import type { Service } from '../types/base';
 	import ServiceConfigPanel from '$lib/features/hosts/components/HostEditModal/Services/ServiceConfigPanel.svelte';
 	import type { Host, HostFormData } from '$lib/features/hosts/types/base';
+	import { useIPAddressesQuery } from '$lib/features/ip-addresses/queries';
 	import { usePortsQuery } from '$lib/features/ports/queries';
 	import { useServicesCacheQuery } from '$lib/features/services/queries';
 	import {
@@ -20,7 +21,7 @@
 	} from '$lib/paraglide/messages';
 
 	// TanStack Query hooks to get child entities for hydrating host form data
-	const ipAddressesQuery = useInterfacesQuery();
+	const ipAddressesQuery = useIPAddressesQuery();
 	const portsQuery = usePortsQuery();
 	const servicesQuery = useServicesCacheQuery();
 	let ipAddressesData = $derived(ipAddressesQuery.data ?? []);

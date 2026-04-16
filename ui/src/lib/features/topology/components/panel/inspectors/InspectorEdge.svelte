@@ -28,18 +28,18 @@
 	{:else if edgeData.edge_type === 'HubAndSpoke' || edgeData.edge_type === 'RequestPath'}
 		<InspectorEdgeDependency
 			dependencyId={edgeData.dependency_id}
-			sourceBindingId={edgeData.source_binding_id}
-			targetBindingId={edgeData.target_binding_id}
+			sourceId={edgeData.source_id}
+			targetId={edgeData.target_id}
 			{view}
 		/>
 	{:else if edgeData.edge_type === 'SameHost'}
 		<InspectorEdgeIPAddress {edge} hostId={edgeData.host_id} {view} />
 	{:else if edgeData.edge_type === 'Hypervisor'}
-		<InspectorEdgeHypervisor {edge} vmServiceId={edgeData.vm_service_id} />
+		<InspectorEdgeHypervisor {edge} hypervisorServiceId={edgeData.hypervisor_service_id} />
 	{:else if edgeData.edge_type === 'ContainerRuntime'}
 		<InspectorEdgeContainerRuntime
 			{edge}
-			containerizingServiceId={edgeData.containerizing_service_id}
+			serviceId={edgeData.service_id}
 		/>
 	{:else if edgeData.edge_type === 'PhysicalLink'}
 		<InspectorEdgePhysicalLink

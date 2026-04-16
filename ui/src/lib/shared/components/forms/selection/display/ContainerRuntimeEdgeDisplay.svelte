@@ -8,9 +8,9 @@
 	> = {
 		getId: (edge) => edge.id,
 		getLabel: (edge, context) => {
-			if (!context?.topology || !('containerizing_service_id' in edge)) return 'Container Runtime';
+			if (!context?.topology || !('service_id' in edge)) return 'Container Runtime';
 			// Find containerized services (services whose virtualization points to this containerizer)
-			const containerizingId = edge.containerizing_service_id;
+			const containerizingId = edge.service_id;
 			const containerized = context.topology.services.filter(
 				(s) =>
 					s.virtualization &&
@@ -22,9 +22,9 @@
 			return `${containerized.length} containerized services`;
 		},
 		getDescription: (edge, context) => {
-			if (!context?.topology || !('containerizing_service_id' in edge)) return '';
+			if (!context?.topology || !('service_id' in edge)) return '';
 			const containerizer = context.topology.services.find(
-				(s) => s.id === edge.containerizing_service_id
+				(s) => s.id === edge.service_id
 			);
 			const host =
 				'host_id' in edge ? context.topology.hosts.find((h) => h.id === edge.host_id) : null;
@@ -36,9 +36,9 @@
 		getIcon: () => edgeTypes.getIconComponent('ContainerRuntime'),
 		getIconColor: () => edgeTypes.getColorHelper('ContainerRuntime').icon,
 		getTags: (edge, context) => {
-			if (!context?.topology || !('containerizing_service_id' in edge)) return [];
+			if (!context?.topology || !('service_id' in edge)) return [];
 			const containerizer = context.topology.services.find(
-				(s) => s.id === edge.containerizing_service_id
+				(s) => s.id === edge.service_id
 			);
 			if (!containerizer) return [];
 			const defName = serviceDefinitions.getName(containerizer.service_definition);

@@ -67,11 +67,11 @@
 		const typeEdges = edgesByType.get('ContainerRuntime');
 		if (!typeEdges || !topology) return null;
 
-		// Group by containerizing_service_id
+		// Group by service_id
 		const byContainerizer = new Map<string, TopologyEdge[]>();
 		for (const edge of typeEdges) {
-			if (!('containerizing_service_id' in edge)) continue;
-			const id = edge.containerizing_service_id as string;
+			if (!('service_id' in edge)) continue;
+			const id = edge.service_id as string;
 			const existing = byContainerizer.get(id);
 			if (existing) existing.push(edge);
 			else byContainerizer.set(id, [edge]);

@@ -7,7 +7,7 @@
 	import { useTopology, selectedTopologyId } from '$lib/features/topology/context';
 	import { getTopologyEditState } from '$lib/features/topology/state';
 
-	let { edge, vmServiceId }: { edge: Edge; vmServiceId: string } = $props();
+	let { edge, hypervisorServiceId }: { edge: Edge; hypervisorServiceId: string } = $props();
 
 	const topo = useTopology();
 	const topoStore = topo.fromContext ? topo.store : null;
@@ -18,7 +18,7 @@
 
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
-	let vmService = $derived(topology ? topology.services.find((s) => s.id == vmServiceId) : null);
+	let vmService = $derived(topology ? topology.services.find((s) => s.id == hypervisorServiceId) : null);
 	let hypervisorHost = $derived(topology ? topology.hosts.find((h) => h.id == edge.target) : null);
 </script>
 

@@ -387,7 +387,7 @@
 	}
 
 	.text-warning {
-		@apply text-yellow-600 dark:text-yellow-400;
+		@apply text-yellow-700 dark:text-yellow-400;
 	}
 
 	.text-danger {

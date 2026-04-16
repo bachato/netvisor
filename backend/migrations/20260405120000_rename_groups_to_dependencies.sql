@@ -42,3 +42,21 @@ ALTER TABLE dependencies ADD COLUMN member_type TEXT NOT NULL DEFAULT 'Bindings'
 -- 10. Rename topology columns
 ALTER TABLE topologies RENAME COLUMN groups TO dependencies;
 ALTER TABLE topologies RENAME COLUMN removed_groups TO removed_dependencies;
+
+-- 11. Migrate serialized JSONB in topologies.dependencies
+--     group_type → dependency_type, binding_ids → members (tagged enum)
+UPDATE topologies SET dependencies = (
+    SELECT COALESCE(jsonb_agg(
+        (dep - 'group_type' - 'binding_ids')
+        || jsonb_build_object('dependency_type', dep->>'group_type')
+        || jsonb_build_object('members',
+            CASE
+                WHEN jsonb_array_length(COALESCE(dep->'binding_ids', '[]'::jsonb)) > 0
+                THEN jsonb_build_object('type', 'Bindings', 'binding_ids', dep->'binding_ids')
+                ELSE jsonb_build_object('type', 'Services', 'service_ids', '[]'::jsonb)
+            END
+        )
+    ), '[]'::jsonb)
+    FROM jsonb_array_elements(dependencies) AS dep
+)
+WHERE dependencies IS NOT NULL AND dependencies != '[]'::jsonb;
