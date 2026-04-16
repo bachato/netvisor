@@ -589,6 +589,7 @@
 	"dependencies_noServicesYet": "No services in this dependency yet.",
 	"dependencies_selectPort": "Select a port...",
 	"dependencies_selectService": "Select a service to add...",
+	"dependencies_selectServicesHelp": "One entry per selection. Pick which service when more than one is available.",
 	"dependencies_servicesHelp": "Select and order the services in this dependency",
 	"dependencies_servicesInfoBody": "Select the services involved and arrange them in order. Use \"With ports\" if you want the topology to show which specific ports traffic flows through.",
 	"dependencies_servicesInfoTitle": "Add services to this dependency",
