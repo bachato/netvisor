@@ -175,6 +175,11 @@
 			upgradePickerServices.every((s) => !!upgradeBindingSelections.get(s.serviceId))
 	);
 
+	function handleUpgradeBindingSelections(next: Record<string, string | null>) {
+		upgradeBindingSelections.clear();
+		for (const [k, v] of Object.entries(next)) upgradeBindingSelections.set(k, v);
+	}
+
 	function cancelUpgrade() {
 		showUpgradeForm = false;
 		upgradeBindingSelections.clear();
@@ -280,7 +285,7 @@
 						<BindingPicker
 							{topology}
 							services={upgradePickerServices}
-							selections={upgradeBindingSelections}
+							onChange={handleUpgradeBindingSelections}
 							disabled={isMutationPending}
 						/>
 						<div class="flex gap-2">

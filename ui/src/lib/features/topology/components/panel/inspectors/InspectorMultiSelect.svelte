@@ -40,6 +40,11 @@
 	import BindingPicker, { type BindingPickerService } from './shared/BindingPicker.svelte';
 	import TargetServicePicker from './shared/TargetServicePicker.svelte';
 	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
+	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
+	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
+	import { createForm } from '@tanstack/svelte-form';
+	import { submitForm } from '$lib/shared/components/forms/form-context';
+	import { required, max } from '$lib/shared/components/forms/validators';
 	import type { Node, Edge } from '@xyflow/svelte';
 	import type { Color } from '$lib/shared/utils/styling';
 	import { AVAILABLE_COLORS, createColorHelper } from '$lib/shared/utils/styling';
@@ -306,13 +311,15 @@
 		return nodes.map((n) => (n.data as TopologyNode)?.header ?? '').filter(Boolean);
 	}
 
-	let groupType: DependencyType = $state('RequestPath');
-	let lastAutoName = $state('');
-	let dependencyName = $state('');
+	// Edge styling lives outside the TanStack form (same pattern as DependencyEditModal):
+	// EdgeStyleForm manages it via bindable callbacks.
 	let dependencyColor: Color = $state(
 		AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)]
 	);
 	let dependencyEdgeStyle: EdgeStyle = $state('Bezier');
+
+	// Initial default for dependency type — forwarded to the form's defaults.
+	const DEFAULT_DEP_TYPE: DependencyType = 'RequestPath';
 
 	// Preview toggle with localStorage persistence
 	let showPreview = $state(true);
@@ -351,7 +358,7 @@
 		members: [],
 		created_at: '',
 		updated_at: '',
-		dependency_type: groupType,
+		dependency_type: DEFAULT_DEP_TYPE,
 		source: { type: 'Manual' as const },
 		network_id: '',
 		tags: []
@@ -365,29 +372,25 @@
 		topology ? resolveDependencyTargets(nodes, topology) : []
 	);
 
-	// Picked service IDs per ambiguous target (keyed by target.elementId).
-	// Hosts: empty until user picks. IP addresses: auto-select if exactly one candidate.
-	const pickedServicesByTarget = new SvelteMap<string, SvelteSet<string>>();
+	// L3 (or any view marking Bindings required) forces the binding toggle on.
+	let bindingsRequired = $derived(inspectorConfig.dependency_creation === 'Bindings');
 
-	$effect(() => {
-		const valid = new Set(depTargets.filter((t) => t.kind !== 'service').map((t) => t.elementId));
-		for (const key of pickedServicesByTarget.keys()) {
-			if (!valid.has(key)) pickedServicesByTarget.delete(key);
-		}
-		for (const target of depTargets) {
-			if (target.kind === 'service') continue;
-			if (!pickedServicesByTarget.has(target.elementId)) {
-				const seed = new SvelteSet<string>();
-				if (target.candidateServiceIds.length === 1) {
-					seed.add(target.candidateServiceIds[0]);
-				}
-				pickedServicesByTarget.set(target.elementId, seed);
-			}
-		}
-	});
+	// Picks emitted by the child pickers — kept alongside the form (same pattern as
+	// DependencyEditModal), since the dynamic per-target / per-service shape doesn't
+	// fit TanStack Form's static defaultValues.
+	const pickedServicesByTarget = new SvelteMap<string, string[]>();
+	const bindingSelections = new SvelteMap<string, string | null>();
 
-	// The final list of services to include as dependency members, with optional IP scope
-	// (used to filter candidate bindings when the user adds binding details).
+	function handleTargetPicks(elementId: string, picks: string[]) {
+		pickedServicesByTarget.set(elementId, picks);
+	}
+
+	function handleBindingSelections(next: Record<string, string | null>) {
+		bindingSelections.clear();
+		for (const [k, v] of Object.entries(next)) bindingSelections.set(k, v);
+	}
+
+	// The final list of services to include as dependency members, with optional IP scope.
 	interface ResolvedService {
 		serviceId: string;
 		serviceName: string;
@@ -435,16 +438,6 @@
 		})()
 	);
 
-	// L3 (or any view marking Bindings required) forces the binding toggle on.
-	let bindingsRequired = $derived(inspectorConfig.dependency_creation === 'Bindings');
-	let wantBindings = $state(false);
-	$effect(() => {
-		if (bindingsRequired) wantBindings = true;
-	});
-
-	// Per-service binding picks, keyed by serviceId, shared with the BindingPicker child.
-	const bindingSelections = new SvelteMap<string, string | null>();
-
 	let bindingPickerServices = $derived<BindingPickerService[]>(
 		resolvedServices.map((r) => ({
 			serviceId: r.serviceId,
@@ -455,54 +448,97 @@
 		}))
 	);
 
+	let hasUnresolvedTargets = $derived(
+		depTargets.some(
+			(t) => t.kind !== 'service' && (pickedServicesByTarget.get(t.elementId)?.length ?? 0) === 0
+		)
+	);
+
 	let allServicesHaveBindings = $derived(
 		resolvedServices.length > 0 &&
 			resolvedServices.every((r) => !!bindingSelections.get(r.serviceId))
 	);
 
-	// The pending targets that the user still needs to resolve (hosts/IPs with no picks).
-	let hasUnresolvedTargets = $derived(
-		depTargets.some(
-			(t) => t.kind !== 'service' && (pickedServicesByTarget.get(t.elementId)?.size ?? 0) === 0
-		)
-	);
+	// TanStack Form — static fields only (dynamic pickers stay outside, matching DEM).
+	interface DepFormValues {
+		name: string;
+		dependency_type: DependencyType;
+		wantBindings: boolean;
+	}
+	const form = createForm(() => ({
+		defaultValues: {
+			name: '',
+			dependency_type: DEFAULT_DEP_TYPE,
+			wantBindings: false
+		} as DepFormValues,
+		onSubmit: async ({ value }) => {
+			if (!topology) return;
+
+			const newDependency = createEmptyDependencyFormData(topology.network_id);
+			newDependency.name = value.name.trim();
+			newDependency.dependency_type = value.dependency_type;
+			newDependency.color = dependencyColor;
+			newDependency.edge_style = dependencyEdgeStyle;
+
+			if (value.wantBindings) {
+				const bindingIds: string[] = [];
+				for (const r of resolvedServices) {
+					const id = bindingSelections.get(r.serviceId);
+					if (!id) return;
+					bindingIds.push(id);
+				}
+				newDependency.members = { type: 'Bindings', binding_ids: bindingIds };
+			} else {
+				newDependency.members = {
+					type: 'Services',
+					service_ids: resolvedServices.map((r) => r.serviceId)
+				};
+			}
+
+			const created = await createDependencyMutation.mutateAsync(newDependency);
+			previewEdges.set([]);
+			onGroupCreated?.(created.id);
+		}
+	}));
+
+	// Keep the view-driven "bindings required" flag in sync with the form.
+	$effect(() => {
+		if (bindingsRequired && form.state.values.wantBindings !== true) {
+			form.setFieldValue('wantBindings', true);
+		}
+	});
+
+	// Bubble dependency_type changes to the parent (tutorial checklist watches this).
+	$effect(() => {
+		const depType = form.state.values.dependency_type;
+		onDependencyTypeChange?.(depType);
+	});
+
+	let lastAutoName = $state('');
+	// Auto-generate dependency name when type or selection changes, unless the user edited it.
+	$effect(() => {
+		const depType = form.state.values.dependency_type;
+		const newName = generateDependencyName(depType, getNodeNames());
+		const current = form.state.values.name;
+		if (current === '' || current === lastAutoName) {
+			form.setFieldValue('name', newName);
+		}
+		lastAutoName = newName;
+	});
 
 	let canCreate = $derived.by(() => {
-		if (!dependencyName.trim()) return false;
+		const v = form.state.values;
+		if (!v.name.trim()) return false;
 		if (createDependencyMutation.isPending) return false;
 		if (resolvedServices.length < 2) return false;
 		if (hasUnresolvedTargets) return false;
-		if (wantBindings && !allServicesHaveBindings) return false;
+		if (v.wantBindings && !allServicesHaveBindings) return false;
 		return true;
 	});
 
 	async function confirmGroupCreation() {
-		if (!topology || !canCreate) return;
-
-		const newDependency = createEmptyDependencyFormData(topology.network_id);
-		newDependency.name = dependencyName.trim();
-		newDependency.dependency_type = groupType;
-		newDependency.color = dependencyColor;
-		newDependency.edge_style = dependencyEdgeStyle;
-
-		if (wantBindings) {
-			const bindingIds: string[] = [];
-			for (const r of resolvedServices) {
-				const bindingId = bindingSelections.get(r.serviceId);
-				if (!bindingId) return; // guarded by canCreate; safety bail
-				bindingIds.push(bindingId);
-			}
-			newDependency.members = { type: 'Bindings', binding_ids: bindingIds };
-		} else {
-			newDependency.members = {
-				type: 'Services',
-				service_ids: resolvedServices.map((r) => r.serviceId)
-			};
-		}
-
-		const created = await createDependencyMutation.mutateAsync(newDependency);
-		previewEdges.set([]);
-		onGroupCreated?.(created.id);
+		if (!canCreate) return;
+		await submitForm(form);
 	}
 
 	// Get absolute position for a node (accounting for parent offset)
@@ -545,8 +581,9 @@
 
 		const colorHelper = createColorHelper(dependencyColor);
 		const preview: Edge[] = [];
+		const depType = form.state.values.dependency_type;
 
-		if (groupType === 'RequestPath') {
+		if (depType === 'RequestPath') {
 			for (let i = 0; i < nodes.length - 1; i++) {
 				const source = nodes[i];
 				const target = nodes[i + 1];
@@ -600,20 +637,11 @@
 		previewEdges.set(preview);
 	}
 
-	// Auto-generate dependency name when type or selection changes
-	$effect(() => {
-		const newName = generateDependencyName(groupType, getNodeNames());
-		if (dependencyName === '' || dependencyName === lastAutoName) {
-			dependencyName = newName;
-		}
-		lastAutoName = newName;
-	});
-
 	// Start preview edges on mount and update when dependencies change
 	$effect(() => {
 		if (showPreview) {
 			void dependencyColor;
-			void groupType;
+			void form.state.values.dependency_type;
 			void dependencyEdgeStyle;
 			void nodes;
 			updatePreviewEdges();
@@ -721,42 +749,53 @@
 
 				<div class="card card-static space-y-3 p-3">
 					<!-- Dependency type toggle + preview button -->
-					<div class="flex items-center gap-2">
-						<SegmentedControl
-							options={['RequestPath', 'HubAndSpoke'].map((type) => ({
-								value: type,
-								label: '',
-								icon: dependencyTypes.getIconComponent(type)
-							}))}
-							selected={groupType}
-							onchange={(v) => {
-								groupType = v as DependencyType;
-								onDependencyTypeChange?.(groupType);
-							}}
-						/>
-						<span class="text-secondary text-xs">{dependencyTypes.getName(groupType)}</span>
-						<button
-							class="btn-secondary ml-auto flex items-center gap-1 p-1.5 text-xs"
-							onclick={togglePreview}
-							title={showPreview ? 'Hide preview' : 'Show preview'}
-						>
-							{#if showPreview}
-								<Eye class="h-3.5 w-3.5" />
-							{:else}
-								<EyeOff class="h-3.5 w-3.5" />
-							{/if}
-							{topology_multiSelectPreviewEdge()}
-						</button>
-					</div>
+					<form.Field name="dependency_type">
+						{#snippet children(field)}
+							<div class="flex items-center gap-2">
+								<SegmentedControl
+									options={['RequestPath', 'HubAndSpoke'].map((type) => ({
+										value: type,
+										label: '',
+										icon: dependencyTypes.getIconComponent(type)
+									}))}
+									selected={field.state.value}
+									onchange={(v) => field.handleChange(v as DependencyType)}
+								/>
+								<span class="text-secondary text-xs"
+									>{dependencyTypes.getName(field.state.value)}</span
+								>
+								<button
+									class="btn-secondary ml-auto flex items-center gap-1 p-1.5 text-xs"
+									onclick={togglePreview}
+									title={showPreview ? 'Hide preview' : 'Show preview'}
+								>
+									{#if showPreview}
+										<Eye class="h-3.5 w-3.5" />
+									{:else}
+										<EyeOff class="h-3.5 w-3.5" />
+									{/if}
+									{topology_multiSelectPreviewEdge()}
+								</button>
+							</div>
+						{/snippet}
+					</form.Field>
 
 					<!-- Name input -->
-					<input
-						type="text"
-						bind:value={dependencyName}
-						placeholder={topology_multiSelectGroupName()}
-						class="h-8 w-full rounded px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-						style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
-					/>
+					<form.Field
+						name="name"
+						validators={{
+							onBlur: ({ value }: { value: string }) => required(value) || max(100)(value)
+						}}
+					>
+						{#snippet children(field)}
+							<TextInput
+								label=""
+								id="dependency-name"
+								{field}
+								placeholder={topology_multiSelectGroupName()}
+							/>
+						{/snippet}
+					</form.Field>
 
 					<!-- Edge style & color -->
 					<EdgeStyleForm
@@ -772,10 +811,11 @@
 					{#if topology}
 						{#each depTargets as target (target.elementId)}
 							{#if target.kind !== 'service'}
-								{@const picks = pickedServicesByTarget.get(target.elementId)}
-								{#if picks}
-									<TargetServicePicker {topology} {target} selectedServiceIds={picks} />
-								{/if}
+								<TargetServicePicker
+									{topology}
+									{target}
+									onChange={(picks) => handleTargetPicks(target.elementId, picks)}
+								/>
 							{/if}
 						{/each}
 					{/if}
@@ -783,21 +823,20 @@
 					<!-- Add binding details toggle + per-service binding picker -->
 					{#if !isTutorial}
 						<div class="space-y-2">
-							<label class="flex cursor-pointer items-center gap-2 text-xs">
-								<input
-									type="checkbox"
-									checked={wantBindings}
-									disabled={bindingsRequired}
-									onchange={(e) => (wantBindings = (e.target as HTMLInputElement).checked)}
-								/>
-								<span class="text-secondary font-medium">{dependencies_addBindingDetails()}</span>
-							</label>
-							<span class="text-tertiary block text-xs">
-								{bindingsRequired
-									? dependencies_serviceBindingsInfo()
-									: dependencies_addBindingDetailsHelp()}
-							</span>
-							{#if wantBindings && topology && resolvedServices.length > 0}
+							<form.Field name="wantBindings">
+								{#snippet children(field)}
+									<Checkbox
+										label={dependencies_addBindingDetails()}
+										id="dependency-add-bindings"
+										{field}
+										disabled={bindingsRequired}
+										helpText={bindingsRequired
+											? dependencies_serviceBindingsInfo()
+											: dependencies_addBindingDetailsHelp()}
+									/>
+								{/snippet}
+							</form.Field>
+							{#if form.state.values.wantBindings && topology && resolvedServices.length > 0}
 								<div class="space-y-2">
 									<span class="text-secondary block text-xs font-medium"
 										>{dependencies_serviceBindings()}</span
@@ -805,7 +844,7 @@
 									<BindingPicker
 										{topology}
 										services={bindingPickerServices}
-										selections={bindingSelections}
+										onChange={handleBindingSelections}
 									/>
 								</div>
 							{/if}

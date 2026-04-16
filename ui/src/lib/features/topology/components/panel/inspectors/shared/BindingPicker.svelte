@@ -56,45 +56,61 @@
 </script>
 
 <script lang="ts">
-	import {
-		topology_multiSelectNoBindings,
-		topology_multiSelectPickBinding
-	} from '$lib/paraglide/messages';
+	import { createForm } from '@tanstack/svelte-form';
+	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
+	import { topology_multiSelectNoBindings, common_bindings } from '$lib/paraglide/messages';
 
 	let {
 		topology,
 		services,
-		selections,
+		onChange,
 		disabled = false
 	}: {
 		topology: Topology;
 		services: BindingPickerService[];
-		selections: Map<string, string | null>;
+		/** Emits the full map of serviceId → bindingId (null when not yet picked). */
+		onChange: (selections: Record<string, string | null>) => void;
 		disabled?: boolean;
 	} = $props();
 
-	function optionsFor(service: BindingPickerService): BindingOption[] {
-		return buildBindingOptions(topology, service.serviceId, service.ipAddressIdFilter);
+	let serviceOptions = $derived(
+		services.map((s) => ({
+			service: s,
+			options: buildBindingOptions(topology, s.serviceId, s.ipAddressIdFilter)
+		}))
+	);
+
+	function initialValues(): Record<string, string> {
+		const out: Record<string, string> = {};
+		for (const { service, options } of serviceOptions) {
+			out[service.serviceId] = options.length === 1 ? options[0].id : '';
+		}
+		return out;
 	}
 
-	// Reactively initialise / prune the selections map to match current services.
+	const form = createForm(() => ({
+		defaultValues: initialValues(),
+		onSubmit: () => {}
+	}));
+
 	$effect(() => {
-		const wanted = new Set(services.map((s) => s.serviceId));
-		for (const key of selections.keys()) {
-			if (!wanted.has(key)) selections.delete(key);
-		}
-		for (const service of services) {
-			if (!selections.has(service.serviceId)) {
-				const opts = optionsFor(service);
-				selections.set(service.serviceId, opts.length === 1 ? opts[0].id : null);
-			}
-		}
+		const keyList = services.map((s) => s.serviceId).join('|');
+		void keyList;
+		form.reset(initialValues());
+	});
+
+	$effect(() => {
+		const values = form.state.values;
+		const out: Record<string, string | null> = {};
+		for (const s of services) out[s.serviceId] = values[s.serviceId] || null;
+		onChange(out);
 	});
 </script>
 
 <div class="space-y-2">
-	{#each services as service (service.serviceId)}
-		{@const options = optionsFor(service)}
+	{#each serviceOptions as entry (entry.service.serviceId)}
+		{@const service = entry.service}
+		{@const options = entry.options}
 		<div class="card card-static space-y-1 p-2">
 			<div class="text-primary truncate text-xs font-medium">
 				{service.serviceName}
@@ -111,21 +127,21 @@
 					{options[0].label}
 				</div>
 			{:else}
-				<select
-					class="h-auto min-h-6 w-full rounded px-1 text-xs"
-					style="border: 1px solid var(--color-border-input); background: var(--color-bg-input); color: var(--color-text-primary)"
-					value={selections.get(service.serviceId) ?? ''}
-					{disabled}
-					onchange={(e) => {
-						const target = e.target as HTMLSelectElement;
-						selections.set(service.serviceId, target.value || null);
-					}}
-				>
-					<option value="">{topology_multiSelectPickBinding()}</option>
-					{#each options as option (option.id)}
-						<option value={option.id}>{option.label}</option>
-					{/each}
-				</select>
+				<form.Field name={service.serviceId}>
+					{#snippet children(field)}
+						<SelectInput
+							label=""
+							id="binding-{service.serviceId}"
+							{field}
+							{disabled}
+							required
+							options={[
+								{ value: '', label: common_bindings(), disabled: true },
+								...options.map((o) => ({ value: o.id, label: o.label }))
+							]}
+						/>
+					{/snippet}
+				</form.Field>
 			{/if}
 		</div>
 	{/each}
