@@ -13,7 +13,7 @@
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 
-	let { edge, vmServiceId }: { edge: Edge; vmServiceId: string } = $props();
+	let { edge, hypervisorServiceId }: { edge: Edge; hypervisorServiceId: string } = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
@@ -27,7 +27,7 @@
 	let isReadonly = $derived(!!topologyContext);
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
-	let vmService = $derived(topology ? topology.services.find((s) => s.id == vmServiceId) : null);
+	let vmService = $derived(topology ? topology.services.find((s) => s.id == hypervisorServiceId) : null);
 	let hypervisorHost = $derived(topology ? topology.hosts.find((h) => h.id == edge.target) : null);
 </script>
 

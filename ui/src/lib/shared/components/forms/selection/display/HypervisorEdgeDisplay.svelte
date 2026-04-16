@@ -5,13 +5,13 @@
 	export const HypervisorEdgeDisplay: EntityDisplayComponent<TopologyEdge, EdgeDisplayContext> = {
 		getId: (edge) => edge.id,
 		getLabel: (edge, context) => {
-			if (!context?.topology || !('vm_service_id' in edge)) return 'Hypervisor';
-			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
+			if (!context?.topology || !('hypervisor_service_id' in edge)) return 'Hypervisor';
+			const vmService = context.topology.services.find((s) => s.id === edge.hypervisor_service_id);
 			return vmService?.name ?? 'Unknown VM';
 		},
 		getDescription: (edge, context) => {
-			if (!context?.topology || !('vm_service_id' in edge)) return '';
-			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
+			if (!context?.topology || !('hypervisor_service_id' in edge)) return '';
+			const vmService = context.topology.services.find((s) => s.id === edge.hypervisor_service_id);
 			if (!vmService) return '';
 			// Find the hypervisor host (the host running the VM service)
 			const hypervisorHost = context.topology.hosts.find((h) => h.id === vmService.host_id);
@@ -22,16 +22,16 @@
 			return parts.join(' · ');
 		},
 		getIcon: (edge, context) => {
-			if (!context?.topology || !('vm_service_id' in edge))
+			if (!context?.topology || !('hypervisor_service_id' in edge))
 				return edgeTypes.getIconComponent('Hypervisor');
-			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
+			const vmService = context.topology.services.find((s) => s.id === edge.hypervisor_service_id);
 			if (vmService) return serviceDefinitions.getIconComponent(vmService.service_definition);
 			return edgeTypes.getIconComponent('Hypervisor');
 		},
 		getIconColor: (edge, context) => {
-			if (!context?.topology || !('vm_service_id' in edge))
+			if (!context?.topology || !('hypervisor_service_id' in edge))
 				return edgeTypes.getColorHelper('Hypervisor').icon;
-			const vmService = context.topology.services.find((s) => s.id === edge.vm_service_id);
+			const vmService = context.topology.services.find((s) => s.id === edge.hypervisor_service_id);
 			if (vmService) return serviceDefinitions.getColorHelper(vmService.service_definition).icon;
 			return edgeTypes.getColorHelper('Hypervisor').icon;
 		}

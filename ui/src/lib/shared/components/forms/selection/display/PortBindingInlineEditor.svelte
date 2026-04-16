@@ -7,6 +7,7 @@
 	import type { PortBinding, Service } from '$lib/features/services/types/base';
 	import { formatPort } from '$lib/shared/utils/formatting';
 	import InlineDanger from '$lib/shared/components/feedback/InlineDanger.svelte';
+	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 
 	// TanStack Query hooks
 	const servicesQuery = useServicesCacheQuery();
@@ -220,11 +221,7 @@
 		<div class="flex gap-3">
 			{#if host.ip_addresses && host.ip_addresses.length === 0}
 				<div class="flex-1">
-					<div
-						class="rounded border border-yellow-600 bg-yellow-900/20 px-2 py-1 text-xs text-warning"
-					>
-						No IP addresses configured on host
-					</div>
+					<InlineWarning title="" body="No IP addresses configured on host" />
 				</div>
 			{:else if host.ip_addresses.length > 0}
 				<div class="flex-1">

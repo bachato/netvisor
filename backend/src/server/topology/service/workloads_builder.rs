@@ -214,7 +214,7 @@ impl ViewBuilder for WorkloadsBuilder {
 
         let virtualizer_titles = Self::build_virtualizer_titles(ctx);
 
-        apply_element_rules_with_titles(
+        let element_rule_result = apply_element_rules_with_titles(
             &mut nodes,
             &grouping.element_rules,
             |node| {
@@ -277,6 +277,34 @@ impl ViewBuilder for WorkloadsBuilder {
             },
             Some(&virtualizer_titles),
         );
+
+        // Build redirect map: elements inside will_accept_edges containers → container
+        let will_accept_edges_containers: HashSet<Uuid> = nodes
+            .iter()
+            .filter_map(|n| {
+                if let NodeType::Container {
+                    will_accept_edges: true,
+                    ..
+                } = &n.node_type
+                {
+                    Some(n.id)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        let edge_redirect: HashMap<Uuid, Uuid> = nodes
+            .iter()
+            .filter_map(|n| {
+                if let NodeType::Element { container_id, .. } = &n.node_type {
+                    if will_accept_edges_containers.contains(container_id) {
+                        return Some((n.id, *container_id));
+                    }
+                }
+                None
+            })
+            .collect();
 
         // --- Phase 5: Remove host containers with no workload elements ---
         // After element rules may have created subcontainers and reassigned elements,
@@ -443,12 +471,12 @@ impl ViewBuilder for WorkloadsBuilder {
             .map(|n| n.id)
             .collect();
 
-        let service_to_node: HashMap<Uuid, Uuid> = ctx
+        let mut service_to_node: HashMap<Uuid, Uuid> = ctx
             .services
             .iter()
             .filter_map(|s| {
                 if element_node_ids.contains(&s.id) {
-                    // Service is its own element node
+                    // Service is its own element node (may be redirected below)
                     Some((s.id, s.id))
                 } else if let Some(host) = host_lookup.get(&s.base.host_id)
                     && host.base.virtualization.is_some()
@@ -461,6 +489,18 @@ impl ViewBuilder for WorkloadsBuilder {
                 }
             })
             .collect();
+
+        // Part A: Redirect elements inside will_accept_edges containers to the container
+        for (_service_id, node_id) in service_to_node.iter_mut() {
+            if let Some(&container_id) = edge_redirect.get(node_id) {
+                *node_id = container_id;
+            }
+        }
+
+        // Part B: Map entities that produced will_accept_edges containers (e.g. Docker daemon)
+        for (entity_id, container_id) in &element_rule_result.edge_accepting_entities {
+            service_to_node.entry(*entity_id).or_insert(*container_id);
+        }
 
         for dep in ctx.dependencies {
             let service_ids: Vec<Uuid> = match &dep.base.members {
@@ -495,8 +535,8 @@ impl ViewBuilder for WorkloadsBuilder {
                             target: window[1],
                             edge_type: EdgeType::RequestPath {
                                 dependency_id: dep.id,
-                                source_binding_id: Uuid::nil(),
-                                target_binding_id: Uuid::nil(),
+                                source_id: Uuid::nil(),
+                                target_id: Uuid::nil(),
                             },
                             label: Some(dep.base.name.clone()),
                             source_handle: EdgeHandle::Bottom,
@@ -515,8 +555,8 @@ impl ViewBuilder for WorkloadsBuilder {
                                 target: spoke_id,
                                 edge_type: EdgeType::HubAndSpoke {
                                     dependency_id: dep.id,
-                                    source_binding_id: Uuid::nil(),
-                                    target_binding_id: Uuid::nil(),
+                                    source_id: Uuid::nil(),
+                                    target_id: Uuid::nil(),
                                 },
                                 label: Some(dep.base.name.clone()),
                                 source_handle: EdgeHandle::Bottom,

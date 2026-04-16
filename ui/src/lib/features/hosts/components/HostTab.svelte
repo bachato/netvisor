@@ -224,6 +224,7 @@
 					type: 'string',
 					filterable: true,
 					groupable: true,
+					filterOptions: networksData.map((n) => n.name),
 					getValue: (item) =>
 						networksData.find((n) => n.id == item.network_id)?.name || common_unknownNetwork()
 				},

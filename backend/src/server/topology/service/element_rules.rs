@@ -34,6 +34,19 @@ pub struct ElementMatchData {
     pub oper_status: Option<IfOperStatus>,
 }
 
+impl ElementRule {
+    /// Returns the entity UUID used as the grouping key for this rule, if any.
+    /// Used to build a mapping from entity IDs to their `will_accept_edges` subcontainers.
+    pub fn grouping_entity_id(&self, data: &ElementMatchData) -> Option<Uuid> {
+        match self {
+            ElementRule::ByHypervisor | ElementRule::ByContainerRuntime => {
+                data.virtualizer_service_id
+            }
+            _ => None,
+        }
+    }
+}
+
 /// Apply element rules to nodes, creating nested subcontainers within each parent container.
 ///
 /// `resolve_element` maps an Element node to its matchable data. Returns `None` for nodes
@@ -43,12 +56,20 @@ pub struct ElementMatchData {
 /// - Application: resolves via node.id (= service.id) → service's category and tags
 ///
 /// First-match-wins: nodes claimed by an earlier rule are not reassigned.
+/// Return type for element rule application.
+/// `edge_accepting_entities` maps entity IDs (e.g. virtualizer service IDs) to the
+/// `will_accept_edges` subcontainer node IDs they produced. Edge builders use this to
+/// route edges for non-element entities (like a Docker daemon) to their subcontainer.
+pub struct ElementRuleResult {
+    pub edge_accepting_entities: HashMap<Uuid, Uuid>,
+}
+
 pub fn apply_element_rules(
     nodes: &mut Vec<Node>,
     element_rules: &[IdentifiedRule<ElementRule>],
     resolve_element: impl Fn(&Node) -> Option<ElementMatchData>,
-) {
-    apply_element_rules_with_titles(nodes, element_rules, resolve_element, None);
+) -> ElementRuleResult {
+    apply_element_rules_with_titles(nodes, element_rules, resolve_element, None)
 }
 
 /// Apply element rules with optional virtualizer title mapping.
@@ -58,9 +79,11 @@ pub fn apply_element_rules_with_titles(
     element_rules: &[IdentifiedRule<ElementRule>],
     resolve_element: impl Fn(&Node) -> Option<ElementMatchData>,
     virtualizer_titles: Option<&HashMap<Uuid, String>>,
-) {
+) -> ElementRuleResult {
     if element_rules.is_empty() {
-        return;
+        return ElementRuleResult {
+            edge_accepting_entities: HashMap::new(),
+        };
     }
 
     // Collect element nodes grouped by their current parent container
@@ -86,6 +109,8 @@ pub fn apply_element_rules_with_titles(
     let mut new_containers: Vec<Node> = Vec::new();
     // Collect reassignments: node_id → new container_id
     let mut reassignments: HashMap<Uuid, Uuid> = HashMap::new();
+    // Entity IDs → will_accept_edges container IDs (for edge routing)
+    let mut edge_accepting_entities: HashMap<Uuid, Uuid> = HashMap::new();
 
     for IdentifiedRule { id: rule_id, rule } in element_rules {
         match rule {
@@ -119,15 +144,16 @@ pub fn apply_element_rules_with_titles(
                         continue;
                     }
 
-                    // Group by virtualizer_service_id
-                    let mut by_virtualizer: HashMap<Option<Uuid>, Vec<Uuid>> = HashMap::new();
+                    // Group by grouping entity ID (virtualizer service for ByHypervisor/ByContainerRuntime)
+                    let mut by_grouping_entity: HashMap<Option<Uuid>, Vec<Uuid>> = HashMap::new();
                     for id in &unclaimed {
-                        let virt_id = match_data.get(id).and_then(|d| d.virtualizer_service_id);
-                        by_virtualizer.entry(virt_id).or_default().push(*id);
+                        let entity_id =
+                            match_data.get(id).and_then(|d| rule.grouping_entity_id(d));
+                        by_grouping_entity.entry(entity_id).or_default().push(*id);
                     }
 
-                    for (virt_host_id, ids) in by_virtualizer {
-                        let Some(vid) = virt_host_id else {
+                    for (grouping_entity_id, ids) in by_grouping_entity {
+                        let Some(vid) = grouping_entity_id else {
                             continue;
                         };
 
@@ -154,6 +180,10 @@ pub fn apply_element_rules_with_titles(
                                 .as_ref()
                                 .and_then(|t| t.get(&vid).cloned()),
                         });
+
+                        if rule.will_accept_edges() {
+                            edge_accepting_entities.insert(vid, group_id);
+                        }
 
                         for id in &ids {
                             reassignments.insert(*id, group_id);
@@ -482,6 +512,10 @@ pub fn apply_element_rules_with_titles(
     }
 
     nodes.extend(new_containers);
+
+    ElementRuleResult {
+        edge_accepting_entities,
+    }
 }
 
 #[cfg(test)]

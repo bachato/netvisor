@@ -708,19 +708,25 @@ export function hydrateStoresFromTopology(topology: Topology, isInitial = true):
 		if (isInitial) {
 			const request = { ...opts.request };
 
-			// Enrich ByServiceCategory with use-case-aware irrelevant categories
-			const useCase = getOrgUseCase();
-			const irrelevant = getIrrelevantCategories(useCase);
+			// Auto-populate infra rule categories if empty (new topology or migration).
+			// Only targets is_infra_rule rules with no categories — preserves user edits.
 			const elementRules = [...(request.element_rules ?? [])];
 			for (let i = 0; i < elementRules.length; i++) {
 				const rule = elementRules[i].rule;
-				if (typeof rule === 'object' && 'ByServiceCategory' in rule) {
+				if (
+					typeof rule === 'object' &&
+					'ByServiceCategory' in rule &&
+					rule.ByServiceCategory.is_infra_rule &&
+					(!rule.ByServiceCategory.categories ||
+						rule.ByServiceCategory.categories.length === 0)
+				) {
+					const useCase = getOrgUseCase();
 					elementRules[i] = {
 						...elementRules[i],
 						rule: {
 							ByServiceCategory: {
 								...rule.ByServiceCategory,
-								categories: irrelevant,
+								categories: getIrrelevantCategories(useCase),
 								title: common_infrastructure()
 							}
 						}

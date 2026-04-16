@@ -2963,14 +2963,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-14T15:54:43.561923Z",
-             *       "id": "61db2cd8-1c33-4af5-a65d-bcc77b01bb49",
+             *       "created_at": "2026-04-14T17:51:45.726704Z",
+             *       "id": "9d845145-b0f2-4ee2-acd4-2af204b35f7b",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-14T15:54:43.561923Z"
+             *       "updated_at": "2026-04-14T17:51:45.726704Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3257,14 +3257,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-14T15:54:43.549077Z",
-             *               "id": "6b1328ac-2edc-4278-83bc-fdaaa33b8c79",
+             *               "created_at": "2026-04-14T17:51:45.705980Z",
+             *               "id": "39b4a52d-382d-410c-b4df-7b994e92b107",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-14T15:54:43.549077Z"
+             *               "updated_at": "2026-04-14T17:51:45.705980Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3273,7 +3273,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Huntarr",
+             *           "service_definition": "Cassandra",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3531,14 +3531,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-14T15:54:43.558176Z",
-             *           "id": "8261ad14-d421-4d34-aa53-d0335ec56932",
+             *           "created_at": "2026-04-14T17:51:45.721249Z",
+             *           "id": "8d6ababe-8b5c-4b2b-954b-ed561106185f",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-14T15:54:43.558176Z"
+             *           "updated_at": "2026-04-14T17:51:45.721249Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3547,7 +3547,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Huntarr",
+             *       "service_definition": "Cassandra",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3898,14 +3898,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-14T15:54:43.549346Z",
-         *       "id": "fef4f8f0-93df-489e-ae0d-08d032e18dbc",
+         *       "created_at": "2026-04-14T17:51:45.706513Z",
+         *       "id": "1659cd26-b845-44f5-a863-062de15e0a6f",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-14T15:54:43.549346Z"
+         *       "updated_at": "2026-04-14T17:51:45.706513Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4090,7 +4090,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Huntarr",
+         *           "service_definition": "Cassandra",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4665,32 +4665,32 @@ export interface components {
             /** @enum {string} */
             edge_type: "Hypervisor";
             /** Format: uuid */
-            vm_service_id: string;
+            hypervisor_service_id: string;
         } | {
-            /** Format: uuid */
-            containerizing_service_id: string;
             /** @enum {string} */
             edge_type: "ContainerRuntime";
             /** Format: uuid */
             host_id: string;
+            /** Format: uuid */
+            service_id: string;
         } | {
             /** Format: uuid */
             dependency_id: string;
             /** @enum {string} */
             edge_type: "RequestPath";
             /** Format: uuid */
-            source_binding_id: string;
+            source_id: string;
             /** Format: uuid */
-            target_binding_id: string;
+            target_id: string;
         } | {
             /** Format: uuid */
             dependency_id: string;
             /** @enum {string} */
             edge_type: "HubAndSpoke";
             /** Format: uuid */
-            source_binding_id: string;
+            source_id: string;
             /** Format: uuid */
-            target_binding_id: string;
+            target_id: string;
         } | {
             /** @enum {string} */
             edge_type: "PhysicalLink";
@@ -4949,14 +4949,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-14T15:54:43.548448Z",
-         *               "id": "e1985bf0-aa01-463b-9350-202c46474686",
+         *               "created_at": "2026-04-14T17:51:45.705355Z",
+         *               "id": "41ec8e9e-f6e9-45cf-ab50-233b0d438ff4",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-14T15:54:43.548448Z"
+         *               "updated_at": "2026-04-14T17:51:45.705355Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4965,7 +4965,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Huntarr",
+         *           "service_definition": "Cassandra",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -6095,14 +6095,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-14T15:54:43.549261Z",
-         *           "id": "abebc71c-1d93-4ccf-9833-d33e0622ff3b",
+         *           "created_at": "2026-04-14T17:51:45.706298Z",
+         *           "id": "5ce75502-ed4a-40d3-8df0-e792968db424",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-14T15:54:43.549261Z"
+         *           "updated_at": "2026-04-14T17:51:45.706298Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6111,7 +6111,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Huntarr",
+         *       "service_definition": "Cassandra",
          *       "source": {
          *         "type": "Manual"
          *       },

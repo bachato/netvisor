@@ -35,6 +35,15 @@ pub fn supports_unified_discovery(version: Option<&Version>) -> bool {
     version.is_some_and(|v| v >= &minimum_unified_discovery())
 }
 
+/// Returns true if the daemon predates the Interface → IPAddress binding type rename (< 0.16.0).
+/// These daemons expect `"type": "Interface"` / `"interface_id"` in binding responses.
+/// Legacy cleanup: remove once minimum_supported >= 0.16.0
+pub fn pre_interface_to_ip_address_rename(version: Option<&str>) -> bool {
+    version
+        .and_then(|v| Version::parse(v).ok())
+        .map_or(true, |v| v < Version::new(0, 16, 0))
+}
+
 impl DaemonVersionPolicy {
     pub fn evaluate(&self, version: Option<&Version>) -> DaemonVersionStatus {
         match version {

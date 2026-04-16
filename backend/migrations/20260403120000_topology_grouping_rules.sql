@@ -31,15 +31,11 @@ SET options = jsonb_set(
                         ELSE '[]'::jsonb
                     END
                 ),
-                'L2Physical', '[]'::jsonb,
-                'Workloads', (
-                    CASE
-                        WHEN COALESCE((options->'request'->>'group_docker_bridges_by_host')::boolean, true)
-                        THEN jsonb_build_array(
-                            jsonb_build_object('id', gen_random_uuid(), 'rule', 'MergeDockerBridges')
-                        )
-                        ELSE '[]'::jsonb
-                    END
+                'L2Physical', jsonb_build_array(
+                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByHost')
+                ),
+                'Workloads', jsonb_build_array(
+                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByHost')
                 ),
                 'Application', jsonb_build_array(
                     jsonb_build_object('id', gen_random_uuid(), 'rule',
@@ -49,25 +45,34 @@ SET options = jsonb_set(
             )
         )
 
-        -- element_rules: Vec<GraphRule<ElementRule>> with all 4 types
+        -- element_rules: Vec<GraphRule<ElementRule>> — full default set in correct order
         || jsonb_build_object('element_rules',
             (
-                -- ByServiceCategory from legacy left_zone_service_categories
-                CASE
-                    WHEN jsonb_array_length(COALESCE(options->'request'->'left_zone_service_categories', '["DNS","ReverseProxy"]'::jsonb)) > 0
-                    THEN jsonb_build_array(
-                        jsonb_build_object(
-                            'id', gen_random_uuid(),
-                            'rule', jsonb_build_object(
-                                'ByServiceCategory', jsonb_build_object(
-                                    'categories', COALESCE(options->'request'->'left_zone_service_categories', '["DNS","ReverseProxy"]'::jsonb),
-                                    'title', 'Network Services'
-                                )
+                -- ByTrunkPort
+                jsonb_build_array(
+                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByTrunkPort')
+                )
+                -- ByVLAN
+                || jsonb_build_array(
+                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByVLAN')
+                )
+                -- ByPortOpStatus
+                || jsonb_build_array(
+                    jsonb_build_object('id', gen_random_uuid(), 'rule', 'ByPortOpStatus')
+                )
+                -- ByServiceCategory: empty infra rule (server populates categories at runtime)
+                || jsonb_build_array(
+                    jsonb_build_object(
+                        'id', gen_random_uuid(),
+                        'rule', jsonb_build_object(
+                            'ByServiceCategory', jsonb_build_object(
+                                'categories', '[]'::jsonb,
+                                'title', 'Infrastructure',
+                                'is_infra_rule', true
                             )
                         )
                     )
-                    ELSE '[]'::jsonb
-                END
+                )
                 -- ByTag (empty default)
                 || jsonb_build_array(
                     jsonb_build_object(

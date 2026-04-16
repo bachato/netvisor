@@ -17,7 +17,7 @@
 	import type { Subnet } from '$lib/features/subnets/types/base';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	let { edge, containerizingServiceId }: { edge: Edge; containerizingServiceId: string } = $props();
+	let { edge, serviceId }: { edge: Edge; serviceId: string } = $props();
 
 	// Try to get topology from context (for share/embed pages), fallback to query + selected topology
 	const topologyContext = getContext<Writable<Topology> | undefined>('topology');
@@ -32,7 +32,7 @@
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
 	let containerizingService = $derived(
-		topology ? topology.services.find((s) => s.id == containerizingServiceId) : null
+		topology ? topology.services.find((s) => s.id == serviceId) : null
 	);
 
 	let containerizingHost = $derived(
@@ -57,7 +57,7 @@
 						(s) =>
 							s.virtualization &&
 							s.virtualization.type === 'Docker' &&
-							s.virtualization.details.service_id === containerizingServiceId
+							s.virtualization.details.service_id === serviceId
 					)
 				: topology.services.filter((s) => s.bindings.some((b) => b.interface_id == edge.target))
 			: []

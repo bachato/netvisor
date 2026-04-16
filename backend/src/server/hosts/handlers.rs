@@ -24,7 +24,7 @@ use crate::server::shared::types::metadata::TypeMetadataProvider;
 use crate::server::shared::validation::{validate_network_access, validate_read_access};
 use crate::server::{
     config::AppState,
-    daemons::r#impl::base::Daemon,
+    daemons::r#impl::{base::Daemon, version::pre_interface_to_ip_address_rename},
     hosts::r#impl::{
         api::{CreateHostRequest, DiscoveryHostRequest, HostResponse, UpdateHostRequest},
         base::Host,
@@ -612,7 +612,11 @@ async fn create_host_discovery(
     State(state): State<Arc<AppState>>,
     auth: Authorized<IsDaemon>,
     Json(request): Json<DiscoveryHostRequest>,
-) -> ApiResult<Json<ApiResponse<HostResponse>>> {
+) -> ApiResult<impl IntoResponse> {
+    // Legacy cleanup: remove once minimum_supported >= 0.16.0
+    let is_legacy_daemon =
+        pre_interface_to_ip_address_rename(auth.entity.daemon_version());
+
     // Get daemon network_id from entity
     let daemon_network_id = auth
         .network_ids()
@@ -650,7 +654,19 @@ async fn create_host_discovery(
         }
     })?;
 
-    Ok(Json(ApiResponse::success(host_response)))
+    // Legacy cleanup: remove once minimum_supported >= 0.16.0
+    // Pre-0.16.0 daemons expect "Interface"/"interface_id" in binding responses
+    if is_legacy_daemon {
+        let mut json = serde_json::to_value(ApiResponse::success(host_response))
+            .map_err(|e| ApiError::internal_error(&e.to_string()))?;
+        rewrite_response_for_legacy_daemon(&mut json);
+        return Ok(Json(json));
+    }
+
+    Ok(Json(
+        serde_json::to_value(ApiResponse::success(host_response))
+            .map_err(|e| ApiError::internal_error(&e.to_string()))?,
+    ))
 }
 
 /// Consolidate hosts
@@ -973,3 +989,5 @@ async fn export_hosts_zip(
 
     Ok((headers, Body::from(zip_data)))
 }
+
+use crate::server::shared::legacy::rewrite_response_for_legacy_daemon;

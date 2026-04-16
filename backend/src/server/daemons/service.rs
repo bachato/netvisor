@@ -33,7 +33,10 @@ use crate::server::daemons::r#impl::api::{
     DaemonRegistrationResponse, DiscoveryUpdatePayload, FirstContactRequest, ServerCapabilities,
 };
 use crate::server::daemons::r#impl::base::{Daemon, DaemonBase};
-use crate::server::daemons::r#impl::version::{DaemonVersionPolicy, supports_unified_discovery};
+use crate::server::daemons::r#impl::version::{
+    DaemonVersionPolicy, pre_interface_to_ip_address_rename, supports_unified_discovery,
+};
+use crate::server::shared::legacy::rewrite_response_for_legacy_daemon;
 use crate::server::discovery::r#impl::base::{Discovery, DiscoveryBase};
 use crate::server::discovery::r#impl::scan_settings::ScanSettings;
 use crate::server::discovery::r#impl::types::{DiscoveryType, HostNamingFallback, RunType};
@@ -433,14 +436,30 @@ impl DaemonService {
             return Ok(());
         }
 
-        let _: Option<serde_json::Value> = self
-            .post_to_daemon(
-                daemon,
-                Some(api_key),
-                "/api/discovery/entities-created",
-                &created_entities,
-            )
-            .await?;
+        // Legacy cleanup: remove once minimum_supported >= 0.16.0
+        // Pre-0.16.0 daemons expect old entity/field names in responses
+        let version_str = daemon.base.version.as_ref().map(|v| v.to_string());
+        if pre_interface_to_ip_address_rename(version_str.as_deref()) {
+            let mut json = serde_json::to_value(&created_entities)?;
+            rewrite_response_for_legacy_daemon(&mut json);
+            let _: Option<serde_json::Value> = self
+                .post_to_daemon(
+                    daemon,
+                    Some(api_key),
+                    "/api/discovery/entities-created",
+                    &json,
+                )
+                .await?;
+        } else {
+            let _: Option<serde_json::Value> = self
+                .post_to_daemon(
+                    daemon,
+                    Some(api_key),
+                    "/api/discovery/entities-created",
+                    &created_entities,
+                )
+                .await?;
+        }
 
         tracing::debug!(
             daemon_id = %daemon.id,

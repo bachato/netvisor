@@ -159,27 +159,23 @@ pub enum EdgeStyle {
 pub enum EdgeType {
     SameHost {
         host_id: Uuid,
-    }, // Connecting IP address nodes that belong to the same host
-    #[serde(alias = "HostVirtualization")]
-    #[strum_discriminants(serde(alias = "HostVirtualization"))]
-    Hypervisor {
-        vm_service_id: Uuid,
     },
-    #[serde(alias = "ServiceVirtualization")]
-    #[strum_discriminants(serde(alias = "ServiceVirtualization"))]
+    Hypervisor {
+        hypervisor_service_id: Uuid,
+    },
     ContainerRuntime {
         host_id: Uuid,
-        containerizing_service_id: Uuid,
+        service_id: Uuid,
     },
     RequestPath {
         dependency_id: Uuid,
-        source_binding_id: Uuid,
-        target_binding_id: Uuid,
+        source_id: Uuid,
+        target_id: Uuid,
     },
     HubAndSpoke {
         dependency_id: Uuid,
-        source_binding_id: Uuid,
-        target_binding_id: Uuid,
+        source_id: Uuid,
+        target_id: Uuid,
     },
     /// Physical link discovered via LLDP/CDP neighbor discovery
     PhysicalLink {

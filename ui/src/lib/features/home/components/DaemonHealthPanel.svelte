@@ -41,8 +41,6 @@
 			<div
 				class="card card-static"
 				class:cursor-pointer={clickable}
-				class:hover:ring-1={clickable}
-				class:hover:ring-gray-700={clickable}
 				onclick={clickable ? () => onNavigate('daemons') : undefined}
 				onkeydown={clickable
 					? (e) => {

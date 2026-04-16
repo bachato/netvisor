@@ -139,7 +139,7 @@ impl EdgeBuilder {
                             source: origin_ip_address.id,
                             target: container_binding_ip_address_id,
                             edge_type: EdgeType::ContainerRuntime {
-                                containerizing_service_id: s.id,
+                                service_id: s.id,
                                 host_id: host.id,
                             },
                             label: Some(format!("{} on {}", s.base.name, host.base.name)),
@@ -215,7 +215,7 @@ impl EdgeBuilder {
                                     source: *proxmox_service_ip_address_id,
                                     target: i.id,
                                     edge_type: EdgeType::Hypervisor {
-                                        vm_service_id: *proxmox_service_id,
+                                        hypervisor_service_id: *proxmox_service_id,
                                     },
                                     label: None,
                                     source_handle: EdgeHandle::Bottom,
@@ -247,7 +247,7 @@ impl EdgeBuilder {
                         source: proxmox_service.base.host_id,
                         target: h.id,
                         edge_type: EdgeType::Hypervisor {
-                            vm_service_id: pv.service_id,
+                            hypervisor_service_id: pv.service_id,
                         },
                         label: None,
                         source_handle: EdgeHandle::Bottom,
@@ -406,19 +406,19 @@ impl EdgeBuilder {
 
     pub fn edge_from_service_bindings(
         ctx: &TopologyContext,
-        source_binding_id: Uuid,
-        target_binding_id: Uuid,
+        source_id: Uuid,
+        target_id: Uuid,
         dependency: &Dependency,
     ) -> Option<Edge> {
         let source_ip_address = ctx.services.iter().find_map(|s| {
-            if let Some(source_binding) = s.get_binding(source_binding_id) {
+            if let Some(source_binding) = s.get_binding(source_id) {
                 return Some(source_binding.ip_address_id());
             }
             None
         });
 
         let target_ip_address = ctx.services.iter().find_map(|s| {
-            if let Some(target_binding) = s.get_binding(target_binding_id) {
+            if let Some(target_binding) = s.get_binding(target_id) {
                 return Some(target_binding.ip_address_id());
             }
             None
@@ -451,13 +451,13 @@ impl EdgeBuilder {
             target: target_ip_address,
             edge_type: match dependency.base.dependency_type {
                 DependencyType::HubAndSpoke => EdgeType::HubAndSpoke {
-                    source_binding_id,
-                    target_binding_id,
+                    source_id,
+                    target_id,
                     dependency_id: dependency.id,
                 },
                 DependencyType::RequestPath => EdgeType::RequestPath {
-                    source_binding_id,
-                    target_binding_id,
+                    source_id,
+                    target_id,
                     dependency_id: dependency.id,
                 },
             },

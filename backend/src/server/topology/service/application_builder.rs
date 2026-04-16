@@ -326,8 +326,8 @@ impl ViewBuilder for ApplicationBuilder {
                                 target: target_id,
                                 edge_type: EdgeType::RequestPath {
                                     dependency_id: dep.id,
-                                    source_binding_id: Uuid::nil(),
-                                    target_binding_id: Uuid::nil(),
+                                    source_id: Uuid::nil(),
+                                    target_id: Uuid::nil(),
                                 },
                                 label: Some(dep.base.name.clone()),
                                 source_handle: EdgeHandle::Bottom,
@@ -350,8 +350,8 @@ impl ViewBuilder for ApplicationBuilder {
                                     target: spoke_id,
                                     edge_type: EdgeType::HubAndSpoke {
                                         dependency_id: dep.id,
-                                        source_binding_id: Uuid::nil(),
-                                        target_binding_id: Uuid::nil(),
+                                        source_id: Uuid::nil(),
+                                        target_id: Uuid::nil(),
                                     },
                                     label: Some(dep.base.name.clone()),
                                     source_handle: EdgeHandle::Bottom,
@@ -377,7 +377,7 @@ impl ViewBuilder for ApplicationBuilder {
                     source: docker.service_id,
                     target: service.id,
                     edge_type: EdgeType::ContainerRuntime {
-                        containerizing_service_id: docker.service_id,
+                        service_id: docker.service_id,
                         host_id: service.base.host_id,
                     },
                     label: None,

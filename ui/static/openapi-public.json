@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-13T23:36:42.912684Z",
-              "id": "38b4415b-20a7-4c88-92ef-d38a8b84364e",
+              "created_at": "2026-04-14T17:51:45.726705Z",
+              "id": "b4e93529-0c77-4c7e-8309-bcab223dc26e",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T23:36:42.912684Z"
+              "updated_at": "2026-04-14T17:51:45.726705Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-13T23:36:42.899036Z",
-                      "id": "b7867f6b-d904-4283-950c-54e30468b071",
+                      "created_at": "2026-04-14T17:51:45.706003Z",
+                      "id": "c3893d5b-f7e8-4a48-9870-8909879f38ca",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-13T23:36:42.899036Z"
+                      "updated_at": "2026-04-14T17:51:45.706003Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "OpenVPN",
+                  "service_definition": "Cassandra",
                   "source": {
                     "type": "Manual"
                   },
@@ -12003,14 +12003,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T23:36:42.908946Z",
-                  "id": "429f0418-f388-4746-9c51-9824efaaa7aa",
+                  "created_at": "2026-04-14T17:51:45.721265Z",
+                  "id": "0cbb5c20-512b-4a31-8a9b-8ee3bd3c6432",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T23:36:42.908946Z"
+                  "updated_at": "2026-04-14T17:51:45.721265Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12019,7 +12019,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "Cassandra",
               "source": {
                 "type": "Manual"
               },
@@ -13384,14 +13384,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-13T23:36:42.899248Z",
-          "id": "6107a820-fc26-4900-ae8b-f6ab3ffb1d10",
+          "created_at": "2026-04-14T17:51:45.706478Z",
+          "id": "68638406-9af2-42cb-8928-3b66245123fa",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-13T23:36:42.899248Z"
+          "updated_at": "2026-04-14T17:51:45.706478Z"
         }
       },
       "BindingBase": {
@@ -13921,7 +13921,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "Cassandra",
               "tags": [],
               "virtualization": null
             }
@@ -14119,10 +14119,9 @@
               "null"
             ],
             "items": {
-              "type": "string",
-              "writeOnly": true
+              "type": "string"
             },
-            "description": "Ephemeral bootstrap IPs for pre-discovery credential resolution.\nWrite-only — skipped in API GET responses."
+            "description": "Ephemeral bootstrap IPs for pre-discovery credential resolution.\nCleared automatically when the next scan dispatches."
           }
         }
       },
@@ -15470,9 +15469,7 @@
         "enum": [
           "Straight",
           "SmoothStep",
-          "Step",
-          "Bezier",
-          "SimpleBezier"
+          "Bezier"
         ]
       },
       "EdgeType": {
@@ -15499,7 +15496,7 @@
           {
             "type": "object",
             "required": [
-              "vm_service_id",
+              "hypervisor_service_id",
               "edge_type"
             ],
             "properties": {
@@ -15509,7 +15506,7 @@
                   "Hypervisor"
                 ]
               },
-              "vm_service_id": {
+              "hypervisor_service_id": {
                 "type": "string",
                 "format": "uuid"
               }
@@ -15519,14 +15516,10 @@
             "type": "object",
             "required": [
               "host_id",
-              "containerizing_service_id",
+              "service_id",
               "edge_type"
             ],
             "properties": {
-              "containerizing_service_id": {
-                "type": "string",
-                "format": "uuid"
-              },
               "edge_type": {
                 "type": "string",
                 "enum": [
@@ -15536,6 +15529,10 @@
               "host_id": {
                 "type": "string",
                 "format": "uuid"
+              },
+              "service_id": {
+                "type": "string",
+                "format": "uuid"
               }
             }
           },
@@ -15543,8 +15540,8 @@
             "type": "object",
             "required": [
               "dependency_id",
-              "source_binding_id",
-              "target_binding_id",
+              "source_id",
+              "target_id",
               "edge_type"
             ],
             "properties": {
@@ -15558,11 +15555,11 @@
                   "RequestPath"
                 ]
               },
-              "source_binding_id": {
+              "source_id": {
                 "type": "string",
                 "format": "uuid"
               },
-              "target_binding_id": {
+              "target_id": {
                 "type": "string",
                 "format": "uuid"
               }
@@ -15572,8 +15569,8 @@
             "type": "object",
             "required": [
               "dependency_id",
-              "source_binding_id",
-              "target_binding_id",
+              "source_id",
+              "target_id",
               "edge_type"
             ],
             "properties": {
@@ -15587,11 +15584,11 @@
                   "HubAndSpoke"
                 ]
               },
-              "source_binding_id": {
+              "source_id": {
                 "type": "string",
                 "format": "uuid"
               },
-              "target_binding_id": {
+              "target_id": {
                 "type": "string",
                 "format": "uuid"
               }
@@ -16442,14 +16439,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-13T23:36:42.898714Z",
-                  "id": "16dbe8f8-c617-41e6-994a-708bc84a826e",
+                  "created_at": "2026-04-14T17:51:45.705371Z",
+                  "id": "b63d888c-2b2e-42e8-afdb-af51be6b8b9a",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-13T23:36:42.898714Z"
+                  "updated_at": "2026-04-14T17:51:45.705371Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16458,7 +16455,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "OpenVPN",
+              "service_definition": "Cassandra",
               "source": {
                 "type": "Manual"
               },
@@ -18646,14 +18643,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-13T23:36:42.891583Z",
-                        "id": "12c34fad-ec53-4346-b452-2e6118c6d805",
+                        "created_at": "2026-04-14T17:51:45.691742Z",
+                        "id": "b4d0576e-831d-4a0b-9460-00f99b92abb9",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-13T23:36:42.891583Z"
+                        "updated_at": "2026-04-14T17:51:45.691742Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18662,7 +18659,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "OpenVPN",
+                    "service_definition": "Cassandra",
                     "source": {
                       "type": "Manual"
                     },
@@ -18739,14 +18736,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-13T23:36:42.908008Z",
-                    "id": "bb90af85-f80e-44ae-a481-ae4a0298401d",
+                    "created_at": "2026-04-14T17:51:45.719640Z",
+                    "id": "800c1d8b-2bd5-4618-a16f-3b35b86195b1",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-13T23:36:42.908008Z"
+                    "updated_at": "2026-04-14T17:51:45.719640Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18755,7 +18752,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "OpenVPN",
+                "service_definition": "Cassandra",
                 "source": {
                   "type": "Manual"
                 },
@@ -19985,14 +19982,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-13T23:36:42.899174Z",
-              "id": "29cf1925-bf55-477f-87e9-aa0c1cfda5e1",
+              "created_at": "2026-04-14T17:51:45.706322Z",
+              "id": "914a63db-ddf4-4ed5-b371-3cbc654dd76f",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-13T23:36:42.899174Z"
+              "updated_at": "2026-04-14T17:51:45.706322Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20001,7 +19998,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "OpenVPN",
+          "service_definition": "Cassandra",
           "source": {
             "type": "Manual"
           },
@@ -20082,7 +20079,10 @@
           "Backup",
           "Media",
           "HomeAutomation",
-          "Virtualization",
+          "Hypervisor",
+          "ContainerRuntime",
+          "Container",
+          "Orchestrator",
           "DNS",
           "VPN",
           "Monitoring",

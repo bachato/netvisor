@@ -1,4 +1,5 @@
 <script lang="ts">
+	import InlineWarning from '$lib/shared/components/feedback/InlineWarning.svelte';
 	import { formatIPAddress } from '$lib/features/hosts/queries';
 	import { useIPAddressesQuery } from '$lib/features/ip-addresses/queries';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
@@ -103,11 +104,7 @@
 		<div class="flex gap-3">
 			<div class="flex-1">
 				{#if host.ip_addresses && host.ip_addresses.length === 0}
-					<div
-						class="rounded border border-yellow-600 bg-yellow-900/20 px-2 py-1 text-xs text-warning"
-					>
-						No IP addresses configured on host
-					</div>
+					<InlineWarning title="" body="No IP addresses configured on host" />
 				{:else if host.ip_addresses && host.ip_addresses.length === 1}
 					<!-- Single IP address - show as read-only -->
 					<div

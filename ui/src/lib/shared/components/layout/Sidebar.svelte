@@ -600,7 +600,7 @@
 	const sectionHeaderClass =
 		'text-secondary hover:text-primary flex w-full items-center rounded-lg text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-gray-100/50 dark:hover:bg-gray-800/50';
 
-	const baseClasses = 'flex w-full items-center rounded-lg font-medium transition-colors';
+	const baseClasses = 'flex w-full items-center rounded-lg text-[13px] font-medium transition-colors';
 </script>
 
 <div
@@ -646,7 +646,7 @@
 
 		<!-- Main Navigation -->
 		<nav class="flex-1 overflow-y-auto px-2 py-4">
-			<ul class="space-y-4">
+			<ul class="space-y-3">
 				{#each mainNavItems as configItem (configItem.id)}
 					{#if isSection(configItem)}
 						<!-- Section with items -->
@@ -667,7 +667,7 @@
 							{/if}
 
 							{#if !sectionStates[configItem.id] || collapsed}
-								<ul class="mt-1 space-y-1" class:mt-0={collapsed}>
+								<ul class="mt-1 space-y-0.5" class:mt-0={collapsed}>
 									{#each configItem.items as item (item.id)}
 										<li>
 											<button
@@ -675,11 +675,11 @@
 												class="{baseClasses} {isItemActive(item)
 													? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 													: inactiveButtonClass}"
-												style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+												style="height: 2rem; padding: 0.375rem 0.75rem;"
 												title={collapsed ? item.label : ''}
 											>
 												<span class="relative">
-													<item.icon class="h-5 w-5 flex-shrink-0" />
+													<item.icon class="h-[18px] w-[18px] flex-shrink-0" />
 													{#if item.id === 'discovery' && hasActiveSessions}
 														<span
 															class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full"
@@ -701,7 +701,7 @@
 																class="{baseClasses} {activeTab === child.id
 																	? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 																	: inactiveButtonClass}"
-																style="height: 2.25rem; padding: 0.375rem 0.75rem;"
+																style="height: 1.875rem; padding: 0.25rem 0.75rem;"
 																title={collapsed ? child.label : ''}
 															>
 																<child.icon class="h-4 w-4 flex-shrink-0" />
@@ -727,10 +727,10 @@
 								(configItem.id === 'settings' && showSettings)
 									? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 									: inactiveButtonClass}"
-								style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+								style="height: 2rem; padding: 0.375rem 0.75rem;"
 								title={collapsed ? configItem.label : ''}
 							>
-								<configItem.icon class="h-5 w-5 flex-shrink-0" />
+								<configItem.icon class="h-[18px] w-[18px] flex-shrink-0" />
 								{#if !collapsed}
 									<span class="ml-3 truncate">{configItem.label}</span>
 								{/if}
@@ -749,11 +749,11 @@
 				<li>
 					<button
 						class="{baseClasses} text-amber-400 hover:bg-amber-500/10"
-						style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+						style="height: 2rem; padding: 0.375rem 0.75rem;"
 						title={collapsed ? common_upgrade() : ''}
 						onclick={() => triggerUpgrade({ source: 'sidebar' })}
 					>
-						<ArrowUpCircle class="h-5 w-5 flex-shrink-0" />
+						<ArrowUpCircle class="h-[18px] w-[18px] flex-shrink-0" />
 						{#if !collapsed}
 							<span class="ml-3 truncate">{common_upgrade()}</span>
 						{/if}
@@ -769,11 +769,11 @@
 							(item.id === 'settings' && showSettings)
 								? 'text-primary border border-blue-500/30 bg-blue-100 dark:border-blue-600 dark:bg-blue-700'
 								: inactiveButtonClass}"
-							style="height: 2.5rem; padding: 0.5rem 0.75rem;"
+							style="height: 2rem; padding: 0.375rem 0.75rem;"
 							title={collapsed ? item.label : ''}
 						>
 							<span class="relative">
-								<item.icon class="h-5 w-5 flex-shrink-0" />
+								<item.icon class="h-[18px] w-[18px] flex-shrink-0" />
 								{#if item.id === 'settings' && showBillingNotification}
 									<span class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-500"
 									></span>

@@ -42,13 +42,13 @@
 	/* eslint-disable @typescript-eslint/no-unused-vars -- component contract props */
 	let {
 		dependencyId,
-		sourceBindingId,
-		targetBindingId,
+		sourceId,
+		targetId,
 		view = 'L3Logical'
 	}: {
 		dependencyId: string;
-		sourceBindingId: string;
-		targetBindingId: string;
+		sourceId: string;
+		targetId: string;
 		view?: TopologyView;
 	} = $props();
 	/* eslint-enable @typescript-eslint/no-unused-vars */
@@ -184,8 +184,8 @@
 				{#if bindingService && bindingHost && bindingData}
 					<div
 						class={isRequestPath
-							? `card card-static ${bindingId == sourceBindingId || bindingId == targetBindingId ? 'ring-1 ring-gray-500' : ''}`
-							: `card card-static ${bindingId == sourceBindingId ? `ring-1 ${groupColor.ring}` : bindingId == targetBindingId ? 'ring-1 ring-gray-500' : ''}`}
+							? `card card-static ${bindingId == sourceId || bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`
+							: `card card-static ${bindingId == sourceId ? `ring-1 ${groupColor.ring}` : bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`}
 					>
 						<EntityDisplayWrapper
 							context={bindingContext}
@@ -193,7 +193,7 @@
 							displayComponent={BindingWithServiceDisplay}
 						/>
 					</div>
-					{#if bindingId == sourceBindingId && isRequestPath}
+					{#if bindingId == sourceId && isRequestPath}
 						<div class="flex flex-col items-center">
 							<ArrowDown class="text-secondary h-5 w-5" />
 						</div>
