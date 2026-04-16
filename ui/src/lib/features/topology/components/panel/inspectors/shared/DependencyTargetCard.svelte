@@ -3,6 +3,11 @@
 	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
 	import { entityRef } from '$lib/shared/components/data/types';
 	import { entities, serviceDefinitions } from '$lib/shared/stores/metadata';
+	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
+	import {
+		ServiceDisplay,
+		type ServiceDisplayContext
+	} from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import BindingPicker from './BindingPicker.svelte';
 	import type { DependencyTarget } from '../../../../resolvers';
 	import type { Topology } from '../../../../types/base';
@@ -17,13 +22,10 @@
 		form: any;
 		topology: Topology;
 		target: DependencyTarget;
-		/** Position of this card's resolved service in the flattened dep service list. */
 		flatIndex: number;
 	} = $props();
 
-	// TanStack Form's form.state.values is not tracked by $derived in Svelte 5.
-	// Mirror it into a $state variable via form.store.subscribe.
-	// (Pattern from CreateDaemonModal / TopologyModal in this app.)
+	// Mirror form state — form.state.values isn't tracked by Svelte 5 $derived.
 	interface MirroredValues {
 		memberMode: 'Services' | 'Bindings';
 		picks: Record<string, string>;
@@ -51,7 +53,6 @@
 			: topology.hosts.find((h) => h.id === target.hostId)
 	);
 
-	// Candidate services (empty for direct service targets).
 	let candidates = $derived(
 		target.kind === 'service'
 			? []
@@ -60,8 +61,6 @@
 					.filter((s): s is NonNullable<typeof s> => !!s)
 	);
 
-	// The resolved service for this card: direct service, the single candidate,
-	// or the currently-picked candidate from the form (defaulted to the first candidate).
 	let resolvedServiceId = $derived.by((): string | null => {
 		if (target.kind === 'service') return target.serviceId;
 		if (candidates.length === 0) return null;
@@ -75,7 +74,7 @@
 
 	let ipAddressIdFilter = $derived(target.kind === 'ipAddress' ? target.ipAddressId : null);
 
-	// Seed the form default for multi-candidate targets so a service is resolved on first render.
+	// Seed default pick for multi-candidate targets so a service resolves on first render.
 	$effect(() => {
 		if (target.kind === 'service') return;
 		if (candidates.length <= 1) return;
@@ -95,13 +94,20 @@
 			: entities.getColorHelper('Service').color;
 	}
 
-	// Whether the card has a picker (multi-candidate) vs. a single resolved service.
 	let hasPicker = $derived(target.kind !== 'service' && candidates.length > 1);
+	let showListeningOn = $derived(memberMode === 'Bindings' && resolvedServiceId !== null);
+
+	// Service options for the RichSelect dropdown, annotated with host name as category.
+	const serviceDisplayWithHost = {
+		...ServiceDisplay,
+		getCategory: (svc: { host_id: string }) =>
+			topology.hosts.find((h) => h.id === svc.host_id)?.name ?? null
+	};
+	let serviceContext: ServiceDisplayContext = $derived({ compact: true });
 </script>
 
 <div class="card card-static space-y-2 p-2 text-sm">
-	<!-- Sentence: <Host> running <Service> [listening on <Binding>]
-	     Multi-candidate breaks "running" onto its own line with the radio list below. -->
+	<!-- Line 1: [HostTag] running -->
 	<div class="flex flex-wrap items-center gap-1.5">
 		{#if host}
 			<EntityTag
@@ -112,43 +118,43 @@
 			/>
 		{/if}
 		<span class="text-tertiary">running</span>
-		{#if !hasPicker && resolvedService}
+	</div>
+
+	<!-- Line 2: [Service] [listening on?] -->
+	<div class="flex flex-wrap items-center gap-1.5">
+		{#if hasPicker}
+			<form.Field name="picks.{target.elementId}">
+				{#snippet children(field: AnyFieldApi)}
+					<div class="min-w-0 flex-1">
+						<RichSelect
+							options={candidates}
+							selectedValue={field.state.value ?? resolvedServiceId}
+							displayComponent={serviceDisplayWithHost}
+							getOptionContext={() => serviceContext}
+							onSelect={(id) => field.handleChange(id)}
+							required
+						/>
+					</div>
+				{/snippet}
+			</form.Field>
+		{:else if resolvedService}
 			<EntityTag
 				entityRef={entityRef('Service', resolvedService.id, resolvedService)}
 				label={resolvedService.name}
 				icon={serviceIcon(resolvedService.service_definition)}
 				color={serviceIconColor(resolvedService.service_definition)}
 			/>
+		{:else}
+			<span class="text-tertiary text-xs italic">—</span>
+		{/if}
+		{#if showListeningOn}
+			<span class="text-tertiary">listening on</span>
 		{/if}
 	</div>
 
-	{#if hasPicker}
-		<form.Field name="picks.{target.elementId}">
-			{#snippet children(field: AnyFieldApi)}
-				<div class="space-y-1 pl-2">
-					{#each candidates as service (service.id)}
-						<label class="text-secondary flex cursor-pointer items-center gap-2 font-medium">
-							<input
-								type="radio"
-								name="picks-{target.elementId}"
-								value={service.id}
-								checked={field.state.value === service.id}
-								onchange={() => field.handleChange(service.id)}
-								class="checkbox-card h-4 w-4 focus:ring-1 focus:ring-blue-500"
-							/>
-							<span>{service.name}</span>
-						</label>
-					{/each}
-				</div>
-			{/snippet}
-		</form.Field>
-	{:else if !resolvedService}
-		<div class="text-tertiary text-xs italic">—</div>
-	{/if}
-
+	<!-- Line 3 (Bindings mode only): [BindingTag or picker] -->
 	{#if memberMode === 'Bindings' && resolvedServiceId}
 		<div class="flex flex-wrap items-center gap-1.5">
-			<span class="text-tertiary">listening on</span>
 			<BindingPicker
 				{form}
 				{topology}

@@ -1,10 +1,13 @@
 <script lang="ts">
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
+	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
+	import { entities } from '$lib/shared/stores/metadata';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import {
-		BindingWithServiceDisplay,
-		type BindingWithServiceContext
-	} from '$lib/shared/components/forms/selection/display/BindingWithServiceDisplay.svelte';
+		BindingDisplay,
+		type BindingDisplayContext
+	} from '$lib/shared/components/forms/selection/display/BindingDisplay.svelte';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import {
 		dependencies_selectPort,
@@ -28,9 +31,7 @@
 		fieldPrefix?: string;
 		topology: Topology;
 		serviceId: string;
-		/** Position in the flattened dep service list. Index 0 is the entry point. */
 		flatIndex: number;
-		/** Restrict candidates to this IP (or null = all-IPs) when the service came from an IP target. */
 		ipAddressIdFilter?: string | null;
 		disabled?: boolean;
 	} = $props();
@@ -42,9 +43,7 @@
 		return subnet ? isContainerSubnet(subnet) : false;
 	});
 
-	let bindingContext: BindingWithServiceContext = $derived({
-		services: topology.services,
-		hosts: topology.hosts,
+	let bindingContext: BindingDisplayContext = $derived({
 		ip_addresses: topology.ip_addresses,
 		ports: topology.ports,
 		isContainerSubnet: isContainerSubnetFn,
@@ -54,7 +53,7 @@
 	let backing = $derived(topology.services.find((s) => s.id === serviceId));
 	let host = $derived(backing ? topology.hosts.find((h) => h.id === backing!.host_id) : undefined);
 
-	// Mirror the bindings map — form.state.values isn't tracked by Svelte 5 $derived.
+	// Mirror the bindings map — form.state.values is not tracked by Svelte 5 $derived.
 	let bindingsMap = $state<Record<string, string>>({
 		...((form.state.values[fieldPrefix] ?? {}) as Record<string, string>)
 	});
@@ -66,7 +65,6 @@
 		});
 	});
 
-	// A binding chosen by any other service in the same form is unavailable to this one.
 	let candidates = $derived.by(() => {
 		if (!backing) return [];
 		return backing.bindings.filter((b) => {
@@ -104,11 +102,12 @@
 			</span>
 		{/if}
 	{:else if candidates.length === 1}
-		<!-- Singleton: show the binding inline as "IP · port/protocol" text so it fits
-		     the "listening on X" sentence in the card. -->
-		<span class="text-primary font-mono text-xs">
-			{BindingWithServiceDisplay.getDescription?.(candidates[0], bindingContext) ?? ''}
-		</span>
+		<EntityTag
+			entityRef={entityRef('Binding', candidates[0].id, candidates[0], bindingContext)}
+			label={BindingDisplay.getLabel?.(candidates[0], bindingContext) ?? ''}
+			icon={entities.getIconComponent('Port')}
+			color={entities.getColorHelper('Port').color}
+		/>
 	{:else}
 		<div class="min-w-0 flex-1">
 			<form.Field name="{fieldPrefix}.{serviceId}">
@@ -117,7 +116,7 @@
 						options={candidates}
 						selectedValue={field.state.value ?? null}
 						placeholder={dependencies_selectPort()}
-						displayComponent={BindingWithServiceDisplay}
+						displayComponent={BindingDisplay}
 						getOptionContext={() => bindingContext}
 						onSelect={(bindingId) => field.handleChange(bindingId)}
 						required
