@@ -14,13 +14,9 @@
 
 <script lang="ts">
 	import { ChevronDown } from 'lucide-svelte';
-	import { tick, onMount, setContext } from 'svelte';
+	import { tick, onMount } from 'svelte';
 	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
 	import { common_selectOption, common_noOptionsAvailable } from '$lib/paraglide/messages';
-
-	// Disable EntityTag's own click-to-navigate and hover-popover inside the dropdown —
-	// otherwise clicking an option would navigate away instead of selecting it.
-	setContext('staticTags', true);
 
 	let {
 		options,
@@ -122,6 +118,7 @@
 				label={selected.label}
 				icon={selected.icon ?? null}
 				color={selected.color ?? 'Gray'}
+				disableNavigate={true}
 				disablePopover={true}
 			/>
 		{:else}
@@ -163,6 +160,7 @@
 						label={option.label}
 						icon={option.icon ?? null}
 						color={option.color ?? 'Gray'}
+						disableNavigate={true}
 						disablePopover={true}
 					/>
 				</button>

@@ -7,7 +7,7 @@
 		type EntityTagOption
 	} from '$lib/shared/components/forms/selection/EntityTagSelect.svelte';
 	import BindingPicker from './BindingPicker.svelte';
-	import { common_host } from '$lib/paraglide/messages';
+	import { common_host, common_at } from '$lib/paraglide/messages';
 	import type { DependencyTarget } from '../../../../resolvers';
 	import type { Topology } from '../../../../types/base';
 
@@ -147,10 +147,10 @@
 		{/if}
 	</div>
 
-	<!-- Line 3 (Bindings mode): listening on {binding} (tag or picker) -->
+	<!-- Line 3 (Bindings mode): at {binding} (tag or picker) -->
 	{#if memberMode === 'Bindings' && resolvedServiceId}
 		<div class="flex flex-wrap items-center gap-1.5">
-			<span class="text-tertiary">listening on</span>
+			<span class="text-tertiary">{common_at()}</span>
 			<BindingPicker
 				{form}
 				{topology}

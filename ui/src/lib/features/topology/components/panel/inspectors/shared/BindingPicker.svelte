@@ -109,6 +109,8 @@
 			label={BindingDisplay.getLabel?.(candidates[0], bindingContext) ?? ''}
 			icon={entities.getIconComponent('Port')}
 			color={entities.getColorHelper('Port').color}
+			disableNavigate={true}
+			disablePopover={true}
 		/>
 	{:else}
 		{@const bindingOptions: EntityTagOption[] = candidates.map((b) => ({

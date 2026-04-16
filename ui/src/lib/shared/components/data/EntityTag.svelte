@@ -18,7 +18,8 @@
 		color = 'Gray',
 		disabled = false,
 		badge = '',
-		disablePopover = false
+		disablePopover = false,
+		disableNavigate = false
 	}: {
 		entityRef: EntityRef;
 		label: string;
@@ -27,6 +28,12 @@
 		disabled?: boolean;
 		badge?: string;
 		disablePopover?: boolean;
+		/**
+		 * When true, the tag doesn't navigate on click and drops the interactive
+		 * cursor / hover-brightness treatment. Popover behavior is unaffected — use
+		 * `disablePopover` for that.
+		 */
+		disableNavigate?: boolean;
 	} = $props();
 
 	let triggerEl: HTMLDivElement | undefined = $state();
@@ -78,6 +85,17 @@
 	<span class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full">
 		<Tag {icon} {color} {disabled} {label} {badge} pill={true} />
 	</span>
+{:else if disableNavigate}
+	<!-- Non-interactive (no click-to-navigate, no hover-brightness) but still tracks
+	     mouseenter/leave so the popover can still trigger when !disablePopover. -->
+	<div
+		bind:this={triggerEl}
+		class="inline-flex flex-shrink-0 cursor-default items-center gap-1 whitespace-nowrap rounded-full"
+		onmouseenter={handleMouseEnter}
+		onmouseleave={handleMouseLeave}
+	>
+		<Tag {icon} {color} {disabled} {label} {badge} pill={true} />
+	</div>
 {:else}
 	<div
 		bind:this={triggerEl}

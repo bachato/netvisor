@@ -59,8 +59,10 @@
 		common_hub,
 		common_spokes,
 		tags_entityTags,
+		dependencies_calls,
 		dependencies_createDependency,
 		dependencies_dependencyName,
+		dependencies_serves,
 		dependencies_servicesOnly,
 		dependencies_withPorts,
 		topology_multiSelectPreviewEdge,
@@ -811,8 +813,9 @@
 				{/if}
 
 				<!-- Services section: one card per selection, in canvas order.
-				     RequestPath inserts a down arrow between cards; HubAndSpoke labels
-				     the first card "Hub" and the rest "Spokes". -->
+				     Between-card arrow + direction label:
+				       RequestPath: "↓ calls" between every pair of cards.
+				       HubAndSpoke: "↓ serves" between Hub card and Spokes header. -->
 				{#if !isTutorial && topology && depTargets.length > 0}
 					{@const depType = formValues.dependency_type}
 					<div class="space-y-2">
@@ -826,14 +829,19 @@
 									>{common_hub()}</span
 								>
 							{:else if depType === 'HubAndSpoke' && targetIdx === 1}
+								<div class="flex flex-col items-center gap-0.5">
+									<ArrowDown class="text-secondary h-4 w-4" />
+									<span class="text-tertiary text-xs">{dependencies_serves()}</span>
+								</div>
 								<span class="text-tertiary mt-2 block text-xs font-semibold uppercase"
 									>{common_spokes()}</span
 								>
 							{/if}
 							<DependencyTargetCard {form} {topology} {target} {flatIndex} />
 							{#if depType === 'RequestPath' && targetIdx < depTargets.length - 1}
-								<div class="flex justify-center">
+								<div class="flex flex-col items-center gap-0.5">
 									<ArrowDown class="text-secondary h-4 w-4" />
+									<span class="text-tertiary text-xs">{dependencies_calls()}</span>
 								</div>
 							{/if}
 						{/each}
