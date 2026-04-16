@@ -9,6 +9,37 @@ use strum_macros::{EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+/// How a rule decides an entity should be represented in the topology.
+/// Used by element rules to declare that certain entities are "inlined"
+/// (represented by another node rather than having their own element).
+#[derive(Debug, Clone)]
+pub enum PlacementDecision {
+    /// Entity is represented by another node — no element created for it.
+    /// The `inline_group` field enables visual grouping in the frontend
+    /// (e.g., Docker containers on a VM host get a dotted border).
+    InlineOn {
+        node_id: Uuid,
+        inline_group: Option<InlineGroup>,
+    },
+}
+
+/// Visual grouping metadata for inlined entities.
+/// Entities sharing the same `group_id` are rendered together in the element card.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct InlineGroup {
+    pub group_id: Uuid,
+    pub role: InlineGroupRole,
+}
+
+/// Role of an inlined entity within its visual group.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub enum InlineGroupRole {
+    /// Rendered as group title with icon (e.g., Docker runtime service)
+    Header,
+    /// Rendered as a service card within the group
+    Member,
+}
+
 pub trait GraphRule {
     /// Whether edges targeting elements inside containers created by this rule
     /// should be elevated to target the container itself.

@@ -13,6 +13,7 @@ import {
 import { elevateEdgesToContainers } from '../layout/edge-elevation';
 import { containerTypes } from '$lib/shared/stores/metadata';
 import { activeView, topologyOptions } from '../queries';
+import { buildTopologyParentIndex } from '../topology-parent-index';
 
 function getStructureKey(topo: Topology): string {
 	const nodeKeys = topo.nodes
@@ -170,6 +171,7 @@ export function prepareTopologyData(
 	}
 
 	const elementToContainer = buildElementToContainer(layoutNodes);
+	const parentIndex = buildTopologyParentIndex(topology.nodes);
 	const hiddenEdgeTypes = get(topologyOptions).local.hide_edge_types ?? [];
 
 	// Elevate edges targeting elements inside absorbing containers
@@ -244,7 +246,8 @@ export function prepareTopologyData(
 		elevatedEdges,
 		collapsed,
 		layoutNodes,
-		hiddenEdgeTypes
+		hiddenEdgeTypes,
+		parentIndex.parentMap
 	);
 
 	const visibleNodes = state.layoutGraph.getVisibleNodes(layoutNodes);
@@ -262,6 +265,7 @@ export function prepareTopologyData(
 		collapsed,
 		elevatedEdges,
 		elementToContainer,
+		parentIndex,
 		topoKey,
 		structureKey,
 		baseKey,

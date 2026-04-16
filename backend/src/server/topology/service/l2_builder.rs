@@ -170,7 +170,7 @@ impl ViewBuilder for L2Builder {
             Uuid,
             &crate::server::interfaces::r#impl::base::Interface,
         > = ctx.interfaces.iter().map(|e| (e.id, e)).collect();
-        apply_element_rules(&mut nodes, &grouping.element_rules, |node| {
+        let _ = apply_element_rules(&mut nodes, &grouping.element_rules, |node| {
             if let NodeType::Element { host_id, .. } = &node.node_type {
                 let host = host_lookup.get(host_id)?;
                 let tag_ids: HashSet<Uuid> = host.base.tags.iter().copied().collect();

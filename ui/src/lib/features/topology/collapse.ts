@@ -391,11 +391,12 @@ export function computeCollapsedEdges(
 	edges: TopologyEdge[],
 	collapsed: Set<string>,
 	nodes: TopologyNode[],
-	hiddenEdgeTypes: string[]
+	hiddenEdgeTypes: string[],
+	prebuiltParentMap?: Map<string, string>
 ): AggregatedEdge[] {
 	if (collapsed.size === 0) return [];
 
-	const parentMap = buildFullParentMap(nodes);
+	const parentMap = prebuiltParentMap ?? buildFullParentMap(nodes);
 
 	const hiddenSet = new Set(hiddenEdgeTypes);
 

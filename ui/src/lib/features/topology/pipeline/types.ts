@@ -5,6 +5,7 @@ import type { SelectionStores } from '../selection';
 import type { Node, Edge } from '@xyflow/svelte';
 import type { Writable } from 'svelte/store';
 import type { AggregatedEdge } from '../collapse';
+import type { TopologyParentIndex } from '../topology-parent-index';
 
 export type XY = { x: number; y: number };
 
@@ -51,6 +52,7 @@ export interface PrepareResult {
 	collapsed: Set<string>;
 	elevatedEdges: TopologyEdge[];
 	elementToContainer: Map<string, string>;
+	parentIndex: TopologyParentIndex;
 	topoKey: string;
 	structureKey: string;
 	baseKey: string;

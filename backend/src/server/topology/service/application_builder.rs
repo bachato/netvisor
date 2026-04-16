@@ -226,7 +226,7 @@ impl ViewBuilder for ApplicationBuilder {
         // Apply element rules (ByServiceCategory, ByTag) to create nested subcontainers
         let service_lookup: HashMap<Uuid, &crate::server::services::r#impl::base::Service> =
             eligible_services.iter().map(|s| (s.id, *s)).collect();
-        apply_element_rules(&mut nodes, &grouping.element_rules, |node| {
+        let _ = apply_element_rules(&mut nodes, &grouping.element_rules, |node| {
             let service = service_lookup.get(&node.id)?;
             let categories = HashSet::from([service.base.service_definition.category()]);
             let mut tag_ids: HashSet<Uuid> = service.base.tags.iter().copied().collect();
@@ -264,11 +264,7 @@ impl ViewBuilder for ApplicationBuilder {
         }
 
         // Build binding_id → service_id lookup (for Bindings variant backward compat)
-        let binding_to_service: HashMap<Uuid, Uuid> = ctx
-            .services
-            .iter()
-            .flat_map(|s| s.base.bindings.iter().map(move |b| (b.id, s.id)))
-            .collect();
+        let binding_to_service = ctx.build_binding_to_service_map();
 
         // Create service-level flow edges from dependencies
         for dep in ctx.dependencies {

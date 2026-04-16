@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use crate::server::{
@@ -290,5 +290,14 @@ impl<'a> TopologyContext<'a> {
         self.get_service_by_id(*service_id)
             .map(|s| !s.base.bindings.is_empty())
             .unwrap_or(true)
+    }
+
+    /// Build a map of binding_id → service_id from all services.
+    /// Used by builders that need to resolve dependency bindings to service IDs.
+    pub fn build_binding_to_service_map(&self) -> HashMap<Uuid, Uuid> {
+        self.services
+            .iter()
+            .flat_map(|s| s.base.bindings.iter().map(move |b| (b.id, s.id)))
+            .collect()
     }
 }

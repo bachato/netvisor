@@ -518,6 +518,7 @@
 			elevatedEdges: prep.elevatedEdges,
 			collapsed,
 			elementToContainer: prep.elementToContainer,
+			parentMap: prep.parentIndex.parentMap,
 			aggregatedEdges: prep.aggregatedEdges,
 			hiddenEdgeTypes: prep.hiddenEdgeTypes,
 			layoutNodes: prep.layoutNodes,

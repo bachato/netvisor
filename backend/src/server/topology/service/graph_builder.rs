@@ -276,7 +276,7 @@ impl GraphBuilder {
         let children_by_id: HashMap<Uuid, &ContainerChild> =
             children.iter().map(|c| (c.id, c)).collect();
 
-        apply_element_rules(child_nodes, &grouping.element_rules, |node| {
+        let _ = apply_element_rules(child_nodes, &grouping.element_rules, |node| {
             let child = children_by_id.get(&node.id)?;
             let categories = ctx
                 .services

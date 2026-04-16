@@ -2,11 +2,14 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use crate::server::{
+    hosts::r#impl::base::Host,
     interfaces::r#impl::base::IfOperStatus,
-    services::r#impl::categories::ServiceCategory,
+    services::r#impl::{base::Service, categories::ServiceCategory},
     shared::entities::EntityDiscriminants,
     topology::types::{
-        grouping::{ElementRule, GraphRule, IdentifiedRule},
+        grouping::{
+            ElementRule, GraphRule, IdentifiedRule, InlineGroup, InlineGroupRole, PlacementDecision,
+        },
         nodes::{ContainerType, Node, NodeType},
     },
 };
@@ -34,6 +37,123 @@ pub struct ElementMatchData {
     pub oper_status: Option<IfOperStatus>,
 }
 
+/// Context for computing inline placement decisions.
+pub struct InlinePlacementContext<'a> {
+    pub hosts: &'a HashMap<Uuid, &'a Host>,
+    pub service_lookup: &'a HashMap<Uuid, &'a Service>,
+    /// virtualizer_service_id → managed container service IDs
+    pub virt_to_container_svcs: &'a HashMap<Uuid, Vec<Uuid>>,
+}
+
+/// Compute inline placement decisions for all applicable element rules.
+///
+/// Returns a map of entity_id → PlacementDecision for entities that should be
+/// inlined on another node rather than having their own element.
+///
+/// The match on ElementRule is **exhaustive** — adding a new variant forces
+/// the developer to decide whether it produces inline placements.
+pub fn compute_inline_placements(
+    rules: &[IdentifiedRule<ElementRule>],
+    ctx: &InlinePlacementContext,
+) -> HashMap<Uuid, PlacementDecision> {
+    let mut result = HashMap::new();
+    for IdentifiedRule { rule, .. } in rules {
+        let placements: HashMap<Uuid, PlacementDecision> = match rule {
+            ElementRule::ByHypervisor => {
+                // Services on VM hosts are inlined on the VM host element.
+                // The hypervisor rule groups VMs under their hypervisor; as a consequence,
+                // VMs are elements (not containers), so services on them can't have their
+                // own element nodes.
+                let mut map = HashMap::new();
+                for (host_id, host) in ctx.hosts.iter() {
+                    if host.base.virtualization.is_none() {
+                        continue;
+                    }
+                    // Find all services on this VM host
+                    for svc in ctx.service_lookup.values() {
+                        if svc.base.host_id == *host_id {
+                            // Skip services that ByContainerRuntime will handle with group info
+                            if svc.base.virtualization.is_some() {
+                                continue;
+                            }
+                            map.insert(
+                                svc.id,
+                                PlacementDecision::InlineOn {
+                                    node_id: *host_id,
+                                    inline_group: None,
+                                },
+                            );
+                        }
+                    }
+                }
+                map
+            }
+            ElementRule::ByContainerRuntime => {
+                // Docker runtimes and their containers on VM hosts are inlined on the
+                // VM host element, with InlineGroup metadata for the dotted-border
+                // visual grouping in the frontend.
+                let mut map = HashMap::new();
+                for (&virt_svc_id, container_svc_ids) in ctx.virt_to_container_svcs {
+                    let Some(virt_svc) = ctx.service_lookup.get(&virt_svc_id) else {
+                        continue;
+                    };
+                    let Some(host) = ctx.hosts.get(&virt_svc.base.host_id) else {
+                        continue;
+                    };
+                    // Only inline when the virtualizer runs on a VM
+                    if host.base.virtualization.is_none() {
+                        continue;
+                    }
+                    let vm_host_id = virt_svc.base.host_id;
+
+                    // Docker runtime → Header role
+                    map.insert(
+                        virt_svc_id,
+                        PlacementDecision::InlineOn {
+                            node_id: vm_host_id,
+                            inline_group: Some(InlineGroup {
+                                group_id: virt_svc_id,
+                                role: InlineGroupRole::Header,
+                            }),
+                        },
+                    );
+
+                    // Container services → Member role
+                    for &svc_id in container_svc_ids {
+                        map.insert(
+                            svc_id,
+                            PlacementDecision::InlineOn {
+                                node_id: vm_host_id,
+                                inline_group: Some(InlineGroup {
+                                    group_id: virt_svc_id,
+                                    role: InlineGroupRole::Member,
+                                }),
+                            },
+                        );
+                    }
+                }
+                map
+            }
+            // These rules only create subcontainers — no inline placements.
+            ElementRule::ByStack
+            | ElementRule::ByServiceCategory { .. }
+            | ElementRule::ByTag { .. }
+            | ElementRule::ByTrunkPort
+            | ElementRule::ByVLAN
+            | ElementRule::ByPortOpStatus => HashMap::new(),
+        };
+        result.extend(placements);
+    }
+    result
+}
+
+/// Result of applying element rules — contains the reassignments made by subcontainer grouping.
+pub struct ElementRuleResult {
+    /// Maps element node ID → new container ID (the subcontainer it was reassigned to).
+    /// Used by builders to derive virtualizer→subcontainer mappings for edge resolution.
+    pub reassignments: HashMap<Uuid, Uuid>,
+}
+
 /// Apply element rules to nodes, creating nested subcontainers within each parent container.
 ///
 /// `resolve_element` maps an Element node to its matchable data. Returns `None` for nodes
@@ -47,8 +167,8 @@ pub fn apply_element_rules(
     nodes: &mut Vec<Node>,
     element_rules: &[IdentifiedRule<ElementRule>],
     resolve_element: impl Fn(&Node) -> Option<ElementMatchData>,
-) {
-    apply_element_rules_with_titles(nodes, element_rules, resolve_element, None);
+) -> ElementRuleResult {
+    apply_element_rules_with_titles(nodes, element_rules, resolve_element, None)
 }
 
 /// Apply element rules with optional virtualizer title mapping.
@@ -58,9 +178,11 @@ pub fn apply_element_rules_with_titles(
     element_rules: &[IdentifiedRule<ElementRule>],
     resolve_element: impl Fn(&Node) -> Option<ElementMatchData>,
     virtualizer_titles: Option<&HashMap<Uuid, String>>,
-) {
+) -> ElementRuleResult {
     if element_rules.is_empty() {
-        return;
+        return ElementRuleResult {
+            reassignments: HashMap::new(),
+        };
     }
 
     // Collect element nodes grouped by their current parent container
@@ -482,6 +604,8 @@ pub fn apply_element_rules_with_titles(
     }
 
     nodes.extend(new_containers);
+
+    ElementRuleResult { reassignments }
 }
 
 #[cfg(test)]
