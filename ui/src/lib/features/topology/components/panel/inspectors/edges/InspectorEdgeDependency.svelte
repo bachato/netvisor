@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { createForm } from '@tanstack/svelte-form';
-	import { submitForm } from '$lib/shared/components/forms/form-context';
 	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import {
 		useUpdateDependencyMutation,
@@ -16,18 +14,15 @@
 		type ServiceDisplayContext
 	} from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
 	import { DependencyDisplay } from '$lib/shared/components/forms/selection/display/DependencyDisplay.svelte';
-	import { ArrowDown, Plus, Trash2 } from 'lucide-svelte';
+	import { ArrowDown, Edit, Trash2 } from 'lucide-svelte';
 	import {
-		common_cancel,
 		common_delete,
 		common_deleting,
 		common_confirmDeleteName,
-		common_save,
-		dependencies_addBindingDetails,
-		dependencies_addBindingDetailsHelp
+		common_edit
 	} from '$lib/paraglide/messages';
-	import BindingPicker from '../shared/BindingPicker.svelte';
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
+	import InspectorMultiSelect from '../InspectorMultiSelect.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Dependency } from '$lib/features/dependencies/types/base';
 	import { autoRebuild } from '$lib/features/topology/queries';
@@ -148,63 +143,9 @@
 		compact: true
 	});
 
-	// ----- Upgrade Services → Bindings -----
-
-	let showUpgradeForm = $state(false);
-
-	let upgradeServiceIds = $derived<string[]>(
-		(() => {
-			if (!topology || !group || group.members.type !== 'Services') return [];
-			return group.members.service_ids.filter((sid) =>
-				topology!.services.some((s) => s.id === sid)
-			);
-		})()
-	);
-
-	// TanStack form for the upgrade flow; BindingPicker renders
-	// <form.Field name="bindings.<serviceId>"> children against this form.
-	const upgradeForm = createForm(() => ({
-		defaultValues: { bindings: {} as Record<string, string> },
-		onSubmit: async ({ value }) => {
-			if (!group) return;
-			const bindings = (value.bindings ?? {}) as Record<string, string>;
-			const bindingIds: string[] = [];
-			for (const serviceId of upgradeServiceIds) {
-				const id = bindings[serviceId];
-				if (!id) return;
-				bindingIds.push(id);
-			}
-			const updated: Dependency = {
-				...group,
-				members: { type: 'Bindings', binding_ids: bindingIds }
-			};
-			await new Promise<void>((resolve, reject) => {
-				updateDependencyMutation.mutate(updated, {
-					onSuccess: () => {
-						showUpgradeForm = false;
-						upgradeForm.reset({ bindings: {} });
-						resolve();
-					},
-					onError: (err) => reject(err)
-				});
-			});
-		}
-	}));
-
-	let canSaveUpgrade = $derived.by(() => {
-		const bindings = (upgradeForm.state.values.bindings ?? {}) as Record<string, string>;
-		return upgradeServiceIds.length > 0 && upgradeServiceIds.every((sid) => !!bindings[sid]);
-	});
-
-	function cancelUpgrade() {
-		showUpgradeForm = false;
-		upgradeForm.reset({ bindings: {} });
-	}
-
-	async function saveUpgrade() {
-		if (!canSaveUpgrade) return;
-		await submitForm(upgradeForm);
-	}
+	// Edit mode: swap this inspector body for the multi-select dep editor,
+	// prepopulated with the current dependency.
+	let isEditing = $state(false);
 
 	// Context for group display with description
 	let groupContext = $derived({
@@ -222,117 +163,87 @@
 
 <div class="space-y-3">
 	{#if group && localGroup}
-		<span class="text-secondary mb-2 block text-sm font-medium">Dependency</span>
-		<div class="card card-static">
-			<EntityDisplayWrapper
-				context={groupContext}
-				item={group}
-				displayComponent={DependencyDisplay}
+		{#if isEditing && topology}
+			<InspectorMultiSelect
+				{topology}
+				editingDependency={group}
+				onClearSelection={() => (isEditing = false)}
+				onDone={() => (isEditing = false)}
 			/>
-		</div>
+		{:else}
+			<span class="text-secondary mb-2 block text-sm font-medium">Dependency</span>
+			<div class="card card-static">
+				<EntityDisplayWrapper
+					context={groupContext}
+					item={group}
+					displayComponent={DependencyDisplay}
+				/>
+			</div>
 
-		<span class="text-secondary mb-2 block text-sm font-medium">Services</span>
-		{#if group.members.type === 'Bindings'}
-			{#each group.members.binding_ids as bindingId (bindingId)}
-				{@const bindingService = getServiceForBindingFromTopology(bindingId)}
-				{@const bindingHost = bindingService ? getHostForService(bindingService.host_id) : null}
-				{@const bindingData = getBindingFromTopology(bindingId)}
-				{#if bindingService && bindingHost && bindingData}
-					<div
-						class={isRequestPath
-							? `card card-static ${bindingId == sourceId || bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`
-							: `card card-static ${bindingId == sourceId ? `ring-1 ${groupColor.ring}` : bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`}
-					>
-						<EntityDisplayWrapper
-							context={bindingContext}
-							item={bindingData}
-							displayComponent={BindingWithServiceDisplay}
-						/>
-					</div>
-					{#if bindingId == sourceId && isRequestPath}
-						<div class="flex flex-col items-center">
-							<ArrowDown class="text-secondary h-5 w-5" />
-						</div>
-					{/if}
-				{/if}
-			{/each}
-		{:else if group.members.type === 'Services'}
-			{#each group.members.service_ids as serviceId (serviceId)}
-				{@const service = topology?.services.find((s) => s.id === serviceId)}
-				{#if service}
-					<div class="card card-static">
-						<EntityDisplayWrapper
-							context={{ compact: true } satisfies ServiceDisplayContext}
-							item={service}
-							displayComponent={ServiceDisplay}
-						/>
-					</div>
-				{/if}
-			{/each}
-
-			{#if !isReadonly && editState.isEditable && topology}
-				{#if !showUpgradeForm}
-					<button
-						type="button"
-						class="btn-secondary flex w-full items-center justify-center gap-2 text-xs"
-						onclick={() => (showUpgradeForm = true)}
-					>
-						<Plus class="h-4 w-4" />
-						{dependencies_addBindingDetails()}
-					</button>
-				{:else}
-					<div class="card card-static space-y-2 p-3">
-						<span class="text-tertiary block text-xs">{dependencies_addBindingDetailsHelp()}</span>
-						{#each upgradeServiceIds as serviceId, flatIndex (serviceId)}
-							{@const service = topology?.services.find((s) => s.id === serviceId)}
-							{#if service}
-								<div class="card card-static space-y-1 p-2">
-									<div class="text-primary truncate text-xs font-medium">{service.name}</div>
-									<BindingPicker
-										form={upgradeForm}
-										{topology}
-										{serviceId}
-										{flatIndex}
-										disabled={isMutationPending}
-									/>
-								</div>
-							{/if}
-						{/each}
-						<div class="flex gap-2">
-							<button
-								type="button"
-								class="btn-secondary flex-1 text-xs"
-								onclick={cancelUpgrade}
-								disabled={isMutationPending}
-							>
-								{common_cancel()}
-							</button>
-							<button
-								type="button"
-								class="btn-primary flex-1 text-xs"
-								onclick={saveUpgrade}
-								disabled={!canSaveUpgrade || isMutationPending}
-							>
-								{common_save()}
-							</button>
-						</div>
-					</div>
-				{/if}
-			{/if}
-		{/if}
-
-		{#if !isReadonly}
-			<div class="pt-2">
+			{#if !isReadonly && editState.isEditable}
 				<button
 					type="button"
-					disabled={isDeleting}
-					onclick={handleDelete}
-					class="btn-danger flex w-full items-center justify-center gap-2"
+					class="btn-secondary flex w-full items-center justify-center gap-2 text-xs"
+					onclick={() => (isEditing = true)}
 				>
-					<Trash2 class="h-4 w-4" />
-					{isDeleting ? common_deleting() : common_delete()}
+					<Edit class="h-4 w-4" />
+					{common_edit()}
 				</button>
-			</div>
+			{/if}
+
+			<span class="text-secondary mb-2 block text-sm font-medium">Services</span>
+			{#if group.members.type === 'Bindings'}
+				{#each group.members.binding_ids as bindingId (bindingId)}
+					{@const bindingService = getServiceForBindingFromTopology(bindingId)}
+					{@const bindingHost = bindingService ? getHostForService(bindingService.host_id) : null}
+					{@const bindingData = getBindingFromTopology(bindingId)}
+					{#if bindingService && bindingHost && bindingData}
+						<div
+							class={isRequestPath
+								? `card card-static ${bindingId == sourceId || bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`
+								: `card card-static ${bindingId == sourceId ? `ring-1 ${groupColor.ring}` : bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`}
+						>
+							<EntityDisplayWrapper
+								context={bindingContext}
+								item={bindingData}
+								displayComponent={BindingWithServiceDisplay}
+							/>
+						</div>
+						{#if bindingId == sourceId && isRequestPath}
+							<div class="flex flex-col items-center">
+								<ArrowDown class="text-secondary h-5 w-5" />
+							</div>
+						{/if}
+					{/if}
+				{/each}
+			{:else if group.members.type === 'Services'}
+				{#each group.members.service_ids as serviceId (serviceId)}
+					{@const service = topology?.services.find((s) => s.id === serviceId)}
+					{#if service}
+						<div class="card card-static">
+							<EntityDisplayWrapper
+								context={{ compact: true } satisfies ServiceDisplayContext}
+								item={service}
+								displayComponent={ServiceDisplay}
+							/>
+						</div>
+					{/if}
+				{/each}
+			{/if}
+
+			{#if !isReadonly}
+				<div class="pt-2">
+					<button
+						type="button"
+						disabled={isDeleting}
+						onclick={handleDelete}
+						class="btn-danger flex w-full items-center justify-center gap-2"
+					>
+						<Trash2 class="h-4 w-4" />
+						{isDeleting ? common_deleting() : common_delete()}
+					</button>
+				</div>
+			{/if}
 		{/if}
 	{/if}
 </div>

@@ -87,10 +87,11 @@
 	</span>
 {:else if disableNavigate}
 	<!-- Non-interactive (no click-to-navigate, no hover-brightness) but still tracks
-	     mouseenter/leave so the popover can still trigger when !disablePopover. -->
+	     mouseenter/leave so the popover can still trigger when !disablePopover.
+	     Cursor is inherited from the parent (e.g. pointer when wrapped in a button). -->
 	<div
 		bind:this={triggerEl}
-		class="inline-flex flex-shrink-0 cursor-default items-center gap-1 whitespace-nowrap rounded-full"
+		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full"
 		onmouseenter={handleMouseEnter}
 		onmouseleave={handleMouseLeave}
 	>

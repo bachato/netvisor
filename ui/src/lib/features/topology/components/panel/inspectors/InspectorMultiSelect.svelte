@@ -32,9 +32,12 @@
 	} from '$lib/features/tags/queries';
 	import {
 		useCreateDependencyMutation,
+		useUpdateDependencyMutation,
 		createEmptyDependencyFormData
 	} from '$lib/features/dependencies/queries';
+	import type { Dependency } from '$lib/features/dependencies/types/base';
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
+	import { computeOptimalHandles } from '../../../layout/elk-layout';
 	import { dependencyTypes, concepts, views } from '$lib/shared/stores/metadata';
 	import { getInspectorConfig } from './view-config';
 	import DependencyTargetCard from './shared/DependencyTargetCard.svelte';
@@ -59,10 +62,13 @@
 		common_hub,
 		common_spokes,
 		tags_entityTags,
-		common_calls,
+		common_makesRequestTo,
 		common_serves,
+		common_cancel,
+		common_update,
 		dependencies_createDependency,
 		dependencies_dependencyName,
+		dependencies_editDependency,
 		dependencies_servicesOnly,
 		dependencies_withPorts,
 		topology_multiSelectPreviewEdge,
@@ -81,7 +87,9 @@
 		isTutorial = false,
 		onClearSelection,
 		onGroupCreated,
-		onDependencyTypeChange
+		onDependencyTypeChange,
+		editingDependency = null,
+		onDone
 	}: {
 		topology: Topology | undefined;
 		isReadOnly?: boolean;
@@ -89,7 +97,14 @@
 		onClearSelection: () => void;
 		onGroupCreated?: (groupId: string) => void;
 		onDependencyTypeChange?: (type: DependencyType) => void;
+		/** When set, the component acts as an edit form for an existing dependency
+		 *  (PUT on submit) instead of a create form. $selectedNodes is ignored. */
+		editingDependency?: Dependency | null;
+		/** Fired when the user finishes editing (successful Update) or cancels. */
+		onDone?: () => void;
 	} = $props();
+
+	let isEditMode = $derived(editingDependency !== null);
 
 	const { fitView } = useSvelteFlow();
 	const PREVIEW_STORAGE_KEY = 'scanopy_topology_group_preview';
@@ -97,6 +112,7 @@
 	const bulkAddTagMutation = useBulkAddTagMutation();
 	const bulkRemoveTagMutation = useBulkRemoveTagMutation();
 	const createDependencyMutation = useCreateDependencyMutation();
+	const updateDependencyMutation = useUpdateDependencyMutation();
 	const rebuildTopologyMutation = useRebuildTopologyMutation();
 
 	// Subscribe to selectedNodes
@@ -314,11 +330,13 @@
 	}
 
 	// Edge styling lives outside the TanStack form (same pattern as DependencyEditModal):
-	// EdgeStyleForm manages it via bindable callbacks.
+	// EdgeStyleForm manages it via bindable callbacks. Seeded from editingDependency
+	// in edit mode, otherwise a random palette pick.
 	let dependencyColor: Color = $state(
-		AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)]
+		editingDependency?.color ??
+			AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)]
 	);
-	let dependencyEdgeStyle: EdgeStyle = $state('Bezier');
+	let dependencyEdgeStyle: EdgeStyle = $state(editingDependency?.edge_style ?? 'Bezier');
 	let edgeStyleCollapsed = $state(true);
 
 	// Initial default for dependency type — forwarded to the form's defaults.
@@ -377,7 +395,34 @@
 	// Resolve selected nodes to dependency targets (service / host / ipAddress).
 	// Each non-service target requires the user to pick its services.
 	let depTargets = $derived<DependencyTarget[]>(
-		topology ? resolveDependencyTargets(nodes, topology) : []
+		(() => {
+			if (!topology) return [];
+			if (editingDependency) {
+				// Edit mode: one service-kind target per dep member, no host/IP disambiguation.
+				const members = editingDependency.members;
+				const serviceIds: string[] =
+					members.type === 'Services'
+						? [...members.service_ids]
+						: members.binding_ids
+								.map((bid) => {
+									const svc = topology.services.find((s) => s.bindings.some((b) => b.id === bid));
+									return svc?.id;
+								})
+								.filter((id): id is string => !!id);
+				return serviceIds.map((sid): DependencyTarget => {
+					const svc = topology.services.find((s) => s.id === sid);
+					const host = svc ? topology.hosts.find((h) => h.id === svc.host_id) : undefined;
+					return {
+						kind: 'service',
+						serviceId: sid,
+						elementId: sid,
+						label: svc?.name ?? '',
+						hostName: host?.name ?? ''
+					};
+				});
+			}
+			return resolveDependencyTargets(nodes, topology);
+		})()
 	);
 
 	// L3 (or any view marking Bindings required) forces the binding toggle on.
@@ -402,24 +447,39 @@
 		ipAddressIdFilter: string | null;
 	}
 
-	const form = createForm(() => ({
-		defaultValues: {
+	function buildInitialFormValues(): DepFormValues {
+		if (editingDependency) {
+			const bindingsSeed: Record<string, string> = {};
+			if (editingDependency.members.type === 'Bindings' && topology) {
+				for (const bid of editingDependency.members.binding_ids) {
+					const svc = topology.services.find((s) => s.bindings.some((b) => b.id === bid));
+					if (svc) bindingsSeed[svc.id] = bid;
+				}
+			}
+			return {
+				name: editingDependency.name,
+				dependency_type: editingDependency.dependency_type,
+				memberMode: editingDependency.members.type,
+				picks: {},
+				bindings: bindingsSeed
+			};
+		}
+		return {
 			name: '',
 			dependency_type: DEFAULT_DEP_TYPE,
-			memberMode: 'Services' as MemberMode,
-			picks: {} as Record<string, string>,
-			bindings: {} as Record<string, string>
-		} as DepFormValues,
+			memberMode: 'Services',
+			picks: {},
+			bindings: {}
+		};
+	}
+
+	const form = createForm(() => ({
+		defaultValues: buildInitialFormValues() as DepFormValues,
 		onSubmit: async ({ value }) => {
 			if (!topology) return;
 			const v = value as DepFormValues;
 
-			const newDependency = createEmptyDependencyFormData(topology.network_id);
-			newDependency.name = v.name.trim();
-			newDependency.dependency_type = v.dependency_type;
-			newDependency.color = dependencyColor;
-			newDependency.edge_style = dependencyEdgeStyle;
-
+			let members: Dependency['members'];
 			if (v.memberMode === 'Bindings') {
 				const bindingIds: string[] = [];
 				for (const r of resolvedServices) {
@@ -427,17 +487,38 @@
 					if (!id) return;
 					bindingIds.push(id);
 				}
-				newDependency.members = { type: 'Bindings', binding_ids: bindingIds };
+				members = { type: 'Bindings', binding_ids: bindingIds };
 			} else {
-				newDependency.members = {
+				members = {
 					type: 'Services',
 					service_ids: resolvedServices.map((r) => r.serviceId)
 				};
 			}
 
-			const created = await createDependencyMutation.mutateAsync(newDependency);
-			previewEdges.set([]);
-			onGroupCreated?.(created.id);
+			if (editingDependency) {
+				const updated: Dependency = {
+					...editingDependency,
+					name: v.name.trim(),
+					dependency_type: v.dependency_type,
+					color: dependencyColor,
+					edge_style: dependencyEdgeStyle,
+					members
+				};
+				await updateDependencyMutation.mutateAsync(updated);
+				previewEdges.set([]);
+				onDone?.();
+			} else {
+				const newDependency = createEmptyDependencyFormData(topology.network_id);
+				newDependency.name = v.name.trim();
+				newDependency.dependency_type = v.dependency_type;
+				newDependency.color = dependencyColor;
+				newDependency.edge_style = dependencyEdgeStyle;
+				newDependency.members = members;
+
+				const created = await createDependencyMutation.mutateAsync(newDependency);
+				previewEdges.set([]);
+				onGroupCreated?.(created.id);
+			}
 		}
 	}));
 
@@ -518,7 +599,7 @@
 
 	let canCreate = $derived.by(() => {
 		if (!formValues.name.trim()) return false;
-		if (createDependencyMutation.isPending) return false;
+		if (createDependencyMutation.isPending || updateDependencyMutation.isPending) return false;
 		if (resolvedServices.length < 2) return false;
 		if (formValues.memberMode === 'Bindings' && !allServicesHaveBindings) return false;
 		return true;
@@ -527,6 +608,11 @@
 	async function confirmGroupCreation() {
 		if (!canCreate) return;
 		await submitForm(form);
+	}
+
+	function cancelEdit() {
+		previewEdges.set([]);
+		onDone?.();
 	}
 
 	// Get absolute position for a node (accounting for parent offset)
@@ -543,24 +629,22 @@
 		return { x: node.position.x, y: node.position.y };
 	}
 
-	// Compute best source/target handles based on absolute node positions
-	function getBestHandles(
-		source: Node,
-		target: Node
-	): { sourceHandle: string; targetHandle: string } {
-		const sourcePos = getAbsolutePosition(source);
-		const targetPos = getAbsolutePosition(target);
-		const dx = targetPos.x - sourcePos.x;
-		const dy = targetPos.y - sourcePos.y;
-		if (Math.abs(dx) > Math.abs(dy)) {
-			return dx > 0
-				? { sourceHandle: 'Right', targetHandle: 'Left' }
-				: { sourceHandle: 'Left', targetHandle: 'Right' };
-		} else {
-			return dy > 0
-				? { sourceHandle: 'Bottom', targetHandle: 'Top' }
-				: { sourceHandle: 'Top', targetHandle: 'Bottom' };
-		}
+	function nodeSize(node: Node): { w: number; h: number } {
+		// Svelte Flow populates measured.{width,height} once the node is laid out.
+		const measured = (node as Node & { measured?: { width?: number; height?: number } }).measured;
+		return {
+			w: measured?.width ?? node.width ?? 0,
+			h: measured?.height ?? node.height ?? 0
+		};
+	}
+
+	function handlesFor(source: Node, target: Node): { sourceHandle: string; targetHandle: string } {
+		return computeOptimalHandles(
+			getAbsolutePosition(source),
+			nodeSize(source),
+			getAbsolutePosition(target),
+			nodeSize(target)
+		);
 	}
 
 	// Preview edges — render as colored group edges
@@ -575,7 +659,7 @@
 			for (let i = 0; i < nodes.length - 1; i++) {
 				const source = nodes[i];
 				const target = nodes[i + 1];
-				const handles = getBestHandles(source, target);
+				const handles = handlesFor(source, target);
 				preview.push({
 					id: `preview-${i}`,
 					source: source.id,
@@ -600,7 +684,7 @@
 			const hub = nodes[0];
 			for (let i = 1; i < nodes.length; i++) {
 				const spoke = nodes[i];
-				const handles = getBestHandles(hub, spoke);
+				const handles = handlesFor(hub, spoke);
 				preview.push({
 					id: `preview-${i}`,
 					source: hub.id,
@@ -728,11 +812,11 @@
 			{/if}
 		{/if}
 
-		{#if inspectorConfig.dependency_creation}
-			<!-- Dependency creation — flat layout, no outer wrapping card -->
+		{#if inspectorConfig.dependency_creation || isEditMode}
+			<!-- Dependency creation / edit — flat layout, no outer wrapping card -->
 			<div class="space-y-3">
 				<span class="text-secondary block text-sm font-medium"
-					>{dependencies_createDependency()}</span
+					>{isEditMode ? dependencies_editDependency() : dependencies_createDependency()}</span
 				>
 
 				<!-- Dependency type toggle + preview button -->
@@ -830,8 +914,8 @@
 								>
 							{:else if depType === 'HubAndSpoke' && targetIdx === 1}
 								<div class="flex flex-col items-center gap-0.5">
-									<ArrowDown class="text-secondary h-4 w-4" />
 									<span class="text-tertiary text-xs">{common_serves()}</span>
+									<ArrowDown class="text-secondary h-4 w-4" />
 								</div>
 								<span class="text-tertiary mt-2 block text-xs font-semibold uppercase"
 									>{common_spokes()}</span
@@ -840,15 +924,16 @@
 							<DependencyTargetCard {form} {topology} {target} {flatIndex} />
 							{#if depType === 'RequestPath' && targetIdx < depTargets.length - 1}
 								<div class="flex flex-col items-center gap-0.5">
+									<span class="text-tertiary text-xs">{common_makesRequestTo()}</span>
 									<ArrowDown class="text-secondary h-4 w-4" />
-									<span class="text-tertiary text-xs">{common_calls()}</span>
 								</div>
 							{/if}
 						{/each}
 					</div>
 				{/if}
 
-				<!-- Rebuild warning (only when auto-rebuild is off) + Create button -->
+				<!-- Rebuild warning + submit / cancel buttons. In edit mode, show Cancel + Update;
+				     in create mode, just Create Dependency (optionally with rebuild warning). -->
 				{#if isTutorial}
 					<button class="btn-primary w-full text-xs" onclick={onClearSelection}>
 						{topology_tutorialDone()}
@@ -860,13 +945,28 @@
 								{topology_multiSelectCreateGroupRebuildWarning()}
 							</p>
 						{/if}
-						<button
-							class="btn-primary w-full text-xs"
-							onclick={confirmGroupCreation}
-							disabled={!canCreate}
-						>
-							{dependencies_createDependency()}
-						</button>
+						{#if isEditMode}
+							<div class="flex gap-2">
+								<button class="btn-secondary flex-1 text-xs" onclick={cancelEdit}>
+									{common_cancel()}
+								</button>
+								<button
+									class="btn-primary flex-1 text-xs"
+									onclick={confirmGroupCreation}
+									disabled={!canCreate}
+								>
+									{common_update()}
+								</button>
+							</div>
+						{:else}
+							<button
+								class="btn-primary w-full text-xs"
+								onclick={confirmGroupCreation}
+								disabled={!canCreate}
+							>
+								{dependencies_createDependency()}
+							</button>
+						{/if}
 					</div>
 				{/if}
 			</div>

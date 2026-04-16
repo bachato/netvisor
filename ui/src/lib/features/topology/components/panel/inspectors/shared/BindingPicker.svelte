@@ -17,6 +17,8 @@
 		topology_multiSelectNoBindings
 	} from '$lib/paraglide/messages';
 	import type { Topology } from '../../../../types/base';
+	import type { Binding } from '$lib/features/services/types/base';
+	import type { IPAddress } from '$lib/features/hosts/types/base';
 
 	let {
 		form,
@@ -67,10 +69,53 @@
 		});
 	});
 
-	let candidates = $derived.by(() => {
+	// The first service in a RequestPath is the caller — it initiates the request.
+	// It isn't *receiving* traffic here, so the port is irrelevant. Offer IP options
+	// instead and map the user's IP pick back to a canonical binding ID.
+	let isFirstService = $derived(flatIndex === 0);
+
+	interface IpCandidate {
+		ipAddress: IPAddress;
+		bindingId: string; // canonical binding for this IP (prefer type=IPAddress, else first Port)
+	}
+
+	let ipCandidates = $derived.by((): IpCandidate[] => {
+		if (!backing) return [];
+		// Group bindings by ip_address_id; skip bindings with null ip_address_id (all-IPs)
+		// here — they don't identify a specific instance of the caller.
+		const byIp = new Map<string, { ipOnly?: Binding; firstPort?: Binding }>();
+		for (const b of backing.bindings) {
+			if (!b.ip_address_id) continue;
+			if (ipAddressIdFilter != null && b.ip_address_id !== ipAddressIdFilter) continue;
+			const entry = byIp.get(b.ip_address_id) ?? {};
+			if (b.type === 'IPAddress') {
+				entry.ipOnly = b;
+			} else if (b.type === 'Port' && !entry.firstPort) {
+				entry.firstPort = b;
+			}
+			byIp.set(b.ip_address_id, entry);
+		}
+		const out: IpCandidate[] = [];
+		for (const [ipId, entry] of byIp) {
+			const canonical = entry.ipOnly ?? entry.firstPort;
+			if (!canonical) continue;
+			const ip = topology.ip_addresses.find((i) => i.id === ipId);
+			if (!ip) continue;
+			// Dedupe across services: skip IPs whose canonical binding is already chosen by another service.
+			const takenByOther = Object.entries(bindingsMap).some(
+				([otherSvcId, chosenBindingId]) =>
+					otherSvcId !== serviceId && chosenBindingId === canonical.id
+			);
+			if (takenByOther) continue;
+			out.push({ ipAddress: ip, bindingId: canonical.id });
+		}
+		return out;
+	});
+
+	let bindingCandidates = $derived.by((): Binding[] => {
 		if (!backing) return [];
 		return backing.bindings.filter((b) => {
-			if (flatIndex > 0 && b.type === 'IPAddress') return false;
+			if (b.type === 'IPAddress') return false; // non-first service can't use IP-only
 			if (ipAddressIdFilter != null) {
 				if (b.ip_address_id !== ipAddressIdFilter && b.ip_address_id !== null) return false;
 			}
@@ -81,17 +126,73 @@
 		});
 	});
 
-	// Auto-resolve singleton: write the only candidate to the form, idempotent.
+	// Auto-resolve singleton: first-service uses IP singleton, others use binding singleton.
 	$effect(() => {
-		if (candidates.length !== 1) return;
-		if (bindingsMap[serviceId] === candidates[0].id) return;
-		form.setFieldValue(`${fieldPrefix}.${serviceId}`, candidates[0].id);
+		if (isFirstService) {
+			if (ipCandidates.length !== 1) return;
+			if (bindingsMap[serviceId] === ipCandidates[0].bindingId) return;
+			form.setFieldValue(`${fieldPrefix}.${serviceId}`, ipCandidates[0].bindingId);
+		} else {
+			if (bindingCandidates.length !== 1) return;
+			if (bindingsMap[serviceId] === bindingCandidates[0].id) return;
+			form.setFieldValue(`${fieldPrefix}.${serviceId}`, bindingCandidates[0].id);
+		}
 	});
+
+	function ipLabel(ip: IPAddress): string {
+		const subnet = subnetsData.find((s) => s.id === ip.subnet_id);
+		if (subnet && isContainerSubnet(subnet)) {
+			return ip.name ?? ip.ip_address;
+		}
+		return (ip.name ? ip.name + ': ' : '') + ip.ip_address;
+	}
+
+	// Currently-selected IP for first-service display — derived from the bindingId stored in the form.
+	let selectedIpCandidate = $derived(
+		isFirstService ? ipCandidates.find((c) => c.bindingId === bindingsMap[serviceId]) : undefined
+	);
 </script>
 
 {#if backing}
-	{#if candidates.length === 0}
-		{#if flatIndex > 0 && backing.bindings.every((b) => b.type === 'IPAddress')}
+	{#if isFirstService}
+		{#if ipCandidates.length === 0}
+			<span class="text-tertiary text-xs italic">
+				{topology_multiSelectNoBindings()}
+			</span>
+		{:else if ipCandidates.length === 1}
+			<EntityTag
+				entityRef={entityRef('IPAddress', ipCandidates[0].ipAddress.id, ipCandidates[0].ipAddress, {
+					subnets: subnetsData
+				})}
+				label={ipLabel(ipCandidates[0].ipAddress)}
+				icon={entities.getIconComponent('IPAddress')}
+				color={entities.getColorHelper('IPAddress').color}
+				disableNavigate={true}
+				disablePopover={true}
+			/>
+		{:else}
+			{@const ipOptions: EntityTagOption[] = ipCandidates.map((c) => ({
+				id: c.bindingId,
+				entityRef: entityRef('IPAddress', c.ipAddress.id, c.ipAddress, { subnets: subnetsData }),
+				label: ipLabel(c.ipAddress),
+				icon: entities.getIconComponent('IPAddress'),
+				color: entities.getColorHelper('IPAddress').color
+			}))}
+			<div class="min-w-0 flex-1">
+				<form.Field name="{fieldPrefix}.{serviceId}">
+					{#snippet children(field: AnyFieldApi)}
+						<EntityTagSelect
+							options={ipOptions}
+							selectedValue={field.state.value ?? selectedIpCandidate?.bindingId ?? null}
+							onSelect={(bindingId) => field.handleChange(bindingId)}
+							{disabled}
+						/>
+					{/snippet}
+				</form.Field>
+			</div>
+		{/if}
+	{:else if bindingCandidates.length === 0}
+		{#if backing.bindings.every((b) => b.type === 'IPAddress')}
 			<p class="text-danger text-xs">
 				{dependencies_noOpenPortsError({
 					serviceName: backing.name,
@@ -103,17 +204,22 @@
 				{topology_multiSelectNoBindings()}
 			</span>
 		{/if}
-	{:else if candidates.length === 1}
+	{:else if bindingCandidates.length === 1}
 		<EntityTag
-			entityRef={entityRef('Binding', candidates[0].id, candidates[0], bindingContext)}
-			label={BindingDisplay.getLabel?.(candidates[0], bindingContext) ?? ''}
+			entityRef={entityRef(
+				'Binding',
+				bindingCandidates[0].id,
+				bindingCandidates[0],
+				bindingContext
+			)}
+			label={BindingDisplay.getLabel?.(bindingCandidates[0], bindingContext) ?? ''}
 			icon={entities.getIconComponent('Port')}
 			color={entities.getColorHelper('Port').color}
 			disableNavigate={true}
 			disablePopover={true}
 		/>
 	{:else}
-		{@const bindingOptions: EntityTagOption[] = candidates.map((b) => ({
+		{@const bindingOptions: EntityTagOption[] = bindingCandidates.map((b) => ({
 			id: b.id,
 			entityRef: entityRef('Binding', b.id, b, bindingContext),
 			label: BindingDisplay.getLabel?.(b, bindingContext) ?? '',
