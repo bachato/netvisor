@@ -803,14 +803,16 @@
 
 					<!-- Edge style & color — collapsed by default; matches how EdgeStyleForm
 					     renders on a selected dep edge. -->
-					<EdgeStyleForm
-						bind:formData={edgeStyleFormData}
-						bind:collapsed={edgeStyleCollapsed}
-						editable={true}
-						showCollapseToggle={true}
-						onColorChange={(c) => (dependencyColor = c)}
-						onEdgeStyleChange={(s) => (dependencyEdgeStyle = s)}
-					/>
+					<div class="card card-static p-2">
+						<EdgeStyleForm
+							bind:formData={edgeStyleFormData}
+							bind:collapsed={edgeStyleCollapsed}
+							editable={true}
+							showCollapseToggle={true}
+							onColorChange={(c) => (dependencyColor = c)}
+							onEdgeStyleChange={(s) => (dependencyEdgeStyle = s)}
+						/>
+					</div>
 
 					<!-- Service disambiguation for host/IP targets -->
 					{#if topology}

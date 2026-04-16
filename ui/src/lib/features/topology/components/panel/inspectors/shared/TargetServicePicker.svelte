@@ -1,16 +1,10 @@
 <script lang="ts">
 	import Checkbox from '$lib/shared/components/forms/input/Checkbox.svelte';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
-	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
-	import {
-		HostDisplay,
-		type HostDisplayContext
-	} from '$lib/shared/components/forms/selection/display/HostDisplay.svelte';
-	import {
-		IPAddressDisplay,
-		type IPAddressDisplayContext
-	} from '$lib/shared/components/forms/selection/display/IPAddressDisplay.svelte';
-	import { useSubnetsQuery } from '$lib/features/subnets/queries';
+	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
+	import { entityRef } from '$lib/shared/components/data/types';
+	import { entities } from '$lib/shared/stores/metadata';
+	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
 	import type { DependencyTarget } from '../../../../resolvers';
 	import type { Topology } from '../../../../types/base';
 
@@ -38,26 +32,39 @@
 			.filter((s): s is NonNullable<typeof s> => !!s)
 	);
 
-	let hostContext: HostDisplayContext = $derived({ compact: true });
 	const subnetsQuery = useSubnetsQuery();
-	let ipContext: IPAddressDisplayContext = $derived({
-		subnets: subnetsQuery.data ?? [],
-		compact: true
+	let subnetsData = $derived(subnetsQuery.data ?? []);
+
+	let ipLabel = $derived.by(() => {
+		if (!ipAddress) return '';
+		const subnet = subnetsData.find((s) => s.id === ipAddress.subnet_id);
+		if (subnet && isContainerSubnet(subnet)) {
+			return ipAddress.name ?? ipAddress.ip_address;
+		}
+		return (ipAddress.name ? ipAddress.name + ': ' : '') + ipAddress.ip_address;
 	});
 </script>
 
 <div class="card card-static space-y-2 p-2">
-	<!-- Card header: host (and IP if applicable) rendered via shared entity displays -->
-	{#if host}
-		<EntityDisplayWrapper context={hostContext} item={host} displayComponent={HostDisplay} />
-	{/if}
-	{#if ipAddress}
-		<EntityDisplayWrapper
-			context={ipContext}
-			item={ipAddress}
-			displayComponent={IPAddressDisplay}
-		/>
-	{/if}
+	<!-- Context header: host (+ IP if applicable) rendered as EntityTag pills with hover-details -->
+	<div class="flex flex-wrap items-center gap-1.5">
+		{#if host}
+			<EntityTag
+				entityRef={entityRef('Host', host.id, host)}
+				label={host.name}
+				icon={entities.getIconComponent('Host')}
+				color={entities.getColorHelper('Host').color}
+			/>
+		{/if}
+		{#if ipAddress}
+			<EntityTag
+				entityRef={entityRef('IPAddress', ipAddress.id, ipAddress, { subnets: subnetsData })}
+				label={ipLabel}
+				icon={entities.getIconComponent('IPAddress')}
+				color={entities.getColorHelper('IPAddress').color}
+			/>
+		{/if}
+	</div>
 
 	{#if candidates.length === 0}
 		<div class="text-tertiary text-xs italic">—</div>
