@@ -62,7 +62,7 @@ pub struct Tag {
 impl ChangeTriggersTopologyStaleness<Tag> for Tag {
     fn triggers_staleness(&self, other: Option<Tag>) -> bool {
         match other {
-            Some(prev) => self.base.is_application != prev.base.is_application,
+            Some(prev) => self.base.is_application || prev.base.is_application,
             None => self.base.is_application,
         }
     }

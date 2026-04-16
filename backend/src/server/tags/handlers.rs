@@ -354,11 +354,16 @@ async fn resolve_entity_scope(
 
 /// Emit EntityEvent::Updated for each entity whose tags changed.
 /// This triggers subscribers (like topology) to refresh their snapshots.
+///
+/// When `trigger_stale` is true, the topology subscriber marks the network's
+/// topology stale — used when an application tag is added or removed, since
+/// that changes the Application-perspective container structure.
 async fn emit_tag_change_events(
     state: &AppState,
     auth: &AuthenticatedEntity,
     entity_ids: &[Uuid],
     entity_type: EntityDiscriminants,
+    trigger_stale: bool,
 ) {
     let default_entity: crate::server::shared::entities::Entity = entity_type.into();
 
@@ -378,13 +383,27 @@ async fn emit_tag_change_events(
                 operation: EntityOperation::Updated,
                 timestamp: Utc::now(),
                 metadata: serde_json::json!({
-                    "trigger_stale": false,
+                    "trigger_stale": trigger_stale,
                     "suppress_logs": true
                 }),
                 authentication: auth.clone(),
             })
             .await;
     }
+}
+
+/// Returns true if the tag with the given ID is an application tag.
+/// Returns false if the tag can't be found.
+async fn is_application_tag(state: &AppState, tag_id: Uuid) -> bool {
+    state
+        .services
+        .tag_service
+        .get_by_id(&tag_id)
+        .await
+        .ok()
+        .flatten()
+        .map(|t| t.base.is_application)
+        .unwrap_or(false)
 }
 
 /// Request body for bulk tag operations
@@ -466,11 +485,13 @@ pub async fn bulk_add_tag(
         .await?;
 
     if affected_count > 0 {
+        let trigger_stale = is_application_tag(&state, request.tag_id).await;
         emit_tag_change_events(
             &state,
             &auth.entity,
             &request.entity_ids,
             request.entity_type,
+            trigger_stale,
         )
         .await;
     }
@@ -519,11 +540,13 @@ pub async fn bulk_remove_tag(
         .await?;
 
     if affected_count > 0 {
+        let trigger_stale = is_application_tag(&state, request.tag_id).await;
         emit_tag_change_events(
             &state,
             &auth.entity,
             &request.entity_ids,
             request.entity_type,
+            trigger_stale,
         )
         .await;
     }
@@ -570,6 +593,17 @@ pub async fn set_entity_tags(
         .organization_id()
         .ok_or_else(|| ApiError::forbidden("Organization context required"))?;
 
+    // Snapshot prior tags so we can detect app-tag adds/removes after set_tags.
+    let prior_tag_ids: std::collections::HashSet<Uuid> = state
+        .services
+        .entity_tag_service
+        .get_tags(&request.entity_id, &request.entity_type)
+        .await
+        .map_err(|e| ApiError::internal_error(&format!("Failed to read prior tags: {}", e)))?
+        .into_iter()
+        .collect();
+    let new_tag_ids: std::collections::HashSet<Uuid> = request.tag_ids.iter().copied().collect();
+
     state
         .services
         .entity_tag_service
@@ -581,11 +615,21 @@ pub async fn set_entity_tags(
         )
         .await?;
 
+    // Trigger stale only if an app tag was actually added or removed.
+    let mut trigger_stale = false;
+    for tag_id in prior_tag_ids.symmetric_difference(&new_tag_ids) {
+        if is_application_tag(&state, *tag_id).await {
+            trigger_stale = true;
+            break;
+        }
+    }
+
     emit_tag_change_events(
         &state,
         &auth.entity,
         &[request.entity_id],
         request.entity_type,
+        trigger_stale,
     )
     .await;
 
